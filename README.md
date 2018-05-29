@@ -47,75 +47,69 @@ prim ::= NUM
        | "(" expr ")"
 ```
 
-It generates a recursive-descent parser:
+It generates a rather strange-looking recursive-descent parser:
 
 ```python
-def parse_expr(src):
+def parse_expr(src, stack):
     token = src.peek()
-    if token in ('-', 'NUM', '(', 'VAR'):
-        result = ('expr', 0, [
-            parse_term(src),
-        ])
+    if token in ('NUM', '(', 'VAR'):
+        parse_term(src, stack)
+        args = stack[-1:]
+        del stack[-1:]
+        stack.append(('expr', 0, args))
+        parse_expr_(src, stack)
     else:
         raise ValueError('expected expr, got {!r}'.format(token))
-    while True:
-        token = src.peek()
-        if token in ('+',):
-            result = ('expr', 1, [
-                result,
-                src.take('+'),
-                parse_term(src),
-            ])
-        elif token in ('-',):
-            result = ('expr', 2, [
-                result,
-                src.take('-'),
-                parse_term(src),
-            ])
-        else:
-            break
-    return result
 
 ...
 
-def parse_unary(src):
+def parse_prim(src, stack):
     token = src.peek()
-    if token in ('NUM', '(', 'VAR'):
-        return ('unary', 0, [
-            parse_prim(src),
-        ])
-    elif token in ('-',):
-        return ('unary', 1, [
-            src.take('-'),
-            parse_prim(src),
-        ])
-    else:
-        raise ValueError('expected unary, got {!r}'.format(token))
-
-def parse_prim(src):
-    token = src.peek()
-    if token in ('NUM',):
-        return ('prim', 0, [
-            src.take('NUM'),
-        ])
-    elif token in ('VAR',):
-        return ('prim', 1, [
-            src.take('VAR'),
-        ])
-    elif token in ('(',):
-        return ('prim', 2, [
-            src.take('('),
-            parse_expr(src),
-            src.take(')'),
-        ])
+    if token == 'NUM':
+        stack.append(src.take('NUM'))
+        args = stack[-1:]
+        del stack[-1:]
+        stack.append(('prim', 0, args))
+    elif token == 'VAR':
+        stack.append(src.take('VAR'))
+        args = stack[-1:]
+        del stack[-1:]
+        stack.append(('prim', 1, args))
+    elif token == '(':
+        stack.append(src.take('('))
+        parse_expr(src, stack)
+        stack.append(src.take(')'))
+        args = stack[-3:]
+        del stack[-3:]
+        stack.append(('prim', 2, args))
     else:
         raise ValueError('expected prim, got {!r}'.format(token))
 
-def parse(src):
-    ast = parse_expr(src)
-    src.take(None)
-    return ast
+def parse_expr_(src, stack):
+    token = src.peek()
+    if token == '+':
+        stack.append(src.take('+'))
+        parse_term(src, stack)
+        args = stack[-3:]
+        del stack[-3:]
+        stack.append(('expr', 1, args))
+        parse_expr_(src, stack)
+    elif token == '-':
+        stack.append(src.take('-'))
+        parse_term(src, stack)
+        args = stack[-3:]
+        del stack[-3:]
+        stack.append(('expr', 2, args))
+        parse_expr_(src, stack)
 
+...
+
+def parse(src):
+    stack = []
+    parse_expr(src, stack)
+    src.take(None)
+    assert len(stack) == 1
+    return stack[0]
 ```
 
 And the result of parsing the input `2 * ( x + y )` looks like this:
@@ -144,32 +138,12 @@ And the result of parsing the input `2 * ( x + y )` looks like this:
 
 It's *all* limitations, but I'll try to list the ones that are relevant to parsing JS.
 
-*   Grammar can't be indirectly left-recursive. This rules out some silly grammars like
-
-    ```
-    a ::= b ";"
-    b ::= START
-    b ::= a LT
-    b ::= a RT
-    ```
-
-    in which *a* matches such strings as `START; LT; RT; RT;`.
-
-    Does it matter?
-    I can imagine getting a grammar like this by refactoring a directly left-recursive grammar,
-    in this case:
-
-    ```
-    a ::= START ";"
-    a ::= a LT ";"
-    a ::= a RT ";"
-
 *   No nonterminal can match the empty string.
     (JS nonterminal that can be empty include
     *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
     and some lexical rules.)
 
-*   Non-left-recursive rules for the same nonterminal must have disjoint start sets.
+*   The grammar must be LL(1), after eliminating left recursion.
     You can work around this, somewhat, by doing manual left-factoring.
 
     But that won't always work.
@@ -177,17 +151,14 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
     I think this makes it impossible to represent a language that contains
     both `x` and `x y`.
 
-*   Similarly, left-recursive rules for the same nonterminal must accept disjoint sets of tokens
-    immediately following the left-recursion.
-
 *   No Kleene quantifiers.
 
-*   Grammar rules can't contain actions (code to execute while parsing,
+*   The input grammar can't contain actions (code to execute while parsing,
     useful for building a nice AST;
     contextually selecting the tokenizer goal symbol;
     and emitting good error messages)
 
-*   The output is a very literal-minded parse tree, really too literal.
+*   The output is a fairly literal-minded parse tree, really too literal.
 
 *   Recursive descent parsers can run out of stack.
     The parser above will throw a RecursionError if asked to parse
@@ -223,7 +194,27 @@ Minor items:
     *   dangling `else`
 
 
-## What I learned, what I wonder (stab 2)
+## What I learned, what I wonder
+
+### Stab 3
+
+I learned how to eliminate left recursion in a grammar (Algorithm 4.1
+from the book). I learned how to check that a grammar is LL(1) using
+the start and follow sets, although I didn't really learn what LL(1)
+means in any depth. (I'm just using it as a means to prove that the
+grammar is unambiguous.)
+
+I learned from the book how to do a table-driven "nonrecursive
+predictive parser". Something to try later.
+
+I came up with the "reduction symbol" thing. It seems to work as
+expected!  This allows me to transform the grammar, but still generate
+parse trees reflecting the source grammar. However, the resulting code
+is inefficient. Further optimization would improve it, but the
+predictive parser will fare better even without optimization.
+
+
+### Stab 2
 
 I learned it's easy for code to race ahead of understanding.
 I learned that a little feature can mean a lot of complexity.
@@ -260,6 +251,8 @@ I noticed that the ES spec contains this:
 I wonder if this prose is effectively the same as adding a negative lookahead assertion
 "[lookahead &ne; `else`]" at the end of the shorter production.
 
+(I asked bterlson and he thinks so.)
+
 I wonder if follow sets can be usefully considered as context-dependent.
 What do I mean by this?
 For example, `function` is certainly in the follow set of *Statement* in JS,
@@ -271,16 +264,16 @@ Follow sets only matter to detect ambiguity in a grammar,
 and *Statement* is ambiguous if it's ambiguous in *any* context.
 
 
-## What I learned, what I wonder (stab 1)
+### Stab 1
 
 I learned that if you simply define a grammar as a set of rules,
 there are all sorts of anomalies that can come up:
 
 *   Vacant nonterminals (that do not match any input strings);
 
-*   Nonterminals that match only infinite strings;
+*   Nonterminals that match only infinite strings, like `a ::= X a`.
 
-*   "Busy loops", like `a ::= a`.
+*   Cycles ("busy loops"), like `a ::= a`.
     These always introduce ambiguity.
     (You can also have cycles through multiple nonterminals:
     `a ::= b; b ::= a`.)

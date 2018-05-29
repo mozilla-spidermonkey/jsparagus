@@ -54,7 +54,7 @@ def compile(grammar):
     scope = {}
     exec(out.getvalue(), scope)
     return scope['parse']
-            
+
 class GenTestCase(unittest.TestCase):
     def testSimple(self):
         grammar = {
@@ -157,10 +157,18 @@ class GenTestCase(unittest.TestCase):
         }
 
         out = io.StringIO()
-        self.assertRaisesRegex(ValueError, r"`B` after left-recursion",
+        self.assertRaisesRegex(ValueError, r"unsupported grammar: the token 'B' could start either a string matching 's_' or something that follows it",
                                lambda: gen.generate_parser(out, grammar, 'goal'))
 
+    def testUndefinedNt(self):
+        grammar = {
+            'goal': [
+                ['expr']
+            ]
+        }
+        out = io.StringIO()
+        self.assertRaisesRegex(ValueError, r"invalid grammar: nonterminal 'expr' is used but not defined",
+                               lambda: gen.generate_parser(out, grammar, 'goal'))
 
 if __name__ == '__main__':
     unittest.main()
-
