@@ -180,6 +180,7 @@ class GenTestCase(unittest.TestCase):
                                lambda: gen.generate_parser(out, grammar, 'goal'))
 
     def testLeftFactor(self):
+        """Most basic left-factoring test."""
         tokenize = LexicalGrammar("A B")
         grammar = {
             'goal': [
@@ -193,6 +194,7 @@ class GenTestCase(unittest.TestCase):
         self.assertEqual(parse(tokenize("A B")), ('goal', 1, ['A', 'B']))
 
     def testLeftFactorMulti(self):
+        """Test left-factoring of grammars where some rules have a common prefix of length >1."""
         tokenize = LexicalGrammar("A B C D E")
         grammar = {
             'goal': [
@@ -203,6 +205,47 @@ class GenTestCase(unittest.TestCase):
         parse = compile(grammar, goal='goal')
         self.assertEqual(parse(tokenize("A B C D")), ('goal', 0, ['A', 'B', 'C', 'D']))
         self.assertEqual(parse(tokenize("A B C E")), ('goal', 1, ['A', 'B', 'C', 'E']))
+
+    def testLeftFactorMultiLevel(self):
+        """Test left-factoring again on a nonterminal introduced by left-factoring."""
+        tokenize = LexicalGrammar("FOR IN TO BY ( ) = ;", VAR=r'[A-Za-z]+')
+
+        # The first left-factoring pass on `stmt` will left-factor `FOR ( VAR`.
+        # A second pass is needed to left-factor `= expr TO expr`.
+        grammar = {
+            'stmt': [
+                ['expr', ';'],
+                ['FOR', '(', 'VAR', 'IN', 'expr', ')', 'stmt'],
+                ['FOR', '(', 'VAR', '=', 'expr', 'TO', 'expr', ')', 'stmt'],
+                ['FOR', '(', 'VAR', '=', 'expr', 'TO', 'expr', 'BY', 'expr', ')', 'stmt'],
+                ['IF', '(', 'expr', ')', 'stmt'],
+            ],
+            'expr': [
+                ['VAR'],
+            ],
+        }
+        parse = compile(grammar, goal='stmt')
+        self.assertEqual(parse(tokenize("FOR (x IN y) z;")),
+                         ('stmt', 1, [
+                             'FOR', '(', 'x', 'IN', ('expr', 0, ['y']), ')', ('stmt', 0, [
+                                 ('expr', 0, ['z']), ';'
+                             ])
+                         ]))
+        self.assertEqual(parse(tokenize("FOR (x = y TO z) x;")),
+                         ('stmt', 2, [
+                             'FOR', '(', 'x', '=', ('expr', 0, ['y']),
+                             'TO', ('expr', 0, ['z']), ')', ('stmt', 0, [
+                                 ('expr', 0, ['x']), ';'
+                             ])
+                         ]))
+        self.assertEqual(parse(tokenize("FOR (x = y TO z BY w) x;")),
+                         ('stmt', 3, [
+                             'FOR', '(', 'x', '=', ('expr', 0, ['y']),
+                             'TO', ('expr', 0, ['z']),
+                             'BY', ('expr', 0, ['w']), ')', ('stmt', 0, [
+                                 ('expr', 0, ['x']), ';'
+                             ])
+                         ]))
 
 
 if __name__ == '__main__':

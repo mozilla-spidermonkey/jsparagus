@@ -202,7 +202,7 @@ def common_prefix(lists):
             common = L[:]
         else:
             i = 0
-            while common[i] == L[i] and i + 1 < len(common) and i + 1 < len(L):
+            while i < len(common) and i < len(L) and common[i] == L[i]:
                 i += 1
             del common[i:]
     assert common is not None
@@ -229,6 +229,7 @@ def left_factor(grammar):
                 assert prod[0] != nt  # should not be left-recursion
                 factor_set = silos[prod[0]]
                 common_seq = common_prefix(factor_set)
+                assert len(common_seq) > 0
                 tail_nt = gensym(grammar, nt)
                 out.append(common_seq + [tail_nt])
                 grammar[tail_nt] = []  # for gensym's benefit
