@@ -2,51 +2,57 @@
 
 import gen
 import io, unittest
+import re
 
-class ListTokens:
-    def __init__(self, tokens):
-        self.tokens = tokens
+class LexicalGrammar:
+    def __init__(self, tokens, **regexps):
+        token_list = sorted(tokens.split(), key=len, reverse=True)
+        self.token_re = re.compile("|".join(re.escape(token) for token in token_list))
+        self.parser_pairs = [(k, re.compile(v)) for k, v in regexps.items()]
+
+    def __call__(self, source):
+        return Tokenizer(self.token_re, self.parser_pairs, source)
+
+
+class Tokenizer:
+    def __init__(self, token_re, parser_pairs, source):
+        self.token_re = token_re
+        self.parser_pairs = parser_pairs
+        self.src = source
+        self.point = 0
+
+    def _match(self):
+        while self.point < len(self.src) and self.src[self.point] in " \t":
+            self.point += 1
+        if self.point == len(self.src):
+            return None
+        match = self.token_re.match(self.src, self.point)
+        if match is not None:
+            return match.group(0), match
+        for name, pattern in self.parser_pairs:
+            match = pattern.match(self.src, self.point)
+            if match is not None:
+                return name, match
+        raise ValueError("unexpected characters {!r}".format(self.src[self.point:self.point+4]))
 
     def peek(self):
-        if len(self.tokens) == 0:
+        hit = self._match()
+        if hit is None:
             return None
-        else:
-            next = self.tokens[0]
-            if next.isdigit():
-                return "NUM"
-            elif next.isalpha():
-                return "VAR"
-            elif next in '+-*/()':
-                return next
-            else:
-                raise ValueError("unexpected token {!r}".format(next))
+        return hit[0]
 
     def take(self, k):
-        if k is None:
-            if self.tokens:
-                raise ValueError("expected end of input")
+        hit = self._match()
+        if hit is None:
+            if k is not None:
+                raise ValueError("unexpected end of input (expected {!r})".format(k))
         else:
-            assert self.peek() == k
-            return self.tokens.pop(0)
+            name, match = hit
+            if k != name:
+                raise ValueError("expected {!r}, got {!r}".format(k, name))
+            self.point = match.end()
+            return match.group()
 
-class LetterTokens(ListTokens):
-    def __init__(self, s):
-        ListTokens.__init__(self, list(s))
-
-class SplitTokens(ListTokens):
-    def __init__(self, s):
-        ListTokens.__init__(self, s.split())
-
-class LispTokens(SplitTokens):
-    def peek(self):
-        if len(self.tokens) == 0:
-            return None
-        else:
-            next = self.tokens[0]
-            if next in '()':
-                return next
-            else:
-                return 'SYMBOL'
 
 def compile(grammar, goal='expr'):
     out = io.StringIO()
@@ -55,8 +61,10 @@ def compile(grammar, goal='expr'):
     exec(out.getvalue(), scope)
     return scope['parse']
 
+
 class GenTestCase(unittest.TestCase):
     def testSimple(self):
+        tokenize = LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
         grammar = {
             'expr': [
                 ['SYMBOL'],
@@ -69,7 +77,7 @@ class GenTestCase(unittest.TestCase):
         }
         parse = compile(grammar)
 
-        parsed = parse(LispTokens("( lambda ( x ) ( * x x ) )"))
+        parsed = parse(tokenize("(lambda (x) (* x x))"))
         self.assertEqual(parsed, ('expr', 1, [
             '(',
             ('tail', 1, [
@@ -94,6 +102,7 @@ class GenTestCase(unittest.TestCase):
         ]))
 
     def testArithmetic(self):
+        tokenize = LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
         parse = compile({
             'expr': [
                 ['term'],
@@ -111,7 +120,7 @@ class GenTestCase(unittest.TestCase):
                 ['(', 'expr', ')'],
             ],
         })
-        tokens = SplitTokens('2 * 3 + 4 * ( 5 + 7 )')
+        tokens = tokenize('2 * 3 + 4 * (5 + 7)')
         self.assertEqual(
             parse(tokens),
             ('expr', 1, [
@@ -171,16 +180,29 @@ class GenTestCase(unittest.TestCase):
                                lambda: gen.generate_parser(out, grammar, 'goal'))
 
     def testLeftFactor(self):
+        tokenize = LexicalGrammar("A B")
         grammar = {
             'goal': [
-                ['+'],
-                ['+', '-'],
+                ['A'],
+                ['A', 'B'],
             ],
         }
 
         parse = compile(grammar, goal='goal')
-        self.assertEqual(parse(SplitTokens("+")), ('goal', 0, ['+']))
-        self.assertEqual(parse(SplitTokens("+ -")), ('goal', 1, ['+', '-']))
+        self.assertEqual(parse(tokenize("A")), ('goal', 0, ['A']))
+        self.assertEqual(parse(tokenize("A B")), ('goal', 1, ['A', 'B']))
+
+    def testLeftFactorMulti(self):
+        tokenize = LexicalGrammar("A B C D E")
+        grammar = {
+            'goal': [
+                ['A', 'B', 'C', 'D'],
+                ['A', 'B', 'C', 'E'],
+            ],
+        }
+        parse = compile(grammar, goal='goal')
+        self.assertEqual(parse(tokenize("A B C D")), ('goal', 0, ['A', 'B', 'C', 'D']))
+        self.assertEqual(parse(tokenize("A B C E")), ('goal', 1, ['A', 'B', 'C', 'E']))
 
 
 if __name__ == '__main__':
