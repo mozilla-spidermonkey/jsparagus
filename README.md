@@ -138,18 +138,17 @@ And the result of parsing the input `2 * ( x + y )` looks like this:
 
 It's *all* limitations, but I'll try to list the ones that are relevant to parsing JS.
 
-*   No nonterminal can match the empty string.
+*   No nonterminal in the input grammar can match the empty string.
     (JS nonterminal that can be empty include
     *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
     and some lexical rules.)
 
-*   The grammar must be LL(1), after eliminating left recursion.
-    You can work around this, somewhat, by doing manual left-factoring.
+    (Internally, the parser generator does transformations that can
+    result in empty productions, but supporting them in the input grammar
+    would complicate some things.)
 
-    But that won't always work.
-    In combination with the previous limitation,
-    I think this makes it impossible to represent a language that contains
-    both `x` and `x y`.
+*   The grammar must be LL(1), after automated left-recursion
+    elimination and left-factoring.
 
 *   No Kleene quantifiers.
 
@@ -212,6 +211,10 @@ expected!  This allows me to transform the grammar, but still generate
 parse trees reflecting the source grammar. However, the resulting code
 is inefficient. Further optimization would improve it, but the
 predictive parser will fare better even without optimization.
+
+I wonder what differences there are between LL(1) and LR(1) grammars.
+
+I have forgotten what LALR stands for.
 
 
 ### Stab 2

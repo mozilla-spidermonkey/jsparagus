@@ -48,9 +48,9 @@ class LispTokens(SplitTokens):
             else:
                 return 'SYMBOL'
 
-def compile(grammar):
+def compile(grammar, goal='expr'):
     out = io.StringIO()
-    gen.generate_parser(out, grammar, 'expr')
+    gen.generate_parser(out, grammar, goal)
     scope = {}
     exec(out.getvalue(), scope)
     return scope['parse']
@@ -163,12 +163,25 @@ class GenTestCase(unittest.TestCase):
     def testUndefinedNt(self):
         grammar = {
             'goal': [
-                ['expr']
-            ]
+                ['expr'],
+            ],
         }
         out = io.StringIO()
         self.assertRaisesRegex(ValueError, r"invalid grammar: nonterminal 'expr' is used but not defined",
                                lambda: gen.generate_parser(out, grammar, 'goal'))
+
+    def testLeftFactor(self):
+        grammar = {
+            'goal': [
+                ['+'],
+                ['+', '-'],
+            ],
+        }
+
+        parse = compile(grammar, goal='goal')
+        self.assertEqual(parse(SplitTokens("+")), ('goal', 0, ['+']))
+        self.assertEqual(parse(SplitTokens("+ -")), ('goal', 1, ['+', '-']))
+
 
 if __name__ == '__main__':
     unittest.main()

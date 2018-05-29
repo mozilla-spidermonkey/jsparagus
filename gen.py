@@ -106,15 +106,15 @@ def check(grammar):
         check_nt(nt)
 
 
+def gensym(grammar, nt):
+    """ Come up with a symbol name that's not already being used in the given grammar. """
+    assert is_nt(nt)
+    while nt in grammar:
+        nt += "_"
+    return nt
+
 def eliminate_left_recursion(grammar):
     """Dragon book Algorithm 4.1."""
-
-    def gensym(grammar, nt):
-        """ Come up with a symbol name that's not already being used in the given grammar. """
-        assert is_nt(nt)
-        while nt in grammar:
-            nt += "_"
-        return nt
 
     def quasisort_nts():
         """ Make a half-hearted effort to put all the nts in a nice order for processing.
@@ -188,6 +188,55 @@ def eliminate_left_recursion(grammar):
         for j, jname in enumerate(ntnames[:i]):
             eliminate_left_calls(from_nt=iname, to_nt=jname)
         eliminate_immediate_left_recursion(iname)
+
+
+def clone_grammar(grammar):
+    return {nt: [prod[:] for prod in prods] for nt, prods in grammar.items()}
+
+
+def common_prefix(lists):
+    """Return the longest sequence S such that every list in `lists` starts with S."""
+    common = None
+    for L in lists:
+        if common is None:
+            common = L[:]
+        else:
+            i = 0
+            while common[i] == L[i] and i + 1 < len(common) and i + 1 < len(L):
+                i += 1
+            del common[i:]
+    assert common is not None
+    return common
+
+
+def left_factor(grammar):
+    """ Left-factor the given non-left-recursive `grammar`. """
+    grammar = clone_grammar(grammar)
+    todo = list(grammar.items())
+    while todo:
+        nt, prods = todo.pop()
+
+        silos = collections.defaultdict(list)
+        for prod in prods:
+            if len(prod) > 0 and not is_reduction(prod[0]):
+                silos[prod[0]].append(prod)
+
+        out = []
+        for prod in prods:
+            if len(prod) == 0 or is_reduction(prod[0]) or len(silos[prod[0]]) == 1:
+                out.append(prod)
+            elif len(silos[prod[0]]) > 1:
+                assert prod[0] != nt  # should not be left-recursion
+                factor_set = silos[prod[0]]
+                common_seq = common_prefix(factor_set)
+                tail_nt = gensym(grammar, nt)
+                out.append(common_seq + [tail_nt])
+                grammar[tail_nt] = []  # for gensym's benefit
+                todo.append((tail_nt, [prod[len(common_seq):] for prod in factor_set]))
+                del factor_set[:]  # don't do this one again later
+        grammar[nt] = out
+
+    return grammar
 
 
 EMPTY = "(empty)"
@@ -339,7 +388,7 @@ def generate_parser(out, grammar, goal):
 
     check(grammar)
     eliminate_left_recursion(grammar)
-    # XXX TODO left-factoring
+    grammar = left_factor(grammar)
     check_ambiguity(grammar, goal)
 
     write = out.write
@@ -385,6 +434,19 @@ def generate_parser(out, grammar, goal):
         if empty_production is None:
             write("    else:\n")
             write("        raise ValueError({!r}.format(token))\n".format("expected " + nt + ", got {!r}"))
+        else:
+            prod = rules[empty_production]
+            if prod:
+                write("    else:\n")
+                for element in prod:
+                    if is_nt(element):
+                        write("        parse_{}(src, stack)\n".format(element))
+                    else:
+                        assert is_reduction(element)
+                        write("        args = stack[-{}:]\n".format(element.arg_count))
+                        write("        del stack[-{}:]\n".format(element.arg_count))
+                        write("        stack.append(({!r}, {!r}, args))\n".format(element.tag_name, element.tag_index))
+
 
         write("\n")
 
