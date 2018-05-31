@@ -28,7 +28,7 @@ def parse(M, goal, tokens):
             operands.append(tokens.take(t))
             t = tokens.peek()
         elif is_nt(plan):
-            k = M[plan, t]
+            k = M.get((plan, t))
             if k is None:
                 raise ValueError("expected {!r}, got {!r}"
                                  .format(plan, t))

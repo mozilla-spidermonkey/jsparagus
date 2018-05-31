@@ -150,6 +150,13 @@ class GenTestCase(unittest.TestCase):
             ])
         )
 
+        self.assertRaisesRegex(ValueError,
+                               r"expected 'expr', got None",
+                               lambda: parse(tokenize("(")))
+        self.assertRaisesRegex(ValueError,
+                               r"expected 'expr', got '\)'",
+                               lambda: parse(tokenize(")")))
+
     def testAmbiguous(self):
         # This grammar should fail verification.
         # It's ambiguous: is ABC s(A)y(BC) or s(AB)y(C)?
