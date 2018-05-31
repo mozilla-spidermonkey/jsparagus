@@ -34,23 +34,9 @@ It's not a bug if it doesn't, but it would be nice to check.
 """
 
 import collections
+import pprint, textwrap
 
-
-# A Reduction is a step in a production that produces an AST node from the most recently parsed symbols.
-Reduction = collections.namedtuple("Reduction", "tag_name tag_index arg_count")
-
-
-# A symbol in a production is one of these three things:
-
-def is_nt(element):
-    return isinstance(element, str) and element[:1].islower()
-
-def is_terminal(element):
-    return isinstance(element, str) and not is_nt(element)
-
-def is_reduction(element):
-    return isinstance(element, Reduction)
-
+from pgen_runtime import is_terminal, is_nt, is_reduction, Reduction
 
 def check(grammar):
     """Enforce three basic rules about the grammar.
@@ -241,7 +227,7 @@ def left_factor(grammar):
 
 
 EMPTY = "(empty)"
-END = "($)"
+END = None
 
 
 def start(grammar, symbol):
@@ -391,15 +377,11 @@ def generate_parser(out, grammar, goal):
     eliminate_left_recursion(grammar)
     grammar = left_factor(grammar)
     check_ambiguity(grammar, goal)
+    follow = follow_sets(grammar, goal)
 
-    write = out.write
-
-    for nt, rules in grammar.items():
-        write("def parse_{}(src, stack):\n".format(nt))
-        write("    token = src.peek()\n")
-
-        if_keyword = "if"
-
+    # Build parse table.
+    parse_table = {}
+    for nt, prods in grammar.items():
         # Set of terminals that can be the first token of a match for any rule
         # we've considered so far. We track this to rule out ambiguity (overzealously).
         #
@@ -408,56 +390,26 @@ def generate_parser(out, grammar, goal):
         # checking doesn't hurt anything.
         seen = set()
         empty_production = None
-        for i, rule in enumerate(rules):
-            start_set = seq_start(grammar, rule)
+        for i, prod in enumerate(prods):
+            start_set = seq_start(grammar, prod)
             if start_set & seen:
                 raise ValueError("invalid grammar: ambiguous token(s) {}".format(start_set & seen))
             seen |= start_set
             if seen == {EMPTY}:
                 assert empty_production is None
-                empty_production = i
+                empty_production = prod
             else:
-                if len(start_set) == 1:
-                    match_expr = "token == {!r}".format(list(start_set)[0])
-                else:
-                    match_expr = "token in {!r}".format(tuple(start_set))
-                write("    {} {}:\n".format(if_keyword, match_expr))
-                if_keyword = "elif"
-                for element in rule:
-                    if is_terminal(element):
-                        write("        stack.append(src.take({!r}))\n".format(element))
-                    elif is_nt(element):
-                        write("        parse_{}(src, stack)\n".format(element))
-                    else:
-                        write("        args = stack[-{}:]\n".format(element.arg_count))
-                        write("        del stack[-{}:]\n".format(element.arg_count))
-                        write("        stack.append(({!r}, {!r}, args))\n".format(element.tag_name, element.tag_index))
-        if empty_production is None:
-            write("    else:\n")
-            write("        raise ValueError({!r}.format(token))\n".format("expected " + nt + ", got {!r}"))
-        else:
-            prod = rules[empty_production]
-            if prod:
-                write("    else:\n")
-                for element in prod:
-                    if is_nt(element):
-                        write("        parse_{}(src, stack)\n".format(element))
-                    else:
-                        assert is_reduction(element)
-                        write("        args = stack[-{}:]\n".format(element.arg_count))
-                        write("        del stack[-{}:]\n".format(element.arg_count))
-                        write("        stack.append(({!r}, {!r}, args))\n".format(element.tag_name, element.tag_index))
+                for token in start_set:
+                    parse_table[nt, token] = prod[::-1]
+        if empty_production is not None:
+            for token in follow[nt]:
+                parse_table[nt, token] = empty_production[::-1]
 
-
-        write("\n")
-
-    # Write entry point.
-    write("def parse(src):\n")
-    write("    stack = []\n")
-    write("    parse_{}(src, stack)\n".format(goal))
-    write("    src.take(None)\n")
-    write("    assert len(stack) == 1\n")
-    write("    return stack[0]\n")
+    # Write the parser.
+    out.write("import pgen_runtime\n"
+              "from pgen_runtime import Reduction\n\n")
+    out.write("parse_table = {}\n\n".format(pprint.pformat(parse_table, width=99)))
+    out.write("parse = pgen_runtime.make_parse_fn(parse_table, {!r})\n".format(goal))
 
 def main():
     grammar = {
@@ -467,9 +419,13 @@ def main():
             ['expr', '-', 'term'],
         ],
         'term': [
+            ['unary'],
+            ['term', '*', 'unary'],
+            ['term', '/', 'unary'],
+        ],
+        'unary': [
             ['prim'],
-            ['term', '*', 'prim'],
-            ['term', '/', 'prim'],
+            ['-', 'unary'],
         ],
         'prim': [
             ['NUM'],

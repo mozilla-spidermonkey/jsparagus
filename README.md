@@ -18,7 +18,7 @@ grammar = {
     ],
     'unary': [
         ['prim'],
-        ['-', 'prim'],
+        ['-', 'unary'],
     ],
     'prim': [
         ['NUM'],
@@ -40,76 +40,46 @@ term ::= unary
        | term "/" unary
 
 unary ::= prim
-        | "-" prim
+        | "-" unary
 
 prim ::= NUM
        | VAR
        | "(" expr ")"
 ```
 
-It generates a rather strange-looking recursive-descent parser:
+It generates a table-driven predictive parser:
 
 ```python
-def parse_expr(src, stack):
-    token = src.peek()
-    if token in ('NUM', '(', 'VAR'):
-        parse_term(src, stack)
-        args = stack[-1:]
-        del stack[-1:]
-        stack.append(('expr', 0, args))
-        parse_expr_(src, stack)
-    else:
-        raise ValueError('expected expr, got {!r}'.format(token))
+import pgen_runtime
+from pgen_runtime import Reduction
 
-...
+parse_table = {('expr', '('): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
+ ('expr', '-'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
+ ('expr', 'NUM'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
+ ('expr', 'VAR'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
+ ('expr_', None): [],
+ ('expr_', ')'): [],
+ ('expr_', '+'): ['expr_', Reduction(tag_name='expr', tag_index=1, arg_count=3), 'term', '+'],
+ ('expr_', '-'): ['expr_', Reduction(tag_name='expr', tag_index=2, arg_count=3), 'term', '-'],
+ ('prim', '('): [Reduction(tag_name='prim', tag_index=2, arg_count=3), ')', 'expr', '('],
+ ('prim', 'NUM'): [Reduction(tag_name='prim', tag_index=0, arg_count=1), 'NUM'],
+ ('prim', 'VAR'): [Reduction(tag_name='prim', tag_index=1, arg_count=1), 'VAR'],
+ ('term', '('): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
+ ('term', '-'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
+ ('term', 'NUM'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
+ ('term', 'VAR'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
+ ('term_', None): [],
+ ('term_', ')'): [],
+ ('term_', '*'): ['term_', Reduction(tag_name='term', tag_index=1, arg_count=3), 'unary', '*'],
+ ('term_', '+'): [],
+ ('term_', '-'): [],
+ ('term_', '/'): ['term_', Reduction(tag_name='term', tag_index=2, arg_count=3), 'unary', '/'],
+ ('unary', '('): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim'],
+ ('unary', '-'): [Reduction(tag_name='unary', tag_index=1, arg_count=2), 'unary', '-'],
+ ('unary', 'NUM'): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim'],
+ ('unary', 'VAR'): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim']}
 
-def parse_prim(src, stack):
-    token = src.peek()
-    if token == 'NUM':
-        stack.append(src.take('NUM'))
-        args = stack[-1:]
-        del stack[-1:]
-        stack.append(('prim', 0, args))
-    elif token == 'VAR':
-        stack.append(src.take('VAR'))
-        args = stack[-1:]
-        del stack[-1:]
-        stack.append(('prim', 1, args))
-    elif token == '(':
-        stack.append(src.take('('))
-        parse_expr(src, stack)
-        stack.append(src.take(')'))
-        args = stack[-3:]
-        del stack[-3:]
-        stack.append(('prim', 2, args))
-    else:
-        raise ValueError('expected prim, got {!r}'.format(token))
-
-def parse_expr_(src, stack):
-    token = src.peek()
-    if token == '+':
-        stack.append(src.take('+'))
-        parse_term(src, stack)
-        args = stack[-3:]
-        del stack[-3:]
-        stack.append(('expr', 1, args))
-        parse_expr_(src, stack)
-    elif token == '-':
-        stack.append(src.take('-'))
-        parse_term(src, stack)
-        args = stack[-3:]
-        del stack[-3:]
-        stack.append(('expr', 2, args))
-        parse_expr_(src, stack)
-
-...
-
-def parse(src):
-    stack = []
-    parse_expr(src, stack)
-    src.take(None)
-    assert len(stack) == 1
-    return stack[0]
+parse = pgen_runtime.make_parse_fn(parse_table, 'expr')
 ```
 
 And the result of parsing the input `2 * ( x + y )` looks like this:
@@ -195,7 +165,24 @@ Minor items:
 
 ## What I learned, what I wonder
 
-### Stab 3
+
+### Stab 4 (nonrecursive table-driven predictive LL parser)
+
+I learned that testing that a Python program can do something deeply
+recursive is kind of nontrivial. :-\
+
+I learned that the predictive parser still takes two stacks (one
+representing the future and one representing the past). It's not magic!
+This makes me want to hop back to stab 3, optimize away the operand
+stack, and see what kind of code I can get.
+
+It seems like recursive descent would be faster, but the table-driven
+parser could be made to support incremental parsing (the state of the
+algorithm is "just data", a pair of stacks, neither of which is the
+parser program's native call stack).
+
+
+### Stab 3 (recursive descent with principled left-recursion-elimination and left-factoring)
 
 I learned how to eliminate left recursion in a grammar (Algorithm 4.1
 from the book). I learned how to check that a grammar is LL(1) using
@@ -213,11 +200,13 @@ is inefficient. Further optimization would improve it, but the
 predictive parser will fare better even without optimization.
 
 I wonder what differences there are between LL(1) and LR(1) grammars.
+(The book repeatedly says they are different, but the distinctions it
+draws suggest differences like: left-recursive grammars can be LR but
+never LL.  That particular difference doesn't matter much to me, because
+there's an algorithm for eliminating left recursion.)
 
-I have forgotten what LALR stands for.
 
-
-### Stab 2
+### Stab 2 (recursive descent with ad hoc immediate-left-recursion-elimination)
 
 I learned it's easy for code to race ahead of understanding.
 I learned that a little feature can mean a lot of complexity.
@@ -267,7 +256,7 @@ Follow sets only matter to detect ambiguity in a grammar,
 and *Statement* is ambiguous if it's ambiguous in *any* context.
 
 
-### Stab 1
+### Stab 1 (very naive recursive descent)
 
 I learned that if you simply define a grammar as a set of rules,
 there are all sorts of anomalies that can come up:

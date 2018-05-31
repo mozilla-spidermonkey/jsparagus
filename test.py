@@ -54,6 +54,9 @@ class Tokenizer:
             return match.group()
 
 
+LispTokenizer = LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
+
+
 def compile(grammar, goal='expr'):
     out = io.StringIO()
     gen.generate_parser(out, grammar, goal)
@@ -64,7 +67,6 @@ def compile(grammar, goal='expr'):
 
 class GenTestCase(unittest.TestCase):
     def testSimple(self):
-        tokenize = LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
         grammar = {
             'expr': [
                 ['SYMBOL'],
@@ -77,7 +79,7 @@ class GenTestCase(unittest.TestCase):
         }
         parse = compile(grammar)
 
-        parsed = parse(tokenize("(lambda (x) (* x x))"))
+        parsed = parse(LispTokenizer("(lambda (x) (* x x))"))
         self.assertEqual(parsed, ('expr', 1, [
             '(',
             ('tail', 1, [
@@ -246,6 +248,51 @@ class GenTestCase(unittest.TestCase):
                                  ('expr', 0, ['x']), ';'
                              ])
                          ]))
+
+    def testDeepRecursion(self):
+        grammar = {
+            'expr': [
+                ['SYMBOL'],
+                ['(', ')'],
+                ['(', 'exprs', ')'],
+            ],
+            'exprs': [
+                ['expr'],
+                ['exprs', 'expr'],
+            ],
+        }
+        parse = compile(grammar)
+
+        N = 3000
+        s = "x"
+        t = ('expr', 0, ['x'])
+        for i in range(N):
+            s = "(" + s + ")"
+            t = ('expr', 2, ['(', ('exprs', 0, [t]), ')'])
+
+        result = parse(LispTokenizer(s))
+
+        # Python can't check that result == t; it causes a RecursionError.
+        # Testing that repr(result) == repr(t), same deal. So:
+        for i in range(N):
+            self.assertIsInstance(result, tuple)
+            self.assertEqual(len(result), 3)
+            self.assertEqual(result[0], 'expr')
+            self.assertEqual(result[1], 2)
+            result = result[2]
+            self.assertIsInstance(result, list)
+            self.assertEqual(len(result), 3)
+            self.assertEqual(result[0], '(')
+            self.assertEqual(result[2], ')')
+            result = result[1]
+            self.assertIsInstance(result, tuple)
+            self.assertEqual(len(result), 3)
+            self.assertEqual(result[0], 'exprs')
+            self.assertEqual(result[1], 0)
+            result = result[2]
+            self.assertIsInstance(result, list)
+            self.assertEqual(len(result), 1)
+            result = result[0]
 
 
 if __name__ == '__main__':
