@@ -109,7 +109,7 @@ And the result of parsing the input `2 * ( x + y )` looks like this:
 It's *all* limitations, but I'll try to list the ones that are relevant to parsing JS.
 
 *   No nonterminal in the input grammar can match the empty string.
-    (JS nonterminal that can be empty include
+    (JS nonterminals that can be empty include
     *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
     and some lexical rules.)
 
@@ -140,9 +140,9 @@ Minor items:
 *   No location information (ditto).
 
 *   Errors are poor:
-    `(` produces "expected tail, got None";
-    `)` produces "expected sexpr, got ')'";
-    `a b` produces "expected end of input".
+    `(` produces "expected 'expr', got None";
+    `)` produces "expected 'expr', got ')'";
+    `a b` produces "expected 'term_', got 'VAR'".
 
 *   Optimization opportunity:
     Some of the `token in (...)` tests this emits are redundant.
