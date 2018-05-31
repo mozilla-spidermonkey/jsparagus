@@ -480,7 +480,7 @@ def main():
         try:
             result = parse(tokens)
         except Exception as exc:
-            print(exc)
+            print(exc.__class__.__name__ + ": " + str(exc))
         else:
             print(result)
 
