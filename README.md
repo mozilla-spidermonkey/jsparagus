@@ -47,39 +47,68 @@ prim ::= NUM
        | "(" expr ")"
 ```
 
-It generates a table-driven predictive parser:
+It generates a table-driven shift-reduce parser:
 
 ```python
 import pgen_runtime
 from pgen_runtime import Reduction
 
-parse_table = {('expr', '('): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
- ('expr', '-'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
- ('expr', 'NUM'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
- ('expr', 'VAR'): ['expr_', Reduction(tag_name='expr', tag_index=0, arg_count=1), 'term'],
- ('expr_', None): [],
- ('expr_', ')'): [],
- ('expr_', '+'): ['expr_', Reduction(tag_name='expr', tag_index=1, arg_count=3), 'term', '+'],
- ('expr_', '-'): ['expr_', Reduction(tag_name='expr', tag_index=2, arg_count=3), 'term', '-'],
- ('prim', '('): [Reduction(tag_name='prim', tag_index=2, arg_count=3), ')', 'expr', '('],
- ('prim', 'NUM'): [Reduction(tag_name='prim', tag_index=0, arg_count=1), 'NUM'],
- ('prim', 'VAR'): [Reduction(tag_name='prim', tag_index=1, arg_count=1), 'VAR'],
- ('term', '('): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
- ('term', '-'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
- ('term', 'NUM'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
- ('term', 'VAR'): ['term_', Reduction(tag_name='term', tag_index=0, arg_count=1), 'unary'],
- ('term_', None): [],
- ('term_', ')'): [],
- ('term_', '*'): ['term_', Reduction(tag_name='term', tag_index=1, arg_count=3), 'unary', '*'],
- ('term_', '+'): [],
- ('term_', '-'): [],
- ('term_', '/'): ['term_', Reduction(tag_name='term', tag_index=2, arg_count=3), 'unary', '/'],
- ('unary', '('): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim'],
- ('unary', '-'): [Reduction(tag_name='unary', tag_index=1, arg_count=2), 'unary', '-'],
- ('unary', 'NUM'): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim'],
- ('unary', 'VAR'): [Reduction(tag_name='unary', tag_index=0, arg_count=1), 'prim']}
+actions = [{'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {None: -9223372036854775807, '+': 9, '-': 10},
+ {None: -1, ')': -1, '*': 12, '+': -1, '-': -1, '/': 11},
+ {None: -4, ')': -4, '*': -4, '+': -4, '-': -4, '/': -4},
+ {None: -7, ')': -7, '*': -7, '+': -7, '-': -7, '/': -7},
+ {None: -10, ')': -10, '*': -10, '+': -10, '-': -10, '/': -10},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {None: -9, ')': -9, '*': -9, '+': -9, '-': -9, '/': -9},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {'(': 8, '-': 6, 'NUM': 7, 'VAR': 5},
+ {None: -8, ')': -8, '*': -8, '+': -8, '-': -8, '/': -8},
+ {')': 19, '+': 9, '-': 10},
+ {None: -2, ')': -2, '*': 12, '+': -2, '-': -2, '/': 11},
+ {None: -3, ')': -3, '*': 12, '+': -3, '-': -3, '/': 11},
+ {None: -6, ')': -6, '*': -6, '+': -6, '-': -6, '/': -6},
+ {None: -5, ')': -5, '*': -5, '+': -5, '-': -5, '/': -5},
+ {None: -11, ')': -11, '*': -11, '+': -11, '-': -11, '/': -11}]
 
-parse = pgen_runtime.make_parse_fn(parse_table, 'expr')
+ctns = [{'expr': 1, 'prim': 4, 'term': 2, 'unary': 3},
+ {},
+ {},
+ {},
+ {},
+ {},
+ {'prim': 4, 'unary': 13},
+ {},
+ {'expr': 14, 'prim': 4, 'term': 2, 'unary': 3},
+ {'prim': 4, 'term': 15, 'unary': 3},
+ {'prim': 4, 'term': 16, 'unary': 3},
+ {'prim': 4, 'unary': 17},
+ {'prim': 4, 'unary': 18},
+ {},
+ {},
+ {},
+ {},
+ {},
+ {},
+ {}]
+
+reductions = [Reduction(tag_name='expr', tag_index=0, arg_count=1),
+ Reduction(tag_name='expr', tag_index=1, arg_count=3),
+ Reduction(tag_name='expr', tag_index=2, arg_count=3),
+ Reduction(tag_name='term', tag_index=0, arg_count=1),
+ Reduction(tag_name='term', tag_index=1, arg_count=3),
+ Reduction(tag_name='term', tag_index=2, arg_count=3),
+ Reduction(tag_name='unary', tag_index=0, arg_count=1),
+ Reduction(tag_name='unary', tag_index=1, arg_count=2),
+ Reduction(tag_name='prim', tag_index=0, arg_count=1),
+ Reduction(tag_name='prim', tag_index=1, arg_count=1),
+ Reduction(tag_name='prim', tag_index=2, arg_count=3),
+ Reduction(tag_name='expr_', tag_index=0, arg_count=1)]
+
+parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)
 ```
 
 And the result of parsing the input `2 * ( x + y )` looks like this:
@@ -113,12 +142,7 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
     *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
     and some lexical rules.)
 
-    (Internally, the parser generator does transformations that can
-    result in empty productions, but supporting them in the input grammar
-    would complicate some things.)
-
-*   The grammar must be LL(1), after automated left-recursion
-    elimination and left-factoring.
+*   The grammar must be in (I think?) SLR(1).
 
 *   No Kleene quantifiers.
 
@@ -129,25 +153,16 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 
 *   The output is a fairly literal-minded parse tree, really too literal.
 
-*   Recursive descent parsers can run out of stack.
-    The parser above will throw a RecursionError if asked to parse
-    a Lisp list with a thousand elements: `(1 2 3 4 ... 1000)`.
-
 Minor items:
 
-*   Only supports a single goal nonterminal (easy to fix).
+*   Only supports a single goal nonterminal.
 
-*   No location information (ditto).
+*   No location information (easy to fix).
 
 *   Errors are poor:
-    `(` produces "expected 'expr', got None";
-    `)` produces "expected 'expr', got ')'";
-    `a b` produces "expected 'term_', got 'VAR'".
-
-*   Optimization opportunity:
-    Some of the `token in (...)` tests this emits are redundant.
-    For rules like `tail ::= sexpr tail`, we can turn that `elif token in ('Symbol', '(')` into an `else`.
-    Apart from the wording of the error message, there's no difference.
+    `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
+    `)` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
+    `a b` produces "expected one of {'-', '/', '+', '*', ')', None}, got 'VAR'".
 
 *   No support for the JS parsing curiosities:
 
@@ -164,6 +179,52 @@ Minor items:
 
 
 ## What I learned, what I wonder
+
+
+### Stab 5 (simple LR)
+
+Well. I learned enough to implement this, although there is still much I
+don't understand.
+
+I learned of at least one phenomenon that can render a grammar outside
+xLL(1) (that is, LL(1) as extended by automated left-factoring and
+left-recursion elimination); see `testFirstFirstConflict` in `test.py`.
+(Maybe a more practical example would be when a C++ parser at toplevel
+sees the keyword `static` or `const`.)
+
+I learned that the shift-reduce operator precedence parser I wrote for
+SpiderMonkey is even less like a typical LR parser than I imagined.
+
+There's a lot still to learn here.
+
+*   OMG, what does it all mean? I don't understand the control flow
+    ("calls" and "returns") of this system.
+
+*   In what sense is an LR parser a DFA? I implemented it, but there's
+    more to it that I haven't grokked yet. In particular,
+    is there just one DFA or many? What exactly is the "derived" grammar
+    is that the DFA parses? How on earth does it magically turn out to be
+    regular?!
+
+*   Is the thing I implemented SLR? What makes a grammar SLR/LR/LALR?
+
+*   If I faithfully implement the algorithms in the book, will it be
+    less of a dumpster fire? Smaller, more factored?
+
+*   In what sense is SLR "simple"? (More to learn by reading.)
+
+I was stunned to learn that the LR parser, including the table generator,
+is *less* code than the predictive LL parser of stab 4.
+
+I learned that I will apparently hand-code the computation of transitive
+closures of sets under relations ten times before even considering
+writing a general algorithm. The patterns I have written over and over
+are: 1. `while not done:` visit every element already in the set,
+iterating to a fixed point, which is this ludicrous O(*n*<sup>2</sup>)
+in the number of pairs in the relation; 2. depth-first graph walking
+with cycle detection, which can overflow the stack.
+
+I haven't really learned this yet. I'm only halfway through SLR.
 
 
 ### Stab 4 (nonrecursive table-driven predictive LL parser)

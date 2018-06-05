@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-"""gen.py - Third stab at a parser generator.
+"""gen.py - Fifth stab at a parser generator.
 
 **Nature of a grammar.**
 A grammar is a dictionary {str: [[symbol]]} mapping names of nonterminals to lists of productions.
 A production is a nonempty list of symbols.
-Each symbol specifies either a kind of terminal, a nonterminal (by name),
-or a Reduction (a namedtuple that guides the construction of the parse tree).
+Each symbol specifies either a kind of terminal or a nonterminal (by name).
 
 **Context of the generated parser.**
 The user passes to each method an object representing the input sequence.
@@ -20,14 +19,7 @@ This object must support two methods:
     if so, it returns None; if not, it throws.
 
 **Simplifying assumptions about the grammar.**
-We assume the grammar is left-factored, or will be once we eliminate left recursion.
-We verify that the grammar, after eliminating left recursion, is LL(1).
-
-We assume that no production in the input grammar matches the empty
-string. (However, eliminating left-recursion typically creates productions that
-match the empty string, so it's unclear what this buys us, except that the
-dragon book claims the algorithm to eliminate left-recursion only works if we
-have no such productions to begin with—a claim I don't understand.)
+No productions may be empty. Empty productions would complicate table generation.
 
 We assume that every nonterminal matches at least one string of finite length.
 It's not a bug if it doesn't, but it would be nice to check.
@@ -36,7 +28,7 @@ It's not a bug if it doesn't, but it would be nice to check.
 import collections
 import pprint, textwrap
 
-from pgen_runtime import is_terminal, is_nt, is_reduction, Reduction
+from pgen_runtime import is_terminal, is_nt, is_reduction, Reduction, ERROR, ACCEPT
 
 def check(grammar):
     """Enforce three basic rules about the grammar.
@@ -99,131 +91,10 @@ def gensym(grammar, nt):
         nt += "_"
     return nt
 
-def eliminate_left_recursion(grammar):
-    """Dragon book Algorithm 4.1."""
-
-    def quasisort_nts():
-        """ Make a half-hearted effort to put all the nts in a nice order for processing.
-
-        Since the algorithm bans left-calls from later nts to earlier ones,
-        the list should ideally be arranged so that such calls are rare; that is,
-        as much as possible, if A left-calls B, then A should appear before B.
-
-        We do a sort of topological sort to try to ensure this; but cycles are possible,
-        and when we find one, we leave a left call that will be eliminated by a future
-        call to eliminate_left_calls().
-        """
-        out = []
-        stack = []
-        def visit(nt):
-            if nt not in out:
-                stack.append(nt)
-                for r in grammar[nt]:
-                    if r and is_nt(r[0]):
-                        if r[0] in stack:
-                            pass # oh well
-                        else:
-                            visit(r[0])
-                out.append(nt)
-                stack.pop()
-
-        for nt in grammar:
-            visit(nt)
-
-        assert sorted(grammar) == sorted(out)
-        out.reverse()
-        return out
-
-    def eliminate_left_calls(from_nt, to_nt):
-        """Rewrite productions of `from_nt` so that none start with the symbol `to_nt`.
-        This is done by inlining all productions of `to_nt` into `from_nt`. (The result
-        could be a combinatorial explosion, but in practice it's not that bad.)
-
-        from_nt ::= to_nt a0 | ... | b0 | ...
-        ==> from_nt ::= c0 a0 | ... | b0 | ...     where to_nt ::= c0 | ...
-
-        That's a cross product of `c` and `a` productions.
-        """
-        grammar[from_nt] = (
-            [r for r in grammar[from_nt]
-                   if r[:1] != [to_nt]] +
-            [c + a[1:] for c in grammar[to_nt]
-                           for a in grammar[from_nt]
-                               if a[:1] == [to_nt]]
-        )
-
-    def eliminate_immediate_left_recursion(nt):
-        """Rewrite the productions of `nt` so that none start with the symbol `nt`.
-
-        nt ::= nt a0 | ... | b0 | ...
-        ==> nt ::= b0 nt' | ...
-            nt' ::= (empty) | a0 nt' | ...
-        """
-        rules = grammar[nt]
-        if any(r[:1] == [nt] for r in rules):
-            epilogue = gensym(grammar, nt)
-            grammar[epilogue] = [[]] + [r[1:] + [epilogue]
-                                        for r in rules
-                                            if r[:1] == [nt]]
-            grammar[nt] = [r + [epilogue]
-                           for r in rules
-                               if r[:1] != [nt]]
-
-    ntnames = quasisort_nts()
-    for i, iname in enumerate(ntnames):
-        for j, jname in enumerate(ntnames[:i]):
-            eliminate_left_calls(from_nt=iname, to_nt=jname)
-        eliminate_immediate_left_recursion(iname)
 
 
 def clone_grammar(grammar):
     return {nt: [prod[:] for prod in prods] for nt, prods in grammar.items()}
-
-
-def common_prefix(lists):
-    """Return the longest sequence S such that every list in `lists` starts with S."""
-    common = None
-    for L in lists:
-        if common is None:
-            common = L[:]
-        else:
-            i = 0
-            while i < len(common) and i < len(L) and common[i] == L[i]:
-                i += 1
-            del common[i:]
-    assert common is not None
-    return common
-
-
-def left_factor(grammar):
-    """ Left-factor the given non-left-recursive `grammar`. """
-    grammar = clone_grammar(grammar)
-    todo = list(grammar.items())
-    while todo:
-        nt, prods = todo.pop()
-
-        silos = collections.defaultdict(list)
-        for prod in prods:
-            if len(prod) > 0 and not is_reduction(prod[0]):
-                silos[prod[0]].append(prod)
-
-        out = []
-        for prod in prods:
-            if len(prod) == 0 or is_reduction(prod[0]) or len(silos[prod[0]]) == 1:
-                out.append(prod)
-            elif len(silos[prod[0]]) > 1:
-                assert prod[0] != nt  # should not be left-recursion
-                factor_set = silos[prod[0]]
-                common_seq = common_prefix(factor_set)
-                assert len(common_seq) > 0
-                tail_nt = gensym(grammar, nt)
-                out.append(common_seq + [tail_nt])
-                grammar[tail_nt] = []  # for gensym's benefit
-                todo.append((tail_nt, [prod[len(common_seq):] for prod in factor_set]))
-                del factor_set[:]  # don't do this one again later
-        grammar[nt] = out
-
-    return grammar
 
 
 EMPTY = "(empty)"
@@ -329,87 +200,141 @@ def dump_grammar(grammar):
             print("   ", s)
 
 
-def check_ambiguity(grammar, goal):
-    """Throw if the given grammar, which must already be non-left-recursive, isn't LL(1)."""
-    follow = follow_sets(grammar, goal)
-    for nt, prods in grammar.items():
-        start = set()
-        for prod in prods:
-            prod_start = seq_start(grammar, prod)
-            conflicts = prod_start & start
-            if conflicts:
-                # The grammar is not LL(1). It may not actually be ambiguous,
-                # but this simplistic analysis can't prove it unambiguous.
-                if conflicts == {EMPTY}:
-                    # Definitely ambiguous.
-                    raise ValueError("ambiguous grammar: multiple productions for {!r} "
-                                     "match the empty string".format(nt))
-                else:
-                    conflicts -= {EMPTY}
-                    raise ValueError("unsupported grammar: multiple productions for {!r} "
-                                     "match strings that start with {!r}"
-                                     .format(nt, list(conflicts)[0]))
-            start |= prod_start
-
-        # If nt can match the empty string, then we also have to check that
-        # there is no ambiguity between matching the empty string and matching
-        # a nonempty string. This is done by comparing the start set we've just
-        # computed with nt's follow set. (If the grammar is left-recursive, this
-        # step will error out, even though the grammar is not really ambiguous.)
-        if EMPTY in start:
-            conflicts = start & follow[nt]
-            if conflicts:
-                raise ValueError("unsupported grammar: the token {!r} could start either "
-                                 "a string matching {!r} or something that follows it"
-                                 .format(list(conflicts)[0], nt))
-
-
 def generate_parser(out, grammar, goal):
-    # First, append a natural reduction step at the end of every production.
-    # This ensures that the parser we eventually generate builds parse trees
-    # matching the *original* grammar, no matter how we transform the grammar
-    # internally.
-    grammar = {nt: [prod + [Reduction(nt, i, len(prod))]
-                    for i, prod in enumerate(productions)]
-               for nt, productions in grammar.items()}
-
     check(grammar)
-    eliminate_left_recursion(grammar)
-    grammar = left_factor(grammar)
-    check_ambiguity(grammar, goal)
-    follow = follow_sets(grammar, goal)
 
-    # Build parse table.
-    parse_table = {}
-    for nt, prods in grammar.items():
-        # Set of terminals that can be the first token of a match for any rule
-        # we've considered so far. We track this to rule out ambiguity (overzealously).
-        #
-        # We track this set even when we're emitting code for left-recursive productions;
-        # it's not necessary, because check() imposes a much tougher rule, but the extra
-        # checking doesn't hurt anything.
-        seen = set()
-        empty_production = None
-        for i, prod in enumerate(prods):
-            start_set = seq_start(grammar, prod)
-            if start_set & seen:
-                raise ValueError("invalid grammar: ambiguous token(s) {}".format(start_set & seen))
-            seen |= start_set
-            if seen == {EMPTY}:
-                assert empty_production is None
-                empty_production = prod
-            else:
-                for token in start_set:
-                    parse_table[nt, token] = prod[::-1]
-        if empty_production is not None:
-            for token in follow[nt]:
-                parse_table[nt, token] = empty_production[::-1]
+    # Add an "init" nonterminal to the grammar. I don't know why this is
+    # necessary but the book says to do it.
+    grammar = clone_grammar(grammar)
+    init_nt = gensym(grammar, goal)
+    grammar[init_nt] = [
+        [goal]
+    ]
+
+    # Put all the productions in one big list, so each one has an index.
+    # We will use the indices in the action table (as arguments to Reduce actions).
+    prods = [(nt, i, rhs) for nt in grammar for i, rhs in enumerate(grammar[nt])]
+
+    # We'll use these tuples at run time when constructing AST nodes.
+    reductions = [Reduction(nt, i, len(rhs)) for nt, i, rhs in prods]
+
+    # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
+    # Maybe we can just add a check at run time that we exited from the right place in the table...
+    follow = follow_sets(grammar, init_nt)
+
+    # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
+    init_production_index = prods.index((init_nt, 0, [goal]))
+    init_state_set = frozenset({(init_production_index, 0)})
+
+    def debug_state_set_str(state_set):
+        return "{{{}}}".format(
+            ",  ".join(
+                "{} ::= {}".format(
+                    nt,
+                    " ".join(rhs[:offset] + ["\N{MIDDLE DOT}"] + rhs[offset:])
+                )
+                for prod_index, offset in state_set
+                    for nt, _i, rhs in [prods[prod_index]]
+            )
+        )
+
+    # We assign each reachable state set a number, and we keep a list of state
+    # sets that have numbers but haven't been analyzed yet. When the list is
+    # empty, we'll be done.
+    visited_state_sets = {
+        init_state_set: 0
+    }
+    todo = [init_state_set]
+
+    def get_state_set_index(s):
+        """ Get a number for a set of states, assigning a new number if needed. """
+        successors = frozenset(s)
+        if successors in visited_state_sets:
+            return visited_state_sets[successors]
+        else:
+            visited_state_sets[successors] = state_index = len(visited_state_sets)
+            #print("State #{} = {}".format(state_index, debug_state_set_str(successors)))
+            todo.append(successors)
+            return state_index
+
+    actions = []
+    ctns = []
+    while todo:
+        current_state_set = todo.pop(0)
+        #print("analyzing state set {}".format(debug_state_set_str(current_state_set)))
+
+        action_row = {}
+        actions.append(action_row)
+
+        # Compute transitive closure of the current state set under left-calls.
+        # During the same walk of the left-call tree, compute successor states
+        # that we'll use to build the continuations table just below.
+        closure_state_set = set(current_state_set)
+        closure_todo = list(current_state_set)
+        nt_successor_states = collections.defaultdict(set)  # maps nts to successor states
+        possible_nts = set()
+        while closure_todo:
+            prod_index, offset = closure_todo.pop(0)
+            nt, i, rhs = prods[prod_index]
+            if offset < len(rhs):
+                callee = rhs[offset]
+                succ = (prod_index, offset + 1)
+                if is_nt(callee) and succ not in nt_successor_states[callee]:
+                    done = False
+                    possible_nts.add(callee)
+                    nt_successor_states[callee].add(succ)
+                    for nested_prod_index, (nested_nt, _i, _rhs) in enumerate(prods):
+                        if nested_nt == callee:
+                            closure_state_set.add((nested_prod_index, 0))
+                            closure_todo.append((nested_prod_index, 0))
+
+        # Compute continuations (the "goto" table).
+        ctn_row = {}
+        for callee, successors in nt_successor_states.items():
+            ctn_row[callee] = get_state_set_index(successors)
+        ctns.append(ctn_row)
+
+        # Compute shift actions.
+        t_successor_states = collections.defaultdict(set)
+        for prod_index, offset in closure_state_set:
+            nt, i, rhs = prods[prod_index]
+            if offset < len(rhs):
+                t = rhs[offset]
+                if is_terminal(t):
+                    t_successor_states[t].add((prod_index, offset + 1))
+        for t, successors in t_successor_states.items():
+            action_row[t] = get_state_set_index(successors)
+
+        # Compute reduce actions.
+        for prod_index, offset in current_state_set:  # if productions can be empty, complicate here
+            nt, i, rhs = prods[prod_index]
+            if offset == len(rhs):
+                # We are at the end of this rule. Now what?
+                if nt == init_nt:  # if supporting multiple goal symbols, complicate here slightly
+                    action = ACCEPT  # yay, terminate
+                else:
+                    # Encode reduce actions as negative numbers.
+                    # Negative zero is the same as zero, hence the "- 1" here.
+                    action = -prod_index - 1
+
+                for t in follow[nt]:
+                    if t in action_row:
+                        # oh dear, conflict
+                        if action_row[t] < 0:
+                            raise ValueError("reduce-reduce conflict when looking at {!r} after {} ::= {}"
+                                             .format(t, nt, ' '.join(rhs)))
+                        else:
+                            raise ValueError("shift-reduce conflict when looking at {!r} after {} ::= {}"
+                                             .format(t, nt, ' '.join(rhs)))
+                    action_row[t] = action
 
     # Write the parser.
     out.write("import pgen_runtime\n"
               "from pgen_runtime import Reduction\n\n")
-    out.write("parse_table = {}\n\n".format(pprint.pformat(parse_table, width=99)))
-    out.write("parse = pgen_runtime.make_parse_fn(parse_table, {!r})\n".format(goal))
+    out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
+    out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
+    out.write("reductions = {}\n\n".format(pprint.pformat(reductions, width=99)))
+    out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
 
 def main():
     grammar = {

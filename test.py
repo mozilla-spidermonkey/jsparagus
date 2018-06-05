@@ -151,10 +151,10 @@ class GenTestCase(unittest.TestCase):
         )
 
         self.assertRaisesRegex(ValueError,
-                               r"expected 'expr', got None",
+                               r"expected one of \['\(', 'NUM', 'VAR'], got None",
                                lambda: parse(tokenize("(")))
         self.assertRaisesRegex(ValueError,
-                               r"expected 'expr', got '\)'",
+                               r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
                                lambda: parse(tokenize(")")))
 
     def testAmbiguous(self):
@@ -175,7 +175,7 @@ class GenTestCase(unittest.TestCase):
         }
 
         out = io.StringIO()
-        self.assertRaisesRegex(ValueError, r"unsupported grammar: the token 'B' could start either a string matching 's_' or something that follows it",
+        self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
                                lambda: gen.generate_parser(out, grammar, 'goal'))
 
     def testUndefinedNt(self):
@@ -255,6 +255,32 @@ class GenTestCase(unittest.TestCase):
                                  ('expr', 0, ['x']), ';'
                              ])
                          ]))
+
+    def testFirstFirstConflict(self):
+        """This grammar is unambiguous, but is not LL(1) due to a first/first conflict.
+
+        Cribbed from: https://stackoverflow.com/a/17047370/94977
+        """
+
+        grammar = {
+            's': [
+                ['x', 'B'],
+                ['y', 'C'],
+            ],
+            'x': [
+                ['A'],
+            ],
+            'y': [
+                ['A'],
+            ],
+        }
+        parse = compile(grammar, 's')
+        tokenize = LexicalGrammar("A B C")
+
+        self.assertEqual(parse(tokenize("A B")),
+                         ('s', 0, [('x', 0, ['A']), 'B']))
+        self.assertEqual(parse(tokenize("A C")),
+                         ('s', 1, [('y', 0, ['A']), 'C']))
 
     def testDeepRecursion(self):
         grammar = {
