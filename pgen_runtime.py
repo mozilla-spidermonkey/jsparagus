@@ -6,18 +6,6 @@ import sys
 Reduction = collections.namedtuple("Reduction", "tag_name tag_index arg_count")
 
 
-# A symbol in a production is one of these three things:
-
-def is_nt(element):
-    return isinstance(element, str) and element[:1].islower()
-
-def is_terminal(element):
-    return isinstance(element, str) and not is_nt(element)
-
-def is_reduction(element):
-    return isinstance(element, Reduction)
-
-
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
 

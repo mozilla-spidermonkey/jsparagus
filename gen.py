@@ -29,7 +29,16 @@ import collections
 import pprint
 import textwrap
 import io
-from pgen_runtime import is_terminal, is_nt, is_reduction, Reduction, ERROR, ACCEPT
+from pgen_runtime import Reduction, ERROR, ACCEPT
+
+
+# A symbol in a production is one of these three things:
+
+def is_nt(element):
+    return isinstance(element, str) and element[:1].islower()
+
+def is_terminal(element):
+    return isinstance(element, str) and not is_nt(element)
 
 
 def check(grammar):
@@ -68,9 +77,6 @@ def check(grammar):
                         raise ValueError("invalid grammar: nonterminal {!r} is used "
                                          "but not defined"
                                          .format(symbol))
-
-                # Filter out reductions.
-                prod = [symbol for symbol in prod if not is_reduction(symbol)]
 
                 if len(prod) == 0:
                     raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
@@ -112,9 +118,6 @@ def start(grammar, symbol):
     if is_terminal(symbol):
         # There is only one allowed match for a terminal.
         return {symbol}
-    elif is_reduction(symbol):
-        # Reductions always match the empty string.
-        return {EMPTY}
     else:
         # Each nonterminal has a start set that depends on its productions.
         assert is_nt(symbol)
