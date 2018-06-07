@@ -125,16 +125,6 @@ class GenTestCase(unittest.TestCase):
         self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
                                lambda: gen.generate_parser(out, grammar, 'goal'))
 
-    def testUndefinedNt(self):
-        grammar = {
-            'goal': [
-                ['expr'],
-            ],
-        }
-        out = io.StringIO()
-        self.assertRaisesRegex(ValueError, r"invalid grammar: nonterminal 'expr' is used but not defined",
-                               lambda: gen.generate_parser(out, grammar, 'goal'))
-
     def testLeftFactor(self):
         """Most basic left-factoring test."""
         tokenize = lexer.LexicalGrammar("A B")

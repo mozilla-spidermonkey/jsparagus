@@ -34,11 +34,12 @@ from pgen_runtime import Reduction, ERROR, ACCEPT
 
 # A symbol in a production is one of these three things:
 
-def is_nt(element):
-    return isinstance(element, str) and element[:1].islower()
+def is_nt(grammar, element):
+    return element in grammar
 
-def is_terminal(element):
-    return isinstance(element, str) and not is_nt(element)
+def is_terminal(grammar, element):
+    assert isinstance(element, str)
+    return not is_nt(grammar, element)
 
 
 def check(grammar):
@@ -72,15 +73,9 @@ def check(grammar):
             status[nt] = False
             prods = grammar[nt]
             for prod in prods:
-                for symbol in prod:
-                    if is_nt(symbol) and symbol not in grammar:
-                        raise ValueError("invalid grammar: nonterminal {!r} is used "
-                                         "but not defined"
-                                         .format(symbol))
-
                 if len(prod) == 0:
                     raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
-                elif len(prod) == 1 and is_nt(prod[0]):
+                elif len(prod) == 1 and is_nt(grammar, prod[0]):
                     # Because we enforce rule 3 (no production can match the
                     # empty string), rule 2 is much easier to check: only
                     # productions consisting of exactly one nonterminal can be
@@ -94,7 +89,7 @@ def check(grammar):
 
 def gensym(grammar, nt):
     """ Come up with a symbol name that's not already being used in the given grammar. """
-    assert is_nt(nt)
+    assert is_nt(grammar, nt)
     while nt in grammar:
         nt += "_"
     return nt
@@ -115,12 +110,12 @@ def start(grammar, symbol):
     A symbol's start set is the set of tokens that a match for that symbol
     may start with, plus EMPTY if the symbol can match the empty string.
     """
-    if is_terminal(symbol):
+    if is_terminal(grammar, symbol):
         # There is only one allowed match for a terminal.
         return {symbol}
     else:
         # Each nonterminal has a start set that depends on its productions.
-        assert is_nt(symbol)
+        assert is_nt(grammar, symbol)
         return set.union(*(seq_start(grammar, prod)
                            for prod in grammar[symbol]))
 
@@ -176,7 +171,7 @@ def follow_sets(grammar, goal):
         visited.add(nt)
         for prod in grammar[nt]:
             for i, symbol in enumerate(prod):
-                if is_nt(symbol):
+                if is_nt(grammar, symbol):
                     visit(symbol)
                     after = seq_start(grammar, prod[i + 1:])
                     if EMPTY in after:
@@ -276,7 +271,7 @@ def generate_parser(out, grammar, goal):
             _nt, _i, rhs = prods[prod_index]
             if offset < len(rhs):
                 next_symbol = rhs[offset]
-                if is_nt(next_symbol):
+                if is_nt(grammar, next_symbol):
                     for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
                         if dest_nt == next_symbol:
                             pair = (dest_prod_index, 0)
@@ -312,7 +307,7 @@ def generate_parser(out, grammar, goal):
             if offset < len(rhs):
                 next_symbol = rhs[offset]
                 next_state = (prod_index, offset + 1)
-                if is_terminal(next_symbol):
+                if is_terminal(grammar, next_symbol):
                     shift_states[next_symbol].add(next_state)
                 else:
                     ctn_states[next_symbol].add(next_state)
