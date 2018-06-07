@@ -226,16 +226,20 @@ def generate_parser(out, grammar, goal):
     init_production_index = prods.index((init_nt, 0, [goal]))
     init_state_set = frozenset({(init_production_index, 0)})
 
-    def debug_state_set_str(state_set):
+    def production_to_str(nt, rhs):
+        return "{} ::= {}".format(nt, " ".join(rhs))
+
+    def state_to_str(state):
+        prod_index, offset = state
+        nt, _i, rhs = prods[prod_index]
+        return "{} ::= {}".format(
+            nt,
+            " ".join(rhs[:offset] + ["\N{MIDDLE DOT}"] + rhs[offset:])
+        )
+
+    def state_set_to_str(state_set):
         return "{{{}}}".format(
-            ",  ".join(
-                "{} ::= {}".format(
-                    nt,
-                    " ".join(rhs[:offset] + ["\N{MIDDLE DOT}"] + rhs[offset:])
-                )
-                for prod_index, offset in state_set
-                    for nt, _i, rhs in [prods[prod_index]]
-            )
+            ",  ".join(state_to_str(state) for state in state_set)
         )
 
     # We assign each reachable state set a number, and we keep a list of state
@@ -253,80 +257,89 @@ def generate_parser(out, grammar, goal):
             return visited_state_sets[successors]
         else:
             visited_state_sets[successors] = state_index = len(visited_state_sets)
-            #print("State #{} = {}".format(state_index, debug_state_set_str(successors)))
+            #print("State #{} = {}".format(state_index, state_set_to_str(successors)))
             todo.append(successors)
             return state_index
+
+    def state_set_closure(state_set):
+        """ Compute transitive closure of the current state set under left-calls. """
+        closure = set(state_set)
+        closure_todo = list(state_set)
+        while closure_todo:
+            pair = closure_todo.pop(0)
+            prod_index, offset = pair
+            _nt, _i, rhs = prods[prod_index]
+            if offset < len(rhs):
+                next_symbol = rhs[offset]
+                if is_nt(next_symbol):
+                    for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
+                        if dest_nt == next_symbol:
+                            pair = (dest_prod_index, 0)
+                            if pair not in closure:
+                                closure.add(pair)
+                                closure_todo.append(pair)
+        return closure
+
+    def raise_reduce_reduce_conflict(t, i, j):
+        nt1, _, rhs1 = prods[i]
+        nt2, _, rhs2 = prods[j]
+
+        raise ValueError(
+            "reduce-reduce conflict when looking at {!r} "
+            "after input matching both:\n"
+            "    {}\n"
+            "and:\n"
+            "    {}\n"
+            .format(t, production_to_str(nt1, rhs1), production_to_str(nt2, rhs2)))
+
+    def analyze_state_set(current_state_set):
+        #print("analyzing state set {}".format(state_set_to_str(current_state_set)))
+
+        # Step 1. Visit every state and list what we want to do for each
+        # possible next token.
+        shift_states = collections.defaultdict(set)  # maps terminals to state-sets
+        ctn_states = collections.defaultdict(set)  # maps nonterminals to state-sets
+        reduce_prods = {}  # maps follow-terminals to production indexes
+
+        for state in state_set_closure(current_state_set):
+            prod_index, offset = state
+            nt, i, rhs = prods[prod_index]
+            if offset < len(rhs):
+                next_symbol = rhs[offset]
+                next_state = (prod_index, offset + 1)
+                if is_terminal(next_symbol):
+                    shift_states[next_symbol].add(next_state)
+                else:
+                    ctn_states[next_symbol].add(next_state)
+            else:
+                for t in follow[nt]:
+                    if t in reduce_prods:
+                        raise_reduce_reduce_conflict(t, reduce_prods[t], prod_index)
+                    reduce_prods[t] = prod_index
+
+        # Step 2. Turn that information into table data to drive the parser.
+        action_row = {}
+        for t, shift_state_set in shift_states.items():
+            action_row[t] = get_state_set_index(shift_state_set)
+        for t, prod_index in reduce_prods.items():
+            nt, _, rhs = prods[prod_index]
+            if t in action_row:
+                raise ValueError("shift-reduce conflict when looking at {!r} after {}"
+                                 .format(t, production_to_str(nt, rhs)))
+            # Encode reduce actions as negative numbers.
+            # Negative zero is the same as zero, hence the "- 1".
+            action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
+        ctn_row = {nt: get_state_set_index(ss) for nt, ss in ctn_states.items()}
+        return action_row, ctn_row
 
     actions = []
     ctns = []
     while todo:
         current_state_set = todo.pop(0)
-        #print("analyzing state set {}".format(debug_state_set_str(current_state_set)))
-
-        action_row = {}
+        action_row, ctn_row = analyze_state_set(current_state_set)
         actions.append(action_row)
-
-        # Compute transitive closure of the current state set under left-calls.
-        # During the same walk of the left-call tree, compute successor states
-        # that we'll use to build the continuations table just below.
-        closure_state_set = set(current_state_set)
-        closure_todo = list(current_state_set)
-        nt_successor_states = collections.defaultdict(set)  # maps nts to successor states
-        possible_nts = set()
-        while closure_todo:
-            prod_index, offset = closure_todo.pop(0)
-            nt, i, rhs = prods[prod_index]
-            if offset < len(rhs):
-                callee = rhs[offset]
-                succ = (prod_index, offset + 1)
-                if is_nt(callee) and succ not in nt_successor_states[callee]:
-                    done = False
-                    possible_nts.add(callee)
-                    nt_successor_states[callee].add(succ)
-                    for nested_prod_index, (nested_nt, _i, _rhs) in enumerate(prods):
-                        if nested_nt == callee:
-                            closure_state_set.add((nested_prod_index, 0))
-                            closure_todo.append((nested_prod_index, 0))
-
-        # Compute continuations (the "goto" table).
-        ctn_row = {}
-        for callee, successors in nt_successor_states.items():
-            ctn_row[callee] = get_state_set_index(successors)
         ctns.append(ctn_row)
 
-        # Compute shift actions.
-        t_successor_states = collections.defaultdict(set)
-        for prod_index, offset in closure_state_set:
-            nt, i, rhs = prods[prod_index]
-            if offset < len(rhs):
-                t = rhs[offset]
-                if is_terminal(t):
-                    t_successor_states[t].add((prod_index, offset + 1))
-        for t, successors in t_successor_states.items():
-            action_row[t] = get_state_set_index(successors)
-
-        # Compute reduce actions.
-        for prod_index, offset in current_state_set:  # if productions can be empty, complicate here
-            nt, i, rhs = prods[prod_index]
-            if offset == len(rhs):
-                # We are at the end of this rule. Now what?
-                if nt == init_nt:  # if supporting multiple goal symbols, complicate here slightly
-                    action = ACCEPT  # yay, terminate
-                else:
-                    # Encode reduce actions as negative numbers.
-                    # Negative zero is the same as zero, hence the "- 1" here.
-                    action = -prod_index - 1
-
-                for t in follow[nt]:
-                    if t in action_row:
-                        # oh dear, conflict
-                        if action_row[t] < 0:
-                            raise ValueError("reduce-reduce conflict when looking at {!r} after {} ::= {}"
-                                             .format(t, nt, ' '.join(rhs)))
-                        else:
-                            raise ValueError("shift-reduce conflict when looking at {!r} after {} ::= {}"
-                                             .format(t, nt, ' '.join(rhs)))
-                    action_row[t] = action
 
     # Write the parser.
     out.write("import pgen_runtime\n"
