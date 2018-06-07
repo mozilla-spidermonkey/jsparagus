@@ -103,31 +103,70 @@ def clone_grammar(grammar):
 EMPTY = "(empty)"
 END = None
 
-
-def start(grammar, symbol):
-    """Compute the start set for the given symbol.
+def start_sets(grammar):
+    """Compute the start sets for terminals and nonterminals in a grammar.
 
     A symbol's start set is the set of tokens that a match for that symbol
     may start with, plus EMPTY if the symbol can match the empty string.
     """
-    if is_terminal(grammar, symbol):
-        # There is only one allowed match for a terminal.
-        return {symbol}
-    else:
-        # Each nonterminal has a start set that depends on its productions.
-        assert is_nt(grammar, symbol)
-        return set.union(*(seq_start(grammar, prod)
-                           for prod in grammar[symbol]))
+
+    # The rules, in pseudocode, are:
+    #
+    # if is_terminal(t) then start[t] == {t}
+    # for nt in grammar, prod in grammar[nt],
+    #     if all(for e in prod, epsilon in start[e]), then epsilon in start[nt]
+    # for nt in grammar, prod in grammar[nt], 0 <= i < len(prod),
+    #     if all(for e in prod[:i], epsilon in start[e]),
+    #         for t in start[prod[i]], if is_terminal(t) then t in start[nt]
+    #
+    # Since this definition is rather circular, we have to iterate to a least
+    # fix point. In the actual code, we don't bother adding terminals to the
+    # `start` dictionary.
+
+    start = {nt: set() for nt in grammar}
+    done = False
+    while not done:
+        done = True
+        for nt in list(start):
+            for prod in grammar[nt]:
+                for sym in prod:
+                    if is_terminal(grammar, sym):
+                        if sym not in start[nt]:
+                            done = False
+                            start[nt].add(sym)
+                        break
+                    else:
+                        saw_empty = False
+                        if sym in start:
+                            for t in start[sym]:
+                                if t == EMPTY:
+                                    saw_empty = True
+                                elif t not in start[nt]:
+                                    done = False
+                                    start[nt].add(t)
+                        else:
+                            done = False
+                            start[sym] = set()
+                        if not saw_empty:
+                            break
+                else:
+                    if EMPTY not in start[nt]:
+                        done = False
+                        start[nt].add(EMPTY)
+    return start
 
 
-def seq_start(grammar, seq):
+def seq_start(grammar, start, seq):
     """Compute the start set for a sequence of symbols."""
     s = {EMPTY}
     for symbol in seq:
         if EMPTY not in s:  # preceding symbols never match the empty string
             break
         s.remove(EMPTY)
-        s |= start(grammar, symbol)
+        if is_terminal(grammar, symbol):
+            s.add(symbol)
+        else:
+            s |= start[symbol]
     return s
 
 
@@ -145,6 +184,8 @@ def follow_sets(grammar, goal):
 
     Returns a default-dictionary mapping nts to follow sets.
     """
+
+    start = start_sets(grammar)
 
     # Set of nonterminals already seen, including those we are in the middle of
     # analyzing. The algorithm starts at `goal` and walks all reachable
@@ -173,7 +214,7 @@ def follow_sets(grammar, goal):
             for i, symbol in enumerate(prod):
                 if is_nt(grammar, symbol):
                     visit(symbol)
-                    after = seq_start(grammar, prod[i + 1:])
+                    after = seq_start(grammar, start, prod[i + 1:])
                     if EMPTY in after:
                         after.remove(EMPTY)
                         subsumes_relation.add((symbol, nt))

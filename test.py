@@ -48,6 +48,50 @@ class GenTestCase(unittest.TestCase):
             ])
         ]))
 
+    def testList(self):
+        list_grammar = {
+            'prelist': [
+                ['word', 'list']
+            ],
+            'list': [
+                ['word'],
+                ['list', 'word'],
+            ],
+            'word': [
+                ['SYMBOL']
+            ],
+        }
+        parse = gen.compile(list_grammar, "prelist")
+        tokens = LispTokenizer("the quick brown fox jumped over the lazy dog")
+        self.assertEqual(
+            parse(tokens),
+            ('prelist', 0, [
+                ('word', 0, ['the']),
+                ('list', 1, [
+                    ('list', 1, [
+                        ('list', 1, [
+                            ('list', 1, [
+                                ('list', 1, [
+                                    ('list', 1, [
+                                        ('list', 1, [
+                                            ('list', 0, [('word', 0, ['quick'])]),
+                                            ('word', 0, ['brown'])
+                                        ]),
+                                        ('word', 0, ['fox'])
+                                    ]),
+                                    ('word', 0, ['jumped'])
+                                ]),
+                                ('word', 0, ['over'])
+                            ]),
+                            ('word', 0, ['the'])
+                        ]),
+                        ('word', 0, ['lazy'])
+                    ]),
+                    ('word', 0, ['dog'])
+                ])
+            ])
+        )
+
     def testArithmetic(self):
         tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
         arith_grammar = {
