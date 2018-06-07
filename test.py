@@ -3,58 +3,9 @@
 import gen
 import io, unittest
 import re
+import lexer
 
-class LexicalGrammar:
-    def __init__(self, tokens, **regexps):
-        token_list = sorted(tokens.split(), key=len, reverse=True)
-        self.token_re = re.compile("|".join(re.escape(token) for token in token_list))
-        self.parser_pairs = [(k, re.compile(v)) for k, v in regexps.items()]
-
-    def __call__(self, source):
-        return Tokenizer(self.token_re, self.parser_pairs, source)
-
-
-class Tokenizer:
-    def __init__(self, token_re, parser_pairs, source):
-        self.token_re = token_re
-        self.parser_pairs = parser_pairs
-        self.src = source
-        self.point = 0
-
-    def _match(self):
-        while self.point < len(self.src) and self.src[self.point] in " \t":
-            self.point += 1
-        if self.point == len(self.src):
-            return None
-        match = self.token_re.match(self.src, self.point)
-        if match is not None:
-            return match.group(0), match
-        for name, pattern in self.parser_pairs:
-            match = pattern.match(self.src, self.point)
-            if match is not None:
-                return name, match
-        raise ValueError("unexpected characters {!r}".format(self.src[self.point:self.point+4]))
-
-    def peek(self):
-        hit = self._match()
-        if hit is None:
-            return None
-        return hit[0]
-
-    def take(self, k):
-        hit = self._match()
-        if hit is None:
-            if k is not None:
-                raise ValueError("unexpected end of input (expected {!r})".format(k))
-        else:
-            name, match = hit
-            if k != name:
-                raise ValueError("expected {!r}, got {!r}".format(k, name))
-            self.point = match.end()
-            return match.group()
-
-
-LispTokenizer = LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
+LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
 
 
 def compile(grammar, goal='expr'):
@@ -104,7 +55,7 @@ class GenTestCase(unittest.TestCase):
         ]))
 
     def testArithmetic(self):
-        tokenize = LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
+        tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
         parse = compile({
             'expr': [
                 ['term'],
@@ -190,7 +141,7 @@ class GenTestCase(unittest.TestCase):
 
     def testLeftFactor(self):
         """Most basic left-factoring test."""
-        tokenize = LexicalGrammar("A B")
+        tokenize = lexer.LexicalGrammar("A B")
         grammar = {
             'goal': [
                 ['A'],
@@ -204,7 +155,7 @@ class GenTestCase(unittest.TestCase):
 
     def testLeftFactorMulti(self):
         """Test left-factoring of grammars where some rules have a common prefix of length >1."""
-        tokenize = LexicalGrammar("A B C D E")
+        tokenize = lexer.LexicalGrammar("A B C D E")
         grammar = {
             'goal': [
                 ['A', 'B', 'C', 'D'],
@@ -217,7 +168,7 @@ class GenTestCase(unittest.TestCase):
 
     def testLeftFactorMultiLevel(self):
         """Test left-factoring again on a nonterminal introduced by left-factoring."""
-        tokenize = LexicalGrammar("FOR IN TO BY ( ) = ;", VAR=r'[A-Za-z]+')
+        tokenize = lexer.LexicalGrammar("FOR IN TO BY ( ) = ;", VAR=r'[A-Za-z]+')
 
         # The first left-factoring pass on `stmt` will left-factor `FOR ( VAR`.
         # A second pass is needed to left-factor `= expr TO expr`.
@@ -275,7 +226,7 @@ class GenTestCase(unittest.TestCase):
             ],
         }
         parse = compile(grammar, 's')
-        tokenize = LexicalGrammar("A B C")
+        tokenize = lexer.LexicalGrammar("A B C")
 
         self.assertEqual(parse(tokenize("A B")),
                          ('s', 0, [('x', 0, ['A']), 'B']))
