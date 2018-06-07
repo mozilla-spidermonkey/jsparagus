@@ -26,9 +26,11 @@ It's not a bug if it doesn't, but it would be nice to check.
 """
 
 import collections
-import pprint, textwrap
-
+import pprint
+import textwrap
+import io
 from pgen_runtime import is_terminal, is_nt, is_reduction, Reduction, ERROR, ACCEPT
+
 
 def check(grammar):
     """Enforce three basic rules about the grammar.
@@ -348,6 +350,15 @@ def generate_parser(out, grammar, goal):
     out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
     out.write("reductions = {}\n\n".format(pprint.pformat(reductions, width=99)))
     out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
+
+
+def compile(grammar, goal):
+    out = io.StringIO()
+    generate_parser(out, grammar, goal)
+    scope = {}
+    exec(out.getvalue(), scope)
+    return scope['parse']
+
 
 def main():
     grammar = {

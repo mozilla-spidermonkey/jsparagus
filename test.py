@@ -3,17 +3,11 @@
 import gen
 import io, unittest
 import re
+import gen
 import lexer
 
+
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
-
-
-def compile(grammar, goal='expr'):
-    out = io.StringIO()
-    gen.generate_parser(out, grammar, goal)
-    scope = {}
-    exec(out.getvalue(), scope)
-    return scope['parse']
 
 
 class GenTestCase(unittest.TestCase):
@@ -28,7 +22,7 @@ class GenTestCase(unittest.TestCase):
                 ['expr', 'tail'],
             ],
         }
-        parse = compile(grammar)
+        parse = gen.compile(grammar, "expr")
 
         parsed = parse(LispTokenizer("(lambda (x) (* x x))"))
         self.assertEqual(parsed, ('expr', 1, [
@@ -56,7 +50,7 @@ class GenTestCase(unittest.TestCase):
 
     def testArithmetic(self):
         tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
-        parse = compile({
+        arith_grammar = {
             'expr': [
                 ['term'],
                 ['expr', '+', 'term'],
@@ -72,7 +66,9 @@ class GenTestCase(unittest.TestCase):
                 ['VAR'],
                 ['(', 'expr', ')'],
             ],
-        })
+        }
+        parse = gen.compile(arith_grammar, "expr")
+
         tokens = tokenize('2 * 3 + 4 * (5 + 7)')
         self.assertEqual(
             parse(tokens),
@@ -149,7 +145,7 @@ class GenTestCase(unittest.TestCase):
             ],
         }
 
-        parse = compile(grammar, goal='goal')
+        parse = gen.compile(grammar, goal='goal')
         self.assertEqual(parse(tokenize("A")), ('goal', 0, ['A']))
         self.assertEqual(parse(tokenize("A B")), ('goal', 1, ['A', 'B']))
 
@@ -162,7 +158,7 @@ class GenTestCase(unittest.TestCase):
                 ['A', 'B', 'C', 'E'],
             ],
         }
-        parse = compile(grammar, goal='goal')
+        parse = gen.compile(grammar, goal='goal')
         self.assertEqual(parse(tokenize("A B C D")), ('goal', 0, ['A', 'B', 'C', 'D']))
         self.assertEqual(parse(tokenize("A B C E")), ('goal', 1, ['A', 'B', 'C', 'E']))
 
@@ -184,7 +180,7 @@ class GenTestCase(unittest.TestCase):
                 ['VAR'],
             ],
         }
-        parse = compile(grammar, goal='stmt')
+        parse = gen.compile(grammar, goal='stmt')
         self.assertEqual(parse(tokenize("FOR (x IN y) z;")),
                          ('stmt', 1, [
                              'FOR', '(', 'x', 'IN', ('expr', 0, ['y']), ')', ('stmt', 0, [
@@ -225,7 +221,7 @@ class GenTestCase(unittest.TestCase):
                 ['A'],
             ],
         }
-        parse = compile(grammar, 's')
+        parse = gen.compile(grammar, 's')
         tokenize = lexer.LexicalGrammar("A B C")
 
         self.assertEqual(parse(tokenize("A B")),
@@ -245,7 +241,7 @@ class GenTestCase(unittest.TestCase):
                 ['exprs', 'expr'],
             ],
         }
-        parse = compile(grammar)
+        parse = gen.compile(grammar, "expr")
 
         N = 3000
         s = "x"
