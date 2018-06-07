@@ -34,6 +34,9 @@ def parse(actions, ctns, reductions, entry_state, tokens):
         else:
             assert action == ERROR
             expected = set(actions[state].keys())
+            if None in expected:
+                expected.remove(None)
+                expected.add("end of input")
             if len(expected) < 2:
                 raise ValueError("expected {!r}, got {!r}".format(list(expected)[0], t))
             else:
