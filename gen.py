@@ -32,7 +32,7 @@ import io
 from pgen_runtime import Reduction, ERROR, ACCEPT
 
 
-# A symbol in a production is one of these three things:
+# A symbol in a production is one of these things:
 
 def is_nt(grammar, element):
     return element in grammar
@@ -244,8 +244,9 @@ def dump_grammar(grammar):
 def generate_parser(out, grammar, goal):
     check(grammar)
 
-    # Add an "init" nonterminal to the grammar. I don't know why this is
-    # necessary but the book says to do it.
+    # Add an "init" nonterminal to the grammar. This nt is guaranteed to be
+    # used in only one place, so that whenever it is reduced we know we're
+    # done.
     grammar = clone_grammar(grammar)
     init_nt = gensym(grammar, goal)
     grammar[init_nt] = [
