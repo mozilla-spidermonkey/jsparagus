@@ -120,39 +120,23 @@ def start_sets(grammar):
     #         for t in start[prod[i]], if is_terminal(t) then t in start[nt]
     #
     # Since this definition is rather circular, we have to iterate to a least
-    # fix point. In the actual code, we don't bother adding terminals to the
-    # `start` dictionary.
+    # fix point. In the actual code, we don't bother computing and storing
+    # start sets for terminals.
 
     start = {nt: set() for nt in grammar}
     done = False
     while not done:
         done = True
-        for nt in list(start):
-            for prod in grammar[nt]:
-                for sym in prod:
-                    if is_terminal(grammar, sym):
-                        if sym not in start[nt]:
-                            done = False
-                            start[nt].add(sym)
-                        break
-                    else:
-                        saw_empty = False
-                        if sym in start:
-                            for t in start[sym]:
-                                if t == EMPTY:
-                                    saw_empty = True
-                                elif t not in start[nt]:
-                                    done = False
-                                    start[nt].add(t)
-                        else:
-                            done = False
-                            start[sym] = set()
-                        if not saw_empty:
-                            break
-                else:
-                    if EMPTY not in start[nt]:
-                        done = False
-                        start[nt].add(EMPTY)
+
+        for nt, prods in grammar.items():
+            nt_start = set()
+            for prod in prods:
+                # Compute start set for `prod` based on `start` so far.
+                # Could be incomplete, but we'll ratchet up as we iterate.
+                nt_start |= seq_start(grammar, start, prod)
+            if nt_start != start[nt]:
+                start[nt] = nt_start
+                done = False
     return start
 
 
