@@ -38,10 +38,10 @@ def parse(actions, ctns, reductions, entry_state, tokens):
                 expected.remove(None)
                 expected.add("end of input")
             if len(expected) < 2:
-                raise ValueError("expected {!r}, got {!r}".format(list(expected)[0], t))
+                tokens.throw("expected {!r}, got {!r}".format(list(expected)[0], t))
             else:
-                raise ValueError("expected one of {!r}, got {!r}"
-                                 .format(sorted(expected), t))
+                tokens.throw("expected one of {!r}, got {!r}"
+                             .format(sorted(expected), t))
 
 
 def make_parse_fn(actions, ctns, reductions, entry_state):

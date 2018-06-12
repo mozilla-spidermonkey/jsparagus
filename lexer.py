@@ -2,6 +2,7 @@
 
 import re
 
+
 class LexicalGrammar:
     def __init__(self, tokens, ignore=r'[ \t]*', **regexps):
         token_list = sorted(tokens.split(), key=len, reverse=True)
@@ -9,17 +10,21 @@ class LexicalGrammar:
         self.token_re = re.compile("|".join(re.escape(token) for token in token_list))
         self.parser_pairs = [(k, re.compile(v)) for k, v in regexps.items()]
 
-    def __call__(self, source):
-        return Tokenizer(self.ignore_re, self.token_re, self.parser_pairs, source)
+    def __call__(self, source, filename=None):
+        return Tokenizer(self.ignore_re, self.token_re, self.parser_pairs, source, filename)
 
 
 class Tokenizer:
-    def __init__(self, ignore_re, token_re, parser_pairs, source):
+    def __init__(self, ignore_re, token_re, parser_pairs, source, filename=None):
         self.ignore_re = ignore_re
         self.token_re = token_re
         self.parser_pairs = parser_pairs
         self.src = source
+        self.filename = filename
+        self.last_point = 0
         self.point = 0
+        self._next_match = None
+        self._next_kind = None
 
     def _match(self):
         ignore_match = self.ignore_re.match(self.src, self.point)
@@ -47,24 +52,45 @@ class Tokenizer:
         elif match is not None:
             return name, match
         else:
-            raise ValueError("unexpected characters {!r}".format(self.src[self.point:self.point+4]))
+            self.throw("unexpected characters {!r}".format(self.src[self.point:self.point+12]))
 
     def peek(self):
+        if self._next_kind is not None:
+            return self._next_kind
         hit = self._match()
         if hit is None:
             return None
-        return hit[0]
+        self._next_kind, self._next_match = hit
+        return self._next_kind
 
     def take(self, k):
-        hit = self._match()
-        if hit is None:
+        next_kind = self.peek()
+        if next_kind is None:
             if k is not None:
-                raise ValueError("unexpected end of input (expected {!r})".format(k))
+                self.throw("unexpected end of input (expected {!r})".format(k))
         else:
-            name, match = hit
-            if k != name:
-                raise ValueError("expected {!r}, got {!r}".format(k, name))
+            if k != next_kind:
+                self.throw("expected {!r}, got {!r}".format(k, next_kind))
+            match = self._next_match
+            self.last_point = match.start()
             self.point = match.end()
+            self._next_kind = None
+            self._next_match = None
             return match.group()
 
+    def last_point_coords(self):
+        src_pre = self.src[:self.last_point]
+        lines = src_pre.splitlines()
+        lineno = len(lines)
+        if lineno == 0:
+            lineno = 1
+            column = 0
+        else:
+            column = len(lines[-1])
+        return lineno, column
 
+    def throw(self, msg):
+        e = SyntaxError(msg)
+        e.filename = self.filename
+        e.lineno, e.column = self.last_point_coords()
+        raise e
