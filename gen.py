@@ -29,7 +29,7 @@ import collections
 import pprint
 import textwrap
 import io
-from pgen_runtime import Reduction, ERROR, ACCEPT
+from pgen_runtime import ERROR, ACCEPT
 
 
 # A symbol in a production is one of these three things:
@@ -80,7 +80,7 @@ def check(grammar):
             status[nt] = False
             prods = grammar[nt]
             for prod_with_options in prods:
-                for prod, _r in expand_optional_symbols(nt, 0, prod_with_options):
+                for prod, _r in expand_optional_symbols(prod_with_options):
                     if len(prod) == 0:
                         raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
                     elif len(prod) == 1 and is_nt(grammar, prod[0]):
@@ -233,21 +233,19 @@ def dump_grammar(grammar):
             print("   ", s)
 
 
-def expand_optional_symbols(nt, pi, rhs, start_index=0):
+def expand_optional_symbols(rhs, start_index=0):
     for i in range(start_index, len(rhs)):
         if is_optional(rhs[i]):
             break
     else:
-        yield rhs[start_index:], Reduction(nt, pi, len(rhs), [])
+        yield rhs[start_index:], []
         return
 
-    for expanded, r in expand_optional_symbols(nt, pi, rhs, i + 1):
+    for expanded, r in expand_optional_symbols(rhs, i + 1):
         # without rhs[i]
-        yield (rhs[start_index:i] + expanded,
-               Reduction(nt, pi, r.arg_count - 1, [i] + r.none_at))
+        yield rhs[start_index:i] + expanded, [i] + r
         # with rhs[i]
-        yield (rhs[start_index:i] + [rhs[i].inner] + expanded,
-               Reduction(nt, pi, r.arg_count, r.none_at))
+        yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
 
 
 def generate_parser(out, grammar, goal):
@@ -276,10 +274,19 @@ def generate_parser(out, grammar, goal):
     for nt in grammar:
         expanded_grammar[nt] = []
         for prod_index, rhs in enumerate(grammar[nt]):
-            for expanded_rhs, r in expand_optional_symbols(nt, prod_index, rhs):
+            for expanded_rhs, removals in expand_optional_symbols(rhs):
                 expanded_grammar[nt].append(expanded_rhs)
                 prods.append((nt, prod_index, expanded_rhs))
-                reductions.append(r)
+                names = ["x" + str(i) for i in range(len(expanded_rhs))]
+                names_with_none = names[:]
+                for i in removals:
+                    names_with_none.insert(i, "None")
+                fn = ("lambda "
+                      + ", ".join(names)
+                      + ": ({!r}, {!r}, [".format(nt, prod_index)
+                      + ", ".join(names_with_none)
+                      + "])")
+                reductions.append((nt, len(expanded_rhs), fn))
     grammar = expanded_grammar
 
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
@@ -406,11 +413,11 @@ def generate_parser(out, grammar, goal):
 
 
     # Write the parser.
-    out.write("import pgen_runtime\n"
-              "from pgen_runtime import Reduction\n\n")
+    out.write("import pgen_runtime\n\n")
     out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
     out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
-    out.write("reductions = {}\n\n".format(pprint.pformat(reductions, width=99)))
+    out.write("reductions = [\n{}]\n\n".format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
+                                                       for nt, length, reducer in reductions)))
     out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
 
 

@@ -321,20 +321,20 @@ class GenTestCase(unittest.TestCase):
             result = result[0]
 
     def testExpandOptional(self):
-        from gen import Reduction, Optional
+        from gen import Optional
         self.assertEqual(
-            list(gen.expand_optional_symbols('ok', 1, ['ONE', 'TWO', '3'])),
-            [(['ONE', 'TWO', '3'], Reduction('ok', 1, 3, []))])
+            list(gen.expand_optional_symbols(['ONE', 'TWO', '3'])),
+            [(['ONE', 'TWO', '3'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols('ok', 1, ['a', 'b', Optional('c')])),
-            [(['a', 'b'], Reduction('ok', 1, 2, [2])),
-             (['a', 'b', 'c'], Reduction('ok', 1, 3, []))])
+            list(gen.expand_optional_symbols(['a', 'b', Optional('c')])),
+            [(['a', 'b'], [2]),
+             (['a', 'b', 'c'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols('ok', 1, [Optional('a'), Optional('b')])),
-            [([], Reduction('ok', 1, 0, [0, 1])),
-             (['a'], Reduction('ok', 1, 1, [1])),
-             (['b'], Reduction('ok', 1, 1, [0])),
-             (['a', 'b'], Reduction('ok', 1, 2, []))])
+            list(gen.expand_optional_symbols([Optional('a'), Optional('b')])),
+            [([], [0, 1]),
+             (['a'], [1]),
+             (['b'], [0]),
+             (['a', 'b'], [])])
 
     def testOptionalEmpty(self):
         from gen import Optional
