@@ -320,6 +320,87 @@ class GenTestCase(unittest.TestCase):
             self.assertEqual(len(result), 1)
             result = result[0]
 
+    def testExpandOptional(self):
+        from gen import Reduction, Optional
+        self.assertEqual(
+            list(gen.expand_optional_symbols('ok', 1, ['ONE', 'TWO', '3'])),
+            [(['ONE', 'TWO', '3'], Reduction('ok', 1, 3, []))])
+        self.assertEqual(
+            list(gen.expand_optional_symbols('ok', 1, ['a', 'b', Optional('c')])),
+            [(['a', 'b'], Reduction('ok', 1, 2, [2])),
+             (['a', 'b', 'c'], Reduction('ok', 1, 3, []))])
+        self.assertEqual(
+            list(gen.expand_optional_symbols('ok', 1, [Optional('a'), Optional('b')])),
+            [([], Reduction('ok', 1, 0, [0, 1])),
+             (['a'], Reduction('ok', 1, 1, [1])),
+             (['b'], Reduction('ok', 1, 1, [0])),
+             (['a', 'b'], Reduction('ok', 1, 2, []))])
+
+    def testOptionalEmpty(self):
+        from gen import Optional
+        grammar = {
+            'a': [
+                [Optional('b'), Optional('c')],
+            ],
+            'b': [
+                ['X'],
+            ],
+            'c': [
+                ['Y'],
+            ]
+        }
+        self.assertRaisesRegex(ValueError,
+                               "nonterminal 'a' can match the empty string",
+                               lambda: gen.compile(grammar, 'a'))
+
+    def testOptional(self):
+        from gen import Optional
+        tokenize = lexer.LexicalGrammar('[ ] , X')
+        grammar = {
+            'array': [
+                ['[', Optional('elision'), ']'],
+                ['[', 'elements', ']'],
+                ['[', 'elements', ',', Optional('elision'), ']']
+            ],
+            'elements': [
+                [Optional('elision'), 'X'],
+                ['elements', ',', Optional('elision'), 'X']
+            ],
+            'elision': [
+                [','],
+                ['elision', ',']
+            ]
+        }
+        parse = gen.compile(grammar, 'array')
+        self.assertEqual(parse(tokenize("[]")),
+                         ('array', 0, ['[', None, ']']))
+        self.assertEqual(parse(tokenize("[,]")),
+                         ('array', 0, ['[',
+                                       ('elision', 0, [',']),
+                                       ']']))
+        self.assertEqual(
+            parse(tokenize("[,,X,,X,]")),
+            ('array', 2, [
+                '[',
+                ('elements', 1, [
+                    ('elements', 0, [
+                        ('elision', 1, [
+                            ('elision', 0, [',']),
+                            ','
+                        ]),
+                        'X'
+                    ]),
+                    ',',
+                    ('elision', 0, [',']),
+                    'X'
+                ]),
+                ',',
+                None,
+                ']'
+            ])
+        )
+
+            
 
 if __name__ == '__main__':
     unittest.main()

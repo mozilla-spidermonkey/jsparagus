@@ -3,7 +3,7 @@ import sys
 
 
 # A Reduction is a step in a production that produces an AST node from the most recently parsed symbols.
-Reduction = collections.namedtuple("Reduction", "tag_name tag_index arg_count")
+Reduction = collections.namedtuple("Reduction", "tag_name tag_index arg_count none_at")
 
 
 ACCEPT = -0x7fffffffffffffff
@@ -26,7 +26,10 @@ def parse(actions, ctns, reductions, entry_state, tokens):
             r = reductions[-action - 1]
             n = r.arg_count
             start = -2 * n
-            node = (r.tag_name, r.tag_index, stack[start::2])
+            args = stack[start::2]
+            for i in r.none_at:
+                args.insert(i, None)
+            node = (r.tag_name, r.tag_index, args)
             stack[start:] = [node, ctns[stack[start - 1]][r.tag_name]]
         elif action == ACCEPT:
             assert len(stack) == 3

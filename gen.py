@@ -32,14 +32,21 @@ import io
 from pgen_runtime import Reduction, ERROR, ACCEPT
 
 
-# A symbol in a production is one of these things:
+# A symbol in a production is one of these three things:
 
 def is_nt(grammar, element):
-    return element in grammar
+    return isinstance(element, str) and element in grammar
+
 
 def is_terminal(grammar, element):
-    assert isinstance(element, str)
-    return not is_nt(grammar, element)
+    return isinstance(element, str) and not is_nt(grammar, element)
+
+
+Optional = collections.namedtuple("Optional", "inner")
+
+
+def is_optional(element):
+    return isinstance(element, Optional)
 
 
 def check(grammar):
@@ -72,15 +79,16 @@ def check(grammar):
             assert s is None
             status[nt] = False
             prods = grammar[nt]
-            for prod in prods:
-                if len(prod) == 0:
-                    raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
-                elif len(prod) == 1 and is_nt(grammar, prod[0]):
-                    # Because we enforce rule 3 (no production can match the
-                    # empty string), rule 2 is much easier to check: only
-                    # productions consisting of exactly one nonterminal can be
-                    # in cycles.
-                    check_nt(prod[0])
+            for prod_with_options in prods:
+                for prod, _r in expand_optional_symbols(nt, 0, prod_with_options):
+                    if len(prod) == 0:
+                        raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
+                    elif len(prod) == 1 and is_nt(grammar, prod[0]):
+                        # Because we enforce rule 3 (no production can match the
+                        # empty string), rule 2 is much easier to check: only
+                        # productions consisting of exactly one nonterminal can be
+                        # in cycles.
+                        check_nt(prod[0])
             status[nt] = True
 
     for nt in grammar:
@@ -225,6 +233,23 @@ def dump_grammar(grammar):
             print("   ", s)
 
 
+def expand_optional_symbols(nt, pi, rhs, start_index=0):
+    for i in range(start_index, len(rhs)):
+        if is_optional(rhs[i]):
+            break
+    else:
+        yield rhs[start_index:], Reduction(nt, pi, len(rhs), [])
+        return
+
+    for expanded, r in expand_optional_symbols(nt, pi, rhs, i + 1):
+        # without rhs[i]
+        yield (rhs[start_index:i] + expanded,
+               Reduction(nt, pi, r.arg_count - 1, [i] + r.none_at))
+        # with rhs[i]
+        yield (rhs[start_index:i] + [rhs[i].inner] + expanded,
+               Reduction(nt, pi, r.arg_count, r.none_at))
+
+
 def generate_parser(out, grammar, goal):
     check(grammar)
 
@@ -237,12 +262,25 @@ def generate_parser(out, grammar, goal):
         [goal]
     ]
 
+    # Expand optional elements in the grammar. We replace each production that
+    # contains an optional element with two productions: one with and one
+    # without. This means the rest of the algorithm can ignore the possibility
+    # of optional elements. But we keep the numbering of all the productions as
+    # they appear in the original grammar (`prod_index` below).
+    expanded_grammar = {}
     # Put all the productions in one big list, so each one has an index.
     # We will use the indices in the action table (as arguments to Reduce actions).
-    prods = [(nt, i, rhs) for nt in grammar for i, rhs in enumerate(grammar[nt])]
-
+    prods = []
     # We'll use these tuples at run time when constructing AST nodes.
-    reductions = [Reduction(nt, i, len(rhs)) for nt, i, rhs in prods]
+    reductions = []
+    for nt in grammar:
+        expanded_grammar[nt] = []
+        for prod_index, rhs in enumerate(grammar[nt]):
+            for expanded_rhs, r in expand_optional_symbols(nt, prod_index, rhs):
+                expanded_grammar[nt].append(expanded_rhs)
+                prods.append((nt, prod_index, expanded_rhs))
+                reductions.append(r)
+    grammar = expanded_grammar
 
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
     # Maybe we can just add a check at run time that we exited from the right place in the table...
