@@ -336,6 +336,7 @@ def generate_parser(out, grammar, goal):
     def get_state_set_index(s):
         """ Get a number for a set of states, assigning a new number if needed. """
         successors = frozenset(s)
+        assert all(state.lookahead is None for state in successors)
         if successors in visited_state_sets:
             return visited_state_sets[successors]
         else:
@@ -350,6 +351,17 @@ def generate_parser(out, grammar, goal):
         The main algorithm assumes that the "next element" in any State is
         never a lookahead rule. We ensure that is true by processing lookahead
         elements before the State is even exposed.
+
+        We don't bother doing extra work here to eliminate lookahead
+        restrictions that are redundant with what's coming up next in the
+        grammar, like `[lookahead != NUM]` when the production is
+        `name ::= IDENT`. We also don't eliminate states that can't match,
+        like `name ::= IDENT` when we have `[lookahead not in {IDENT}]`.
+
+        Such silly states can exist; but we would only care if it caused
+        get_state_set_index to treat equivalent state-sets as distinct, leading
+        to a combinatorial blow-up. That doesn't happen because we currently
+        never add a state with lookahead to a state-set.
         """
         state = State(*args, **kwargs)
         _nt, _i, rhs = prods[state.prod_index]
@@ -364,8 +376,12 @@ def generate_parser(out, grammar, goal):
         That is, return a superset of state_set that adds every state that's
         reachable from it by "stepping in" to nonterminals without consuming
         any tokens. Note that it's often possible to "step in" repeatedly.
+
+        This is the only part of the system that makes states with lookahead
+        restrictions.
         """
         closure = set(state_set)
+        assert all(state.lookahead is None for state in closure)
         closure_todo = list(state_set)
         while closure_todo:
             state = closure_todo.pop(0)
@@ -377,7 +393,7 @@ def generate_parser(out, grammar, goal):
                     for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
                         if dest_nt == next_symbol:
                             new_state = make_state(dest_prod_index, 0, state.lookahead)
-                            if new_state is not None and new_state not in closure:
+                            if new_state not in closure:
                                 closure.add(new_state)
                                 closure_todo.append(new_state)
         return closure
@@ -402,6 +418,7 @@ def generate_parser(out, grammar, goal):
         get_state_set_index (a side effect).
         """
         #print("analyzing state set {}".format(state_set_to_str(current_state_set)))
+        assert all(state.lookahead is None for state in current_state_set)
 
         # Step 1. Visit every state and list what we want to do for each
         # possible next token.
@@ -423,8 +440,7 @@ def generate_parser(out, grammar, goal):
                 if is_terminal(grammar, next_symbol):
                     if lookahead_contains(state.lookahead, next_symbol):
                         next_state = make_state(state.prod_index, offset + 1, None)
-                        if next_state is not None:
-                            shift_states[next_symbol].add(next_state)
+                        shift_states[next_symbol].add(next_state)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (those are preprocessed out of the
@@ -434,8 +450,7 @@ def generate_parser(out, grammar, goal):
                     # We never reduce with a lookahead restriction still active,
                     # so the new state has no lookahead restrictions on it.
                     next_state = make_state(state.prod_index, offset + 1, lookahead=None)
-                    if next_state is not None:
-                        ctn_states[next_symbol].add(next_state)
+                    ctn_states[next_symbol].add(next_state)
             else:
                 if state.lookahead is not None:
                     raise ValueError("invalid grammar: lookahead restriction still active "
