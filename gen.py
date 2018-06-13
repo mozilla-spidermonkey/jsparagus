@@ -32,7 +32,36 @@ import io
 from pgen_runtime import ERROR, ACCEPT
 
 
-# A symbol in a production is one of these things:
+# *** What is a grammar? ******************************************************
+#
+# A grammar is a dictionary mapping nonterminal names to lists of right-hand
+# sides. Each right-hand side (also called a "production") is a list whose
+# elements all pass exactly one of the predicates below.
+#
+# The most common elements are terminals and nonterminals, so a grammar usually
+# looks a lot like this:
+def example_grammar():
+    return {
+        'expr': [
+            ['term'],
+            ['expr', '+', 'term'],
+            ['expr', '-', 'term'],
+        ],
+        'term': [
+            ['unary'],
+            ['term', '*', 'unary'],
+            ['term', '/', 'unary'],
+        ],
+        'unary': [
+            ['prim'],
+            ['-', 'unary'],
+        ],
+        'prim': [
+            ['NUM'],
+            ['VAR'],
+            ['(', 'expr', ')'],
+        ],
+    }
 
 def is_nt(grammar, element):
     return isinstance(element, str) and element in grammar
@@ -43,12 +72,21 @@ def is_terminal(grammar, element):
 
 
 Optional = collections.namedtuple("Optional", "inner")
+Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
 
 def is_optional(element):
     return isinstance(element, Optional)
 
 
 LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
+LookaheadRule.__doc__ = """\
+LookaheadRule(set, pos) imposes a lookahead restriction on whatever follows.
+
+It never consumes any tokens itself. Instead, the right-hand side
+[LookaheadRule(frozenset(['a', 'b']), False), 'Thing']
+matches a Thing that does not start with the token `a` or `b`.
+"""
+
 
 def is_lookahead_rule(element):
     return isinstance(element, LookaheadRule)
@@ -113,7 +151,7 @@ def check(grammar):
                 for prod, _r in expand_optional_symbols(prod_with_options):
                     if prod and is_lookahead_rule(prod[-1]):
                         raise ValueError("invalid grammar: lookahead restriction at end of production: " +
-                                         production_to_str(nt, prod_with_options))
+                                         production_to_str(grammar, nt, prod_with_options))
                     # Otherwise ignore lookahead restrictions for the purpose of this check.
                     prod = [e for e in prod if not is_lookahead_rule(e)]
                     if len(prod) == 0:
@@ -145,6 +183,7 @@ def clone_grammar(grammar):
 
 EMPTY = "(empty)"
 END = None
+
 
 def start_sets(grammar):
     """Compute the start sets for terminals and nonterminals in a grammar.
@@ -266,13 +305,6 @@ def follow_sets(grammar, goal):
     return follow
 
 
-def dump_grammar(grammar):
-    for nt, rules in sorted(grammar.items()):
-        print(nt + " ::=")
-        for s in rules:
-            print("   ", s)
-
-
 def expand_optional_symbols(rhs, start_index=0):
     for i in range(start_index, len(rhs)):
         if is_optional(rhs[i]):
@@ -288,14 +320,16 @@ def expand_optional_symbols(rhs, start_index=0):
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
 
 
-State = collections.namedtuple("State", "prod_index offset lookahead")
+# *** How to dump stuff *******************************************************
 
-
-# Debugging routines.
-def element_to_str(e):
-    if isinstance(e, Optional):
-        return element_to_str(e) + "?"
-    elif isinstance(e, LookaheadRule):
+def element_to_str(grammar, e):
+    if is_nt(grammar, e):
+        return e
+    elif is_terminal(grammar, e):
+        return '"' + repr(e)[1:-1] + '"'
+    elif is_optional(e):
+        return element_to_str(grammar, e.inner) + "?"
+    elif is_lookahead_rule(e):
         if len(e.set) == 1:
             op = "==" if e.positive else "!="
             s = repr(list(e.set)[0])
@@ -307,30 +341,46 @@ def element_to_str(e):
         return str(e)
 
 
-def production_to_str(nt, rhs):
-    return "{} ::= {}".format(nt, " ".join(map(element_to_str, rhs)))
+def rhs_to_str(grammar, rhs):
+    return " ".join(element_to_str(grammar, e) for e in rhs)
 
 
-def state_to_str(prods, state):
+def production_to_str(grammar, nt, rhs):
+    return "{} ::= {}".format(nt, rhs_to_str(grammar, rhs))
+
+
+def state_to_str(grammar, prods, state):
     nt, _i, rhs = prods[state.prod_index]
     if state.lookahead is None:
         la = []
     else:
-        la = [element_to_str(state.lookahead)]
+        la = [element_to_str(grammar, state.lookahead)]
     return "{} ::= {}".format(
         nt,
-        " ".join([element_to_str(e) for e in rhs[:state.offset]]
+        " ".join([element_to_str(grammar, e) for e in rhs[:state.offset]]
                  + ["\N{MIDDLE DOT}"]
                  + la
-                 + [element_to_str(e) for e in rhs[state.offset:]])
+                 + [element_to_str(grammar, e) for e in rhs[state.offset:]])
     )
 
 
-def state_set_to_str(prods, state_set):
+def state_set_to_str(grammar, prods, state_set):
     return "{{{}}}".format(
-        ",  ".join(state_to_str(prods, state) for state in state_set)
+        ",  ".join(state_to_str(grammar, prods, state) for state in state_set)
     )
 
+
+def dump_grammar(grammar):
+    for nt, prods in grammar.items():
+        print(nt + " ::=")
+        for rhs in prods:
+            print("   ", rhs_to_str(grammar, rhs))
+        print()
+
+
+# *** Parser generation *******************************************************
+
+State = collections.namedtuple("State", "prod_index offset lookahead")
 
 def generate_parser(out, grammar, goal):
     def get_state_set_index(s):
@@ -341,7 +391,9 @@ def generate_parser(out, grammar, goal):
             return visited_state_sets[successors]
         else:
             visited_state_sets[successors] = state_index = len(visited_state_sets)
-            #print("State-set #{} = {}".format(state_index, state_set_to_str(prods, state_set_closure(successors))))
+            ## print("State-set #{} = {}"
+            ##       .format(state_index,
+            ##               state_set_to_str(grammar, prods, state_set_closure(successors))))
             todo.append(successors)
             return state_index
 
@@ -408,7 +460,9 @@ def generate_parser(out, grammar, goal):
             "    {}\n"
             "and:\n"
             "    {}\n"
-            .format(t, production_to_str(nt1, rhs1), production_to_str(nt2, rhs2)))
+            .format(t,
+                    production_to_str(grammar, nt1, rhs1),
+                    production_to_str(grammar, nt2, rhs2)))
 
     def analyze_state_set(current_state_set):
         """Generate the LR parser table entry for a single state set.
@@ -417,7 +471,7 @@ def generate_parser(out, grammar, goal):
         state-set-ids for state sets we haven't considered yet, so it calls
         get_state_set_index (a side effect).
         """
-        #print("analyzing state set {}".format(state_set_to_str(current_state_set)))
+        #print("analyzing state set {}".format(state_set_to_str(grammar, current_state_set)))
         assert all(state.lookahead is None for state in current_state_set)
 
         # Step 1. Visit every state and list what we want to do for each
@@ -454,7 +508,8 @@ def generate_parser(out, grammar, goal):
             else:
                 if state.lookahead is not None:
                     raise ValueError("invalid grammar: lookahead restriction still active "
-                                     "at end of production " + production_to_str(nt, rhs))
+                                     "at end of production " +
+                                     production_to_str(grammar, nt, rhs))
                 for t in follow[nt]:
                     if t in reduce_prods:
                         raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
@@ -468,7 +523,7 @@ def generate_parser(out, grammar, goal):
             nt, _, rhs = prods[prod_index]
             if t in action_row:
                 raise ValueError("shift-reduce conflict when looking at {!r} after {}"
-                                 .format(t, production_to_str(nt, rhs)))
+                                 .format(t, production_to_str(grammar, nt, rhs)))
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
@@ -546,8 +601,9 @@ def generate_parser(out, grammar, goal):
     out.write("import pgen_runtime\n\n")
     out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
     out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
-    out.write("reductions = [\n{}]\n\n".format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
-                                                       for nt, length, reducer in reductions)))
+    out.write("reductions = [\n{}]\n\n"
+              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
+                              for nt, length, reducer in reductions)))
     out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
 
 
@@ -559,28 +615,10 @@ def compile(grammar, goal):
     return scope['parse']
 
 
+# *** Fun demo ****************************************************************
+
 def main():
-    grammar = {
-        'expr': [
-            ['term'],
-            ['expr', '+', 'term'],
-            ['expr', '-', 'term'],
-        ],
-        'term': [
-            ['unary'],
-            ['term', '*', 'unary'],
-            ['term', '/', 'unary'],
-        ],
-        'unary': [
-            ['prim'],
-            ['-', 'unary'],
-        ],
-        'prim': [
-            ['NUM'],
-            ['VAR'],
-            ['(', 'expr', ')'],
-        ],
-    }
+    grammar = example_grammar()
 
     class Tokens:
         def __init__(self, space_separated):
@@ -631,6 +669,7 @@ def main():
             print(exc.__class__.__name__ + ": " + str(exc))
         else:
             print(result)
+
 
 if __name__ == '__main__':
     main()
