@@ -170,9 +170,7 @@ Minor items:
 
     *   boolean parameterization of nonterminals (`[Yield]` and such)
     
-    *   automatic semicolon insertion
-    
-    *   "[lookahead not in {`let`, `[`}]"
+    *   automatic semicolon insertion and "[no LineTerminal here]"
 
     *   dangling `else`
 
@@ -191,9 +189,27 @@ and left-recursion elimination); see `testFirstFirstConflict` in
 `test.py` for a contrived example, and `testLeftHandSideExpression` for
 a realistic one.
 
-
 I learned that the shift-reduce operator precedence parser I wrote for
 SpiderMonkey is even less like a typical LR parser than I imagined.
+
+I was stunned to find that the LR parser, including the table generator,
+was *less* code than the predictive LL parser of stab 4.
+
+I learned that I will apparently hand-code the computation of transitive
+closures of sets under relations ten times before even considering
+writing a general algorithm. The patterns I have written over and over
+are: 1. `while not done:` visit every element already in the set,
+iterating to a fixed point, which is this ludicrous O(*n*<sup>2</sup>)
+in the number of pairs in the relation; 2. depth-first graph walking
+with cycle detection, which can overflow the stack.
+
+I learned one way to hack features into an LR parser generator (cf. how
+easy it is to hack stuff into a recursive descent parser). The trick I
+know is this: add more states. To add lookahead assertions, I just added
+a lookahead element to the state tuple. The trick then is to make sure
+you are normalizing states that are actually identical, to avoid
+combinatorial explosion—and eventually, I expect, table
+compression.
 
 There's a lot still to learn here.
 
@@ -206,25 +222,8 @@ There's a lot still to learn here.
     is that the DFA parses? How on earth does it magically turn out to be
     regular?!
 
-*   Is the thing I implemented SLR? What makes a grammar SLR/LR/LALR?
-
 *   If I faithfully implement the algorithms in the book, will it be
     less of a dumpster fire? Smaller, more factored?
-
-*   In what sense is SLR "simple"? (More to learn by reading.)
-
-I was stunned to learn that the LR parser, including the table generator,
-is *less* code than the predictive LL parser of stab 4.
-
-I learned that I will apparently hand-code the computation of transitive
-closures of sets under relations ten times before even considering
-writing a general algorithm. The patterns I have written over and over
-are: 1. `while not done:` visit every element already in the set,
-iterating to a fixed point, which is this ludicrous O(*n*<sup>2</sup>)
-in the number of pairs in the relation; 2. depth-first graph walking
-with cycle detection, which can overflow the stack.
-
-I haven't really learned this yet. I'm only halfway through SLR.
 
 
 ### Stab 4 (nonrecursive table-driven predictive LL parser)

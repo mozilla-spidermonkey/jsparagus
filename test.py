@@ -4,6 +4,7 @@ import gen
 import io, unittest
 import re
 import gen
+from gen import Optional, LookaheadRule
 import lexer
 
 
@@ -362,7 +363,6 @@ class GenTestCase(unittest.TestCase):
             result = result[0]
 
     def testExpandOptional(self):
-        from gen import Optional
         self.assertEqual(
             list(gen.expand_optional_symbols(['ONE', 'TWO', '3'])),
             [(['ONE', 'TWO', '3'], [])])
@@ -378,7 +378,6 @@ class GenTestCase(unittest.TestCase):
              (['a', 'b'], [])])
 
     def testOptionalEmpty(self):
-        from gen import Optional
         grammar = {
             'a': [
                 [Optional('b'), Optional('c')],
@@ -395,7 +394,6 @@ class GenTestCase(unittest.TestCase):
                                lambda: gen.compile(grammar, 'a'))
 
     def testOptional(self):
-        from gen import Optional
         tokenize = lexer.LexicalGrammar('[ ] , X')
         grammar = {
             'array': [
@@ -441,7 +439,183 @@ class GenTestCase(unittest.TestCase):
             ])
         )
 
-            
+    def testPositiveLookahead(self):
+        self.compile(
+            lexer.LexicalGrammar('A B + ( )'),
+            {
+                'goal': [
+                    [LookaheadRule(frozenset({'A', 'B'}), True), 'expr'],
+                ],
+                'expr': [
+                    ['term'],
+                    ['expr', '+', 'term'],
+                ],
+                'term': [
+                    ['A'],
+                    ['B'],
+                    ['(', 'expr', ')'],
+                ]
+            }
+        )
+        self.assertNoParse("(A)", "expected one of ['A', 'B'], got '('")
+        self.assertParse("A + B")
+
+    def testNegativeLookahead(self):
+        tokenize = lexer.LexicalGrammar('a b')
+        grammar = {
+            'goal': [
+                [LookaheadRule(frozenset({'a'}), False), 'abs'],
+            ],
+            'abs': [
+                ['a'],
+                ['b'],
+                ['abs', 'a'],
+                ['abs', 'b'],
+            ],
+        }
+
+        parse = gen.compile(grammar, 'goal')
+        self.assertRaisesRegex(SyntaxError,
+                               r"expected 'b', got 'a'",
+                               lambda: parse(tokenize("ab")))
+        self.assertEqual(
+            parse(tokenize('ba')),
+            ('goal', 0, [
+                ('abs', 2, [
+                    ('abs', 1, ['b']),
+                    'a'
+                ]),
+            ])
+        )
+
+        # In simple cases like this, the lookahead restriction can even
+        # disambiguate a grammar that would otherwise be ambiguous.
+        grammar['goal'].append(['a'])
+        parse = gen.compile(grammar, 'goal')
+        self.assertEqual(
+            parse(tokenize('a')),
+            ('goal', 1, ['a'])
+        )
+
+    # to test: correct behavior when lookahead goes past an optional nt (reject grammar?)
+    # to test: combination of lookaheads, ++, +-, -+, --
+
+
+    def disabledNegativeLookaheadDisambiguation(self):
+        tokenize = lexer.LexicalGrammar('( ) { } ; function =', IDENT=r'[A-Za-z_][A-Za-z_0-9]*')
+        grammar = {
+            'stmts': [
+                ['stmt'],
+                ['stmts', 'stmt'],
+            ],
+            'stmt': [
+                [LookaheadRule(set=frozenset({'function'}), positive=False), 'expr', ';'],
+                ['fndecl'],
+            ],
+            'fndecl': [
+                ['function', 'IDENT', '(', ')', '{', Optional('stmt'), '}'],
+            ],
+            'expr': [
+                ['term'],
+                ['IDENT', '=', 'expr'],
+            ],
+            'term': [
+                ['(', 'expr', ')'],
+                ['fndecl'],
+                ['term', '(', 'expr', ')'],
+            ],
+        }
+        parse = gen.compile(grammar, 'stmts')
+
+        # Test that without the lookahead restriction, we reject this grammar
+        # (it's ambiguous):
+        del grammar['stmt'][0][0]
+        self.assertRaisesRegex(ValueError,
+                               'banana',
+                               lambda: gen.compile(grammar, 'stmt'))
+
+        self.assertEqual(
+            parse(tokenize('function f() { x = function y() {}; }')),
+            ('stmts', 0, [
+                ('stmt', 1, [
+                    ('fndecl', 0, [
+                        'function', 'f', '(', ')', '{',
+                        ('stmt', 0, [
+                            ('expr', 1, [
+                                'x',
+                                '=',
+                                ('expr', 0, [
+                                    ('term', 1, [
+                                        ('fndecl', 0, [
+                                            'function', 'y', '(', ')', '{', None, '}',
+                                        ]),
+                                    ]),
+                                ]),
+                            ]),
+                            ';',
+                        ]),
+                    ]),
+                ]),
+            ])
+        )
+
+        self.assertEqual(
+            parse(tokenize('(function g(){});')),
+            ('stmts', 0, [
+                ('stmt', 0, [
+                    ('expr', 0, [
+                        ('term', 1, [
+                            ('fndecl', 0, [
+                                'function', 'g', '(', ')', '{', None, '}',
+                            ]),
+                        ]),
+                    ]),
+                    ';',
+                ]),
+            ])
+        )
+
+    def testTrailingLookahead(self):
+        """Lookahead at the end of a production is banned."""
+        grammar = {
+            'stmt': [
+                ['OTHER', ';'],
+                ['IF', '(', 'X', ')', 'stmt', LookaheadRule(frozenset({'ELSE'}), False)],
+                ['IF', '(', 'X', ')', 'stmt', 'ELSE', 'stmt'],
+            ],
+        }
+        self.assertRaisesRegex(ValueError,
+                               r"invalid grammar: lookahead restriction still active at end of production",
+                               lambda: gen.compile(grammar, 'stmt'))
+
+    def testLookaheadBeforeOptional(self):
+        self.compile(
+            lexer.LexicalGrammar('= : _', PUBLIC=r'public\b', IDENT=r'[a-z]+\b', NUM=r'[0-9]\b'),
+            {
+                'decl': [
+                    [LookaheadRule(frozenset({'IDENT'}), True), Optional('attrs'), 'pat', '=', 'NUM'],
+                ],
+                'attrs': [
+                    ['attr'],
+                    ['attrs', 'attr'],
+                ],
+                'attr': [
+                    ['PUBLIC', ':'],
+                    ['IDENT', ':'],
+                ],
+                'pat': [
+                    ['IDENT'],
+                    ['_'],
+                ],
+            }
+        )
+        self.assertParse("x = 0")
+        self.assertParse("thread: x = 0")
+        self.assertNoParse("public: x = 0", "expected 'IDENT', got 'PUBLIC'")
+        self.assertNoParse("_ = 0", "expected 'IDENT', got '_'")
+        self.assertParse("funny: public: x = 0")
+        self.assertParse("funny: _ = 0")
+
 
 if __name__ == '__main__':
     unittest.main()
