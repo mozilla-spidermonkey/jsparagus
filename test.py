@@ -61,16 +61,16 @@ class GenTestCase(unittest.TestCase):
         ]))
 
     def testEnd(self):
-        grammar = {
-            'goal': [
-                ['ONE', 'TWO']
-            ]
-        }
-        tokenize = lexer.LexicalGrammar("ONE TWO")
-        parse = gen.compile(grammar, 'goal')
-        self.assertRaisesRegex(SyntaxError,
-                               "expected 'end of input', got 'TWO'",
-                               lambda: parse(tokenize("ONE TWO TWO")))
+        self.compile(
+            lexer.LexicalGrammar("ONE TWO"),
+            {
+                'goal': [
+                    ['ONE', 'TWO']
+                ]
+            }
+        )
+        self.assertNoParse("ONE TWO TWO",
+                           "expected 'end of input', got 'TWO'")
 
     def testList(self):
         list_grammar = {
