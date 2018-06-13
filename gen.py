@@ -426,9 +426,14 @@ def generate_parser(out, grammar, goal):
                         if next_state is not None:
                             shift_states[next_symbol].add(next_state)
                 else:
-                    assert is_nt(grammar, next_symbol)  # should have settled already
-                    # We never reduce with a lookahead restriction still active.
-                    next_state = make_state(state.prod_index, offset + 1, None)
+                    # The next element is always a terminal or nonterminal,
+                    # never an Optional (those are preprocessed out of the
+                    # grammar) or a LookaheadRule (see make_state).
+                    assert is_nt(grammar, next_symbol)
+
+                    # We never reduce with a lookahead restriction still active,
+                    # so the new state has no lookahead restrictions on it.
+                    next_state = make_state(state.prod_index, offset + 1, lookahead=None)
                     if next_state is not None:
                         ctn_states[next_symbol].add(next_state)
             else:
