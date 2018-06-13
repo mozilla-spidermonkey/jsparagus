@@ -322,17 +322,19 @@ def generate_parser(out, grammar, goal):
             todo.append(successors)
             return state_index
 
-    def settle_state(state):
-        """ Advance the given State past any lookahead rules. """
+    def make_state(*args, **kwargs):
+        """Create a State tuple and advance it past any lookahead rules.
+
+        The main algorithm assumes that the "next element" in any State is
+        never a lookahead rule. We ensure that is true by processing lookahead
+        elements before the State is even exposed.
+        """
+        state = State(*args, **kwargs)
         _nt, _i, rhs = prods[state.prod_index]
         while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
             state = state._replace(offset=state.offset + 1,
                                    lookahead=lookahead_intersect(state.lookahead, rhs[state.offset]))
         return state
-
-    def state_at_start_of_production(prod_index, lookahead):
-        """ Create a new State at the start of a production. """
-        return settle_state(State(prod_index, 0, lookahead))
 
     def state_set_closure(state_set):
         """Compute transitive closure of the given state set under left-calls.
@@ -352,8 +354,8 @@ def generate_parser(out, grammar, goal):
                 if is_nt(grammar, next_symbol):
                     for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
                         if dest_nt == next_symbol:
-                            new_state = state_at_start_of_production(dest_prod_index, state.lookahead)
-                            if new_state not in closure:
+                            new_state = make_state(dest_prod_index, 0, state.lookahead)
+                            if new_state is not None and new_state not in closure:
                                 closure.add(new_state)
                                 closure_todo.append(new_state)
         return closure
@@ -398,13 +400,15 @@ def generate_parser(out, grammar, goal):
                 next_symbol = rhs[offset]
                 if is_terminal(grammar, next_symbol):
                     if lookahead_contains(state.lookahead, next_symbol):
-                        next_state = settle_state(State(state.prod_index, offset + 1, None))
-                        shift_states[next_symbol].add(next_state)
+                        next_state = make_state(state.prod_index, offset + 1, None)
+                        if next_state is not None:
+                            shift_states[next_symbol].add(next_state)
                 else:
                     assert is_nt(grammar, next_symbol)  # should have settled already
                     # We never reduce with a lookahead restriction still active.
-                    next_state = settle_state(State(state.prod_index, offset + 1, None))
-                    ctn_states[next_symbol].add(next_state)
+                    next_state = make_state(state.prod_index, offset + 1, None)
+                    if next_state is not None:
+                        ctn_states[next_symbol].add(next_state)
             else:
                 if state.lookahead is not None:
                     raise ValueError("invalid grammar: lookahead restriction still active "
@@ -477,7 +481,7 @@ def generate_parser(out, grammar, goal):
 
     # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
     init_production_index = prods.index((init_nt, 0, [goal]))
-    init_state_set = frozenset({settle_state(State(init_production_index, 0, None))})
+    init_state_set = frozenset({make_state(init_production_index, 0, None)})
 
     # We assign each reachable state set a number, and we keep a list of state
     # sets that have numbers but haven't been analyzed yet. When the list is
