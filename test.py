@@ -497,10 +497,6 @@ class GenTestCase(unittest.TestCase):
             ('goal', 1, ['a'])
         )
 
-    # to test: correct behavior when lookahead goes past an optional nt (reject grammar?)
-    # to test: combination of lookaheads, ++, +-, -+, --
-
-
     def disabledNegativeLookaheadDisambiguation(self):
         tokenize = lexer.LexicalGrammar('( ) { } ; function =', IDENT=r'[A-Za-z_][A-Za-z_0-9]*')
         grammar = {
@@ -615,6 +611,8 @@ class GenTestCase(unittest.TestCase):
         self.assertNoParse("_ = 0", "expected 'IDENT', got '_'")
         self.assertParse("funny: public: x = 0")
         self.assertParse("funny: _ = 0")
+
+    # XXX to test: combination of lookaheads, ++, +-, -+, --
 
 
 if __name__ == '__main__':
