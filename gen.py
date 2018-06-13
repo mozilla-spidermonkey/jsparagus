@@ -301,7 +301,7 @@ def element_to_str(e):
             s = repr(list(e.set)[0])
         else:
             op = "in" if e.positive else "not in"
-            s = repr(e.set)
+            s = repr(set(e.set))
         return "[lookahead {} {}]".format(op, s)
     else:
         return str(e)
@@ -311,23 +311,24 @@ def production_to_str(nt, rhs):
     return "{} ::= {}".format(nt, " ".join(map(element_to_str, rhs)))
 
 
-def state_to_str(state):
+def state_to_str(prods, state):
     nt, _i, rhs = prods[state.prod_index]
     if state.lookahead is None:
-        la = ""
-    elif state.lookahead.positive:
-        la = "[lookahead in {!r}]".format(state.lookahead.set)
+        la = []
     else:
-        la = "[lookahead not in {!r}]".format(state.lookahead.set)
+        la = [element_to_str(state.lookahead)]
     return "{} ::= {}".format(
         nt,
-        " ".join(rhs[:state.offset] + ["\N{MIDDLE DOT}"] + rhs[state.offset:])
+        " ".join([element_to_str(e) for e in rhs[:state.offset]]
+                 + ["\N{MIDDLE DOT}"]
+                 + la
+                 + [element_to_str(e) for e in rhs[state.offset:]])
     )
 
 
-def state_set_to_str(state_set):
+def state_set_to_str(prods, state_set):
     return "{{{}}}".format(
-        ",  ".join(state_to_str(state) for state in state_set)
+        ",  ".join(state_to_str(prods, state) for state in state_set)
     )
 
 
@@ -339,7 +340,7 @@ def generate_parser(out, grammar, goal):
             return visited_state_sets[successors]
         else:
             visited_state_sets[successors] = state_index = len(visited_state_sets)
-            #print("State #{} = {}".format(state_index, state_set_to_str(successors)))
+            #print("State-set #{} = {}".format(state_index, state_set_to_str(prods, state_set_closure(successors))))
             todo.append(successors)
             return state_index
 
