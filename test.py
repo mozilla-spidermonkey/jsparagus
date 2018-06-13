@@ -11,6 +11,18 @@ LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
 
 
 class GenTestCase(unittest.TestCase):
+    def compile(self, tokenize, grammar):
+        """Compile a grammar. Use this when you expect compilation to succeed."""
+        self.tokenize = tokenize
+        self.parse = gen.compile(grammar, next(iter(grammar)))
+
+    def assertParse(self, s):
+        self.parse(self.tokenize(s))
+
+    def assertNoParse(self, s, message="banana"):
+        tokens = self.tokenize(s)
+        self.assertRaisesRegex(SyntaxError, re.escape(message), lambda: self.parse(tokens))
+
     def testSimple(self):
         grammar = {
             'expr': [
@@ -274,6 +286,35 @@ class GenTestCase(unittest.TestCase):
                          ('s', 0, [('x', 0, ['A']), 'B']))
         self.assertEqual(parse(tokenize("A C")),
                          ('s', 1, [('y', 0, ['A']), 'C']))
+
+    def testLeftHandSideExpression(self):
+        """Example of a grammar that's in SLR(1) but hard to smoosh into an LL(1) form.
+
+        This is taken from the ECMAScript grammar.
+
+        ...Of course, it's not really possible to enforce the desired syntactic
+        restrictions in LR(k) either; the ES grammar matches `(x + y) = z` and
+        an additional attribute grammar (IsValidSimpleAssignmentTarget) is
+        necessary to rule it out.
+        """
+        self.compile(
+            lexer.LexicalGrammar("= +", VAR=r'[a-z]+\b'),
+            {
+                'AssignmentExpression': [
+                    ['AdditiveExpression'],
+                    ['LeftHandSideExpression', '=', 'AssignmentExpression'],
+                ],
+                'AdditiveExpression': [
+                    ['LeftHandSideExpression'],
+                    ['AdditiveExpression', '+', 'LeftHandSideExpression'],
+                ],
+                'LeftHandSideExpression': [
+                    ['VAR'],
+                ]
+            }
+        )
+        self.assertParse("z = x + y")
+        self.assertNoParse("x + y = z", "expected one of ['+', 'end of input'], got '='")
 
     def testDeepRecursion(self):
         grammar = {

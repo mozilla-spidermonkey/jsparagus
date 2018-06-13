@@ -187,11 +187,12 @@ Minor items:
 Well. I learned enough to implement this, although there is still much I
 don't understand.
 
-I learned of at least one phenomenon that can render a grammar outside
-xLL(1) (that is, LL(1) as extended by automated left-factoring and
-left-recursion elimination); see `testFirstFirstConflict` in `test.py`.
-(Maybe a more practical example would be when a C++ parser at toplevel
-sees the keyword `static` or `const`.)
+I learned a bit about what kind of phenomenon can render a grammar
+outside XLL(1) (that is, LL(1) as extended by automated left-factoring
+and left-recursion elimination); see `testFirstFirstConflict` in
+`test.py` for a contrived example, and `testLeftHandSideExpression` for
+a realistic one.
+
 
 I learned that the shift-reduce operator precedence parser I wrote for
 SpiderMonkey is even less like a typical LR parser than I imagined.
