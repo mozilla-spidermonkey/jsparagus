@@ -143,9 +143,9 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
     *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
     and some lexical rules.)
 
-*   The grammar must be in (I think?) SLR(1).
+*   The grammar must be in SLR(1).
 
-*   No Kleene quantifiers.
+*   Kleene `?` is supported, but no Kleene `*`.
 
 *   The input grammar can't contain actions (code to execute while parsing,
     useful for building a nice AST;
@@ -157,8 +157,6 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 Minor items:
 
 *   Only supports a single goal nonterminal.
-
-*   No location information (easy to fix).
 
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
