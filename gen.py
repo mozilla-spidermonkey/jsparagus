@@ -77,7 +77,7 @@ def lookahead_intersect(a, b):
 
 
 def check(grammar):
-    """Enforce three basic rules about the grammar.
+    """Enforce a few basic rules about the grammar.
 
     1.  Every nonterminal that appears in any production is defined.
 
@@ -86,6 +86,9 @@ def check(grammar):
         nonterminal `q` has `q ==>+ q` (produces itself via at least one step).
 
     3.  No rule matches the empty string.
+
+    4.  No LookaheadRule appears at the end of a production or before only
+        optional nonterminals.
 
     If the grammar breaks any of these rules, throw.
     """
@@ -108,7 +111,10 @@ def check(grammar):
             prods = grammar[nt]
             for prod_with_options in prods:
                 for prod, _r in expand_optional_symbols(prod_with_options):
-                    # Ignore lookahead restrictions for the purpose of this check.
+                    if prod and is_lookahead_rule(prod[-1]):
+                        raise ValueError("invalid grammar: lookahead restriction at end of production: " +
+                                         production_to_str(nt, prod_with_options))
+                    # Otherwise ignore lookahead restrictions for the purpose of this check.
                     prod = [e for e in prod if not is_lookahead_rule(e)]
                     if len(prod) == 0:
                         raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
@@ -286,8 +292,23 @@ State = collections.namedtuple("State", "prod_index offset lookahead")
 
 
 # Debugging routines.
+def element_to_str(e):
+    if isinstance(e, Optional):
+        return element_to_str(e) + "?"
+    elif isinstance(e, LookaheadRule):
+        if len(e.set) == 1:
+            op = "==" if e.positive else "!="
+            s = repr(list(e.set)[0])
+        else:
+            op = "in" if e.positive else "not in"
+            s = repr(e.set)
+        return "[lookahead {} {}]".format(op, s)
+    else:
+        return str(e)
+
+
 def production_to_str(nt, rhs):
-    return "{} ::= {}".format(nt, " ".join(map(str, rhs)))
+    return "{} ::= {}".format(nt, " ".join(map(element_to_str, rhs)))
 
 
 def state_to_str(state):

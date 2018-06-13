@@ -585,7 +585,7 @@ class GenTestCase(unittest.TestCase):
             ],
         }
         self.assertRaisesRegex(ValueError,
-                               r"invalid grammar: lookahead restriction still active at end of production",
+                               r"invalid grammar: lookahead restriction at end of production",
                                lambda: gen.compile(grammar, 'stmt'))
 
     def testLookaheadBeforeOptional(self):
