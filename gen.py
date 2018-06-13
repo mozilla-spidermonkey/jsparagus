@@ -135,13 +135,10 @@ def start_sets(grammar):
     done = False
     while not done:
         done = True
-
         for nt, prods in grammar.items():
-            nt_start = set()
-            for prod in prods:
-                # Compute start set for `prod` based on `start` so far.
-                # Could be incomplete, but we'll ratchet up as we iterate.
-                nt_start |= seq_start(grammar, start, prod)
+            # Compute start set for each `prod` based on `start` so far.
+            # Could be incomplete, but we'll ratchet up as we iterate.
+            nt_start = set.union(*[seq_start(grammar, start, prod) for prod in prods])
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -364,6 +361,12 @@ def generate_parser(out, grammar, goal):
             .format(t, production_to_str(nt1, rhs1), production_to_str(nt2, rhs2)))
 
     def analyze_state_set(current_state_set):
+        """Generate the LR parser table entry for a single state set.
+
+        This can be done without iterating. But this function sometimes needs
+        state-set-ids for state sets we haven't considered yet, so it calls
+        get_state_set_index (a side effect).
+        """
         #print("analyzing state set {}".format(state_set_to_str(current_state_set)))
 
         # Step 1. Visit every state and list what we want to do for each
