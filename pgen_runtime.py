@@ -20,7 +20,7 @@ def parse(actions, ctns, reductions, entry_state, tokens):
             t = tokens.peek()
         elif action > ACCEPT:  # reduce
             tag_name, n, reducer = reductions[-action - 1]
-            start = -2 * n
+            start = len(stack) - 2 * n
             node = reducer(*stack[start::2])
             stack[start:] = [node, ctns[stack[start - 1]][tag_name]]
         elif action == ACCEPT:

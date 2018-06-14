@@ -377,7 +377,17 @@ class GenTestCase(unittest.TestCase):
              (['b'], [0]),
              (['a', 'b'], [])])
 
+    def testEmptyGrammar(self):
+        tokenize = lexer.LexicalGrammar("X")
+        self.compile(tokenize, {'goal': [[]]})
+        self.assertEqual(
+            self.parse(self.tokenize("")),
+            ('goal', 0, [])
+        )
+        self.assertNoParse("X", "expected 'end of input', got 'X' (line 1)")
+
     def testOptionalEmpty(self):
+        tokenize = lexer.LexicalGrammar("X Y")
         grammar = {
             'a': [
                 [Optional('b'), Optional('c')],
@@ -389,9 +399,11 @@ class GenTestCase(unittest.TestCase):
                 ['Y'],
             ]
         }
-        self.assertRaisesRegex(ValueError,
-                               "nonterminal 'a' can match the empty string",
-                               lambda: gen.compile(grammar, 'a'))
+        parse = gen.compile(grammar, "a")
+        self.assertEqual(parse(tokenize("")), ('a', 0, [None, None]))
+        self.assertEqual(parse(tokenize("X")), ('a', 0, [('b', 0, ['X']), None]))
+        self.assertEqual(parse(tokenize("Y")), ('a', 0, [None, ('c', 0, ['Y'])]))
+        self.assertEqual(parse(tokenize("X Y")), ('a', 0, [('b', 0, ['X']), ('c', 0, ['Y'])]))
 
     def testOptional(self):
         tokenize = lexer.LexicalGrammar('[ ] , X')

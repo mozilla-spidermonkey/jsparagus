@@ -114,58 +114,102 @@ def lookahead_intersect(a, b):
             return LookaheadRule(a.set | b.set, False)
 
 
+def fix(f, start):
+    """Compute the least fix point of `f`, the hard way, starting from `start`."""
+    prev, current = start, f(start)
+    while current != prev:
+        prev, current = current, f(current)
+    return current
+
+
+def empty_nt_set(grammar):
+    """Return the set of all nonterminals in `grammar` that can produce the empty string."""
+    def step(empties):
+        def rhs_is_empty(nt, rhs):
+            return all(is_lookahead_rule(e)
+                       or is_optional(e)
+                       or (is_nt(grammar, e) and e in empties)
+                       for e in rhs)
+        return set(nt
+                   for nt, rhs_list in grammar.items()
+                   if any(rhs_is_empty(nt, rhs) for rhs in rhs_list))
+
+    return fix(step, set())
+
+
+def check_cycle_free(grammar):
+    """Throw an exception if any nonterminal in `grammar` produces itself
+    via a cycle of 1 or more productions.
+    """
+    empties = empty_nt_set(grammar)
+
+    # OK, first find out which nonterminals directly produce which other
+    # nonterminals (after possibly erasing some optional/empty nts).
+    direct_produces = {}
+    for orig in grammar:
+        direct_produces[orig] = set()
+        for source_rhs in grammar[orig]:
+            for rhs, _r in expand_optional_symbols(source_rhs):
+                result = []
+                all_possibly_empty_so_far = True
+                # If we break out of the following loop, that means it turns
+                # out that this production does not produce *any* strings that
+                # are just a single nonterminal.
+                for e in rhs:
+                    if is_terminal(grammar, e):
+                        break  # no good, this production contains a terminal
+                    elif is_nt(grammar, e):
+                        if e in empties:
+                            result.append(e)
+                        else:
+                            if not all_possibly_empty_so_far:
+                                break # no good, we have 2+ nonterminals that can't be empty
+                            all_possibly_empty_so_far = False
+                            result = [e]
+                    elif is_optional(e):
+                        if is_nt(grammar, e.inner):
+                            result.append(e.inner)
+                    else:
+                        assert is_lookahead_rule(e)
+                        pass # ignore the restriction - we lose a little precision here
+                else:
+                    # If we get here, we didn't break, so our results are good!
+                    # nt can definitely produce all the nonterminals in result.
+                    direct_produces[orig] |= set(result)
+
+    def step(produces):
+        return {
+            orig: dest | set(b for a in dest for b in produces[a])
+            for orig, dest in produces.items()
+        }
+    produces = fix(step, direct_produces)
+
+    for nt in grammar:
+        if nt in produces[nt]:
+            raise ValueError("invalid grammar: nonterminal {} can produce itself".format(nt))
+
+
 def check(grammar):
     """Enforce a few basic rules about the grammar.
 
-    1.  Every nonterminal that appears in any production is defined.
-
-    2.  The grammar contains no cycles.
+    1.  The grammar is cycle-free.
         A cycle is a set of productions such that any
         nonterminal `q` has `q ==>+ q` (produces itself via at least one step).
 
-    3.  No rule matches the empty string.
+    2.  No LookaheadRule appears at the end of a production (or before elements
+        that can produce the empty string).
 
-    4.  No LookaheadRule appears at the end of a production or before only
-        optional nonterminals.
-
-    If the grammar breaks any of these rules, throw.
+    If the grammar breaks either rule, throw.
     """
 
-    # Maps names of nonterminals to one of:
-    #     (missing) - we haven't seen this nt at all
-    #     False - we are currently examining this nt for cycles
-    #     True - we checked and this nt definitely is not in any cycles
-    status = {}
-
-    def check_nt(nt):
-        s = status.get(nt)
-        if s == True:
-            return
-        elif s == False:
-            raise ValueError("invalid grammar: nonterminal {!r} has a cycle".format(nt))
-        else:
-            assert s is None
-            status[nt] = False
-            prods = grammar[nt]
-            for prod_with_options in prods:
-                for prod, _r in expand_optional_symbols(prod_with_options):
-                    if prod and is_lookahead_rule(prod[-1]):
-                        raise ValueError("invalid grammar: lookahead restriction at end of production: " +
-                                         production_to_str(grammar, nt, prod_with_options))
-                    # Otherwise ignore lookahead restrictions for the purpose of this check.
-                    prod = [e for e in prod if not is_lookahead_rule(e)]
-                    if len(prod) == 0:
-                        raise ValueError("invalid grammar: nonterminal {!r} can match the empty string".format(nt))
-                    elif len(prod) == 1 and is_nt(grammar, prod[0]):
-                        # Because we enforce rule 3 (no production can match the
-                        # empty string), rule 2 is much easier to check: only
-                        # productions consisting of exactly one nonterminal can be
-                        # in cycles.
-                        check_nt(prod[0])
-            status[nt] = True
-
+    check_cycle_free(grammar)
     for nt in grammar:
-        check_nt(nt)
+        for rhs_with_options in grammar[nt]:
+            for rhs, _r in expand_optional_symbols(rhs_with_options):
+                if rhs and is_lookahead_rule(rhs[-1]):
+                    # XXX this is insufficient now
+                    raise ValueError("invalid grammar: lookahead restriction at end of production: " +
+                                     production_to_str(grammar, nt, rhs_with_options))
 
 
 def gensym(grammar, nt):
@@ -320,6 +364,39 @@ def expand_optional_symbols(rhs, start_index=0):
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
 
 
+def make_epsilon_free_step_1(grammar):
+    """ Return a clone of `grammar` in which all uses of nonterminals
+    that match the empty string are wrapped in Optional.
+
+    `grammar` must already be cycle-free.
+    """
+
+    empties = empty_nt_set(grammar)
+
+    def hack(e):
+        if is_nt(grammar, e) and e in empties:
+            return Optional(e)
+        return e
+
+    return {
+        nt: [[hack(e) for e in rhs]
+             for rhs in rhs_list]
+        for nt, rhs_list in grammar.items()
+    }
+
+
+def make_epsilon_free_step_2(grammar, goal):
+    """Return a clone of `grammar` with empty right-hand sides removed.
+
+    All empty productions are removed except any for the goal nonterminal,
+    so the grammar still recognizes the same language.
+    """
+    return {
+        nt: [rhs for rhs in rhs_list if len(rhs) > 0 or nt == goal]
+        for nt, rhs_list in grammar.items()
+    }
+
+
 # *** How to dump stuff *******************************************************
 
 def element_to_str(grammar, e):
@@ -374,7 +451,10 @@ def dump_grammar(grammar):
     for nt, prods in grammar.items():
         print(nt + " ::=")
         for rhs in prods:
-            print("   ", rhs_to_str(grammar, rhs))
+            if rhs:
+                print("   ", rhs_to_str(grammar, rhs))
+            else:
+                print("   [empty]")
         print()
 
 
@@ -495,6 +575,7 @@ def generate_parser(out, grammar, goal):
         state-set-ids for state sets we haven't considered yet, so it calls
         get_state_set_index (a side effect).
         """
+
         #print("analyzing state set {}".format(state_set_to_str(grammar, current_state_set)))
 
         # Step 1. Visit every state and list what we want to do for each
@@ -566,15 +647,19 @@ def generate_parser(out, grammar, goal):
         [goal]
     ]
 
+    grammar = make_epsilon_free_step_1(grammar)
+
     # Expand optional elements in the grammar. We replace each production that
     # contains an optional element with two productions: one with and one
     # without. This means the rest of the algorithm can ignore the possibility
     # of optional elements. But we keep the numbering of all the productions as
     # they appear in the original grammar (`prod_index` below).
     expanded_grammar = {}
+
     # Put all the productions in one big list, so each one has an index.
     # We will use the indices in the action table (as arguments to Reduce actions).
     prods = []
+
     # We'll use these tuples at run time when constructing AST nodes.
     reductions = []
     for nt in grammar:
@@ -597,6 +682,7 @@ def generate_parser(out, grammar, goal):
                 reductions.append((nt, len(names), fn))
     grammar = expanded_grammar
 
+    grammar = make_epsilon_free_step_2(grammar, goal)
     start = start_sets(grammar)
 
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
