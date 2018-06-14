@@ -635,8 +635,16 @@ def generate_parser(out, grammar, goal):
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
-                raise ValueError("shift-reduce conflict when looking at {!r} after {}"
-                                 .format(t, production_to_str(grammar, nt, rhs)))
+                assert t in follow[nt]
+                raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
+                                 "can't decide whether to shift into:\n"
+                                 "    {}\n"
+                                 "or reduce using:\n"
+                                 "    {}\n"
+                                 .format(rhs_to_str(grammar, rhs),
+                                         element_to_str(grammar, t),
+                                         state_to_str(grammar, prods, next(iter(shift_states[t]))),
+                                         production_to_str(grammar, nt, rhs)))
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
