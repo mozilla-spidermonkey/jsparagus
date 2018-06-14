@@ -612,7 +612,28 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("funny: public: x = 0")
         self.assertParse("funny: _ = 0")
 
+    def testForLookahead(self):
+        grammar = {
+            'Stmt': [
+                [';'],
+                ['ForStmt'],
+            ],
+            'ForStmt': [
+                ["for", "(", LookaheadRule(frozenset({"let"}), False),
+                 "Expr", ";", ";", ")", "Stmt"],
+            ],
+            'Expr': [
+                ["0"],
+                ["let"],
+            ],
+        }
+        self.compile(lexer.LexicalGrammar("for ( let ; ) 0"), grammar)
+        self.assertParse("for (0;;) ;")
+        self.assertNoParse("for (let;;) ;", "expected '0', got 'let'")
+
     # XXX to test: combination of lookaheads, ++, +-, -+, --
+    # XXX todo: find an example where lookahead canonicalization matters
+
 
 
 if __name__ == '__main__':

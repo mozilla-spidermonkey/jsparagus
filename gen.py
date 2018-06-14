@@ -386,7 +386,6 @@ def generate_parser(out, grammar, goal):
     def get_state_set_index(s):
         """ Get a number for a set of states, assigning a new number if needed. """
         successors = frozenset(s)
-        assert all(state.lookahead is None for state in successors)
         if successors in visited_state_sets:
             return visited_state_sets[successors]
         else:
@@ -411,15 +410,41 @@ def generate_parser(out, grammar, goal):
         like `name ::= IDENT` when we have `[lookahead not in {IDENT}]`.
 
         Such silly states can exist; but we would only care if it caused
-        get_state_set_index to treat equivalent state-sets as distinct, leading
-        to a combinatorial blow-up. That doesn't happen because we currently
-        never add a state with lookahead to a state-set.
+        get_state_set_index to treat equivalent state-sets as distinct.
+        I haven't seen that happen for any grammar yet.
         """
         state = State(*args, **kwargs)
         _nt, _i, rhs = prods[state.prod_index]
         while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
             state = state._replace(offset=state.offset + 1,
                                    lookahead=lookahead_intersect(state.lookahead, rhs[state.offset]))
+
+        #if state.lookahead is not None:
+        if False:  # this block is disabled for now; see comment
+            # We want equivalent states to be ==, so the following code
+            # canonicalizes lookahead rules, eliminates lookahead rules that
+            # are redundant with the upcoming symbols in the rhs, and
+            # eliminates states that (due to lookahead rules) won't match
+            # anything.
+            #
+            # This sounds good in theory, and it does reduce the number of
+            # States we end up tracking, but I have not found an example where
+            # it reduces the number of runtime "parser states" i.e. state-sets.
+            # So this code is disabled for now.
+
+            expected = seq_start(grammar, start, rhs[state.offset:])
+            if state.lookahead.positive:
+                ok_set = expected & state.lookahead.set
+            else:
+                ok_set = expected - state.lookahead.set
+
+            if len(ok_set) == 0:
+                return None  # this state can't match anything
+            elif ok_set == expected:
+                look = None
+            else:
+                look = LookaheadRule(frozenset(ok_set), True)
+            state = state._replace(lookahead=look)
         return state
 
     def state_set_closure(state_set):
@@ -433,7 +458,6 @@ def generate_parser(out, grammar, goal):
         restrictions.
         """
         closure = set(state_set)
-        assert all(state.lookahead is None for state in closure)
         closure_todo = list(state_set)
         while closure_todo:
             state = closure_todo.pop(0)
@@ -445,7 +469,7 @@ def generate_parser(out, grammar, goal):
                     for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
                         if dest_nt == next_symbol:
                             new_state = make_state(dest_prod_index, 0, state.lookahead)
-                            if new_state not in closure:
+                            if new_state is not None and new_state not in closure:
                                 closure.add(new_state)
                                 closure_todo.append(new_state)
         return closure
@@ -472,7 +496,6 @@ def generate_parser(out, grammar, goal):
         get_state_set_index (a side effect).
         """
         #print("analyzing state set {}".format(state_set_to_str(grammar, current_state_set)))
-        assert all(state.lookahead is None for state in current_state_set)
 
         # Step 1. Visit every state and list what we want to do for each
         # possible next token.
@@ -494,7 +517,8 @@ def generate_parser(out, grammar, goal):
                 if is_terminal(grammar, next_symbol):
                     if lookahead_contains(state.lookahead, next_symbol):
                         next_state = make_state(state.prod_index, offset + 1, None)
-                        shift_states[next_symbol].add(next_state)
+                        if next_state is not None:
+                            shift_states[next_symbol].add(next_state)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (those are preprocessed out of the
@@ -504,7 +528,8 @@ def generate_parser(out, grammar, goal):
                     # We never reduce with a lookahead restriction still active,
                     # so the new state has no lookahead restrictions on it.
                     next_state = make_state(state.prod_index, offset + 1, lookahead=None)
-                    ctn_states[next_symbol].add(next_state)
+                    if next_state is not None:
+                        ctn_states[next_symbol].add(next_state)
             else:
                 if state.lookahead is not None:
                     raise ValueError("invalid grammar: lookahead restriction still active "
@@ -572,13 +597,19 @@ def generate_parser(out, grammar, goal):
                 reductions.append((nt, len(names), fn))
     grammar = expanded_grammar
 
+    start = start_sets(grammar)
+
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
     # Maybe we can just add a check at run time that we exited from the right place in the table...
     follow = follow_sets(grammar, init_nt)
 
     # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
     init_production_index = prods.index((init_nt, 0, [goal]))
-    init_state_set = frozenset({make_state(init_production_index, 0, None)})
+    start_state = make_state(init_production_index, 0, None)
+    if start_state is None:
+        init_state_set = frozenset()
+    else:
+        init_state_set = frozenset({start_state})
 
     # We assign each reachable state set a number, and we keep a list of state
     # sets that have numbers but haven't been analyzed yet. When the list is
