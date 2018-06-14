@@ -222,7 +222,8 @@ def gensym(grammar, nt):
 
 
 def clone_grammar(grammar):
-    return {nt: [prod[:] for prod in prods] for nt, prods in grammar.items()}
+    return {nt: [rhs[:] for rhs in rhs_list]
+            for nt, rhs_list in grammar.items()}
 
 
 EMPTY = "(empty)"
@@ -253,10 +254,10 @@ def start_sets(grammar):
     done = False
     while not done:
         done = True
-        for nt, prods in grammar.items():
+        for nt, rhs_list in grammar.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
-            nt_start = set.union(*[seq_start(grammar, start, prod) for prod in prods])
+            nt_start = set(t for rhs in rhs_list for t in seq_start(grammar, start, rhs))
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -448,9 +449,9 @@ def state_set_to_str(grammar, prods, state_set):
 
 
 def dump_grammar(grammar):
-    for nt, prods in grammar.items():
+    for nt, rhs_list in grammar.items():
         print(nt + " ::=")
-        for rhs in prods:
+        for rhs in rhs_list:
             if rhs:
                 print("   ", rhs_to_str(grammar, rhs))
             else:
@@ -680,6 +681,7 @@ def generate_parser(out, grammar, goal):
                       + ", ".join(names_with_none)
                       + "])")
                 reductions.append((nt, len(names), fn))
+
     grammar = expanded_grammar
 
     grammar = make_epsilon_free_step_2(grammar, goal)
