@@ -71,11 +71,37 @@ def is_terminal(grammar, element):
     return isinstance(element, str) and not is_nt(grammar, element)
 
 
+# Optional elements. These are expanded out before states are calculated,
+# so the core of the algorithm never sees them.
 Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
 
 def is_optional(element):
     return isinstance(element, Optional)
+
+
+# Function application. Function nonterminals are expanded out very early in
+# the process, before states are calculated, so most of the algorithm doesn't
+# see these. They're replaced with gensym names.
+Apply = collections.namedtuple("Apply", "nt args")
+Apply.__doc__ = """\
+Apply(nt, (arg0, arg1, ...)) is a call to a nonterminal that's a function.
+
+Each nonterminal in a grammar is defined by either a list of lists (its
+productions) or a function that returns a list of lists.
+
+To refer to the first kind of nonterminal in a right-hand-side, just use the
+nonterminal's name. To use the second kind, we have to represent a function call
+somehow; for that, use Apply.
+
+The arguments are typically booleans. They can be whatever you want, but each
+function nonterminal gets expanded into a set of productions, one for every
+different argument tuple that is ever passed to it.
+"""
+
+def is_apply(element):
+    """True if `element` smells like apples."""
+    return isinstance(element, Apply)
 
 
 LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
@@ -215,15 +241,78 @@ def check(grammar):
 def gensym(grammar, nt):
     """ Come up with a symbol name that's not already being used in the given grammar. """
     assert is_nt(grammar, nt)
-    while nt in grammar:
-        nt += "_"
-    return nt
+    i = 0
+    sym = nt
+    while sym in grammar:
+        i += 1
+        sym = nt + "_" + str(i)
+    return sym
 
 
 
 def clone_grammar(grammar):
     return {nt: [rhs[:] for rhs in rhs_list]
             for nt, rhs_list in grammar.items()}
+
+
+def expand_function_nonterminals(grammar, goal):
+    """Replace function nonterminals with production lists."""
+
+    # Make dummy entries for everything in the grammar. gensym() needs them.
+    result = {nt: None for nt in grammar}
+
+    assigned_names = {goal: goal}
+    todo = [goal]
+    def expand_element(orig_e):
+        e = orig_e
+        opt = False
+        while is_optional(e):
+            opt = True
+            e = e.inner
+
+        if is_nt(grammar, e):
+            target = e
+        elif is_apply(e):
+            target = e.nt
+        else:
+            return orig_e
+
+        if target not in grammar:
+            raise ValueError("invalid grammar: undefined nonterminal {} used in production {}"
+                             .format(e, production_to_str(grammar, e, rhs)))
+        if is_apply(e) and not callable(grammar[target]):
+            raise ValueError("invalid grammar: {} is not a function, called in production {}"
+                             .format(target, production_to_str(grammar, e, rhs)))
+
+        if e not in assigned_names:
+            if is_apply(e):
+                name = gensym(result, e.nt)
+                result[name] = None  # for the benefit of future gensym calls
+            else:
+                name = e
+            assigned_names[e] = name
+            todo.append(e)
+
+        e = assigned_names[e]
+        if opt:
+            e = Optional(e)
+        return e
+
+    while todo:
+        e = todo.pop(0)
+        name = assigned_names[e]
+        if is_nt(grammar, e):
+            rhs_list = grammar[e]
+        else:
+            assert is_apply(e)
+            rhs_list = grammar[e.nt](*e.args)
+
+        result[name] = [[expand_element(e) for e in rhs] for rhs in rhs_list]
+
+    unreachable_keys = [nt for nt, rhs_list in result.items() if rhs_list is None]
+    for key in unreachable_keys:
+        del result[key]
+    return result
 
 
 EMPTY = "(empty)"
@@ -403,6 +492,8 @@ def make_epsilon_free_step_2(grammar, goal):
 def element_to_str(grammar, e):
     if is_nt(grammar, e):
         return e
+    elif is_apply(e):
+        return "{}[{}]".format(e.nt, ", ".join(repr(arg) for arg in e.args))
     elif is_terminal(grammar, e):
         return '"' + repr(e)[1:-1] + '"'
     elif is_optional(e):
@@ -451,11 +542,14 @@ def state_set_to_str(grammar, prods, state_set):
 def dump_grammar(grammar):
     for nt, rhs_list in grammar.items():
         print(nt + " ::=")
-        for rhs in rhs_list:
-            if rhs:
-                print("   ", rhs_to_str(grammar, rhs))
-            else:
-                print("   [empty]")
+        if callable(rhs_list):
+            print("   ", repr(rhs_list))
+        else:
+            for rhs in rhs_list:
+                if rhs:
+                    print("   ", rhs_to_str(grammar, rhs))
+                else:
+                    print("   [empty]")
         print()
 
 
@@ -651,6 +745,7 @@ def generate_parser(out, grammar, goal):
         ctn_row = {nt: get_state_set_index(ss) for nt, ss in ctn_states.items()}
         return action_row, ctn_row
 
+    grammar = expand_function_nonterminals(grammar, goal)
     check(grammar)
 
     # Add an "init" nonterminal to the grammar. This nt is guaranteed to be

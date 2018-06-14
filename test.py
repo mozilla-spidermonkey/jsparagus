@@ -4,7 +4,7 @@ import gen
 import io, unittest
 import re
 import gen
-from gen import Optional, LookaheadRule
+from gen import Apply, Optional, LookaheadRule
 import lexer
 
 
@@ -719,6 +719,55 @@ class GenTestCase(unittest.TestCase):
         """
 
         self.assertParse(source)
+
+    def testFunctionNt(self):
+        def name(inGenerator):
+            rhs_list = [
+                ["IDENT"]
+            ]
+            if not inGenerator:
+                rhs_list.append(["yield"])
+            return rhs_list
+
+        def stmts(inGenerator):
+            stmt_ = Apply("stmt", (inGenerator,))
+            stmts_ = Apply("stmts", (inGenerator,))
+            return [
+                [stmt_],
+                [stmts_, stmt_],
+            ]
+
+        def stmt(inGenerator):
+            name = Apply("name", (inGenerator,))
+            rhs_list = [
+                [name, "(", ")", ";"],
+                [name, "=", name, ";"],
+            ]
+            if inGenerator:
+                rhs_list.append(["yield", name, ";"]);
+            return rhs_list
+
+        grammar = {
+            'script': [
+                ['def'],
+                ['script', 'def'],
+            ],
+            'def': [
+                ['function', 'IDENT', '(', ')', '{', Apply('stmts', (False,)), '}'],
+                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', (True,)), '}'],
+            ],
+            'stmts': stmts,
+            'stmt': stmt,
+            'name': name,
+        }
+        self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",
+                                          IDENT=r'[A-Za-z]\w*'),
+                     grammar)
+        self.assertParse("function* farm() { cow = pig; yield cow; }")
+        self.assertNoParse("function city() { yield toOncomingTraffic; }",
+                           "expected one of ['(', ';', '='], got 'IDENT'")
+        self.assertNoParse("function* farm() { yield = corn; yield yield; }",
+                           "expected 'IDENT', got '='")
 
 
 if __name__ == '__main__':
