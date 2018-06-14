@@ -547,8 +547,14 @@ def generate_parser(out, grammar, goal):
             if state.offset < len(rhs):
                 next_symbol = rhs[state.offset]
                 if is_nt(grammar, next_symbol):
-                    for dest_prod_index, (dest_nt, _i, _rhs) in enumerate(prods):
-                        if dest_nt == next_symbol:
+                    for dest_prod_index, (dest_nt, _i, rhs) in enumerate(prods):
+                        # We may have rewritten the grammar just a tad since
+                        # `prods` was built. (`prods` has to be built during the
+                        # expansion of optional elements, but the grammar has
+                        # to be modified a bit after that.) So, embarrassingly, we
+                        # must now check that the production we just found is
+                        # still in the grammar. XXX FIXME
+                        if dest_nt == next_symbol and rhs in grammar[next_symbol]:
                             new_state = make_state(dest_prod_index, 0, state.lookahead)
                             if new_state is not None and new_state not in closure:
                                 closure.add(new_state)
