@@ -646,6 +646,79 @@ class GenTestCase(unittest.TestCase):
     # XXX to test: combination of lookaheads, ++, +-, -+, --
     # XXX todo: find an example where lookahead canonicalization matters
 
+    def testHugeExample(self):
+        grammar = {
+         'grammar': [['nt_def_or_blank_line'], ['grammar', 'nt_def_or_blank_line']],
+         'arg': [['sigil', 'NT']],
+         'args': [['arg'], ['args', ',', 'arg']],
+         'definite_sigil': [['~'], ['+']],
+         'exclusion': [['terminal'], ['nonterminal'], ['CHR', 'through', 'CHR']],
+         'exclusion_list': [['exclusion'], ['exclusion_list', 'or', 'exclusion']],
+         'ifdef': [['[', 'definite_sigil', 'NT', ']']],
+         'line_terminator': [['NT'], ['NTALT']],
+         'lookahead_assertion': [['==', 'terminal'],
+                                 ['!=', 'terminal'],
+                                 ['<!', 'NT'],
+                                 ['<!', '{', 'lookahead_exclusions', '}']],
+         'lookahead_exclusion': [['lookahead_exclusion_element'],
+                                 ['lookahead_exclusion',
+                                  'lookahead_exclusion_element']],
+         'lookahead_exclusion_element': [['terminal'], ['no_line_terminator_here']],
+         'lookahead_exclusions': [['lookahead_exclusion'],
+                                  ['lookahead_exclusions', ',', 'lookahead_exclusion']],
+         'no_line_terminator_here': [['[', 'no', 'line_terminator', 'here', ']']],
+         'nonterminal': [['NT'], ['NTCALL', '[', 'args', ']']],
+         'nt_def': [['nt_lhs', 'EQ', 'NL', 'rhs_lines', 'NL'],
+                    ['nt_lhs', 'EQ', 'one', 'of', 'NL', 't_list_lines', 'NL']],
+         'nt_def_or_blank_line': [['NL'], ['nt_def']],
+         'nt_lhs': [['NT'], ['NTCALL', '[', 'params', ']']],
+         'param': [['NT']],
+         'params': [['param'], ['params', ',', 'param']],
+         'rhs': [['symbols'], ['[', 'empty', ']']],
+         'rhs_line': [[Optional(inner='ifdef'), 'rhs', Optional(inner='PRODID'), 'NL'],
+                      ['PROSE', 'NL']],
+         'rhs_lines': [['rhs_line'], ['rhs_lines', 'rhs_line']],
+         'sigil': [['definite_sigil'], ['?']],
+         'symbol': [['terminal'],
+                    ['nonterminal'],
+                    ['nonterminal', '?'],
+                    ['nonterminal', 'but', 'not', 'exclusion'],
+                    ['nonterminal', 'but', 'not', 'one', 'of', 'exclusion_list'],
+                    ['[', 'lookahead', 'lookahead_assertion', ']'],
+                    ['no_line_terminator_here'],
+                    ['WPROSE']],
+         'symbols': [['symbol'], ['symbols', 'symbol']],
+         't_list_line': [['terminal_seq', 'NL']],
+         't_list_lines': [['t_list_line'], ['t_list_lines', 't_list_line']],
+         'terminal': [['T'], ['CHR']],
+         'terminal_seq': [['terminal'], ['terminal_seq', 'terminal']]}
+
+        emu_grammar_lexer = lexer.LexicalGrammar(
+            #   the operators and keywords:
+            "[ ] { } , ~ + ? <! == != but empty here lookahead no not of one or through",
+            NL="\n",
+            EQ=r':+',                           # any number of colons together
+            T=r'`[^` \n]+`|```',                # terminals of the ES grammar, quoted with backticks
+            CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',     # also terminals, denoting control characters
+            NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',   # nonterminals that will be followed by boolean parameters
+            NT=r'(?:uri|[A-Z])\w*',             # nonterminals (also, boolean parameters)
+            NTALT=r'\|[A-Z]\w+\|',              # nonterminals wrapped in vertical bars for no apparent reason
+            PRODID=r'#[A-Za-z]\w*',             # the spec also gives a few productions names
+            PROSE=r'>.*',                       # prose to the end of the line
+            WPROSE=r'\[>[^]]*\]'                # prose wrapped in square brackets
+            )
+
+        self.compile(emu_grammar_lexer, grammar)
+
+        source = """\
+        IdentifierReference[Yield, Await] :
+          Identifier
+          [~Yield] `yield`
+          [~Await] `await`
+
+        """
+
+        self.assertParse(source)
 
 
 if __name__ == '__main__':
