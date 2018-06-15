@@ -5,9 +5,15 @@ import re
 
 class LexicalGrammar:
     def __init__(self, tokens, ignore=r'[ \t]*', **regexps):
+        def token_to_re(token):
+            s = re.escape(token)
+            if s.isalpha():
+                s += r'\b'
+            return s
+
         token_list = sorted(tokens.split(), key=len, reverse=True)
         self.ignore_re = re.compile(ignore)
-        self.token_re = re.compile("|".join(re.escape(token) for token in token_list))
+        self.token_re = re.compile("|".join(token_to_re(token) for token in token_list))
         self.parser_pairs = [(k, re.compile(v)) for k, v in regexps.items()]
 
     def __call__(self, source, filename=None):

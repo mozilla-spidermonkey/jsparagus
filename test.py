@@ -489,9 +489,9 @@ class GenTestCase(unittest.TestCase):
         parse = gen.compile(grammar, 'goal')
         self.assertRaisesRegex(SyntaxError,
                                r"expected 'b', got 'a'",
-                               lambda: parse(tokenize("ab")))
+                               lambda: parse(tokenize("a b")))
         self.assertEqual(
-            parse(tokenize('ba')),
+            parse(tokenize('b a')),
             ('goal', 0, [
                 ('abs', 2, [
                     ('abs', 1, ['b']),
