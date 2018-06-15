@@ -916,31 +916,8 @@ def compile(grammar, goal):
 def main():
     grammar = example_grammar()
 
-    class Tokens:
-        def __init__(self, space_separated):
-            self.tokens = space_separated.split()
-
-        def peek(self):
-            if len(self.tokens) == 0:
-                return None
-            else:
-                next = self.tokens[0]
-                if next.isdigit():
-                    return "NUM"
-                elif next.isalpha():
-                    return "VAR"
-                elif next in '+-*/()':
-                    return next
-                else:
-                    raise ValueError("unexpected token {!r}".format(next))
-
-        def take(self, k):
-            if k is None:
-                if self.tokens:
-                    raise ValueError("expected end of input")
-            else:
-                assert self.peek() == k
-                return self.tokens.pop(0)
+    import lexer
+    tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'0|[1-9][0-9]*', VAR=r'[_A-Za-z]\w+')
 
     import io
     out = io.StringIO()
@@ -958,9 +935,8 @@ def main():
             line = input('> ')
         except EOFError as _:
             break
-        tokens = Tokens(line)
         try:
-            result = parse(tokens)
+            result = parse(tokenize(line))
         except Exception as exc:
             print(exc.__class__.__name__ + ": " + str(exc))
         else:
