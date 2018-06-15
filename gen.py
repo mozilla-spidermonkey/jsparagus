@@ -36,10 +36,11 @@ from pgen_runtime import ERROR, ACCEPT
 #
 # A grammar is a dictionary mapping nonterminal names to lists of right-hand
 # sides. Each right-hand side (also called a "production") is a list whose
-# elements all pass exactly one of the predicates below.
+# elements can include terminals, nonterminals, Optional elements, LookaheadRules,
+# and Apply elements (function calls).
 #
 # The most common elements are terminals and nonterminals, so a grammar usually
-# looks a lot like this:
+# looks something like this:
 def example_grammar():
     return {
         'expr': [
@@ -63,12 +64,17 @@ def example_grammar():
         ],
     }
 
-def is_nt(grammar, element):
-    return isinstance(element, str) and element in grammar
 
-
+# Terminals are tokens that must appear verbatim in the input wherever they
+# appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
+# in the example grammar.
 def is_terminal(grammar, element):
     return isinstance(element, str) and not is_nt(grammar, element)
+
+
+# Nonterminals refer to other rules.
+def is_nt(grammar, element):
+    return isinstance(element, str) and element in grammar
 
 
 # Optional elements. These are expanded out before states are calculated,
@@ -104,6 +110,7 @@ def is_apply(element):
     return isinstance(element, Apply)
 
 
+# Lookahead restrictions stay with us throughout the algorithm.
 LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
 LookaheadRule.__doc__ = """\
 LookaheadRule(set, pos) imposes a lookahead restriction on whatever follows.
@@ -113,17 +120,28 @@ It never consumes any tokens itself. Instead, the right-hand side
 matches a Thing that does not start with the token `a` or `b`.
 """
 
-
 def is_lookahead_rule(element):
     return isinstance(element, LookaheadRule)
 
 
+# A lookahead restriction really just specifies a set of allowed terminals.
+#
+# -   No lookahead restriction at all is equivalent to a rule specifying all terminals.
+#
+# -   A positive lookahead restriction explicitly lists all allowed tokens.
+#
+# -   A negative lookahead restriction instead specfies the set of all tokens
+#     except a few.
+#
 def lookahead_contains(rule, t):
+    """True if the given lookahead restriction `rule` allows the terminal `t`."""
     return (rule is None
-            or (t in rule.set if rule.positive else t not in rule.set))
+            or (t in rule.set if rule.positive
+                else t not in rule.set))
 
 
 def lookahead_intersect(a, b):
+    """Returns a single rule enforcing both `a` and `b`, allowing only terminals that pass both."""
     if a is None:
         return b
     elif b is None:
