@@ -26,8 +26,8 @@ It's not a bug if it doesn't, but it would be nice to check.
 """
 
 import collections
+import typing
 import pprint
-import textwrap
 import io
 from pgen_runtime import ERROR, ACCEPT
 
@@ -157,6 +157,51 @@ def lookahead_intersect(a, b):
         else:
             return LookaheadRule(a.set | b.set, False)
 
+
+# *** Basic grammar validity **************************************************
+
+def check_valid_grammar(grammar):
+    """Throw if the given grammar is invalid.
+
+    This only checks types. It doesn't check that the grammar is LR, that it's
+    cycle-free, or any other nice properties.
+
+    Normally, good Python style is never to check types but to plow ahead and
+    let the language throw if the caller has erred. Here, the values are quite
+    large, errors are likely, and if we don't check, the eventual TypeError
+    doesn't usefully point to the location of the problem. So we check up front.
+
+    (More justification: it's very sad to throw a bad error message while
+    building a good one or debugging. Passing this predicate means a grammar
+    can be used safely with `dump_grammar`, `rhs_to_str`, and so on.)
+    """
+    if not isinstance(grammar, typing.Mapping):
+        raise TypeError("expected grammar dict, not {!r}".format(type(grammar).__name__))
+    for nt, rhs_list_or_fn in grammar.items():
+        if not isinstance(nt, str):
+            raise TypeError("invalid grammar: expected string keys, got {!r}".format(nt))
+
+        # A nonterminal maps to either a single function or (more typically) a
+        # list of right-hand sides.  Function nonterminals can't be
+        # type-checked here; we check the result after calling them.
+        if not callable(rhs_list_or_fn):
+            check_valid_rhs_list(nt, rhs_list_or_fn)
+
+def check_valid_rhs_list(nt, rhs_list):
+    if not isinstance(rhs_list, typing.Iterable):
+        raise TypeError("invalid grammar: grammar[{!r}] should be a list of productions, not {!r}"
+                        .format(nt, type(rhs_list).__name__))
+    for i, rhs in enumerate(rhs_list):
+        if not isinstance(rhs, typing.Iterable):
+            raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
+                            .format(nt, i, type(rhs).__name__))
+        for e in rhs:
+            if not isinstance(e, (str, Optional, LookaheadRule, Apply)):
+                raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}]`: {!r}"
+                                .format(nt, i, e))
+
+
+# *** Operations on grammars **************************************************
 
 def fix(f, start):
     """Compute the least fix point of `f`, the hard way, starting from `start`."""
@@ -324,6 +369,7 @@ def expand_function_nonterminals(grammar, goal):
         else:
             assert is_apply(e)
             rhs_list = grammar[e.nt](*e.args)
+            check_valid_rhs_list("{}{!r}".format(e.nt, e.args), rhs_list)
 
         result[name] = [[expand_element(e) for e in rhs] for rhs in rhs_list]
 
@@ -762,6 +808,10 @@ def generate_parser(out, grammar, goal):
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
         ctn_row = {nt: get_state_set_index(ss) for nt, ss in ctn_states.items()}
         return action_row, ctn_row
+
+
+    # First we merely check the types.
+    check_valid_grammar(grammar)
 
     grammar = expand_function_nonterminals(grammar, goal)
     check(grammar)
