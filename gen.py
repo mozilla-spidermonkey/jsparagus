@@ -700,6 +700,17 @@ def state_set_to_str(grammar, prods, state_set):
 # to refer to sets of these (which we call "state-sets").
 State = collections.namedtuple("State", "prod_index offset lookahead")
 
+
+def write_parser(out, actions, ctns, reductions):
+    out.write("import pgen_runtime\n\n")
+    out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
+    out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
+    out.write("reductions = [\n{}]\n\n"
+              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
+                              for nt, length, reducer in reductions)))
+    out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
+
+
 def generate_parser(out, grammar, goal):
     def get_state_set_index(s):
         """ Get a number for a set of states, assigning a new number if needed. """
@@ -971,15 +982,7 @@ def generate_parser(out, grammar, goal):
         actions.append(action_row)
         ctns.append(ctn_row)
 
-
-    # Write the parser.
-    out.write("import pgen_runtime\n\n")
-    out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
-    out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
-    out.write("reductions = [\n{}]\n\n"
-              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
-                              for nt, length, reducer in reductions)))
-    out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
+    write_parser(out, actions, ctns, reductions)
 
 
 def compile(grammar, goal):
