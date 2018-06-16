@@ -378,6 +378,8 @@ def expand_function_nonterminals(grammar, goal):
     return result
 
 
+# *** Start sets and follow sets **********************************************
+
 EMPTY = "(empty)"
 END = None
 
