@@ -301,6 +301,11 @@ def check(grammar):
                                      production_to_str(grammar, nt, rhs_with_options))
 
 
+def clone_grammar(grammar):
+    return {nt: [rhs[:] for rhs in rhs_list]
+            for nt, rhs_list in grammar.items()}
+
+
 def gensym(grammar, nt):
     """ Come up with a symbol name that's not already being used in the given grammar. """
     assert is_nt(grammar, nt)
@@ -310,12 +315,6 @@ def gensym(grammar, nt):
         i += 1
         sym = nt + "_" + str(i)
     return sym
-
-
-
-def clone_grammar(grammar):
-    return {nt: [rhs[:] for rhs in rhs_list]
-            for nt, rhs_list in grammar.items()}
 
 
 def expand_function_nonterminals(grammar, goal):
