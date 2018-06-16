@@ -582,6 +582,20 @@ def production_to_str(grammar, nt, rhs):
     return "{} ::= {}".format(nt, rhs_to_str(grammar, rhs))
 
 
+def dump_grammar(grammar):
+    for nt, rhs_list in grammar.items():
+        print(nt + " ::=")
+        if callable(rhs_list):
+            print("   ", repr(rhs_list))
+        else:
+            for rhs in rhs_list:
+                if rhs:
+                    print("   ", rhs_to_str(grammar, rhs))
+                else:
+                    print("   [empty]")
+        print()
+
+
 def state_to_str(grammar, prods, state):
     nt, _i, rhs = prods[state.prod_index]
     if state.lookahead is None:
@@ -603,22 +617,87 @@ def state_set_to_str(grammar, prods, state_set):
     )
 
 
-def dump_grammar(grammar):
-    for nt, rhs_list in grammar.items():
-        print(nt + " ::=")
-        if callable(rhs_list):
-            print("   ", repr(rhs_list))
-        else:
-            for rhs in rhs_list:
-                if rhs:
-                    print("   ", rhs_to_str(grammar, rhs))
-                else:
-                    print("   [empty]")
-        print()
-
-
 # *** Parser generation *******************************************************
 
+# ## LR parsers: Why?
+#
+# Consider a single production `expr ::= expr "+" term` being parsed in a
+# recursive descent parser. As we read the source left to right, our parser's
+# internal state looks like this (marking our place with a dot):
+#
+#     expr ::= · expr "+" term
+#     expr ::= expr · "+" term
+#     expr ::= expr "+" · term
+#     expr ::= expr "+" term ·
+#
+# As we go, we build an AST. First we parse an *expr* and temporarily set it
+# aside. Then we expect to see a `+` operator. Then we parse a *term*. Then,
+# having got to the end, we create an AST node for the whole addition
+# expression.
+#
+# Since the grammar is nested, we really have a stack of these intermediate
+# states.
+#
+# But how do we decide which production we should be matching? Often the first
+# token just tells us: the `switch` keyword means there's a `switch` statement
+# coming up. Grammars in which this is always the case are called LL(1). But
+# while it's possible to wrangle *most* of the ES grammar into an LL(1) form,
+# not everything works out. For example, here's the ES assignment syntax (much
+# simplified):
+#
+#     assignment ::= sum
+#     assignment ::= primitive "=" assignment
+#     sum ::= primitive
+#     sum ::= sum "+" primitive
+#     primitive ::= VAR
+#
+# Note that the bogus assignment `a + b = c` doesn't parse because `a + b`
+# isn't a primitive.
+#
+# Suppose we want to parse an expression, and the first token is `a`. We don't
+# know yet which *assignment* production matches. So this grammar is not in
+# LL(1).
+#
+#
+# ## LR parsers: How
+#
+# An LR parser generator allows for a *superposition* of states.
+# As we read `a = b + c`, our parser's internal state is like this
+# (eliding a few steps, like how we recognize that `a` is a primitive):
+#
+#     current point in input  superposed parser states
+#     ----------------------  ------------------------
+#     · a = b + c             assignment ::= · sum
+#                             assignment ::= · primitive "=" assignment
+#
+#       (Then, after recognizing that `a` is a *primitive*...)
+#
+#     a · = b + c             sum ::= primitive ·
+#                             assignment ::= primitive · "=" assignment
+#
+#       (The next token, `=`, rules out the first alternative,
+#       collapsing the waveform...)
+#
+#     a = · b + c             assignment ::= primitive "=" · assignment
+#
+#       (After recognizing that `b` is a primitive, we again have options:)
+#
+#     a = b · + c             sum ::= primitive ·
+#                             assignment ::= primitive · "=" assignment
+#
+# And so on. (It is not meant to be clear yet just *how* the parser knows which
+# rules might match.)
+#
+# Since the grammar is nested, we really have a stack of these parser state
+# superpositions.
+#
+# The uncertainty in LR parsing means that code for an LR parser written by
+# hand, in the style of recursive descent, would read like gibberish. What we
+# can do instead is generate a parser table.
+
+# A State tracks progress through a single specific production.
+# It's a bad name since the literature calls this an "LR item" and uses "state"
+# to refer to sets of these (which we call "state-sets").
 State = collections.namedtuple("State", "prod_index offset lookahead")
 
 def generate_parser(out, grammar, goal):
