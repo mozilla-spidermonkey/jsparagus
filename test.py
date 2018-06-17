@@ -765,10 +765,33 @@ class GenTestCase(unittest.TestCase):
                      grammar)
         self.assertParse("function* farm() { cow = pig; yield cow; }")
         self.assertNoParse("function city() { yield toOncomingTraffic; }",
-                           "expected one of ['(', ';', '='], got 'IDENT'")
+                           "expected one of ['(', '='], got 'IDENT'")
         self.assertNoParse("function* farm() { yield = corn; yield yield; }",
                            "expected 'IDENT', got '='")
 
+    def testCanonicalLR(self):
+        """Example 4.39 (grammar 4.20) from the book."""
+
+        # Modified as marked below
+        grammar = {
+            "S": [
+                ["L", "=", "R"],
+                ["R"],
+            ],
+            "L": [
+                ["*", "R"],
+                ["id"],
+            ],
+            "R": [
+                ["L"],
+                ["7"], # added so we can have a negative test, showing R = R is not an S
+            ],
+        }
+        self.compile(lexer.LexicalGrammar("id = * 7"), grammar)
+        self.assertParse("id = *id")
+        self.assertParse("*id = id")
+        self.assertParse("id = 7")
+        self.assertNoParse("7 = id", "expected 'end of input', got '='")
 
 if __name__ == '__main__':
     unittest.main()

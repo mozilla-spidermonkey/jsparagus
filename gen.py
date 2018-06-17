@@ -603,12 +603,13 @@ def state_to_str(grammar, prods, state):
         la = []
     else:
         la = [element_to_str(grammar, state.lookahead)]
-    return "{} ::= {}".format(
+    return "{} ::= {} >> {}".format(
         nt,
         " ".join([element_to_str(grammar, e) for e in rhs[:state.offset]]
                  + ["\N{MIDDLE DOT}"]
                  + la
-                 + [element_to_str(grammar, e) for e in rhs[state.offset:]])
+                 + [element_to_str(grammar, e) for e in rhs[state.offset:]]),
+        "$" if state.followed_by is None else element_to_str(grammar, state.followed_by)
     )
 
 
@@ -699,7 +700,24 @@ def state_set_to_str(grammar, prods, state_set):
 # A State tracks progress through a single specific production.
 # It's a bad name since the literature calls this an "LR item" and uses "state"
 # to refer to sets of these (which we call "state-sets").
-State = collections.namedtuple("State", "prod_index offset lookahead")
+#
+# Speaking of unfortunate naming: `lookahead` and `followed_by` are two totally
+# different kinds of lookahead.
+#
+# *   `lookahead` is the LookaheadRule, if any, that applies to the immediately
+#     upcoming input. It is present only if this State is subject to a
+#     `[lookahead]` restriction; otherwise it's None. These restrictions can't
+#     extend beyond the end of a production, or else the grammar is invalid.
+#     This is a hack and not part of any account of LR I've seen.
+#
+# *   `followed_by` is a completely different kind of lookahead restriction.
+#     This is the kind of lookahead that is a central part of canonical LR
+#     table generation.  It applies to the token *after* the whole current
+#     production, so `followed_by` always applies to completely different and
+#     later tokens than `lookahead`.  `followed_by` is a single terminal;
+#     `None` means `END`, not that the State is unrestricted.
+#
+State = collections.namedtuple("State", "prod_index offset lookahead followed_by")
 
 
 def write_parser(out, actions, ctns, reductions):
@@ -777,6 +795,19 @@ def generate_parser(out, grammar, goal):
             state = state._replace(lookahead=look)
         return state
 
+    def specific_follow(grammar, start, rhs, offset, followed_by):
+        """Return the set of tokens that might appear after the nonterminal rhs[offset],
+        given that after `rhs` the next token will be exactly `followed_by`.
+        """
+
+        # First, which tokens might follow rhs[offset] *within* the rest of rhs?
+        result = seq_start(grammar, start, rhs[offset+1:])
+        if EMPTY in result:
+            # The rest of rhs might be empty, so we might also see `followed_by`.
+            result.remove(EMPTY)
+            result.add(followed_by)
+        return result
+
     def state_set_closure(state_set):
         """Compute transitive closure of the given state set under left-calls.
 
@@ -796,18 +827,25 @@ def generate_parser(out, grammar, goal):
             if state.offset < len(rhs):
                 next_symbol = rhs[state.offset]
                 if is_nt(grammar, next_symbol):
-                    for dest_prod_index, (dest_nt, _i, rhs) in enumerate(prods):
+                    # Step in to each production for this nt.
+                    for dest_prod_index, (dest_nt, _i, callee_rhs) in enumerate(prods):
                         # We may have rewritten the grammar just a tad since
                         # `prods` was built. (`prods` has to be built during the
                         # expansion of optional elements, but the grammar has
                         # to be modified a bit after that.) So, embarrassingly, we
                         # must now check that the production we just found is
                         # still in the grammar. XXX FIXME
-                        if dest_nt == next_symbol and rhs in grammar[next_symbol]:
-                            new_state = make_state(dest_prod_index, 0, state.lookahead)
-                            if new_state is not None and new_state not in closure:
-                                closure.add(new_state)
-                                closure_todo.append(new_state)
+                        if dest_nt == next_symbol and callee_rhs in grammar[next_symbol]:
+                            ## print("    Considering stepping from state {} into production {}"
+                            ##       .format(state_to_str(grammar, prods, state),
+                            ##               production_to_str(grammar, dest_nt, callee_rhs)))
+                            for followed_by in specific_follow(grammar, start, rhs, state.offset,
+                                                               state.followed_by):
+                                new_state = make_state(dest_prod_index, 0, state.lookahead,
+                                                       followed_by)
+                                if new_state is not None and new_state not in closure:
+                                    closure.add(new_state)
+                                    closure_todo.append(new_state)
         return closure
 
     def raise_reduce_reduce_conflict(t, i, j):
@@ -832,7 +870,8 @@ def generate_parser(out, grammar, goal):
         get_state_set_index (a side effect).
         """
 
-        #print("analyzing state set {}".format(state_set_to_str(grammar, current_state_set)))
+        #print("analyzing state set {}".format(state_set_to_str(grammar, prods, current_state_set)))
+        #print("  closure: {}".format(state_set_to_str(grammar, prods, state_set_closure(current_state_set))))
 
         # Step 1. Visit every state and list what we want to do for each
         # possible next token.
@@ -853,26 +892,31 @@ def generate_parser(out, grammar, goal):
                 next_symbol = rhs[offset]
                 if is_terminal(grammar, next_symbol):
                     if lookahead_contains(state.lookahead, next_symbol):
-                        next_state = make_state(state.prod_index, offset + 1, None)
+                        next_state = make_state(state.prod_index, offset + 1, None, state.followed_by)
                         if next_state is not None:
                             shift_states[next_symbol].add(next_state)
                 else:
                     # The next element is always a terminal or nonterminal,
-                    # never an Optional (those are preprocessed out of the
-                    # grammar) or a LookaheadRule (see make_state).
+                    # never an Optional or Apply (those are preprocessed out of
+                    # the grammar) or LookaheadRule (see make_state).
                     assert is_nt(grammar, next_symbol)
 
-                    # We never reduce with a lookahead restriction still active,
-                    # so the new state has no lookahead restrictions on it.
-                    next_state = make_state(state.prod_index, offset + 1, lookahead=None)
+                    # We never reduce with a lookahead restriction still
+                    # active, so `lookahead=None` is appropriate.
+                    next_state = make_state(state.prod_index, offset + 1,
+                                            lookahead=None,
+                                            followed_by=state.followed_by)
                     if next_state is not None:
                         ctn_states[next_symbol].add(next_state)
             else:
                 if state.lookahead is not None:
+                    # I think we could improve on this with canonical LR.
+                    # The simplification in LALR might make it too weird though.
                     raise ValueError("invalid grammar: lookahead restriction still active "
                                      "at end of production " +
                                      production_to_str(grammar, nt, rhs))
-                for t in follow[nt]:
+                t = state.followed_by
+                if t in follow[nt]:
                     if t in reduce_prods:
                         raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
                     reduce_prods[t] = state.prod_index
@@ -961,7 +1005,7 @@ def generate_parser(out, grammar, goal):
 
     # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
     init_production_index = prods.index((init_nt, 0, [goal]))
-    start_state = make_state(init_production_index, 0, None)
+    start_state = make_state(init_production_index, 0, lookahead=None, followed_by=END)
     if start_state is None:
         init_state_set = frozenset()
     else:
