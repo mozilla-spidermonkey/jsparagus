@@ -138,14 +138,21 @@ And the result of parsing the input `2 * ( x + y )` looks like this:
 
 It's *all* limitations, but I'll try to list the ones that are relevant to parsing JS.
 
-*   No nonterminal in the input grammar can match the empty string.
-    (JS nonterminals that can be empty include
-    *Script*, *Module*, *FormalParameters*, and *FunctionStatementList*;
-    and some lexical rules.)
+*   Lookahead assertions are limited to one token. (The JS grammar contains an occasional
+    ``[lookahead != `let [`]``
+    and even
+    ``[lookahead != `async [no LineTerminator here] function`]``.)
 
-*   The grammar must be in SLR(1).
+*   No support for any kind of dangling `else` workaround.
 
 *   Kleene `?` is supported, but no Kleene `*`.
+
+*   There is nothing like the level of weirdness that would be needed to
+    implement automatic semicolon insertion and restricted productions
+    ("`[no LineTerminator here]`").
+
+    I have talked this over with @jimblandy and it's possible.
+    It just requires some seriously special hacks.
 
 *   The input grammar can't contain actions (code to execute while parsing,
     useful for building a nice AST;
@@ -154,25 +161,17 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 
 *   The output is a fairly literal-minded parse tree, really too literal.
 
-Minor items:
+*   No support for feedback from syntactic context to lexical analysis
+    (selecting the lexical goal symbol).
 
 *   Only supports a single goal nonterminal.
+
+    I think this might be easy to fix, though.
 
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `)` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `a b` produces "expected one of {'-', '/', '+', '*', ')', None}, got 'VAR'".
-
-*   No support for the JS parsing curiosities:
-
-    *   feedback from syntactic context to lexical analysis
-        (selecting the lexical goal symbol)
-
-    *   boolean parameterization of nonterminals (`[Yield]` and such)
-    
-    *   automatic semicolon insertion and "[no LineTerminal here]"
-
-    *   dangling `else`
 
 
 ## What I learned, what I wonder
