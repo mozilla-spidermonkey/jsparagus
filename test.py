@@ -793,5 +793,31 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("id = 7")
         self.assertNoParse("7 = id", "expected 'end of input', got '='")
 
+    def testLookaheadWithCanonicalLR(self):
+        """Only a lookahead assertion makes this grammar unambiguous."""
+        tokenize = lexer.LexicalGrammar("async => { } ;", Identifier=r'\w+')
+        grammar = {
+            "script": [
+                ["Expression", ";"],
+            ],
+            "Expression": [
+                ["PrimaryExpression"],
+                ["async", "Identifier", "=>", "AsyncConciseBody"],
+            ],
+            "AsyncConciseBody": [
+                [LookaheadRule(set=frozenset(["{"]), positive=False), "Expression"],
+                ["{", "}"],
+            ],
+            "PrimaryExpression": [
+                ["{", "}"],
+            ],
+        }
+
+        self.compile(tokenize, grammar)
+        self.assertParse("{};")
+        self.assertParse("async x => {};");
+        self.assertParse("async x => async y => {};");
+
+
 if __name__ == '__main__':
     unittest.main()
