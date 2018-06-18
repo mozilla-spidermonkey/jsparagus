@@ -1,0 +1,38 @@
+# Grammar for the pgen parser specification language
+#
+# This was used to bootstrap the parser for the emu-grammar parser
+# specification language, and it's not clear why we should have two things.
+# Ignore this for now.
+
+nt grammar {
+    nt_def;
+    grammar nt_def;
+}
+
+nt nt_def {
+    "nt" IDENT "{" prods? "}";
+}
+
+nt prods {
+    prod;
+    prods prod;
+}
+
+nt prod {
+    terms ";";
+}
+
+nt terms {
+    term;
+    terms term;
+}
+
+nt term {
+    symbol;
+    symbol "?";
+}
+
+nt symbol {
+    IDENT;
+    STR;
+}

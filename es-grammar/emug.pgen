@@ -1,0 +1,150 @@
+# Grammar for ECMArkup grammar descriptions
+
+nt grammar {
+    nt_def_or_blank_line;
+    grammar nt_def_or_blank_line;
+}
+
+nt nt_def_or_blank_line {
+    NL;
+    nt_def;
+}
+
+nt nt_def {
+    nt_lhs EQ NL rhs_lines NL;
+    nt_lhs EQ "one" "of" NL t_list_lines NL;
+}
+
+nt nt_lhs {
+    NT;
+    NTCALL "[" params "]";
+}
+
+nt params {
+    param;
+    params "," param;
+}
+
+nt param {
+    NT;
+}
+
+nt t_list_lines {
+    t_list_line;
+    t_list_lines t_list_line;
+}
+
+nt t_list_line {
+    terminal_seq NL;
+}
+
+nt terminal_seq {
+    terminal;
+    terminal_seq terminal;
+}
+
+nt terminal {
+    T;
+    CHR;
+}
+
+nt rhs_lines {
+    rhs_line;
+    rhs_lines rhs_line;
+}
+
+nt rhs_line {
+    ifdef? rhs PRODID? NL;
+    PROSE NL;
+}
+
+nt rhs {
+    symbols;
+    "[" "empty" "]";
+}
+
+nt ifdef {
+   "[" definite_sigil NT "]";
+}
+
+nt symbols {
+    symbol;
+    symbols symbol;
+}
+
+nt symbol {
+    terminal;
+    nonterminal;
+    nonterminal "?";
+    nonterminal "but" "not" exclusion;
+    nonterminal "but" "not" "one" "of" exclusion_list;
+    "[" "lookahead" lookahead_assertion "]";
+    no_line_terminator_here;
+    WPROSE;
+}
+
+nt no_line_terminator_here {
+    "[" "no" line_terminator "here" "]";
+}
+
+nt nonterminal {
+    NT;
+    NTCALL "[" args "]";
+}
+
+nt args {
+    arg;
+    args "," arg;
+}
+
+nt arg {
+    sigil NT;
+}
+
+nt sigil {
+    definite_sigil;
+    "?";
+}
+
+nt definite_sigil {
+    "~";
+    "+";
+}
+
+nt exclusion_list {
+    exclusion;
+    exclusion_list "or" exclusion;
+}
+
+nt exclusion {
+    terminal;
+    nonterminal;
+    CHR "through" CHR;
+}
+
+nt lookahead_assertion {
+    "==" terminal;
+    "!=" terminal;
+    "<!" NT;
+    "<!" "{" lookahead_exclusions "}";
+}
+
+nt lookahead_exclusions {
+    lookahead_exclusion;
+    lookahead_exclusions "," lookahead_exclusion;
+}
+
+nt lookahead_exclusion {
+    lookahead_exclusion_element;
+    lookahead_exclusion lookahead_exclusion_element;
+}
+
+nt lookahead_exclusion_element {
+    terminal;
+    no_line_terminator_here;
+}
+
+nt line_terminator {
+    NT;
+    NTALT;
+}
