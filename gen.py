@@ -3,11 +3,14 @@
 """gen.py - Fifth stab at a parser generator.
 
 **Nature of a grammar.**
-A grammar is a dictionary {str: [[symbol]]} mapping names of nonterminals to lists of productions.
-A production is a nonempty list of symbols.
-Each symbol specifies either a kind of terminal or a nonterminal (by name).
+A grammar is a dictionary {str: [[symbol]]} mapping names of nonterminals to
+lists of right-hand sides. Each right-hand side is a list of symbols. There
+are several kinds of symbols; read the comments to learn more.
 
-**Context of the generated parser.**
+Instead of a list of right-hand sides, the value of a grammar entry may be a
+function; see gen.Apply for details.
+
+**Token streams.**
 The user passes to each method an object representing the input sequence.
 This object must support two methods:
 
@@ -18,11 +21,7 @@ This object must support two methods:
     The special case `src.take(None)` checks that the input stream is empty:
     if so, it returns None; if not, it throws.
 
-**Simplifying assumptions about the grammar.**
-No productions may be empty. Empty productions would complicate table generation.
-
-We assume that every nonterminal matches at least one string of finite length.
-It's not a bug if it doesn't, but it would be nice to check.
+For very basic needs, see `lexer.LexicalGrammar`.
 """
 
 import collections
