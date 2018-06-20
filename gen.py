@@ -818,9 +818,9 @@ def generate_parser(out, grammar, goal):
         restrictions.
         """
         closure = set(state_set)
-        closure_todo = list(state_set)
+        closure_todo = collections.deque(state_set)
         while closure_todo:
-            state = closure_todo.pop(0)
+            state = closure_todo.popleft()
             assert isinstance(state, State)
             _nt, _i, rhs = prods[state.prod_index]
             if state.offset < len(rhs):
