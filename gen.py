@@ -439,7 +439,7 @@ def seq_start(grammar, start, seq):
     return s
 
 
-def follow_sets(grammar, goal):
+def follow_sets(grammar, prods_with_indexes_by_nt, goal):
     """Compute all follow sets for nonterminals in a grammar.
 
     The follow set for a nonterminal `A`, as defined in the book, is "the set
@@ -479,11 +479,11 @@ def follow_sets(grammar, goal):
         if nt in visited:
             return
         visited.add(nt)
-        for prod in grammar[nt]:
-            for i, symbol in enumerate(prod):
+        for prod_index, rhs in prods_with_indexes_by_nt[nt]:
+            for i, symbol in enumerate(rhs):
                 if is_nt(grammar, symbol):
                     visit(symbol)
-                    after = seq_start(grammar, start, prod[i + 1:])
+                    after = seq_start(grammar, start, rhs[i + 1:])
                     if EMPTY in after:
                         after.remove(EMPTY)
                         subsumes_relation.add((symbol, nt))
@@ -827,14 +827,14 @@ def generate_parser(out, grammar, goal):
                 next_symbol = rhs[state.offset]
                 if is_nt(grammar, next_symbol):
                     # Step in to each production for this nt.
-                    for dest_prod_index, (dest_nt, _i, callee_rhs) in enumerate(prods):
+                    for dest_prod_index, callee_rhs in prods_with_indexes_by_nt[next_symbol]:
                         # We may have rewritten the grammar just a tad since
                         # `prods` was built. (`prods` has to be built during the
                         # expansion of optional elements, but the grammar has
                         # to be modified a bit after that.) So, embarrassingly, we
                         # must now check that the production we just found is
                         # still in the grammar. XXX FIXME
-                        if dest_nt == next_symbol and callee_rhs in grammar[next_symbol]:
+                        if callee_rhs or callee_rhs in grammar[next_symbol]:
                             ## print("    Considering stepping from state {} into production {}"
                             ##       .format(state_to_str(grammar, prods, state),
                             ##               production_to_str(grammar, dest_nt, callee_rhs)))
@@ -971,6 +971,7 @@ def generate_parser(out, grammar, goal):
     # Put all the productions in one big list, so each one has an index.
     # We will use the indices in the action table (as arguments to Reduce actions).
     prods = []
+    prods_with_indexes_by_nt = collections.defaultdict(list)
 
     # We'll use these tuples at run time when constructing AST nodes.
     reductions = []
@@ -980,6 +981,7 @@ def generate_parser(out, grammar, goal):
             for expanded_rhs, removals in expand_optional_symbols(rhs):
                 expanded_grammar[nt].append(expanded_rhs)
                 prods.append((nt, prod_index, expanded_rhs))
+                prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
                 names = ["x" + str(i)
                          for i, e in enumerate(expanded_rhs)
                          if is_terminal(grammar, e) or is_nt(grammar, e)]
@@ -1000,7 +1002,7 @@ def generate_parser(out, grammar, goal):
 
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
     # Maybe we can just add a check at run time that we exited from the right place in the table...
-    follow = follow_sets(grammar, init_nt)
+    follow = follow_sets(grammar, prods_with_indexes_by_nt, init_nt)
 
     # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
     init_production_index = prods.index((init_nt, 0, [goal]))
