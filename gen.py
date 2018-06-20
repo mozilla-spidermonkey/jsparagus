@@ -410,7 +410,7 @@ def start_sets(grammar):
         for nt, rhs_list in grammar.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
-            nt_start = set(t for rhs in rhs_list for t in seq_start(grammar, start, rhs))
+            nt_start = frozenset(t for rhs in rhs_list for t in seq_start(grammar, start, rhs))
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -436,10 +436,45 @@ def seq_start(grammar, start, seq):
             else:
                 future -= e.set
             return future
-    return s
+    return frozenset(s)
 
 
-def follow_sets(grammar, prods_with_indexes_by_nt, goal):
+def make_start_set_cache(grammar, prods, start):
+    """Compute start sets for all suffixes of productions in the grammar.
+
+    Returns a list of lists `cache` such that
+    `cache[n][i] == seq_start(grammar, start, prods[n][i:])`.
+
+    (The cache is for speed, since seq_start was being called millions of times.)
+    """
+    start = start_sets(grammar)
+
+    def suffix_start_list(rhs):
+        sets = [frozenset([EMPTY])]
+        for e in reversed(rhs):
+            if is_terminal(grammar, e):
+                s = frozenset([e])
+            elif is_nt(grammar, e):
+                s = start[e]
+                if EMPTY in s:
+                    s = frozenset((s - {EMPTY}) | sets[-1])
+            else:
+                assert is_lookahead_rule(e)
+                if e.positive:
+                    s = frozenset(sets[-1] & e.set)
+                else:
+                    s = frozenset(sets[-1] - e.set)
+            assert isinstance(s, frozenset)
+            assert s == seq_start(grammar, start, rhs[len(rhs) - len(sets):])
+            sets.append(s)
+        sets.reverse()
+        assert sets == [seq_start(grammar, start, rhs[i:]) for i in range(len(rhs) + 1)]
+        return sets
+
+    return [suffix_start_list(rhs) for _nt, _i, rhs in prods]
+
+
+def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, goal):
     """Compute all follow sets for nonterminals in a grammar.
 
     The follow set for a nonterminal `A`, as defined in the book, is "the set
@@ -453,8 +488,6 @@ def follow_sets(grammar, prods_with_indexes_by_nt, goal):
 
     Returns a default-dictionary mapping nts to follow sets.
     """
-
-    start = start_sets(grammar)
 
     # Set of nonterminals already seen, including those we are in the middle of
     # analyzing. The algorithm starts at `goal` and walks all reachable
@@ -483,9 +516,9 @@ def follow_sets(grammar, prods_with_indexes_by_nt, goal):
             for i, symbol in enumerate(rhs):
                 if is_nt(grammar, symbol):
                     visit(symbol)
-                    after = seq_start(grammar, start, rhs[i + 1:])
+                    after = start_set_cache[prod_index][i + 1]
                     if EMPTY in after:
-                        after.remove(EMPTY)
+                        after -= {EMPTY}
                         subsumes_relation.add((symbol, nt))
                     follow[symbol] |= after
 
@@ -794,15 +827,16 @@ def generate_parser(out, grammar, goal):
             state = state._replace(lookahead=look)
         return state
 
-    def specific_follow(grammar, start, rhs, offset, followed_by):
+    def specific_follow(grammar, start_set_cache, prod_id, offset, followed_by):
         """Return the set of tokens that might appear after the nonterminal rhs[offset],
         given that after `rhs` the next token will be exactly `followed_by`.
         """
 
         # First, which tokens might follow rhs[offset] *within* the rest of rhs?
-        result = seq_start(grammar, start, rhs[offset+1:])
+        result = start_set_cache[prod_id][offset+1]
         if EMPTY in result:
             # The rest of rhs might be empty, so we might also see `followed_by`.
+            result = set(result)
             result.remove(EMPTY)
             result.add(followed_by)
         return result
@@ -837,8 +871,9 @@ def generate_parser(out, grammar, goal):
                         if callee_rhs or callee_rhs in grammar[next_symbol]:
                             ## print("    Considering stepping from state {} into production {}"
                             ##       .format(state_to_str(grammar, prods, state),
-                            ##               production_to_str(grammar, dest_nt, callee_rhs)))
-                            for followed_by in specific_follow(grammar, start, rhs, state.offset,
+                            ##               production_to_str(grammar, next_symbol, callee_rhs)))
+                            for followed_by in specific_follow(grammar, start_set_cache,
+                                                               state.prod_index, state.offset,
                                                                state.followed_by):
                                 new_state = make_state(dest_prod_index, 0, state.lookahead,
                                                        followed_by)
@@ -999,12 +1034,13 @@ def generate_parser(out, grammar, goal):
 
     grammar = make_epsilon_free_step_2(grammar, goal)
     start = start_sets(grammar)
+    start_set_cache = make_start_set_cache(grammar, prods, start)
 
     # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
     # Maybe we can just add a check at run time that we exited from the right place in the table...
-    follow = follow_sets(grammar, prods_with_indexes_by_nt, init_nt)
+    follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nt)
 
-    # A state set is a (frozen) set of pairs (production_index, offset_into_rhs).
+    # A state set is a (frozen) set of States
     init_production_index = prods.index((init_nt, 0, [goal]))
     start_state = make_state(init_production_index, 0, lookahead=None, followed_by=END)
     if start_state is None:
