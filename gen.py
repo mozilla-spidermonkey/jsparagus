@@ -26,7 +26,6 @@ For very basic needs, see `lexer.LexicalGrammar`.
 
 import collections
 import typing
-import pprint
 import io
 from pgen_runtime import ERROR, ACCEPT
 
@@ -754,8 +753,14 @@ State = collections.namedtuple("State", "prod_index offset lookahead followed_by
 
 def write_parser(out, actions, ctns, reductions):
     out.write("import pgen_runtime\n\n")
-    out.write("actions = {}\n\n".format(pprint.pformat(actions, width=99)))
-    out.write("ctns = {}\n\n".format(pprint.pformat(ctns, width=99)))
+    out.write("actions = [\n")
+    for row in actions:
+        out.write("    " + repr(row) + ",\n")
+    out.write("]\n\n")
+    out.write("ctns = [\n")
+    for row in ctns:
+        out.write("    " + repr(row) + ",\n")
+    out.write("]\n\n")
     out.write("reductions = [\n{}]\n\n"
               .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
                               for nt, length, reducer in reductions)))
