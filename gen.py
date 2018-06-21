@@ -67,12 +67,12 @@ def example_grammar():
 # appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
 # in the example grammar.
 def is_terminal(grammar, element):
-    return isinstance(element, str) and not is_nt(grammar, element)
+    return type(element) is str and not is_nt(grammar, element)
 
 
 # Nonterminals refer to other rules.
 def is_nt(grammar, element):
-    return isinstance(element, str) and element in grammar
+    return type(element) is str and element in grammar
 
 
 # Optional elements. These are expanded out before states are calculated,
@@ -81,7 +81,7 @@ Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
 
 def is_optional(element):
-    return isinstance(element, Optional)
+    return type(element) is Optional
 
 
 # Function application. Function nonterminals are expanded out very early in
@@ -105,7 +105,7 @@ different argument tuple that is ever passed to it.
 
 def is_apply(element):
     """True if `element` smells like apples."""
-    return isinstance(element, Apply)
+    return type(element) is Apply
 
 
 # Lookahead restrictions stay with us throughout the algorithm.
@@ -119,7 +119,7 @@ matches a Thing that does not start with the token `a` or `b`.
 """
 
 def is_lookahead_rule(element):
-    return isinstance(element, LookaheadRule)
+    return type(element) is LookaheadRule
 
 
 # A lookahead restriction really just specifies a set of allowed terminals.
@@ -860,7 +860,6 @@ def generate_parser(out, grammar, goal):
         closure_todo = collections.deque(state_set)
         while closure_todo:
             state = closure_todo.popleft()
-            assert isinstance(state, State)
             _nt, _i, rhs = prods[state.prod_index]
             if state.offset < len(rhs):
                 next_symbol = rhs[state.offset]

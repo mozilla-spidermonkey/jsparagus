@@ -27,10 +27,6 @@ tokenize_emug = LexicalGrammar(
 
 parse_emug = gen.compile(parse_pgen.load_grammar("emug.pgen"), "grammar")
 
-class T(str): pass
-
-class Nt(str): pass
-
 def unroll(ast, list_nt, element_nt):
     x = []
     if ast is not None:
@@ -108,7 +104,7 @@ def postparse_terminal(ast):
     assert len(t) >= 3
     assert t[0] == "`"
     assert t[-1] == "`"
-    return T(t[1:-1])
+    return t[1:-1]
 
 
 def postparse_lookahead_exclusion(ast):
