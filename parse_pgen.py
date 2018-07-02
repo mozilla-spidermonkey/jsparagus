@@ -27,6 +27,10 @@ pgen_grammar = {
 }
 
 class AstBuilder:
+    def __init__(self):
+        self.identifiers_used = set()
+        self.quoted_terminals_used = set()
+
     def grammar_0(self, nt_def): return self.grammar_1({}, nt_def)
     def grammar_1(self, grammar, nt_def):
         nt, prods = nt_def
@@ -54,12 +58,32 @@ class AstBuilder:
         assert q == '?'
         return gen.Optional(sym)
 
-    def symbol_0(self, sym): return sym
+    def symbol_0(self, sym):
+        self.identifiers_used.add(sym)
+        return sym
     def symbol_1(self, sym):
         assert len(sym) > 1
         assert sym[0] == '"'
         assert sym[-1] == '"'
-        return sym[1:-1]  # This is very sloppy.
+        chars = sym[1:-1]  # This is very sloppy.
+        self.quoted_terminals_used.add(sym)
+        return chars
+
+    def check(self, grammar):
+        for t in self.quoted_terminals_used:
+            if t in self.identifiers_used:
+                if t in grammar:
+                    raise ValueError("nonterminal `{}` is also used as a quoted terminal "
+                                     "(sorry, they're not allowed to look the same; rename the nonterminal)"
+                                     .format(t))
+                else:
+                    raise ValueError("nonterminal `{}` is used both quoted and nonquoted; pick one".format(t))
+        for t in self.identifiers_used:
+            if t not in grammar:
+                if not all(c.isupper() or c == '_' for c in t):
+                    print("Warning: symbol `{}` is not defined as a nonterminal in the grammar "
+                          "(if it's a terminal, you can silence this warning by renaming it to SHOUTY_CASE)"
+                          .format(t))
 
 depth=0
 
@@ -82,7 +106,9 @@ def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
     result = parse_pgen_generated.parse(pgen_lexer(text, filename=filename))
-    grammar = postparse(AstBuilder(), result)
+    builder = AstBuilder()
+    grammar = postparse(builder, result)
+    builder.check(grammar)
     return grammar
 
 
