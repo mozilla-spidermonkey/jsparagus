@@ -752,37 +752,16 @@ def state_set_to_str(grammar, prods, state_set):
 State = collections.namedtuple("State", "prod_index offset lookahead followed_by")
 
 
-def write_parser(out, actions, ctns, reductions):
-    out.write("import pgen_runtime\n\n")
-    out.write("actions = [\n")
-    for row in actions:
-        out.write("    " + repr(row) + ",\n")
-    out.write("]\n\n")
-    out.write("ctns = [\n")
-    for row in ctns:
-        out.write("    " + repr(row) + ",\n")
-    out.write("]\n\n")
-    out.write("reductions = [\n{}]\n\n"
-              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
-                              for nt, length, reducer in reductions)))
-    out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
+class PgenContext:
+    """ The immutable part of the parser generator's data. """
+    def __init__(self, grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow):
+        self.grammar = grammar
+        self.prods = prods
+        self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
+        self.start_set_cache = start_set_cache
+        self.follow = follow
 
-
-def generate_parser(out, grammar, goal):
-    def get_state_set_index(s):
-        """ Get a number for a set of states, assigning a new number if needed. """
-        successors = frozenset(s)
-        if successors in visited_state_sets:
-            return visited_state_sets[successors]
-        else:
-            visited_state_sets[successors] = state_index = len(visited_state_sets)
-            ## print("State-set #{} = {}"
-            ##       .format(state_index,
-            ##               state_set_to_str(grammar, prods, state_set_closure(successors))))
-            todo.append(successors)
-            return state_index
-
-    def make_state(*args, **kwargs):
+    def make_state(self, *args, **kwargs):
         """Create a State tuple and advance it past any lookahead rules.
 
         The main algorithm assumes that the "next element" in any State is
@@ -799,6 +778,9 @@ def generate_parser(out, grammar, goal):
         get_state_set_index to treat equivalent state-sets as distinct.
         I haven't seen that happen for any grammar yet.
         """
+        grammar = self.grammar
+        prods = self.prods
+
         state = State(*args, **kwargs)
         _nt, _i, rhs = prods[state.prod_index]
         while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
@@ -833,32 +815,72 @@ def generate_parser(out, grammar, goal):
             state = state._replace(lookahead=look)
         return state
 
-    def specific_follow(grammar, start_set_cache, prod_id, offset, followed_by):
-        """Return the set of tokens that might appear after the nonterminal rhs[offset],
-        given that after `rhs` the next token will be exactly `followed_by`.
-        """
+    def raise_reduce_reduce_conflict(self, t, i, j):
+        nt1, _, rhs1 = self.prods[i]
+        nt2, _, rhs2 = self.prods[j]
 
-        # First, which tokens might follow rhs[offset] *within* the rest of rhs?
-        result = start_set_cache[prod_id][offset+1]
-        if EMPTY in result:
-            # The rest of rhs might be empty, so we might also see `followed_by`.
-            result = set(result)
-            result.remove(EMPTY)
-            result.add(followed_by)
-        return result
+        raise ValueError(
+            "reduce-reduce conflict when looking at {!r} "
+            "after input matching both:\n"
+            "    {}\n"
+            "and:\n"
+            "    {}\n"
+            .format(t,
+                    production_to_str(self.grammar, nt1, rhs1),
+                    production_to_str(self.grammar, nt2, rhs2)))
 
-    def state_set_closure(state_set):
-        """Compute transitive closure of the given state set under left-calls.
+    def raise_shift_reduce_conflict(self, t, shift_options, nt, rhs):
+        assert shift_options
+        assert t in self.follow[nt]
+        grammar = self.grammar
+        raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
+                         "can't decide whether to shift into:\n"
+                         "    {}\n"
+                         "or reduce using:\n"
+                         "    {}\n"
+                         .format(rhs_to_str(grammar, rhs),
+                                 element_to_str(grammar, t),
+                                 state_to_str(grammar, self.prods, next(iter(shift_options))),
+                                 production_to_str(grammar, nt, rhs)))
 
-        That is, return a superset of state_set that adds every state that's
+
+class StateSet:
+    __slots__ = ['context', '_states']
+
+    def __init__(self, context, states):
+        self.context = context
+        self._states = frozenset(states)
+
+    def __eq__(self, other):
+        return self._states == other._states
+
+    def __hash__(self):
+        return hash(tuple(map(hash, self._states)))
+
+    def __str__(self):
+        return "{{{}}}".format(
+            ",  ".join(state_to_str(self.context.grammar, self.context.prods, state)
+                       for state in self._states)
+        )
+
+    def closure(self):
+        """Compute transitive closure of this state set under left-calls.
+
+        That is, return a superset of self that adds every state that's
         reachable from it by "stepping in" to nonterminals without consuming
         any tokens. Note that it's often possible to "step in" repeatedly.
 
         This is the only part of the system that makes states with lookahead
         restrictions.
         """
-        closure = set(state_set)
-        closure_todo = collections.deque(state_set)
+        context = self.context
+        grammar = context.grammar
+        prods = context.prods
+        prods_with_indexes_by_nt = context.prods_with_indexes_by_nt
+        start_set_cache = context.start_set_cache
+
+        closure = set(self._states)
+        closure_todo = collections.deque(self._states)
         while closure_todo:
             state = closure_todo.popleft()
             _nt, _i, rhs = prods[state.prod_index]
@@ -877,29 +899,60 @@ def generate_parser(out, grammar, goal):
                             ## print("    Considering stepping from state {} into production {}"
                             ##       .format(state_to_str(grammar, prods, state),
                             ##               production_to_str(grammar, next_symbol, callee_rhs)))
-                            for followed_by in specific_follow(grammar, start_set_cache,
+                            for followed_by in specific_follow(start_set_cache,
                                                                state.prod_index, state.offset,
                                                                state.followed_by):
-                                new_state = make_state(dest_prod_index, 0, state.lookahead,
-                                                       followed_by)
+                                new_state = context.make_state(dest_prod_index, 0, state.lookahead,
+                                                               followed_by)
                                 if new_state is not None and new_state not in closure:
                                     closure.add(new_state)
                                     closure_todo.append(new_state)
         return closure
 
-    def raise_reduce_reduce_conflict(t, i, j):
-        nt1, _, rhs1 = prods[i]
-        nt2, _, rhs2 = prods[j]
 
-        raise ValueError(
-            "reduce-reduce conflict when looking at {!r} "
-            "after input matching both:\n"
-            "    {}\n"
-            "and:\n"
-            "    {}\n"
-            .format(t,
-                    production_to_str(grammar, nt1, rhs1),
-                    production_to_str(grammar, nt2, rhs2)))
+def specific_follow(start_set_cache, prod_id, offset, followed_by):
+    """Return the set of tokens that might appear after the nonterminal rhs[offset],
+    given that after `rhs` the next token will be exactly `followed_by`.
+    """
+
+    # First, which tokens might follow rhs[offset] *within* the rest of rhs?
+    result = start_set_cache[prod_id][offset+1]
+    if EMPTY in result:
+        # The rest of rhs might be empty, so we might also see `followed_by`.
+        result = set(result)
+        result.remove(EMPTY)
+        result.add(followed_by)
+    return result
+
+
+def write_parser(out, actions, ctns, reductions):
+    out.write("import pgen_runtime\n\n")
+    out.write("actions = [\n")
+    for row in actions:
+        out.write("    " + repr(row) + ",\n")
+    out.write("]\n\n")
+    out.write("ctns = [\n")
+    for row in ctns:
+        out.write("    " + repr(row) + ",\n")
+    out.write("]\n\n")
+    out.write("reductions = [\n{}]\n\n"
+              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
+                              for nt, length, reducer in reductions)))
+    out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
+
+
+def generate_parser(out, grammar, goal):
+    def get_state_set_index(successors):
+        """ Get a number for a set of states, assigning a new number if needed. """
+        assert isinstance(successors, StateSet)
+        if successors in visited_state_sets:
+            return visited_state_sets[successors]
+        else:
+            visited_state_sets[successors] = state_index = len(visited_state_sets)
+            ## print("State-set #{} = {}"
+            ##       .format(state_index, successors.closure()))
+            todo.append(successors)
+            return state_index
 
     def analyze_state_set(current_state_set):
         """Generate the LR parser table entry for a single state set.
@@ -909,8 +962,10 @@ def generate_parser(out, grammar, goal):
         get_state_set_index (a side effect).
         """
 
+        context = current_state_set.context
+
         #print("analyzing state set {}".format(state_set_to_str(grammar, prods, current_state_set)))
-        #print("  closure: {}".format(state_set_to_str(grammar, prods, state_set_closure(current_state_set))))
+        #print("  closure: {}".format(state_set_to_str(grammar, prods, current_state_set.closure())))
 
         # Step 1. Visit every state and list what we want to do for each
         # possible next token.
@@ -923,15 +978,15 @@ def generate_parser(out, grammar, goal):
         # - We can step over a nonterminal.
         # - At the end of a production, we can reduce.
         # There is also a sort of "stepping in" effect for nonterminals, which
-        # is achieved by the call to state_set_closure at the top of the loop.
-        for state in state_set_closure(current_state_set):
+        # is achieved by the .closure() call at the top of the loop.
+        for state in current_state_set.closure():
             offset = state.offset
             nt, i, rhs = prods[state.prod_index]
             if offset < len(rhs):
                 next_symbol = rhs[offset]
                 if is_terminal(grammar, next_symbol):
                     if lookahead_contains(state.lookahead, next_symbol):
-                        next_state = make_state(state.prod_index, offset + 1, None, state.followed_by)
+                        next_state = context.make_state(state.prod_index, offset + 1, None, state.followed_by)
                         if next_state is not None:
                             shift_states[next_symbol].add(next_state)
                 else:
@@ -942,9 +997,10 @@ def generate_parser(out, grammar, goal):
 
                     # We never reduce with a lookahead restriction still
                     # active, so `lookahead=None` is appropriate.
-                    next_state = make_state(state.prod_index, offset + 1,
-                                            lookahead=None,
-                                            followed_by=state.followed_by)
+                    next_state = context.make_state(state.prod_index,
+                                                    offset + 1,
+                                                    lookahead=None,
+                                                    followed_by=state.followed_by)
                     if next_state is not None:
                         ctn_states[next_symbol].add(next_state)
             else:
@@ -957,30 +1013,22 @@ def generate_parser(out, grammar, goal):
                 t = state.followed_by
                 if t in follow[nt]:
                     if t in reduce_prods:
-                        raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
+                        context.raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
                     reduce_prods[t] = state.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
         for t, shift_state_set in shift_states.items():
+            shift_state_set = StateSet(context, shift_state_set)  # freeze the set
             action_row[t] = get_state_set_index(shift_state_set)
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
-                assert t in follow[nt]
-                raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
-                                 "can't decide whether to shift into:\n"
-                                 "    {}\n"
-                                 "or reduce using:\n"
-                                 "    {}\n"
-                                 .format(rhs_to_str(grammar, rhs),
-                                         element_to_str(grammar, t),
-                                         state_to_str(grammar, prods, next(iter(shift_states[t]))),
-                                         production_to_str(grammar, nt, rhs)))
+                context.raise_shift_reduce_conflict(t, shift_states[t], nt, rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
-        ctn_row = {nt: get_state_set_index(ss) for nt, ss in ctn_states.items()}
+        ctn_row = {nt: get_state_set_index(StateSet(context, ss)) for nt, ss in ctn_states.items()}
         return action_row, ctn_row
 
 
@@ -1050,11 +1098,12 @@ def generate_parser(out, grammar, goal):
 
     # A state set is a (frozen) set of States
     init_production_index = prods.index((init_nt, 0, [goal]))
-    start_state = make_state(init_production_index, 0, lookahead=None, followed_by=END)
+    context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
+    start_state = context.make_state(init_production_index, 0, lookahead=None, followed_by=END)
     if start_state is None:
-        init_state_set = frozenset()
+        init_state_set = StateSet(context, [])
     else:
-        init_state_set = frozenset({start_state})
+        init_state_set = StateSet(context, [start_state])
 
     # We assign each reachable state set a number, and we keep a list of state
     # sets that have numbers but haven't been analyzed yet. When the list is
