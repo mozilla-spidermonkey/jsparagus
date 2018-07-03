@@ -28,6 +28,7 @@ import collections
 import typing
 import io
 from pgen_runtime import ERROR, ACCEPT
+from lexer import SyntaxError
 
 
 # *** What is a grammar? ******************************************************

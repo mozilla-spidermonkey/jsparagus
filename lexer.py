@@ -3,6 +3,10 @@
 import re
 
 
+class SyntaxError(__builtins__['SyntaxError']):
+    pass
+
+
 class LexicalGrammar:
     def __init__(self, tokens, ignore=r'[ \t]*', **regexps):
         def token_to_re(token):
