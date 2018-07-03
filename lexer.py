@@ -35,6 +35,7 @@ class Tokenizer:
         self.point = 0
         self._next_match = None
         self._next_kind = None
+        # TODO: check that none of the regexps (except ignore_re) can match the empty string
 
     def _match(self):
         ignore_match = self.ignore_re.match(self.src, self.point)
