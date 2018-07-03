@@ -77,7 +77,7 @@ class AstBuilder:
                                      "(sorry, they're not allowed to look the same; rename the nonterminal)"
                                      .format(t))
                 else:
-                    raise ValueError("nonterminal `{}` is used both quoted and nonquoted; pick one".format(t))
+                    raise ValueError("terminal `{}` is used both quoted and nonquoted; pick one".format(t))
         for t in self.identifiers_used:
             if t not in grammar:
                 if not all(c.isupper() or c == '_' for c in t):
