@@ -85,19 +85,14 @@ class AstBuilder:
                           "(if it's a terminal, you can silence this warning by renaming it to SHOUTY_CASE)"
                           .format(t))
 
-depth=0
-
 def postparse(builder, cst):
-    global depth
     if isinstance(cst, tuple) and len(cst) == 3 and (isinstance(cst[0], str)
                                                      and isinstance(cst[1], int)
                                                      and isinstance(cst[2], list)):
         method_name = cst[0] + "_" + str(cst[1])
         method = getattr(builder, method_name, None)
         if method is not None:
-            depth += 1
             args = [postparse(builder, kid) for kid in cst[2]]
-            depth -= 1
             return method(*args)
     return cst
 
