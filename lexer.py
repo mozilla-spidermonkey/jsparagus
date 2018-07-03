@@ -63,10 +63,12 @@ class Tokenizer:
     def peek(self):
         if self._next_kind is not None:
             return self._next_kind
+        self.last_point = self.point
         hit = self._match()
         if hit is None:
             return None
         self._next_kind, self._next_match = hit
+        self.last_point = self._next_match.end()
         return self._next_kind
 
     def take(self, k):
@@ -78,7 +80,6 @@ class Tokenizer:
             if k != next_kind:
                 self.throw("expected {!r}, got {!r}".format(k, next_kind))
             match = self._next_match
-            self.last_point = match.start()
             self.point = match.end()
             self._next_kind = None
             self._next_match = None
@@ -86,13 +87,9 @@ class Tokenizer:
 
     def last_point_coords(self):
         src_pre = self.src[:self.last_point]
-        lines = src_pre.splitlines()
-        lineno = len(lines)
-        if lineno == 0:
-            lineno = 1
-            column = 0
-        else:
-            column = len(lines[-1])
+        lineno = 1 + src_pre.count("\n")
+        line_start_index = src_pre.rfind("\n") + 1
+        column = self.last_point - line_start_index  # can be zero
         return lineno, column
 
     def throw(self, msg):
