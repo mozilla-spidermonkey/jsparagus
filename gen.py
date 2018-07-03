@@ -986,6 +986,9 @@ def generate_parser(out, grammar, goal):
     # First we merely check the types.
     check_valid_grammar(grammar)
 
+    if not is_nt(grammar, goal):
+        raise ValueError("goal nonterminal {!r} is undefined".format(goal))
+
     grammar = expand_function_nonterminals(grammar, goal)
     check(grammar)
 
