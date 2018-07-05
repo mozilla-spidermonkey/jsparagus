@@ -584,6 +584,63 @@ def make_epsilon_free_step_2(grammar, goal):
     }
 
 
+# *** The path algorithm ******************************************************
+
+def find_path(start_set, successors, test):
+    """Find a path from a value in `start_set` to a value that passes `test`.
+
+    `start_set` is an iterable of "points". `successors` is a function mapping
+    a point to an iterable of (edge, point) pairs. `test` is a predicate on
+    points.  All points must support hashing; edges can be any value.
+
+    Returns the shortest list `path` such that:
+    - `path[0] in start_set`;
+    - for every triplet `a, e, b` of adjacent elements in `path`
+      starting with an even index, `(e, b) in successors(a)`;
+    - `test(path[-1])`.
+
+    If no such path exists, returns None.
+
+    """
+
+    # This implementation is long! I was tired when I wrote it.
+
+    # Get started.
+    links = {}
+    todo = collections.deque()
+    for p in start_set:
+        if p not in links:
+            links[p] = None
+            if test(p):
+                return [p]
+            todo.append(p)
+
+    # Iterate.
+    found = False
+    while todo:
+        a = todo.popleft()
+        for edge, b in successors(a):
+            if b not in links:
+                links[b] = a, edge
+                if test(b):
+                    found = True
+                    todo.clear()
+                    break
+                todo.append(b)
+    if not found:
+        return None
+
+    # Reconstruct how we got here.
+    path = [b]
+    while links[b] is not None:
+        a, edge = links[b]
+        path.append(edge)
+        path.append(a)
+        b = a
+    path.reverse()
+    return path
+
+
 # *** How to dump stuff *******************************************************
 
 def element_to_str(grammar, e):
@@ -829,19 +886,91 @@ class PgenContext:
                     production_to_str(self.grammar, nt1, rhs1),
                     production_to_str(self.grammar, nt2, rhs2)))
 
+    def why_start(self, t, prod_index, offset):
+        """ Yield a sequence of productions showing why `t in START(prods[prod_index][offset:])`.
+
+        If `prods[prod_index][offset] is actually t, the sequence is empty.
+        """
+        # This code is garbage. I'm tired.
+        # It depends on every symbol being either a terminal or nonterminal,
+        # so it is actually pretty broken probably.
+        assert t in self.start_set_cache[prod_index][offset]
+
+        def successors(pair):
+            prod_index, offset = pair
+            _, _, rhs = self.prods[prod_index]
+            nt = rhs[offset]
+            if not is_nt(self.grammar, nt):
+                return
+            for next_prod_index, next_rhs in self.prods_with_indexes_by_nt[nt]:
+                if t in self.start_set_cache[next_prod_index][0]:
+                    yield next_prod_index, (next_prod_index, 0)
+
+        def done(pair):
+            prod_index, offset = pair
+            _, _, rhs = self.prods[prod_index]
+            return rhs[offset] == t
+
+        path = find_path([(prod_index, offset)],
+                         successors,
+                         done)
+        if path is None:  # oh, we found a bug. this was likely.
+            return
+
+        for prod_index in path[1::2]:
+            xnt, _, xrhs = self.prods[prod_index]
+            yield xnt, xrhs
+
+    def why_follow(self, nt, t):
+        """ Return a sequence of productions showing why the terminal t is in nt's follow set. """
+
+        start_points = {}
+        for prod_index, (nt1, _, rhs1) in enumerate(self.prods):
+            for i in range(len(rhs1) - 1):
+                if is_nt(self.grammar, rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
+                    start_points[rhs1[i]] = (prod_index, i + 1)
+
+        def successors(nt):
+            for prod_index, rhs in self.prods_with_indexes_by_nt[nt]:
+                last = rhs[-1]
+                if is_nt(self.grammar, last):
+                    yield prod_index, last
+
+        path = find_path(start_points.keys(), successors, lambda point: point == nt)
+
+        # Yield productions showing how to produce `nt` in the right context.
+        prod_index, offset = start_points[path[0]]
+        xnt, _, xrhs = self.prods[prod_index]
+        yield xnt, xrhs
+        for index in path[1::2]:
+            xnt, _, xrhs = self.prods[index]
+            yield xnt, xrhs
+
+        # Now show how the immediate next token can expand into something that starts with `t`.
+        for xnt, xrhs in self.why_start(t, prod_index, offset):
+            yield xnt, xrhs
+
     def raise_shift_reduce_conflict(self, t, shift_options, nt, rhs):
         assert shift_options
         assert t in self.follow[nt]
         grammar = self.grammar
+        t_str = element_to_str(grammar, t)
         raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
                          "can't decide whether to shift into:\n"
                          "    {}\n"
                          "or reduce using:\n"
                          "    {}\n"
+                         "\n"
+                         "These productions show how {} can appear after {}:\n"
+                         "{}"
                          .format(rhs_to_str(grammar, rhs),
-                                 element_to_str(grammar, t),
+                                 t_str,
                                  state_to_str(grammar, self.prods, next(iter(shift_options))),
-                                 production_to_str(grammar, nt, rhs)))
+                                 production_to_str(grammar, nt, rhs),
+                                 t_str,
+                                 nt,
+                                 "".join("    " + production_to_str(grammar, *prod) + "\n"
+                                         for prod in self.why_follow(nt, t))))
 
 
 class StateSet:
