@@ -692,13 +692,15 @@ def state_to_str(grammar, prods, state):
         la = []
     else:
         la = [element_to_str(grammar, state.lookahead)]
-    return "{} ::= {} >> {}".format(
+    return "{} ::= {} >> {{{}}}".format(
         nt,
         " ".join([element_to_str(grammar, e) for e in rhs[:state.offset]]
                  + ["\N{MIDDLE DOT}"]
                  + la
                  + [element_to_str(grammar, e) for e in rhs[state.offset:]]),
-        "$" if state.followed_by is None else element_to_str(grammar, state.followed_by)
+        ", ".join(
+            "$" if t is None else element_to_str(grammar, t)
+            for t in state.followed_by)
     )
 
 
@@ -803,7 +805,7 @@ def state_set_to_str(grammar, prods, state_set):
 #     This is the kind of lookahead that is a central part of canonical LR
 #     table generation.  It applies to the token *after* the whole current
 #     production, so `followed_by` always applies to completely different and
-#     later tokens than `lookahead`.  `followed_by` is a single terminal;
+#     later tokens than `lookahead`.  `followed_by` is a set of terminals;
 #     `None` means `END`, not that the State is unrestricted.
 #
 State = collections.namedtuple("State", "prod_index offset lookahead followed_by")
@@ -835,10 +837,12 @@ class PgenContext:
         get_state_set_index to treat equivalent state-sets as distinct.
         I haven't seen that happen for any grammar yet.
         """
+
         grammar = self.grammar
         prods = self.prods
 
         state = State(*args, **kwargs)
+        assert isinstance(state.followed_by, frozenset)
         _nt, _i, rhs = prods[state.prod_index]
         while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
             state = state._replace(offset=state.offset + 1,
@@ -978,7 +982,10 @@ class StateSet:
 
     def __init__(self, context, states):
         self.context = context
-        self._states = frozenset(states)
+        a = collections.defaultdict(set)
+        for s in states:
+            a[s.prod_index, s.offset, s.lookahead] |= s.followed_by
+        self._states = frozenset(State(*k, frozenset(v)) for k, v in a.items())
 
     def __eq__(self, other):
         return self._states == other._states
@@ -1028,20 +1035,20 @@ class StateSet:
                             ## print("    Considering stepping from state {} into production {}"
                             ##       .format(state_to_str(grammar, prods, state),
                             ##               production_to_str(grammar, next_symbol, callee_rhs)))
-                            for followed_by in specific_follow(start_set_cache,
-                                                               state.prod_index, state.offset,
-                                                               state.followed_by):
-                                new_state = context.make_state(dest_prod_index, 0, state.lookahead,
-                                                               followed_by)
-                                if new_state is not None and new_state not in closure:
-                                    closure.add(new_state)
-                                    closure_todo.append(new_state)
+                            followers = specific_follow(start_set_cache,
+                                                        state.prod_index, state.offset,
+                                                        state.followed_by)
+                            new_state = context.make_state(dest_prod_index, 0, state.lookahead,
+                                                           followers)
+                            if new_state is not None and new_state not in closure:
+                                closure.add(new_state)
+                                closure_todo.append(new_state)
         return closure
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
     """Return the set of tokens that might appear after the nonterminal rhs[offset],
-    given that after `rhs` the next token will be exactly `followed_by`.
+    given that after `rhs` the next token will be a terminal in `followed_by`.
     """
 
     # First, which tokens might follow rhs[offset] *within* the rest of rhs?
@@ -1050,8 +1057,8 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
         # The rest of rhs might be empty, so we might also see `followed_by`.
         result = set(result)
         result.remove(EMPTY)
-        result.add(followed_by)
-    return result
+        result |= followed_by
+    return frozenset(result)
 
 
 def write_parser(out, actions, ctns, reductions):
@@ -1139,11 +1146,11 @@ def generate_parser(out, grammar, goal):
                     raise ValueError("invalid grammar: lookahead restriction still active "
                                      "at end of production " +
                                      production_to_str(grammar, nt, rhs))
-                t = state.followed_by
-                if t in follow[nt]:
-                    if t in reduce_prods:
-                        context.raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
-                    reduce_prods[t] = state.prod_index
+                for t in state.followed_by:
+                    if t in follow[nt]:
+                        if t in reduce_prods:
+                            context.raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
+                        reduce_prods[t] = state.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
@@ -1228,7 +1235,10 @@ def generate_parser(out, grammar, goal):
     # A state set is a (frozen) set of States
     init_production_index = prods.index((init_nt, 0, [goal]))
     context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
-    start_state = context.make_state(init_production_index, 0, lookahead=None, followed_by=END)
+    start_state = context.make_state(init_production_index,
+                                     0,
+                                     lookahead=None,
+                                     followed_by=frozenset([END]))
     if start_state is None:
         init_state_set = StateSet(context, [])
     else:
