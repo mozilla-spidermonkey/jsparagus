@@ -732,7 +732,7 @@ def state_set_to_str(grammar, prods, state_set):
 # states.
 #
 # But how do we decide which production we should be matching? Often the first
-# token just tells us: the `switch` keyword means there's a `switch` statement
+# token just tells us: the `while` keyword means there's a `while` statement
 # coming up. Grammars in which this is always the case are called LL(1). But
 # while it's possible to wrangle *most* of the ES grammar into an LL(1) form,
 # not everything works out. For example, here's the ES assignment syntax (much
