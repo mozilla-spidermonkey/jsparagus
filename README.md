@@ -342,9 +342,6 @@ I wonder if there's a principled way to deal with it.
 
 I know that a parse is a constructive proof that a string matches a grammar.
 
-It's surprisingly tricky to check a grammar and rule out the possibility of ambiguity,
-and it's easiest to do so by imposing draconian restrictions.
-
 I learned that start sets are important even in minimal parser generators.
 This is interesting because they'll be a bit more interesting to compute
 once we start considering empty productions.

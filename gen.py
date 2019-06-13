@@ -2,7 +2,7 @@
 
 """gen.py - Fifth stab at a parser generator.
 
-**Nature of a grammar.**
+**Grammars.**
 A grammar is a dictionary {str: [[symbol]]} mapping names of nonterminals to
 lists of right-hand sides. Each right-hand side is a list of symbols. There
 are several kinds of symbols; read the comments to learn more.
@@ -186,6 +186,7 @@ def check_valid_grammar(grammar):
         if not callable(rhs_list_or_fn):
             check_valid_rhs_list(nt, rhs_list_or_fn)
 
+
 def check_valid_rhs_list(nt, rhs_list):
     if not isinstance(rhs_list, typing.Iterable):
         raise TypeError("invalid grammar: grammar[{!r}] should be a list of productions, not {!r}"
@@ -203,7 +204,7 @@ def check_valid_rhs_list(nt, rhs_list):
 # *** Operations on grammars **************************************************
 
 def fix(f, start):
-    """Compute the least fix point of `f`, the hard way, starting from `start`."""
+    """Compute a fixed point of `f`, the hard way, starting from `start`."""
     prev, current = start, f(start)
     while current != prev:
         prev, current = current, f(current)
@@ -294,13 +295,16 @@ def check(grammar):
     for nt in grammar:
         for rhs_with_options in grammar[nt]:
             for rhs, _r in expand_optional_symbols(rhs_with_options):
+                # XXX BUG: The next if-condition is insufficient, since it
+                # fails to detect a lookahead restriction followed by a
+                # nonterminal that can match the empty string.
                 if rhs and is_lookahead_rule(rhs[-1]):
-                    # XXX this is insufficient now
                     raise ValueError("invalid grammar: lookahead restriction at end of production: " +
                                      production_to_str(grammar, nt, rhs_with_options))
 
 
 def clone_grammar(grammar):
+    """ Return a deep copy of a grammar (which must contain no functions). """
     return {nt: [rhs[:] for rhs in rhs_list]
             for nt, rhs_list in grammar.items()}
 
@@ -384,24 +388,27 @@ END = None
 
 
 def start_sets(grammar):
-    """Compute the start sets for terminals and nonterminals in a grammar.
+    """Compute the start sets for nonterminals in a grammar.
 
-    A symbol's start set is the set of tokens that a match for that symbol
-    may start with, plus EMPTY if the symbol can match the empty string.
+    A nonterminal's start set is the set of tokens that a match for that
+    nonterminal may start with, plus EMPTY if it can match the empty string.
     """
 
-    # The rules, in pseudocode, are:
+    # How this works: Note that we can replace the words "match" and "start
+    # with" in the definition above with more queries about start sets.
     #
-    # if is_terminal(t) then start[t] == {t}
-    # for nt in grammar, prod in grammar[nt],
-    #     if all(for e in prod, epsilon in start[e]), then epsilon in start[nt]
-    # for nt in grammar, prod in grammar[nt], 0 <= i < len(prod),
-    #     if all(for e in prod[:i], epsilon in start[e]),
-    #         for t in start[prod[i]], if is_terminal(t) then t in start[nt]
+    # 1.  A nonterminal's start set contains a terminal `t` if any of its
+    #     productions contains either `t` or a nonterminal with `t` in *its*
+    #     start set, preceded only by zero or more nonterminals that have EMPTY
+    #     in *their* start sets. Plus:
     #
-    # Since this definition is rather circular, we have to iterate to a least
-    # fix point. In the actual code, we don't bother computing and storing
-    # start sets for terminals.
+    # 2.  A nonterminal's start set contains EMPTY if any of its productions
+    #     consists entirely of nonterminals that have EMPTY in *their* start
+    #     sets.
+    #
+    # This definition is rather circular. We want the smallest collection of
+    # start sets satisfying these rules, and we get that by iterating to a
+    # fixed point.
 
     start = {nt: set() for nt in grammar}
     done = False
@@ -748,7 +755,7 @@ def state_set_to_str(grammar, prods, state_set):
 # isn't a primitive.
 #
 # Suppose we want to parse an expression, and the first token is `a`. We don't
-# know yet which *assignment* production matches. So this grammar is not in
+# know yet which *assignment* production to use. So this grammar is not in
 # LL(1).
 #
 #
@@ -788,7 +795,8 @@ def state_set_to_str(grammar, prods, state_set):
 # hand, in the style of recursive descent, would read like gibberish. What we
 # can do instead is generate a parser table.
 
-# A State tracks progress through a single specific production.
+
+# A State is a snapshot of progress through a single specific production.
 # It's a bad name since the literature calls this an "LR item" and uses "state"
 # to refer to sets of these (which we call "state-sets").
 #
@@ -805,8 +813,9 @@ def state_set_to_str(grammar, prods, state_set):
 #     This is the kind of lookahead that is a central part of canonical LR
 #     table generation.  It applies to the token *after* the whole current
 #     production, so `followed_by` always applies to completely different and
-#     later tokens than `lookahead`.  `followed_by` is a set of terminals;
-#     `None` means `END`, not that the State is unrestricted.
+#     later tokens than `lookahead`.  `followed_by` is a set of terminals; if
+#     `None` is in this set, it means `END`, not that the State is
+#     unrestricted.
 #
 State = collections.namedtuple("State", "prod_index offset lookahead followed_by")
 
