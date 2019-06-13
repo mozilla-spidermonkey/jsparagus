@@ -1001,7 +1001,7 @@ class StateSet:
         return self._states == other._states
 
     def __hash__(self):
-        return hash(tuple(map(hash, self._states)))
+        return hash(tuple(sorted(map(hash, self._states))))
 
     def __str__(self):
         return "{{{}}}".format(
