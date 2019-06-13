@@ -885,17 +885,18 @@ class PgenContext:
             state = state._replace(lookahead=look)
         return state
 
-    def raise_reduce_reduce_conflict(self, t, i, j):
+    def raise_reduce_reduce_conflict(self, state_set, t, i, j):
+        scenario_str = state_set.traceback()
         nt1, _, rhs1 = self.prods[i]
         nt2, _, rhs2 = self.prods[j]
 
         raise ValueError(
-            "reduce-reduce conflict when looking at {!r} "
-            "after input matching both:\n"
+            "reduce-reduce conflict when looking at {} followed by {}\n"
+            "can't decide whether to reduce with:\n"
             "    {}\n"
-            "and:\n"
+            "or with:\n"
             "    {}\n"
-            .format(t,
+            .format(scenario_str, element_to_str(self.grammar, t),
                     production_to_str(self.grammar, nt1, rhs1),
                     production_to_str(self.grammar, nt2, rhs2)))
 
@@ -963,22 +964,27 @@ class PgenContext:
         for xnt, xrhs in self.why_start(t, prod_index, offset):
             yield xnt, xrhs
 
-    def raise_shift_reduce_conflict(self, t, shift_options, nt, rhs):
+    def raise_shift_reduce_conflict(self, state_set, t, shift_options, nt, rhs):
         assert shift_options
         assert t in self.follow[nt]
         grammar = self.grammar
+        some_shift_option = next(iter(shift_options))
+        shift_option_nt = self.prods[some_shift_option.prod_index][0]
+        shift_option_nt_str = element_to_str(grammar, shift_option_nt)
         t_str = element_to_str(grammar, t)
+        scenario_str = state_set.traceback()
+
         raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
                          "can't decide whether to shift into:\n"
                          "    {}\n"
                          "or reduce using:\n"
                          "    {}\n"
                          "\n"
-                         "These productions show how {} can appear after {}:\n"
+                         "These productions show how {} can appear after {} (if we reduce):\n"
                          "{}"
-                         .format(rhs_to_str(grammar, rhs),
+                         .format(scenario_str,
                                  t_str,
-                                 state_to_str(grammar, self.prods, next(iter(shift_options))),
+                                 state_to_str(grammar, self.prods, some_shift_option),
                                  production_to_str(grammar, nt, rhs),
                                  t_str,
                                  nt,
@@ -1179,7 +1185,7 @@ def generate_parser(out, grammar, goal):
                 for t in state.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
-                            context.raise_reduce_reduce_conflict(t, reduce_prods[t], state.prod_index)
+                            context.raise_reduce_reduce_conflict(current_state_set, t, reduce_prods[t], state.prod_index)
                         reduce_prods[t] = state.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
@@ -1190,7 +1196,7 @@ def generate_parser(out, grammar, goal):
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
-                context.raise_shift_reduce_conflict(t, shift_states[t], nt, rhs)
+                context.raise_shift_reduce_conflict(current_state_set, t, shift_states[t], nt, rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
