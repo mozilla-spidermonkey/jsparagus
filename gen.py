@@ -987,14 +987,15 @@ class PgenContext:
 
 
 class StateSet:
-    __slots__ = ['context', '_states']
+    __slots__ = ['context', '_states', '_debug_traceback']
 
-    def __init__(self, context, states):
+    def __init__(self, context, states, debug_traceback=None):
         self.context = context
         a = collections.defaultdict(set)
         for s in states:
             a[s.prod_index, s.offset, s.lookahead] |= s.followed_by
         self._states = frozenset(State(*k, frozenset(v)) for k, v in a.items())
+        self._debug_traceback = debug_traceback
 
     def __eq__(self, other):
         return self._states == other._states
@@ -1053,6 +1054,26 @@ class StateSet:
                                 closure.add(new_state)
                                 closure_todo.append(new_state)
         return closure
+
+    def traceback(self):
+        """Return a list of terminals and nonterminals that could have gotten us here."""
+        # _debug_traceback chains all the way back to the initial state.
+        traceback = []
+        ss = self
+        while ss is not None:
+            traceback.append(ss)
+            ss = ss._debug_traceback
+        assert next(iter(traceback[-1]._states)).offset == 0
+        del traceback[-1]
+        traceback.reverse()
+
+        scenario = []
+        for ss in traceback:
+            state = next(iter(ss._states))
+            nt, prod_index, rhs = self.context.prods[state.prod_index]
+            assert state.offset > 0
+            scenario.append(rhs[state.offset - 1])
+        return rhs_to_str(self.context.grammar, scenario)
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
@@ -1164,7 +1185,7 @@ def generate_parser(out, grammar, goal):
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
         for t, shift_state_set in shift_states.items():
-            shift_state_set = StateSet(context, shift_state_set)  # freeze the set
+            shift_state_set = StateSet(context, shift_state_set, current_state_set)  # freeze the set
             action_row[t] = get_state_set_index(shift_state_set)
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
@@ -1173,7 +1194,8 @@ def generate_parser(out, grammar, goal):
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
-        ctn_row = {nt: get_state_set_index(StateSet(context, ss)) for nt, ss in ctn_states.items()}
+        ctn_row = {nt: get_state_set_index(StateSet(context, ss, current_state_set))
+                   for nt, ss in ctn_states.items()}
         return action_row, ctn_row
 
 
