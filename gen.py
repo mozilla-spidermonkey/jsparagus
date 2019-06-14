@@ -999,13 +999,16 @@ class PgenContext:
 class StateSet:
     __slots__ = ['context', '_lr_items', '_debug_traceback']
 
-    def __init__(self, context, states, debug_traceback=None):
+    def __init__(self, context, items, debug_traceback=None):
         self.context = context
-        a = collections.defaultdict(set)
-        for s in states:
-            a[s.prod_index, s.offset, s.lookahead] |= s.followed_by
-        self._lr_items = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
         self._debug_traceback = debug_traceback
+
+        # Consolidate similar items, to ensure that equivalent states have
+        # equal _lr_items sets.
+        a = collections.defaultdict(set)
+        for item in items:
+            a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
+        self._lr_items = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
 
     def __eq__(self, other):
         return self._lr_items == other._lr_items
@@ -1026,7 +1029,7 @@ class StateSet:
         reachable from it by "stepping in" to nonterminals without consuming
         any tokens. Note that it's often possible to "step in" repeatedly.
 
-        This is the only part of the system that makes states with lookahead
+        This is the only part of the system that makes items with lookahead
         restrictions.
         """
         context = self.context
@@ -1079,10 +1082,10 @@ class StateSet:
 
         scenario = []
         for ss in traceback:
-            state = next(iter(ss._lr_items))
-            nt, prod_index, rhs = self.context.prods[state.prod_index]
-            assert state.offset > 0
-            scenario.append(rhs[state.offset - 1])
+            item = next(iter(ss._lr_items))
+            nt, prod_index, rhs = self.context.prods[item.prod_index]
+            assert item.offset > 0
+            scenario.append(rhs[item.offset - 1])
         return rhs_to_str(self.context.grammar, scenario)
 
 
