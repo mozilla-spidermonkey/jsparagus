@@ -1,7 +1,3 @@
-import collections
-import sys
-
-
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
 
