@@ -159,7 +159,7 @@ def lookahead_intersect(a, b):
 
 # *** Basic grammar validity **************************************************
 
-def check_valid_grammar(grammar):
+def check_grammar_types(grammar):
     """Throw if the given grammar is invalid.
 
     This only checks types. It doesn't check that the grammar is LR, that it's
@@ -185,6 +185,11 @@ def check_valid_grammar(grammar):
         # type-checked here; we check the result after calling them.
         if not callable(rhs_list_or_fn):
             check_valid_rhs_list(nt, rhs_list_or_fn)
+
+
+def check_valid_goal(grammar, goal):
+    if not is_nt(grammar, goal):
+        raise ValueError("goal nonterminal {!r} is undefined".format(goal))
 
 
 def check_valid_rhs_list(nt, rhs_list):
@@ -278,17 +283,11 @@ def check_cycle_free(grammar):
             raise ValueError("invalid grammar: nonterminal {} can produce itself".format(nt))
 
 
-def check(grammar):
-    """Enforce a few basic rules about the grammar.
+def check_lookahead_rules(grammar):
+    """Check that no LookaheadRule appears at the end of a production (or before
+    elements that can produce the empty string).
 
-    1.  The grammar is cycle-free.
-        A cycle is a set of productions such that any
-        nonterminal `q` has `q ==>+ q` (produces itself via at least one step).
-
-    2.  No LookaheadRule appears at the end of a production (or before elements
-        that can produce the empty string).
-
-    If the grammar breaks either rule, throw.
+    If there are any offending lookahead rules, throw a ValueError.
     """
 
     check_cycle_free(grammar)
@@ -890,8 +889,9 @@ LRItem = collections.namedtuple("LRItem", "prod_index offset lookahead followed_
 
 class PgenContext:
     """ The immutable part of the parser generator's data. """
-    def __init__(self, grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow):
+    def __init__(self, grammar, init_nt, prods, prods_with_indexes_by_nt, start_set_cache, follow):
         self.grammar = grammar
+        self.init_nt = init_nt
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
         self.start_set_cache = start_set_cache
@@ -1194,28 +1194,54 @@ def write_parser(out, actions, ctns, reductions):
     out.write("parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)\n")
 
 
-def generate_parser(out, grammar, goal):
-    def get_state_index(successor):
+class ParserGenerator:
+    """ The core of the parser generation algorithm. """
+
+    def __init__(self, init_state):
+        # We assign each reachable state a number, and we keep a list of states
+        # that have numbers but haven't been analyzed yet. When the list is empty,
+        # we'll be done.
+        self.visited_states = {
+            init_state: 0
+        }
+        self.todo = [init_state]
+
+    def run(self):
+        actions = []
+        ctns = []
+        while self.todo:
+            current_state = self.todo.pop(0)
+            action_row, ctn_row = self.analyze_state(current_state)
+            actions.append(action_row)
+            ctns.append(ctn_row)
+        return actions, ctns
+
+    def get_state_index(self, successor):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
+        visited_states = self.visited_states
         if successor in visited_states:
             return visited_states[successor]
         else:
             visited_states[successor] = state_index = len(visited_states)
             ## print("State #{} = {}"
             ##       .format(state_index, successor.closure()))
-            todo.append(successor)
+            self.todo.append(successor)
             return state_index
 
-    def analyze_state(current_state):
+    def analyze_state(self, current_state):
         """Generate the LR parser table entry for a single state.
 
-        This can be done without iterating. But this function sometimes needs
-        state-ids for states we haven't considered yet, so it calls
-        get_state_index (a side effect).
+        This is done without iterating. But we sometimes need state-ids for
+        states we haven't considered yet, so it calls self.get_state_index() --
+        a side effect.
         """
 
         context = current_state.context
+        grammar = context.grammar
+        init_nt = context.init_nt
+        prods = context.prods
+        follow = context.follow
 
         #print("analyzing state {}".format(item_set_to_str(grammar, prods, current_state)))
         #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state.closure())))
@@ -1273,7 +1299,7 @@ def generate_parser(out, grammar, goal):
         action_row = {}
         for t, shift_state in shift_items.items():
             shift_state = State(context, shift_state, current_state)  # freeze the set
-            action_row[t] = get_state_index(shift_state)
+            action_row[t] = self.get_state_index(shift_state)
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
@@ -1281,35 +1307,31 @@ def generate_parser(out, grammar, goal):
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
-        ctn_row = {nt: get_state_index(State(context, ss, current_state))
+        ctn_row = {nt: self.get_state_index(State(context, ss, current_state))
                    for nt, ss in ctn_items.items()}
         return action_row, ctn_row
 
-
-    # First we merely check the types.
-    check_valid_grammar(grammar)
-
-    if not is_nt(grammar, goal):
-        raise ValueError("goal nonterminal {!r} is undefined".format(goal))
-
+def generate_parser(out, grammar, goal):
+    # Step by step, we check the grammar and expand it to a more primitive form.
+    check_grammar_types(grammar)
+    check_valid_goal(grammar, goal)
     grammar = expand_function_nonterminals(grammar, goal)
-    check(grammar)
-
+    check_cycle_free(grammar)
+    check_lookahead_rules(grammar)
     grammar, init_nt = add_init_nonterminal(grammar, goal)
     grammar = make_epsilon_free_step_1(grammar)
     grammar, prods, prods_with_indexes_by_nt, reductions = expand_all_optional_elements(grammar)
     grammar = make_epsilon_free_step_2(grammar, goal)
 
+    # Now the grammar is in its final form. Compute information about it that
+    # we can cache and use during the main part of the algorithm below.
     start = start_sets(grammar)
     start_set_cache = make_start_set_cache(grammar, prods, start)
-
-    # Note: this use of `init_nt` is a problem for adding multiple goal symbols.
-    # Maybe we can just add a check at run time that we exited from the right place in the table...
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nt)
 
     # Construct the start state.
     init_production_index = prods.index((init_nt, 0, [goal]))
-    context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
+    context = PgenContext(grammar, init_nt, prods, prods_with_indexes_by_nt, start_set_cache, follow)
     start_item = context.make_lr_item(init_production_index,
                                       0,
                                       lookahead=None,
@@ -1319,22 +1341,11 @@ def generate_parser(out, grammar, goal):
     else:
         init_state = State(context, [start_item])
 
-    # We assign each reachable state a number, and we keep a list of states
-    # that have numbers but haven't been analyzed yet. When the list is empty,
-    # we'll be done.
-    visited_states = {
-        init_state: 0
-    }
-    todo = [init_state]
+    # Run the core LR table generation algorithm.
+    pgen = ParserGenerator(init_state)
+    actions, ctns = pgen.run()
 
-    actions = []
-    ctns = []
-    while todo:
-        current_state = todo.pop(0)
-        action_row, ctn_row = analyze_state(current_state)
-        actions.append(action_row)
-        ctns.append(ctn_row)
-
+    # Finally, dump the output.
     write_parser(out, actions, ctns, reductions)
 
 
