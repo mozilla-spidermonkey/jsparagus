@@ -796,15 +796,18 @@ def state_set_to_str(grammar, prods, state_set):
 # can do instead is generate a parser table.
 
 
-# A State is a snapshot of progress through a single specific production.
-# It's a bad name since the literature calls this an "LR item" and uses "state"
-# to refer to sets of these (which we call "state-sets").
+# An LRItem is a snapshot of progress through a single specific production.
 #
-# Speaking of unfortunate naming: `lookahead` and `followed_by` are two totally
-# different kinds of lookahead.
+# *   `prod_index` identifies the production. (Every production in the grammar
+#     gets a unique index; see the loop that computes
+#     prods_with_indexes_by_nt.)
+#
+# *   `offset` is the position of the cursor within the production.
+#
+# `lookahead` and `followed_by` are two totally different kinds of lookahead.
 #
 # *   `lookahead` is the LookaheadRule, if any, that applies to the immediately
-#     upcoming input. It is present only if this State is subject to a
+#     upcoming input. It is present only if this LRItem is subject to a
 #     `[lookahead]` restriction; otherwise it's None. These restrictions can't
 #     extend beyond the end of a production, or else the grammar is invalid.
 #     This is a hack and not part of any account of LR I've seen.
@@ -814,10 +817,10 @@ def state_set_to_str(grammar, prods, state_set):
 #     table generation.  It applies to the token *after* the whole current
 #     production, so `followed_by` always applies to completely different and
 #     later tokens than `lookahead`.  `followed_by` is a set of terminals; if
-#     `None` is in this set, it means `END`, not that the State is
+#     `None` is in this set, it means `END`, not that the LRItem is
 #     unrestricted.
 #
-State = collections.namedtuple("State", "prod_index offset lookahead followed_by")
+LRItem = collections.namedtuple("LRItem", "prod_index offset lookahead followed_by")
 
 
 class PgenContext:
@@ -830,11 +833,11 @@ class PgenContext:
         self.follow = follow
 
     def make_state(self, *args, **kwargs):
-        """Create a State tuple and advance it past any lookahead rules.
+        """Create an LRItem tuple and advance it past any lookahead rules.
 
-        The main algorithm assumes that the "next element" in any State is
+        The main algorithm assumes that the "next element" in any LRItem is
         never a lookahead rule. We ensure that is true by processing lookahead
-        elements before the State is even exposed.
+        elements before the LRItem is even exposed.
 
         We don't bother doing extra work here to eliminate lookahead
         restrictions that are redundant with what's coming up next in the
@@ -850,7 +853,7 @@ class PgenContext:
         grammar = self.grammar
         prods = self.prods
 
-        state = State(*args, **kwargs)
+        state = LRItem(*args, **kwargs)
         assert isinstance(state.followed_by, frozenset)
         _nt, _i, rhs = prods[state.prod_index]
         while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
@@ -866,7 +869,7 @@ class PgenContext:
             # anything.
             #
             # This sounds good in theory, and it does reduce the number of
-            # States we end up tracking, but I have not found an example where
+            # LRItems we end up tracking, but I have not found an example where
             # it reduces the number of runtime "parser states" i.e. state-sets.
             # So this code is disabled for now.
 
@@ -1000,7 +1003,7 @@ class StateSet:
         a = collections.defaultdict(set)
         for s in states:
             a[s.prod_index, s.offset, s.lookahead] |= s.followed_by
-        self._states = frozenset(State(*k, frozenset(v)) for k, v in a.items())
+        self._states = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
         self._debug_traceback = debug_traceback
 
     def __eq__(self, other):
@@ -1269,7 +1272,7 @@ def generate_parser(out, grammar, goal):
     # Maybe we can just add a check at run time that we exited from the right place in the table...
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nt)
 
-    # A state set is a (frozen) set of States
+    # A state set is a (frozen) set of LRItems
     init_production_index = prods.index((init_nt, 0, [goal]))
     context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
     start_state = context.make_state(init_production_index,
