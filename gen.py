@@ -1024,7 +1024,7 @@ class State:
         )
 
     def closure(self):
-        """Compute transitive closure of this state set under left-calls.
+        """Compute transitive closure of this state under left-calls.
 
         That is, return a superset of self that adds every item that's
         reachable from it by "stepping in" to nonterminals without consuming
@@ -1135,7 +1135,7 @@ def generate_parser(out, grammar, goal):
             return state_index
 
     def analyze_state(current_state):
-        """Generate the LR parser table entry for a single state set.
+        """Generate the LR parser table entry for a single state.
 
         This can be done without iterating. But this function sometimes needs
         state-ids for states we haven't considered yet, so it calls
@@ -1144,7 +1144,7 @@ def generate_parser(out, grammar, goal):
 
         context = current_state.context
 
-        #print("analyzing state set {}".format(item_set_to_str(grammar, prods, current_state)))
+        #print("analyzing state {}".format(item_set_to_str(grammar, prods, current_state)))
         #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state.closure())))
 
         # Step 1. Visit every item and list what we want to do for each
@@ -1277,7 +1277,7 @@ def generate_parser(out, grammar, goal):
     # Maybe we can just add a check at run time that we exited from the right place in the table...
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nt)
 
-    # A state set is a (frozen) set of LRItems
+    # A state is a (frozen) set of LRItems
     init_production_index = prods.index((init_nt, 0, [goal]))
     context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
     start_item = context.make_lr_item(init_production_index,
@@ -1289,9 +1289,9 @@ def generate_parser(out, grammar, goal):
     else:
         init_state = State(context, [start_item])
 
-    # We assign each reachable state set a number, and we keep a list of state
-    # sets that have numbers but haven't been analyzed yet. When the list is
-    # empty, we'll be done.
+    # We assign each reachable state a number, and we keep a list of states
+    # that have numbers but haven't been analyzed yet. When the list is empty,
+    # we'll be done.
     visited_states = {
         init_state: 0
     }
