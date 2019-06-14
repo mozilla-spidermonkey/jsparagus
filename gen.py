@@ -1233,7 +1233,7 @@ def generate_parser(out, grammar, goal):
 
     grammar = make_epsilon_free_step_1(grammar)
 
-    if 1:
+    def expand_optional_elements():
         # Expand optional elements in the grammar. We replace each production that
         # contains an optional element with two productions: one with and one
         # without. This means the rest of the algorithm can ignore the possibility
@@ -1268,7 +1268,9 @@ def generate_parser(out, grammar, goal):
                           + "])")
                     reductions.append((nt, len(names), fn))
 
-    grammar = expanded_grammar
+        return expanded_grammar, prods, prods_with_indexes_by_nt, reductions
+
+    grammar, prods, prods_with_indexes_by_nt, reductions = expand_optional_elements()
 
     grammar = make_epsilon_free_step_2(grammar, goal)
     start = start_sets(grammar)
