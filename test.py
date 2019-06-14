@@ -364,14 +364,14 @@ class GenTestCase(unittest.TestCase):
 
     def testExpandOptional(self):
         self.assertEqual(
-            list(gen.expand_optional_symbols(['ONE', 'TWO', '3'])),
+            list(gen.expand_optional_symbols_in_rhs(['ONE', 'TWO', '3'])),
             [(['ONE', 'TWO', '3'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols(['a', 'b', Optional('c')])),
+            list(gen.expand_optional_symbols_in_rhs(['a', 'b', Optional('c')])),
             [(['a', 'b'], [2]),
              (['a', 'b', 'c'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols([Optional('a'), Optional('b')])),
+            list(gen.expand_optional_symbols_in_rhs([Optional('a'), Optional('b')])),
             [([], [0, 1]),
              (['a'], [1]),
              (['b'], [0]),

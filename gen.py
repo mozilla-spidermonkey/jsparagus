@@ -238,7 +238,7 @@ def check_cycle_free(grammar):
     for orig in grammar:
         direct_produces[orig] = set()
         for source_rhs in grammar[orig]:
-            for rhs, _r in expand_optional_symbols(source_rhs):
+            for rhs, _r in expand_optional_symbols_in_rhs(source_rhs):
                 result = []
                 all_possibly_empty_so_far = True
                 # If we break out of the following loop, that means it turns
@@ -294,7 +294,7 @@ def check(grammar):
     check_cycle_free(grammar)
     for nt in grammar:
         for rhs_with_options in grammar[nt]:
-            for rhs, _r in expand_optional_symbols(rhs_with_options):
+            for rhs, _r in expand_optional_symbols_in_rhs(rhs_with_options):
                 # XXX BUG: The next if-condition is insufficient, since it
                 # fails to detect a lookahead restriction followed by a
                 # nonterminal that can match the empty string.
@@ -543,7 +543,17 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, goal):
     return follow
 
 
-def expand_optional_symbols(rhs, start_index=0):
+def expand_optional_symbols_in_rhs(rhs, start_index=0):
+    """Expand a sequence that may contain optional symbols into sequences that don't.
+
+    rhs is a list of symbols, possibly containing optional elements. This
+    yields every list that can be made by replacing each optional element
+    either with its .inner value, or with nothing.
+
+    For example, `expand_optional_symbols_in_rhs(["if", Optional("else")])`
+    yields the two sequences ["if"] and ["if", "else"].
+    """
+
     for i in range(start_index, len(rhs)):
         if is_optional(rhs[i]):
             break
@@ -551,11 +561,52 @@ def expand_optional_symbols(rhs, start_index=0):
         yield rhs[start_index:], []
         return
 
-    for expanded, r in expand_optional_symbols(rhs, i + 1):
+    for expanded, r in expand_optional_symbols_in_rhs(rhs, i + 1):
         # without rhs[i]
         yield rhs[start_index:i] + expanded, [i] + r
         # with rhs[i]
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
+
+
+def expand_all_optional_elements(grammar):
+    """Expand optional elements in the grammar. We replace each production that
+    contains an optional element with two productions: one with and one
+    without. This means the rest of the algorithm can ignore the
+    possibility of optional elements. But we keep the numbering of all the
+    productions as they appear in the original grammar (`prod_index`
+    below).
+    """
+    expanded_grammar = {}
+
+    # Put all the productions in one big list, so each one has an index.
+    # We will use the indices in the action table (as arguments to Reduce actions).
+    prods = []
+    prods_with_indexes_by_nt = collections.defaultdict(list)
+
+    # We'll use these tuples at run time when constructing AST nodes.
+    reductions = []
+
+    for nt in grammar:
+        expanded_grammar[nt] = []
+        for prod_index, rhs in enumerate(grammar[nt]):
+            for expanded_rhs, removals in expand_optional_symbols_in_rhs(rhs):
+                expanded_grammar[nt].append(expanded_rhs)
+                prods.append((nt, prod_index, expanded_rhs))
+                prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
+                names = ["x" + str(i)
+                         for i, e in enumerate(expanded_rhs)
+                         if is_terminal(grammar, e) or is_nt(grammar, e)]
+                names_with_none = names[:]
+                for i in removals:
+                    names_with_none.insert(i, "None")
+                fn = ("lambda "
+                      + ", ".join(names)
+                      + ": ({!r}, {!r}, [".format(nt, prod_index)
+                      + ", ".join(names_with_none)
+                      + "])")
+                reductions.append((nt, len(names), fn))
+
+    return expanded_grammar, prods, prods_with_indexes_by_nt, reductions
 
 
 def make_epsilon_free_step_1(grammar):
@@ -1233,44 +1284,7 @@ def generate_parser(out, grammar, goal):
 
     grammar = make_epsilon_free_step_1(grammar)
 
-    def expand_optional_elements():
-        # Expand optional elements in the grammar. We replace each production that
-        # contains an optional element with two productions: one with and one
-        # without. This means the rest of the algorithm can ignore the possibility
-        # of optional elements. But we keep the numbering of all the productions as
-        # they appear in the original grammar (`prod_index` below).
-        expanded_grammar = {}
-
-        # Put all the productions in one big list, so each one has an index.
-        # We will use the indices in the action table (as arguments to Reduce actions).
-        prods = []
-        prods_with_indexes_by_nt = collections.defaultdict(list)
-
-        # We'll use these tuples at run time when constructing AST nodes.
-        reductions = []
-        for nt in grammar:
-            expanded_grammar[nt] = []
-            for prod_index, rhs in enumerate(grammar[nt]):
-                for expanded_rhs, removals in expand_optional_symbols(rhs):
-                    expanded_grammar[nt].append(expanded_rhs)
-                    prods.append((nt, prod_index, expanded_rhs))
-                    prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
-                    names = ["x" + str(i)
-                             for i, e in enumerate(expanded_rhs)
-                             if is_terminal(grammar, e) or is_nt(grammar, e)]
-                    names_with_none = names[:]
-                    for i in removals:
-                        names_with_none.insert(i, "None")
-                    fn = ("lambda "
-                          + ", ".join(names)
-                          + ": ({!r}, {!r}, [".format(nt, prod_index)
-                          + ", ".join(names_with_none)
-                          + "])")
-                    reductions.append((nt, len(names), fn))
-
-        return expanded_grammar, prods, prods_with_indexes_by_nt, reductions
-
-    grammar, prods, prods_with_indexes_by_nt, reductions = expand_optional_elements()
+    grammar, prods, prods_with_indexes_by_nt, reductions = expand_all_optional_elements(grammar)
 
     grammar = make_epsilon_free_step_2(grammar, goal)
     start = start_sets(grammar)
