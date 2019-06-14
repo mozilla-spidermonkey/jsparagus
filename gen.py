@@ -1122,16 +1122,16 @@ def write_parser(out, actions, ctns, reductions):
 
 
 def generate_parser(out, grammar, goal):
-    def get_state_index(successors):
-        """ Get a number for a set of states, assigning a new number if needed. """
-        assert isinstance(successors, State)
-        if successors in visited_states:
-            return visited_states[successors]
+    def get_state_index(successor):
+        """ Get a number for a state, assigning a new number if needed. """
+        assert isinstance(successor, State)
+        if successor in visited_states:
+            return visited_states[successor]
         else:
-            visited_states[successors] = state_index = len(visited_states)
-            ## print("State-set #{} = {}"
-            ##       .format(state_index, successors.closure()))
-            todo.append(successors)
+            visited_states[successor] = state_index = len(visited_states)
+            ## print("State #{} = {}"
+            ##       .format(state_index, successor.closure()))
+            todo.append(successor)
             return state_index
 
     def analyze_state(current_state):
