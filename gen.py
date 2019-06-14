@@ -1233,39 +1233,40 @@ def generate_parser(out, grammar, goal):
 
     grammar = make_epsilon_free_step_1(grammar)
 
-    # Expand optional elements in the grammar. We replace each production that
-    # contains an optional element with two productions: one with and one
-    # without. This means the rest of the algorithm can ignore the possibility
-    # of optional elements. But we keep the numbering of all the productions as
-    # they appear in the original grammar (`prod_index` below).
-    expanded_grammar = {}
+    if 1:
+        # Expand optional elements in the grammar. We replace each production that
+        # contains an optional element with two productions: one with and one
+        # without. This means the rest of the algorithm can ignore the possibility
+        # of optional elements. But we keep the numbering of all the productions as
+        # they appear in the original grammar (`prod_index` below).
+        expanded_grammar = {}
 
-    # Put all the productions in one big list, so each one has an index.
-    # We will use the indices in the action table (as arguments to Reduce actions).
-    prods = []
-    prods_with_indexes_by_nt = collections.defaultdict(list)
+        # Put all the productions in one big list, so each one has an index.
+        # We will use the indices in the action table (as arguments to Reduce actions).
+        prods = []
+        prods_with_indexes_by_nt = collections.defaultdict(list)
 
-    # We'll use these tuples at run time when constructing AST nodes.
-    reductions = []
-    for nt in grammar:
-        expanded_grammar[nt] = []
-        for prod_index, rhs in enumerate(grammar[nt]):
-            for expanded_rhs, removals in expand_optional_symbols(rhs):
-                expanded_grammar[nt].append(expanded_rhs)
-                prods.append((nt, prod_index, expanded_rhs))
-                prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
-                names = ["x" + str(i)
-                         for i, e in enumerate(expanded_rhs)
-                         if is_terminal(grammar, e) or is_nt(grammar, e)]
-                names_with_none = names[:]
-                for i in removals:
-                    names_with_none.insert(i, "None")
-                fn = ("lambda "
-                      + ", ".join(names)
-                      + ": ({!r}, {!r}, [".format(nt, prod_index)
-                      + ", ".join(names_with_none)
-                      + "])")
-                reductions.append((nt, len(names), fn))
+        # We'll use these tuples at run time when constructing AST nodes.
+        reductions = []
+        for nt in grammar:
+            expanded_grammar[nt] = []
+            for prod_index, rhs in enumerate(grammar[nt]):
+                for expanded_rhs, removals in expand_optional_symbols(rhs):
+                    expanded_grammar[nt].append(expanded_rhs)
+                    prods.append((nt, prod_index, expanded_rhs))
+                    prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
+                    names = ["x" + str(i)
+                             for i, e in enumerate(expanded_rhs)
+                             if is_terminal(grammar, e) or is_nt(grammar, e)]
+                    names_with_none = names[:]
+                    for i in removals:
+                        names_with_none.insert(i, "None")
+                    fn = ("lambda "
+                          + ", ".join(names)
+                          + ": ({!r}, {!r}, [".format(nt, prod_index)
+                          + ", ".join(names_with_none)
+                          + "])")
+                    reductions.append((nt, len(names), fn))
 
     grammar = expanded_grammar
 
