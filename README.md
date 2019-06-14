@@ -145,14 +145,13 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 
 *   No support for any kind of dangling `else` workaround.
 
-*   Kleene `?` is supported, but no Kleene `*`.
+    Since `else` is a nonterminal, the cleanest and easiest workaround
+    would be an explicit way to say in the grammar, "shifting with this
+    next token is preferred over reducing with other rules".
 
 *   There is nothing like the level of weirdness that would be needed to
     implement automatic semicolon insertion and restricted productions
     ("`[no LineTerminator here]`").
-
-    I have talked this over with @jimblandy and it's possible.
-    It just requires some seriously special hacks.
 
 *   The input grammar can't contain actions (code to execute while parsing,
     useful for building a nice AST;
@@ -166,12 +165,16 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 
 *   Only supports a single goal nonterminal.
 
-    I think this might be easy to fix, though.
-
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `)` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `a b` produces "expected one of {'-', '/', '+', '*', ')', None}, got 'VAR'".
+
+*   No support for Rust output yet.
+
+*   No support for providing any kind of advice to the lexer yet. This
+    is needed for resolving the conflict in the lexical grammar between
+    RegExps and division operators.
 
 
 ## What I learned, what I wonder
