@@ -693,27 +693,27 @@ def dump_grammar(grammar):
         print()
 
 
-def state_to_str(grammar, prods, state):
-    nt, _i, rhs = prods[state.prod_index]
-    if state.lookahead is None:
+def lr_item_to_str(grammar, prods, item):
+    nt, _i, rhs = prods[item.prod_index]
+    if item.lookahead is None:
         la = []
     else:
-        la = [element_to_str(grammar, state.lookahead)]
+        la = [element_to_str(grammar, item.lookahead)]
     return "{} ::= {} >> {{{}}}".format(
         nt,
-        " ".join([element_to_str(grammar, e) for e in rhs[:state.offset]]
+        " ".join([element_to_str(grammar, e) for e in rhs[:item.offset]]
                  + ["\N{MIDDLE DOT}"]
                  + la
-                 + [element_to_str(grammar, e) for e in rhs[state.offset:]]),
+                 + [element_to_str(grammar, e) for e in rhs[item.offset:]]),
         ", ".join(
             "$" if t is None else element_to_str(grammar, t)
-            for t in state.followed_by)
+            for t in item.followed_by)
     )
 
 
 def state_set_to_str(grammar, prods, state_set):
     return "{{{}}}".format(
-        ",  ".join(state_to_str(grammar, prods, state) for state in state_set)
+        ",  ".join(lr_item_to_str(grammar, prods, state) for state in state_set)
     )
 
 
@@ -987,7 +987,7 @@ class PgenContext:
                          "{}"
                          .format(scenario_str,
                                  t_str,
-                                 state_to_str(grammar, self.prods, some_shift_option),
+                                 lr_item_to_str(grammar, self.prods, some_shift_option),
                                  production_to_str(grammar, nt, rhs),
                                  t_str,
                                  nt,
@@ -1014,7 +1014,7 @@ class StateSet:
 
     def __str__(self):
         return "{{{}}}".format(
-            ",  ".join(state_to_str(self.context.grammar, self.context.prods, state)
+            ",  ".join(lr_item_to_str(self.context.grammar, self.context.prods, state)
                        for state in self._states)
         )
 
@@ -1052,7 +1052,7 @@ class StateSet:
                         # still in the grammar. XXX FIXME
                         if callee_rhs or callee_rhs in grammar[next_symbol]:
                             ## print("    Considering stepping from state {} into production {}"
-                            ##       .format(state_to_str(grammar, prods, state),
+                            ##       .format(lr_item_to_str(grammar, prods, state),
                             ##               production_to_str(grammar, next_symbol, callee_rhs)))
                             followers = specific_follow(start_set_cache,
                                                         state.prod_index, state.offset,
