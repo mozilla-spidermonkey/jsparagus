@@ -847,8 +847,9 @@ class PgenContext:
         like `name ::= IDENT` when we have `[lookahead not in {IDENT}]`.
 
         Such silly items can exist; but we would only care if it caused
-        get_state_set_index to treat equivalent state-sets as distinct.
-        I haven't seen that happen for any grammar yet.
+        get_state_index to treat equivalent states as distinct. I haven't seen
+        that happen for any grammar yet.
+
         """
 
         grammar = self.grammar
@@ -889,8 +890,8 @@ class PgenContext:
             item = item._replace(lookahead=look)
         return item
 
-    def raise_reduce_reduce_conflict(self, state_set, t, i, j):
-        scenario_str = state_set.traceback()
+    def raise_reduce_reduce_conflict(self, state, t, i, j):
+        scenario_str = state.traceback()
         nt1, _, rhs1 = self.prods[i]
         nt2, _, rhs2 = self.prods[j]
 
@@ -968,7 +969,7 @@ class PgenContext:
         for xnt, xrhs in self.why_start(t, prod_index, offset):
             yield xnt, xrhs
 
-    def raise_shift_reduce_conflict(self, state_set, t, shift_options, nt, rhs):
+    def raise_shift_reduce_conflict(self, state, t, shift_options, nt, rhs):
         assert shift_options
         assert t in self.follow[nt]
         grammar = self.grammar
@@ -976,7 +977,7 @@ class PgenContext:
         shift_option_nt = self.prods[some_shift_option.prod_index][0]
         shift_option_nt_str = element_to_str(grammar, shift_option_nt)
         t_str = element_to_str(grammar, t)
-        scenario_str = state_set.traceback()
+        scenario_str = state.traceback()
 
         raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
                          "can't decide whether to shift into:\n"
@@ -996,7 +997,7 @@ class PgenContext:
                                          for prod in self.why_follow(nt, t))))
 
 
-class StateSet:
+class State:
     __slots__ = ['context', '_lr_items', '_debug_traceback']
 
     def __init__(self, context, items, debug_traceback=None):
@@ -1121,30 +1122,30 @@ def write_parser(out, actions, ctns, reductions):
 
 
 def generate_parser(out, grammar, goal):
-    def get_state_set_index(successors):
+    def get_state_index(successors):
         """ Get a number for a set of states, assigning a new number if needed. """
-        assert isinstance(successors, StateSet)
-        if successors in visited_state_sets:
-            return visited_state_sets[successors]
+        assert isinstance(successors, State)
+        if successors in visited_states:
+            return visited_states[successors]
         else:
-            visited_state_sets[successors] = state_index = len(visited_state_sets)
+            visited_states[successors] = state_index = len(visited_states)
             ## print("State-set #{} = {}"
             ##       .format(state_index, successors.closure()))
             todo.append(successors)
             return state_index
 
-    def analyze_state_set(current_state_set):
+    def analyze_state(current_state):
         """Generate the LR parser table entry for a single state set.
 
         This can be done without iterating. But this function sometimes needs
-        state-set-ids for state sets we haven't considered yet, so it calls
-        get_state_set_index (a side effect).
+        state-ids for states we haven't considered yet, so it calls
+        get_state_index (a side effect).
         """
 
-        context = current_state_set.context
+        context = current_state.context
 
-        #print("analyzing state set {}".format(item_set_to_str(grammar, prods, current_state_set)))
-        #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state_set.closure())))
+        #print("analyzing state set {}".format(item_set_to_str(grammar, prods, current_state)))
+        #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state.closure())))
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
@@ -1158,7 +1159,7 @@ def generate_parser(out, grammar, goal):
         # - At the end of a production, we can reduce.
         # There is also a sort of "stepping in" effect for nonterminals, which
         # is achieved by the .closure() call at the top of the loop.
-        for item in current_state_set.closure():
+        for item in current_state.closure():
             offset = item.offset
             nt, i, rhs = prods[item.prod_index]
             if offset < len(rhs):
@@ -1192,22 +1193,22 @@ def generate_parser(out, grammar, goal):
                 for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
-                            context.raise_reduce_reduce_conflict(current_state_set, t, reduce_prods[t], item.prod_index)
+                            context.raise_reduce_reduce_conflict(current_state, t, reduce_prods[t], item.prod_index)
                         reduce_prods[t] = item.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
-        for t, shift_state_set in shift_items.items():
-            shift_state_set = StateSet(context, shift_state_set, current_state_set)  # freeze the set
-            action_row[t] = get_state_set_index(shift_state_set)
+        for t, shift_state in shift_items.items():
+            shift_state = State(context, shift_state, current_state)  # freeze the set
+            action_row[t] = get_state_index(shift_state)
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
-                context.raise_shift_reduce_conflict(current_state_set, t, shift_items[t], nt, rhs)
+                context.raise_shift_reduce_conflict(current_state, t, shift_items[t], nt, rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
-        ctn_row = {nt: get_state_set_index(StateSet(context, ss, current_state_set))
+        ctn_row = {nt: get_state_index(State(context, ss, current_state))
                    for nt, ss in ctn_items.items()}
         return action_row, ctn_row
 
@@ -1284,23 +1285,23 @@ def generate_parser(out, grammar, goal):
                                       lookahead=None,
                                       followed_by=frozenset([END]))
     if start_item is None:
-        init_state_set = StateSet(context, [])
+        init_state = State(context, [])
     else:
-        init_state_set = StateSet(context, [start_item])
+        init_state = State(context, [start_item])
 
     # We assign each reachable state set a number, and we keep a list of state
     # sets that have numbers but haven't been analyzed yet. When the list is
     # empty, we'll be done.
-    visited_state_sets = {
-        init_state_set: 0
+    visited_states = {
+        init_state: 0
     }
-    todo = [init_state_set]
+    todo = [init_state]
 
     actions = []
     ctns = []
     while todo:
-        current_state_set = todo.pop(0)
-        action_row, ctn_row = analyze_state_set(current_state_set)
+        current_state = todo.pop(0)
+        action_row, ctn_row = analyze_state(current_state)
         actions.append(action_row)
         ctns.append(ctn_row)
 
