@@ -381,6 +381,19 @@ def expand_function_nonterminals(grammar, goal):
     return result
 
 
+def add_init_nonterminal(grammar, goal):
+    """Add an "init" nonterminal to the grammar. This nt is guaranteed to be used
+    in only one place, so that whenever it is reduced we know we're done.
+    """
+
+    grammar = clone_grammar(grammar)
+    init_nt = gensym(grammar, goal)
+    grammar[init_nt] = [
+        [goal]
+    ]
+    return grammar, init_nt
+
+
 # *** Start sets and follow sets **********************************************
 
 EMPTY = "(empty)"
@@ -1049,6 +1062,15 @@ class PgenContext:
 
 
 class State:
+    """A parser state. A state is basically a set of LRItems.
+
+    (For convenience, each State also has an attribute `self.context` that
+    points to the PgenContext that has the grammar and various cached data; and
+    an attribute `_debug_traceback` used in error messages. But for the most
+    part, when we talk about a "state" we only care about the frozen set of
+    LRItems in `self._lr_items`.)
+    """
+
     __slots__ = ['context', '_lr_items', '_debug_traceback']
 
     def __init__(self, context, items, debug_traceback=None):
@@ -1273,20 +1295,11 @@ def generate_parser(out, grammar, goal):
     grammar = expand_function_nonterminals(grammar, goal)
     check(grammar)
 
-    # Add an "init" nonterminal to the grammar. This nt is guaranteed to be
-    # used in only one place, so that whenever it is reduced we know we're
-    # done.
-    grammar = clone_grammar(grammar)
-    init_nt = gensym(grammar, goal)
-    grammar[init_nt] = [
-        [goal]
-    ]
-
+    grammar, init_nt = add_init_nonterminal(grammar, goal)
     grammar = make_epsilon_free_step_1(grammar)
-
     grammar, prods, prods_with_indexes_by_nt, reductions = expand_all_optional_elements(grammar)
-
     grammar = make_epsilon_free_step_2(grammar, goal)
+
     start = start_sets(grammar)
     start_set_cache = make_start_set_cache(grammar, prods, start)
 
@@ -1294,7 +1307,7 @@ def generate_parser(out, grammar, goal):
     # Maybe we can just add a check at run time that we exited from the right place in the table...
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nt)
 
-    # A state is a (frozen) set of LRItems
+    # Construct the start state.
     init_production_index = prods.index((init_nt, 0, [goal]))
     context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
     start_item = context.make_lr_item(init_production_index,
