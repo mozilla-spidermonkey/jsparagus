@@ -711,9 +711,9 @@ def lr_item_to_str(grammar, prods, item):
     )
 
 
-def state_set_to_str(grammar, prods, state_set):
+def item_set_to_str(grammar, prods, item_set):
     return "{{{}}}".format(
-        ",  ".join(lr_item_to_str(grammar, prods, item) for item in state_set)
+        ",  ".join(lr_item_to_str(grammar, prods, item) for item in item_set)
     )
 
 
@@ -1143,8 +1143,8 @@ def generate_parser(out, grammar, goal):
 
         context = current_state_set.context
 
-        #print("analyzing state set {}".format(state_set_to_str(grammar, prods, current_state_set)))
-        #print("  closure: {}".format(state_set_to_str(grammar, prods, current_state_set.closure())))
+        #print("analyzing state set {}".format(item_set_to_str(grammar, prods, current_state_set)))
+        #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state_set.closure())))
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
