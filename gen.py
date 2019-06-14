@@ -713,7 +713,7 @@ def lr_item_to_str(grammar, prods, item):
 
 def state_set_to_str(grammar, prods, state_set):
     return "{{{}}}".format(
-        ",  ".join(lr_item_to_str(grammar, prods, state) for state in state_set)
+        ",  ".join(lr_item_to_str(grammar, prods, item) for item in state_set)
     )
 
 
@@ -765,8 +765,8 @@ def state_set_to_str(grammar, prods, state_set):
 # As we read `a = b + c`, our parser's internal state is like this
 # (eliding a few steps, like how we recognize that `a` is a primitive):
 #
-#     current point in input  superposed parser states
-#     ----------------------  ------------------------
+#     current point in input  superposed parser state
+#     ----------------------  -----------------------
 #     · a = b + c             assignment ::= · sum
 #                             assignment ::= · primitive "=" assignment
 #
@@ -785,8 +785,9 @@ def state_set_to_str(grammar, prods, state_set):
 #     a = b · + c             sum ::= primitive ·
 #                             assignment ::= primitive · "=" assignment
 #
-# And so on. (It is not meant to be clear yet just *how* the parser knows which
-# rules might match.)
+# And so on. We call each dotted production an "LR item", and the superposition
+# of several LR items is called a "state".  (It is not meant to be clear yet
+# just *how* the parser knows which rules might match.)
 #
 # Since the grammar is nested, we really have a stack of these parser state
 # superpositions.
@@ -832,7 +833,7 @@ class PgenContext:
         self.start_set_cache = start_set_cache
         self.follow = follow
 
-    def make_state(self, *args, **kwargs):
+    def make_lr_item(self, *args, **kwargs):
         """Create an LRItem tuple and advance it past any lookahead rules.
 
         The main algorithm assumes that the "next element" in any LRItem is
@@ -842,10 +843,10 @@ class PgenContext:
         We don't bother doing extra work here to eliminate lookahead
         restrictions that are redundant with what's coming up next in the
         grammar, like `[lookahead != NUM]` when the production is
-        `name ::= IDENT`. We also don't eliminate states that can't match,
+        `name ::= IDENT`. We also don't eliminate items that can't match,
         like `name ::= IDENT` when we have `[lookahead not in {IDENT}]`.
 
-        Such silly states can exist; but we would only care if it caused
+        Such silly items can exist; but we would only care if it caused
         get_state_set_index to treat equivalent state-sets as distinct.
         I haven't seen that happen for any grammar yet.
         """
@@ -853,40 +854,40 @@ class PgenContext:
         grammar = self.grammar
         prods = self.prods
 
-        state = LRItem(*args, **kwargs)
-        assert isinstance(state.followed_by, frozenset)
-        _nt, _i, rhs = prods[state.prod_index]
-        while state.offset < len(rhs) and is_lookahead_rule(rhs[state.offset]):
-            state = state._replace(offset=state.offset + 1,
-                                   lookahead=lookahead_intersect(state.lookahead, rhs[state.offset]))
+        item = LRItem(*args, **kwargs)
+        assert isinstance(item.followed_by, frozenset)
+        _nt, _i, rhs = prods[item.prod_index]
+        while item.offset < len(rhs) and is_lookahead_rule(rhs[item.offset]):
+            item = item._replace(offset=item.offset + 1,
+                                 lookahead=lookahead_intersect(item.lookahead, rhs[item.offset]))
 
-        #if state.lookahead is not None:
+        #if item.lookahead is not None:
         if False:  # this block is disabled for now; see comment
-            # We want equivalent states to be ==, so the following code
+            # We want equivalent items to be ==, so the following code
             # canonicalizes lookahead rules, eliminates lookahead rules that
             # are redundant with the upcoming symbols in the rhs, and
-            # eliminates states that (due to lookahead rules) won't match
+            # eliminates items that (due to lookahead rules) won't match
             # anything.
             #
             # This sounds good in theory, and it does reduce the number of
             # LRItems we end up tracking, but I have not found an example where
-            # it reduces the number of runtime "parser states" i.e. state-sets.
-            # So this code is disabled for now.
+            # it reduces the number of parser states. So this code is disabled
+            # for now.
 
-            expected = seq_start(grammar, start, rhs[state.offset:])
-            if state.lookahead.positive:
-                ok_set = expected & state.lookahead.set
+            expected = seq_start(grammar, start, rhs[item.offset:])
+            if item.lookahead.positive:
+                ok_set = expected & item.lookahead.set
             else:
-                ok_set = expected - state.lookahead.set
+                ok_set = expected - item.lookahead.set
 
             if len(ok_set) == 0:
-                return None  # this state can't match anything
+                return None  # this item can't match anything
             elif ok_set == expected:
                 look = None
             else:
                 look = LookaheadRule(frozenset(ok_set), True)
-            state = state._replace(lookahead=look)
-        return state
+            item = item._replace(lookahead=look)
+        return item
 
     def raise_reduce_reduce_conflict(self, state_set, t, i, j):
         scenario_str = state_set.traceback()
@@ -1014,14 +1015,14 @@ class StateSet:
 
     def __str__(self):
         return "{{{}}}".format(
-            ",  ".join(lr_item_to_str(self.context.grammar, self.context.prods, state)
-                       for state in self._states)
+            ",  ".join(lr_item_to_str(self.context.grammar, self.context.prods, item)
+                       for item in self._states)
         )
 
     def closure(self):
         """Compute transitive closure of this state set under left-calls.
 
-        That is, return a superset of self that adds every state that's
+        That is, return a superset of self that adds every item that's
         reachable from it by "stepping in" to nonterminals without consuming
         any tokens. Note that it's often possible to "step in" repeatedly.
 
@@ -1037,10 +1038,10 @@ class StateSet:
         closure = set(self._states)
         closure_todo = collections.deque(self._states)
         while closure_todo:
-            state = closure_todo.popleft()
-            _nt, _i, rhs = prods[state.prod_index]
-            if state.offset < len(rhs):
-                next_symbol = rhs[state.offset]
+            item = closure_todo.popleft()
+            _nt, _i, rhs = prods[item.prod_index]
+            if item.offset < len(rhs):
+                next_symbol = rhs[item.offset]
                 if is_nt(grammar, next_symbol):
                     # Step in to each production for this nt.
                     for dest_prod_index, callee_rhs in prods_with_indexes_by_nt[next_symbol]:
@@ -1051,17 +1052,17 @@ class StateSet:
                         # must now check that the production we just found is
                         # still in the grammar. XXX FIXME
                         if callee_rhs or callee_rhs in grammar[next_symbol]:
-                            ## print("    Considering stepping from state {} into production {}"
-                            ##       .format(lr_item_to_str(grammar, prods, state),
+                            ## print("    Considering stepping from item {} into production {}"
+                            ##       .format(lr_item_to_str(grammar, prods, item),
                             ##               production_to_str(grammar, next_symbol, callee_rhs)))
                             followers = specific_follow(start_set_cache,
-                                                        state.prod_index, state.offset,
-                                                        state.followed_by)
-                            new_state = context.make_state(dest_prod_index, 0, state.lookahead,
-                                                           followers)
-                            if new_state is not None and new_state not in closure:
-                                closure.add(new_state)
-                                closure_todo.append(new_state)
+                                                        item.prod_index, item.offset,
+                                                        item.followed_by)
+                            new_item = context.make_lr_item(dest_prod_index, 0, item.lookahead,
+                                                            followers)
+                            if new_item is not None and new_item not in closure:
+                                closure.add(new_item)
+                                closure_todo.append(new_item)
         return closure
 
     def traceback(self):
@@ -1154,42 +1155,42 @@ def generate_parser(out, grammar, goal):
         # - At the end of a production, we can reduce.
         # There is also a sort of "stepping in" effect for nonterminals, which
         # is achieved by the .closure() call at the top of the loop.
-        for state in current_state_set.closure():
-            offset = state.offset
-            nt, i, rhs = prods[state.prod_index]
+        for item in current_state_set.closure():
+            offset = item.offset
+            nt, i, rhs = prods[item.prod_index]
             if offset < len(rhs):
                 next_symbol = rhs[offset]
                 if is_terminal(grammar, next_symbol):
-                    if lookahead_contains(state.lookahead, next_symbol):
-                        next_state = context.make_state(state.prod_index, offset + 1, None, state.followed_by)
-                        if next_state is not None:
-                            shift_states[next_symbol].add(next_state)
+                    if lookahead_contains(item.lookahead, next_symbol):
+                        next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
+                        if next_item is not None:
+                            shift_states[next_symbol].add(next_item)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional or Apply (those are preprocessed out of
-                    # the grammar) or LookaheadRule (see make_state).
+                    # the grammar) or LookaheadRule (see make_lr_item).
                     assert is_nt(grammar, next_symbol)
 
                     # We never reduce with a lookahead restriction still
                     # active, so `lookahead=None` is appropriate.
-                    next_state = context.make_state(state.prod_index,
-                                                    offset + 1,
-                                                    lookahead=None,
-                                                    followed_by=state.followed_by)
-                    if next_state is not None:
-                        ctn_states[next_symbol].add(next_state)
+                    next_item = context.make_lr_item(item.prod_index,
+                                                     offset + 1,
+                                                     lookahead=None,
+                                                     followed_by=item.followed_by)
+                    if next_item is not None:
+                        ctn_states[next_symbol].add(next_item)
             else:
-                if state.lookahead is not None:
+                if item.lookahead is not None:
                     # I think we could improve on this with canonical LR.
                     # The simplification in LALR might make it too weird though.
                     raise ValueError("invalid grammar: lookahead restriction still active "
                                      "at end of production " +
                                      production_to_str(grammar, nt, rhs))
-                for t in state.followed_by:
+                for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
-                            context.raise_reduce_reduce_conflict(current_state_set, t, reduce_prods[t], state.prod_index)
-                        reduce_prods[t] = state.prod_index
+                            context.raise_reduce_reduce_conflict(current_state_set, t, reduce_prods[t], item.prod_index)
+                        reduce_prods[t] = item.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
@@ -1275,14 +1276,14 @@ def generate_parser(out, grammar, goal):
     # A state set is a (frozen) set of LRItems
     init_production_index = prods.index((init_nt, 0, [goal]))
     context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
-    start_state = context.make_state(init_production_index,
-                                     0,
-                                     lookahead=None,
-                                     followed_by=frozenset([END]))
-    if start_state is None:
+    start_item = context.make_lr_item(init_production_index,
+                                      0,
+                                      lookahead=None,
+                                      followed_by=frozenset([END]))
+    if start_item is None:
         init_state_set = StateSet(context, [])
     else:
-        init_state_set = StateSet(context, [start_state])
+        init_state_set = StateSet(context, [start_item])
 
     # We assign each reachable state set a number, and we keep a list of state
     # sets that have numbers but haven't been analyzed yet. When the list is
