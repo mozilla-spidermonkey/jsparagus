@@ -69,8 +69,14 @@ handle:
     Otherwise we'd get an error message correctly noting that the
     grammar is ambiguous as written.
 
-        ValueError: shift-reduce conflict when looking at "if" "(" Expression_1 ")" Statement_1 followed by "else"
-        can't decide whether to shift into:
-            IfStatement_1 ::= "if" "(" Expression_1 ")" Statement_1 "else" · Statement_1
-        or reduce using:
-            IfStatement_1 ::= "if" "(" Expression_1 ")" Statement_1
+    ```
+    ValueError: shift-reduce conflict when looking at "if" "(" Expression_1 ")" "if" "(" Expression_1 ")" Statement_1 followed by "else"
+    can't decide whether to shift into:
+        IfStatement_1 ::= "if" "(" Expression_1 ")" Statement_1 "else" · Statement_1 >> {...}
+    or reduce using:
+        IfStatement_1 ::= "if" "(" Expression_1 ")" Statement_1
+
+    These productions show how "else" can appear after IfStatement_1 (if we reduce):
+        IfStatement_1 ::= "if" "(" Expression_1 ")" Statement_1 "else" Statement_1
+        Statement_1 ::= IfStatement_1
+    ```
