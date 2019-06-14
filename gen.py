@@ -997,26 +997,26 @@ class PgenContext:
 
 
 class StateSet:
-    __slots__ = ['context', '_states', '_debug_traceback']
+    __slots__ = ['context', '_lr_items', '_debug_traceback']
 
     def __init__(self, context, states, debug_traceback=None):
         self.context = context
         a = collections.defaultdict(set)
         for s in states:
             a[s.prod_index, s.offset, s.lookahead] |= s.followed_by
-        self._states = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
+        self._lr_items = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
         self._debug_traceback = debug_traceback
 
     def __eq__(self, other):
-        return self._states == other._states
+        return self._lr_items == other._lr_items
 
     def __hash__(self):
-        return hash(tuple(sorted(map(hash, self._states))))
+        return hash(tuple(sorted(map(hash, self._lr_items))))
 
     def __str__(self):
         return "{{{}}}".format(
             ",  ".join(lr_item_to_str(self.context.grammar, self.context.prods, item)
-                       for item in self._states)
+                       for item in self._lr_items)
         )
 
     def closure(self):
@@ -1035,8 +1035,8 @@ class StateSet:
         prods_with_indexes_by_nt = context.prods_with_indexes_by_nt
         start_set_cache = context.start_set_cache
 
-        closure = set(self._states)
-        closure_todo = collections.deque(self._states)
+        closure = set(self._lr_items)
+        closure_todo = collections.deque(self._lr_items)
         while closure_todo:
             item = closure_todo.popleft()
             _nt, _i, rhs = prods[item.prod_index]
@@ -1073,13 +1073,13 @@ class StateSet:
         while ss is not None:
             traceback.append(ss)
             ss = ss._debug_traceback
-        assert next(iter(traceback[-1]._states)).offset == 0
+        assert next(iter(traceback[-1]._lr_items)).offset == 0
         del traceback[-1]
         traceback.reverse()
 
         scenario = []
         for ss in traceback:
-            state = next(iter(ss._states))
+            state = next(iter(ss._lr_items))
             nt, prod_index, rhs = self.context.prods[state.prod_index]
             assert state.offset > 0
             scenario.append(rhs[state.offset - 1])
@@ -1143,13 +1143,13 @@ def generate_parser(out, grammar, goal):
         #print("analyzing state set {}".format(state_set_to_str(grammar, prods, current_state_set)))
         #print("  closure: {}".format(state_set_to_str(grammar, prods, current_state_set.closure())))
 
-        # Step 1. Visit every state and list what we want to do for each
+        # Step 1. Visit every item and list what we want to do for each
         # possible next token.
-        shift_states = collections.defaultdict(set)  # maps terminals to state-sets
-        ctn_states = collections.defaultdict(set)  # maps nonterminals to state-sets
+        shift_items = collections.defaultdict(set)  # maps terminals to item-sets
+        ctn_items = collections.defaultdict(set)  # maps nonterminals to item-sets
         reduce_prods = {}  # maps follow-terminals to production indexes
 
-        # Each state has three ways to advance.
+        # Each item has three ways to advance.
         # - We can step over a terminal.
         # - We can step over a nonterminal.
         # - At the end of a production, we can reduce.
@@ -1164,7 +1164,7 @@ def generate_parser(out, grammar, goal):
                     if lookahead_contains(item.lookahead, next_symbol):
                         next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
                         if next_item is not None:
-                            shift_states[next_symbol].add(next_item)
+                            shift_items[next_symbol].add(next_item)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional or Apply (those are preprocessed out of
@@ -1178,7 +1178,7 @@ def generate_parser(out, grammar, goal):
                                                      lookahead=None,
                                                      followed_by=item.followed_by)
                     if next_item is not None:
-                        ctn_states[next_symbol].add(next_item)
+                        ctn_items[next_symbol].add(next_item)
             else:
                 if item.lookahead is not None:
                     # I think we could improve on this with canonical LR.
@@ -1194,18 +1194,18 @@ def generate_parser(out, grammar, goal):
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}
-        for t, shift_state_set in shift_states.items():
+        for t, shift_state_set in shift_items.items():
             shift_state_set = StateSet(context, shift_state_set, current_state_set)  # freeze the set
             action_row[t] = get_state_set_index(shift_state_set)
         for t, prod_index in reduce_prods.items():
             nt, _, rhs = prods[prod_index]
             if t in action_row:
-                context.raise_shift_reduce_conflict(current_state_set, t, shift_states[t], nt, rhs)
+                context.raise_shift_reduce_conflict(current_state_set, t, shift_items[t], nt, rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if nt == init_nt else -prod_index - 1
         ctn_row = {nt: get_state_set_index(StateSet(context, ss, current_state_set))
-                   for nt, ss in ctn_states.items()}
+                   for nt, ss in ctn_items.items()}
         return action_row, ctn_row
 
 
