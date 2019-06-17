@@ -637,23 +637,7 @@ def expand_all_optional_elements(grammar):
                 prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
 
-    # We'll use these tuples at run time when constructing AST nodes.
-    reductions = []
-    for prod in prods:
-        names = ["x" + str(i)
-                 for i, e in enumerate(prod.rhs)
-                 if is_terminal(grammar, e) or is_nt(grammar, e)]
-        names_with_none = names[:]
-        for i in prod.removals:
-            names_with_none.insert(i, "None")
-        fn = ("lambda "
-              + ", ".join(names)
-              + ": ({!r}, {!r}, [".format(prod.nt, prod.index)
-              + ", ".join(names_with_none)
-              + "])")
-        reductions.append((prod.nt, len(names), fn))
-
-    return expanded_grammar, prods, prods_with_indexes_by_nt, reductions
+    return expanded_grammar, prods, prods_with_indexes_by_nt
 
 
 def make_epsilon_free_step_1(grammar):
@@ -1215,7 +1199,7 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     return frozenset(result)
 
 
-def write_parser(out, actions, ctns, reductions, init_state_map):
+def write_parser(out, grammar, actions, ctns, prods, init_state_map):
     out.write("import pgen_runtime\n\n")
     out.write("actions = [\n")
     for row in actions:
@@ -1225,9 +1209,23 @@ def write_parser(out, actions, ctns, reductions, init_state_map):
     for row in ctns:
         out.write("    " + repr(row) + ",\n")
     out.write("]\n\n")
-    out.write("reductions = [\n{}]\n\n"
-              .format("".join("    ({!r}, {!r}, {}),\n".format(nt, length, reducer)
-                              for nt, length, reducer in reductions)))
+
+    out.write("reductions = [\n")
+    for prod in prods:
+        names = ["x" + str(i)
+                 for i, e in enumerate(prod.rhs)
+                 if is_terminal(grammar, e) or is_nt(grammar, e)]
+        names_with_none = names[:]
+        for i in prod.removals:
+            names_with_none.insert(i, "None")
+        fn = ("lambda "
+              + ", ".join(names)
+              + ": ({!r}, {!r}, [".format(prod.nt, prod.index)
+              + ", ".join(names_with_none)
+              + "])")
+        out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
+    out.write("]\n\n")
+
     for init_nt, index in init_state_map.items():
         out.write("parse_{} = pgen_runtime.make_parse_fn(actions, ctns, reductions, {})\n"
                   .format(init_nt, index))
@@ -1375,7 +1373,7 @@ def generate_parser(out, grammar, goal_nts):
     grammar, init_nt_map = add_init_nonterminals(grammar, goal_nts)
     init_nts = frozenset(init_nt_map.values())
     grammar = make_epsilon_free_step_1(grammar)
-    grammar, prods, prods_with_indexes_by_nt, reductions = expand_all_optional_elements(grammar)
+    grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(grammar)
     grammar = make_epsilon_free_step_2(grammar, goal_nts)
 
     # Now the grammar is in its final form. Compute information about it that
@@ -1390,7 +1388,7 @@ def generate_parser(out, grammar, goal_nts):
     actions, ctns, init_state_map = pgen.run()
 
     # Finally, dump the output.
-    write_parser(out, actions, ctns, reductions, init_state_map)
+    write_parser(out, grammar, actions, ctns, prods, init_state_map)
 
 
 class Parser:
