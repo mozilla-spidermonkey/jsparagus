@@ -603,14 +603,16 @@ def expand_optional_symbols_in_rhs(rhs, start_index=0):
 # source.  We need to associate them with the original grammar in order to
 # produce correct ouptut, so we use Prod values to represent productions.
 #
-# -   nt is the name of the nonterminal as it appears in the original grammar.
-# -   index is the index of the source production, within nt's productions,
+# -   `nt` is the name of the nonterminal as it appears in the original grammar.
+# -   `index` is the index of the source production, within nt's productions,
 #     in the original grammar.
-# -   rhs is the fully lowered/expanded right-hand-side of the production.
+# -   `rhs` is the fully lowered/expanded right-hand-side of the production.
+# -   `removals` is the list of indexes of elements in the original rhs
+#     which were optional and are not present in this production.
 #
 # There may be many productions in a grammar that all have the same `nt` and `index`
 # because they were all produced from the same source production.
-Prod = collections.namedtuple("Prod", "nt index rhs")
+Prod = collections.namedtuple("Prod", "nt index rhs removals")
 
 
 def expand_all_optional_elements(grammar):
@@ -635,7 +637,7 @@ def expand_all_optional_elements(grammar):
         for prod_index, rhs in enumerate(grammar[nt]):
             for expanded_rhs, removals in expand_optional_symbols_in_rhs(rhs):
                 expanded_grammar[nt].append(expanded_rhs)
-                prods.append(Prod(nt, prod_index, expanded_rhs))
+                prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
                 names = ["x" + str(i)
                          for i, e in enumerate(expanded_rhs)
@@ -1040,7 +1042,9 @@ class PgenContext:
         """ Return a sequence of productions showing why the terminal t is in nt's follow set. """
 
         start_points = {}
-        for prod_index, (nt1, _, rhs1) in enumerate(self.prods):
+        for prod_index, prod in enumerate(self.prods):
+            nt1 = prod.nt
+            rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
                 if is_nt(self.grammar, rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
                     start_points[rhs1[i]] = (prod_index, i + 1)
@@ -1070,7 +1074,7 @@ class PgenContext:
         assert t in self.follow[nt]
         grammar = self.grammar
         some_shift_option = next(iter(shift_options))
-        shift_option_nt = self.prods[some_shift_option.prod_index][0]
+        shift_option_nt = self.prods[some_shift_option.prod_index].nt
         shift_option_nt_str = element_to_str(grammar, shift_option_nt)
         t_str = element_to_str(grammar, t)
         scenario_str = state.traceback()
@@ -1089,8 +1093,8 @@ class PgenContext:
                                  production_to_str(grammar, nt, rhs),
                                  t_str,
                                  nt,
-                                 "".join("    " + production_to_str(grammar, *prod) + "\n"
-                                         for prod in self.why_follow(nt, t))))
+                                 "".join("    " + production_to_str(grammar, nt, rhs) + "\n"
+                                         for nt, rhs in self.why_follow(nt, t))))
 
 
 class State:
@@ -1241,7 +1245,7 @@ class ParserGenerator:
 
         # Compute the start states.
         for goal_nt, init_nt in init_nt_map.items():
-            init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt]))
+            init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt], removals=[]))
             start_item = context.make_lr_item(init_prod_index,
                                               0,
                                               lookahead=None,
