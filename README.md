@@ -203,13 +203,19 @@ iterating to a fixed point, which is this ludicrous O(*n*<sup>2</sup>)
 in the number of pairs in the relation; 2. depth-first graph walking
 with cycle detection, which can overflow the stack.
 
-I learned one way to hack features into an LR parser generator (cf. how
-easy it is to hack stuff into a recursive descent parser). The trick I
-know is this: add more states. To add lookahead assertions, I just added
-a lookahead element to the state tuple. The trick then is to make sure
-you are normalizing states that are actually identical, to avoid
-combinatorial explosion—and eventually, I expect, table
-compression.
+I learned two ways to hack features into an LR parser generator (cf. how
+easy it is to hack stuff into a recursive descent parser). The tricks I
+know are:
+
+1.  Add custom items. To add lookahead assertions, I just added a
+    lookahead element to the LRItem tuple. The trick then is to make
+    sure you are normalizing states that are actually identical, to
+    avoid combinatorial explosion—and eventually, I expect, table
+    compression.
+
+2.  Add custom actions. I think I can support automatic semicolon
+    insertion by replacing the usual error action of some states with a
+    special ASI actions.
 
 There's a lot still to learn here.
 
