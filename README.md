@@ -163,8 +163,6 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
 *   No support for feedback from syntactic context to lexical analysis
     (selecting the lexical goal symbol).
 
-*   Only supports a single goal nonterminal.
-
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `)` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".

@@ -17,12 +17,21 @@ class GenTestCase(unittest.TestCase):
         self.tokenize = tokenize
         self.parse = gen.compile(grammar, next(iter(grammar)))
 
-    def assertParse(self, s):
-        self.parse(self.tokenize(s))
+    def compile_multi(self, tokenize, grammar, goal_nts):
+        self.tokenize = tokenize
+        obj = gen.compile_multi(grammar, goal_nts)
+        for attr in dir(obj):
+            if attr.startswith("parse_"):
+                setattr(self, attr, getattr(obj, attr))
 
-    def assertNoParse(self, s, message="banana"):
+    def assertParse(self, s, goal=None):
+        method = "parse" if goal is None else "parse_" + goal
+        getattr(self, method)(self.tokenize(s))
+
+    def assertNoParse(self, s, *, goal=None, message="banana"):
         tokens = self.tokenize(s)
-        self.assertRaisesRegex(SyntaxError, re.escape(message), lambda: self.parse(tokens))
+        method = "parse" if goal is None else "parse_" + goal
+        self.assertRaisesRegex(SyntaxError, re.escape(message), lambda: getattr(self, method)(tokens))
 
     def testSimple(self):
         grammar = {
@@ -71,7 +80,7 @@ class GenTestCase(unittest.TestCase):
             }
         )
         self.assertNoParse("ONE TWO TWO",
-                           "expected 'end of input', got 'TWO'")
+                           message="expected 'end of input', got 'TWO'")
 
     def testList(self):
         list_grammar = {
@@ -192,7 +201,7 @@ class GenTestCase(unittest.TestCase):
 
         out = io.StringIO()
         self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
-                               lambda: gen.generate_parser(out, grammar, 'goal'))
+                               lambda: gen.generate_parser(out, grammar, ['goal']))
 
     def testLeftFactor(self):
         """Most basic left-factoring test."""
@@ -315,7 +324,8 @@ class GenTestCase(unittest.TestCase):
             }
         )
         self.assertParse("z = x + y")
-        self.assertNoParse("x + y = z", "expected one of ['+', 'end of input'], got '='")
+        self.assertNoParse("x + y = z",
+                           message="expected one of ['+', 'end of input'], got '='")
 
     def testDeepRecursion(self):
         grammar = {
@@ -384,7 +394,7 @@ class GenTestCase(unittest.TestCase):
             self.parse(self.tokenize("")),
             ('goal', 0, [])
         )
-        self.assertNoParse("X", "expected 'end of input', got 'X' (line 1)")
+        self.assertNoParse("X", message="expected 'end of input', got 'X' (line 1)")
 
     def testOptionalEmpty(self):
         tokenize = lexer.LexicalGrammar("X Y")
@@ -469,7 +479,7 @@ class GenTestCase(unittest.TestCase):
                 ]
             }
         )
-        self.assertNoParse("(A)", "expected one of ['A', 'B'], got '('")
+        self.assertNoParse("(A)", message="expected one of ['A', 'B'], got '('")
         self.assertParse("A + B")
 
     def testNegativeLookahead(self):
@@ -619,8 +629,8 @@ class GenTestCase(unittest.TestCase):
         )
         self.assertParse("x = 0")
         self.assertParse("thread: x = 0")
-        self.assertNoParse("public: x = 0", "expected 'IDENT', got 'PUBLIC'")
-        self.assertNoParse("_ = 0", "expected 'IDENT', got '_'")
+        self.assertNoParse("public: x = 0", message="expected 'IDENT', got 'PUBLIC'")
+        self.assertNoParse("_ = 0", message="expected 'IDENT', got '_'")
         self.assertParse("funny: public: x = 0")
         self.assertParse("funny: _ = 0")
 
@@ -641,7 +651,7 @@ class GenTestCase(unittest.TestCase):
         }
         self.compile(lexer.LexicalGrammar("for ( let ; ) 0"), grammar)
         self.assertParse("for (0;;) ;")
-        self.assertNoParse("for (let;;) ;", "expected '0', got 'let'")
+        self.assertNoParse("for (let;;) ;", message="expected '0', got 'let'")
 
     # XXX to test: combination of lookaheads, ++, +-, -+, --
     # XXX todo: find an example where lookahead canonicalization matters
@@ -765,9 +775,9 @@ class GenTestCase(unittest.TestCase):
                      grammar)
         self.assertParse("function* farm() { cow = pig; yield cow; }")
         self.assertNoParse("function city() { yield toOncomingTraffic; }",
-                           "expected one of ['(', '='], got 'IDENT'")
+                           message="expected one of ['(', '='], got 'IDENT'")
         self.assertNoParse("function* farm() { yield = corn; yield yield; }",
-                           "expected 'IDENT', got '='")
+                           message="expected 'IDENT', got '='")
 
     def testCanonicalLR(self):
         """Example 4.39 (grammar 4.20) from the book."""
@@ -791,7 +801,7 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("id = *id")
         self.assertParse("*id = id")
         self.assertParse("id = 7")
-        self.assertNoParse("7 = id", "expected 'end of input', got '='")
+        self.assertNoParse("7 = id", message="expected 'end of input', got '='")
 
     def testLookaheadWithCanonicalLR(self):
         """Only a lookahead assertion makes this grammar unambiguous."""
@@ -817,6 +827,37 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("{};")
         self.assertParse("async x => {};");
         self.assertParse("async x => async y => {};");
+
+    def testMultiGoal(self):
+        tokenize = lexer.LexicalGrammar("WHILE DEF FN { } ( ) -> ;", ID=r'\w+')
+        grammar = {
+            "stmt": [
+                ["expr", ";"],
+                ["{", "stmts", "}"],
+                ["WHILE", "(", "expr", ")", "stmt"],
+                ["DEF", "ID", "(", "ID", ")", "{", Optional("stmts"), "}"],
+            ],
+            "stmts": [
+                ["stmt"],
+                ["stmts", "stmt"],
+            ],
+            "expr": [
+                ["FN", "ID", "->", "expr"],
+                ["call_expr"],
+            ],
+            "call_expr": [
+                ["ID"],
+                ["call_expr", "(", "expr", ")"],
+                ["(", "expr", ")"],
+            ],
+        }
+        self.compile_multi(tokenize, grammar, ["stmts", "expr"])
+        self.assertParse("WHILE ( x ) { decx ( x ) ; }", goal="stmts")
+        self.assertNoParse("WHILE ( x ) { decx ( x ) ; }", goal="expr",
+                           message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")
+        self.assertParse("(FN x -> f ( x ))(x)", goal="expr")
+        self.assertNoParse("(FN x -> f ( x ))(x)", goal="stmts",
+                           message="expected one of ['(', ';'], got None")
 
 
 if __name__ == '__main__':
