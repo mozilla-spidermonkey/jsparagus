@@ -855,6 +855,9 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("WHILE ( x ) { decx ( x ) ; }", goal="stmts")
         self.assertNoParse("WHILE ( x ) { decx ( x ) ; }", goal="expr",
                            message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")
+        self.assertParse("f(x);", goal="stmts")
+        self.assertNoParse("f(x);", goal="expr",
+                           message="expected one of ['(', 'end of input'], got ';'")
         self.assertParse("(FN x -> f ( x ))(x)", goal="expr")
         self.assertNoParse("(FN x -> f ( x ))(x)", goal="stmts",
                            message="expected one of ['(', ';'], got None")
