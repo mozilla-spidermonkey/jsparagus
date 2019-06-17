@@ -500,7 +500,7 @@ def make_start_set_cache(grammar, prods, start):
         assert sets == [seq_start(grammar, start, rhs[i:]) for i in range(len(rhs) + 1)]
         return sets
 
-    return [suffix_start_list(rhs) for _nt, _i, rhs in prods]
+    return [suffix_start_list(prod.rhs) for prod in prods]
 
 
 def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
@@ -774,17 +774,17 @@ def dump_grammar(grammar):
 
 
 def lr_item_to_str(grammar, prods, item):
-    nt, _i, rhs = prods[item.prod_index]
+    prod = prods[item.prod_index]
     if item.lookahead is None:
         la = []
     else:
         la = [element_to_str(grammar, item.lookahead)]
     return "{} ::= {} >> {{{}}}".format(
-        nt,
-        " ".join([element_to_str(grammar, e) for e in rhs[:item.offset]]
+        prod.nt,
+        " ".join([element_to_str(grammar, e) for e in prod.rhs[:item.offset]]
                  + ["\N{MIDDLE DOT}"]
                  + la
-                 + [element_to_str(grammar, e) for e in rhs[item.offset:]]),
+                 + [element_to_str(grammar, e) for e in prod.rhs[item.offset:]]),
         ", ".join(
             "$" if t is None else element_to_str(grammar, t)
             for t in item.followed_by)
@@ -938,7 +938,7 @@ class PgenContext:
 
         item = LRItem(*args, **kwargs)
         assert isinstance(item.followed_by, frozenset)
-        _nt, _i, rhs = prods[item.prod_index]
+        rhs = prods[item.prod_index].rhs
         while item.offset < len(rhs) and is_lookahead_rule(rhs[item.offset]):
             item = item._replace(offset=item.offset + 1,
                                  lookahead=lookahead_intersect(item.lookahead, rhs[item.offset]))
@@ -973,8 +973,8 @@ class PgenContext:
 
     def raise_reduce_reduce_conflict(self, state, t, i, j):
         scenario_str = state.traceback()
-        nt1, _, rhs1 = self.prods[i]
-        nt2, _, rhs2 = self.prods[j]
+        p1 = self.prods[i]
+        p2 = self.prods[j]
 
         raise ValueError(
             "reduce-reduce conflict when looking at {} followed by {}\n"
@@ -983,8 +983,8 @@ class PgenContext:
             "or with:\n"
             "    {}\n"
             .format(scenario_str, element_to_str(self.grammar, t),
-                    production_to_str(self.grammar, nt1, rhs1),
-                    production_to_str(self.grammar, nt2, rhs2)))
+                    production_to_str(self.grammar, p1.nt, p1.rhs),
+                    production_to_str(self.grammar, p2.nt, p2.rhs)))
 
     def why_start(self, t, prod_index, offset):
         """ Yield a sequence of productions showing why `t in START(prods[prod_index][offset:])`.
@@ -998,7 +998,7 @@ class PgenContext:
 
         def successors(pair):
             prod_index, offset = pair
-            _, _, rhs = self.prods[prod_index]
+            rhs = self.prods[prod_index].rhs
             nt = rhs[offset]
             if not is_nt(self.grammar, nt):
                 return
@@ -1008,7 +1008,7 @@ class PgenContext:
 
         def done(pair):
             prod_index, offset = pair
-            _, _, rhs = self.prods[prod_index]
+            rhs = self.prods[prod_index].rhs
             return rhs[offset] == t
 
         path = find_path([(prod_index, offset)],
@@ -1018,8 +1018,8 @@ class PgenContext:
             return
 
         for prod_index in path[1::2]:
-            xnt, _, xrhs = self.prods[prod_index]
-            yield xnt, xrhs
+            prod = self.prods[prod_index]
+            yield prod.nt, prod.rhs
 
     def why_follow(self, nt, t):
         """ Return a sequence of productions showing why the terminal t is in nt's follow set. """
@@ -1040,11 +1040,11 @@ class PgenContext:
 
         # Yield productions showing how to produce `nt` in the right context.
         prod_index, offset = start_points[path[0]]
-        xnt, _, xrhs = self.prods[prod_index]
-        yield xnt, xrhs
+        prod = self.prods[prod_index]
+        yield prod.nt, prod.rhs
         for index in path[1::2]:
-            xnt, _, xrhs = self.prods[index]
-            yield xnt, xrhs
+            prod = self.prods[index]
+            yield prod.nt, prod.rhs
 
         # Now show how the immediate next token can expand into something that starts with `t`.
         for xnt, xrhs in self.why_start(t, prod_index, offset):
@@ -1133,7 +1133,7 @@ class State:
         closure_todo = collections.deque(self._lr_items)
         while closure_todo:
             item = closure_todo.popleft()
-            _nt, _i, rhs = prods[item.prod_index]
+            rhs = prods[item.prod_index].rhs
             if item.offset < len(rhs):
                 next_symbol = rhs[item.offset]
                 if is_nt(grammar, next_symbol):
@@ -1174,9 +1174,9 @@ class State:
         scenario = []
         for ss in traceback:
             item = next(iter(ss._lr_items))
-            nt, prod_index, rhs = self.context.prods[item.prod_index]
+            prod = self.context.prods[item.prod_index]
             assert item.offset > 0
-            scenario.append(rhs[item.offset - 1])
+            scenario.append(prod.rhs[item.offset - 1])
         return rhs_to_str(self.context.grammar, scenario)
 
 
@@ -1226,7 +1226,7 @@ class ParserGenerator:
 
         # Compute the start states.
         for goal_nt, init_nt in init_nt_map.items():
-            init_prod_index = prods.index((init_nt, 0, [goal_nt]))
+            init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt]))
             start_item = context.make_lr_item(init_prod_index,
                                               0,
                                               lookahead=None,
@@ -1291,7 +1291,10 @@ class ParserGenerator:
         # is achieved by the .closure() call at the top of the loop.
         for item in current_state.closure():
             offset = item.offset
-            nt, i, rhs = prods[item.prod_index]
+            prod = prods[item.prod_index]
+            nt = prod.nt
+            i = prod.index
+            rhs = prod.rhs
             if offset < len(rhs):
                 next_symbol = rhs[offset]
                 if is_terminal(grammar, next_symbol):
@@ -1332,12 +1335,12 @@ class ParserGenerator:
             shift_state = State(context, shift_state, current_state)  # freeze the set
             action_row[t] = self.get_state_index(shift_state)
         for t, prod_index in reduce_prods.items():
-            nt, _, rhs = prods[prod_index]
+            prod = prods[prod_index]
             if t in action_row:
-                context.raise_shift_reduce_conflict(current_state, t, shift_items[t], nt, rhs)
+                context.raise_shift_reduce_conflict(current_state, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if nt in init_nts else -prod_index - 1
+            action_row[t] = ACCEPT if prod.nt in init_nts else -prod_index - 1
         ctn_row = {nt: self.get_state_index(State(context, ss, current_state))
                    for nt, ss in ctn_items.items()}
         return action_row, ctn_row
