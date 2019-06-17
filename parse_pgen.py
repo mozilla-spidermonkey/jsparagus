@@ -2,7 +2,7 @@
 
 """parse_pgen.py - Parse grammars written in the pgen parser specification language.
 
-I'm not sure I want to keep pgen around; ignore this for now.
+I'm not sure I want to keep this pgen mini-language around; ignore this for now.
 """
 
 from lexer import LexicalGrammar
