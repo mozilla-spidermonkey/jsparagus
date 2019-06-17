@@ -629,9 +629,6 @@ def expand_all_optional_elements(grammar):
     prods = []
     prods_with_indexes_by_nt = collections.defaultdict(list)
 
-    # We'll use these tuples at run time when constructing AST nodes.
-    reductions = []
-
     for nt in grammar:
         expanded_grammar[nt] = []
         for prod_index, rhs in enumerate(grammar[nt]):
@@ -639,18 +636,22 @@ def expand_all_optional_elements(grammar):
                 expanded_grammar[nt].append(expanded_rhs)
                 prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
-                names = ["x" + str(i)
-                         for i, e in enumerate(expanded_rhs)
-                         if is_terminal(grammar, e) or is_nt(grammar, e)]
-                names_with_none = names[:]
-                for i in removals:
-                    names_with_none.insert(i, "None")
-                fn = ("lambda "
-                      + ", ".join(names)
-                      + ": ({!r}, {!r}, [".format(nt, prod_index)
-                      + ", ".join(names_with_none)
-                      + "])")
-                reductions.append((nt, len(names), fn))
+
+    # We'll use these tuples at run time when constructing AST nodes.
+    reductions = []
+    for prod in prods:
+        names = ["x" + str(i)
+                 for i, e in enumerate(prod.rhs)
+                 if is_terminal(grammar, e) or is_nt(grammar, e)]
+        names_with_none = names[:]
+        for i in prod.removals:
+            names_with_none.insert(i, "None")
+        fn = ("lambda "
+              + ", ".join(names)
+              + ": ({!r}, {!r}, [".format(prod.nt, prod.index)
+              + ", ".join(names_with_none)
+              + "])")
+        reductions.append((prod.nt, len(names), fn))
 
     return expanded_grammar, prods, prods_with_indexes_by_nt, reductions
 
