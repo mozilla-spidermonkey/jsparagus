@@ -323,6 +323,11 @@ def gensym(grammar, nt):
 def expand_function_nonterminals(grammar, goal_nts):
     """Replace function nonterminals with production lists."""
 
+    # BUG: This use gensym() to create a bunch of new nonterminals, but without
+    # any mapping back to the originals. Therefore the gensym names appear in
+    # the parser output at run time. It would probably be OK to just use Apply
+    # objects as nonterminal names.
+
     # Make dummy entries for everything in the grammar. gensym() needs them.
     result = {nt: None for nt in grammar}
 
@@ -594,16 +599,26 @@ def expand_optional_symbols_in_rhs(rhs, start_index=0):
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
 
 
+# At this point, lowered productions start getting farther from the original
+# source.  We need to associate them with the original grammar in order to
+# produce correct ouptut, so we use Prod values to represent productions.
+#
+# -   nt is the name of the nonterminal as it appears in the original grammar.
+# -   index is the index of the source production, within nt's productions,
+#     in the original grammar.
+# -   rhs is the fully lowered/expanded right-hand-side of the production.
+#
+# There may be many productions in a grammar that all have the same `nt` and `index`
+# because they were all produced from the same source production.
 Prod = collections.namedtuple("Prod", "nt index rhs")
 
 
 def expand_all_optional_elements(grammar):
-    """Expand optional elements in the grammar. We replace each production that
-    contains an optional element with two productions: one with and one
-    without. This means the rest of the algorithm can ignore the
-    possibility of optional elements. But we keep the numbering of all the
-    productions as they appear in the original grammar (`prod_index`
-    below).
+    """Expand optional elements in the grammar.
+
+    We replace each production that contains an optional element with two
+    productions: one with and one without. Downstream of this step, we can
+    ignore the possibility of optional elements.
     """
     expanded_grammar = {}
 
