@@ -594,6 +594,9 @@ def expand_optional_symbols_in_rhs(rhs, start_index=0):
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
 
 
+Prod = collections.namedtuple("Prod", "nt index rhs")
+
+
 def expand_all_optional_elements(grammar):
     """Expand optional elements in the grammar. We replace each production that
     contains an optional element with two productions: one with and one
@@ -617,7 +620,7 @@ def expand_all_optional_elements(grammar):
         for prod_index, rhs in enumerate(grammar[nt]):
             for expanded_rhs, removals in expand_optional_symbols_in_rhs(rhs):
                 expanded_grammar[nt].append(expanded_rhs)
-                prods.append((nt, prod_index, expanded_rhs))
+                prods.append(Prod(nt, prod_index, expanded_rhs))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
                 names = ["x" + str(i)
                          for i, e in enumerate(expanded_rhs)
