@@ -1484,14 +1484,14 @@ def main():
 
     import io
     out = io.StringIO()
-    generate_parser(out, grammar, 'expr')
+    generate_parser(out, grammar, ['expr'])
     code = out.getvalue()
     print(code)
     print("----")
 
     sandbox = {}
     exec(code, sandbox)
-    parse = sandbox['parse']
+    parse = sandbox['parse_expr']
 
     while True:
         try:
