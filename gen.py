@@ -1426,6 +1426,7 @@ class ParserGenerator:
         return action_row, ctn_row
 
 def generate_parser(out, grammar, goal_nts, target='python'):
+    goal_nts = list(goal_nts)  # iterate this only once
     assert target in ('python', 'rust')
 
     # Step by step, we check the grammar and lower it to a more primitive form.
