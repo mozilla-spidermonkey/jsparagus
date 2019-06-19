@@ -1251,7 +1251,7 @@ def write_rust_parser(out, grammar, actions, ctns, prods, init_state_map):
         out.write("    {}\n".format(' '.join("{},".format(row.get(nt, 0)) for nt in nonterminals)))
     out.write("]\n\n")
 
-    out.write("fn reduce(prod: usize, stack: &mut Vec<Node>) {\n")
+    out.write("fn reduce(prod: usize, stack: &mut Vec<Box<Node>>) {\n")
     out.write("    match prod {\n")
     for i, prod in enumerate(prods):
         out.write("        {} => {{\n".format(i))
@@ -1259,7 +1259,7 @@ def write_rust_parser(out, grammar, actions, ctns, prods, init_state_map):
         for j, element in reversed(list(enumerate(prod.rhs))):
             if is_terminal(grammar, element) or is_nt(grammar, element):
                 out.write("            let x{} = stack.pop().unwrap();\n".format(j))
-                names_with_none.append("x{}".format(j))
+                names_with_none.append("Some(x{})".format(j))
 
         names_with_none.reverse()
         for i in prod.removals:
@@ -1277,9 +1277,9 @@ def write_rust_parser(out, grammar, actions, ctns, prods, init_state_map):
     out.write(
         "static TABLES: ParserTables<'static> = {\n" +
         "    state_count: {},\n".format(len(actions)) +
-        "    action_table: ACTIONS,\n" +
+        "    action_table: &ACTIONS,\n" +
         "    action_width: {},\n".format(len(terminals)) +
-        "    goto_table: GOTO,\n" +
+        "    goto_table: &GOTO,\n" +
         "    goto_width: {},\n".format(len(nonterminals)) +
         "};\n\n"
     )
