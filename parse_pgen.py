@@ -81,7 +81,8 @@ class AstBuilder:
         self.quoted_terminals_used.add(sym)
         return chars
 
-    def check(self, grammar):
+    def check(self, result):
+        grammar, goal_nts = result
         for t in self.quoted_terminals_used:
             if t in self.identifiers_used:
                 if t in grammar:
