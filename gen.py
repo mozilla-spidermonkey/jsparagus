@@ -519,7 +519,7 @@ def start_sets(grammar):
     # start sets satisfying these rules, and we get that by iterating to a
     # fixed point.
 
-    start = {nt: OrderedSet() for nt in grammar}
+    start = {nt: OrderedFrozenSet() for nt in grammar}
     done = False
     while not done:
         done = True
@@ -551,7 +551,7 @@ def seq_start(grammar, start, seq):
                 future &= e.set
             else:
                 future -= e.set
-            return future
+            return OrderedFrozenSet(future)
     return OrderedFrozenSet(s)
 
 
