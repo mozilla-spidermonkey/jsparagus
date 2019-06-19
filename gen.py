@@ -82,7 +82,6 @@ class OrderedSet:
                 self.remove(v)
         return self
 
-set = OrderedSet
 
 class OrderedFrozenSet:
     """Like frozenset(), but iteration order is insertion order."""
@@ -112,8 +111,6 @@ class OrderedFrozenSet:
 
     def __sub__(self, other):
         return OrderedFrozenSet(v for v in self._data if v not in other)
-
-frozenset = OrderedFrozenSet
 
 
 # *** What is a grammar? ******************************************************
@@ -310,11 +307,11 @@ def empty_nt_set(grammar):
                        or is_optional(e)
                        or (is_nt(grammar, e) and e in empties)
                        for e in rhs)
-        return set(nt
+        return OrderedSet(nt
                    for nt, rhs_list in grammar.items()
                    if any(rhs_is_empty(nt, rhs) for rhs in rhs_list))
 
-    return fix(step, set())
+    return fix(step, OrderedSet())
 
 
 def check_cycle_free(grammar):
@@ -327,7 +324,7 @@ def check_cycle_free(grammar):
     # nonterminals (after possibly erasing some optional/empty nts).
     direct_produces = {}
     for orig in grammar:
-        direct_produces[orig] = set()
+        direct_produces[orig] = OrderedSet()
         for source_rhs in grammar[orig]:
             for rhs, _r in expand_optional_symbols_in_rhs(source_rhs):
                 result = []
@@ -355,11 +352,11 @@ def check_cycle_free(grammar):
                 else:
                     # If we get here, we didn't break, so our results are good!
                     # nt can definitely produce all the nonterminals in result.
-                    direct_produces[orig] |= set(result)
+                    direct_produces[orig] |= OrderedSet(result)
 
     def step(produces):
         return {
-            orig: dest | set(b for a in dest for b in produces[a])
+            orig: dest | OrderedSet(b for a in dest for b in produces[a])
             for orig, dest in produces.items()
         }
     produces = fix(step, direct_produces)
@@ -522,7 +519,7 @@ def start_sets(grammar):
     # start sets satisfying these rules, and we get that by iterating to a
     # fixed point.
 
-    start = {nt: set() for nt in grammar}
+    start = {nt: OrderedSet() for nt in grammar}
     done = False
     while not done:
         done = True
@@ -538,7 +535,7 @@ def start_sets(grammar):
 
 def seq_start(grammar, start, seq):
     """Compute the start set for a sequence of elements."""
-    s = set([EMPTY])
+    s = OrderedSet([EMPTY])
     for i, e in enumerate(seq):
         if EMPTY not in s:  # preceding elements never match the empty string
             break
@@ -555,7 +552,7 @@ def seq_start(grammar, start, seq):
             else:
                 future -= e.set
             return future
-    return frozenset(s)
+    return OrderedFrozenSet(s)
 
 
 def make_start_set_cache(grammar, prods, start):
@@ -569,21 +566,21 @@ def make_start_set_cache(grammar, prods, start):
     start = start_sets(grammar)
 
     def suffix_start_list(rhs):
-        sets = [frozenset([EMPTY])]
+        sets = [OrderedFrozenSet([EMPTY])]
         for e in reversed(rhs):
             if is_terminal(grammar, e):
-                s = frozenset([e])
+                s = OrderedFrozenSet([e])
             elif is_nt(grammar, e):
                 s = start[e]
                 if EMPTY in s:
-                    s = frozenset((s - {EMPTY}) | sets[-1])
+                    s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
             else:
                 assert is_lookahead_rule(e)
                 if e.positive:
-                    s = frozenset(sets[-1] & e.set)
+                    s = OrderedFrozenSet(sets[-1] & e.set)
                 else:
-                    s = frozenset(sets[-1] - e.set)
-            assert isinstance(s, frozenset)
+                    s = OrderedFrozenSet(sets[-1] - e.set)
+            assert isinstance(s, OrderedFrozenSet)
             assert s == seq_start(grammar, start, rhs[len(rhs) - len(sets):])
             sets.append(s)
         sets.reverse()
@@ -613,17 +610,17 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
     # Set of nonterminals already seen, including those we are in the middle of
     # analyzing. The algorithm starts at `goal` and walks all reachable
     # nonterminals, recursively.
-    visited = set()
+    visited = OrderedSet()
 
     # The results. By definition, nonterminals that are not reachable from the
     # goal nt have empty follow sets.
-    follow = collections.defaultdict(set)
+    follow = collections.defaultdict(OrderedSet)
 
     # If `(x, y) in subsumes_relation`, then x can appear at the end of a
     # production of y, and therefore follow[x] should be <= follow[y].
     # (We could maintain that invariant throughout, but at present we
     # brute-force iterate to a fixed point at the end.)
-    subsumes_relation = set()
+    subsumes_relation = OrderedSet()
 
     # `END` is $. It is, of course, in follow[each goal nonterminal]. It gets
     # into other nonterminals' follow sets through the subsumes relation.
@@ -832,7 +829,7 @@ def element_to_str(grammar, e):
             s = repr(list(e.set)[0])
         else:
             op = "in" if e.positive else "not in"
-            s = repr(set(e.set))
+            s = '{' + repr(list(e.set))[1:-1] + '}'
         return "[lookahead {} {}]".format(op, s)
     else:
         return str(e)
@@ -995,7 +992,7 @@ class PgenContext:
     """ The immutable part of the parser generator's data. """
     def __init__(self, grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow):
         self.grammar = grammar
-        self.init_nts = frozenset(init_nts)
+        self.init_nts = OrderedFrozenSet(init_nts)
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
         self.start_set_cache = start_set_cache
@@ -1024,7 +1021,7 @@ class PgenContext:
         prods = self.prods
 
         item = LRItem(*args, **kwargs)
-        assert isinstance(item.followed_by, frozenset)
+        assert isinstance(item.followed_by, OrderedFrozenSet)
         rhs = prods[item.prod_index].rhs
         while item.offset < len(rhs) and is_lookahead_rule(rhs[item.offset]):
             item = item._replace(offset=item.offset + 1,
@@ -1054,7 +1051,7 @@ class PgenContext:
             elif ok_set == expected:
                 look = None
             else:
-                look = LookaheadRule(frozenset(ok_set), True)
+                look = LookaheadRule(OrderedFrozenSet(ok_set), True)
             item = item._replace(lookahead=look)
         return item
 
@@ -1185,10 +1182,10 @@ class State:
 
         # Consolidate similar items, to ensure that equivalent states have
         # equal _lr_items sets.
-        a = collections.defaultdict(set)
+        a = collections.defaultdict(OrderedSet)
         for item in items:
             a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
-        self._lr_items = frozenset(LRItem(*k, frozenset(v)) for k, v in a.items())
+        self._lr_items = OrderedFrozenSet(LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
 
     def __eq__(self, other):
         return self._lr_items == other._lr_items
@@ -1218,7 +1215,7 @@ class State:
         prods_with_indexes_by_nt = context.prods_with_indexes_by_nt
         start_set_cache = context.start_set_cache
 
-        closure = set(self._lr_items)
+        closure = OrderedSet(self._lr_items)
         closure_todo = collections.deque(self._lr_items)
         while closure_todo:
             item = closure_todo.popleft()
@@ -1278,10 +1275,10 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     result = start_set_cache[prod_id][offset+1]
     if EMPTY in result:
         # The rest of rhs might be empty, so we might also see `followed_by`.
-        result = set(result)
+        result = OrderedSet(result)
         result.remove(EMPTY)
         result |= followed_by
-    return frozenset(result)
+    return OrderedFrozenSet(result)
 
 
 def write_parser(out, grammar, actions, ctns, prods, init_state_map):
@@ -1324,14 +1321,14 @@ def write_rust_parser(out, grammar, actions, ctns, prods, init_state_map):
     out.write("const ERROR: usize = {};\n\n".format(ERROR))
 
     # BUG - nondeterministic set ordering here
-    terminals = list(set(t for row in actions for t in row))
+    terminals = list(OrderedSet(t for row in actions for t in row))
     out.write("static ACTIONS: [i64] = [\n")
     for row in actions:
         out.write("    {}\n".format(' '.join("{},".format(row.get(t, "ERROR")) for t in terminals)))
     out.write("]\n\n")
 
     # BUG - nondeterministic set ordering here
-    nonterminals = list(set(nt for row in ctns for nt in row))
+    nonterminals = list(OrderedSet(nt for row in ctns for nt in row))
     out.write("static GOTO: [usize] = [\n")
     for row in ctns:
         out.write("    {}\n".format(' '.join("{},".format(row.get(nt, 0)) for nt in nonterminals)))
@@ -1396,7 +1393,7 @@ class ParserGenerator:
             start_item = context.make_lr_item(init_prod_index,
                                               0,
                                               lookahead=None,
-                                              followed_by=frozenset([END]))
+                                              followed_by=OrderedFrozenSet([END]))
             if start_item is None:
                 init_state = State(context, [])
             else:
@@ -1445,8 +1442,8 @@ class ParserGenerator:
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
-        shift_items = collections.defaultdict(set)  # maps terminals to item-sets
-        ctn_items = collections.defaultdict(set)  # maps nonterminals to item-sets
+        shift_items = collections.defaultdict(OrderedSet)  # maps terminals to item-sets
+        ctn_items = collections.defaultdict(OrderedSet)  # maps nonterminals to item-sets
         reduce_prods = {}  # maps follow-terminals to production indexes
 
         # Each item has three ways to advance.
@@ -1522,7 +1519,7 @@ def generate_parser(out, grammar, goal_nts, target='python'):
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
     grammar, init_nt_map = add_init_nonterminals(grammar, goal_nts)
-    init_nts = frozenset(init_nt_map.values())
+    init_nts = OrderedFrozenSet(init_nt_map.values())
     grammar = make_epsilon_free_step_1(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(grammar)
     grammar = make_epsilon_free_step_2(grammar, goal_nts)
