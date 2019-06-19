@@ -4,13 +4,14 @@
 # specification language, and it's not clear why we should have two things.
 # Ignore this for now.
 
-nt grammar {
+goal nt grammar {
     nt_def;
     grammar nt_def;
 }
 
 nt nt_def {
     "nt" IDENT "{" prods? "}";
+    "goal" "nt" IDENT "{" prods? "}";
 }
 
 nt prods {

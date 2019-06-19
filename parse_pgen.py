@@ -11,14 +11,17 @@ import pprint
 import parse_pgen_generated
 import unittest
 
-pgen_lexer = LexicalGrammar("nt { } ; ?",
+pgen_lexer = LexicalGrammar("goal nt { } ; ?",
                             r'([ \t\r\n]|#.*)*',
                             IDENT=r'[A-Za-z_](?:\w|[_-])*',
                             STR=r'"[^\\\n"]*"')
 
 pgen_grammar = {
     'grammar': [['nt_def'], ['grammar', 'nt_def']],
-    'nt_def': [['nt', 'IDENT', '{', gen.Optional('prods'), '}']],
+    'nt_def': [
+        ['nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+        ['goal', 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+    ],
     'prods': [['prod'], ['prods', 'prod']],
     'prod': [['terms', ';']],
     'terms': [['term'], ['terms', 'term']],
@@ -26,22 +29,31 @@ pgen_grammar = {
     'symbol': [['IDENT'], ['STR']],
 }
 
+
 class AstBuilder:
     def __init__(self):
         self.identifiers_used = set()
         self.quoted_terminals_used = set()
 
-    def grammar_0(self, nt_def): return self.grammar_1({}, nt_def)
-    def grammar_1(self, grammar, nt_def):
-        nt, prods = nt_def
+    def grammar_0(self, nt_def): return self.grammar_1(({}, []), nt_def)
+    def grammar_1(self, grammar_in, nt_def):
+        is_goal, nt, prods = nt_def
+        grammar, goal_nts = grammar_in
         if nt in grammar:
             raise ValueError("multiple definitions for nt {}".format(nt))
         grammar[nt] = prods
-        return grammar
+        if is_goal:
+            goal_nts.append(nt)
+        return grammar, goal_nts
 
-    def nt_def_0(self, nt_kw, ident, lc, prods, rc):
+    def nt_def_0(self, *args):
+        nt_kw, ident, lc, prods, rc = args
         assert (nt_kw, lc, rc) == ('nt', '{', '}')
-        return (ident, prods)
+        return (False, ident, prods)
+    def nt_def_1(self, *args):
+        goal_kw, nt_kw, ident, lc, prods, rc = args
+        assert (goal_kw, nt_kw, lc, rc) == ('goal', 'nt', '{', '}')
+        return (True, ident, prods)
 
     def prods_0(self, prod): return [prod]
     def prods_1(self, prods, prod): return prods + [prod]
@@ -100,7 +112,7 @@ def postparse(builder, cst):
 def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
-    result = parse_pgen_generated.parse(pgen_lexer(text, filename=filename))
+    result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename))
     builder = AstBuilder()
     grammar = postparse(builder, result)
     builder.check(grammar)
@@ -109,24 +121,28 @@ def load_grammar(filename):
 
 def regenerate():
     import sys
-    gen.generate_parser(sys.stdout, pgen_grammar, 'grammar')
+    gen.generate_parser(sys.stdout, pgen_grammar, ['grammar'])
 
 
 class ParsePgenTestCase(unittest.TestCase):
     def test_self(self):
         import os
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
-        grammar = load_grammar(filename)
+        grammar, goal_nts = load_grammar(filename)
+        print(goal_nts)
         self.assertEqual(grammar, pgen_grammar)
+        self.assertEqual(goal_nts, ['grammar'])
 
         import io
         out = io.StringIO()
-        gen.generate_parser(out, grammar, "grammar")
+        gen.generate_parser(out, grammar, ["grammar"])
         self_generated = out.getvalue()
 
         with open(parse_pgen_generated.__file__) as f:
             pre_generated = f.read()
 
+        # BUG - This currently fails due to nondeterminism in gen.py.
+        self.maxDiff = None
         self.assertEqual(self_generated, pre_generated)
 
 
