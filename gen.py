@@ -1239,12 +1239,14 @@ def write_rust_parser(out, grammar, actions, ctns, prods, init_state_map):
 
     out.write("const ERROR: usize = {};\n\n".format(ERROR))
 
+    # BUG - nondeterministic set ordering here
     terminals = list(set(t for row in actions for t in row))
     out.write("static ACTIONS: [i64] = [\n")
     for row in actions:
         out.write("    {}\n".format(' '.join("{},".format(row.get(t, "ERROR")) for t in terminals)))
     out.write("]\n\n")
 
+    # BUG - nondeterministic set ordering here
     nonterminals = list(set(nt for row in ctns for nt in row))
     out.write("static GOTO: [usize] = [\n")
     for row in ctns:
