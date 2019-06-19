@@ -1425,7 +1425,9 @@ class ParserGenerator:
                    for nt, ss in ctn_items.items()}
         return action_row, ctn_row
 
-def generate_parser(out, grammar, goal_nts):
+def generate_parser(out, grammar, goal_nts, target='python'):
+    assert target in ('python', 'rust')
+
     # Step by step, we check the grammar and lower it to a more primitive form.
     check_grammar_types(grammar)
     check_valid_goals(grammar, goal_nts)
@@ -1450,7 +1452,10 @@ def generate_parser(out, grammar, goal_nts):
     actions, ctns, init_state_map = pgen.run()
 
     # Finally, dump the output.
-    write_parser(out, grammar, actions, ctns, prods, init_state_map)
+    if target == 'rust':
+        write_rust_parser(out, grammar, actions, ctns, prods, init_state_map)
+    else:
+        write_parser(out, grammar, actions, ctns, prods, init_state_map)
 
 
 class Parser:
@@ -1476,7 +1481,7 @@ def compile(grammar, goal):
 
 # *** Fun demo ****************************************************************
 
-def main():
+def demo():
     grammar = example_grammar()
 
     import lexer
@@ -1507,4 +1512,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    demo()
