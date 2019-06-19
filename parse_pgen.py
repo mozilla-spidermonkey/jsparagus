@@ -130,7 +130,6 @@ class ParsePgenTestCase(unittest.TestCase):
         import os
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
         grammar, goal_nts = load_grammar(filename)
-        print(goal_nts)
         self.assertEqual(grammar, pgen_grammar)
         self.assertEqual(goal_nts, ['grammar'])
 
@@ -142,7 +141,6 @@ class ParsePgenTestCase(unittest.TestCase):
         with open(parse_pgen_generated.__file__) as f:
             pre_generated = f.read()
 
-        # BUG - This currently fails due to nondeterminism in gen.py.
         self.maxDiff = None
         self.assertEqual(self_generated, pre_generated)
 
