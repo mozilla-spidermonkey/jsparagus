@@ -307,11 +307,11 @@ def empty_nt_set(grammar):
                        or is_optional(e)
                        or (is_nt(grammar, e) and e in empties)
                        for e in rhs)
-        return OrderedSet(nt
+        return set(nt
                    for nt, rhs_list in grammar.items()
                    if any(rhs_is_empty(nt, rhs) for rhs in rhs_list))
 
-    return fix(step, OrderedSet())
+    return fix(step, set())
 
 
 def check_cycle_free(grammar):
@@ -324,7 +324,7 @@ def check_cycle_free(grammar):
     # nonterminals (after possibly erasing some optional/empty nts).
     direct_produces = {}
     for orig in grammar:
-        direct_produces[orig] = OrderedSet()
+        direct_produces[orig] = set()
         for source_rhs in grammar[orig]:
             for rhs, _r in expand_optional_symbols_in_rhs(source_rhs):
                 result = []
@@ -352,11 +352,11 @@ def check_cycle_free(grammar):
                 else:
                     # If we get here, we didn't break, so our results are good!
                     # nt can definitely produce all the nonterminals in result.
-                    direct_produces[orig] |= OrderedSet(result)
+                    direct_produces[orig] |= set(result)
 
     def step(produces):
         return {
-            orig: dest | OrderedSet(b for a in dest for b in produces[a])
+            orig: dest | set(b for a in dest for b in produces[a])
             for orig, dest in produces.items()
         }
     produces = fix(step, direct_produces)
@@ -610,7 +610,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
     # Set of nonterminals already seen, including those we are in the middle of
     # analyzing. The algorithm starts at `goal` and walks all reachable
     # nonterminals, recursively.
-    visited = OrderedSet()
+    visited = set()
 
     # The results. By definition, nonterminals that are not reachable from the
     # goal nt have empty follow sets.
