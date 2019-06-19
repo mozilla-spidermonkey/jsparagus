@@ -1519,7 +1519,7 @@ def generate_parser(out, grammar, goal_nts, target='python'):
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
     grammar, init_nt_map = add_init_nonterminals(grammar, goal_nts)
-    init_nts = OrderedFrozenSet(init_nt_map.values())
+    init_nts = list(init_nt_map.values())
     grammar = make_epsilon_free_step_1(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(grammar)
     grammar = make_epsilon_free_step_2(grammar, goal_nts)
