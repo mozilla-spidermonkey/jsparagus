@@ -43,6 +43,10 @@ where Iter: Iterator<Item=char>
         }
     }
 
+    fn is_identifier_start(c: char) -> bool {
+        c.is_alphabetic() || c == '_'
+    }
+
     fn is_identifier_part(c: char) -> bool {
         c.is_alphanumeric() || c == '_'
     }
@@ -78,7 +82,7 @@ where Iter: Iterator<Item=char>
             }
 
             Some(c) =>
-                if c.is_alphabetic() {
+                if Lexer::<Iter>::is_identifier_start(c) {
                     let mut id = String::new();
                     id.push(c);
                     self.take_while(Lexer::<Iter>::is_identifier_part, &mut id);
