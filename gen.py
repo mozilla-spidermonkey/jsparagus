@@ -1286,6 +1286,8 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
         # nonterminal, only accepted, never reduced.
         if prod.nt in nonterminals:
             out.write("        {} => {{\n".format(i))
+            out.write("            // {}\n".format(production_to_str(grammar, prod.nt, prod.rhs)))
+
             names_with_none = []
             for j, element in reversed(list(enumerate(prod.rhs))):
                 if is_terminal(grammar, element) or is_nt(grammar, element):

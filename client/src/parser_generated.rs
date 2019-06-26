@@ -141,17 +141,20 @@ static GOTO: [usize; 203] = [
 fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
     match prod {
         0 => {
+            // grammar ::= nt_def
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("grammar", 0, vec![Some(x0)]));
             0
         }
         1 => {
+            // grammar ::= grammar nt_def
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("grammar", 1, vec![Some(x0), Some(x1)]));
             0
         }
         2 => {
+            // nt_def ::= "nt" "IDENT" "{" "}"
             let x3 = stack.pop().unwrap();
             let x2 = stack.pop().unwrap();
             let x1 = stack.pop().unwrap();
@@ -160,6 +163,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             1
         }
         3 => {
+            // nt_def ::= "nt" "IDENT" "{" prods "}"
             let x4 = stack.pop().unwrap();
             let x3 = stack.pop().unwrap();
             let x2 = stack.pop().unwrap();
@@ -169,6 +173,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             1
         }
         4 => {
+            // nt_def ::= "goal" "nt" "IDENT" "{" "}"
             let x4 = stack.pop().unwrap();
             let x3 = stack.pop().unwrap();
             let x2 = stack.pop().unwrap();
@@ -178,6 +183,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             1
         }
         5 => {
+            // nt_def ::= "goal" "nt" "IDENT" "{" prods "}"
             let x5 = stack.pop().unwrap();
             let x4 = stack.pop().unwrap();
             let x3 = stack.pop().unwrap();
@@ -188,50 +194,59 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             1
         }
         6 => {
+            // prods ::= prod
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prods", 0, vec![Some(x0)]));
             2
         }
         7 => {
+            // prods ::= prods prod
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prods", 1, vec![Some(x0), Some(x1)]));
             2
         }
         8 => {
+            // prod ::= terms ";"
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prod", 0, vec![Some(x0), Some(x1)]));
             3
         }
         9 => {
+            // terms ::= term
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("terms", 0, vec![Some(x0)]));
             4
         }
         10 => {
+            // terms ::= terms term
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("terms", 1, vec![Some(x0), Some(x1)]));
             4
         }
         11 => {
+            // term ::= symbol
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("term", 0, vec![Some(x0)]));
             5
         }
         12 => {
+            // term ::= symbol "?"
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("term", 1, vec![Some(x0), Some(x1)]));
             5
         }
         13 => {
+            // symbol ::= "IDENT"
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("symbol", 0, vec![Some(x0)]));
             6
         }
         14 => {
+            // symbol ::= "STR"
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("symbol", 1, vec![Some(x0)]));
             6
