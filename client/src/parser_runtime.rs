@@ -1,4 +1,5 @@
 pub use crate::ast::Node;
+pub use crate::parser_generated::NonterminalId;
 
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
@@ -52,7 +53,7 @@ pub fn parse<In, Out>(
 ) -> Result<Node, &'static str>
 where
     In: TokenStream<Token=crate::ast::Token>,
-    Out: Fn(usize, &mut Vec<Node>) -> usize,
+    Out: Fn(usize, &mut Vec<Node>) -> NonterminalId,
 {
     assert_eq!(tables.action_table.len(), tables.state_count * tables.action_width);
     assert_eq!(tables.goto_table.len(), tables.state_count * tables.goto_width);
@@ -72,10 +73,10 @@ where
         } else if action.is_reduce() {
             let prod_index = action.reduce_prod_index();
             let nt = reduce(prod_index, &mut node_stack);
-            assert!(nt < tables.goto_width);
+            assert!((nt as usize) < tables.goto_width);
             state_stack.truncate(node_stack.len());
             let prev_state = *state_stack.last().unwrap();
-            let state_after = tables.goto_table[prev_state * tables.goto_width + nt];
+            let state_after = tables.goto_table[prev_state * tables.goto_width + nt as usize];
             assert!(state_after < tables.state_count);
             state_stack.push(state_after);
         } else if action.is_accept() {

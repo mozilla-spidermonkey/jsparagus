@@ -1251,7 +1251,7 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
     out.write("const ERROR: i64 = {};\n\n".format(hex(ERROR)))
 
     terminals = list(OrderedSet(t for row in actions for t in row))
-    out.write("#[derive(Copy, Clone, Debug)]\n")
+    out.write("#[derive(Copy, Clone, Debug, PartialEq)]\n")
     out.write("pub enum TokenType {\n")
     for i, t in enumerate(terminals):
         if t is None:
@@ -1274,12 +1274,30 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
     out.write("];\n\n")
 
     nonterminals = list(OrderedSet(nt for row in ctns for nt in row))
+
+    def to_camel_case(id):
+        return ''.join(word.capitalize() for word in id.split('_'))
+
+    seen = {}
+    for nt in nonterminals:
+        cc = to_camel_case(nt)
+        if cc in seen:
+            raise ValueError("{} and {} have the same camel-case spelling ({})".format(
+                seen[cc], nt, cc))
+        seen[cc] = nt
+
+    out.write("#[derive(Clone, Copy, Debug, PartialEq)]\n")
+    out.write("pub enum NonterminalId {\n")
+    for i, nt in enumerate(nonterminals):
+        out.write("    {} = {},\n".format(to_camel_case(nt), i))
+    out.write("}\n\n")
+
     out.write("static GOTO: [usize; {}] = [\n".format(len(ctns) * len(nonterminals)))
     for row in ctns:
         out.write("    {}\n".format(' '.join("{},".format(row.get(nt, 0)) for nt in nonterminals)))
     out.write("];\n\n")
 
-    out.write("fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {\n")
+    out.write("fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {\n")
     out.write("    match prod {\n")
     for i, prod in enumerate(prods):
         # If prod.nt is not in nonterminals, that means it's a goal
@@ -1302,7 +1320,7 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
                 prod.index,
                 ", ".join(names_with_none)
             ))
-            out.write("            {}\n".format(nonterminals.index(prod.nt)))
+            out.write("            NonterminalId::{}\n".format(to_camel_case(prod.nt)))
             out.write("        }\n")
     out.write('        _ => panic!("no such production: {}", prod),\n')
     out.write("    }\n")

@@ -4,7 +4,7 @@ use super::parser_runtime::{self, Node, ParserTables, TokenStream};
 
 const ERROR: i64 = -0x8000000000000000;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
     Nt = 0, // 'nt'
     Goal = 1, // 'goal'
@@ -106,6 +106,17 @@ static ACTIONS: [i64; 261] = [
     -6, -6, ERROR, -6, ERROR, ERROR, ERROR, ERROR, ERROR,
 ];
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NonterminalId {
+    Grammar = 0,
+    NtDef = 1,
+    Prods = 2,
+    Prod = 3,
+    Terms = 4,
+    Term = 5,
+    Symbol = 6,
+}
+
 static GOTO: [usize; 203] = [
     3, 4, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0,
@@ -138,20 +149,20 @@ static GOTO: [usize; 203] = [
     0, 0, 0, 0, 0, 0, 0,
 ];
 
-fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
+fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
     match prod {
         0 => {
             // grammar ::= nt_def
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("grammar", 0, vec![Some(x0)]));
-            0
+            NonterminalId::Grammar
         }
         1 => {
             // grammar ::= grammar nt_def
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("grammar", 1, vec![Some(x0), Some(x1)]));
-            0
+            NonterminalId::Grammar
         }
         2 => {
             // nt_def ::= "nt" "IDENT" "{" "}"
@@ -160,7 +171,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("nt_def", 0, vec![Some(x0), Some(x1), Some(x2), None, Some(x3)]));
-            1
+            NonterminalId::NtDef
         }
         3 => {
             // nt_def ::= "nt" "IDENT" "{" prods "}"
@@ -170,7 +181,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("nt_def", 0, vec![Some(x0), Some(x1), Some(x2), Some(x3), Some(x4)]));
-            1
+            NonterminalId::NtDef
         }
         4 => {
             // nt_def ::= "goal" "nt" "IDENT" "{" "}"
@@ -180,7 +191,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("nt_def", 1, vec![Some(x0), Some(x1), Some(x2), Some(x3), None, Some(x4)]));
-            1
+            NonterminalId::NtDef
         }
         5 => {
             // nt_def ::= "goal" "nt" "IDENT" "{" prods "}"
@@ -191,65 +202,65 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> usize {
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("nt_def", 1, vec![Some(x0), Some(x1), Some(x2), Some(x3), Some(x4), Some(x5)]));
-            1
+            NonterminalId::NtDef
         }
         6 => {
             // prods ::= prod
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prods", 0, vec![Some(x0)]));
-            2
+            NonterminalId::Prods
         }
         7 => {
             // prods ::= prods prod
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prods", 1, vec![Some(x0), Some(x1)]));
-            2
+            NonterminalId::Prods
         }
         8 => {
             // prod ::= terms ";"
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("prod", 0, vec![Some(x0), Some(x1)]));
-            3
+            NonterminalId::Prod
         }
         9 => {
             // terms ::= term
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("terms", 0, vec![Some(x0)]));
-            4
+            NonterminalId::Terms
         }
         10 => {
             // terms ::= terms term
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("terms", 1, vec![Some(x0), Some(x1)]));
-            4
+            NonterminalId::Terms
         }
         11 => {
             // term ::= symbol
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("term", 0, vec![Some(x0)]));
-            5
+            NonterminalId::Term
         }
         12 => {
             // term ::= symbol "?"
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("term", 1, vec![Some(x0), Some(x1)]));
-            5
+            NonterminalId::Term
         }
         13 => {
             // symbol ::= "IDENT"
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("symbol", 0, vec![Some(x0)]));
-            6
+            NonterminalId::Symbol
         }
         14 => {
             // symbol ::= "STR"
             let x0 = stack.pop().unwrap();
             stack.push(Node::new("symbol", 1, vec![Some(x0)]));
-            6
+            NonterminalId::Symbol
         }
         _ => panic!("no such production: {}", prod),
     }
