@@ -219,17 +219,54 @@ know are:
 
 There's a lot still to learn here.
 
-*   OMG, what does it all mean? I don't understand the control flow
-    ("calls" and "returns") of this system.
+*   OMG, what does it all mean? I'm getting more comfortable with the
+    control flow ("calls" and "returns") of this system, but I wouldn't
+    say I understand it!
+
+*   Why is lookahead, past the end of the current half-parsed
+    production, part of an LR item? What other kinds of item
+    embellishment could be done instead?
 
 *   In what sense is an LR parser a DFA? I implemented it, but there's
-    more to it that I haven't grokked yet. In particular,
-    is there just one DFA or many? What exactly is the "derived" grammar
-    is that the DFA parses? How on earth does it magically turn out to be
-    regular?!
+    more to it that I haven't grokked yet.
+
+*   Is there just one DFA or many? What exactly is the "derived" grammar
+    that the DFA parses? How on earth does it magically turn out to be
+    regular?  (This depends on it not extending past the first handle,
+    but I still don't quite see.)
 
 *   If I faithfully implement the algorithms in the book, will it be
     less of a dumpster fire? Smaller, more factored?
+
+Things I noticed:
+
+*   I think Yacc allows bits of code in the middle of productions:
+
+        nt1: T1 T2 nt2 { code1(); } T3 nt3 T4 { code2(); }
+
+    That could be implemented by introducing a synthetic production
+    that contains everything up to the first code block:
+
+        nt1_aux: T1 T2 nt2 { code1(); }
+        nt1: nt1_aux T3 nt3 T4 { code2(); }
+
+    There is a principle that says code should happen only at the end of
+    a production: because LR states are superpositions of items. We
+    don't know which production we are really parsing until we reduce,
+    so we don't know which code to execute.
+
+*   Each state is reachable from an initial state by a finite sequence
+    of "pushes", each of which pushes either a terminal (a shift action)
+    or a nonterminal (a summary of a bunch of parsing actions, ending
+    with a reduce).
+
+    States can sometimes be reached multiple ways (it's a state
+    transition graph). But regardless of which path you take, the symbols
+    pushed by the last few steps always match the symbols appearing to
+    the left of point in each of the state's LR items. (This implies
+    that those items have to agree on what has happened. Might make a
+    nice assertion.)
+
 
 
 ### Stab 4 (nonrecursive table-driven predictive LL parser)
