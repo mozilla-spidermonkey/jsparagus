@@ -862,6 +862,37 @@ class GenTestCase(unittest.TestCase):
         self.assertNoParse("(FN x -> f ( x ))(x)", goal="stmts",
                            message="expected one of ['(', ';'], got None")
 
+    def testStaggeredItems(self):
+        """Two items in a state can have different amounts of leading context."""
+        # In this example grammar, after "A" "B", we're in a state that
+        # contains these two items (ignoring lookahead):
+        #       goal ::= "A" "B" · y
+        #       x ::= "B" · stars "X"
+        #
+        # Likewise, after `"A" "B" stars`, we have:
+        #       x ::= "B" stars · "X"
+        #       y ::= stars · "Y"
+        #       stars ::= stars · "*"
+        tokenize = lexer.LexicalGrammar("A B * X Y")
+        grammar = {
+            "goal": [
+                ["A", "x"],
+                ["A", "B", "y"],
+            ],
+            "x": [
+                ["B", "stars", "X"],
+            ],
+            "y": [
+                ["stars", "Y"],
+            ],
+            "stars": [
+                ["*"],
+                ["stars", "*"],
+            ],
+        }
+        self.compile(tokenize, grammar)
+        self.assertParse("A B * * * X")
+        self.assertParse("A B * * * Y")
 
 if __name__ == '__main__':
     unittest.main()
