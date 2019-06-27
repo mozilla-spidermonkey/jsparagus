@@ -19,6 +19,9 @@ class OrderedSet:
     def __len__(self):
         return len(self._data)
 
+    def __bool__(self):
+        return bool(self._data)
+
     def __contains__(self, v):
         return v in self._data
 
@@ -56,6 +59,9 @@ class OrderedFrozenSet:
 
     def __len__(self):
         return len(self._data)
+
+    def __bool__(self):
+        return bool(self._data)
 
     def __contains__(self, v):
         return v in self._data
