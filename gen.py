@@ -1252,7 +1252,7 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
 
     terminals = list(OrderedSet(t for row in actions for t in row))
     out.write("#[derive(Copy, Clone, Debug, PartialEq)]\n")
-    out.write("pub enum TokenType {\n")
+    out.write("pub enum TerminalId {\n")
     for i, t in enumerate(terminals):
         if t is None:
             name = "End"
@@ -1286,6 +1286,35 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
                 seen[cc], nt, cc))
         seen[cc] = nt
 
+    def nt_node_variant(grammar, prod):
+        name = to_camel_case(prod.nt)
+        if len(grammar[prod.nt]) > 1:
+            name += "P" + str(prod.index)
+        return name
+
+    seen = {}
+    for prod in prods:
+        if prod.nt in nonterminals and not prod.removals:
+            name = nt_node_variant(grammar, prod)
+            if name in seen:
+                raise ValueError("Productions {} and {} have the same spelling ({})".format(
+                    production_to_str(grammar, seen[name].nt, seen[name].rhs),
+                    production_to_str(grammar, prod.nt, prod.rhs),
+                    name))
+            seen[name] = prod
+
+    out.write("#[derive(Debug)]\n")
+    out.write("pub enum NtNode {\n")
+    for prod in prods:
+        # Each production with an optional element removed uses the same
+        # variant as the corresponding production where the optional element is
+        # present.
+        if prod.nt in nonterminals and not prod.removals:
+            out.write("    // {}\n".format(production_to_str(grammar, prod.nt, prod.rhs)))
+            name = nt_node_variant(grammar, prod)
+            out.write("    {}({}),\n".format(name, ", ".join("Option<Node>" for v in prod.rhs)))
+    out.write("}\n\n")
+
     out.write("#[derive(Clone, Copy, Debug, PartialEq)]\n")
     out.write("pub enum NonterminalId {\n")
     for i, nt in enumerate(nonterminals):
@@ -1313,11 +1342,11 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
                     names_with_none.append("Some(x{})".format(j))
 
             names_with_none.reverse()
-            for i in prod.removals:
-                names_with_none.insert(i, "None")
-            out.write("            stack.push(Node::new(\"{}\", {}, vec![{}]));\n".format(
-                prod.nt,
-                prod.index,
+            for j in prod.removals:
+                names_with_none.insert(j, "None")
+            ntv = nt_node_variant(grammar, prod)
+            out.write("            stack.push(Node::Nonterminal(Box::new(NtNode::{}({}))));\n".format(
+                ntv,
                 ", ".join(names_with_none)
             ))
             out.write("            NonterminalId::{}\n".format(to_camel_case(prod.nt)))

@@ -1,5 +1,4 @@
 use crate::ast::Token;
-use crate::parser_generated::TokenType;
 use crate::parser_runtime::TokenStream;
 
 pub struct Lexer<Iter: Iterator<Item=char>> {
@@ -55,11 +54,11 @@ where Iter: Iterator<Item=char>
         assert!(self.current.is_none());
         self.skip_whitespace();
         let token = match self.chars.next() {
-            None => Token::new(TokenType::End),
-            Some(';') => Token::new(TokenType::Semicolon),
-            Some('{') => Token::new(TokenType::OpenBrace),
-            Some('}') => Token::new(TokenType::CloseBrace),
-            Some('?') => Token::new(TokenType::QuestionMark),
+            None => Token::End,
+            Some(';') => Token::Semicolon,
+            Some('{') => Token::OpenBrace,
+            Some('}') => Token::CloseBrace,
+            Some('?') => Token::QuestionMark,
 
             Some('"') => {
                 let mut s = String::new();
@@ -75,10 +74,7 @@ where Iter: Iterator<Item=char>
                 if self.chars.peek().is_none() {
                     panic!("not implemented: syntax error, unterminated string");
                 }
-                Token {
-                    ty: TokenType::String,
-                    data: s
-                }
+                Token::String(s)
             }
 
             Some(c) =>
@@ -87,14 +83,11 @@ where Iter: Iterator<Item=char>
                     id.push(c);
                     self.take_while(Lexer::<Iter>::is_identifier_part, &mut id);
                     if &id == "goal" {
-                        Token::new(TokenType::Goal)
+                        Token::Goal
                     } else if &id == "nt" {
-                        Token::new(TokenType::Nt)
+                        Token::Nt
                     } else {
-                        Token {
-                            ty: TokenType::Identifier,
-                            data: id,
-                        }
+                        Token::Identifier(id)
                     }
                 } else {
                     panic!("not implemented: syntax error, illegal character {:?}", c);
@@ -116,6 +109,6 @@ where Iter: Iterator<Item=char>
         self.current.take().unwrap()
     }
     fn token_as_index(t: &Self::Token) -> usize {
-        t.ty as usize
+        t.get_id() as usize
     }
 }

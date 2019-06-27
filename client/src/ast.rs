@@ -1,39 +1,40 @@
-use crate::parser_generated::TokenType;
+use crate::parser_generated::TerminalId;
+use crate::parser_generated::NtNode;
 
+// Danger: The order of these variants is chosen to match TerminalId, so that
+// the .get_id() method is trivial.
 #[derive(Debug)]
-pub struct Token {
-    pub ty: TokenType,
-    pub data: String,
+pub enum Token {
+    Nt,  // 'nt' keyword
+    Goal,  // 'goal' keyword
+    Identifier(String),
+    End,
+    OpenBrace, // {
+    CloseBrace, // }
+    String(String),
+    Semicolon, // ;
+    QuestionMark, // ?
 }
 
 impl Token {
-    pub fn new(ty: TokenType) -> Token {
-        Token {
-            ty,
-            data: String::new(),
+    pub fn get_id(&self) -> TerminalId {
+        // This switch should be optimized away.
+        match self {
+            Token::Nt => TerminalId::Nt,
+            Token::Goal => TerminalId::Goal,
+            Token::Identifier(_) => TerminalId::Identifier,
+            Token::End => TerminalId::End,
+            Token::OpenBrace => TerminalId::OpenBrace,
+            Token::CloseBrace => TerminalId::CloseBrace,
+            Token::String(_) => TerminalId::String,
+            Token::Semicolon => TerminalId::Semicolon,
+            Token::QuestionMark => TerminalId::QuestionMark,
         }
     }
-}
-
-#[derive(Debug)]
-pub struct NtNode {
-    pub nt: &'static str,
-    pub prod: usize,
-    pub fields: Vec<Option<Node>>,
 }
 
 #[derive(Debug)]
 pub enum Node {
     Terminal(Token),
     Nonterminal(Box<NtNode>),
-}
-
-impl Node {
-    pub fn new(
-        nt: &'static str,
-        prod: usize,
-        fields: Vec<Option<Node>>
-    ) -> Node {
-        Node::Nonterminal(Box::new(NtNode { nt, prod, fields }))
-    }
 }
