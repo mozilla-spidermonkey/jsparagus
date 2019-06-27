@@ -1206,6 +1206,8 @@ def write_parser(out, grammar, states, actions, ctns, prods, init_state_map):
     out.write("actions = [\n")
     for i, (state, row) in enumerate(zip(states, actions)):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))
+        ##for item in state._lr_items:
+        ##    out.write("    #       {}\n".format(lr_item_to_str(grammar, prods, item)))
         out.write("    " + repr(row) + ",\n")
         out.write("\n")
     out.write("]\n\n")
@@ -1549,6 +1551,7 @@ def compile_multi(grammar, goals):
     out = io.StringIO()
     generate_parser(out, grammar, goal_nts)
     scope = {}
+    ##print(out.getvalue())
     exec(out.getvalue(), scope)
     parser = Parser()
     for goal_nt in goal_nts:
