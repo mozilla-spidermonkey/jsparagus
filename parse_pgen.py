@@ -69,23 +69,23 @@ default_token_list = [
 ]
 
 class AstBuilder:
-    def grammar_0(self, token_defs, nt_defs):
+    def grammar_P0(self, token_defs, nt_defs):
         nonterminals, goal_nts = nt_defs
         return (token_defs or default_token_list, nonterminals, goal_nts)
 
-    def token_defs_0(self, token_def): return [token_def]
-    def token_defs_1(self, token_defs, token_def): return token_defs + [token_def]
+    def token_defs_P0(self, token_def): return [token_def]
+    def token_defs_P1(self, token_defs, token_def): return token_defs + [token_def]
 
-    def token_def_0(self, token, name, eq, picture, semi):
+    def token_def_P0(self, token, name, eq, picture, semi):
         assert (token, eq, semi) == ('token', '=', ';')
         return (name, picture)
 
-    def token_def_1(self, var, token, name, semi):
+    def token_def_P1(self, var, token, name, semi):
         assert (var, token, semi) == ('var', 'token', ';')
         return (name, None)
 
-    def nt_defs_0(self, nt_def): return self.nt_defs_1(({}, []), nt_def)
-    def nt_defs_1(self, grammar_in, nt_def):
+    def nt_defs_P0(self, nt_def): return self.nt_defs_P1(({}, []), nt_def)
+    def nt_defs_P1(self, grammar_in, nt_def):
         is_goal, nt, prods = nt_def
         grammar, goal_nts = grammar_in
         if nt in grammar:
@@ -95,102 +95,88 @@ class AstBuilder:
             goal_nts.append(nt)
         return grammar, goal_nts
 
-    def nt_def_0(self, *args):
+    def nt_def_P0(self, *args):
         nt_kw, ident, lc, prods, rc = args
         assert (nt_kw, lc, rc) == ('nt', '{', '}')
         return (False, ident, prods)
-    def nt_def_1(self, *args):
+    def nt_def_P1(self, *args):
         goal_kw, nt_kw, ident, lc, prods, rc = args
         assert (goal_kw, nt_kw, lc, rc) == ('goal', 'nt', '{', '}')
         return (True, ident, prods)
 
-    def prods_0(self, prod): return [prod]
-    def prods_1(self, prods, prod): return prods + [prod]
+    def prods_P0(self, prod): return [prod]
+    def prods_P1(self, prods, prod): return prods + [prod]
 
-    def prod_0(self, symbols, semi):
+    def prod_P0(self, symbols, semi):
         assert semi == ';'
         return symbols
 
-    def terms_0(self, term): return [term]
-    def terms_1(self, terms, term): return terms + [term]
+    def terms_P0(self, term): return [term]
+    def terms_P1(self, terms, term): return terms + [term]
 
-    def term_0(self, sym): return sym
-    def term_1(self, sym, q):
+    def term_P0(self, sym): return sym
+    def term_P1(self, sym, q):
         assert q == '?'
         return gen.Optional(sym)
 
-    def symbol_0(self, sym): return sym
-    def symbol_1(self, sym):
+    def symbol_P0(self, sym): return sym
+    def symbol_P1(self, sym):
         assert len(sym) > 1
         assert sym[0] == '"'
         assert sym[-1] == '"'
         chars = sym[1:-1]  # This is a bit sloppy.
         return Literal(chars)
 
-    def check(self, result):
-        tokens, nonterminals, goal_nts = result
+def check_grammar(result):
+    tokens, nonterminals, goal_nts = result
+    tokens_by_name = {}
+    tokens_by_image = {}
+    for name, image in tokens:
+        if name in tokens_by_name:
+            raise ValueError("token `{}` redeclared".format(name))
+        tokens_by_name[name] = image
+        if image is not None and image in tokens_by_image:
+            raise ValueError("multiple tokens look like \"{}\"".format(image))
+        tokens_by_image[image] = name
+        if name in nonterminals:
+            raise ValueError("`{}` is declared as both a token and a nonterminal (pick one)".format(name))
 
-        tokens_by_name = {}
-        tokens_by_image = {}
-        for name, image in tokens:
-            if name in tokens_by_name:
-                raise ValueError("token `{}` redeclared".format(name))
-            tokens_by_name[name] = image
-            if image is not None and image in tokens_by_image:
-                raise ValueError("multiple tokens look like \"{}\"".format(image))
-            tokens_by_image[image] = name
-            if name in nonterminals:
-                raise ValueError("`{}` is declared as both a token and a nonterminal (pick one)".format(name))
-
-        def check_element(nt, i, e):
-            if isinstance(e, Optional):
-                return Optional(check_element(nt, i, e.inner))
-            elif isinstance(e, Literal):
-                if e.chars not in tokens_by_image:
-                    raise ValueError("in {} production {}: undeclared token \"{}\"".format(nt, i, e.chars))
-                return e.chars
+    def check_element(nt, i, e):
+        if isinstance(e, Optional):
+            return Optional(check_element(nt, i, e.inner))
+        elif isinstance(e, Literal):
+            if e.chars not in tokens_by_image:
+                raise ValueError("in {} production {}: undeclared token \"{}\"".format(nt, i, e.chars))
+            return e.chars
+        else:
+            assert isinstance(e, str), e.__class__.__name__
+            if e in nonterminals:
+                return e
+            elif e in tokens_by_name:
+                image = tokens_by_name[e]
+                if image is not None:
+                    return image
+                return e
             else:
-                assert isinstance(e, str), e.__class__.__name__
-                if e in nonterminals:
-                    return e
-                elif e in tokens_by_name:
-                    image = tokens_by_name[e]
-                    if image is not None:
-                        return image
-                    return e
-                else:
-                    raise ValueError("in {} production {}: undeclared symbol {}".format(nt, i, e))
+                raise ValueError("in {} production {}: undeclared symbol {}".format(nt, i, e))
 
-        out = {nt: [] for nt in nonterminals}
-        for nt, rhs_list in nonterminals.items():
-            for i, rhs in enumerate(rhs_list):
-                out_rhs = []
-                for e in rhs:
-                    e = check_element(nt, i, e)
-                    out_rhs.append(e)
-                out[nt].append(out_rhs)
+    out = {nt: [] for nt in nonterminals}
+    for nt, rhs_list in nonterminals.items():
+        for i, rhs in enumerate(rhs_list):
+            out_rhs = []
+            for e in rhs:
+                e = check_element(nt, i, e)
+                out_rhs.append(e)
+            out[nt].append(out_rhs)
 
-        return (tokens, out, goal_nts)
-
-def postparse(builder, cst):
-    if isinstance(cst, tuple) and len(cst) == 3 and (isinstance(cst[0], str)
-                                                     and isinstance(cst[1], int)
-                                                     and isinstance(cst[2], list)):
-        method_name = cst[0] + "_" + str(cst[1])
-        method = getattr(builder, method_name, None)
-        if method is not None:
-            args = [postparse(builder, kid) for kid in cst[2]]
-            return method(*args)
-    return cst
-
+    return (tokens, out, goal_nts)
 
 def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
-    result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename))
     builder = AstBuilder()
-    result = postparse(builder, result)
-    tokens, nonterminals, goals = builder.check(result)
+    result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename), builder)
+    tokens, nonterminals, goals = check_grammar(result)
     variable_terminals = [name for name, image in tokens if image is None]
     return Grammar(nonterminals, variable_terminals), goals
 

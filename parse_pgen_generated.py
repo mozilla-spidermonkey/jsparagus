@@ -179,28 +179,53 @@ ctns = [
 ]
 
 reductions = [
-    ('grammar', 1, lambda x0: ('grammar', 0, [None, x0])),
-    ('grammar', 2, lambda x0, x1: ('grammar', 0, [x0, x1])),
-    ('token_defs', 1, lambda x0: ('token_defs', 0, [x0])),
-    ('token_defs', 2, lambda x0, x1: ('token_defs', 1, [x0, x1])),
-    ('token_def', 5, lambda x0, x1, x2, x3, x4: ('token_def', 0, [x0, x1, x2, x3, x4])),
-    ('token_def', 4, lambda x0, x1, x2, x3: ('token_def', 1, [x0, x1, x2, x3])),
-    ('nt_defs', 1, lambda x0: ('nt_defs', 0, [x0])),
-    ('nt_defs', 2, lambda x0, x1: ('nt_defs', 1, [x0, x1])),
-    ('nt_def', 4, lambda x0, x1, x2, x3: ('nt_def', 0, [x0, x1, x2, None, x3])),
-    ('nt_def', 5, lambda x0, x1, x2, x3, x4: ('nt_def', 0, [x0, x1, x2, x3, x4])),
-    ('nt_def', 5, lambda x0, x1, x2, x3, x4: ('nt_def', 1, [x0, x1, x2, x3, None, x4])),
-    ('nt_def', 6, lambda x0, x1, x2, x3, x4, x5: ('nt_def', 1, [x0, x1, x2, x3, x4, x5])),
-    ('prods', 1, lambda x0: ('prods', 0, [x0])),
-    ('prods', 2, lambda x0, x1: ('prods', 1, [x0, x1])),
-    ('prod', 2, lambda x0, x1: ('prod', 0, [x0, x1])),
-    ('terms', 1, lambda x0: ('terms', 0, [x0])),
-    ('terms', 2, lambda x0, x1: ('terms', 1, [x0, x1])),
-    ('term', 1, lambda x0: ('term', 0, [x0])),
-    ('term', 2, lambda x0, x1: ('term', 1, [x0, x1])),
-    ('symbol', 1, lambda x0: ('symbol', 0, [x0])),
-    ('symbol', 1, lambda x0: ('symbol', 1, [x0])),
-    ('grammar_1', 1, lambda x0: ('grammar_1', 0, [x0])),
+    ('grammar', 1, lambda builder, x0: builder.grammar_P0(None, x0)),
+    ('grammar', 2, lambda builder, x0, x1: builder.grammar_P0(x0, x1)),
+    ('token_defs', 1, lambda builder, x0: builder.token_defs_P0(x0)),
+    ('token_defs', 2, lambda builder, x0, x1: builder.token_defs_P1(x0, x1)),
+    ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.token_def_P0(x0, x1, x2, x3, x4)),
+    ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.token_def_P1(x0, x1, x2, x3)),
+    ('nt_defs', 1, lambda builder, x0: builder.nt_defs_P0(x0)),
+    ('nt_defs', 2, lambda builder, x0, x1: builder.nt_defs_P1(x0, x1)),
+    ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def_P0(x0, x1, x2, None, x3)),
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P0(x0, x1, x2, x3, x4)),
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P1(x0, x1, x2, x3, None, x4)),
+    ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def_P1(x0, x1, x2, x3, x4, x5)),
+    ('prods', 1, lambda builder, x0: builder.prods_P0(x0)),
+    ('prods', 2, lambda builder, x0, x1: builder.prods_P1(x0, x1)),
+    ('prod', 2, lambda builder, x0, x1: builder.prod_P0(x0, x1)),
+    ('terms', 1, lambda builder, x0: builder.terms_P0(x0)),
+    ('terms', 2, lambda builder, x0, x1: builder.terms_P1(x0, x1)),
+    ('term', 1, lambda builder, x0: builder.term_P0(x0)),
+    ('term', 2, lambda builder, x0, x1: builder.term_P1(x0, x1)),
+    ('symbol', 1, lambda builder, x0: builder.symbol_P0(x0)),
+    ('symbol', 1, lambda builder, x0: builder.symbol_P1(x0)),
+    ('grammar_1', 1, lambda builder, x0: builder.grammar_1_P0(x0)),
 ]
 
-parse_grammar = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)
+class DefaultBuilder:
+    def grammar_P0(self, *args): return ('grammar', 0, list(args))
+    def grammar_P0(self, *args): return ('grammar', 0, list(args))
+    def token_defs_P0(self, *args): return ('token_defs', 0, list(args))
+    def token_defs_P1(self, *args): return ('token_defs', 1, list(args))
+    def token_def_P0(self, *args): return ('token_def', 0, list(args))
+    def token_def_P1(self, *args): return ('token_def', 1, list(args))
+    def nt_defs_P0(self, *args): return ('nt_defs', 0, list(args))
+    def nt_defs_P1(self, *args): return ('nt_defs', 1, list(args))
+    def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
+    def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
+    def nt_def_P1(self, *args): return ('nt_def', 1, list(args))
+    def nt_def_P1(self, *args): return ('nt_def', 1, list(args))
+    def prods_P0(self, *args): return ('prods', 0, list(args))
+    def prods_P1(self, *args): return ('prods', 1, list(args))
+    def prod_P0(self, *args): return ('prod', 0, list(args))
+    def terms_P0(self, *args): return ('terms', 0, list(args))
+    def terms_P1(self, *args): return ('terms', 1, list(args))
+    def term_P0(self, *args): return ('term', 0, list(args))
+    def term_P1(self, *args): return ('term', 1, list(args))
+    def symbol_P0(self, *args): return ('symbol', 0, list(args))
+    def symbol_P1(self, *args): return ('symbol', 1, list(args))
+    def grammar_1_P0(self, *args): return ('grammar_1', 0, list(args))
+
+
+parse_grammar = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)

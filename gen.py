@@ -990,22 +990,30 @@ def write_parser(out, grammar, states, actions, ctns, prods, init_state_map):
 
     out.write("reductions = [\n")
     for prod in prods:
+        reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
         names = ["x" + str(i)
                  for i, e in enumerate(prod.rhs)
                  if grammar.is_terminal(e) or grammar.is_nt(e)]
         names_with_none = names[:]
         for i in prod.removals:
             names_with_none.insert(i, "None")
-        fn = ("lambda "
+        fn = ("lambda builder, "
               + ", ".join(names)
-              + ": ({!r}, {!r}, [".format(prod.nt, prod.index)
+              + ": builder.{}(".format(reduce_method_name)
               + ", ".join(names_with_none)
-              + "])")
+              + ")")
         out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
     out.write("]\n\n")
 
+    out.write("class DefaultBuilder:\n")
+    for prod in prods:
+        reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
+        out.write("    def {}(self, *args): return ({!r}, {!r}, list(args))\n"
+                  .format(reduce_method_name, prod.nt, prod.index))
+    out.write("\n\n")
+
     for init_nt, index in init_state_map.items():
-        out.write("parse_{} = pgen_runtime.make_parse_fn(actions, ctns, reductions, {})\n"
+        out.write("parse_{} = pgen_runtime.make_parse_fn(actions, ctns, reductions, {}, DefaultBuilder)\n"
                   .format(init_nt, index))
 
 TERMINAL_NAMES = {

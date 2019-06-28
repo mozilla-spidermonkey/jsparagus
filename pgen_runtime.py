@@ -2,7 +2,7 @@ ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
 
 
-def parse(actions, ctns, reductions, entry_state, tokens):
+def parse(actions, ctns, reductions, entry_state, tokens, builder):
     """ Table-driven LR parser. """
     t = tokens.peek()
     stack = [entry_state]  # alternates state-ids and AST nodes
@@ -17,7 +17,7 @@ def parse(actions, ctns, reductions, entry_state, tokens):
         elif action > ACCEPT:  # reduce
             tag_name, n, reducer = reductions[-action - 1]
             start = len(stack) - 2 * n
-            node = reducer(*stack[start::2])
+            node = reducer(builder, *stack[start::2])
             stack[start:] = [node, ctns[stack[start - 1]][tag_name]]
         elif action == ACCEPT:
             assert len(stack) == 3
@@ -35,5 +35,9 @@ def parse(actions, ctns, reductions, entry_state, tokens):
                              .format(sorted(expected), t))
 
 
-def make_parse_fn(actions, ctns, reductions, entry_state):
-    return lambda tokens: parse(actions, ctns, reductions, entry_state, tokens)
+def make_parse_fn(actions, ctns, reductions, entry_state, builder_cls):
+    def parse_fn(tokens, builder=None):
+        if builder is None:
+            builder = builder_cls()
+        return parse(actions, ctns, reductions, entry_state, tokens, builder)
+    return parse_fn
