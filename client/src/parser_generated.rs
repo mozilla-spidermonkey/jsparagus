@@ -33,7 +33,7 @@ static ACTIONS: [i64; 261] = [
     // 4. nt_def
     -1, -1, ERROR, -1, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 5. "nt" "IDENT"
+    // 5. "nt" IDENT
     ERROR, ERROR, ERROR, ERROR, 8, ERROR, ERROR, ERROR, ERROR,
 
     // 6. "goal" "nt"
@@ -42,98 +42,98 @@ static ACTIONS: [i64; 261] = [
     // 7. grammar nt_def
     -2, -2, ERROR, -2, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 8. "nt" "IDENT" "{"
+    // 8. "nt" IDENT "{"
     ERROR, ERROR, 11, ERROR, ERROR, 10, 12, ERROR, ERROR,
 
-    // 9. "goal" "nt" "IDENT"
+    // 9. "goal" "nt" IDENT
     ERROR, ERROR, ERROR, ERROR, 18, ERROR, ERROR, ERROR, ERROR,
 
-    // 10. "nt" "IDENT" "{" "}"
+    // 10. "nt" IDENT "{" "}"
     -3, -3, ERROR, -3, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 11. "nt" "IDENT" "{" "IDENT"
+    // 11. "nt" IDENT "{" IDENT
     ERROR, ERROR, -14, ERROR, ERROR, ERROR, -14, -14, -14,
 
-    // 12. "nt" "IDENT" "{" "STR"
+    // 12. "nt" IDENT "{" STR
     ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, -15,
 
-    // 13. "nt" "IDENT" "{" prods
+    // 13. "nt" IDENT "{" prods
     ERROR, ERROR, 11, ERROR, ERROR, 19, 12, ERROR, ERROR,
 
-    // 14. "nt" "IDENT" "{" prod
+    // 14. "nt" IDENT "{" prod
     ERROR, ERROR, -7, ERROR, ERROR, -7, -7, ERROR, ERROR,
 
-    // 15. "nt" "IDENT" "{" terms
+    // 15. "nt" IDENT "{" terms
     ERROR, ERROR, 22, ERROR, ERROR, ERROR, 23, 21, ERROR,
 
-    // 16. "nt" "IDENT" "{" term
+    // 16. "nt" IDENT "{" term
     ERROR, ERROR, -10, ERROR, ERROR, ERROR, -10, -10, ERROR,
 
-    // 17. "nt" "IDENT" "{" symbol
+    // 17. "nt" IDENT "{" symbol
     ERROR, ERROR, -12, ERROR, ERROR, ERROR, -12, -12, 25,
 
-    // 18. "goal" "nt" "IDENT" "{"
+    // 18. "goal" "nt" IDENT "{"
     ERROR, ERROR, 11, ERROR, ERROR, 26, 12, ERROR, ERROR,
 
-    // 19. "nt" "IDENT" "{" prods "}"
+    // 19. "nt" IDENT "{" prods "}"
     -4, -4, ERROR, -4, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 20. "nt" "IDENT" "{" prods prod
+    // 20. "nt" IDENT "{" prods prod
     ERROR, ERROR, -8, ERROR, ERROR, -8, -8, ERROR, ERROR,
 
-    // 21. "nt" "IDENT" "{" terms ";"
+    // 21. "nt" IDENT "{" terms ";"
     ERROR, ERROR, -9, ERROR, ERROR, -9, -9, ERROR, ERROR,
 
-    // 22. "nt" "IDENT" "{" terms "IDENT"
+    // 22. "nt" IDENT "{" terms IDENT
     ERROR, ERROR, -14, ERROR, ERROR, ERROR, -14, -14, -14,
 
-    // 23. "nt" "IDENT" "{" terms "STR"
+    // 23. "nt" IDENT "{" terms STR
     ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, -15,
 
-    // 24. "nt" "IDENT" "{" terms term
+    // 24. "nt" IDENT "{" terms term
     ERROR, ERROR, -11, ERROR, ERROR, ERROR, -11, -11, ERROR,
 
-    // 25. "nt" "IDENT" "{" symbol "?"
+    // 25. "nt" IDENT "{" symbol "?"
     ERROR, ERROR, -13, ERROR, ERROR, ERROR, -13, -13, ERROR,
 
-    // 26. "goal" "nt" "IDENT" "{" "}"
+    // 26. "goal" "nt" IDENT "{" "}"
     -5, -5, ERROR, -5, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 27. "goal" "nt" "IDENT" "{" prods
+    // 27. "goal" "nt" IDENT "{" prods
     ERROR, ERROR, 11, ERROR, ERROR, 28, 12, ERROR, ERROR,
 
-    // 28. "goal" "nt" "IDENT" "{" prods "}"
+    // 28. "goal" "nt" IDENT "{" prods "}"
     -6, -6, ERROR, -6, ERROR, ERROR, ERROR, ERROR, ERROR,
 ];
 
 #[derive(Debug)]
 pub enum NtNode {
     // grammar ::= nt_def
-    GrammarP0(Option<Node>),
+    GrammarP0(Node),
     // grammar ::= grammar nt_def
-    GrammarP1(Option<Node>, Option<Node>),
-    // nt_def ::= "nt" "IDENT" "{" prods "}"
-    NtDefP0(Option<Node>, Option<Node>, Option<Node>, Option<Node>, Option<Node>),
-    // nt_def ::= "goal" "nt" "IDENT" "{" prods "}"
-    NtDefP1(Option<Node>, Option<Node>, Option<Node>, Option<Node>, Option<Node>, Option<Node>),
+    GrammarP1(Node, Node),
+    // nt_def ::= "nt" IDENT "{" prods "}"
+    NtDefP0(Node, Option<Node>),
+    // nt_def ::= "goal" "nt" IDENT "{" prods "}"
+    NtDefP1(Node, Option<Node>),
     // prods ::= prod
-    ProdsP0(Option<Node>),
+    ProdsP0(Node),
     // prods ::= prods prod
-    ProdsP1(Option<Node>, Option<Node>),
+    ProdsP1(Node, Node),
     // prod ::= terms ";"
-    Prod(Option<Node>, Option<Node>),
+    Prod(Node),
     // terms ::= term
-    TermsP0(Option<Node>),
+    TermsP0(Node),
     // terms ::= terms term
-    TermsP1(Option<Node>, Option<Node>),
+    TermsP1(Node, Node),
     // term ::= symbol
-    TermP0(Option<Node>),
+    TermP0(Node),
     // term ::= symbol "?"
-    TermP1(Option<Node>, Option<Node>),
-    // symbol ::= "IDENT"
-    SymbolP0(Option<Node>),
-    // symbol ::= "STR"
-    SymbolP1(Option<Node>),
+    TermP1(Node),
+    // symbol ::= IDENT
+    SymbolP0(Node),
+    // symbol ::= STR
+    SymbolP1(Node),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -184,112 +184,112 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
         0 => {
             // grammar ::= nt_def
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(x0))));
             NonterminalId::Grammar
         }
         1 => {
             // grammar ::= grammar nt_def
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP1(Some(x0), Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP1(x0, x1))));
             NonterminalId::Grammar
         }
         2 => {
-            // nt_def ::= "nt" "IDENT" "{" "}"
-            let x3 = stack.pop().unwrap();
-            let x2 = stack.pop().unwrap();
-            let x1 = stack.pop().unwrap();
+            // nt_def ::= "nt" IDENT "{" "}"
+            stack.pop();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(Some(x0), Some(x1), Some(x2), None, Some(x3)))));
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(x0, None))));
             NonterminalId::NtDef
         }
         3 => {
-            // nt_def ::= "nt" "IDENT" "{" prods "}"
-            let x4 = stack.pop().unwrap();
-            let x3 = stack.pop().unwrap();
-            let x2 = stack.pop().unwrap();
+            // nt_def ::= "nt" IDENT "{" prods "}"
+            stack.pop();
             let x1 = stack.pop().unwrap();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(Some(x0), Some(x1), Some(x2), Some(x3), Some(x4)))));
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(x0, Some(x1)))));
             NonterminalId::NtDef
         }
         4 => {
-            // nt_def ::= "goal" "nt" "IDENT" "{" "}"
-            let x4 = stack.pop().unwrap();
-            let x3 = stack.pop().unwrap();
-            let x2 = stack.pop().unwrap();
-            let x1 = stack.pop().unwrap();
+            // nt_def ::= "goal" "nt" IDENT "{" "}"
+            stack.pop();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(Some(x0), Some(x1), Some(x2), Some(x3), None, Some(x4)))));
+            stack.pop();
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(x0, None))));
             NonterminalId::NtDef
         }
         5 => {
-            // nt_def ::= "goal" "nt" "IDENT" "{" prods "}"
-            let x5 = stack.pop().unwrap();
-            let x4 = stack.pop().unwrap();
-            let x3 = stack.pop().unwrap();
-            let x2 = stack.pop().unwrap();
+            // nt_def ::= "goal" "nt" IDENT "{" prods "}"
+            stack.pop();
             let x1 = stack.pop().unwrap();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(Some(x0), Some(x1), Some(x2), Some(x3), Some(x4), Some(x5)))));
+            stack.pop();
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(x0, Some(x1)))));
             NonterminalId::NtDef
         }
         6 => {
             // prods ::= prod
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP0(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP0(x0))));
             NonterminalId::Prods
         }
         7 => {
             // prods ::= prods prod
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP1(Some(x0), Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP1(x0, x1))));
             NonterminalId::Prods
         }
         8 => {
             // prod ::= terms ";"
-            let x1 = stack.pop().unwrap();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::Prod(Some(x0), Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::Prod(x0))));
             NonterminalId::Prod
         }
         9 => {
             // terms ::= term
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP0(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP0(x0))));
             NonterminalId::Terms
         }
         10 => {
             // terms ::= terms term
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP1(Some(x0), Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP1(x0, x1))));
             NonterminalId::Terms
         }
         11 => {
             // term ::= symbol
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermP0(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::TermP0(x0))));
             NonterminalId::Term
         }
         12 => {
             // term ::= symbol "?"
-            let x1 = stack.pop().unwrap();
+            stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermP1(Some(x0), Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::TermP1(x0))));
             NonterminalId::Term
         }
         13 => {
-            // symbol ::= "IDENT"
+            // symbol ::= IDENT
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP0(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP0(x0))));
             NonterminalId::Symbol
         }
         14 => {
-            // symbol ::= "STR"
+            // symbol ::= STR
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP1(Some(x0)))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP1(x0))));
             NonterminalId::Symbol
         }
         _ => panic!("no such production: {}", prod),

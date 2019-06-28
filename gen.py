@@ -1077,6 +1077,33 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
                     name))
             seen[name] = prod
 
+    prod_optional_element_indexes = {
+        (prod.nt, prod.index): set(
+            i
+            for p in prods
+            if p.index == prod.index
+            for i in p.removals
+        )
+        for prod in prods
+        if prod.nt in nonterminals and not prod.removals
+    }
+
+    def rust_type_of_element(prod, i, e):
+        if grammar.is_variable_terminal(e):
+            ty = 'Node'
+        elif grammar.is_terminal(e):
+            ty = '()'
+        else:
+            assert grammar.is_nt(e)
+            ty = 'Node'
+
+        if i in prod_optional_element_indexes[(prod.nt, prod.index)]:
+            if ty == '()':
+                ty = 'bool'
+            else:
+                ty = 'Option<{}>'.format(ty)
+        return ty
+
     out.write("#[derive(Debug)]\n")
     out.write("pub enum NtNode {\n")
     for prod in prods:
@@ -1084,9 +1111,15 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
         # variant as the corresponding production where the optional element is
         # present.
         if prod.nt in nonterminals and not prod.removals:
+            types = []
+            for i, e in enumerate(prod.rhs):
+                ty = rust_type_of_element(prod, i, e)
+                if ty != '()':
+                    types.append(ty)
+
             out.write("    // {}\n".format(grammar.production_to_str(prod.nt, prod.rhs)))
             name = nt_node_variant(grammar, prod)
-            out.write("    {}({}),\n".format(name, ", ".join("Option<Node>" for v in prod.rhs)))
+            out.write("    {}({}),\n".format(name, ", ".join(types)))
     out.write("}\n\n")
 
     out.write("#[derive(Clone, Copy, Debug, PartialEq)]\n")
@@ -1109,19 +1142,41 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
             out.write("        {} => {{\n".format(i))
             out.write("            // {}\n".format(grammar.production_to_str(prod.nt, prod.rhs)))
 
-            names_with_none = []
-            for j, element in reversed(list(enumerate(prod.rhs))):
-                if grammar.is_terminal(element) or grammar.is_nt(element):
-                    out.write("            let x{} = stack.pop().unwrap();\n".format(j))
-                    names_with_none.append("Some(x{})".format(j))
+            stack_elements = []  # to remove
+            arguments = []       # to pass to constructor
+            original_index = 0
+            variable_index = 0
+            for element in prod.rhs:
+                while original_index in prod.removals:
+                    arguments.append("None")
+                    original_index += 1
 
-            names_with_none.reverse()
-            for j in prod.removals:
-                names_with_none.insert(j, "None")
+                ty = rust_type_of_element(prod, original_index, element)
+                if ty == '()':
+                    var = None
+                    arg = '()'
+                else:
+                    var = "x" + str(variable_index)
+                    variable_index += 1
+                    arg = var
+                if ty.startswith('Option<'):
+                    arg = "Some({})".format(arg)
+
+                stack_elements.append(var)
+                if ty != '()':
+                    arguments.append(arg)
+                original_index += 1
+
+            for var in reversed(stack_elements):
+                if var is None:
+                    out.write("            stack.pop();\n")
+                else:
+                    out.write("            let {} = stack.pop().unwrap();\n".format(var))
+
             ntv = nt_node_variant(grammar, prod)
             out.write("            stack.push(Node::Nonterminal(Box::new(NtNode::{}({}))));\n".format(
                 ntv,
-                ", ".join(names_with_none)
+                ", ".join(arguments)
             ))
             out.write("            NonterminalId::{}\n".format(to_camel_case(prod.nt)))
             out.write("        }\n")
