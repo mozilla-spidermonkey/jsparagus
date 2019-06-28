@@ -205,7 +205,8 @@ class ParsePgenTestCase(unittest.TestCase):
         import os
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
         grammar, goal_nts = load_grammar(filename)
-        self.assertEqual(grammar, pgen_grammar)
+        self.assertEqual(grammar.nonterminals, pgen_grammar.nonterminals)
+        self.assertEqual(grammar.variable_terminals, pgen_grammar.variable_terminals)
         self.assertEqual(goal_nts, ['grammar'])
 
         import io
