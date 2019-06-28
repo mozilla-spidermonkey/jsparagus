@@ -5,8 +5,22 @@
 # Ignore this for now.
 
 goal nt grammar {
+    token_defs? nt_defs;
+}
+
+nt token_defs {
+    token_def;
+    token_defs token_def;
+}
+
+nt token_def {
+    "token" IDENT "=" STR ";";
+    "var" "token" IDENT ";";
+}
+
+nt nt_defs {
     nt_def;
-    grammar nt_def;
+    nt_defs nt_def;
 }
 
 nt nt_def {

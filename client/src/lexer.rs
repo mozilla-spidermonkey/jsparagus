@@ -59,6 +59,7 @@ where Iter: Iterator<Item=char>
             Some('{') => Token::OpenBrace,
             Some('}') => Token::CloseBrace,
             Some('?') => Token::QuestionMark,
+            Some('=') => Token::EqualSign,
 
             Some('"') => {
                 let mut s = String::new();
@@ -82,10 +83,14 @@ where Iter: Iterator<Item=char>
                     let mut id = String::new();
                     id.push(c);
                     self.take_while(Lexer::<Iter>::is_identifier_part, &mut id);
-                    if &id == "goal" {
+                    if id == "goal" {
                         Token::Goal
-                    } else if &id == "nt" {
+                    } else if id == "nt" {
                         Token::Nt
+                    } else if id == "token" {
+                        Token::Token
+                    } else if id == "var" {
+                        Token::Var
                     } else {
                         Token::Identifier(id)
                     }

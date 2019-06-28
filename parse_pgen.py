@@ -6,11 +6,12 @@ I'm not sure I want to keep this pgen mini-language around; ignore this for now.
 """
 
 from lexer import LexicalGrammar
-from grammar import Grammar
+from grammar import Grammar, Optional
 import gen
 import pprint
 import parse_pgen_generated
 import unittest
+from collections import namedtuple
 
 
 pgen_lexer = LexicalGrammar("goal nt { } ; ?",
@@ -21,7 +22,13 @@ pgen_lexer = LexicalGrammar("goal nt { } ; ?",
 
 pgen_grammar = Grammar(
     {
-        'grammar': [['nt_def'], ['grammar', 'nt_def']],
+        'grammar': [[Optional('token_defs'), 'nt_defs']],
+        'token_defs': [['token_def'], ['token_defs', 'token_def']],
+        'token_def': [
+            ['token', 'IDENT', '=', 'STR', ';'],
+            ['var', 'token', 'IDENT', ';']
+        ],
+        'nt_defs': [['nt_def'], ['nt_defs', 'nt_def']],
         'nt_def': [
             ['nt', 'IDENT', '{', gen.Optional('prods'), '}'],
             ['goal', 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
@@ -36,13 +43,53 @@ pgen_grammar = Grammar(
 )
 
 
+Literal = namedtuple("Literal", "chars")
+
+default_token_list = [
+    ("Var", "var"),
+    ("Token", "token"),
+    ("Goal", "goal"),
+    ("Nt", "nt"),
+    ("IDENT", None),
+    ("STR", None),
+    ("OpenBrace", "{"),
+    ("CloseBrace", "}"),
+    ("OpenParenthesis", "("),
+    ("CloseParenthesis", ")"),
+    ("Colon", ":"),
+    ("EqualSign", "="),
+    ("Asterisk", "*"),
+    ("PlusSign", "+"),
+    ("MinusSign", "-"),
+    ("Slash", "/"),
+    ("Semicolon", ";"),
+    ("QuestionMark", "?"),
+    ("RightArrow", "->"),
+    ("Comma", ","),
+]
+
 class AstBuilder:
     def __init__(self):
         self.identifiers_used = set()
         self.quoted_terminals_used = set()
 
-    def grammar_0(self, nt_def): return self.grammar_1(({}, []), nt_def)
-    def grammar_1(self, grammar_in, nt_def):
+    def grammar_0(self, token_defs, nt_defs):
+        nonterminals, goal_nts = nt_defs
+        return (token_defs or default_token_list, nonterminals, goal_nts)
+
+    def token_defs_0(self, token_def): return [token_def]
+    def token_defs_1(self, token_defs, token_def): return token_defs + [token_def]
+
+    def token_def_0(self, token, name, eq, picture, semi):
+        assert (token, eq, semi) == ('token', '=', ';')
+        return (name, picture)
+
+    def token_def_1(self, var, token, name, semi):
+        assert (var, token, semi) == ('var', 'token', ';')
+        return (name, None)
+
+    def nt_defs_0(self, nt_def): return self.nt_defs_1(({}, []), nt_def)
+    def nt_defs_1(self, grammar_in, nt_def):
         is_goal, nt, prods = nt_def
         grammar, goal_nts = grammar_in
         if nt in grammar:
@@ -83,26 +130,54 @@ class AstBuilder:
         assert len(sym) > 1
         assert sym[0] == '"'
         assert sym[-1] == '"'
-        chars = sym[1:-1]  # This is very sloppy.
+        chars = sym[1:-1]  # This is a bit sloppy.
         self.quoted_terminals_used.add(sym)
-        return chars
+        return Literal(chars)
 
     def check(self, result):
-        nonterminals, goal_nts = result
-        for t in self.quoted_terminals_used:
-            if t in self.identifiers_used:
-                if t in nonterminals:
-                    raise ValueError("nonterminal `{}` is also used as a quoted terminal "
-                                     "(sorry, they're not allowed to look the same; rename the nonterminal)"
-                                     .format(t))
+        tokens, nonterminals, goal_nts = result
+
+        tokens_by_name = {}
+        tokens_by_image = {}
+        for name, image in tokens:
+            if name in tokens_by_name:
+                raise ValueError("token `{}` redeclared".format(name))
+            tokens_by_name[name] = image
+            if image is not None and image in tokens_by_image:
+                raise ValueError("multiple tokens look like \"{}\"".format(image))
+            tokens_by_image[image] = name
+            if name in nonterminals:
+                raise ValueError("`{}` is declared as both a token and a nonterminal (pick one)".format(name))
+
+        def check_element(nt, i, e):
+            if isinstance(e, Optional):
+                return Optional(check_element(nt, i, e.inner))
+            elif isinstance(e, Literal):
+                if e.chars not in tokens_by_image:
+                    raise ValueError("in {} production {}: undeclared token \"{}\"".format(nt, i, e.chars))
+                return e.chars
+            else:
+                assert isinstance(e, str), e.__class__.__name__
+                if e in nonterminals:
+                    return e
+                elif e in tokens_by_name:
+                    image = tokens_by_name[e]
+                    if image is not None:
+                        return image
+                    return e
                 else:
-                    raise ValueError("terminal `{}` is used both quoted and nonquoted; pick one".format(t))
-        for t in self.identifiers_used:
-            if t not in nonterminals:
-                if not all(c.isupper() or c == '_' for c in t):
-                    print("Warning: symbol `{}` is not defined as a nonterminal in the grammar "
-                          "(if it's a terminal, you can silence this warning by renaming it to SHOUTY_CASE)"
-                          .format(t))
+                    raise ValueError("in {} production {}: undeclared symbol {}".format(nt, i, e))
+
+        out = {nt: [] for nt in nonterminals}
+        for nt, rhs_list in nonterminals.items():
+            for i, rhs in enumerate(rhs_list):
+                out_rhs = []
+                for e in rhs:
+                    e = check_element(nt, i, e)
+                    out_rhs.append(e)
+                out[nt].append(out_rhs)
+
+        return (tokens, out, goal_nts)
 
 def postparse(builder, cst):
     if isinstance(cst, tuple) and len(cst) == 3 and (isinstance(cst[0], str)
@@ -122,8 +197,7 @@ def load_grammar(filename):
     result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename))
     builder = AstBuilder()
     result = postparse(builder, result)
-    builder.check(result)
-    nonterminals, goals = result
+    tokens, nonterminals, goals = builder.check(result)
     unquoted_terminals = [id for id in builder.identifiers_used if id not in nonterminals]
     return Grammar(nonterminals, unquoted_terminals), goals
 

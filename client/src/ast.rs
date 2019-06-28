@@ -7,9 +7,12 @@ use crate::parser_generated::NtNode;
 pub enum Token {
     Nt,  // 'nt' keyword
     Goal,  // 'goal' keyword
+    Token,  // 'token' keyword
+    Var,  // 'var' keyword
     Identifier(String),
     End,
     OpenBrace, // {
+    EqualSign, // =
     CloseBrace, // }
     String(String),
     Semicolon, // ;
@@ -22,9 +25,12 @@ impl Token {
         match self {
             Token::Nt => TerminalId::Nt,
             Token::Goal => TerminalId::Goal,
+            Token::Token => TerminalId::Token,
+            Token::Var => TerminalId::Var,
             Token::Identifier(_) => TerminalId::Identifier,
             Token::End => TerminalId::End,
             Token::OpenBrace => TerminalId::OpenBrace,
+            Token::EqualSign => TerminalId::EqualSign,
             Token::CloseBrace => TerminalId::CloseBrace,
             Token::String(_) => TerminalId::String,
             Token::Semicolon => TerminalId::Semicolon,

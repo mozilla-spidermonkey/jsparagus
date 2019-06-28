@@ -8,110 +8,165 @@ const ERROR: i64 = -0x8000000000000000;
 pub enum TerminalId {
     Nt = 0, // 'nt'
     Goal = 1, // 'goal'
-    Identifier = 2, // 'IDENT'
-    End = 3, // None
-    OpenBrace = 4, // '{'
-    CloseBrace = 5, // '}'
-    String = 6, // 'STR'
-    Semicolon = 7, // ';'
-    QuestionMark = 8, // '?'
+    Token = 2, // 'token'
+    Var = 3, // 'var'
+    Identifier = 4, // 'IDENT'
+    End = 5, // None
+    OpenBrace = 6, // '{'
+    EqualSign = 7, // '='
+    CloseBrace = 8, // '}'
+    String = 9, // 'STR'
+    Semicolon = 10, // ';'
+    QuestionMark = 11, // '?'
 }
 
-static ACTIONS: [i64; 261] = [
+static ACTIONS: [i64; 516] = [
     // 0. <empty>
-    1, 2, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+    1, 2, 3, 4, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 1. "nt"
-    ERROR, ERROR, 5, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+    ERROR, ERROR, ERROR, ERROR, 10, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 2. "goal"
-    6, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+    11, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 3. grammar
-    1, 2, ERROR, -9223372036854775807, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 3. "token"
+    ERROR, ERROR, ERROR, ERROR, 12, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 4. nt_def
-    -1, -1, ERROR, -1, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 4. "var"
+    ERROR, ERROR, 13, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 5. "nt" IDENT
-    ERROR, ERROR, ERROR, ERROR, 8, ERROR, ERROR, ERROR, ERROR,
+    // 5. grammar
+    ERROR, ERROR, ERROR, ERROR, ERROR, -9223372036854775807, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 6. "goal" "nt"
-    ERROR, ERROR, 9, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 6. nt_defs
+    1, 2, ERROR, ERROR, ERROR, -1, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 7. grammar nt_def
-    -2, -2, ERROR, -2, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 7. token_defs
+    1, 2, 3, 4, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 8. "nt" IDENT "{"
-    ERROR, ERROR, 11, ERROR, ERROR, 10, 12, ERROR, ERROR,
+    // 8. nt_def
+    -7, -7, ERROR, ERROR, ERROR, -7, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 9. "goal" "nt" IDENT
-    ERROR, ERROR, ERROR, ERROR, 18, ERROR, ERROR, ERROR, ERROR,
+    // 9. token_def
+    -3, -3, -3, -3, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 10. "nt" IDENT "{" "}"
-    -3, -3, ERROR, -3, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 10. "nt" IDENT
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 17, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 11. "nt" IDENT "{" IDENT
-    ERROR, ERROR, -14, ERROR, ERROR, ERROR, -14, -14, -14,
+    // 11. "goal" "nt"
+    ERROR, ERROR, ERROR, ERROR, 18, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 12. "nt" IDENT "{" STR
-    ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, -15,
+    // 12. "token" IDENT
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 19, ERROR, ERROR, ERROR, ERROR,
 
-    // 13. "nt" IDENT "{" prods
-    ERROR, ERROR, 11, ERROR, ERROR, 19, 12, ERROR, ERROR,
+    // 13. "var" "token"
+    ERROR, ERROR, ERROR, ERROR, 20, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 14. "nt" IDENT "{" prod
-    ERROR, ERROR, -7, ERROR, ERROR, -7, -7, ERROR, ERROR,
+    // 14. nt_defs nt_def
+    -8, -8, ERROR, ERROR, ERROR, -8, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 15. "nt" IDENT "{" terms
-    ERROR, ERROR, 22, ERROR, ERROR, ERROR, 23, 21, ERROR,
+    // 15. token_defs nt_defs
+    1, 2, ERROR, ERROR, ERROR, -2, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 16. "nt" IDENT "{" term
-    ERROR, ERROR, -10, ERROR, ERROR, ERROR, -10, -10, ERROR,
+    // 16. token_defs token_def
+    -4, -4, -4, -4, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 17. "nt" IDENT "{" symbol
-    ERROR, ERROR, -12, ERROR, ERROR, ERROR, -12, -12, 25,
+    // 17. "nt" IDENT "{"
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 21, 23, ERROR, ERROR,
 
-    // 18. "goal" "nt" IDENT "{"
-    ERROR, ERROR, 11, ERROR, ERROR, 26, 12, ERROR, ERROR,
+    // 18. "goal" "nt" IDENT
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 29, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 19. "nt" IDENT "{" prods "}"
-    -4, -4, ERROR, -4, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 19. "token" IDENT "="
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 30, ERROR, ERROR,
 
-    // 20. "nt" IDENT "{" prods prod
-    ERROR, ERROR, -8, ERROR, ERROR, -8, -8, ERROR, ERROR,
+    // 20. "var" "token" IDENT
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 31, ERROR,
 
-    // 21. "nt" IDENT "{" terms ";"
-    ERROR, ERROR, -9, ERROR, ERROR, -9, -9, ERROR, ERROR,
+    // 21. "nt" IDENT "{" "}"
+    -9, -9, ERROR, ERROR, ERROR, -9, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 22. "nt" IDENT "{" terms IDENT
-    ERROR, ERROR, -14, ERROR, ERROR, ERROR, -14, -14, -14,
+    // 22. "nt" IDENT "{" IDENT
+    ERROR, ERROR, ERROR, ERROR, -20, ERROR, ERROR, ERROR, ERROR, -20, -20, -20,
 
-    // 23. "nt" IDENT "{" terms STR
-    ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, -15,
+    // 23. "nt" IDENT "{" STR
+    ERROR, ERROR, ERROR, ERROR, -21, ERROR, ERROR, ERROR, ERROR, -21, -21, -21,
 
-    // 24. "nt" IDENT "{" terms term
-    ERROR, ERROR, -11, ERROR, ERROR, ERROR, -11, -11, ERROR,
+    // 24. "nt" IDENT "{" prods
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 32, 23, ERROR, ERROR,
 
-    // 25. "nt" IDENT "{" symbol "?"
-    ERROR, ERROR, -13, ERROR, ERROR, ERROR, -13, -13, ERROR,
+    // 25. "nt" IDENT "{" prod
+    ERROR, ERROR, ERROR, ERROR, -13, ERROR, ERROR, ERROR, -13, -13, ERROR, ERROR,
 
-    // 26. "goal" "nt" IDENT "{" "}"
-    -5, -5, ERROR, -5, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 26. "nt" IDENT "{" terms
+    ERROR, ERROR, ERROR, ERROR, 35, ERROR, ERROR, ERROR, ERROR, 36, 34, ERROR,
 
-    // 27. "goal" "nt" IDENT "{" prods
-    ERROR, ERROR, 11, ERROR, ERROR, 28, 12, ERROR, ERROR,
+    // 27. "nt" IDENT "{" term
+    ERROR, ERROR, ERROR, ERROR, -16, ERROR, ERROR, ERROR, ERROR, -16, -16, ERROR,
 
-    // 28. "goal" "nt" IDENT "{" prods "}"
-    -6, -6, ERROR, -6, ERROR, ERROR, ERROR, ERROR, ERROR,
+    // 28. "nt" IDENT "{" symbol
+    ERROR, ERROR, ERROR, ERROR, -18, ERROR, ERROR, ERROR, ERROR, -18, -18, 38,
+
+    // 29. "goal" "nt" IDENT "{"
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 39, 23, ERROR, ERROR,
+
+    // 30. "token" IDENT "=" STR
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 41, ERROR,
+
+    // 31. "var" "token" IDENT ";"
+    -6, -6, -6, -6, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+
+    // 32. "nt" IDENT "{" prods "}"
+    -10, -10, ERROR, ERROR, ERROR, -10, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+
+    // 33. "nt" IDENT "{" prods prod
+    ERROR, ERROR, ERROR, ERROR, -14, ERROR, ERROR, ERROR, -14, -14, ERROR, ERROR,
+
+    // 34. "nt" IDENT "{" terms ";"
+    ERROR, ERROR, ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, ERROR, ERROR,
+
+    // 35. "nt" IDENT "{" terms IDENT
+    ERROR, ERROR, ERROR, ERROR, -20, ERROR, ERROR, ERROR, ERROR, -20, -20, -20,
+
+    // 36. "nt" IDENT "{" terms STR
+    ERROR, ERROR, ERROR, ERROR, -21, ERROR, ERROR, ERROR, ERROR, -21, -21, -21,
+
+    // 37. "nt" IDENT "{" terms term
+    ERROR, ERROR, ERROR, ERROR, -17, ERROR, ERROR, ERROR, ERROR, -17, -17, ERROR,
+
+    // 38. "nt" IDENT "{" symbol "?"
+    ERROR, ERROR, ERROR, ERROR, -19, ERROR, ERROR, ERROR, ERROR, -19, -19, ERROR,
+
+    // 39. "goal" "nt" IDENT "{" "}"
+    -11, -11, ERROR, ERROR, ERROR, -11, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+
+    // 40. "goal" "nt" IDENT "{" prods
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 42, 23, ERROR, ERROR,
+
+    // 41. "token" IDENT "=" STR ";"
+    -5, -5, -5, -5, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
+
+    // 42. "goal" "nt" IDENT "{" prods "}"
+    -12, -12, ERROR, ERROR, ERROR, -12, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 ];
 
 #[derive(Debug)]
 pub enum NtNode {
-    // grammar ::= nt_def
-    GrammarP0(Node),
-    // grammar ::= grammar nt_def
-    GrammarP1(Node, Node),
+    // grammar ::= token_defs nt_defs
+    GrammarP0(Option<Node>, Node),
+    // token_defs ::= token_def
+    TokenDefsP0(Node),
+    // token_defs ::= token_defs token_def
+    TokenDefsP1(Node, Node),
+    // token_def ::= "token" IDENT "=" STR ";"
+    TokenDefP0(Node, Node),
+    // token_def ::= "var" "token" IDENT ";"
+    TokenDefP1(Node),
+    // nt_defs ::= nt_def
+    NtDefsP0(Node),
+    // nt_defs ::= nt_defs nt_def
+    NtDefsP1(Node, Node),
     // nt_def ::= "nt" IDENT "{" prods "}"
     NtDefP0(Node, Option<Node>),
     // nt_def ::= "goal" "nt" IDENT "{" prods "}"
@@ -139,62 +194,124 @@ pub enum NtNode {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum NonterminalId {
     Grammar = 0,
-    NtDef = 1,
-    Prods = 2,
-    Prod = 3,
-    Terms = 4,
-    Term = 5,
-    Symbol = 6,
+    NtDefs = 1,
+    TokenDefs = 2,
+    NtDef = 3,
+    TokenDef = 4,
+    Prods = 5,
+    Prod = 6,
+    Terms = 7,
+    Term = 8,
+    Symbol = 9,
 }
 
-static GOTO: [usize; 203] = [
-    3, 4, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 7, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 13, 14, 15, 16, 17,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 20, 15, 16, 17,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 24, 17,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 27, 14, 15, 16, 17,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 20, 15, 16, 17,
-    0, 0, 0, 0, 0, 0, 0,
+static GOTO: [usize; 430] = [
+    5, 6, 7, 8, 9, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 14, 0, 0, 0, 0, 0, 0,
+    0, 15, 0, 8, 16, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 14, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 24, 25, 26, 27, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 33, 26, 27, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 37, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 40, 25, 26, 27, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 33, 26, 27, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
 
 fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
     match prod {
         0 => {
-            // grammar ::= nt_def
+            // grammar ::= nt_defs
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(None, x0))));
             NonterminalId::Grammar
         }
         1 => {
-            // grammar ::= grammar nt_def
+            // grammar ::= token_defs nt_defs
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP1(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(Some(x0), x1))));
             NonterminalId::Grammar
         }
         2 => {
+            // token_defs ::= token_def
+            let x0 = stack.pop().unwrap();
+            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefsP0(x0))));
+            NonterminalId::TokenDefs
+        }
+        3 => {
+            // token_defs ::= token_defs token_def
+            let x1 = stack.pop().unwrap();
+            let x0 = stack.pop().unwrap();
+            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefsP1(x0, x1))));
+            NonterminalId::TokenDefs
+        }
+        4 => {
+            // token_def ::= "token" IDENT "=" STR ";"
+            stack.pop();
+            let x1 = stack.pop().unwrap();
+            stack.pop();
+            let x0 = stack.pop().unwrap();
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefP0(x0, x1))));
+            NonterminalId::TokenDef
+        }
+        5 => {
+            // token_def ::= "var" "token" IDENT ";"
+            stack.pop();
+            let x0 = stack.pop().unwrap();
+            stack.pop();
+            stack.pop();
+            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefP1(x0))));
+            NonterminalId::TokenDef
+        }
+        6 => {
+            // nt_defs ::= nt_def
+            let x0 = stack.pop().unwrap();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefsP0(x0))));
+            NonterminalId::NtDefs
+        }
+        7 => {
+            // nt_defs ::= nt_defs nt_def
+            let x1 = stack.pop().unwrap();
+            let x0 = stack.pop().unwrap();
+            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefsP1(x0, x1))));
+            NonterminalId::NtDefs
+        }
+        8 => {
             // nt_def ::= "nt" IDENT "{" "}"
             stack.pop();
             stack.pop();
@@ -203,7 +320,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(x0, None))));
             NonterminalId::NtDef
         }
-        3 => {
+        9 => {
             // nt_def ::= "nt" IDENT "{" prods "}"
             stack.pop();
             let x1 = stack.pop().unwrap();
@@ -213,7 +330,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(x0, Some(x1)))));
             NonterminalId::NtDef
         }
-        4 => {
+        10 => {
             // nt_def ::= "goal" "nt" IDENT "{" "}"
             stack.pop();
             stack.pop();
@@ -223,7 +340,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(x0, None))));
             NonterminalId::NtDef
         }
-        5 => {
+        11 => {
             // nt_def ::= "goal" "nt" IDENT "{" prods "}"
             stack.pop();
             let x1 = stack.pop().unwrap();
@@ -234,59 +351,59 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP1(x0, Some(x1)))));
             NonterminalId::NtDef
         }
-        6 => {
+        12 => {
             // prods ::= prod
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP0(x0))));
             NonterminalId::Prods
         }
-        7 => {
+        13 => {
             // prods ::= prods prod
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP1(x0, x1))));
             NonterminalId::Prods
         }
-        8 => {
+        14 => {
             // prod ::= terms ";"
             stack.pop();
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::Prod(x0))));
             NonterminalId::Prod
         }
-        9 => {
+        15 => {
             // terms ::= term
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::TermsP0(x0))));
             NonterminalId::Terms
         }
-        10 => {
+        16 => {
             // terms ::= terms term
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::TermsP1(x0, x1))));
             NonterminalId::Terms
         }
-        11 => {
+        17 => {
             // term ::= symbol
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::TermP0(x0))));
             NonterminalId::Term
         }
-        12 => {
+        18 => {
             // term ::= symbol "?"
             stack.pop();
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::TermP1(x0))));
             NonterminalId::Term
         }
-        13 => {
+        19 => {
             // symbol ::= IDENT
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP0(x0))));
             NonterminalId::Symbol
         }
-        14 => {
+        20 => {
             // symbol ::= STR
             let x0 = stack.pop().unwrap();
             stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP1(x0))));
@@ -297,11 +414,11 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
 }
 
 static TABLES: ParserTables<'static> = ParserTables {
-    state_count: 29,
+    state_count: 43,
     action_table: &ACTIONS,
-    action_width: 9,
+    action_width: 12,
     goto_table: &GOTO,
-    goto_width: 7,
+    goto_width: 10,
 };
 
 pub fn parse_grammar<In: TokenStream<Token=crate::ast::Token>>(

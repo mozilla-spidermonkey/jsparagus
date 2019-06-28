@@ -1015,6 +1015,7 @@ TERMINAL_NAMES = {
     "?": "QuestionMark",
     "IDENT": "Identifier",
     "STR": "String",
+    "=": "EqualSign",
 }
 
 def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map):
@@ -1081,9 +1082,19 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
         (prod.nt, prod.index): set(
             i
             for p in prods
-            if p.index == prod.index
+            if p.nt == prod.nt and p.index == prod.index
             for i in p.removals
         )
+        for prod in prods
+        if prod.nt in nonterminals and not prod.removals
+    }
+
+    # Reverse-engineered original productions for everything
+    originals = {
+        (prod.nt, prod.index): [
+            (Optional(e) if i in prod_optional_element_indexes[prod.nt, prod.index] else e)
+            for i, e in enumerate(prod.rhs)
+        ]
         for prod in prods
         if prod.nt in nonterminals and not prod.removals
     }
@@ -1148,13 +1159,22 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
             variable_index = 0
             for element in prod.rhs:
                 while original_index in prod.removals:
-                    arguments.append("None")
+                    e = originals[prod.nt, prod.index][original_index]
+                    assert isinstance(e, Optional)
+                    if rust_type_of_element(prod, original_index, e.inner) == 'bool':
+                        arg = "false"
+                    else:
+                        arg = "None"
+                    arguments.append(arg)
                     original_index += 1
 
                 ty = rust_type_of_element(prod, original_index, element)
                 if ty == '()':
                     var = None
                     arg = '()'
+                elif ty == 'bool':
+                    var = None
+                    arg = 'true'
                 else:
                     var = "x" + str(variable_index)
                     variable_index += 1
