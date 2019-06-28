@@ -6,28 +6,34 @@ I'm not sure I want to keep this pgen mini-language around; ignore this for now.
 """
 
 from lexer import LexicalGrammar
+from grammar import Grammar
 import gen
 import pprint
 import parse_pgen_generated
 import unittest
+
 
 pgen_lexer = LexicalGrammar("goal nt { } ; ?",
                             r'([ \t\r\n]|#.*)*',
                             IDENT=r'[A-Za-z_](?:\w|[_-])*',
                             STR=r'"[^\\\n"]*"')
 
-pgen_grammar = {
-    'grammar': [['nt_def'], ['grammar', 'nt_def']],
-    'nt_def': [
-        ['nt', 'IDENT', '{', gen.Optional('prods'), '}'],
-        ['goal', 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
-    ],
-    'prods': [['prod'], ['prods', 'prod']],
-    'prod': [['terms', ';']],
-    'terms': [['term'], ['terms', 'term']],
-    'term': [['symbol'], ['symbol', '?']],
-    'symbol': [['IDENT'], ['STR']],
-}
+
+pgen_grammar = Grammar(
+    {
+        'grammar': [['nt_def'], ['grammar', 'nt_def']],
+        'nt_def': [
+            ['nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+            ['goal', 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+        ],
+        'prods': [['prod'], ['prods', 'prod']],
+        'prod': [['terms', ';']],
+        'terms': [['term'], ['terms', 'term']],
+        'term': [['symbol'], ['symbol', '?']],
+        'symbol': [['IDENT'], ['STR']],
+    },
+    ['IDENT', 'STR']
+)
 
 
 class AstBuilder:
@@ -82,17 +88,17 @@ class AstBuilder:
         return chars
 
     def check(self, result):
-        grammar, goal_nts = result
+        nonterminals, goal_nts = result
         for t in self.quoted_terminals_used:
             if t in self.identifiers_used:
-                if t in grammar:
+                if t in nonterminals:
                     raise ValueError("nonterminal `{}` is also used as a quoted terminal "
                                      "(sorry, they're not allowed to look the same; rename the nonterminal)"
                                      .format(t))
                 else:
                     raise ValueError("terminal `{}` is used both quoted and nonquoted; pick one".format(t))
         for t in self.identifiers_used:
-            if t not in grammar:
+            if t not in nonterminals:
                 if not all(c.isupper() or c == '_' for c in t):
                     print("Warning: symbol `{}` is not defined as a nonterminal in the grammar "
                           "(if it's a terminal, you can silence this warning by renaming it to SHOUTY_CASE)"
@@ -115,9 +121,11 @@ def load_grammar(filename):
         text = f.read()
     result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename))
     builder = AstBuilder()
-    grammar = postparse(builder, result)
-    builder.check(grammar)
-    return grammar
+    result = postparse(builder, result)
+    builder.check(result)
+    nonterminals, goals = result
+    unquoted_terminals = [id for id in builder.identifiers_used if id not in nonterminals]
+    return Grammar(nonterminals, unquoted_terminals), goals
 
 
 def regenerate():
