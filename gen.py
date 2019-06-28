@@ -5,10 +5,10 @@
 **Grammars.**
 A grammar is a dictionary {str: [[symbol]]} mapping names of nonterminals to
 lists of right-hand sides. Each right-hand side is a list of symbols. There
-are several kinds of symbols; read the comments to learn more.
+are several kinds of symbols; see grammar.py to learn more.
 
 Instead of a list of right-hand sides, the value of a grammar entry may be a
-function; see gen.Apply for details.
+function; see grammar.Apply for details.
 
 **Token streams.**
 The user passes to each method an object representing the input sequence.
@@ -29,184 +29,14 @@ import typing
 import io
 import sys
 from ordered import OrderedSet, OrderedFrozenSet
+
+from grammar import (Grammar,
+                     Optional, is_optional,
+                     Apply, is_apply,
+                     LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
+
 from pgen_runtime import ERROR, ACCEPT
 from lexer import SyntaxError
-
-
-# *** What is a grammar? ******************************************************
-#
-# A grammar is a dictionary mapping nonterminal names to lists of right-hand
-# sides. Each right-hand side (also called a "production") is a list whose
-# elements can include terminals, nonterminals, Optional elements, LookaheadRules,
-# and Apply elements (function calls).
-#
-# The most common elements are terminals and nonterminals, so a grammar usually
-# looks something like this:
-def example_grammar():
-    return {
-        'expr': [
-            ['term'],
-            ['expr', '+', 'term'],
-            ['expr', '-', 'term'],
-        ],
-        'term': [
-            ['unary'],
-            ['term', '*', 'unary'],
-            ['term', '/', 'unary'],
-        ],
-        'unary': [
-            ['prim'],
-            ['-', 'unary'],
-        ],
-        'prim': [
-            ['NUM'],
-            ['VAR'],
-            ['(', 'expr', ')'],
-        ],
-    }
-
-
-# Terminals are tokens that must appear verbatim in the input wherever they
-# appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
-# in the example grammar.
-def is_terminal(grammar, element):
-    return type(element) is str and not is_nt(grammar, element)
-
-
-# Nonterminals refer to other rules.
-def is_nt(grammar, element):
-    return type(element) is str and element in grammar
-
-
-# Optional elements. These are expanded out before states are calculated,
-# so the core of the algorithm never sees them.
-Optional = collections.namedtuple("Optional", "inner")
-Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
-
-def is_optional(element):
-    return type(element) is Optional
-
-
-# Function application. Function nonterminals are expanded out very early in
-# the process, before states are calculated, so most of the algorithm doesn't
-# see these. They're replaced with gensym names.
-Apply = collections.namedtuple("Apply", "nt args")
-Apply.__doc__ = """\
-Apply(nt, (arg0, arg1, ...)) is a call to a nonterminal that's a function.
-
-Each nonterminal in a grammar is defined by either a list of lists (its
-productions) or a function that returns a list of lists.
-
-To refer to the first kind of nonterminal in a right-hand-side, just use the
-nonterminal's name. To use the second kind, we have to represent a function call
-somehow; for that, use Apply.
-
-The arguments are typically booleans. They can be whatever you want, but each
-function nonterminal gets expanded into a set of productions, one for every
-different argument tuple that is ever passed to it.
-"""
-
-def is_apply(element):
-    """True if `element` smells like apples."""
-    return type(element) is Apply
-
-
-# Lookahead restrictions stay with us throughout the algorithm.
-LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
-LookaheadRule.__doc__ = """\
-LookaheadRule(set, pos) imposes a lookahead restriction on whatever follows.
-
-It never consumes any tokens itself. Instead, the right-hand side
-[LookaheadRule(frozenset(['a', 'b']), False), 'Thing']
-matches a Thing that does not start with the token `a` or `b`.
-"""
-
-def is_lookahead_rule(element):
-    return type(element) is LookaheadRule
-
-
-# A lookahead restriction really just specifies a set of allowed terminals.
-#
-# -   No lookahead restriction at all is equivalent to a rule specifying all terminals.
-#
-# -   A positive lookahead restriction explicitly lists all allowed tokens.
-#
-# -   A negative lookahead restriction instead specfies the set of all tokens
-#     except a few.
-#
-def lookahead_contains(rule, t):
-    """True if the given lookahead restriction `rule` allows the terminal `t`."""
-    return (rule is None
-            or (t in rule.set if rule.positive
-                else t not in rule.set))
-
-
-def lookahead_intersect(a, b):
-    """Returns a single rule enforcing both `a` and `b`, allowing only terminals that pass both."""
-    if a is None:
-        return b
-    elif b is None:
-        return a
-    elif a.positive:
-        if b.positive:
-            return LookaheadRule(a.set & b.set, True)
-        else:
-            return LookaheadRule(a.set - b.set, True)
-    else:
-        if b.positive:
-            return LookaheadRule(b.set - a.set, True)
-        else:
-            return LookaheadRule(a.set | b.set, False)
-
-
-# *** Basic grammar validity **************************************************
-
-def check_grammar_types(grammar):
-    """Throw if the given grammar is invalid.
-
-    This only checks types. It doesn't check that the grammar is LR, that it's
-    cycle-free, or any other nice properties.
-
-    Normally, good Python style is never to check types but to plow ahead and
-    let the language throw if the caller has erred. Here, the values are quite
-    large, errors are likely, and if we don't check, the eventual TypeError
-    doesn't usefully point to the location of the problem. So we check up front.
-
-    (More justification: it's very sad to throw a bad error message while
-    building a good one or debugging. Passing this predicate means a grammar
-    can be used safely with `dump_grammar`, `rhs_to_str`, and so on.)
-    """
-    if not isinstance(grammar, typing.Mapping):
-        raise TypeError("expected grammar dict, not {!r}".format(type(grammar).__name__))
-    for nt, rhs_list_or_fn in grammar.items():
-        if not isinstance(nt, str):
-            raise TypeError("invalid grammar: expected string keys, got {!r}".format(nt))
-
-        # A nonterminal maps to either a single function or (more typically) a
-        # list of right-hand sides.  Function nonterminals can't be
-        # type-checked here; we check the result after calling them.
-        if not callable(rhs_list_or_fn):
-            check_valid_rhs_list(nt, rhs_list_or_fn)
-
-
-def check_valid_goals(grammar, goal_nts):
-    for goal in goal_nts:
-        if not is_nt(grammar, goal):
-            raise ValueError("goal nonterminal {!r} is undefined".format(goal))
-
-
-def check_valid_rhs_list(nt, rhs_list):
-    if not isinstance(rhs_list, typing.Iterable):
-        raise TypeError("invalid grammar: grammar[{!r}] should be a list of productions, not {!r}"
-                        .format(nt, type(rhs_list).__name__))
-    for i, rhs in enumerate(rhs_list):
-        if not isinstance(rhs, typing.Iterable):
-            raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
-                            .format(nt, i, type(rhs).__name__))
-        for e in rhs:
-            if not isinstance(e, (str, Optional, LookaheadRule, Apply)):
-                raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}]`: {!r}"
-                                .format(nt, i, e))
 
 
 # *** Operations on grammars **************************************************
@@ -225,10 +55,10 @@ def empty_nt_set(grammar):
         def rhs_is_empty(nt, rhs):
             return all(is_lookahead_rule(e)
                        or is_optional(e)
-                       or (is_nt(grammar, e) and e in empties)
+                       or (grammar.is_nt(e) and e in empties)
                        for e in rhs)
         return set(nt
-                   for nt, rhs_list in grammar.items()
+                   for nt, rhs_list in grammar.nonterminals.items()
                    if any(rhs_is_empty(nt, rhs) for rhs in rhs_list))
 
     return fix(step, set())
@@ -238,14 +68,15 @@ def check_cycle_free(grammar):
     """Throw an exception if any nonterminal in `grammar` produces itself
     via a cycle of 1 or more productions.
     """
+    assert isinstance(grammar, Grammar)
     empties = empty_nt_set(grammar)
 
     # OK, first find out which nonterminals directly produce which other
     # nonterminals (after possibly erasing some optional/empty nts).
     direct_produces = {}
-    for orig in grammar:
+    for orig in grammar.nonterminals:
         direct_produces[orig] = set()
-        for source_rhs in grammar[orig]:
+        for source_rhs in grammar.nonterminals[orig]:
             for rhs, _r in expand_optional_symbols_in_rhs(source_rhs):
                 result = []
                 all_possibly_empty_so_far = True
@@ -253,9 +84,9 @@ def check_cycle_free(grammar):
                 # out that this production does not produce *any* strings that
                 # are just a single nonterminal.
                 for e in rhs:
-                    if is_terminal(grammar, e):
+                    if grammar.is_terminal(e):
                         break  # no good, this production contains a terminal
-                    elif is_nt(grammar, e):
+                    elif grammar.is_nt(e):
                         if e in empties:
                             result.append(e)
                         else:
@@ -264,7 +95,7 @@ def check_cycle_free(grammar):
                             all_possibly_empty_so_far = False
                             result = [e]
                     elif is_optional(e):
-                        if is_nt(grammar, e.inner):
+                        if grammar.is_nt(e.inner):
                             result.append(e.inner)
                     else:
                         assert is_lookahead_rule(e)
@@ -281,7 +112,7 @@ def check_cycle_free(grammar):
         }
     produces = fix(step, direct_produces)
 
-    for nt in grammar:
+    for nt in grammar.nonterminals:
         if nt in produces[nt]:
             raise ValueError("invalid grammar: nonterminal {} can produce itself".format(nt))
 
@@ -294,29 +125,23 @@ def check_lookahead_rules(grammar):
     """
 
     check_cycle_free(grammar)
-    for nt in grammar:
-        for rhs_with_options in grammar[nt]:
+    for nt in grammar.nonterminals:
+        for rhs_with_options in grammar.nonterminals[nt]:
             for rhs, _r in expand_optional_symbols_in_rhs(rhs_with_options):
                 # XXX BUG: The next if-condition is insufficient, since it
                 # fails to detect a lookahead restriction followed by a
                 # nonterminal that can match the empty string.
                 if rhs and is_lookahead_rule(rhs[-1]):
                     raise ValueError("invalid grammar: lookahead restriction at end of production: " +
-                                     production_to_str(grammar, nt, rhs_with_options))
+                                     grammar.production_to_str(nt, rhs_with_options))
 
 
-def clone_grammar(grammar):
-    """ Return a deep copy of a grammar (which must contain no functions). """
-    return {nt: [rhs[:] for rhs in rhs_list]
-            for nt, rhs_list in grammar.items()}
-
-
-def gensym(grammar, nt):
+def gensym(nonterminals, nt):
     """ Come up with a symbol name that's not already being used in the given grammar. """
-    assert is_nt(grammar, nt)
+    assert nt in nonterminals
     i = 0
     sym = nt
-    while sym in grammar:
+    while sym in nonterminals:
         i += 1
         sym = nt + "_" + str(i)
     return sym
@@ -331,7 +156,7 @@ def expand_function_nonterminals(grammar, goal_nts):
     # objects as nonterminal names.
 
     # Make dummy entries for everything in the grammar. gensym() needs them.
-    result = {nt: None for nt in grammar}
+    result = {nt: None for nt in grammar.nonterminals}
 
     todo = list(goal_nts)
     assigned_names = {goal: goal for goal in todo}
@@ -342,19 +167,19 @@ def expand_function_nonterminals(grammar, goal_nts):
             opt = True
             e = e.inner
 
-        if is_nt(grammar, e):
+        if grammar.is_nt(e):
             target = e
         elif is_apply(e):
             target = e.nt
         else:
             return orig_e
 
-        if target not in grammar:
+        if target not in grammar.nonterminals:
             raise ValueError("invalid grammar: undefined nonterminal {} used in production {}"
-                             .format(e, production_to_str(grammar, e, rhs)))
-        if is_apply(e) and not callable(grammar[target]):
+                             .format(e, grammar.production_to_str(e, rhs)))
+        if is_apply(e) and not callable(grammar.nonterminals[target]):
             raise ValueError("invalid grammar: {} is not a function, called in production {}"
-                             .format(target, production_to_str(grammar, e, rhs)))
+                             .format(target, grammar.production_to_str(e, rhs)))
 
         if e not in assigned_names:
             if is_apply(e):
@@ -373,19 +198,19 @@ def expand_function_nonterminals(grammar, goal_nts):
     while todo:
         e = todo.pop(0)
         name = assigned_names[e]
-        if is_nt(grammar, e):
-            rhs_list = grammar[e]
+        if grammar.is_nt(e):
+            rhs_list = grammar.nonterminals[e]
         else:
             assert is_apply(e)
-            rhs_list = grammar[e.nt](*e.args)
-            check_valid_rhs_list("{}{!r}".format(e.nt, e.args), rhs_list)
+            rhs_list = grammar.nonterminals[e.nt](*e.args)
+            #check_valid_rhs_list("{}{!r}".format(e.nt, e.args), rhs_list)
 
         result[name] = [[expand_element(e) for e in rhs] for rhs in rhs_list]
 
     unreachable_keys = [nt for nt, rhs_list in result.items() if rhs_list is None]
     for key in unreachable_keys:
         del result[key]
-    return result
+    return Grammar(result, grammar.variable_terminals)
 
 
 def add_init_nonterminals(grammar, goals):
@@ -398,11 +223,11 @@ def add_init_nonterminals(grammar, goals):
     init_nt.
     """
 
-    grammar = clone_grammar(grammar)
+    grammar = grammar.clone()
     init_nts = {}
     for goal_nt in goals:
-        init_nt = gensym(grammar, goal_nt)
-        grammar[init_nt] = [
+        init_nt = gensym(grammar.nonterminals, goal_nt)
+        grammar.nonterminals[init_nt] = [
             [goal_nt]
         ]
         assert goal_nt not in init_nts
@@ -439,11 +264,11 @@ def start_sets(grammar):
     # start sets satisfying these rules, and we get that by iterating to a
     # fixed point.
 
-    start = {nt: OrderedFrozenSet() for nt in grammar}
+    start = {nt: OrderedFrozenSet() for nt in grammar.nonterminals}
     done = False
     while not done:
         done = True
-        for nt, rhs_list in grammar.items():
+        for nt, rhs_list in grammar.nonterminals.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
             nt_start = OrderedFrozenSet(t for rhs in rhs_list for t in seq_start(grammar, start, rhs))
@@ -460,9 +285,9 @@ def seq_start(grammar, start, seq):
         if EMPTY not in s:  # preceding elements never match the empty string
             break
         s.remove(EMPTY)
-        if is_terminal(grammar, e):
+        if grammar.is_terminal(e):
             s.add(e)
-        elif is_nt(grammar, e):
+        elif grammar.is_nt(e):
             s |= start[e]
         else:
             assert is_lookahead_rule(e)
@@ -488,9 +313,9 @@ def make_start_set_cache(grammar, prods, start):
     def suffix_start_list(rhs):
         sets = [OrderedFrozenSet([EMPTY])]
         for e in reversed(rhs):
-            if is_terminal(grammar, e):
+            if grammar.is_terminal(e):
                 s = OrderedFrozenSet([e])
-            elif is_nt(grammar, e):
+            elif grammar.is_nt(e):
                 s = start[e]
                 if EMPTY in s:
                     s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
@@ -553,7 +378,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
         visited.add(nt)
         for prod_index, rhs in prods_with_indexes_by_nt[nt]:
             for i, symbol in enumerate(rhs):
-                if is_nt(grammar, symbol):
+                if grammar.is_nt(symbol):
                     visit(symbol)
                     after = start_set_cache[prod_index][i + 1]
                     if EMPTY in after:
@@ -631,15 +456,15 @@ def expand_all_optional_elements(grammar):
     prods = []
     prods_with_indexes_by_nt = collections.defaultdict(list)
 
-    for nt in grammar:
+    for nt in grammar.nonterminals:
         expanded_grammar[nt] = []
-        for prod_index, rhs in enumerate(grammar[nt]):
+        for prod_index, rhs in enumerate(grammar.nonterminals[nt]):
             for expanded_rhs, removals in expand_optional_symbols_in_rhs(rhs):
                 expanded_grammar[nt].append(expanded_rhs)
                 prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
 
-    return expanded_grammar, prods, prods_with_indexes_by_nt
+    return Grammar(expanded_grammar, grammar.variable_terminals), prods, prods_with_indexes_by_nt
 
 
 def make_epsilon_free_step_1(grammar):
@@ -652,15 +477,15 @@ def make_epsilon_free_step_1(grammar):
     empties = empty_nt_set(grammar)
 
     def hack(e):
-        if is_nt(grammar, e) and e in empties:
+        if grammar.is_nt(e) and e in empties:
             return Optional(e)
         return e
 
-    return {
+    return Grammar({
         nt: [[hack(e) for e in rhs]
              for rhs in rhs_list]
-        for nt, rhs_list in grammar.items()
-    }
+        for nt, rhs_list in grammar.nonterminals.items()
+    }, grammar.variable_terminals)
 
 
 def make_epsilon_free_step_2(grammar, goal_nts):
@@ -669,10 +494,10 @@ def make_epsilon_free_step_2(grammar, goal_nts):
     All empty productions are removed except any for the goal nonterminals,
     so the grammar still recognizes the same language.
     """
-    return {
+    return Grammar({
         nt: [rhs for rhs in rhs_list if len(rhs) > 0 or nt in goal_nts]
-        for nt, rhs_list in grammar.items()
-    }
+        for nt, rhs_list in grammar.nonterminals.items()
+    }, grammar.variable_terminals)
 
 
 # *** The path algorithm ******************************************************
@@ -730,75 +555,6 @@ def find_path(start_set, successors, test):
         b = a
     path.reverse()
     return path
-
-
-# *** How to dump stuff *******************************************************
-
-def element_to_str(grammar, e):
-    if is_nt(grammar, e):
-        return e
-    elif is_apply(e):
-        return "{}[{}]".format(e.nt, ", ".join(repr(arg) for arg in e.args))
-    elif is_terminal(grammar, e):
-        return '"' + repr(e)[1:-1] + '"'
-    elif is_optional(e):
-        return element_to_str(grammar, e.inner) + "?"
-    elif is_lookahead_rule(e):
-        if len(e.set) == 1:
-            op = "==" if e.positive else "!="
-            s = repr(list(e.set)[0])
-        else:
-            op = "in" if e.positive else "not in"
-            s = '{' + repr(list(e.set))[1:-1] + '}'
-        return "[lookahead {} {}]".format(op, s)
-    else:
-        return str(e)
-
-
-def rhs_to_str(grammar, rhs):
-    return " ".join(element_to_str(grammar, e) for e in rhs)
-
-
-def production_to_str(grammar, nt, rhs):
-    return "{} ::= {}".format(nt, rhs_to_str(grammar, rhs))
-
-
-def dump_grammar(grammar):
-    for nt, rhs_list in grammar.items():
-        print(nt + " ::=")
-        if callable(rhs_list):
-            print("   ", repr(rhs_list))
-        else:
-            for rhs in rhs_list:
-                if rhs:
-                    print("   ", rhs_to_str(grammar, rhs))
-                else:
-                    print("   [empty]")
-        print()
-
-
-def lr_item_to_str(grammar, prods, item):
-    prod = prods[item.prod_index]
-    if item.lookahead is None:
-        la = []
-    else:
-        la = [element_to_str(grammar, item.lookahead)]
-    return "{} ::= {} >> {{{}}}".format(
-        prod.nt,
-        " ".join([element_to_str(grammar, e) for e in prod.rhs[:item.offset]]
-                 + ["\N{MIDDLE DOT}"]
-                 + la
-                 + [element_to_str(grammar, e) for e in prod.rhs[item.offset:]]),
-        ", ".join(
-            "$" if t is None else element_to_str(grammar, t)
-            for t in item.followed_by)
-    )
-
-
-def item_set_to_str(grammar, prods, item_set):
-    return "{{{}}}".format(
-        ",  ".join(lr_item_to_str(grammar, prods, item) for item in item_set)
-    )
 
 
 # *** Parser generation *******************************************************
@@ -986,9 +742,9 @@ class PgenContext:
             "    {}\n"
             "or with:\n"
             "    {}\n"
-            .format(scenario_str, element_to_str(self.grammar, t),
-                    production_to_str(self.grammar, p1.nt, p1.rhs),
-                    production_to_str(self.grammar, p2.nt, p2.rhs)))
+            .format(scenario_str, self.grammar.element_to_str(t),
+                    self.grammar.production_to_str(p1.nt, p1.rhs),
+                    self.grammar.production_to_str(p2.nt, p2.rhs)))
 
     def why_start(self, t, prod_index, offset):
         """ Yield a sequence of productions showing why `t in START(prods[prod_index][offset:])`.
@@ -1004,7 +760,7 @@ class PgenContext:
             prod_index, offset = pair
             rhs = self.prods[prod_index].rhs
             nt = rhs[offset]
-            if not is_nt(self.grammar, nt):
+            if not self.grammar.is_nt(nt):
                 return
             for next_prod_index, next_rhs in self.prods_with_indexes_by_nt[nt]:
                 if t in self.start_set_cache[next_prod_index][0]:
@@ -1033,13 +789,13 @@ class PgenContext:
             nt1 = prod.nt
             rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
-                if is_nt(self.grammar, rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
+                if self.grammar.is_nt(rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
                     start_points[rhs1[i]] = (prod_index, i + 1)
 
         def successors(nt):
             for prod_index, rhs in self.prods_with_indexes_by_nt[nt]:
                 last = rhs[-1]
-                if is_nt(self.grammar, last):
+                if self.grammar.is_nt(last):
                     yield prod_index, last
 
         path = find_path(start_points.keys(), successors, lambda point: point == nt)
@@ -1062,8 +818,8 @@ class PgenContext:
         grammar = self.grammar
         some_shift_option = next(iter(shift_options))
         shift_option_nt = self.prods[some_shift_option.prod_index].nt
-        shift_option_nt_str = element_to_str(grammar, shift_option_nt)
-        t_str = element_to_str(grammar, t)
+        shift_option_nt_str = grammar.element_to_str(shift_option_nt)
+        t_str = grammar.element_to_str(t)
         scenario_str = state.traceback()
 
         raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
@@ -1076,11 +832,11 @@ class PgenContext:
                          "{}"
                          .format(scenario_str,
                                  t_str,
-                                 lr_item_to_str(grammar, self.prods, some_shift_option),
-                                 production_to_str(grammar, nt, rhs),
+                                 grammar.lr_item_to_str(self.prods, some_shift_option),
+                                 grammar.production_to_str(nt, rhs),
                                  t_str,
                                  nt,
-                                 "".join("    " + production_to_str(grammar, nt, rhs) + "\n"
+                                 "".join("    " + grammar.production_to_str(nt, rhs) + "\n"
                                          for nt, rhs in self.why_follow(nt, t))))
 
 
@@ -1115,7 +871,7 @@ class State:
 
     def __str__(self):
         return "{{{}}}".format(
-            ",  ".join(lr_item_to_str(self.context.grammar, self.context.prods, item)
+            ",  ".join(self.context.grammar.lr_item_to_str(self.context.prods, item)
                        for item in self._lr_items)
         )
 
@@ -1142,7 +898,7 @@ class State:
             rhs = prods[item.prod_index].rhs
             if item.offset < len(rhs):
                 next_symbol = rhs[item.offset]
-                if is_nt(grammar, next_symbol):
+                if grammar.is_nt(next_symbol):
                     # Step in to each production for this nt.
                     for dest_prod_index, callee_rhs in prods_with_indexes_by_nt[next_symbol]:
                         # We may have rewritten the grammar just a tad since
@@ -1151,10 +907,10 @@ class State:
                         # to be modified a bit after that.) So, embarrassingly, we
                         # must now check that the production we just found is
                         # still in the grammar. XXX FIXME
-                        if callee_rhs or callee_rhs in grammar[next_symbol]:
+                        if callee_rhs or callee_rhs in grammar.nonterminals[next_symbol]:
                             ## print("    Considering stepping from item {} into production {}"
-                            ##       .format(lr_item_to_str(grammar, prods, item),
-                            ##               production_to_str(grammar, next_symbol, callee_rhs)))
+                            ##       .format(grammar.lr_item_to_str(prods, item),
+                            ##               grammar.production_to_str(next_symbol, callee_rhs)))
                             followers = specific_follow(start_set_cache,
                                                         item.prod_index, item.offset,
                                                         item.followed_by)
@@ -1183,7 +939,7 @@ class State:
             prod = self.context.prods[item.prod_index]
             assert item.offset > 0
             scenario.append(prod.rhs[item.offset - 1])
-        return rhs_to_str(self.context.grammar, scenario)
+        return self.context.grammar.rhs_to_str(scenario)
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
@@ -1207,7 +963,7 @@ def write_parser(out, grammar, states, actions, ctns, prods, init_state_map):
     for i, (state, row) in enumerate(zip(states, actions)):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))
         ##for item in state._lr_items:
-        ##    out.write("    #       {}\n".format(lr_item_to_str(grammar, prods, item)))
+        ##    out.write("    #       {}\n".format(grammar.lr_item_to_str(prods, item)))
         out.write("    " + repr(row) + ",\n")
         out.write("\n")
     out.write("]\n\n")
@@ -1220,7 +976,7 @@ def write_parser(out, grammar, states, actions, ctns, prods, init_state_map):
     for prod in prods:
         names = ["x" + str(i)
                  for i, e in enumerate(prod.rhs)
-                 if is_terminal(grammar, e) or is_nt(grammar, e)]
+                 if grammar.is_terminal(e) or grammar.is_nt(e)]
         names_with_none = names[:]
         for i in prod.removals:
             names_with_none.insert(i, "None")
@@ -1290,7 +1046,7 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
 
     def nt_node_variant(grammar, prod):
         name = to_camel_case(prod.nt)
-        if len(grammar[prod.nt]) > 1:
+        if len(grammar.nonterminals[prod.nt]) > 1:
             name += "P" + str(prod.index)
         return name
 
@@ -1300,8 +1056,8 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
             name = nt_node_variant(grammar, prod)
             if name in seen:
                 raise ValueError("Productions {} and {} have the same spelling ({})".format(
-                    production_to_str(grammar, seen[name].nt, seen[name].rhs),
-                    production_to_str(grammar, prod.nt, prod.rhs),
+                    grammar.production_to_str(seen[name].nt, seen[name].rhs),
+                    grammar.production_to_str(prod.nt, prod.rhs),
                     name))
             seen[name] = prod
 
@@ -1312,7 +1068,7 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
         # variant as the corresponding production where the optional element is
         # present.
         if prod.nt in nonterminals and not prod.removals:
-            out.write("    // {}\n".format(production_to_str(grammar, prod.nt, prod.rhs)))
+            out.write("    // {}\n".format(grammar.production_to_str(prod.nt, prod.rhs)))
             name = nt_node_variant(grammar, prod)
             out.write("    {}({}),\n".format(name, ", ".join("Option<Node>" for v in prod.rhs)))
     out.write("}\n\n")
@@ -1335,11 +1091,11 @@ def write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map
         # nonterminal, only accepted, never reduced.
         if prod.nt in nonterminals:
             out.write("        {} => {{\n".format(i))
-            out.write("            // {}\n".format(production_to_str(grammar, prod.nt, prod.rhs)))
+            out.write("            // {}\n".format(grammar.production_to_str(prod.nt, prod.rhs)))
 
             names_with_none = []
             for j, element in reversed(list(enumerate(prod.rhs))):
-                if is_terminal(grammar, element) or is_nt(grammar, element):
+                if grammar.is_terminal(element) or grammar.is_nt(element):
                     out.write("            let x{} = stack.pop().unwrap();\n".format(j))
                     names_with_none.append("Some(x{})".format(j))
 
@@ -1460,7 +1216,7 @@ class ParserGenerator:
             rhs = prod.rhs
             if offset < len(rhs):
                 next_symbol = rhs[offset]
-                if is_terminal(grammar, next_symbol):
+                if grammar.is_terminal(next_symbol):
                     if lookahead_contains(item.lookahead, next_symbol):
                         next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
                         if next_item is not None:
@@ -1469,7 +1225,7 @@ class ParserGenerator:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional or Apply (those are preprocessed out of
                     # the grammar) or LookaheadRule (see make_lr_item).
-                    assert is_nt(grammar, next_symbol)
+                    assert grammar.is_nt(next_symbol)
 
                     # We never reduce with a lookahead restriction still
                     # active, so `lookahead=None` is appropriate.
@@ -1485,7 +1241,7 @@ class ParserGenerator:
                     # The simplification in LALR might make it too weird though.
                     raise ValueError("invalid grammar: lookahead restriction still active "
                                      "at end of production " +
-                                     production_to_str(grammar, nt, rhs))
+                                     grammar.production_to_str(nt, rhs))
                 for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
@@ -1509,12 +1265,12 @@ class ParserGenerator:
         return action_row, ctn_row
 
 def generate_parser(out, grammar, goal_nts, target='python'):
+    assert isinstance(grammar, Grammar)
     goal_nts = list(goal_nts)  # iterate this only once
     assert target in ('python', 'rust')
 
     # Step by step, we check the grammar and lower it to a more primitive form.
-    check_grammar_types(grammar)
-    check_valid_goals(grammar, goal_nts)
+    grammar.check_valid_goals(goal_nts)
     grammar = expand_function_nonterminals(grammar, goal_nts)
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
@@ -1547,6 +1303,7 @@ class Parser:
 
 
 def compile_multi(grammar, goals):
+    assert isinstance(grammar, Grammar)
     goal_nts = list(goals)
     out = io.StringIO()
     generate_parser(out, grammar, goal_nts)
@@ -1561,6 +1318,7 @@ def compile_multi(grammar, goals):
 
 
 def compile(grammar, goal):
+    assert isinstance(grammar, Grammar)
     return getattr(compile_multi(grammar, [goal]), "parse_" + goal)
 
 
