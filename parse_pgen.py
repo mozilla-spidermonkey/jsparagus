@@ -69,10 +69,6 @@ default_token_list = [
 ]
 
 class AstBuilder:
-    def __init__(self):
-        self.identifiers_used = set()
-        self.quoted_terminals_used = set()
-
     def grammar_0(self, token_defs, nt_defs):
         nonterminals, goal_nts = nt_defs
         return (token_defs or default_token_list, nonterminals, goal_nts)
@@ -123,15 +119,12 @@ class AstBuilder:
         assert q == '?'
         return gen.Optional(sym)
 
-    def symbol_0(self, sym):
-        self.identifiers_used.add(sym)
-        return sym
+    def symbol_0(self, sym): return sym
     def symbol_1(self, sym):
         assert len(sym) > 1
         assert sym[0] == '"'
         assert sym[-1] == '"'
         chars = sym[1:-1]  # This is a bit sloppy.
-        self.quoted_terminals_used.add(sym)
         return Literal(chars)
 
     def check(self, result):
@@ -198,8 +191,8 @@ def load_grammar(filename):
     builder = AstBuilder()
     result = postparse(builder, result)
     tokens, nonterminals, goals = builder.check(result)
-    unquoted_terminals = [id for id in builder.identifiers_used if id not in nonterminals]
-    return Grammar(nonterminals, unquoted_terminals), goals
+    variable_terminals = [name for name, image in tokens if image is None]
+    return Grammar(nonterminals, variable_terminals), goals
 
 
 def regenerate():
