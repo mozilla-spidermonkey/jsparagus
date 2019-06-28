@@ -664,6 +664,21 @@ def find_path(start_set, successors, test):
 LRItem = collections.namedtuple("LRItem", "prod_index offset lookahead followed_by")
 
 
+def assert_items_are_compatible(grammar, prods, items):
+    """Assert that no two elements of `items` have conflicting history.
+
+    All items in the same state must be produced by the same history,
+    the same sequence of terminals and nonterminals.
+    """
+    max_item = max(items, key=lambda item: item.offset)
+    known_history = prods[max_item.prod_index].rhs[:max_item.offset]
+    for item in items:
+        assert prods[item.prod_index].rhs[:item.offset] == known_history[-item.offset:], \
+            "incompatible LR items:\n    {}\n    {}\n".format(
+                grammar.lr_item_to_str(prods, max_item),
+                grammar.lr_item_to_str(prods, item))
+
+
 class PgenContext:
     """ The immutable part of the parser generator's data. """
     def __init__(self, grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow):
@@ -862,6 +877,7 @@ class State:
         for item in items:
             a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
         self._lr_items = OrderedFrozenSet(LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
+        assert_items_are_compatible(self.context.grammar, self.context.prods, self._lr_items)
 
     def __eq__(self, other):
         return self._lr_items == other._lr_items
