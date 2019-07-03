@@ -132,10 +132,6 @@ def check_grammar(result):
     tokens_by_name = {}
     tokens_by_image = {}
     for name, image in tokens:
-        if image is not None:
-            assert image[0] == '"'
-            assert image[-1] == '"'
-            image = image[1:-1]
         if name in tokens_by_name:
             raise ValueError("token `{}` redeclared".format(name))
         tokens_by_name[name] = image

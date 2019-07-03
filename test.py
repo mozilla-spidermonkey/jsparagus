@@ -4,7 +4,7 @@ import gen
 import io, unittest
 import re
 import gen
-from gen import Grammar, Apply, Optional, LookaheadRule
+from gen import Grammar, Apply, Optional, LookaheadRule, Parameterized, ConditionalRhs, Var
 import lexer
 
 
@@ -731,46 +731,33 @@ class GenTestCase(unittest.TestCase):
 
         self.assertParse(source)
 
-    def testFunctionNt(self):
-        def name(inGenerator):
-            rhs_list = [
-                ["IDENT"]
-            ]
-            if not inGenerator:
-                rhs_list.append(["yield"])
-            return rhs_list
-
-        def stmts(inGenerator):
-            stmt_ = Apply("stmt", (inGenerator,))
-            stmts_ = Apply("stmts", (inGenerator,))
-            return [
-                [stmt_],
-                [stmts_, stmt_],
-            ]
-
-        def stmt(inGenerator):
-            name = Apply("name", (inGenerator,))
-            rhs_list = [
-                [name, "(", ")", ";"],
-                [name, "=", name, ";"],
-            ]
-            if inGenerator:
-                rhs_list.append(["yield", name, ";"]);
-            return rhs_list
-
+    def testParameterizedProductions(self):
+        name = Apply("name", {'Yield': Var('Yield')})
+        stmt = Apply("stmt", {'Yield': Var('Yield')})
+        stmts = Apply("stmts", {'Yield': Var('Yield')})
         grammar = Grammar({
             'script': [
                 ['def'],
                 ['script', 'def'],
             ],
             'def': [
-                ['function', 'IDENT', '(', ')', '{', Apply('stmts', (False,)), '}'],
-                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', (True,)), '}'],
+                ['function', 'IDENT', '(', ')', '{', Apply('stmts', {'Yield': False}), '}'],
+                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', {'Yield': True}), '}'],
             ],
-            'stmts': stmts,
-            'stmt': stmt,
-            'name': name,
-        })
+            'stmts': Parameterized(['Yield'], [
+                [stmt],
+                [stmts, stmt],
+            ]),
+            'stmt': Parameterized(['Yield'], [
+                [name, "(", ")", ";"],
+                [name, "=", name, ";"],
+                ConditionalRhs('Yield', True, ["yield", name, ";"]),
+            ]),
+            'name': Parameterized(['Yield'], [
+                ["IDENT"],
+                ConditionalRhs('Yield', False, ["yield"]),
+            ]),
+        }, ["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",
                                           IDENT=r'[A-Za-z]\w*'),
                      grammar)

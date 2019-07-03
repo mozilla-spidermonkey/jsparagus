@@ -66,49 +66,79 @@ class Grammar:
         # building a good one or while debugging. Passing these checks means a
         # grammar can be used safely with `dump`, `rhs_to_str`, and so on.)
 
-        if not isinstance(nonterminals, typing.Mapping):
-            raise TypeError("expected nonterminals dict, not {!r}".format(type(nonterminals).__name__))
-
+        nonterminals = dict(nonterminals.items())
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
-        self.nonterminals = {}
+        self.nonterminals = {nt: None for nt in nonterminals}
         all_terminals = OrderedSet(self.variable_terminals)
 
-        def validate_element(nt, i, e):
+        def validate_element(nt, i, j, e, context_params):
             # As a side effect, this populates all_terminals
             if isinstance(e, str):
                 if e not in nonterminals:
                     all_terminals.add(e)
+                return e
             elif isinstance(e, Optional):
                 if not isinstance(e.inner, (str, Apply)):
-                    raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}].inner`: {!r}"
-                                    .format(nt, i, e.inner))
-                if e.inner not in nonterminals:
-                    all_terminals.add(e.inner)
-            elif not isinstance(e, (LookaheadRule, Apply)):
-                raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}]`: {!r}"
-                                .format(nt, i, e))
+                    raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}][{}].inner`: {!r}"
+                                    .format(nt, i, j, e.inner))
+                validate_element(nt, i, j, e.inner, context_params)
+                return e
+            elif isinstance(e, Apply):
+                if e.nt not in nonterminals:
+                    raise ValueError("invalid grammar: unrecognized nonterminal in production `grammar[{!r}][{}][{}]`: {!r}"
+                                    .format(nt, i, j, e.nt))
+                args = list(e.args)
+                if args != list(nonterminals[e.nt].params):
+                    raise ValueError("invalid grammar: wrong arguments passed to {!r} in production `grammar[{!r}][{}][{}]`: passed {!r}, expected {!r}"
+                                    .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
+                for arg in e.args:
+                    if isinstance(arg, Var):
+                        if arg.name not in context_params:
+                            raise ValueError("invalid grammar: undefined variable {!r} in production `grammar[{!r}][{}][{}]`"
+                                             .format(arg.name, nt, i, j))
+                return e
+            elif isinstance(e, LookaheadRule):
+                return e
+            else:
+                raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}][{}]`: {!r}"
+                                .format(nt, i, j, e))
             return e
 
-        def copy_rhs(nt, i, rhs):
-            if not isinstance(rhs, typing.Iterable):
+        def copy_rhs(nt, i, rhs, context_params):
+            #print("#COPY_RHS", rhs)
+            if isinstance(rhs, ConditionalRhs):
+                if rhs.param not in context_params:
+                    raise TypeError("invalid grammar: undefined parameter {!r} in conditional for grammar[{!r}][{}]"
+                                    .format(rhs.param, nt, i))
+                return ConditionalRhs(rhs.param, rhs.value, copy_rhs(nt, i, rhs.rhs, context_params))
+            elif isinstance(rhs, list):
+                return [validate_element(nt, i, j, e, context_params) for j, e in enumerate(rhs)]
+            else:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
-                                .format(nt, i, type(rhs).__name__))
-            return [validate_element(nt, i, e) for e in rhs]
+                                .format(nt, i, rhs))
 
+        def copy_rhs_list(nt, rhs_list, params):
+            if isinstance(rhs_list, Parameterized):
+                fn = rhs_list
+                params = list(fn.params)
+                for i, param in enumerate(params):
+                    if not isinstance(param, str):
+                        raise TypeError("invalid grammar: parameter {} of {} should be a string, not {!r}"
+                                        .format(i + 1, nt, param))
+                assert isinstance(fn.body, list)
+                return Parameterized(params, copy_rhs_list(nt, fn.body, params))
+            else:
+                if not isinstance(rhs_list, list):
+                    raise TypeError("invalid grammar: grammar[{!r}] should be either a Parameterized object or a list of right-hand sides, not {!r}"
+                                    .format(nt, type(rhs_list).__name__))
+                return [copy_rhs(nt, i, rhs, params) for i, rhs in enumerate(rhs_list)]
 
         for nt, rhs_list_or_fn in nonterminals.items():
             if not isinstance(nt, str):
                 raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
                 raise TypeError("invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
-
-            # A nonterminal maps to either a single function or (more typically) a
-            # list of right-hand sides.  Function nonterminals can't be
-            # type-checked here; we check the result after calling them.
-            if callable(rhs_list_or_fn):
-                self.nonterminals[nt] = rhs_list_or_fn
-            else:
-                self.nonterminals[nt] = [copy_rhs(nt, i, rhs) for i, rhs in enumerate(rhs_list_or_fn)]
+            self.nonterminals[nt] = copy_rhs_list(nt, rhs_list_or_fn, [])
 
         self.terminals = OrderedFrozenSet(all_terminals)
 
@@ -162,8 +192,16 @@ class Grammar:
         else:
             return str(e)
 
-    def rhs_to_str(self, rhs):
+    def symbols_to_str(self, rhs):
         return " ".join(self.element_to_str(e) for e in rhs)
+
+    def rhs_to_str(self, rhs):
+        if isinstance(rhs, ConditionalRhs):
+            return "#[if {} == {!r}] ".format(rhs.param, rhs.value) + self.rhs_to_str(rhs.rhs)
+        elif len(rhs) == 0:
+            return "[empty]"
+        else:
+            return self.symbols_to_str(rhs)
 
     def production_to_str(self, nt, rhs):
         return "{} ::= {}".format(nt, self.rhs_to_str(rhs))
@@ -192,15 +230,12 @@ class Grammar:
  
     def dump(self):
         for nt, rhs_list in self.nonterminals.items():
+            if isinstance(rhs_list, Parameterized):
+                nt += "(" + ", ".join(rhs_list.params) + ")"
+                rhs_list = rhs_list.body
             print(nt + " ::=")
-            if callable(rhs_list):
-                print("   ", repr(rhs_list))
-            else:
-                for rhs in rhs_list:
-                    if rhs:
-                        print("   ", self.rhs_to_str(rhs))
-                    else:
-                        print("   [empty]")
+            for rhs in rhs_list:
+                print("   ", self.rhs_to_str(rhs))
             print()
 
 
@@ -219,7 +254,7 @@ def is_optional(element):
 # see these. They're replaced with gensym names.
 Apply = collections.namedtuple("Apply", "nt args")
 Apply.__doc__ = """\
-Apply(nt, (arg0, arg1, ...)) is a call to a nonterminal that's a function.
+Apply(nt, {param0: arg0, ...}) is a call to a nonterminal that's a function.
 
 Each nonterminal in a grammar is defined by either a list of lists (its
 productions) or a function that returns a list of lists.
@@ -228,9 +263,9 @@ To refer to the first kind of nonterminal in a right-hand-side, just use the
 nonterminal's name. To use the second kind, we have to represent a function call
 somehow; for that, use Apply.
 
-The arguments are typically booleans. They can be whatever you want, but each
-function nonterminal gets expanded into a set of productions, one for every
-different argument tuple that is ever passed to it.
+Parameter names are strings. The arguments are typically booleans. They can be
+whatever you want, but each function nonterminal gets expanded into a set of
+productions, one for every different argument tuple that is ever passed to it.
 """
 
 
@@ -286,3 +321,66 @@ def lookahead_intersect(a, b):
             return LookaheadRule(b.set - a.set, True)
         else:
             return LookaheadRule(a.set | b.set, False)
+
+
+Parameterized = collections.namedtuple("Parameterized", "params body")
+Parameterized.__doc__ = """\
+Parameterized(params, rhs_list) - Lambda for nonterminals.
+
+Some langauges have constructs that are allowed or disallowed in particular
+situations. For example, in many languages `return` statements are allowed only
+inside functions or methods. The ECMAScript standard (5.1.5 "Grammar Notation")
+offers this example of the notation it uses to specify this sort of thing:
+
+    StatementList [Return] :
+        [+Return] ReturnStatement
+        ExpressionStatement
+
+This is an abbreviation for:
+
+    StatementList :
+        ExpressionStatement
+
+    StatementList_Return :
+        ReturnStatement
+        ExpressionStatement
+
+We offer Parameterized as a way of representing this in our system.
+
+    "StatementList": Parameterized(["Return"], [
+        Conditional("Return", True, ["ReturnStatement"]),
+        ["ExpressionStatement"],
+    ]),
+
+This is an abbreviation for:
+
+    "StatementList_0": [
+        ["ExpressionStatement"],
+    ],
+    "StatementList_1": [
+        ["ReturnStatement"],
+        ["ExpressionStatement"],
+    ],
+
+Fields:
+
+params - List of strings, the names of the parameters.
+
+body - List of right-hand sides. Each element of rhs_list is either a list
+of grammar elements or a ConditionalRhs (see below). Also, arguments to Apply
+elements in the productions in rhs_list can be Param(s) where s in params,
+indicating that parameter should be passed through unchanged.
+"""
+
+
+ConditionalRhs = collections.namedtuple("ConditionalRhs", "param value rhs")
+ConditionalRhs.__doc__ = """\
+ConditionalRhs(param, value, rhs) is just like rhs but conditionally ignored.
+"""
+
+
+Var = collections.namedtuple("Var", "name")
+Var.__doc__ = """\
+Var(name) represents the run-time value of the parameter with the given name.
+"""
+

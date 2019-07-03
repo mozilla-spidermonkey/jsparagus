@@ -32,7 +32,7 @@ from ordered import OrderedSet, OrderedFrozenSet
 
 from grammar import (Grammar,
                      Optional, is_optional,
-                     Apply, is_apply,
+                     Parameterized, ConditionalRhs, Apply, is_apply, Var,
                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
 
 from pgen_runtime import ERROR, ACCEPT
@@ -148,65 +148,79 @@ def gensym(nonterminals, nt):
 
 
 def expand_function_nonterminals(grammar, goal_nts):
-    """Replace function nonterminals with production lists."""
+    """Replace function nonterminals with production lists.
+
+    Also replaces Apply elements with nt elements and eliminates Var and
+    ConditionalRhs objects from the grammar.
+    """
 
     # BUG: This use gensym() to create a bunch of new nonterminals, but without
     # any mapping back to the originals. Therefore the gensym names appear in
     # the parser output at run time. It would probably be OK to just use Apply
     # objects as nonterminal names.
 
-    # Make dummy entries for everything in the grammar. gensym() needs them.
-    result = {nt: None for nt in grammar.nonterminals}
+    goals = list(goal_nts)
+    assigned_names = {(goal, None): goal for goal in goals}
+    todo = collections.deque(assigned_names.keys())
+    result = {nt: None for nt in grammar.nonterminals}  # gensym needs all of them to exist
 
-    todo = list(goal_nts)
-    assigned_names = {goal: goal for goal in todo}
-    def expand_element(orig_e):
-        e = orig_e
-        opt = False
-        while is_optional(e):
-            opt = True
-            e = e.inner
-
-        if grammar.is_nt(e):
-            target = e
-        elif is_apply(e):
-            target = e.nt
-        else:
-            return orig_e
-
-        if target not in grammar.nonterminals:
-            raise ValueError("invalid grammar: undefined nonterminal {} used in production {}"
-                             .format(e, grammar.production_to_str(e, rhs)))
-        if is_apply(e) and not callable(grammar.nonterminals[target]):
-            raise ValueError("invalid grammar: {} is not a function, called in production {}"
-                             .format(target, grammar.production_to_str(e, rhs)))
-
-        if e not in assigned_names:
-            if is_apply(e):
-                name = gensym(result, e.nt)
-                result[name] = None  # for the benefit of future gensym calls
+    def get_derived_name(nt, args):
+        name = assigned_names.get((nt, args))
+        if name is None:
+            if args is None:
+                name = nt
             else:
-                name = e
-            assigned_names[e] = name
-            todo.append(e)
+                name = gensym(result, nt)
+            assigned_names[nt, args] = name
+            todo.append((nt, args))
+            result[name] = None  # avoid gensym collisions
+        return name
 
-        e = assigned_names[e]
-        if opt:
-            e = Optional(e)
-        return e
+    def expand(nt, args):
+        """ Return an rhs list, the expansion of grammar.nonterminals[nt](**args). """
+
+        def evaluate_arg(arg):
+            if isinstance(arg, Var):
+                return args[arg.name]
+            else:
+                return arg
+
+        def expand_element(e):
+            if grammar.is_nt(e):
+                return get_derived_name(e, None)
+            elif is_optional(e):
+                return Optional(expand_element(e.inner))
+            elif is_apply(e):
+                return get_derived_name(e.nt, tuple(evaluate_arg(arg) for arg in e.args.values()))
+            else:
+                return e
+
+        def expand_rhs(rhs):
+            return [expand_element(e) for e in rhs]
+
+        def expand_rhs_list(rhs_list):
+            result = []
+            for rhs in rhs_list:
+                if isinstance(rhs, ConditionalRhs):
+                    if args[rhs.param] == rhs.value:
+                        result.append(expand_rhs(rhs.rhs))
+                else:
+                    result.append(expand_rhs(rhs))
+            return result
+
+        if args is None:
+            return expand_rhs_list(grammar.nonterminals[nt])
+        else:
+            fn = grammar.nonterminals[nt]
+            assert len(args) == len(fn.params)
+            args = dict(zip(fn.params, args)) # expand tuple back to dict
+            return expand_rhs_list(fn.body)
 
     while todo:
-        e = todo.pop(0)
-        name = assigned_names[e]
-        if grammar.is_nt(e):
-            rhs_list = grammar.nonterminals[e]
-        else:
-            assert is_apply(e)
-            rhs_list = grammar.nonterminals[e.nt](*e.args)
-            #check_valid_rhs_list("{}{!r}".format(e.nt, e.args), rhs_list)
-
-        result[name] = [[expand_element(e) for e in rhs] for rhs in rhs_list]
-
+        nt, args = todo.popleft()
+        name = assigned_names[nt, args]
+        if result[name] is None:  # not already expanded
+            result[name] = expand(nt, args)
     unreachable_keys = [nt for nt, rhs_list in result.items() if rhs_list is None]
     for key in unreachable_keys:
         del result[key]
@@ -958,7 +972,7 @@ class State:
             prod = self.context.prods[item.prod_index]
             assert item.offset > 0
             scenario.append(prod.rhs[item.offset - 1])
-        return self.context.grammar.rhs_to_str(scenario)
+        return self.context.grammar.symbols_to_str(scenario)
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
