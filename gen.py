@@ -670,10 +670,13 @@ def assert_items_are_compatible(grammar, prods, items):
     All items in the same state must be produced by the same history,
     the same sequence of terminals and nonterminals.
     """
-    max_item = max(items, key=lambda item: item.offset)
-    known_history = prods[max_item.prod_index].rhs[:max_item.offset]
-    for item in items:
-        assert prods[item.prod_index].rhs[:item.offset] == known_history[-item.offset:], \
+    def item_history(item):
+        return [e for e in prods[item.prod_index].rhs[:item.offset] if not is_lookahead_rule(e)]
+
+    pairs = [(item, item_history(item)) for item in items]
+    max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
+    for item, history in pairs:
+        assert history[:item.offset] == known_history[-item.offset:], \
             "incompatible LR items:\n    {}\n    {}\n".format(
                 grammar.lr_item_to_str(prods, max_item),
                 grammar.lr_item_to_str(prods, item))
