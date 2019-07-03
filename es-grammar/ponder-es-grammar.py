@@ -6,9 +6,9 @@ import sys; sys.path.append("..")
 
 from lexer import LexicalGrammar
 import gen
-from gen import LookaheadRule
 import parse_pgen
 import argparse
+
 
 tokenize_emug = LexicalGrammar(
     #   the operators and keywords:
@@ -191,11 +191,11 @@ class EmugBuilder:
 
     def lookahead_assertion_P0(self, eq, t):
         assert eq == "=="
-        return LookaheadRule(frozenset([t]), True)
+        return gen.LookaheadRule(frozenset([t]), True)
 
     def lookahead_assertion_P1(self, ne, t):
         assert ne == "!="
-        return LookaheadRule(frozenset([t]), False)
+        return gen.LookaheadRule(frozenset([t]), False)
 
     def lookahead_assertion_P2(self, notin, nt):
         assert notin == '<!'
@@ -204,7 +204,7 @@ class EmugBuilder:
     def lookahead_assertion_P3(self, notin, ob, lookahead_exclusions, cb):
         assert (notin, ob, cb) == ("<!", '{', '}')
         if all(len(excl) == 1 for excl in lookahead_exclusions):
-            return LookaheadRule(frozenset(excl[0] for excl in lookahead_exclusions), False)
+            return gen.LookaheadRule(frozenset(excl[0] for excl in lookahead_exclusions), False)
         raise ValueError("unsupported: lookahead > 1 token, " + repr(lookahead_exclusions))
 
     def lookahead_exclusions_P0(self, e): return [e]
