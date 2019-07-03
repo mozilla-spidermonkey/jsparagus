@@ -79,7 +79,7 @@ class Grammar:
                 if e not in nonterminals:
                     all_terminals.add(e)
             elif isinstance(e, Optional):
-                if not isinstance(e.inner, str):
+                if not isinstance(e.inner, (str, Apply)):
                     raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}].inner`: {!r}"
                                     .format(nt, i, e.inner))
                 if e.inner not in nonterminals:
