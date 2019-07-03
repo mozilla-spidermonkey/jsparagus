@@ -1,6 +1,40 @@
 # Grammar for ECMArkup grammar descriptions
 
-nt grammar {
+var token CHR;
+var token EQ;
+var token NL;
+var token NT;
+var token NTALT;
+var token NTCALL;
+var token PRODID;
+var token PROSE;
+var token T;
+var token WPROSE;
+
+token But = "but";
+token Empty = "empty";
+token Here = "here";
+token Lookahead = "lookahead";
+token No = "no";
+token Not = "not";
+token Of = "of";
+token One = "one";
+token Or = "or";
+token Through = "through";
+token Comma = ",";
+token OpenBracket = "[";
+token CloseBracket = "]";
+token QuestionMark = "?";
+token Tilde = "~";
+token PlusSign = "+";
+token Equals = "==";
+token IsNotEqualTo = "!=";
+token IsNotIn = "<!";
+token OpenBrace = "{";
+token CloseBrace = "}";
+
+
+goal nt grammar {
     nt_def_or_blank_line;
     grammar nt_def_or_blank_line;
 }
