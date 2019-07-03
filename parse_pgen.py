@@ -14,7 +14,7 @@ import unittest
 from collections import namedtuple
 
 
-pgen_lexer = LexicalGrammar("goal nt { } ; ?",
+pgen_lexer = LexicalGrammar("goal nt var token { } ; ? =",
                             r'([ \t\r\n]|#.*)*',
                             IDENT=r'[A-Za-z_](?:\w|[_-])*',
                             STR=r'"[^\\\n"]*"')
@@ -132,6 +132,10 @@ def check_grammar(result):
     tokens_by_name = {}
     tokens_by_image = {}
     for name, image in tokens:
+        if image is not None:
+            assert image[0] == '"'
+            assert image[-1] == '"'
+            image = image[1:-1]
         if name in tokens_by_name:
             raise ValueError("token `{}` redeclared".format(name))
         tokens_by_name[name] = image
