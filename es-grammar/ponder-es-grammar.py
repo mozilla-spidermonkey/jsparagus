@@ -25,250 +25,199 @@ tokenize_emug = LexicalGrammar(
     WPROSE=r'\[>[^]]*\]'                # prose wrapped in square brackets
     )
 
-parse_emug = gen.compile(parse_pgen.load_grammar("emug.pgen"), "grammar")
-
-def unroll(ast, list_nt, element_nt):
-    x = []
-    if ast is not None:
-        a, i, e = ast
-        assert a == list_nt
-        while i == 1:
-            if len(e) == 2:
-                [rtail, rhead] = e
-            else:
-                [rtail, comma, rhead] = e
-                assert comma == ","
-            assert rhead[0] == element_nt
-            x.append(rhead)
-            a, i, e = rtail
-            assert a == list_nt
-        assert i == 0
-        [rhead] = e
-        assert rhead[0] == element_nt
-        x.append(rhead)
-        x.reverse()
-    return x
+parse_emug = gen.compile(parse_pgen.load_grammar("emug.pgen")[0], "grammar")
 
 
-def postparse_param(ast):
-    nt, i, args = ast
-    assert nt == 'param'
-    assert i == 0
-    return args[0]
-
-def postparse_nt_lhs(ast):
-    nt, i, args = ast
-    assert nt == "nt_lhs"
-    if i == 0:  # NT
-        [name] = args
-        return name
-    else:  # NTCALL [ params ]
-        [name, lb, params, rb] = args
-        assert lb == '['
-        assert rb == ']'
-        return (name, [postparse_param(ast) for ast in unroll(params, "params", "param")])
-
-SIGIL_FALSE = ('definite_sigil', 0, ['~'])
-SIGIL_TRUE = ('definite_sigil', 1, ['+'])
-
-def postparse_arg(ast):
-    nt, i, args = ast
-    assert nt == "arg"
-    assert i == 0
-    [sigil, argname] = args
-    if sigil == ('sigil', 1, ['?']):
-        return '?' + argname
-    elif sigil == ('sigil', 0, [SIGIL_FALSE]):
-        return '~' + argname
-    elif sigil == ('sigil', 0, [SIGIL_TRUE]):
-        return '+' + argname
-    else:
-        assert False
+SIGIL_FALSE = '~'
+SIGIL_TRUE = '+'
 
 
-def postparse_nonterminal(ast):
-    nt, i, args = ast
-    assert nt == "nonterminal"
-    if i == 0:
-        [name] = args
-        return name
-    elif i == 1:
-        [name, lb, args_ast, rb] = args
-        return ('apply', name, [postparse_arg(ast) for ast in unroll(args_ast, "args", "arg")])
+class EmugBuilder:
+    def grammar_P0(self, x): return x
+    def grammar_P1(self, x, y): return x + y
 
+    def nt_def_or_blank_line_P0(self, nl): return []
+    def nt_def_or_blank_line_P1(self, nt_def): return [nt_def]
 
-def postparse_terminal(ast):
-    nt, i, [t] = ast
-    assert nt == "terminal"
-    assert i in (0, 1)
-    assert len(t) >= 3
-    assert t[0] == "`"
-    assert t[-1] == "`"
-    return t[1:-1]
+    def make_nt_def(self, lhs, eq, rhs_list):
+        if isinstance(lhs, tuple):
+            name, args = lhs
+            return (name, eq, ("lambda", args, rhs_list))
+        else:
+            return (lhs, eq, rhs_list)
 
-
-def postparse_lookahead_exclusion(ast):
-    return [postparse_lookahead_exclusion_element(e_ast)
-            for e_ast in unroll(ast, "lookahead_exclusion", "lookahead_exclusion_element")]
-
-
-def postparse_lookahead_exclusion_element(ast):
-    nt, i, args = ast
-    assert nt == "lookahead_exclusion_element"
-    if i == 0:
-        [t_ast] = args
-        return postparse_terminal(t_ast)
-    else:
-        assert i == 1
-        [n_ast] = args
-        return postparse_no_line_terminator_here(n_ast)
-
-
-def postparse_lookahead_assertion(ast):
-    nt, i, args = ast
-    assert nt == "lookahead_assertion"
-    if i in (0, 1):
-        [relop, symbol] = args
-        t = postparse_terminal(symbol)
-        assert relop in ('==', '!=')
-        return LookaheadRule(frozenset([t]), relop == "==")
-    elif i == 2:
-        [relop, symbol] = args
-        assert relop == '<!'
-        return ('?!', symbol)
-    else:
-        assert i == 3
-        [relop, lc, xs_ast, rc] = args
-        assert (relop, lc, rc) == ('<!', '{', '}')
-        excls = [postparse_lookahead_exclusion(x_ast)
-                 for x_ast in unroll(xs_ast, 'lookahead_exclusions', 'lookahead_exclusion')]
-        if all(len(excl) == 1 for excl in excls):
-            return LookaheadRule(frozenset(excl[0] for excl in excls), False)
-        raise ValueError("unsupported: lookahead > 1 token, " + repr(excls))
-
-
-def postparse_no_line_terminator_here(ast):
-    nt2, i2, args2 = ast
-    assert nt2 == "no_line_terminator_here"
-    assert i2 == 0
-    [lb, no_t, line_terminator, here_t, rb] = args2
-    assert (lb, no_t, here_t, rb) == ('[', 'no', 'here', ']')
-    nt3, i3, args3 = line_terminator
-    assert nt3 == 'line_terminator'
-    assert (i3, args3) in ((0, ["LineTerminator"]), (1, ["|LineTerminator|"]))
-    return ("no-LineTerminator-here",)
-
-
-def postparse_symbol(ast):
-    nt, i, args = ast
-    assert nt == "symbol"
-    if i == 0:  # terminal
-        [t_ast] = args
-        return postparse_terminal(t_ast)
-    elif i == 1:  #nonterminal
-        [nt_ast] = args
-        return postparse_nonterminal(nt_ast)
-    elif i == 2:  #nonterminal "?"
-        [nt_ast, q] = args
-        assert q == "?"
-        return gen.Optional(postparse_nonterminal(nt_ast))
-    elif i == 3:  #nonterminal "but not" exclusion
-        [nt_ast, but_t, not_t, exclusion_ast] = args
-        assert but_t == "but"
-        assert not_t == "not"
-        return ('-', postparse_nonterminal(nt_ast), exclusion_ast)
-    elif i == 4:  #nonterminal "but not one of" exclusion_list
-        [nt_ast, but_t, not_t, one_t, of_t, exclusion_list_ast] = args
-        assert (but_t, not_t, one_t, of_t) == ("but", "not", "one", "of")
-        return ('-', postparse_nonterminal(nt_ast), exclusion_list_ast)
-    elif i == 5:  # [lookahead ...]
-        [lb, lookahead_t, look_assert_ast, rb] = args
-        assert (lb, lookahead_t, rb) == ('[', 'lookahead', ']')
-        return postparse_lookahead_assertion(look_assert_ast)
-    elif i == 6:  # [no LineTerminator here]
-        [n_ast] = args
-        return postparse_no_line_terminator_here(n_ast)
-    else:
-        return ast
-
-
-def postparse_symbols(ast):
-    return [postparse_symbol(sym) for sym in unroll(ast, "symbols", "symbol")]
-
-
-def postparse_rhs(ast):
-    nt, i, args = ast
-    assert nt == "rhs"
-    if i == 0:
-        [symbols] = args
-        return postparse_symbols(symbols)
-    else:
-        assert i == 1
-        assert args == ["[", "empty", "]"]
-        return []
-
-
-def postparse_rhs_line(ast):
-    nt, i, args = ast
-    assert nt == 'rhs_line'
-    if i == 0:
-        [ifdef, rhs, _prodid, nl] = args
-        result = postparse_rhs(rhs)
+    def nt_def_P0(self, nt_lhs, eq, nl, rhs_lines, nl2):
+        # nt_lhs EQ NL rhs_lines NL
         assert nl == "\n"
+        assert nl2 == "\n"
+        return self.make_nt_def(nt_lhs, eq, rhs_lines)
+
+    def nt_def_P1(self, nt_lhs, eq, one, of, nl, terminals, nl2):
+        # nt_lhs EQ "one" "of" NL t_list_lines
+        assert one == "one"
+        assert of == "of"
+        assert nl == "\n"
+        assert nl2 == "\n"
+        return self.make_nt_def(nt_lhs, eq, [[t] for t in terminals])
+
+    def nt_lhs_P0(self, nt): return nt
+    def nt_lhs_P1(self, name, ob, params, cb):
+        # NTCALL [ params ]
+        assert ob == '['
+        assert cb == ']'
+        return (name, params)
+
+    def params_P0(self, param): return [param]
+    def params_P1(self, params, comma, param): return params + [param]
+
+    def param_P0(self, nt): return nt
+
+    def t_list_lines_P0(self, line): return line
+    def t_list_lines_P1(self, lines, line): return lines + line
+
+    def t_list_line_P0(self, terminals, nl): return terminals
+
+    def terminal_seq_P0(self, t): return [t]
+    def terminal_seq_P1(self, ts, t): return ts + [t]
+
+    def terminal_P0(self, t):
+        assert t[0] == "`"
+        assert t[-1] == "`"
+        return t[1:-1]
+
+    def terminal_P1(self, chr):
+        raise ValueError("FAILED: %r" % chr)
+
+    def rhs_lines_P0(self, line): return [line]
+    def rhs_lines_P1(self, lines, line): return lines + [line]
+
+    def rhs_line_P0(self, ifdef, rhs, prodid, nl):
+        assert nl == "\n"
+        result = rhs
         if ifdef is not None:
-            nt2, i2, args2 = ifdef
-            assert nt2 == 'ifdef'
-            assert i2 == 0
-            lb, sigil, name, rb = args2
-            assert lb == '['
-            assert rb == ']'
-            if sigil == SIGIL_FALSE:
-                sigil = False
-            elif sigil == SIGIL_TRUE:
-                sigil = True
-            result = ('if', name, sigil, result)
+            name, value = ifdef
+            result = ('if', name, value, result)
         return result
-    else:
-        [prose, nl] = args
+
+    def rhs_line_P1(self, prose, nl):
         assert nl == "\n"
         return prose
 
+    def rhs_P0(self, symbols): return symbols
 
-def postparse_t_list_line(ast):
-    nt, i, args = ast
-    assert nt == 't_list_line'
-    assert i == 0
-    [ts_ast, nl] = args
-    assert nl == "\n"
-    return [postparse_terminal(t_ast) for t_ast in unroll(ts_ast, "terminal_seq", "terminal")]
+    def rhs_P1(self, ob, empty, cb):
+        assert (ob, empty, cb) == ("[", "empty", "]")
+        return []
 
+    def ifdef_P0(self, ob, value, nt, cb):
+        assert (ob, cb) == ("[", "]")
+        return nt, value
 
-def postparse_nt_def(ast):
-    nt, i, args = ast
-    assert nt == 'nt_def'
-    if i == 0:  # nt_lhs EQ NL rhs_lines
-        [lhs_ast, eq, _nl, rhs_lines_ast, _nl2] = args
-        lhs = postparse_nt_lhs(lhs_ast)
-        rhs_list = [postparse_rhs_line(line_ast)
-                    for line_ast in unroll(rhs_lines_ast, "rhs_lines", "rhs_line")]
+    def symbols_P0(self, symbol): return [symbol]
+    def symbols_P1(self, symbols, symbol): return symbols + [symbol]
 
-    else:
-        assert i == 1  # nt_lhs EQ "one" "of" NL t_list_lines
-        [lhs_ast, eq, one_t, of_t, nl, t_list_lines_ast, nl2] = args
-        lhs = postparse_nt_lhs(lhs_ast)
-        assert one_t == "one"
-        assert of_t == "of"
-        assert nl == "\n"
-        assert nl2 == "\n"
-        rhs_list = [[t]
-                    for tll_ast in unroll(t_list_lines_ast, "t_list_lines", "t_list_line")
-                    for t in postparse_t_list_line(tll_ast)]
+    def symbol_P0(self, t):
+        # terminal
+        return t
 
-    if isinstance(lhs, tuple):
-        name, args = lhs
-        return (name, eq, ("lambda", args, rhs_list))
-    else:
-        return (lhs, eq, rhs_list)
+    def symbol_P1(self, nt):
+        # nonterminal
+        return nt
+
+    def symbol_P2(self, nt, q):
+        # nonterminal `?`
+        assert q == "?"
+        return gen.Optional(nt)
+
+    def symbol_P3(self, nt, but, not_, exclusion):
+        # nonterminal "but not" exclusion
+        assert but == "but"
+        assert not_ == "not"
+        return ('-', nt, exclusion)
+
+    def symbol_P4(self, nt, but, not_, one, of, exclusion_list):
+        # nonterminal "but not one of" exclusion_list
+        assert (but, not_, one, of) == ("but", "not", "one", "of")
+        return ('-', nt, exclusion_list)
+
+    def symbol_P5(self, ob, lookahead, look_assert, cb):
+        # [lookahead ...]
+        assert (ob, lookahead, cb) == ('[', 'lookahead', ']')
+        return look_assert
+
+    def symbol_P6(self, n):
+        return self.no_line_terminator_here(n)
+
+    def no_line_terminator_here(self, ob, no, line_terminator, here, cb):
+        assert (ob, no, line_terminator, here, cb) == ('[', 'no', 'LineTerminator', 'here', ']')
+        return ("no-LineTerminator-here",)
+
+    def nonterminal_P0(self, nt):
+        return nt
+
+    def nonterminal_P1(self, name, ob, args, cb):
+        assert (ob, cb) == ('[', ']')
+        return ('apply', name, args)
+
+    def args_P0(self, arg): return [arg]
+    def args_P1(self, args, comma, arg): return args + [arg]
+
+    def arg_P0(self, sigil, argname):
+        return sigil + argname
+
+    def sigil_P0(self, value):
+        return SIGIL_TRUE if value else SIGIL_FALSE
+
+    def sigil_P1(self, q):
+        assert q == '?'
+        return '?'
+
+    def definite_sigil_P0(self, sigil):
+        assert sigil == SIGIL_FALSE
+        return False
+
+    def definite_sigil_P1(self, sigil):
+        assert sigil == SIGIL_TRUE
+        return True
+
+    def exclusion_list_P0(self, exclusion): return [exclusion]
+    def exclusion_list_P0(self, exclusions, exclusion): return exclusions + [exclusion]
+
+    def exclusion_P0(self, t): return ("t", t)
+    def exclusion_P1(self, nt): return ("nt", nt)
+    def exclusion_P2(self, c1, through, c2):
+        assert through == "through"
+        return ("range", c1, c2)
+
+    def lookahead_assertion_P0(self, eq, t):
+        assert eq == "=="
+        return LookaheadRule(frozenset([t]), True)
+
+    def lookahead_assertion_P1(self, ne, t):
+        assert ne == "!="
+        return LookaheadRule(frozenset([t]), False)
+
+    def lookahead_assertion_P2(self, notin, nt):
+        assert notin == '<!'
+        return ('?!', nt)
+
+    def lookahead_assertion_P3(self, notin, ob, lookahead_exclusions, cb):
+        assert (notin, ob, cb) == ("<!", '{', '}')
+        if all(len(excl) == 1 for excl in lookahead_exclusions):
+            return LookaheadRule(frozenset(excl[0] for excl in lookahead_exclusions), False)
+        raise ValueError("unsupported: lookahead > 1 token, " + repr(lookahead_exclusions))
+
+    def lookahead_exclusions_P0(self, e): return [e]
+    def lookahead_exclusions_P1(self, es, comma, e): return es + [e]
+
+    def lookahead_exclusion_P0(self, e): return [e]
+    def lookahead_exclusion_P1(self, es, e): return es + [e]
+
+    def lookahead_exclusion_element_P0(self, t):
+        return t
+
+    def lookahead_exclusion_element_P1(self, no_lt_here):
+        return no_lt_here
 
 
 def expand_apply(e, env):
@@ -317,7 +266,7 @@ def make_rhs_lambda(func_name, param_names, body):
     return build_rhs_list
 
 
-def postparse_grammar(ast):
+def postparse_grammar(nt_defs):
     terminal_set = set()
 
     def hack_rhs(rhs):
@@ -331,29 +280,32 @@ def postparse_grammar(ast):
                 rhs[i] = expand_apply(rhs[i], {})
 
     grammar = {}
-    for nt, i, [nt_def_ast] in unroll(ast, "grammar", "nt_def_or_blank_line"):
-        if i == 1:
-            nt_name, eq, rhs_list_or_lambda = postparse_nt_def(nt_def_ast)
-            if isinstance(rhs_list_or_lambda, tuple):
-                tag, params, rhs_list = rhs_list_or_lambda
-                assert tag == "lambda"
-                grammar[nt_name] = make_rhs_lambda(nt_name, params, rhs_list)
-            else:
-                rhs_list = rhs_list_or_lambda
-                for rhs in rhs_list:
-                    if not isinstance(rhs, list):
-                        raise ValueError("invalid grammar: ifdef in non-function-call context")
-                    hack_rhs(rhs)
-                if eq == ':':
-                    if nt_name in grammar:
-                        raise ValueError("unsupported: multiple definitions for nt " + nt_name)
-                    grammar[nt_name] = rhs_list
+    variable_terminals = set()
+    for nt_name, eq, rhs_list_or_lambda in nt_defs:
+        if eq == "::":
+            variable_terminals.add(nt_name)
+
+        if isinstance(rhs_list_or_lambda, tuple):
+            tag, params, rhs_list = rhs_list_or_lambda
+            assert tag == "lambda"
+            grammar[nt_name] = make_rhs_lambda(nt_name, params, rhs_list)
+        else:
+            rhs_list = rhs_list_or_lambda
+            for rhs in rhs_list:
+                if not isinstance(rhs, list):
+                    raise ValueError("invalid grammar: ifdef in non-function-call context")
+                hack_rhs(rhs)
+            if eq == ':':
+                if nt_name in grammar:
+                    raise ValueError("unsupported: multiple definitions for nt " + nt_name)
+                grammar[nt_name] = rhs_list
 
     for t in terminal_set:
         if t in grammar:
             raise ValueError("grammar contains both a terminal `{}` and nonterminal {}".format(t, t))
 
-    return grammar
+    return gen.Grammar(grammar, variable_terminals)
+
 
 
 def main():
@@ -366,10 +318,9 @@ def main():
         text = f.read()
 
     tokens = tokenize_emug(text, filename=args.filename)
-    ast = parse_emug(tokens)
-    grammar = postparse_grammar(ast)
-    #gen.dump_grammar(grammar)
-    gen.generate_parser(sys.stdout, grammar, 'Script')
+    grammar = postparse_grammar(parse_emug(tokens, EmugBuilder()))
+    #grammar.dump()
+    gen.generate_parser(sys.stdout, grammar, ['Script', 'Module'])
 
 if __name__ == '__main__':
     main()
