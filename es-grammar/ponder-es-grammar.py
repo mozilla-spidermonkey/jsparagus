@@ -25,7 +25,8 @@ tokenize_emug = LexicalGrammar(
     WPROSE=r'\[>[^]]*\]'                # prose wrapped in square brackets
     )
 
-parse_emug = gen.compile(parse_pgen.load_grammar("emug.pgen")[0], "grammar")
+
+parse_emug_generic = gen.compile(parse_pgen.load_grammar("emug.pgen")[0], "grammar")
 
 
 SIGIL_FALSE = '~'
@@ -306,6 +307,13 @@ def postparse_grammar(nt_defs):
 
     return gen.Grammar(grammar, variable_terminals)
 
+
+def parse_emug(text, filename=None):
+    tokens = tokenize_emug(text, filename=filename)
+    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()))
+
+
+# ----
 
 
 def main():
