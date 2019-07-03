@@ -43,7 +43,7 @@ class EmugBuilder:
     def make_nt_def(self, lhs, eq, rhs_list):
         if isinstance(lhs, tuple):
             name, args = lhs
-            return (name, eq, ("lambda", args, rhs_list))
+            return (name, eq, gen.Parameterized(args, rhs_list))
         else:
             return (lhs, eq, rhs_list)
 
@@ -97,7 +97,7 @@ class EmugBuilder:
         result = rhs
         if ifdef is not None:
             name, value = ifdef
-            result = ('if', name, value, result)
+            result = gen.ConditionalRhs(name, value, result)
         return result
 
     def rhs_line_P1(self, prose, nl):
@@ -158,16 +158,26 @@ class EmugBuilder:
 
     def nonterminal_P1(self, name, ob, args, cb):
         assert (ob, cb) == ('[', ']')
-        return ('apply', name, args)
+        return gen.Apply(name, args)
 
-    def args_P0(self, arg): return [arg]
-    def args_P1(self, args, comma, arg): return args + [arg]
+    def args_P0(self, arg):
+        return dict([arg])
+
+    def args_P1(self, args, comma, arg):
+        key, value = arg
+        if key in args:
+            raise ValueError("parameter passed multiple times")
+        args[key] = value
+        return args
 
     def arg_P0(self, sigil, argname):
-        return sigil + argname
+        if sigil == '?':
+            return (argname, gen.Var(argname))
+        else:
+            return (argname, sigil)
 
     def sigil_P0(self, value):
-        return SIGIL_TRUE if value else SIGIL_FALSE
+        return value
 
     def sigil_P1(self, q):
         assert q == '?'
@@ -221,53 +231,7 @@ class EmugBuilder:
         return no_lt_here
 
 
-def expand_apply(e, env):
-    if gen.is_optional(e):
-        return gen.Optional(expand_apply(e.inner, env))
-    if isinstance(e, tuple) and e[0] == 'apply':
-        _tag, nt, args = e
-        arg_values = []
-        for arg in args:
-            if arg[0] == '+':
-                v = True
-            elif arg[0] == '~':
-                v = False
-            else:
-                assert arg[0] == '?'
-                if arg[1:] not in env:
-                    raise ValueError("invalid grammar: {} is not defined here"
-                                     .format(arg[1:]))
-                v = env[arg[1:]]
-            arg_values.append(v)
-        return gen.Apply(nt, tuple(arg_values))
-    return e
-
-
-def make_rhs_lambda(func_name, param_names, body):
-    def build_rhs_list(*args):
-        if len(param_names) != len(args):
-            raise ValueError("nonterminal {} called with wrong number of arguments:"
-                             "expected {!r}, got {!r}"
-                             .format(nt_name, params, args))
-        assert all(isinstance(a, bool) for a in args)
-        env = dict(zip(param_names, args))
-
-        result = []
-        for rhs in body:
-            if isinstance(rhs, tuple) and rhs[0] == 'if':
-                _tag, name, enabled, seq = rhs
-                if env[name] != enabled:
-                    continue  # this production is inhibited, skip it
-                rhs = seq
-            expanded_rhs = [expand_apply(e, env) for e in rhs]
-            result.append(expanded_rhs)
-        return result
-
-    build_rhs_list.__name__ = func_name
-    return build_rhs_list
-
-
-def postparse_grammar(nt_defs):
+def finish_grammar(nt_defs):
     terminal_set = set()
 
     def hack_rhs(rhs):
@@ -277,8 +241,6 @@ def postparse_grammar(nt_defs):
                     raise ValueError("I don't know what this is: " + repr(e) + "(in " + repr(rhs) + ")")
                 rhs[i] = token = e[1:-1]
                 terminal_set.add(token)
-            else:
-                rhs[i] = expand_apply(rhs[i], {})
 
     grammar = {}
     variable_terminals = set()
@@ -286,10 +248,8 @@ def postparse_grammar(nt_defs):
         if eq == "::":
             variable_terminals.add(nt_name)
 
-        if isinstance(rhs_list_or_lambda, tuple):
-            tag, params, rhs_list = rhs_list_or_lambda
-            assert tag == "lambda"
-            grammar[nt_name] = make_rhs_lambda(nt_name, params, rhs_list)
+        if isinstance(rhs_list_or_lambda, gen.Parameterized):
+            grammar[nt_name] = rhs_list_or_lambda
         else:
             rhs_list = rhs_list_or_lambda
             for rhs in rhs_list:
@@ -325,8 +285,7 @@ def main():
     with open(args.filename) as f:
         text = f.read()
 
-    tokens = tokenize_emug(text, filename=args.filename)
-    grammar = postparse_grammar(parse_emug(tokens, EmugBuilder()))
+    grammar = parse_emug(text, filename=args.filename)
     #grammar.dump()
     gen.generate_parser(sys.stdout, grammar, ['Script', 'Module'])
 
