@@ -1084,50 +1084,46 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     return OrderedFrozenSet(result)
 
 
-class ParserGenerator:
-    """ The core of the parser generation algorithm. """
+def analyze_states(context, prods, init_nt_map):
+    """The core of the parser generation algorithm."""
 
-    def __init__(self, context, prods, init_nt_map):
-        # We assign each reachable state a number, and we keep a list of states
-        # that have numbers but haven't been analyzed yet. When the list is empty,
-        # we'll be done.
-        self.todo = []
-        self.visited_states = {}
-        self.init_state_map = {}
+    # There is one state for each reachable set of LR items ("core").
+    # We assign each reachable state a number, its index in `states`.
+    states = []
+    itemsets_to_state_index = {}
 
-        # Compute the start states.
-        for goal_nt, init_nt in init_nt_map.items():
-            init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt], removals=[]))
-            start_item = context.make_lr_item(init_prod_index,
-                                              0,
-                                              lookahead=None,
-                                              followed_by=OrderedFrozenSet([END]))
-            if start_item is None:
-                init_state = State(context, [])
-            else:
-                init_state = State(context, [start_item])
-            self.init_state_map[goal_nt] = self.get_state_index(init_state)
-
-    def get_state_index(self, successor):
+    def get_state_index(successor):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
-        visited_states = self.visited_states
-        if successor in visited_states:
-            return visited_states[successor]
+        if successor in itemsets_to_state_index:
+            return itemsets_to_state_index[successor]
         else:
-            visited_states[successor] = state_index = len(visited_states)
+            itemsets_to_state_index[successor] = state_index = len(states)
             ## print("State #{} = {}"
             ##       .format(state_index, successor.closure()))
-            self.todo.append(successor)
+            states.append(successor)
             return state_index
 
-    def run(self):
-        states = []
-        while self.todo:
-            current_state = self.todo.pop(0)
-            states.append(current_state)
-            current_state.analyze(self.get_state_index)
-        return states, self.init_state_map
+    # Compute the start states.
+    init_state_map = {}
+    for goal_nt, init_nt in init_nt_map.items():
+        init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt], removals=[]))
+        start_item = context.make_lr_item(init_prod_index,
+                                          0,
+                                          lookahead=None,
+                                          followed_by=OrderedFrozenSet([END]))
+        if start_item is None:
+            init_state = State(context, [])
+        else:
+            init_state = State(context, [start_item])
+        init_state_map[goal_nt] = get_state_index(init_state)
+
+    # Turn the crank. Note: new states are appended to `states` while this loop
+    # is running. The loop visits all the initial states and then these new
+    # ones, continuing until no more new states are added.
+    for state in states:
+        state.analyze(get_state_index)
+    return states, init_state_map
 
 
 def generate_parser(out, grammar, goal_nts, target='python'):
@@ -1154,8 +1150,7 @@ def generate_parser(out, grammar, goal_nts, target='python'):
     context = PgenContext(grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
-    pgen = ParserGenerator(context, prods, init_nt_map)
-    states, init_state_map = pgen.run()
+    states, init_state_map = analyze_states(context, prods, init_nt_map)
 
     # Finally, dump the output.
     if target == 'rust':
