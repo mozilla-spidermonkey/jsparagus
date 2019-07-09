@@ -958,6 +958,91 @@ class State:
                                 closure_todo.append(new_item)
         return closure
 
+    def analyze(self, get_state_index):
+        """Generate the LR parser table entry for this state.
+
+        This is done without iterating or recursing on states. But we sometimes
+        need state-ids for states we haven't considered yet, so it calls
+        get_state_index() -- a callback that can enqueue new states to be
+        visited later.
+        """
+
+        context = self.context
+        grammar = context.grammar
+        prods = context.prods
+        follow = context.follow
+
+        #print("analyzing state {}".format(item_set_to_str(grammar, prods, self)))
+        #print("  closure: {}".format(item_set_to_str(grammar, prods, self.closure())))
+
+        # Step 1. Visit every item and list what we want to do for each
+        # possible next token.
+        shift_items = collections.defaultdict(OrderedSet)  # maps terminals to item-sets
+        ctn_items = collections.defaultdict(OrderedSet)  # maps nonterminals to item-sets
+        reduce_prods = {}  # maps follow-terminals to production indexes
+
+        # Each item has three ways to advance.
+        # - We can step over a terminal.
+        # - We can step over a nonterminal.
+        # - At the end of a production, we can reduce.
+        # There is also a sort of "stepping in" effect for nonterminals, which
+        # is achieved by the .closure() call at the top of the loop.
+        for item in self.closure():
+            offset = item.offset
+            prod = prods[item.prod_index]
+            nt = prod.nt
+            i = prod.index
+            rhs = prod.rhs
+            if offset < len(rhs):
+                next_symbol = rhs[offset]
+                if grammar.is_terminal(next_symbol):
+                    if lookahead_contains(item.lookahead, next_symbol):
+                        next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
+                        if next_item is not None:
+                            shift_items[next_symbol].add(next_item)
+                else:
+                    # The next element is always a terminal or nonterminal,
+                    # never an Optional or Apply (those are preprocessed out of
+                    # the grammar) or LookaheadRule (see make_lr_item).
+                    assert grammar.is_nt(next_symbol)
+
+                    # We never reduce with a lookahead restriction still
+                    # active, so `lookahead=None` is appropriate.
+                    next_item = context.make_lr_item(item.prod_index,
+                                                     offset + 1,
+                                                     lookahead=None,
+                                                     followed_by=item.followed_by)
+                    if next_item is not None:
+                        ctn_items[next_symbol].add(next_item)
+            else:
+                if item.lookahead is not None:
+                    # I think we could improve on this with canonical LR.
+                    # The simplification in LALR might make it too weird though.
+                    raise ValueError("invalid grammar: lookahead restriction still active "
+                                     "at end of production " +
+                                     grammar.production_to_str(nt, rhs))
+                for t in item.followed_by:
+                    if t in follow[nt]:
+                        if t in reduce_prods:
+                            context.raise_reduce_reduce_conflict(self, t, reduce_prods[t], item.prod_index)
+                        reduce_prods[t] = item.prod_index
+
+        # Step 2. Turn that information into table data to drive the parser.
+        action_row = {}
+        for t, shift_state in shift_items.items():
+            shift_state = State(context, shift_state, self)  # freeze the set
+            action_row[t] = get_state_index(shift_state)
+        for t, prod_index in reduce_prods.items():
+            prod = prods[prod_index]
+            if t in action_row:
+                context.raise_shift_reduce_conflict(self, t, shift_items[t], prod.nt, prod.rhs)
+            # Encode reduce actions as negative numbers.
+            # Negative zero is the same as zero, hence the "- 1".
+            action_row[t] = ACCEPT if prod.nt in context.init_nts else -prod_index - 1
+        ctn_row = {nt: get_state_index(State(context, ss, self))
+                   for nt, ss in ctn_items.items()}
+        return action_row, ctn_row
+
     def traceback(self):
         """Return a list of terminals and nonterminals that could have gotten us here."""
         # _debug_traceback chains all the way back to the initial state.
@@ -1025,7 +1110,7 @@ class ParserGenerator:
         while self.todo:
             current_state = self.todo.pop(0)
             states.append(current_state)
-            action_row, ctn_row = self.analyze_state(current_state)
+            action_row, ctn_row = current_state.analyze(self.get_state_index)
             actions.append(action_row)
             ctns.append(ctn_row)
         return states, actions, ctns, self.init_state_map
@@ -1042,90 +1127,6 @@ class ParserGenerator:
             ##       .format(state_index, successor.closure()))
             self.todo.append(successor)
             return state_index
-
-    def analyze_state(self, current_state):
-        """Generate the LR parser table entry for a single state.
-
-        This is done without iterating. But we sometimes need state-ids for
-        states we haven't considered yet, so it calls self.get_state_index() --
-        a side effect.
-        """
-
-        context = current_state.context
-        grammar = context.grammar
-        prods = context.prods
-        follow = context.follow
-
-        #print("analyzing state {}".format(item_set_to_str(grammar, prods, current_state)))
-        #print("  closure: {}".format(item_set_to_str(grammar, prods, current_state.closure())))
-
-        # Step 1. Visit every item and list what we want to do for each
-        # possible next token.
-        shift_items = collections.defaultdict(OrderedSet)  # maps terminals to item-sets
-        ctn_items = collections.defaultdict(OrderedSet)  # maps nonterminals to item-sets
-        reduce_prods = {}  # maps follow-terminals to production indexes
-
-        # Each item has three ways to advance.
-        # - We can step over a terminal.
-        # - We can step over a nonterminal.
-        # - At the end of a production, we can reduce.
-        # There is also a sort of "stepping in" effect for nonterminals, which
-        # is achieved by the .closure() call at the top of the loop.
-        for item in current_state.closure():
-            offset = item.offset
-            prod = prods[item.prod_index]
-            nt = prod.nt
-            i = prod.index
-            rhs = prod.rhs
-            if offset < len(rhs):
-                next_symbol = rhs[offset]
-                if grammar.is_terminal(next_symbol):
-                    if lookahead_contains(item.lookahead, next_symbol):
-                        next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
-                        if next_item is not None:
-                            shift_items[next_symbol].add(next_item)
-                else:
-                    # The next element is always a terminal or nonterminal,
-                    # never an Optional or Apply (those are preprocessed out of
-                    # the grammar) or LookaheadRule (see make_lr_item).
-                    assert grammar.is_nt(next_symbol)
-
-                    # We never reduce with a lookahead restriction still
-                    # active, so `lookahead=None` is appropriate.
-                    next_item = context.make_lr_item(item.prod_index,
-                                                     offset + 1,
-                                                     lookahead=None,
-                                                     followed_by=item.followed_by)
-                    if next_item is not None:
-                        ctn_items[next_symbol].add(next_item)
-            else:
-                if item.lookahead is not None:
-                    # I think we could improve on this with canonical LR.
-                    # The simplification in LALR might make it too weird though.
-                    raise ValueError("invalid grammar: lookahead restriction still active "
-                                     "at end of production " +
-                                     grammar.production_to_str(nt, rhs))
-                for t in item.followed_by:
-                    if t in follow[nt]:
-                        if t in reduce_prods:
-                            context.raise_reduce_reduce_conflict(current_state, t, reduce_prods[t], item.prod_index)
-                        reduce_prods[t] = item.prod_index
-
-        # Step 2. Turn that information into table data to drive the parser.
-        action_row = {}
-        for t, shift_state in shift_items.items():
-            shift_state = State(context, shift_state, current_state)  # freeze the set
-            action_row[t] = self.get_state_index(shift_state)
-        for t, prod_index in reduce_prods.items():
-            prod = prods[prod_index]
-            if t in action_row:
-                context.raise_shift_reduce_conflict(current_state, t, shift_items[t], prod.nt, prod.rhs)
-            # Encode reduce actions as negative numbers.
-            # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if prod.nt in context.init_nts else -prod_index - 1
-        ctn_row = {nt: self.get_state_index(State(context, ss, current_state))
-                   for nt, ss in ctn_items.items()}
-        return action_row, ctn_row
 
 
 def generate_parser(out, grammar, goal_nts, target='python'):
