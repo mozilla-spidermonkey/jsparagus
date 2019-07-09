@@ -238,6 +238,15 @@ There's a lot still to learn here.
 *   If I faithfully implement the algorithms in the book, will it be
     less of a dumpster fire? Smaller, more factored?
 
+*   How can I tell if a transformation on grammars preserves the
+    property of being LR(k)? Factoring out a nonterminal, for example,
+    may not preserve LR(k)ness. Inlining probably always does.
+
+*   Is there some variant of this that treats nonterminals more like
+    terminals? It's easy to imagine computing start sets and follow sets
+    that contain both kinds of symbols. Does that buy us anything?
+
+
 Things I noticed:
 
 *   I think Yacc allows bits of code in the middle of productions:

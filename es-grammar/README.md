@@ -15,6 +15,7 @@ In this directory:
 *   **ponder-es-grammar.py** - A script to try generating a parser for *es-simplified.emug*.
     Read on for instructions.
 
+
 ## How to run it
 
 To generate a parser, follow these steps:
