@@ -415,6 +415,24 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
     return follow
 
 
+# *** Lowering ****************************************************************
+
+# At this point, lowered productions start getting farther from the original
+# source.  We need to associate them with the original grammar in order to
+# produce correct output, so we use Prod values to represent productions.
+#
+# -   `nt` is the name of the nonterminal as it appears in the original grammar.
+# -   `index` is the index of the source production, within nt's productions,
+#     in the original grammar.
+# -   `rhs` is the fully lowered/expanded right-hand-side of the production.
+# -   `removals` is the list of indexes of elements in the original rhs
+#     which were optional and are not present in this production.
+#
+# There may be many productions in a grammar that all have the same `nt` and `index`
+# because they were all produced from the same source production.
+Prod = collections.namedtuple("Prod", "nt index rhs removals")
+
+
 def expand_optional_symbols_in_rhs(rhs, start_index=0):
     """Expand a sequence that may contain optional symbols into sequences that don't.
 
@@ -422,8 +440,11 @@ def expand_optional_symbols_in_rhs(rhs, start_index=0):
     yields every list that can be made by replacing each optional element
     either with its .inner value, or with nothing.
 
+    Each list is accompanied by the list of the indices of optional elements in
+    `rhs` that were dropped.
+
     For example, `expand_optional_symbols_in_rhs(["if", Optional("else")])`
-    yields the two sequences ["if"] and ["if", "else"].
+    yields the two pairs `(["if"], [1])` and `["if", "else"], []`.
     """
 
     for i in range(start_index, len(rhs)):
@@ -438,22 +459,6 @@ def expand_optional_symbols_in_rhs(rhs, start_index=0):
         yield rhs[start_index:i] + expanded, [i] + r
         # with rhs[i]
         yield rhs[start_index:i] + [rhs[i].inner] + expanded, r
-
-
-# At this point, lowered productions start getting farther from the original
-# source.  We need to associate them with the original grammar in order to
-# produce correct ouptut, so we use Prod values to represent productions.
-#
-# -   `nt` is the name of the nonterminal as it appears in the original grammar.
-# -   `index` is the index of the source production, within nt's productions,
-#     in the original grammar.
-# -   `rhs` is the fully lowered/expanded right-hand-side of the production.
-# -   `removals` is the list of indexes of elements in the original rhs
-#     which were optional and are not present in this production.
-#
-# There may be many productions in a grammar that all have the same `nt` and `index`
-# because they were all produced from the same source production.
-Prod = collections.namedtuple("Prod", "nt index rhs removals")
 
 
 def expand_all_optional_elements(grammar):
