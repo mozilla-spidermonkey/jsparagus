@@ -78,7 +78,9 @@ class AstBuilder:
 
     def token_def_P0(self, token, name, eq, picture, semi):
         assert (token, eq, semi) == ('token', '=', ';')
-        return (name, picture)
+        assert picture[0] == '"'
+        assert picture[-1] == '"'
+        return (name, picture[1:-1])
 
     def token_def_P1(self, var, token, name, semi):
         assert (var, token, semi) == ('var', 'token', ';')
