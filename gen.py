@@ -895,7 +895,7 @@ class State:
     LRItems in `self._lr_items`.)
     """
 
-    __slots__ = ['context', '_lr_items', '_debug_traceback', 'action_row', 'ctn_row']
+    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', 'action_row', 'ctn_row']
 
     def __init__(self, context, items, debug_traceback=None):
         self.context = context
@@ -907,19 +907,34 @@ class State:
         for item in items:
             a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
         self._lr_items = OrderedFrozenSet(LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
-        assert_items_are_compatible(self.context.grammar, self.context.prods, self._lr_items)
+        self.key = repr(sorted(self._lr_items))
+        assert_items_are_compatible(context.grammar, context.prods, self._lr_items)
 
     def __eq__(self, other):
-        return self._lr_items == other._lr_items
+        return self.key == other.key
 
     def __hash__(self):
-        return hash(tuple(sorted(map(hash, self._lr_items))))
+        return hash(self.key)
 
     def __str__(self):
         return "{{{}}}".format(
             ",  ".join(self.context.grammar.lr_item_to_str(self.context.prods, item)
                        for item in self._lr_items)
         )
+
+    def update(self, new_state):
+        """Merge another State into self.
+
+        This is called 0 or more times as we build out the graph of states.
+        It's called each time an edge is found that points to `self`, except
+        the first time. The caller has created a State object, `new_state`, but
+        then found that this compatible State object already exists. Merge the
+        two nodes. The caller discards `new_state` afterwards.
+        """
+        assert new_state.key == self.key
+
+        # There's nothing to merge in a canonical LR parser.
+        return False
 
     def closure(self):
         """Compute transitive closure of this state under left-calls.
@@ -1092,22 +1107,25 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
 def analyze_states(context, prods, init_nt_map):
     """The core of the parser generation algorithm."""
 
-    # There is one state for each reachable set of LR items ("core").
+    # There is one state for each reachable set of LR items.
     # We assign each reachable state a number, its index in `states`.
     states = []
     itemsets_to_state_index = {}
+    todo = collections.deque()
 
     def get_state_index(successor):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
         if successor in itemsets_to_state_index:
-            return itemsets_to_state_index[successor]
+            state_index = itemsets_to_state_index[successor]
+            state = states[state_index]
+            if state.update(successor):
+                todo.append(state)
         else:
             itemsets_to_state_index[successor] = state_index = len(states)
-            ## print("State #{} = {}"
-            ##       .format(state_index, successor.closure()))
             states.append(successor)
-            return state_index
+            todo.append(successor)
+        return state_index
 
     # Compute the start states.
     init_state_map = {}
@@ -1123,11 +1141,9 @@ def analyze_states(context, prods, init_nt_map):
             init_state = State(context, [start_item])
         init_state_map[goal_nt] = get_state_index(init_state)
 
-    # Turn the crank. Note: new states are appended to `states` while this loop
-    # is running. The loop visits all the initial states and then these new
-    # ones, continuing until no more new states are added.
-    for state in states:
-        state.analyze(get_state_index)
+    # Turn the crank.
+    while todo:
+        todo.popleft().analyze(get_state_index)
     return states, init_state_map
 
 

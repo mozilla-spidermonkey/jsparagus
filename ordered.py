@@ -11,6 +11,9 @@ class OrderedSet:
         for v in values:
             self.add(v)
 
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + repr(list(self)) + ")"
+
     def add(self, v):
         self._data[v] = 1
 
@@ -68,6 +71,9 @@ class OrderedFrozenSet:
 
     def __init__(self, values=()):
         self._data = {v: 1 for v in values}
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + repr(list(self)) + ")"
 
     def __len__(self):
         return len(self._data)
