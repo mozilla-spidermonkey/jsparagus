@@ -763,7 +763,7 @@ class GenTestCase(unittest.TestCase):
                      grammar)
         self.assertParse("function* farm() { cow = pig; yield cow; }")
         self.assertNoParse("function city() { yield toOncomingTraffic; }",
-                           message="expected one of ['(', '='], got 'IDENT'")
+                           message="expected one of ['(', ';', '='], got 'IDENT'")
         self.assertNoParse("function* farm() { yield = corn; yield yield; }",
                            message="expected 'IDENT', got '='")
 
@@ -845,10 +845,10 @@ class GenTestCase(unittest.TestCase):
                            message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")
         self.assertParse("f(x);", goal="stmts")
         self.assertNoParse("f(x);", goal="expr",
-                           message="expected one of ['(', 'end of input'], got ';'")
+                           message="expected 'end of input', got ';'")
         self.assertParse("(FN x -> f ( x ))(x)", goal="expr")
         self.assertNoParse("(FN x -> f ( x ))(x)", goal="stmts",
-                           message="expected one of ['(', ';'], got None")
+                           message="expected ';', got None")
 
     def testStaggeredItems(self):
         """Two items in a state can have different amounts of leading context."""

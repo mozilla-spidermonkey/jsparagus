@@ -1,4 +1,8 @@
+"""Emit code for parser tables in either Python or Rust. """
 
+from pgen_runtime import ERROR
+from ordered import OrderedSet
+from grammar import Optional
 
 def write_parser(out, grammar, states, prods, init_state_map):
     out.write("import pgen_runtime\n\n")

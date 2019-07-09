@@ -35,7 +35,7 @@ from grammar import (Grammar,
                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
 import emit
-from pgen_runtime import ERROR, ACCEPT
+from pgen_runtime import ACCEPT
 from lexer import SyntaxError
 
 
@@ -674,7 +674,8 @@ def find_path(start_set, successors, test):
 #     upcoming input. It is present only if this LRItem is subject to a
 #     `[lookahead]` restriction; otherwise it's None. These restrictions can't
 #     extend beyond the end of a production, or else the grammar is invalid.
-#     This is a hack and not part of any account of LR I've seen.
+#     This implements the lookahead restrictions in the ECMAScript grammar.
+#     It is not part of any account of LR I've seen.
 #
 # *   `followed_by` is a completely different kind of lookahead restriction.
 #     This is the kind of lookahead that is a central part of canonical LR
@@ -895,7 +896,7 @@ class State:
     LRItems in `self._lr_items`.)
     """
 
-    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', 'action_row', 'ctn_row']
+    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', '_hash', 'action_row', 'ctn_row']
 
     def __init__(self, context, items, debug_traceback=None):
         self.context = context
@@ -907,14 +908,22 @@ class State:
         for item in items:
             a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
         self._lr_items = OrderedFrozenSet(LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
-        self.key = repr(sorted(self._lr_items))
+
+        # This state should be reused if another state is found that has all
+        # the same items except with different .followed_by sets. This line of
+        # code is what makes this an LALR parser generator rather than a
+        # canonical LR parser generator.
+        self.key = "".join(repr((item.prod_index, item.offset, item.lookahead)) + "\n"
+                           for item in sorted(self._lr_items))
+
+        self._hash = hash(self.key)
         assert_items_are_compatible(context.grammar, context.prods, self._lr_items)
 
     def __eq__(self, other):
         return self.key == other.key
 
     def __hash__(self):
-        return hash(self.key)
+        return self._hash
 
     def __str__(self):
         return "{{{}}}".format(
@@ -930,11 +939,32 @@ class State:
         the first time. The caller has created a State object, `new_state`, but
         then found that this compatible State object already exists. Merge the
         two nodes. The caller discards `new_state` afterwards.
+
+        Returns True if anything changed.
         """
         assert new_state.key == self.key
+        assert len(self._lr_items) == len(new_state._lr_items)
 
-        # There's nothing to merge in a canonical LR parser.
-        return False
+        def item_key(item):
+            return item.prod_index, item.offset, item.lookahead
+
+        new_followed_by = {
+            item_key(item): item.followed_by
+            for item in new_state._lr_items
+        }
+
+        # If none of the new items adds any new followed_by symbols,
+        # then there's nothing to update.
+        if not any(new_followed_by[item_key(item)] - item.followed_by
+                   for item in self._lr_items):
+            return False
+
+        # Really do the work of merging the two states.
+        self._lr_items = OrderedFrozenSet(
+            LRItem(*item_key(item), item.followed_by | new_followed_by[item_key(item)])
+            for item in self._lr_items
+        )
+        return True
 
     def closure(self):
         """Compute transitive closure of this state under left-calls.
