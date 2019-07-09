@@ -174,7 +174,20 @@ class Grammar:
         if self.is_nt(e):
             return e
         elif is_apply(e):
-            return "{}[{}]".format(e.nt, ", ".join(repr(arg) for arg in e.args))
+            def arg_to_str(name, value):
+                if value == True:
+                    return '+' + name
+                elif value == False:
+                    return '~' + name
+                elif isinstance(value, Var):
+                    if value.name == name:
+                        return '?' + value.name
+                    return name + "=" + value.name
+                else:
+                    return name + "=" + repr(value)
+
+            return "{}[{}]".format(e.nt, ", ".join(arg_to_str(name, value)
+                                                   for name, value in e.args.items()))
         elif self.is_terminal(e):
             if self.is_variable_terminal(e):
                 return e
