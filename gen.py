@@ -589,8 +589,8 @@ def find_path(start_set, successors, test):
 # having got to the end, we create an AST node for the whole addition
 # expression.
 #
-# Since the grammar is nested, we really have a stack of these intermediate
-# states.
+# Since the grammar is nested, at run time we really have a stack of these
+# intermediate states.
 #
 # But how do we decide which production we should be matching? Often the first
 # token just tells us: the `while` keyword means there's a `while` statement
@@ -615,7 +615,11 @@ def find_path(start_set, successors, test):
 #
 # ## LR parsers: How
 #
-# An LR parser generator allows for a *superposition* of states.
+# An LR parser generator allows for a *superposition* of states. While parsing,
+# we can sometimes have multiple productions at once that might match. It's
+# like how in quantum theory, Schrödinger’s cat can tentatively be both alive
+# and dead until decisive information is observed.
+#
 # As we read `a = b + c`, our parser's internal state is like this
 # (eliding a few steps, like how we recognize that `a` is a primitive):
 #
@@ -643,8 +647,8 @@ def find_path(start_set, successors, test):
 # of several LR items is called a "state".  (It is not meant to be clear yet
 # just *how* the parser knows which rules might match.)
 #
-# Since the grammar is nested, we really have a stack of these parser state
-# superpositions.
+# Since the grammar is nested, at run time we'll have a stack of these parser
+# state superpositions.
 #
 # The uncertainty in LR parsing means that code for an LR parser written by
 # hand, in the style of recursive descent, would read like gibberish. What we
