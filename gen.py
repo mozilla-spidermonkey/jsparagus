@@ -879,6 +879,10 @@ class PgenContext:
 class State:
     """A parser state. A state is basically a set of LRItems.
 
+    During parser generation, states are annotated with attributes
+    `.action_row` and `.ctn_row` that tell the actual parser what to do at run time.
+    These will become rows of the parser tables.
+
     (For convenience, each State also has an attribute `self.context` that
     points to the PgenContext that has the grammar and various cached data; and
     an attribute `_debug_traceback` used in error messages. But for the most
@@ -886,7 +890,7 @@ class State:
     LRItems in `self._lr_items`.)
     """
 
-    __slots__ = ['context', '_lr_items', '_debug_traceback']
+    __slots__ = ['context', '_lr_items', '_debug_traceback', 'action_row', 'ctn_row']
 
     def __init__(self, context, items, debug_traceback=None):
         self.context = context
@@ -1041,7 +1045,8 @@ class State:
             action_row[t] = ACCEPT if prod.nt in context.init_nts else -prod_index - 1
         ctn_row = {nt: get_state_index(State(context, ss, self))
                    for nt, ss in ctn_items.items()}
-        return action_row, ctn_row
+        self.action_row = action_row
+        self.ctn_row = ctn_row
 
     def traceback(self):
         """Return a list of terminals and nonterminals that could have gotten us here."""
@@ -1103,18 +1108,6 @@ class ParserGenerator:
                 init_state = State(context, [start_item])
             self.init_state_map[goal_nt] = self.get_state_index(init_state)
 
-    def run(self):
-        states = []
-        actions = []
-        ctns = []
-        while self.todo:
-            current_state = self.todo.pop(0)
-            states.append(current_state)
-            action_row, ctn_row = current_state.analyze(self.get_state_index)
-            actions.append(action_row)
-            ctns.append(ctn_row)
-        return states, actions, ctns, self.init_state_map
-
     def get_state_index(self, successor):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
@@ -1127,6 +1120,14 @@ class ParserGenerator:
             ##       .format(state_index, successor.closure()))
             self.todo.append(successor)
             return state_index
+
+    def run(self):
+        states = []
+        while self.todo:
+            current_state = self.todo.pop(0)
+            states.append(current_state)
+            current_state.analyze(self.get_state_index)
+        return states, self.init_state_map
 
 
 def generate_parser(out, grammar, goal_nts, target='python'):
@@ -1154,13 +1155,13 @@ def generate_parser(out, grammar, goal_nts, target='python'):
 
     # Run the core LR table generation algorithm.
     pgen = ParserGenerator(context, prods, init_nt_map)
-    states, actions, ctns, init_state_map = pgen.run()
+    states, init_state_map = pgen.run()
 
     # Finally, dump the output.
     if target == 'rust':
-        emit.write_rust_parser(out, grammar, states, actions, ctns, prods, init_state_map)
+        emit.write_rust_parser(out, grammar, states, prods, init_state_map)
     else:
-        emit.write_parser(out, grammar, states, actions, ctns, prods, init_state_map)
+        emit.write_parser(out, grammar, states, prods, init_state_map)
 
 
 class Parser:
