@@ -1305,7 +1305,6 @@ class ParserGenerator:
 
         context = current_state.context
         grammar = context.grammar
-        init_nts = context.init_nts
         prods = context.prods
         follow = context.follow
 
@@ -1375,7 +1374,7 @@ class ParserGenerator:
                 context.raise_shift_reduce_conflict(current_state, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if prod.nt in init_nts else -prod_index - 1
+            action_row[t] = ACCEPT if prod.nt in context.init_nts else -prod_index - 1
         ctn_row = {nt: self.get_state_index(State(context, ss, current_state))
                    for nt, ss in ctn_items.items()}
         return action_row, ctn_row
