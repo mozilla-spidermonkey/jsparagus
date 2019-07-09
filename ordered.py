@@ -1,7 +1,11 @@
 """ Deterministic data structures. """
 
 class OrderedSet:
-    """Like set(), but iteration order is insertion order."""
+    """Like set(), but iteration order is insertion order.
+
+    Two OrderedSets, x and y, that have different insertion order are still
+    considered equal (x == y) if they contain the same elements.
+    """
     def __init__(self, values=()):
         self._data = {}
         for v in values:
@@ -15,6 +19,9 @@ class OrderedSet:
 
     def __eq__(self, other):
         return isinstance(other, OrderedSet) and self._data == other._data
+
+    def __hash__(self):
+        raise TypeError("unhashable type: " + self.__class__.__name__)
 
     def __len__(self):
         return len(self._data)
@@ -53,7 +60,12 @@ class OrderedSet:
 
 
 class OrderedFrozenSet:
-    """Like frozenset(), but iteration order is insertion order."""
+    """Like frozenset(), but iteration order is insertion order.
+
+    Two OrderedFrozenSets, x and y, that have different insertion order are
+    still considered equal (x == y) if they contain the same elements.
+    """
+
     def __init__(self, values=()):
         self._data = {v: 1 for v in values}
 
