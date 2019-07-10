@@ -26,7 +26,7 @@ TOKEN_RE = re.compile(r'''(?x)
       (?: [$_A-Za-z]     | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})
       (?: [$_0-9A-Za-z]  | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})*
       # NumericLiteral
-| [0-9][0-9A-Za-z]*(?:\.[0-9A-Za-z]*)?
+    | [0-9][0-9A-Za-z]*(?:\.[0-9A-Za-z]*)?
     | \.[0-9]+
       # Punctuator
     | [ { ( ) \[ \] ; , ~ \? :]
