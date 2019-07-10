@@ -896,7 +896,7 @@ class State:
     LRItems in `self._lr_items`.)
     """
 
-    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', '_hash', 'action_row', 'ctn_row']
+    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', '_hash', 'action_row', 'ctn_row', 'id']
 
     def __init__(self, context, items, debug_traceback=None):
         self.context = context
@@ -1026,8 +1026,10 @@ class State:
         prods = context.prods
         follow = context.follow
 
-        #print("analyzing state {}".format(item_set_to_str(grammar, prods, self)))
-        #print("  closure: {}".format(item_set_to_str(grammar, prods, self.closure())))
+        ## print("State {}.".format(self.id))
+        ## for item in self._lr_items:
+        ##     print("    " + grammar.lr_item_to_str(prods, item))
+        ## print()
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
@@ -1147,15 +1149,15 @@ def analyze_states(context, prods, init_nt_map):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
         if successor in itemsets_to_state_index:
-            state_index = itemsets_to_state_index[successor]
-            state = states[state_index]
+            state = states[itemsets_to_state_index[successor]]
             if state.update(successor):
                 todo.append(state)
         else:
-            itemsets_to_state_index[successor] = state_index = len(states)
-            states.append(successor)
-            todo.append(successor)
-        return state_index
+            state = successor
+            itemsets_to_state_index[state] = state.id = len(states)
+            states.append(state)
+            todo.append(state)
+        return state.id
 
     # Compute the start states.
     init_state_map = {}
