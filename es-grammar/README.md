@@ -28,7 +28,7 @@ $ pip install -r requirements.txt
 $ ./ponder-es-grammar.py > es_parser.py
 ```
 
-**Note:** This last step currently takes about 45 minutes to run on my
+**Note:** This last step currently takes about 3 minutes to run on my
 laptop.  pgen is slow.
 
 Once you're done, to see your parser run, try this:

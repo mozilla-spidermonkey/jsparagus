@@ -210,7 +210,13 @@ class Grammar:
 
     def rhs_to_str(self, rhs):
         if isinstance(rhs, ConditionalRhs):
-            return "#[if {} == {!r}] ".format(rhs.param, rhs.value) + self.rhs_to_str(rhs.rhs)
+            if rhs.value == True:
+                condition = "+" + rhs.param
+            elif rhs.value == False:
+                condition = "~" + rhs.param
+            else:
+                condition = "{} == {!r}".format(rhs.param, rhs.value)
+            return "#[if {}] ".format(condition) + self.rhs_to_str(rhs.rhs)
         elif len(rhs) == 0:
             return "[empty]"
         else:
@@ -244,7 +250,7 @@ class Grammar:
     def dump(self):
         for nt, rhs_list in self.nonterminals.items():
             if isinstance(rhs_list, Parameterized):
-                nt += "(" + ", ".join(rhs_list.params) + ")"
+                nt += "[" + ", ".join(rhs_list.params) + "]"
                 rhs_list = rhs_list.body
             print(nt + " ::=")
             for rhs in rhs_list:

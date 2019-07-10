@@ -1012,7 +1012,7 @@ class State:
                                 closure_todo.append(new_item)
         return closure
 
-    def analyze(self, get_state_index):
+    def analyze(self, get_state_index, *, verbose=False):
         """Generate the LR parser table entry for this state.
 
         This is done without iterating or recursing on states. But we sometimes
@@ -1026,10 +1026,11 @@ class State:
         prods = context.prods
         follow = context.follow
 
-        ## print("State {}.".format(self.id))
-        ## for item in self._lr_items:
-        ##     print("    " + grammar.lr_item_to_str(prods, item))
-        ## print()
+        if verbose:
+            print("State {}.".format(self.id))
+            for item in self._lr_items:
+                print("    " + grammar.lr_item_to_str(prods, item))
+            print()
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
@@ -1136,7 +1137,7 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     return OrderedFrozenSet(result)
 
 
-def analyze_states(context, prods, init_nt_map):
+def analyze_states(context, prods, init_nt_map, *, verbose=False, progress=False):
     """The core of the parser generation algorithm."""
 
     # There is one state for each reachable set of LR items.
@@ -1174,12 +1175,25 @@ def analyze_states(context, prods, init_nt_map):
         init_state_map[goal_nt] = get_state_index(init_state)
 
     # Turn the crank.
+    i = 0
     while todo:
-        todo.popleft().analyze(get_state_index)
+        if progress:
+            sys.stdout.write(".")
+            i += 1
+            if i == 100:
+                sys.stdout.write("\n")
+                i = 0
+            sys.stdout.flush()
+        todo.popleft().analyze(get_state_index, verbose=verbose)
+
+    if progress and i != 0:
+        sys.stdout.write("\n")
+
     return states, init_state_map
 
 
-def generate_parser(out, grammar, goal_nts, target='python'):
+def generate_parser(out, grammar, goal_nts, *, target='python',
+                    verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
     goal_nts = list(goal_nts)  # iterate this only once
     assert target in ('python', 'rust')
@@ -1203,7 +1217,8 @@ def generate_parser(out, grammar, goal_nts, target='python'):
     context = PgenContext(grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
-    states, init_state_map = analyze_states(context, prods, init_nt_map)
+    states, init_state_map = analyze_states(context, prods, init_nt_map,
+                                            verbose=verbose, progress=progress)
 
     # Finally, dump the output.
     if target == 'rust':
