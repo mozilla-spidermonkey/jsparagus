@@ -30,7 +30,7 @@ def main():
                         help="emug file containing the grammar")
     parser.add_argument('-o', '--output', metavar='FILE', default='/dev/stdout',
                         help="output filename for parser tables")
-    parser.add_argument('--target', choices=['python', 'rust'], default='rust',
+    parser.add_argument('--target', choices=['python', 'rust'], default='python',
                         help="target language to use when printing the parser tables")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help="print some debug output")
@@ -46,7 +46,7 @@ def main():
         grammar.dump()
 
     with open(args.output, 'w') as f:
-        gen.generate_parser(f, grammar, ECMASCRIPT_GOAL_NTS,
+        gen.generate_parser(f, grammar, ECMASCRIPT_GOAL_NTS, target=args.target,
                             verbose=args.verbose, progress=args.progress)
 
 
