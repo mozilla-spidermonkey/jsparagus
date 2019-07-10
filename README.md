@@ -52,64 +52,83 @@ It generates a table-driven shift-reduce parser:
 ```python
 import pgen_runtime
 
-actions = [{'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {None: -10, ')': -10, '*': -10, '+': -10, '-': -10, '/': -10},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {None: -9, ')': -9, '*': -9, '+': -9, '-': -9, '/': -9},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {None: -1, ')': -1, '*': 12, '+': -1, '-': -1, '/': 11},
- {None: -4, ')': -4, '*': -4, '+': -4, '-': -4, '/': -4},
- {None: -7, ')': -7, '*': -7, '+': -7, '-': -7, '/': -7},
- {None: -9223372036854775807, '+': 13, '-': 14},
- {None: -8, ')': -8, '*': -8, '+': -8, '-': -8, '/': -8},
- {')': 15, '+': 13, '-': 14},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {'(': 4, '-': 2, 'NUM': 3, 'VAR': 1},
- {None: -11, ')': -11, '*': -11, '+': -11, '-': -11, '/': -11},
- {None: -6, ')': -6, '*': -6, '+': -6, '-': -6, '/': -6},
- {None: -5, ')': -5, '*': -5, '+': -5, '-': -5, '/': -5},
- {None: -2, ')': -2, '*': 12, '+': -2, '-': -2, '/': 11},
- {None: -3, ')': -3, '*': 12, '+': -3, '-': -3, '/': 11}]
-
-ctns = [{'expr': 8, 'prim': 7, 'term': 5, 'unary': 6},
- {},
- {'prim': 7, 'unary': 9},
- {},
- {'expr': 10, 'prim': 7, 'term': 5, 'unary': 6},
- {},
- {},
- {},
- {},
- {},
- {},
- {'prim': 7, 'unary': 16},
- {'prim': 7, 'unary': 17},
- {'prim': 7, 'term': 18, 'unary': 6},
- {'prim': 7, 'term': 19, 'unary': 6},
- {},
- {},
- {},
- {},
- {}]
-
-reductions = [
-    ('expr', 1, lambda x0: ('expr', 0, [x0])),
-    ('expr', 3, lambda x0, x1, x2: ('expr', 1, [x0, x1, x2])),
-    ('expr', 3, lambda x0, x1, x2: ('expr', 2, [x0, x1, x2])),
-    ('term', 1, lambda x0: ('term', 0, [x0])),
-    ('term', 3, lambda x0, x1, x2: ('term', 1, [x0, x1, x2])),
-    ('term', 3, lambda x0, x1, x2: ('term', 2, [x0, x1, x2])),
-    ('unary', 1, lambda x0: ('unary', 0, [x0])),
-    ('unary', 2, lambda x0, x1: ('unary', 1, [x0, x1])),
-    ('prim', 1, lambda x0: ('prim', 0, [x0])),
-    ('prim', 1, lambda x0: ('prim', 1, [x0])),
-    ('prim', 3, lambda x0, x1, x2: ('prim', 2, [x0, x1, x2])),
-    ('expr_', 1, lambda x0: ('expr_', 0, [x0])),
+actions = [
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {None: -9, '*': -9, '/': -9, '+': -9, '-': -9, ')': -9},
+    {None: -10, '*': -10, '/': -10, '+': -10, '-': -10, ')': -10},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'+': 11, '-': 12, None: -9223372036854775807},
+    {'*': 13, '/': 14, None: -1, '+': -1, '-': -1, ')': -1},
+    {None: -4, '*': -4, '/': -4, '+': -4, '-': -4, ')': -4},
+    {None: -7, '*': -7, '/': -7, '+': -7, '-': -7, ')': -7},
+    {None: -8, '*': -8, '/': -8, '+': -8, '-': -8, ')': -8},
+    {')': 15, '+': 11, '-': 12},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {None: -11, '*': -11, '/': -11, '+': -11, '-': -11, ')': -11},
+    {'*': 13, '/': 14, None: -2, '+': -2, '-': -2, ')': -2},
+    {'*': 13, '/': 14, None: -3, '+': -3, '-': -3, ')': -3},
+    {None: -5, '*': -5, '/': -5, '+': -5, '-': -5, ')': -5},
+    {None: -6, '*': -6, '/': -6, '+': -6, '-': -6, ')': -6},
 ]
 
-parse = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0)
+ctns = [
+    {'expr': 5, 'term': 6, 'unary': 7, 'prim': 8},
+    {'unary': 9, 'prim': 8},
+    {},
+    {},
+    {'expr': 10, 'term': 6, 'unary': 7, 'prim': 8},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {'term': 16, 'unary': 7, 'prim': 8},
+    {'term': 17, 'unary': 7, 'prim': 8},
+    {'unary': 18, 'prim': 8},
+    {'unary': 19, 'prim': 8},
+    {},
+    {},
+    {},
+    {},
+    {},
+]
+
+reductions = [
+    ('expr', 1, lambda builder, x0: builder.expr_P0(x0)),
+    ('expr', 3, lambda builder, x0, x1, x2: builder.expr_P1(x0, x1, x2)),
+    ('expr', 3, lambda builder, x0, x1, x2: builder.expr_P2(x0, x1, x2)),
+    ('term', 1, lambda builder, x0: builder.term_P0(x0)),
+    ('term', 3, lambda builder, x0, x1, x2: builder.term_P1(x0, x1, x2)),
+    ('term', 3, lambda builder, x0, x1, x2: builder.term_P2(x0, x1, x2)),
+    ('unary', 1, lambda builder, x0: builder.unary_P0(x0)),
+    ('unary', 2, lambda builder, x0, x1: builder.unary_P1(x0, x1)),
+    ('prim', 1, lambda builder, x0: builder.prim_P0(x0)),
+    ('prim', 1, lambda builder, x0: builder.prim_P1(x0)),
+    ('prim', 3, lambda builder, x0, x1, x2: builder.prim_P2(x0, x1, x2)),
+    ('expr_1', 1, lambda builder, x0: builder.expr_1_P0(x0)),
+]
+
+class DefaultBuilder:
+    def expr_P0(self, *args): return ('expr', 0, list(args))
+    def expr_P1(self, *args): return ('expr', 1, list(args))
+    def expr_P2(self, *args): return ('expr', 2, list(args))
+    def term_P0(self, *args): return ('term', 0, list(args))
+    def term_P1(self, *args): return ('term', 1, list(args))
+    def term_P2(self, *args): return ('term', 2, list(args))
+    def unary_P0(self, *args): return ('unary', 0, list(args))
+    def unary_P1(self, *args): return ('unary', 1, list(args))
+    def prim_P0(self, *args): return ('prim', 0, list(args))
+    def prim_P1(self, *args): return ('prim', 1, list(args))
+    def prim_P2(self, *args): return ('prim', 2, list(args))
+    def expr_1_P0(self, *args): return ('expr_1', 0, list(args))
+
+
+parse_expr = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)
 ```
 
 And the result of parsing the input `2 * ( x + y )` looks like this:
