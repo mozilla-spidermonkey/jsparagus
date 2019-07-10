@@ -152,7 +152,7 @@ class EmugBuilder:
 
     def nonterminal_P1(self, name, ob, args, cb):
         assert (ob, cb) == ('[', ']')
-        return gen.Apply(name, args)
+        return gen.Apply(name, tuple(args.items()))
 
     def args_P0(self, arg):
         return dict([arg])

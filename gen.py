@@ -192,7 +192,7 @@ def expand_function_nonterminals(grammar, goal_nts):
             elif is_optional(e):
                 return Optional(expand_element(e.inner))
             elif is_apply(e):
-                return get_derived_name(e.nt, tuple(evaluate_arg(arg) for arg in e.args.values()))
+                return get_derived_name(e.nt, tuple(evaluate_arg(arg) for _name, arg in e.args))
             else:
                 return e
 

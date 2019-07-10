@@ -732,17 +732,18 @@ class GenTestCase(unittest.TestCase):
         self.assertParse(source)
 
     def testParameterizedProductions(self):
-        name = Apply("name", {'Yield': Var('Yield')})
-        stmt = Apply("stmt", {'Yield': Var('Yield')})
-        stmts = Apply("stmts", {'Yield': Var('Yield')})
+        passthru = ('Yield', Var('Yield')),
+        name = Apply("name", passthru)
+        stmt = Apply("stmt", passthru)
+        stmts = Apply("stmts", passthru)
         grammar = Grammar({
             'script': [
                 ['def'],
                 ['script', 'def'],
             ],
             'def': [
-                ['function', 'IDENT', '(', ')', '{', Apply('stmts', {'Yield': False}), '}'],
-                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', {'Yield': True}), '}'],
+                ['function', 'IDENT', '(', ')', '{', Apply('stmts', (('Yield', False),)), '}'],
+                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', (('Yield', True),)), '}'],
             ],
             'stmts': Parameterized(['Yield'], [
                 [stmt],

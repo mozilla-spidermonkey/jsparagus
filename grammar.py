@@ -87,15 +87,15 @@ class Grammar:
                 if e.nt not in nonterminals:
                     raise ValueError("invalid grammar: unrecognized nonterminal in production `grammar[{!r}][{}][{}]`: {!r}"
                                     .format(nt, i, j, e.nt))
-                args = list(e.args)
+                args = [pair[0] for pair in e.args]
                 if args != list(nonterminals[e.nt].params):
                     raise ValueError("invalid grammar: wrong arguments passed to {!r} in production `grammar[{!r}][{}][{}]`: passed {!r}, expected {!r}"
                                     .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
-                for arg in e.args:
-                    if isinstance(arg, Var):
-                        if arg.name not in context_params:
+                for param_name, arg_expr in e.args:
+                    if isinstance(arg_expr, Var):
+                        if arg_expr.name not in context_params:
                             raise ValueError("invalid grammar: undefined variable {!r} in production `grammar[{!r}][{}][{}]`"
-                                             .format(arg.name, nt, i, j))
+                                             .format(arg_expr.name, nt, i, j))
                 return e
             elif isinstance(e, LookaheadRule):
                 return e
@@ -187,7 +187,7 @@ class Grammar:
                     return name + "=" + repr(value)
 
             return "{}[{}]".format(e.nt, ", ".join(arg_to_str(name, value)
-                                                   for name, value in e.args.items()))
+                                                   for name, value in e.args))
         elif self.is_terminal(e):
             if self.is_variable_terminal(e):
                 return e
@@ -273,7 +273,7 @@ def is_optional(element):
 # see these. They're replaced with gensym names.
 Apply = collections.namedtuple("Apply", "nt args")
 Apply.__doc__ = """\
-Apply(nt, {param0: arg0, ...}) is a call to a nonterminal that's a function.
+Apply(nt, ((param0, arg0), ...)) is a call to a nonterminal that's a function.
 
 Each nonterminal in a grammar is defined by either a list of lists (its
 productions) or a Parameterized, a lambda that returns a list of lists.
