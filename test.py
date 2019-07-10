@@ -882,5 +882,21 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("A B * * * X")
         self.assertParse("A B * * * Y")
 
+    def testCheckCycleFree(self):
+        tokenize = lexer.LexicalGrammar("!")
+        grammar = Grammar({
+            "problem": [
+                ["one", "two"],
+            ],
+            "one": [
+                ["!"],
+            ],
+            "two": [
+                [Optional("problem")],
+            ],
+        })
+        self.compile(tokenize, grammar)
+        self.assertParse("! ! ! ! !")
+
 if __name__ == '__main__':
     unittest.main()

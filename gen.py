@@ -88,7 +88,8 @@ def check_cycle_free(grammar):
                         break  # no good, this production contains a terminal
                     elif grammar.is_nt(e):
                         if e in empties:
-                            result.append(e)
+                            if all_possibly_empty_so_far:
+                                result.append(e)
                         else:
                             if not all_possibly_empty_so_far:
                                 break # no good, we have 2+ nonterminals that can't be empty
