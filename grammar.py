@@ -276,7 +276,7 @@ Apply.__doc__ = """\
 Apply(nt, {param0: arg0, ...}) is a call to a nonterminal that's a function.
 
 Each nonterminal in a grammar is defined by either a list of lists (its
-productions) or a function that returns a list of lists.
+productions) or a Parameterized, a lambda that returns a list of lists.
 
 To refer to the first kind of nonterminal in a right-hand-side, just use the
 nonterminal's name. To use the second kind, we have to represent a function call
@@ -387,7 +387,7 @@ params - List of strings, the names of the parameters.
 
 body - List of right-hand sides. Each element of rhs_list is either a list
 of grammar elements or a ConditionalRhs (see below). Also, arguments to Apply
-elements in the productions in rhs_list can be Param(s) where s in params,
+elements in the productions in rhs_list can be Var(s) where s in params,
 indicating that parameter should be passed through unchanged.
 """
 
