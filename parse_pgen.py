@@ -39,6 +39,7 @@ pgen_grammar = Grammar(
         'term': [['symbol'], ['symbol', '?']],
         'symbol': [['IDENT'], ['STR']],
     },
+    goal_nts=['grammar'],
     variable_terminals=['IDENT', 'STR']
 )
 
@@ -185,7 +186,7 @@ def load_grammar(filename):
 
 def regenerate():
     import sys
-    gen.generate_parser(sys.stdout, pgen_grammar, ['grammar'])
+    gen.generate_parser(sys.stdout, pgen_grammar)
 
 
 class ParsePgenTestCase(unittest.TestCase):

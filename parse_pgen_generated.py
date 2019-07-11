@@ -80,19 +80,19 @@ actions = [
     {'}': -13, 'IDENT': -13, 'STR': -13},
 
     # 26. "nt" IDENT "{" terms
-    {';': 34, 'IDENT': 35, 'STR': 36},
+    {';': 34, 'IDENT': 22, 'STR': 23},
 
     # 27. "nt" IDENT "{" term
     {';': -16, 'IDENT': -16, 'STR': -16},
 
     # 28. "nt" IDENT "{" symbol
-    {'?': 38, ';': -18, 'IDENT': -18, 'STR': -18},
+    {'?': 36, ';': -18, 'IDENT': -18, 'STR': -18},
 
     # 29. "goal" "nt" IDENT "{"
-    {'}': 39, 'IDENT': 22, 'STR': 23},
+    {'}': 37, 'IDENT': 22, 'STR': 23},
 
     # 30. "token" IDENT "=" STR
-    {';': 41},
+    {';': 39},
 
     # 31. "var" "token" IDENT ";"
     {'nt': -6, 'goal': -6, 'token': -6, 'var': -6},
@@ -106,28 +106,22 @@ actions = [
     # 34. "nt" IDENT "{" terms ";"
     {'}': -15, 'IDENT': -15, 'STR': -15},
 
-    # 35. "nt" IDENT "{" terms IDENT
-    {';': -20, 'IDENT': -20, 'STR': -20, '?': -20},
-
-    # 36. "nt" IDENT "{" terms STR
-    {';': -21, 'IDENT': -21, 'STR': -21, '?': -21},
-
-    # 37. "nt" IDENT "{" terms term
+    # 35. "nt" IDENT "{" terms term
     {';': -17, 'IDENT': -17, 'STR': -17},
 
-    # 38. "nt" IDENT "{" symbol "?"
+    # 36. "nt" IDENT "{" symbol "?"
     {';': -19, 'IDENT': -19, 'STR': -19},
 
-    # 39. "goal" "nt" IDENT "{" "}"
+    # 37. "goal" "nt" IDENT "{" "}"
     {None: -11, 'nt': -11, 'goal': -11},
 
-    # 40. "goal" "nt" IDENT "{" prods
-    {'}': 42, 'IDENT': 22, 'STR': 23},
+    # 38. "goal" "nt" IDENT "{" prods
+    {'}': 40, 'IDENT': 22, 'STR': 23},
 
-    # 41. "token" IDENT "=" STR ";"
+    # 39. "token" IDENT "=" STR ";"
     {'nt': -5, 'goal': -5, 'token': -5, 'var': -5},
 
-    # 42. "goal" "nt" IDENT "{" prods "}"
+    # 40. "goal" "nt" IDENT "{" prods "}"
     {None: -12, 'nt': -12, 'goal': -12},
 
 ]
@@ -159,12 +153,10 @@ ctns = [
     {},
     {'prod': 33, 'terms': 26, 'term': 27, 'symbol': 28},
     {},
-    {'term': 37, 'symbol': 28},
+    {'term': 35, 'symbol': 28},
     {},
     {},
-    {'prods': 40, 'prod': 25, 'terms': 26, 'term': 27, 'symbol': 28},
-    {},
-    {},
+    {'prods': 38, 'prod': 25, 'terms': 26, 'term': 27, 'symbol': 28},
     {},
     {},
     {},
@@ -200,7 +192,6 @@ reductions = [
     ('term', 2, lambda builder, x0, x1: builder.term_P1(x0, x1)),
     ('symbol', 1, lambda builder, x0: builder.symbol_P0(x0)),
     ('symbol', 1, lambda builder, x0: builder.symbol_P1(x0)),
-    ('grammar_1', 1, lambda builder, x0: builder.grammar_1_P0(x0)),
 ]
 
 class DefaultBuilder:
@@ -225,7 +216,6 @@ class DefaultBuilder:
     def term_P1(self, *args): return ('term', 1, list(args))
     def symbol_P0(self, *args): return ('symbol', 0, list(args))
     def symbol_P1(self, *args): return ('symbol', 1, list(args))
-    def grammar_1_P0(self, *args): return ('grammar_1', 0, list(args))
 
 
 parse_grammar = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)

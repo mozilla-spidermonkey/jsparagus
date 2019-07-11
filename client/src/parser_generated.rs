@@ -20,7 +20,7 @@ pub enum TerminalId {
     QuestionMark = 11, // '?'
 }
 
-static ACTIONS: [i64; 516] = [
+static ACTIONS: [i64; 492] = [
     // 0. <empty>
     1, 2, 3, 4, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
@@ -100,19 +100,19 @@ static ACTIONS: [i64; 516] = [
     ERROR, ERROR, ERROR, ERROR, -13, ERROR, ERROR, ERROR, -13, -13, ERROR, ERROR,
 
     // 26. "nt" IDENT "{" terms
-    ERROR, ERROR, ERROR, ERROR, 35, ERROR, ERROR, ERROR, ERROR, 36, 34, ERROR,
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, ERROR, 23, 34, ERROR,
 
     // 27. "nt" IDENT "{" term
     ERROR, ERROR, ERROR, ERROR, -16, ERROR, ERROR, ERROR, ERROR, -16, -16, ERROR,
 
     // 28. "nt" IDENT "{" symbol
-    ERROR, ERROR, ERROR, ERROR, -18, ERROR, ERROR, ERROR, ERROR, -18, -18, 38,
+    ERROR, ERROR, ERROR, ERROR, -18, ERROR, ERROR, ERROR, ERROR, -18, -18, 36,
 
     // 29. "goal" "nt" IDENT "{"
-    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 39, 23, ERROR, ERROR,
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 37, 23, ERROR, ERROR,
 
     // 30. "token" IDENT "=" STR
-    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 41, ERROR,
+    ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 39, ERROR,
 
     // 31. "var" "token" IDENT ";"
     -6, -6, -6, -6, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
@@ -126,28 +126,22 @@ static ACTIONS: [i64; 516] = [
     // 34. "nt" IDENT "{" terms ";"
     ERROR, ERROR, ERROR, ERROR, -15, ERROR, ERROR, ERROR, -15, -15, ERROR, ERROR,
 
-    // 35. "nt" IDENT "{" terms IDENT
-    ERROR, ERROR, ERROR, ERROR, -20, ERROR, ERROR, ERROR, ERROR, -20, -20, -20,
-
-    // 36. "nt" IDENT "{" terms STR
-    ERROR, ERROR, ERROR, ERROR, -21, ERROR, ERROR, ERROR, ERROR, -21, -21, -21,
-
-    // 37. "nt" IDENT "{" terms term
+    // 35. "nt" IDENT "{" terms term
     ERROR, ERROR, ERROR, ERROR, -17, ERROR, ERROR, ERROR, ERROR, -17, -17, ERROR,
 
-    // 38. "nt" IDENT "{" symbol "?"
+    // 36. "nt" IDENT "{" symbol "?"
     ERROR, ERROR, ERROR, ERROR, -19, ERROR, ERROR, ERROR, ERROR, -19, -19, ERROR,
 
-    // 39. "goal" "nt" IDENT "{" "}"
+    // 37. "goal" "nt" IDENT "{" "}"
     -11, -11, ERROR, ERROR, ERROR, -11, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 40. "goal" "nt" IDENT "{" prods
-    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 42, 23, ERROR, ERROR,
+    // 38. "goal" "nt" IDENT "{" prods
+    ERROR, ERROR, ERROR, ERROR, 22, ERROR, ERROR, ERROR, 40, 23, ERROR, ERROR,
 
-    // 41. "token" IDENT "=" STR ";"
+    // 39. "token" IDENT "=" STR ";"
     -5, -5, -5, -5, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 42. "goal" "nt" IDENT "{" prods "}"
+    // 40. "goal" "nt" IDENT "{" prods "}"
     -12, -12, ERROR, ERROR, ERROR, -12, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 ];
 
@@ -205,7 +199,7 @@ pub enum NonterminalId {
     Symbol = 9,
 }
 
-static GOTO: [usize; 430] = [
+static GOTO: [usize; 410] = [
     5, 6, 7, 8, 9, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -232,12 +226,10 @@ static GOTO: [usize; 430] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 33, 26, 27, 28,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 37, 28,
+    0, 0, 0, 0, 0, 0, 0, 0, 35, 28,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 40, 25, 26, 27, 28,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 38, 25, 26, 27, 28,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -414,7 +406,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
 }
 
 static TABLES: ParserTables<'static> = ParserTables {
-    state_count: 43,
+    state_count: 41,
     action_table: &ACTIONS,
     action_width: 12,
     goto_table: &GOTO,
