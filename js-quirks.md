@@ -102,7 +102,7 @@ somehow. It's just unbelievably confusing.
     This is reflected in the message and location information for
     certain syntax errors:
 
-    ```js
+    ```
     SyntaxError: implements is a reserved identifier:
     class implements {}
     ......^
@@ -126,8 +126,8 @@ object literal properties and methods, even in strict mode.
 
 A script or function can start with this:
 
-```
-"use strict';
+```js
+"use strict";
 ```
 
 This enables ["strict mode"](https://tc39.es/ecma262/#sec-strict-mode-of-ecmascript).
@@ -155,7 +155,7 @@ include:
     Interestingly, you don't always know if you're in strict mode or not
     when parsing arguments.
     
-    ```
+    ```js
     function foo(a, a) {
         "use strict";
     }
@@ -202,7 +202,7 @@ Early Error rules:
             like it could be enforced in the grammar, but that approach
             would make this a valid program, due to ASI:
 
-            ```
+            ```js
             let
             yield 0;
             ```
@@ -413,7 +413,7 @@ recursive descent parser is a little bit different each time.
     The purpose of this rule is subtle. It triggers ASI and thus prevents
     syntax errors:
 
-    ```
+    ```js
     var x = y       // ok: semicolon inserted here
     ++z;
     ```
@@ -557,7 +557,7 @@ matching `)`, which could be a long way away.
 Suppose the parser is scanning text from start to end, when it sees a
 statement that starts with something like this:
 
-```
+```js
 let f = (a
 ```
 
@@ -565,7 +565,7 @@ The parser doesn't know yet if `(a ...` is *ArrowParameters* or just a
 *ParenthesizedExpression*. Either is possible. We'll know when either
 (1) we see something that rules out the other case:
 
-```
+```js
 let f = (a + b           // can't be ArrowParameters
 
 let f = (a, b, ...args   // can't be ParenthesizedExpression
@@ -613,7 +613,7 @@ though syntactic rules are applied after the fact:
     and as the operand of postfix `++` and `--`. But this is way too lax;
     most expressions shouldn't be assigned to:
     
-    ```
+    ```js
     1 = 0;  // matches the formal grammar, SyntaxError by an early error rule
 
     null++;   // same
