@@ -15,11 +15,11 @@ class GenTestCase(unittest.TestCase):
     def compile(self, tokenize, grammar):
         """Compile a grammar. Use this when you expect compilation to succeed."""
         self.tokenize = tokenize
-        self.parse = gen.compile(grammar, next(iter(grammar.nonterminals)))
+        self.parse = gen.compile(grammar)
 
-    def compile_multi(self, tokenize, grammar, goal_nts):
+    def compile_multi(self, tokenize, grammar):
         self.tokenize = tokenize
-        obj = gen.compile_multi(grammar, goal_nts)
+        obj = gen.compile_multi(grammar)
         for attr in dir(obj):
             if attr.startswith("parse_"):
                 setattr(self, attr, getattr(obj, attr))
@@ -44,7 +44,7 @@ class GenTestCase(unittest.TestCase):
                 ['expr', 'tail'],
             ],
         })
-        parse = gen.compile(grammar, "expr")
+        parse = gen.compile(grammar)
 
         parsed = parse(LispTokenizer("(lambda (x) (* x x))"))
         self.assertEqual(parsed, ('expr', 1, [
@@ -95,7 +95,7 @@ class GenTestCase(unittest.TestCase):
                 ['SYMBOL']
             ],
         })
-        parse = gen.compile(list_grammar, "prelist")
+        parse = gen.compile(list_grammar)
         tokens = LispTokenizer("the quick brown fox jumped over the lazy dog")
         self.assertEqual(
             parse(tokens),
@@ -145,7 +145,7 @@ class GenTestCase(unittest.TestCase):
                 ['(', 'expr', ')'],
             ],
         })
-        parse = gen.compile(arith_grammar, "expr")
+        parse = gen.compile(arith_grammar)
 
         tokens = tokenize('2 * 3 + 4 * (5 + 7)')
         self.assertEqual(
@@ -201,7 +201,7 @@ class GenTestCase(unittest.TestCase):
 
         out = io.StringIO()
         self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
-                               lambda: gen.generate_parser(out, grammar, ['goal']))
+                               lambda: gen.generate_parser(out, grammar))
 
     def testLeftFactor(self):
         """Most basic left-factoring test."""
@@ -213,7 +213,7 @@ class GenTestCase(unittest.TestCase):
             ],
         })
 
-        parse = gen.compile(grammar, goal='goal')
+        parse = gen.compile(grammar)
         self.assertEqual(parse(tokenize("A")), ('goal', 0, ['A']))
         self.assertEqual(parse(tokenize("A B")), ('goal', 1, ['A', 'B']))
 
@@ -226,7 +226,7 @@ class GenTestCase(unittest.TestCase):
                 ['A', 'B', 'C', 'E'],
             ],
         })
-        parse = gen.compile(grammar, goal='goal')
+        parse = gen.compile(grammar)
         self.assertEqual(parse(tokenize("A B C D")), ('goal', 0, ['A', 'B', 'C', 'D']))
         self.assertEqual(parse(tokenize("A B C E")), ('goal', 1, ['A', 'B', 'C', 'E']))
 
@@ -248,7 +248,7 @@ class GenTestCase(unittest.TestCase):
                 ['VAR'],
             ],
         })
-        parse = gen.compile(grammar, goal='stmt')
+        parse = gen.compile(grammar)
         self.assertEqual(parse(tokenize("FOR (x IN y) z;")),
                          ('stmt', 1, [
                              'FOR', '(', 'x', 'IN', ('expr', 0, ['y']), ')', ('stmt', 0, [
@@ -289,7 +289,7 @@ class GenTestCase(unittest.TestCase):
                 ['A'],
             ],
         })
-        parse = gen.compile(grammar, 's')
+        parse = gen.compile(grammar)
         tokenize = lexer.LexicalGrammar("A B C")
 
         self.assertEqual(parse(tokenize("A B")),
@@ -339,7 +339,7 @@ class GenTestCase(unittest.TestCase):
                 ['exprs', 'expr'],
             ],
         })
-        parse = gen.compile(grammar, "expr")
+        parse = gen.compile(grammar)
 
         N = 3000
         s = "x"
@@ -409,7 +409,7 @@ class GenTestCase(unittest.TestCase):
                 ['Y'],
             ]
         })
-        parse = gen.compile(grammar, "a")
+        parse = gen.compile(grammar)
         self.assertEqual(parse(tokenize("")), ('a', 0, [None, None]))
         self.assertEqual(parse(tokenize("X")), ('a', 0, [('b', 0, ['X']), None]))
         self.assertEqual(parse(tokenize("Y")), ('a', 0, [None, ('c', 0, ['Y'])]))
@@ -432,7 +432,7 @@ class GenTestCase(unittest.TestCase):
                 ['elision', ',']
             ]
         })
-        parse = gen.compile(grammar, 'array')
+        parse = gen.compile(grammar)
         self.assertEqual(parse(tokenize("[]")),
                          ('array', 0, ['[', None, ']']))
         self.assertEqual(parse(tokenize("[,]")),
@@ -496,7 +496,7 @@ class GenTestCase(unittest.TestCase):
             ],
         }
 
-        parse = gen.compile(Grammar(rules), 'goal')
+        parse = gen.compile(Grammar(rules))
         self.assertRaisesRegex(SyntaxError,
                                r"expected 'b', got 'a'",
                                lambda: parse(tokenize("a b")))
@@ -513,7 +513,7 @@ class GenTestCase(unittest.TestCase):
         # In simple cases like this, the lookahead restriction can even
         # disambiguate a grammar that would otherwise be ambiguous.
         rules['goal'].append(['a'])
-        parse = gen.compile(Grammar(rules), 'goal')
+        parse = gen.compile(Grammar(rules))
         self.assertEqual(
             parse(tokenize('a')),
             ('goal', 1, ['a'])
@@ -543,14 +543,14 @@ class GenTestCase(unittest.TestCase):
                 ['term', '(', 'expr', ')'],
             ],
         })
-        parse = gen.compile(grammar, 'stmts')
+        parse = gen.compile(grammar)
 
         # Test that without the lookahead restriction, we reject this grammar
         # (it's ambiguous):
         del grammar['stmt'][0][0]
         self.assertRaisesRegex(ValueError,
                                'banana',
-                               lambda: gen.compile(grammar, 'stmt'))
+                               lambda: gen.compile(grammar))
 
         self.assertEqual(
             parse(tokenize('function f() { x = function y() {}; }')),
@@ -604,7 +604,7 @@ class GenTestCase(unittest.TestCase):
         })
         self.assertRaisesRegex(ValueError,
                                r"invalid grammar: lookahead restriction at end of production",
-                               lambda: gen.compile(grammar, 'stmt'))
+                               lambda: gen.compile(grammar))
 
     def testLookaheadBeforeOptional(self):
         self.compile(
@@ -702,7 +702,7 @@ class GenTestCase(unittest.TestCase):
          't_list_lines': [['t_list_line'], ['t_list_lines', 't_list_line']],
          'terminal': [['T'], ['CHR']],
          'terminal_seq': [['terminal'], ['terminal_seq', 'terminal']]},
-        'EQ T CHR NTCALL NT NTALT PRODID PROSE WPROSE'.split())
+        variable_terminals='EQ T CHR NTCALL NT NTALT PRODID PROSE WPROSE'.split())
 
         emu_grammar_lexer = lexer.LexicalGrammar(
             #   the operators and keywords:
@@ -758,7 +758,7 @@ class GenTestCase(unittest.TestCase):
                 ["IDENT"],
                 ConditionalRhs('Yield', False, ["yield"]),
             ]),
-        }, ["IDENT"])
+        }, variable_terminals=["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",
                                           IDENT=r'[A-Za-z]\w*'),
                      grammar)
@@ -839,8 +839,8 @@ class GenTestCase(unittest.TestCase):
                 ["call_expr", "(", "expr", ")"],
                 ["(", "expr", ")"],
             ],
-        })
-        self.compile_multi(tokenize, grammar, ["stmts", "expr"])
+        }, goal_nts=["stmts", "expr"])
+        self.compile_multi(tokenize, grammar)
         self.assertParse("WHILE ( x ) { decx ( x ) ; }", goal="stmts")
         self.assertNoParse("WHILE ( x ) { decx ( x ) ; }", goal="expr",
                            message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")

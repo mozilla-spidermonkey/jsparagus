@@ -20,8 +20,8 @@ def main():
     options = parser.parse_args()
 
     [pgen_filename] = options.grammar
-    grammar, goal_nts = parse_pgen.load_grammar(pgen_filename)
-    gen.generate_parser(sys.stdout, grammar, goal_nts, target=options.target)
+    grammar = parse_pgen.load_grammar(pgen_filename)
+    gen.generate_parser(sys.stdout, grammar, target=options.target)
 
 
 if __name__ == '__main__':

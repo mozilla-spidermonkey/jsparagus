@@ -2,7 +2,7 @@
 
 from pgen_runtime import ERROR
 from ordered import OrderedSet
-from grammar import Optional
+from grammar import InitNt, Optional
 
 def write_parser(out, grammar, states, prods, init_state_map):
     out.write("import pgen_runtime\n\n")
@@ -21,6 +21,8 @@ def write_parser(out, grammar, states, prods, init_state_map):
 
     out.write("reductions = [\n")
     for prod in prods:
+        if isinstance(prod.nt, InitNt):
+            continue
         reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
         names = ["x" + str(i)
                  for i, e in enumerate(prod.rhs)
@@ -38,9 +40,10 @@ def write_parser(out, grammar, states, prods, init_state_map):
 
     out.write("class DefaultBuilder:\n")
     for prod in prods:
-        reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
-        out.write("    def {}(self, *args): return ({!r}, {!r}, list(args))\n"
-                  .format(reduce_method_name, prod.nt, prod.index))
+        if not isinstance(prod.nt, InitNt):
+            reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
+            out.write("    def {}(self, *args): return ({!r}, {!r}, list(args))\n"
+                      .format(reduce_method_name, prod.nt, prod.index))
     out.write("\n\n")
 
     for init_nt, index in init_state_map.items():

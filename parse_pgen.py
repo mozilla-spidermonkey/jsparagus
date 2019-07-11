@@ -39,7 +39,7 @@ pgen_grammar = Grammar(
         'term': [['symbol'], ['symbol', '?']],
         'symbol': [['IDENT'], ['STR']],
     },
-    ['IDENT', 'STR']
+    variable_terminals=['IDENT', 'STR']
 )
 
 
@@ -180,7 +180,7 @@ def load_grammar(filename):
     result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename), builder)
     tokens, nonterminals, goals = check_grammar(result)
     variable_terminals = [name for name, image in tokens if image is None]
-    return Grammar(nonterminals, variable_terminals), goals
+    return Grammar(nonterminals, goals, variable_terminals)
 
 
 def regenerate():
@@ -192,14 +192,14 @@ class ParsePgenTestCase(unittest.TestCase):
     def test_self(self):
         import os
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
-        grammar, goal_nts = load_grammar(filename)
+        grammar = load_grammar(filename)
         self.assertEqual(grammar.nonterminals, pgen_grammar.nonterminals)
         self.assertEqual(grammar.variable_terminals, pgen_grammar.variable_terminals)
-        self.assertEqual(goal_nts, ['grammar'])
+        self.assertEqual(grammar.goals(), ['grammar'])
 
         import io
         out = io.StringIO()
-        gen.generate_parser(out, grammar, ["grammar"])
+        gen.generate_parser(out, grammar)
         self_generated = out.getvalue()
 
         with open(parse_pgen_generated.__file__) as f:

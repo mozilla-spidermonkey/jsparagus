@@ -37,11 +37,14 @@ def example_grammar():
         ],
     }
 
+    # The goal nonterminals are the nonterminals we're actually interested in
+    # parsing. Here we want to parse expressions; all the other nonterminals
+    # are interesting only as the building blocks of expressions.
+    #
     # Variable terminals are terminal symbols that can have several different
     # values, like a VAR token that could be any identifier, or a NUM token
     # that could be any number.
-    variable_terminals = ['NUM', 'VAR']
-    return Grammar(rules, variable_terminals)
+    return Grammar(rules, goal_nts=['expr'], variable_terminals=['NUM', 'VAR'])
 
 
 # A Grammar object is just an object that contains a bunch of productions, like
@@ -49,7 +52,7 @@ def example_grammar():
 # terminals from nonterminals, we store the set of terminals and the set of
 # nonterminals in the Grammar.
 class Grammar:
-    def __init__(self, nonterminals, variable_terminals=()):
+    def __init__(self, nonterminals, goal_nts=None, variable_terminals=()):
 
         # This constructor type-checks the arguments.
         #
@@ -67,8 +70,19 @@ class Grammar:
         # grammar can be used safely with `dump`, `rhs_to_str`, and so on.)
 
         nonterminals = dict(nonterminals.items())
+
+        if goal_nts is None:
+            # Default to the first nonterminal in the dictionary.
+            goal_nts = []
+            for name in nonterminals:
+                goal_nts.append(name)
+                break
+        else:
+            goal_nts = list(goal_nts)
+
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
         self.nonterminals = {nt: None for nt in nonterminals}
+
         all_terminals = OrderedSet(self.variable_terminals)
 
         def validate_element(nt, i, j, e, context_params):
@@ -134,21 +148,41 @@ class Grammar:
                 return [copy_rhs(nt, i, rhs, params) for i, rhs in enumerate(rhs_list)]
 
         for nt, rhs_list_or_fn in nonterminals.items():
-            if not isinstance(nt, str):
+            if isinstance(nt, InitNt):
+                # Users don't include init nonterminals when initially creating
+                # a Grammar. They are automatically added below. But if this
+                # Grammar is being created by hacking on a previous Grammar, it
+                # will already have them.
+                if not isinstance(nt.goal, str):
+                    raise TypeError("invalid grammar: InitNt.goal should be a string, got {!r}".format(nt))
+                if nt.goal not in nonterminals:
+                    raise TypeError("invalid grammar: undefined nonterminal referenced by InitNt: {!r}".format(nt))
+                if nt.goal not in goal_nts:
+                    raise TypeError("invalid grammar: nonterminal referenced by InitNt is not in the list of goals: {!r}".format(nt))
+                # Check the form of init productions. Initially these look like
+                # [[goal]], but after the pipeline goes to work, they can be
+                # [[Optional(goal)]] or [[], [goal]].
+                if (rhs_list_or_fn != [[nt.goal]] and
+                    rhs_list_or_fn != [[Optional(nt.goal)]] and
+                    rhs_list_or_fn != [[], [nt.goal]]):
+                    raise ValueError("invalid grammar: grammar[{!r}] is not one of the expected forms: got {!r}"
+                                     .format(nt, rhs_list_or_fn))
+            elif not isinstance(nt, str):
                 raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
                 raise TypeError("invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
             self.nonterminals[nt] = copy_rhs_list(nt, rhs_list_or_fn, [])
 
-        self.terminals = OrderedFrozenSet(all_terminals)
-
-    def check_valid_goals(self, goal_nts):
+        self.init_nts = []
         for goal in goal_nts:
-            if not self.is_nt(goal):
+            if goal not in nonterminals:
                 raise ValueError("goal nonterminal {!r} is undefined".format(goal))
+            init_nt = InitNt(goal)
+            if init_nt not in self.nonterminals:
+                self.nonterminals[init_nt] = [[goal]]
+            self.init_nts.append(init_nt)
 
-
-
+        self.terminals = OrderedFrozenSet(all_terminals)
 
     # Terminals are tokens that must appear verbatim in the input wherever they
     # appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
@@ -163,9 +197,17 @@ class Grammar:
     def is_nt(self, element):
         return type(element) is str and element in self.nonterminals
 
+    def goals(self):
+        """Return a list of this grammar's goal nonterminals."""
+        return [init_nt.goal for init_nt in self.init_nts]
+
     def clone(self):
-        """ Return a deep copy of a grammar (which must contain no functions). """
-        return Grammar(self.nonterminals, self.variable_terminals)
+        """Return a deep copy of a grammar (which must contain no functions)."""
+        return Grammar(self.nonterminals, self.goals(), self.variable_terminals)
+
+    def with_nonterminals(self, nonterminals):
+        """Return a copy of self with the same attributes except different nonterminals."""
+        return Grammar(nonterminals, self.goals(), self.variable_terminals)
 
 
     # === A few methods for dumping pieces of grammar.
@@ -256,6 +298,22 @@ class Grammar:
             for rhs in rhs_list:
                 print("   ", self.rhs_to_str(rhs))
             print()
+
+
+InitNt = collections.namedtuple("InitNt", "goal")
+InitNt.__doc__ = """\
+InitNt(goal) is the name of the init nonterminal for the given goal.
+
+One init nonterminal is created internally for each goal symbol in the grammar.
+
+The idea is to have a nonterminal that the user has no control over, that is
+never used in any production, but *only* as an entry point for the grammar,
+that always has a single production "init_nt ::= goal_nt". This predictable
+structure makes it easier to get into and out of parsing at run time.
+
+When an init nonterminal is matched, we take the "accept" action rather than
+a "reduce" action.
+"""
 
 
 # Optional elements. These are expanded out before states are calculated,

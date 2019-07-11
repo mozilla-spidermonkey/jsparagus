@@ -41,12 +41,12 @@ def main():
     with open(args.filename) as f:
         text = f.read()
 
-    grammar = parse_emug.parse_emug(text, filename=args.filename)
+    grammar = parse_emug.parse_emug(text, filename=args.filename, goals=ECMASCRIPT_GOAL_NTS)
     if args.verbose:
         grammar.dump()
 
     with open(args.output, 'w') as f:
-        gen.generate_parser(f, grammar, ECMASCRIPT_GOAL_NTS, target=args.target,
+        gen.generate_parser(f, grammar, target=args.target,
                             verbose=args.verbose, progress=args.progress)
 
 

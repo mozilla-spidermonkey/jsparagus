@@ -31,6 +31,7 @@ import sys
 from ordered import OrderedSet, OrderedFrozenSet
 
 from grammar import (Grammar,
+                     InitNt,
                      Optional, is_optional,
                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
@@ -148,7 +149,7 @@ def gensym(nonterminals, nt):
     return sym
 
 
-def expand_function_nonterminals(grammar, goal_nts):
+def expand_function_nonterminals(grammar):
     """Replace function nonterminals with production lists.
 
     Also replaces Apply elements with nt elements and eliminates Var and
@@ -160,8 +161,7 @@ def expand_function_nonterminals(grammar, goal_nts):
     # the parser output at run time. It would probably be OK to just use Apply
     # objects as nonterminal names.
 
-    goals = list(goal_nts)
-    assigned_names = {(goal, None): goal for goal in goals}
+    assigned_names = {(goal, None): goal for goal in grammar.goals()}
     todo = collections.deque(assigned_names.keys())
     result = {nt: None for nt in grammar.nonterminals}  # gensym needs all of them to exist
 
@@ -225,29 +225,7 @@ def expand_function_nonterminals(grammar, goal_nts):
     unreachable_keys = [nt for nt, rhs_list in result.items() if rhs_list is None]
     for key in unreachable_keys:
         del result[key]
-    return Grammar(result, grammar.variable_terminals)
-
-
-def add_init_nonterminals(grammar, goals):
-    """Add "init" nonterminals to the grammar. These are guaranteed to be used only
-    as entry points, never on the rhs of any production, so that whenever they are
-    reduced, we know we're done.
-
-    Returns a pair: the modified grammar, and a dict {real_goal_nt:
-    synthesized_init_nt, ...} mapping each nonterminal in `goals` to its new
-    init_nt.
-    """
-
-    grammar = grammar.clone()
-    init_nts = {}
-    for goal_nt in goals:
-        init_nt = gensym(grammar.nonterminals, goal_nt)
-        grammar.nonterminals[init_nt] = [
-            [goal_nt]
-        ]
-        assert goal_nt not in init_nts
-        init_nts[goal_nt] = init_nt
-    return grammar, init_nts
+    return grammar.with_nonterminals(result)
 
 
 # *** Start sets and follow sets **********************************************
@@ -350,7 +328,7 @@ def make_start_set_cache(grammar, prods, start):
     return [suffix_start_list(prod.rhs) for prod in prods]
 
 
-def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
+def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
     """Compute all follow sets for nonterminals in a grammar.
 
     The follow set for a nonterminal `A`, as defined in the book, is "the set
@@ -364,8 +342,6 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
 
     Returns a default-dictionary mapping nts to follow sets.
     """
-
-    init_nts = list(init_nts)
 
     # Set of nonterminals already seen, including those we are in the middle of
     # analyzing. The algorithm starts at `goal` and walks all reachable
@@ -384,7 +360,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
 
     # `END` is $. It is, of course, in follow[each goal nonterminal]. It gets
     # into other nonterminals' follow sets through the subsumes relation.
-    for init_nt in init_nts:
+    for init_nt in grammar.init_nts:
         follow[init_nt].add(END)
 
     def visit(nt):
@@ -401,7 +377,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts):
                         subsumes_relation.add((symbol, nt))
                     follow[symbol] |= after
 
-    for nt in init_nts:
+    for nt in grammar.init_nts:
         visit(nt)
 
     # Now iterate to a fixed point on the subsumes relation.
@@ -484,7 +460,7 @@ def expand_all_optional_elements(grammar):
                 prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
 
-    return Grammar(expanded_grammar, grammar.variable_terminals), prods, prods_with_indexes_by_nt
+    return grammar.with_nonterminals(expanded_grammar), prods, prods_with_indexes_by_nt
 
 
 def make_epsilon_free_step_1(grammar):
@@ -501,23 +477,24 @@ def make_epsilon_free_step_1(grammar):
             return Optional(e)
         return e
 
-    return Grammar({
+    return grammar.with_nonterminals({
         nt: [[hack(e) for e in rhs]
              for rhs in rhs_list]
         for nt, rhs_list in grammar.nonterminals.items()
-    }, grammar.variable_terminals)
+    })
 
 
-def make_epsilon_free_step_2(grammar, goal_nts):
+def make_epsilon_free_step_2(grammar):
     """Return a clone of `grammar` with empty right-hand sides removed.
 
     All empty productions are removed except any for the goal nonterminals,
     so the grammar still recognizes the same language.
     """
-    return Grammar({
+    goal_nts = set(grammar.goals())
+    return grammar.with_nonterminals({
         nt: [rhs for rhs in rhs_list if len(rhs) > 0 or nt in goal_nts]
         for nt, rhs_list in grammar.nonterminals.items()
-    }, grammar.variable_terminals)
+    })
 
 
 # *** The path algorithm ******************************************************
@@ -709,9 +686,8 @@ def assert_items_are_compatible(grammar, prods, items):
 
 class PgenContext:
     """ The immutable part of the parser generator's data. """
-    def __init__(self, grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow):
+    def __init__(self, grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow):
         self.grammar = grammar
-        self.init_nts = OrderedFrozenSet(init_nts)
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
         self.start_set_cache = start_set_cache
@@ -1096,7 +1072,7 @@ class State:
                 context.raise_shift_reduce_conflict(self, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if prod.nt in context.init_nts else -prod_index - 1
+            action_row[t] = ACCEPT if isinstance(prod.nt, InitNt) else -prod_index - 1
         ctn_row = {nt: get_state_index(State(context, ss, self))
                    for nt, ss in ctn_items.items()}
         self.action_row = action_row
@@ -1138,7 +1114,7 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     return OrderedFrozenSet(result)
 
 
-def analyze_states(context, prods, init_nt_map, *, verbose=False, progress=False):
+def analyze_states(context, prods, *, verbose=False, progress=False):
     """The core of the parser generation algorithm."""
 
     # There is one state for each reachable set of LR items.
@@ -1163,8 +1139,8 @@ def analyze_states(context, prods, init_nt_map, *, verbose=False, progress=False
 
     # Compute the start states.
     init_state_map = {}
-    for goal_nt, init_nt in init_nt_map.items():
-        init_prod_index = prods.index(Prod(init_nt, 0, [goal_nt], removals=[]))
+    for init_nt in context.grammar.init_nts:
+        init_prod_index = prods.index(Prod(init_nt, 0, [init_nt.goal], removals=[]))
         start_item = context.make_lr_item(init_prod_index,
                                           0,
                                           lookahead=None,
@@ -1173,7 +1149,7 @@ def analyze_states(context, prods, init_nt_map, *, verbose=False, progress=False
             init_state = State(context, [])
         else:
             init_state = State(context, [start_item])
-        init_state_map[goal_nt] = get_state_index(init_state)
+        init_state_map[init_nt.goal] = get_state_index(init_state)
 
     # Turn the crank.
     i = 0
@@ -1193,33 +1169,29 @@ def analyze_states(context, prods, init_nt_map, *, verbose=False, progress=False
     return states, init_state_map
 
 
-def generate_parser(out, grammar, goal_nts, *, target='python',
+def generate_parser(out, grammar, *, target='python',
                     verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
-    goal_nts = list(goal_nts)  # iterate this only once
     assert target in ('python', 'rust')
 
     # Step by step, we check the grammar and lower it to a more primitive form.
-    grammar.check_valid_goals(goal_nts)
-    grammar = expand_function_nonterminals(grammar, goal_nts)
+    grammar = expand_function_nonterminals(grammar)
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
-    grammar, init_nt_map = add_init_nonterminals(grammar, goal_nts)
-    init_nts = list(init_nt_map.values())
     grammar = make_epsilon_free_step_1(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(grammar)
-    grammar = make_epsilon_free_step_2(grammar, goal_nts)
+    grammar = make_epsilon_free_step_2(grammar)
 
     # Now the grammar is in its final form. Compute information about it that
     # we can cache and use during the main part of the algorithm below.
     start = start_sets(grammar)
     start_set_cache = make_start_set_cache(grammar, prods, start)
-    follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache, init_nts)
-    context = PgenContext(grammar, init_nts, prods, prods_with_indexes_by_nt, start_set_cache, follow)
+    follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache)
+    context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
-    states, init_state_map = analyze_states(context, prods, init_nt_map,
-                                            verbose=verbose, progress=progress)
+    states, init_state_map = analyze_states(context, prods, verbose=verbose,
+                                            progress=progress)
 
     # Finally, dump the output.
     if target == 'rust':
@@ -1232,24 +1204,24 @@ class Parser:
     pass
 
 
-def compile_multi(grammar, goals):
+def compile_multi(grammar):
     assert isinstance(grammar, Grammar)
-    goal_nts = list(goals)
     out = io.StringIO()
-    generate_parser(out, grammar, goal_nts)
+    generate_parser(out, grammar)
     scope = {}
     ##print(out.getvalue())
     exec(out.getvalue(), scope)
     parser = Parser()
-    for goal_nt in goal_nts:
+    for goal_nt in grammar.goals():
         name = "parse_" + goal_nt
         setattr(parser, name, scope[name])
     return parser
 
 
-def compile(grammar, goal):
+def compile(grammar):
     assert isinstance(grammar, Grammar)
-    return getattr(compile_multi(grammar, [goal]), "parse_" + goal)
+    [goal] = grammar.goals()
+    return getattr(compile_multi(grammar), "parse_" + goal)
 
 
 # *** Fun demo ****************************************************************

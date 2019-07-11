@@ -20,7 +20,7 @@ tokenize_emug = LexicalGrammar(
     )
 
 
-parse_emug_generic = gen.compile(parse_pgen.load_grammar("emug.pgen")[0], "grammar")
+parse_emug_generic = gen.compile(parse_pgen.load_grammar("emug.pgen"))
 
 
 SIGIL_FALSE = '~'
@@ -225,7 +225,7 @@ class EmugBuilder:
         return no_lt_here
 
 
-def finish_grammar(nt_defs):
+def finish_grammar(nt_defs, goals):
     terminal_set = set()
 
     def hack_rhs(rhs):
@@ -259,9 +259,9 @@ def finish_grammar(nt_defs):
         if t in grammar:
             raise ValueError("grammar contains both a terminal `{}` and nonterminal {}".format(t, t))
 
-    return gen.Grammar(grammar, variable_terminals)
+    return gen.Grammar(grammar, goals, variable_terminals)
 
 
-def parse_emug(text, filename=None):
+def parse_emug(text, filename=None, goals=None):
     tokens = tokenize_emug(text, filename=filename)
-    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()))
+    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()), goals=goals)
