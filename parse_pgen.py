@@ -10,6 +10,7 @@ from grammar import Grammar, Optional
 import gen
 import pprint
 import parse_pgen_generated
+import sys
 import unittest
 from collections import namedtuple
 
@@ -211,4 +212,11 @@ class ParsePgenTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    if sys.argv[1:] == ['--regenerate']:
+        regenerate()
+    elif sys.argv[1:2] == ['--test']:
+        del sys.argv[1]
+        unittest.main()
+    else:
+        print("usage: ./parse_pgen.py [--renegerate|--test]")
+        sys.exit(1)
