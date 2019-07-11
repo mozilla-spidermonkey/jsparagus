@@ -197,16 +197,16 @@ class ParsePgenTestCase(unittest.TestCase):
         self.assertEqual(grammar.variable_terminals, pgen_grammar.variable_terminals)
         self.assertEqual(grammar.goals(), ['grammar'])
 
+        with open(parse_pgen_generated.__file__) as f:
+            pre_generated = f.read()
+
         import io
         out = io.StringIO()
         gen.generate_parser(out, grammar)
         self_generated = out.getvalue()
 
-        with open(parse_pgen_generated.__file__) as f:
-            pre_generated = f.read()
-
         self.maxDiff = None
-        self.assertEqual(self_generated, pre_generated)
+        self.assertEqual(pre_generated, self_generated)
 
 
 if __name__ == '__main__':
