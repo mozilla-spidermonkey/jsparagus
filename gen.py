@@ -1118,22 +1118,23 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
     """The core of the parser generation algorithm."""
 
     # There is one state for each reachable set of LR items.
-    # We assign each reachable state a number, its index in `states`.
+    # Each reachable state's id is its index in `states`.
     states = []
-    itemsets_to_state_index = {}
+    states_by_key = {}
     todo = collections.deque()
 
     def get_state_index(successor):
         """ Get a number for a state, assigning a new number if needed. """
         assert isinstance(successor, State)
-        if successor in itemsets_to_state_index:
-            state = states[itemsets_to_state_index[successor]]
+        state = states_by_key.get(successor.key)
+        if state is not None:
             if state.update(successor):
                 todo.append(state)
         else:
             state = successor
-            itemsets_to_state_index[state] = state.id = len(states)
+            state.id = len(states)
             states.append(state)
+            states_by_key[state.key] = state
             todo.append(state)
         return state.id
 
