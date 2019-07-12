@@ -291,7 +291,6 @@ def make_start_set_cache(grammar, prods, start):
 
     (The cache is for speed, since seq_start was being called millions of times.)
     """
-    start = start_sets(grammar)
 
     def suffix_start_list(rhs):
         sets = [OrderedFrozenSet([EMPTY])]
