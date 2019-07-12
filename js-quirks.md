@@ -5,7 +5,7 @@ its syntactic quirks, with an eye toward actually implementing a parser
 from scratch.
 
 Problems are rated in terms of difficulty, from `(*)` = easy to `(***)`
-= hard. We'll start with the easiest problems.
+= hard. We’ll start with the easiest problems.
 
 
 ### Dangling else (*)
@@ -28,8 +28,8 @@ operator precedence for this.
 Yacc aside: This should seem a little outrageous at first, as `else` is
 hardly an operator. It helps if you understand what Yacc is doing. In LR
 parsers, this kind of ambiguity in the grammar manifests as a
-shift-reduce conflict. In this case, when we've already parsed `if (
-Expression ) Statement` and are looking at `else`, it's unclear to Yacc
+shift-reduce conflict. In this case, when we’ve already parsed `if (
+Expression ) Statement` and are looking at `else`, it’s unclear to Yacc
 whether to reduce the if-statement or shift `else`. Yacc does not offer
 a feature that lets us just say "always shift `else` here"; but there
 *is* a Yacc feature that lets us resolve shift-reduce conflicts in a
@@ -37,8 +37,8 @@ rather odd, indirect way: operator precedence.  We can resolve this
 conflict by making `else` higher-precedence than the preceding symbol
 `)`.
 
-Alternatively, I believe it's equivalent to add "[lookahead /= `else`]"
-at the end of the IfStatement production that doesn't have an `else`.
+Alternatively, I believe it’s equivalent to add "[lookahead /= `else`]"
+at the end of the IfStatement production that doesn’t have an `else`.
 
 
 ### Conditional keywords (*)
@@ -51,12 +51,19 @@ keywords are in the *Keyword* list; the rest are not. New syntax that
 happened to be introduced around the same time as strict mode was
 awarded keyword status in strict mode. The rules are scattered through
 the spec. All this interacts with `\u0065` Unicode escape sequences
-somehow. It's just unbelievably confusing.
+somehow. It’s just unbelievably confusing.
 
 *   `yield` is both a *Keyword* and a *ReservedWord*. However, it can be
     used as an identifier except in generators.
 
-*   `await` is like that, but in async functions. Also it's not a valid
+    This means that `yield - 1` is valid both inside and outside
+    generators, with different meanings. Outside a generator, it’s
+    subtraction. Inside, it yields the value **-1**.
+
+    That reminds me of the Groucho Marx line: Outside of a dog, a book
+    is a man’s best friend. Inside of a dog it’s too dark to read.
+
+*   `await` is like that, but in async functions. Also it’s not a valid
     identifier in modules.
 
 *   `let` is not a *Keyword* or a *ReservedWord*. Usually it can be an
@@ -73,12 +80,12 @@ somehow. It's just unbelievably confusing.
 
     In strict mode, `let` is not a valid *Identifier*.
 
-*   `static` is similar. It's a valid identifier, except in strict
-    mode. It's only special at the beginning of a *ClassElement*.
+*   `static` is similar. It’s a valid identifier, except in strict
+    mode. It’s only special at the beginning of a *ClassElement*.
 
-*   `async` is similar, but trickier. It's an identifier. It is special
-    only if it's marking an `async` function, method, or arrow function
-    (the tough case, since you won't know it's an arrow function until
+*   `async` is similar, but trickier. It’s an identifier. It is special
+    only if it’s marking an `async` function, method, or arrow function
+    (the tough case, since you won’t know it’s an arrow function until
     you see the `=>`, possibly much later).
 
     ```js
@@ -146,13 +153,13 @@ include:
     enough to detect class boundaries, "use strict" directives in
     functions, and function boundaries.
 
-*   It's a SyntaxError to have bindings named `eval` or `arguments` in
+*   It’s a SyntaxError to have bindings named `eval` or `arguments` in
     strict mode code, or to assign to `eval` or `arguments`.
 
-*   It's a SyntaxError to have two argument bindings with the same name
+*   It’s a SyntaxError to have two argument bindings with the same name
     in a strict function.
     
-    Interestingly, you don't always know if you're in strict mode or not
+    Interestingly, you don’t always know if you’re in strict mode or not
     when parsing arguments.
     
     ```js
@@ -178,10 +185,10 @@ Some early errors are basically syntactic. Others are not.
 
 This is entangled with lazy compilation: "early errors" often involve a
 retrospective look at an arbitrarily large glob of code we just parsed,
-but in Beast Mode we're not building an AST. In fact we would like to be
+but in Beast Mode we’re not building an AST. In fact we would like to be
 doing as little bookkeeping as possible.
 
-Even setting that aside, every early error is a special case, and it's
+Even setting that aside, every early error is a special case, and it’s
 just a ton of rules that all have to be implemented by hand.
 
 <!--
@@ -192,7 +199,7 @@ Early Error rules:
 
     *   Rules that affect the set of keywords (character sequences that
         match *IdentifierName* but are not allowed as binding names) based
-        on whether or not we're in strict mode code, or in a
+        on whether or not we’re in strict mode code, or in a
         *Module*. Affected identifiers include `arguments`, `eval`, `yield`,
         `await`, `let`, `implements`, `interface`, `package`, `private`,
         `protected`, `public`, `static`.
@@ -214,17 +221,17 @@ Early Error rules:
 
     *   Lexical variable names have to be unique within a scope:
 
-        *   Lexical variables (`let` and `const`) can't be declared more
+        *   Lexical variables (`let` and `const`) can’t be declared more
             than once in a block, or both lexically declared and
             declared with `var`.
 
-        *   Lexically declared variables in a function body can't have the same
+        *   Lexically declared variables in a function body can’t have the same
             name as argument bindings.
 
-    *   A lexical variable can't be named `let`.
+    *   A lexical variable can’t be named `let`.
 
-    *   In strict mode code, bindings can't be named `arguments` or `eval`,
-        and it's not legal to assign to `arguments` or `eval`.
+    *   In strict mode code, bindings can’t be named `arguments` or `eval`,
+        and it’s not legal to assign to `arguments` or `eval`.
 
     *   Common-sense rules dealing with unicode escape sequences in
         identifiers.
@@ -244,7 +251,7 @@ Early Error rules:
 
 *   `const x;` without an initializer is a Syntax Error.
 
-*   A direct substatement of an `if` statement, loop statement, can't be a labelled
+*   A direct substatement of an `if` statement, loop statement, can’t be a labelled
     `function`.
 
 *   Early errors are used to hook up cover grammars.
@@ -312,12 +319,12 @@ Wrinkles:
 
 3.  A few semicolons are never optional, like the semicolons in `for (;;)`.
 
-    This means there's a semicolon in the grammar that is optionally
+    This means there’s a semicolon in the grammar that is optionally
     optional! This one:
 
     > *LexicalDeclaration* : *LetOrConst* *BindingList* `;`
 
-    It's usually optional, but not if this is the *LexicalDeclaration*
+    It’s usually optional, but not if this is the *LexicalDeclaration*
     in `for (let i=0; i < 9; i++)`!
 
 4.  Semicolons are not inserted only as a last resort to avoid
@@ -330,8 +337,8 @@ Wrinkles:
 
 A recursive descent parser implements ASI by calling a special method
 every time it needs to parse a semicolon that might be optional.  The
-special method has to peek at the next token and consume it only if it's
-a semicolon. This would not be so bad if it weren't for slashes.
+special method has to peek at the next token and consume it only if it’s
+a semicolon. This would not be so bad if it weren’t for slashes.
 
 In a parser generator, ASI is a tough problem. Getting started is easy:
 
@@ -353,7 +360,7 @@ harder than it looks.
 
 *(entangled with: ASI, slashes)*
 
-Line breaks aren't allowed in certain places. For example, the following
+Line breaks aren’t allowed in certain places. For example, the following
 is not a valid program:
 
     throw                 // SyntaxError
@@ -370,7 +377,7 @@ The indentation is misleading; actually ASI inserts a semicolon at the
 end of the first line: `return; g();`. (This function always returns
 undefined. The second statement is never reached.)
 
-I'm not sure why these rules exist, but it's probably because (back in
+I’m not sure why these rules exist, but it’s probably because (back in
 the Netscape days) users complained about the bizarre behavior of
 automatic semicolon insertion, and so some special do-what-I-mean hacks
 were put in.
@@ -379,7 +386,7 @@ This is specified with a weird special thing in the grammar:
 
 > *ReturnStatement* : `return` [no *LineTerminator* here] *Expression* `;`
 
-This is called a *restricted production*, and it's unfortunately
+This is called a *restricted production*, and it’s unfortunately
 necessary to go through them one by one, because there are several
 kinds. Note that the particular hack required to parse them in a
 recursive descent parser is a little bit different each time.
@@ -387,7 +394,7 @@ recursive descent parser is a little bit different each time.
 *   After `continue`, `break`, or `return`, a line break triggers ASI.
 
     The relevant productions are all statements, and in each case
-    there's an alternative production that ends immediately with a
+    there’s an alternative production that ends immediately with a
     semicolon: `continue ;` `break ;` and `return ;`.
 
     Note that the alternative production is *not* restricted: e.g. a
@@ -407,7 +414,7 @@ recursive descent parser is a little bit different each time.
 
     Here the alternative production is simply `yield`, not `yield ;`.
 
-*   In a post-increment or post-decrement expression, there can't be a
+*   In a post-increment or post-decrement expression, there can’t be a
     line break before `++` or `--`.
 
     The purpose of this rule is subtle. It triggers ASI and thus prevents
@@ -440,7 +447,7 @@ approaches, you can skip the first two.
     `TokenType::LeftParenAfterLineBreak`.  Of course the parser
     generator can treat these exactly the same in normal cases, and
     automatically generate identical table entries (or whatever) except
-    in states where there's a relevant restricted production.
+    in states where there’s a relevant restricted production.
 
 *   Add a special LineTerminator token. Normally, the lexer skips
     newlines and never emits this token. However, if the current state
@@ -450,12 +457,12 @@ approaches, you can skip the first two.
     as appropriate.
 
 *   When in a state that has a relevant restricted production, change
-    states if there's a line break before the next token.  That is,
-    split each such state into two: the one we stay in when there's not
+    states if there’s a line break before the next token.  That is,
+    split each such state into two: the one we stay in when there’s not
     a line break, and the one we jump to if there is a line break.
 
-In all cases it'll be hard to have confidence that the resulting parser
-generator is really sound. I don't know exactly what property of the few
+In all cases it’ll be hard to have confidence that the resulting parser
+generator is really sound. I don’t know exactly what property of the few
 special uses in the ES grammar makes them seem benign.
 
 
@@ -463,8 +470,8 @@ special uses in the ES grammar makes them seem benign.
 
 *(entangled with: ASI, restricted productions)*
 
-When you see `/` in a JS program, you don't know if that's a
-division operator or the start of a regular expression unless you've
+When you see `/` in a JS program, you don’t know if that’s a
+division operator or the start of a regular expression unless you’ve
 been paying attention up to that point.
 
 [The spec:](https://tc39.es/ecma262/#sec-ecmascript-language-lexical-grammar)
@@ -489,7 +496,7 @@ var of = 6; of / 2      // `/` after `of` is division
 throw /x/;              // `/` after `throw` is regexp
 Math.throw / 2;         // `/` after `throw` is division
 
-++/x/.lastIndex;        // '/' after '++' is regexp
+++/x/.lastIndex;        // `/` after `++` is regexp
 n++ / 2;                // `/` after `++` is division
 ```
 
@@ -497,12 +504,12 @@ So how can the spec be implemented?
 
 In a recursive descent parser, you have to tell the lexer which goal
 symbol to use every time you ask for a token. And you have to make sure,
-if you look ahead at a token, but *don't* consume it, and fall back on
+if you look ahead at a token, but *don’t* consume it, and fall back on
 another path that can accept a *RegularExpressionLiteral* or
 *DivPunctuator*, that you did not initially lex it incorrectly. We have
 assertions for this and it is a bit of a nightmare when we have to touch
 it (which is thankfully rare). Part of the problem is that the token
-you're peeking ahead at might not be part of the same production at all.
+you’re peeking ahead at might not be part of the same production at all.
 Thanks to ASI, it might be the start of the next statement, which will
 be parsed in a faraway part of the Parser.
 
@@ -522,7 +529,7 @@ JS engines *lazily compile* function bodies. During parsing, when the
 engine sees a `function`, it switches to a high-speed parsing mode
 (which I will call “Beast Mode”) that just skims the function and checks
 for syntax errors. Beast Mode does not compile the code. Beast Mode
-doesn't even create AST nodes. All that will be done later, on demand,
+doesn’t even create AST nodes. All that will be done later, on demand,
 the first time the function is called.
 
 The point is to get through parsing *fast*, so that the script can start
@@ -544,7 +551,7 @@ nested function. So scoping, which otherwise could be done as a separate
 phase of compilation, must be done during parsing in Beast Mode.
 
 Getting the scoping of arrow functions right while parsing is tricky,
-because it's often not possible to know when you're entering a scope
+because it’s often not possible to know when you’re entering a scope
 until later. Consider parsing `(a`. This could be the beginning of an
 arrow function, or not; we might not know until after we reach the
 matching `)`, which could be a long way away.
@@ -561,8 +568,8 @@ statement that starts with something like this:
 let f = (a
 ```
 
-The parser doesn't know yet if `(a ...` is *ArrowParameters* or just a
-*ParenthesizedExpression*. Either is possible. We'll know when either
+The parser doesn’t know yet if `(a ...` is *ArrowParameters* or just a
+*ParenthesizedExpression*. Either is possible. We’ll know when either
 (1) we see something that rules out the other case:
 
 ```js
@@ -590,7 +597,7 @@ grammar) that say arrow functions’ parameters must match
 So after the initial parse, the implementation must somehow check that
 the *CoverParenthesizedExpressionAndArrowParameterList* really is valid
 in context. This complicates lazy compilation because in Beast Mode we
-are not even building an AST. It's not easy to go back and check.
+are not even building an AST. It’s not easy to go back and check.
 
 Something similar happens in a few other cases: the spec is written as
 though syntactic rules are applied after the fact:
@@ -611,7 +618,7 @@ though syntactic rules are applied after the fact:
 
 *   *LeftHandSideExpression* is used to the left of `=` in assignment,
     and as the operand of postfix `++` and `--`. But this is way too lax;
-    most expressions shouldn't be assigned to:
+    most expressions shouldn’t be assigned to:
     
     ```js
     1 = 0;  // matches the formal grammar, SyntaxError by an early error rule
