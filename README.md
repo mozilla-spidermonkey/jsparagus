@@ -110,7 +110,6 @@ reductions = [
     ('prim', 1, lambda builder, x0: builder.prim_P0(x0)),
     ('prim', 1, lambda builder, x0: builder.prim_P1(x0)),
     ('prim', 3, lambda builder, x0, x1, x2: builder.prim_P2(x0, x1, x2)),
-    ('expr_1', 1, lambda builder, x0: builder.expr_1_P0(x0)),
 ]
 
 class DefaultBuilder:
@@ -125,8 +124,6 @@ class DefaultBuilder:
     def prim_P0(self, *args): return ('prim', 0, list(args))
     def prim_P1(self, *args): return ('prim', 1, list(args))
     def prim_P2(self, *args): return ('prim', 2, list(args))
-    def expr_1_P0(self, *args): return ('expr_1', 0, list(args))
-
 
 parse_expr = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)
 ```
