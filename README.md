@@ -174,21 +174,22 @@ It's *all* limitations, but I'll try to list the ones that are relevant to parsi
     contextually selecting the tokenizer goal symbol;
     and emitting good error messages)
 
-*   The output is a fairly literal-minded parse tree, really too literal.
-
-*   No support for feedback from syntactic context to lexical analysis
-    (selecting the lexical goal symbol).
-
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `)` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
     `a b` produces "expected one of {'-', '/', '+', '*', ')', None}, got 'VAR'".
 
-*   No support for Rust output yet.
+*   Rust support is extremely rudimentary.
 
-*   No support for providing any kind of advice to the lexer yet. This
-    is needed for resolving the conflict in the lexical grammar between
-    RegExps and division operators.
+*   No support for feedback from syntactic context to lexical analysis
+    (selecting the lexical goal symbol).
+
+    This is needed for resolving the conflict in the lexical grammar
+    between RegExps and division operators, at least. It might also be
+    used for conditional keywords and for parsing TemplateTail.
+
+*   No table compaction or table optimization. I think there's plenty of
+    low-hanging fruit there.
 
 
 ## What I learned, what I wonder
