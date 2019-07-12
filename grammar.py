@@ -302,7 +302,7 @@ class Grammar:
                 if action.method in methods:
                     if len(action.args) != methods[action.method]:
                         raise ValueError("invalid grammar: method {!r} is called with {} argument(s) and with {} argument(s)"
-                                         .format(len(action.args), methods[action.method]))
+                                         .format(action.method, len(action.args), methods[action.method]))
                     for expr in action.args:
                         gather_methods(expr)
                 else:
