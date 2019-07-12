@@ -68,9 +68,11 @@ class OrderedFrozenSet:
     Two OrderedFrozenSets, x and y, that have different insertion order are
     still considered equal (x == y) if they contain the same elements.
     """
+    __slots__ = ['_data', '_hash']
 
     def __init__(self, values=()):
         self._data = {v: 1 for v in values}
+        self._hash = None
 
     def __repr__(self):
         return self.__class__.__name__ + "(" + repr(list(self)) + ")"
@@ -91,7 +93,9 @@ class OrderedFrozenSet:
         return isinstance(other, OrderedFrozenSet) and self._data == other._data
 
     def __hash__(self):
-        return hash(tuple(hash(v) for v in self._data))
+        if self._hash is None:
+            self._hash = hash(frozenset(self._data))
+        return self._hash
 
     def __and__(self, other):
         return OrderedFrozenSet(v for v in self._data if v in other)
