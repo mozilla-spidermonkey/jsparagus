@@ -698,7 +698,6 @@ class PgenContext:
         Such silly items can exist; but we would only care if it caused
         get_state_index to treat equivalent states as distinct. I haven't seen
         that happen for any grammar yet.
-
         """
 
         grammar = self.grammar
@@ -862,7 +861,16 @@ class State:
     LRItems in `self._lr_items`.)
     """
 
-    __slots__ = ['context', '_lr_items', '_debug_traceback', 'key', '_hash', 'action_row', 'ctn_row', 'id']
+    __slots__ = [
+        'context',
+        '_lr_items', # OrderedSet of LRItems, the actual content here
+        '_debug_traceback',  # State from which this one was first reached
+        'key',  # str, projection from _lr_items used to merge similar-enough states
+        '_hash',  # int, probably useless
+        'action_row',  # output of analysis: {terminal: action}
+        'ctn_row',  # output of analysis: {nonterminal: state_id}
+        'id'  # int, small unique id
+    ]
 
     def __init__(self, context, items, debug_traceback=None):
         self.context = context

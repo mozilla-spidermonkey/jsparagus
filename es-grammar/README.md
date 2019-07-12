@@ -44,7 +44,6 @@ Here are the differences between *es.emug*, the actual ES grammar, and
 *es-simplified.emug*, the simplified version that pgen can actually
 handle:
 
-
 *   Syntactic layer only.
 
     The simplified grammar does not contain the lexical grammar or any
