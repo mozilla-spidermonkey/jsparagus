@@ -417,12 +417,14 @@ structure makes it easier to get into and out of parsing at run time.
 When an init nonterminal is matched, we take the "accept" action rather than
 a "reduce" action.
 """
+InitNt.__iter__ = None
 
 
 # Optional elements. These are expanded out before states are calculated,
 # so the core of the algorithm never sees them.
 Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
+Optional.__iter__ = None
 
 
 def is_optional(element):
@@ -563,4 +565,3 @@ Var = collections.namedtuple("Var", "name")
 Var.__doc__ = """\
 Var(name) represents the run-time value of the parameter with the given name.
 """
-
