@@ -61,6 +61,7 @@ TERMINAL_NAMES = {
     "IDENT": "Identifier",
     "STR": "String",
     "=": "EqualSign",
+    "=>": "Arrow",
 }
 
 def write_rust_parser(out, grammar, states, prods, init_state_map):

@@ -1,4 +1,5 @@
 import pgen_runtime
+from pgen_runtime import Apply
 
 actions = [
     # 0. <empty>
@@ -68,10 +69,10 @@ actions = [
     {None: -9, 'nt': -9, 'goal': -9},
 
     # 22. "nt" IDENT "{" IDENT
-    {';': -20, '?': -20, 'IDENT': -20, 'STR': -20},
+    {';': -21, '?': -21, '=>': -21, 'IDENT': -21, 'STR': -21},
 
     # 23. "nt" IDENT "{" STR
-    {';': -21, '?': -21, 'IDENT': -21, 'STR': -21},
+    {';': -22, '?': -22, '=>': -22, 'IDENT': -22, 'STR': -22},
 
     # 24. "nt" IDENT "{" prods
     {'}': 32, 'IDENT': 22, 'STR': 23},
@@ -80,25 +81,25 @@ actions = [
     {'}': -13, 'IDENT': -13, 'STR': -13},
 
     # 26. "nt" IDENT "{" terms
-    {';': 34, 'IDENT': 22, 'STR': 23},
+    {';': 34, '=>': 35, 'IDENT': 22, 'STR': 23},
 
     # 27. "nt" IDENT "{" term
-    {';': -16, 'IDENT': -16, 'STR': -16},
+    {';': -17, '=>': -17, 'IDENT': -17, 'STR': -17},
 
     # 28. "nt" IDENT "{" symbol
-    {'?': 36, ';': -18, 'IDENT': -18, 'STR': -18},
+    {'?': 38, ';': -19, '=>': -19, 'IDENT': -19, 'STR': -19},
 
     # 29. "goal" "nt" IDENT "{"
-    {'}': 37, 'IDENT': 22, 'STR': 23},
+    {'}': 39, 'IDENT': 22, 'STR': 23},
 
     # 30. "token" IDENT "=" STR
-    {';': 39},
+    {';': 41},
 
     # 31. "var" "token" IDENT ";"
     {'nt': -6, 'goal': -6, 'token': -6, 'var': -6},
 
     # 32. "nt" IDENT "{" prods "}"
-    {None: -10, 'nt': -10, 'goal': -10},
+    {None: -11, 'nt': -11, 'goal': -11},
 
     # 33. "nt" IDENT "{" prods prod
     {'}': -14, 'IDENT': -14, 'STR': -14},
@@ -106,22 +107,34 @@ actions = [
     # 34. "nt" IDENT "{" terms ";"
     {'}': -15, 'IDENT': -15, 'STR': -15},
 
-    # 35. "nt" IDENT "{" terms term
-    {';': -17, 'IDENT': -17, 'STR': -17},
+    # 35. "nt" IDENT "{" terms "=>"
+    {'IDENT': 42},
 
-    # 36. "nt" IDENT "{" symbol "?"
-    {';': -19, 'IDENT': -19, 'STR': -19},
+    # 36. "nt" IDENT "{" terms action
+    {';': 43},
 
-    # 37. "goal" "nt" IDENT "{" "}"
-    {None: -11, 'nt': -11, 'goal': -11},
+    # 37. "nt" IDENT "{" terms term
+    {';': -18, '=>': -18, 'IDENT': -18, 'STR': -18},
 
-    # 38. "goal" "nt" IDENT "{" prods
-    {'}': 40, 'IDENT': 22, 'STR': 23},
+    # 38. "nt" IDENT "{" symbol "?"
+    {';': -20, '=>': -20, 'IDENT': -20, 'STR': -20},
 
-    # 39. "token" IDENT "=" STR ";"
+    # 39. "goal" "nt" IDENT "{" "}"
+    {None: -10, 'nt': -10, 'goal': -10},
+
+    # 40. "goal" "nt" IDENT "{" prods
+    {'}': 44, 'IDENT': 22, 'STR': 23},
+
+    # 41. "token" IDENT "=" STR ";"
     {'nt': -5, 'goal': -5, 'token': -5, 'var': -5},
 
-    # 40. "goal" "nt" IDENT "{" prods "}"
+    # 42. "nt" IDENT "{" terms "=>" IDENT
+    {';': -23},
+
+    # 43. "nt" IDENT "{" terms action ";"
+    {'}': -16, 'IDENT': -16, 'STR': -16},
+
+    # 44. "goal" "nt" IDENT "{" prods "}"
     {None: -12, 'nt': -12, 'goal': -12},
 
 ]
@@ -153,10 +166,12 @@ ctns = [
     {},
     {'prod': 33, 'terms': 26, 'term': 27, 'symbol': 28},
     {},
-    {'term': 35, 'symbol': 28},
+    {'action': 36, 'term': 37, 'symbol': 28},
     {},
     {},
-    {'prods': 38, 'prod': 25, 'terms': 26, 'term': 27, 'symbol': 28},
+    {'prods': 40, 'prod': 25, 'terms': 26, 'term': 27, 'symbol': 28},
+    {},
+    {},
     {},
     {},
     {},
@@ -166,6 +181,8 @@ ctns = [
     {},
     {},
     {'prod': 33, 'terms': 26, 'term': 27, 'symbol': 28},
+    {},
+    {},
     {},
     {},
 ]
@@ -179,19 +196,21 @@ reductions = [
     ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.token_def_P1(x0, x1, x2, x3)),
     ('nt_defs', 1, lambda builder, x0: builder.nt_defs_P0(x0)),
     ('nt_defs', 2, lambda builder, x0, x1: builder.nt_defs_P1(x0, x1)),
-    ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def_P0(x0, x1, x2, None, x3)),
-    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P0(x0, x1, x2, x3, x4)),
-    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P1(x0, x1, x2, x3, None, x4)),
-    ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def_P1(x0, x1, x2, x3, x4, x5)),
+    ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def_P0(None, x0, x1, x2, None, x3)),
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P0(x0, x1, x2, x3, None, x4)),
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def_P0(None, x0, x1, x2, x3, x4)),
+    ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def_P0(x0, x1, x2, x3, x4, x5)),
     ('prods', 1, lambda builder, x0: builder.prods_P0(x0)),
     ('prods', 2, lambda builder, x0, x1: builder.prods_P1(x0, x1)),
-    ('prod', 2, lambda builder, x0, x1: builder.prod_P0(x0, x1)),
+    ('prod', 2, lambda builder, x0, x1: builder.prod_P0(x0, None, x1)),
+    ('prod', 3, lambda builder, x0, x1, x2: builder.prod_P0(x0, x1, x2)),
     ('terms', 1, lambda builder, x0: builder.terms_P0(x0)),
     ('terms', 2, lambda builder, x0, x1: builder.terms_P1(x0, x1)),
     ('term', 1, lambda builder, x0: builder.term_P0(x0)),
     ('term', 2, lambda builder, x0, x1: builder.term_P1(x0, x1)),
     ('symbol', 1, lambda builder, x0: builder.symbol_P0(x0)),
     ('symbol', 1, lambda builder, x0: builder.symbol_P1(x0)),
+    ('action', 2, lambda builder, x0, x1: builder.action_P0(x0, x1)),
 ]
 
 class DefaultBuilder:
@@ -205,10 +224,11 @@ class DefaultBuilder:
     def nt_defs_P1(self, *args): return ('nt_defs', 1, list(args))
     def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
     def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
-    def nt_def_P1(self, *args): return ('nt_def', 1, list(args))
-    def nt_def_P1(self, *args): return ('nt_def', 1, list(args))
+    def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
+    def nt_def_P0(self, *args): return ('nt_def', 0, list(args))
     def prods_P0(self, *args): return ('prods', 0, list(args))
     def prods_P1(self, *args): return ('prods', 1, list(args))
+    def prod_P0(self, *args): return ('prod', 0, list(args))
     def prod_P0(self, *args): return ('prod', 0, list(args))
     def terms_P0(self, *args): return ('terms', 0, list(args))
     def terms_P1(self, *args): return ('terms', 1, list(args))
@@ -216,6 +236,7 @@ class DefaultBuilder:
     def term_P1(self, *args): return ('term', 1, list(args))
     def symbol_P0(self, *args): return ('symbol', 0, list(args))
     def symbol_P1(self, *args): return ('symbol', 1, list(args))
+    def action_P0(self, *args): return ('action', 0, list(args))
 
 
 parse_grammar = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)

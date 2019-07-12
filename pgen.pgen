@@ -4,50 +4,66 @@
 # specification language, and it's not clear why we should have two things.
 # Ignore this for now.
 
+var token IDENT;
+var token STR;
+token Eq = "=";
+token Arrow = "=>";
+token Semi = ";";
+token Token = "token";
+token Var = "var";
+token Nt = "nt";
+token Goal = "goal";
+token OpenBrace = "{";
+token CloseBrace = "}";
+token QuestionMark = "?";
+
 goal nt grammar {
-    token_defs? nt_defs;
+    token_defs? nt_defs => grammar;
 }
 
 nt token_defs {
-    token_def;
-    token_defs token_def;
+    token_def => singleton;
+    token_defs token_def => append;
 }
 
 nt token_def {
-    "token" IDENT "=" STR ";";
-    "var" "token" IDENT ";";
+    "token" IDENT "=" STR ";" => const_token;
+    "var" "token" IDENT ";" => var_token;
 }
 
 nt nt_defs {
-    nt_def;
-    nt_defs nt_def;
+    nt_def => singleton;
+    nt_defs nt_def => append;
 }
 
 nt nt_def {
-    "nt" IDENT "{" prods? "}";
-    "goal" "nt" IDENT "{" prods? "}";
+    "goal"? "nt" IDENT "{" prods? "}" => nt_def;
 }
 
 nt prods {
-    prod;
-    prods prod;
+    prod => singleton;
+    prods prod => append;
 }
 
 nt prod {
-    terms ";";
+    terms action? ";" =>  production;
 }
 
 nt terms {
-    term;
-    terms term;
+    term => singleton;
+    terms term => append;
 }
 
 nt term {
     symbol;
-    symbol "?";
+    symbol "?" => optional;
 }
 
 nt symbol {
     IDENT;
     STR;
+}
+
+nt action {
+    "=>" IDENT;
 }

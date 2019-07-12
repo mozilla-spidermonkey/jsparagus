@@ -13,6 +13,7 @@ pub enum Token {
     End,
     OpenBrace, // {
     EqualSign, // =
+    Arrow, // =>
     CloseBrace, // }
     String(String),
     Semicolon, // ;
@@ -30,6 +31,7 @@ impl Token {
             Token::Identifier(_) => TerminalId::Identifier,
             Token::End => TerminalId::End,
             Token::OpenBrace => TerminalId::OpenBrace,
+            Token::Arrow => TerminalId::Arrow,
             Token::EqualSign => TerminalId::EqualSign,
             Token::CloseBrace => TerminalId::CloseBrace,
             Token::String(_) => TerminalId::String,

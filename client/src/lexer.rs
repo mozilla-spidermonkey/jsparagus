@@ -59,7 +59,15 @@ where Iter: Iterator<Item=char>
             Some('{') => Token::OpenBrace,
             Some('}') => Token::CloseBrace,
             Some('?') => Token::QuestionMark,
-            Some('=') => Token::EqualSign,
+            Some('=') => {
+                match self.chars.peek() {
+                    Some('>') => {
+                        self.chars.next();
+                        Token::Arrow
+                    }
+                    _ => Token::EqualSign,
+                }
+            }
 
             Some('"') => {
                 let mut s = String::new();

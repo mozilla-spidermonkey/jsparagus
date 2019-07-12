@@ -15,7 +15,7 @@ import unittest
 from collections import namedtuple
 
 
-pgen_lexer = LexicalGrammar("goal nt var token { } ; ? =",
+pgen_lexer = LexicalGrammar("goal nt var token { } ; ? = =>",
                             r'([ \t\r\n]|#.*)*',
                             IDENT=r'[A-Za-z_](?:\w|[_-])*',
                             STR=r'"[^\\\n"]*"')
@@ -31,14 +31,14 @@ pgen_grammar = Grammar(
         ],
         'nt_defs': [['nt_def'], ['nt_defs', 'nt_def']],
         'nt_def': [
-            ['nt', 'IDENT', '{', gen.Optional('prods'), '}'],
-            ['goal', 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+            [Optional('goal'), 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
         ],
         'prods': [['prod'], ['prods', 'prod']],
-        'prod': [['terms', ';']],
+        'prod': [['terms', gen.Optional('action'), ';']],
         'terms': [['term'], ['terms', 'term']],
         'term': [['symbol'], ['symbol', '?']],
         'symbol': [['IDENT'], ['STR']],
+        'action': [['=>', 'IDENT']],
     },
     goal_nts=['grammar'],
     variable_terminals=['IDENT', 'STR']
@@ -99,19 +99,15 @@ class AstBuilder:
             goal_nts.append(nt)
         return grammar, goal_nts
 
-    def nt_def_P0(self, *args):
-        nt_kw, ident, lc, prods, rc = args
+    def nt_def_P0(self, goal_kw, nt_kw, ident, lc, prods, rc):
+        is_goal = goal_kw == "goal"
         assert (nt_kw, lc, rc) == ('nt', '{', '}')
-        return (False, ident, prods)
-    def nt_def_P1(self, *args):
-        goal_kw, nt_kw, ident, lc, prods, rc = args
-        assert (goal_kw, nt_kw, lc, rc) == ('goal', 'nt', '{', '}')
-        return (True, ident, prods)
+        return (is_goal, ident, prods)
 
     def prods_P0(self, prod): return [prod]
     def prods_P1(self, prods, prod): return prods + [prod]
 
-    def prod_P0(self, symbols, semi):
+    def prod_P0(self, symbols, action, semi):
         assert semi == ';'
         return symbols
 
@@ -130,6 +126,10 @@ class AstBuilder:
         assert sym[-1] == '"'
         chars = sym[1:-1]  # This is a bit sloppy.
         return Literal(chars)
+
+    def action_P0(self, arrow, ident):
+        assert arrow == '=>'
+        return ident
 
 def check_grammar(result):
     tokens, nonterminals, goal_nts = result
@@ -195,6 +195,7 @@ class ParsePgenTestCase(unittest.TestCase):
         import os
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
         grammar = load_grammar(filename)
+        self.maxDiff = None
         self.assertEqual(grammar.nonterminals, pgen_grammar.nonterminals)
         self.assertEqual(grammar.variable_terminals, pgen_grammar.variable_terminals)
         self.assertEqual(grammar.goals(), ['grammar'])
