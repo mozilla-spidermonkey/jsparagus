@@ -138,17 +138,6 @@ def check_lookahead_rules(grammar):
                                      grammar.production_to_str(nt, rhs_with_options))
 
 
-def gensym(nonterminals, nt):
-    """ Come up with a symbol name that's not already being used in the given grammar. """
-    assert nt in nonterminals
-    i = 0
-    sym = nt
-    while sym in nonterminals:
-        i += 1
-        sym = nt + "_" + str(i)
-    return sym
-
-
 def expand_function_nonterminals(grammar):
     """Replace function nonterminals with production lists.
 
@@ -156,14 +145,9 @@ def expand_function_nonterminals(grammar):
     ConditionalRhs objects from the grammar.
     """
 
-    # BUG: This use gensym() to create a bunch of new nonterminals, but without
-    # any mapping back to the originals. Therefore the gensym names appear in
-    # the parser output at run time. It would probably be OK to just use Apply
-    # objects as nonterminal names.
-
     assigned_names = {(goal, None): goal for goal in grammar.goals()}
     todo = collections.deque(assigned_names.keys())
-    result = {nt: None for nt in grammar.nonterminals}  # gensym needs all of them to exist
+    result = {nt: None for nt in grammar.nonterminals}  # maybe could start empty now
 
     def get_derived_name(nt, args):
         name = assigned_names.get((nt, args))
@@ -171,18 +155,23 @@ def expand_function_nonterminals(grammar):
             if args is None:
                 name = nt
             else:
-                name = gensym(result, nt)
+                name = Apply(nt, args)
             assigned_names[nt, args] = name
             todo.append((nt, args))
-            result[name] = None  # avoid gensym collisions
+            result[name] = None  # maybe unnecessary now
         return name
 
     def expand(nt, args):
         """ Return an rhs list, the expansion of grammar.nonterminals[nt](**args). """
 
+        if args is None:
+            args_dict = None
+        else:
+            args_dict = dict(args)
+
         def evaluate_arg(arg):
             if isinstance(arg, Var):
-                return args[arg.name]
+                return args_dict[arg.name]
             else:
                 return arg
 
@@ -192,7 +181,8 @@ def expand_function_nonterminals(grammar):
             elif is_optional(e):
                 return Optional(expand_element(e.inner))
             elif is_apply(e):
-                return get_derived_name(e.nt, tuple(evaluate_arg(arg) for _name, arg in e.args))
+                return get_derived_name(e.nt, tuple((name, evaluate_arg(arg))
+                                                    for name, arg in e.args))
             else:
                 return e
 
@@ -203,7 +193,7 @@ def expand_function_nonterminals(grammar):
             result = []
             for rhs in rhs_list:
                 if isinstance(rhs, ConditionalRhs):
-                    if args[rhs.param] == rhs.value:
+                    if args_dict[rhs.param] == rhs.value:
                         result.append(expand_rhs(rhs.rhs))
                 else:
                     result.append(expand_rhs(rhs))
@@ -214,7 +204,7 @@ def expand_function_nonterminals(grammar):
         else:
             fn = grammar.nonterminals[nt]
             assert len(args) == len(fn.params)
-            args = dict(zip(fn.params, args)) # expand tuple back to dict
+            args = tuple(zip(fn.params, args)) # create activation environment! are we having fun yet
             return expand_rhs_list(fn.body)
 
     while todo:

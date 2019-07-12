@@ -98,11 +98,13 @@ class Grammar:
                 validate_element(nt, i, j, e.inner, context_params)
                 return e
             elif isinstance(e, Apply):
-                if e.nt not in nonterminals:
+                # Either the application or the original parameterized
+                # production must be present in the dictionary.
+                if e not in nonterminals and e.nt not in nonterminals:
                     raise ValueError("invalid grammar: unrecognized nonterminal in production `grammar[{!r}][{}][{}]`: {!r}"
                                     .format(nt, i, j, e.nt))
                 args = [pair[0] for pair in e.args]
-                if args != list(nonterminals[e.nt].params):
+                if e.nt in nonterminals and args != list(nonterminals[e.nt].params):
                     raise ValueError("invalid grammar: wrong arguments passed to {!r} in production `grammar[{!r}][{}][{}]`: passed {!r}, expected {!r}"
                                     .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
                 for param_name, arg_expr in e.args:
@@ -167,6 +169,15 @@ class Grammar:
                     rhs_list_or_fn != [[], [nt.goal]]):
                     raise ValueError("invalid grammar: grammar[{!r}] is not one of the expected forms: got {!r}"
                                      .format(nt, rhs_list_or_fn))
+            elif isinstance(nt, Apply):
+                if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
+                    raise TypeError("invalid grammar: expected str or Apply(nt=str, args=tuple) keys in nonterminals dict, got {!r}".format(nt))
+                for pair in nt.args:
+                    if (not isinstance(pair, tuple) or
+                        len(pair) != 2 or
+                        not isinstance(pair[0], str) or
+                        not isinstance(pair[1], bool)):
+                        raise TypeError("invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
             elif not isinstance(nt, str):
                 raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
@@ -195,7 +206,7 @@ class Grammar:
 
     # Nonterminals refer to other rules.
     def is_nt(self, element):
-        return type(element) is str and element in self.nonterminals
+        return isinstance(element, (str, Apply)) and element in self.nonterminals
 
     def goals(self):
         """Return a list of this grammar's goal nonterminals."""
@@ -213,9 +224,7 @@ class Grammar:
     # === A few methods for dumping pieces of grammar.
 
     def element_to_str(self, e):
-        if self.is_nt(e):
-            return e
-        elif is_apply(e):
+        if is_apply(e):
             def arg_to_str(name, value):
                 if value == True:
                     return '+' + name
@@ -230,6 +239,8 @@ class Grammar:
 
             return "{}[{}]".format(e.nt, ", ".join(arg_to_str(name, value)
                                                    for name, value in e.args))
+        elif self.is_nt(e):
+            return e
         elif self.is_terminal(e):
             if self.is_variable_terminal(e):
                 return e

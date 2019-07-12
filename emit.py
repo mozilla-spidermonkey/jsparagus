@@ -5,7 +5,8 @@ from ordered import OrderedSet
 from grammar import InitNt, Optional
 
 def write_parser(out, grammar, states, prods, init_state_map):
-    out.write("import pgen_runtime\n\n")
+    out.write("import pgen_runtime\n")
+    out.write("from pgen_runtime import Apply\n\n")
     out.write("actions = [\n")
     for i, state in enumerate(states):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))
@@ -23,7 +24,8 @@ def write_parser(out, grammar, states, prods, init_state_map):
     for prod in prods:
         if isinstance(prod.nt, InitNt):
             continue
-        reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
+        nt_name_without_args = prod.nt if isinstance(prod.nt, str) else prod.nt.nt
+        reduce_method_name = '{}_P{}'.format(nt_name_without_args, prod.index)
         names = ["x" + str(i)
                  for i, e in enumerate(prod.rhs)
                  if grammar.is_terminal(e) or grammar.is_nt(e)]
@@ -41,7 +43,8 @@ def write_parser(out, grammar, states, prods, init_state_map):
     out.write("class DefaultBuilder:\n")
     for prod in prods:
         if not isinstance(prod.nt, InitNt):
-            reduce_method_name = '{}_P{}'.format(prod.nt, prod.index)
+            nt_name_without_args = prod.nt if isinstance(prod.nt, str) else prod.nt.nt
+            reduce_method_name = '{}_P{}'.format(nt_name_without_args, prod.index)
             out.write("    def {}(self, *args): return ({!r}, {!r}, list(args))\n"
                       .format(reduce_method_name, prod.nt, prod.index))
     out.write("\n\n")

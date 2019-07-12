@@ -1,3 +1,5 @@
+from grammar import Apply  # to re-export
+
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
 
