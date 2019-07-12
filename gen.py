@@ -1195,7 +1195,7 @@ def generate_parser(out, grammar, *, target='python',
     if target == 'rust':
         emit.write_rust_parser(out, grammar, states, prods, init_state_map)
     else:
-        emit.write_parser(out, grammar, states, prods, init_state_map)
+        emit.write_python_parser(out, grammar, states, prods, init_state_map)
 
 
 class Parser:

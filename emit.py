@@ -4,7 +4,7 @@ from pgen_runtime import ERROR
 from ordered import OrderedSet
 from grammar import InitNt, Optional
 
-def write_parser(out, grammar, states, prods, init_state_map):
+def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("import pgen_runtime\n")
     out.write("from pgen_runtime import Apply\n\n")
     out.write("actions = [\n")
