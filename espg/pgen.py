@@ -5,10 +5,9 @@
 (This is for testing. pgen will likely go away. Ignore this for now.)
 """
 
-import argparse
-import parse_pgen
-import gen
-import sys
+import sys, argparse
+from . import parse_pgen
+from . import gen
 
 
 def main():

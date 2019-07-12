@@ -5,14 +5,13 @@
 I'm not sure I want to keep this pgen mini-language around; ignore this for now.
 """
 
-from lexer import LexicalGrammar
-from grammar import Grammar, Production, CallMethod, is_concrete_element, Optional
-import gen
-import pprint
-import parse_pgen_generated
 import sys
-import unittest
 from collections import namedtuple
+
+from .lexer import LexicalGrammar
+from .grammar import Grammar, Production, CallMethod, is_concrete_element, Optional
+from . import gen
+from . import parse_pgen_generated
 
 
 pgen_lexer = LexicalGrammar("goal nt var token { } ; ? = =>",
@@ -216,28 +215,6 @@ def load_grammar(filename):
 def regenerate():
     import sys
     gen.generate_parser(sys.stdout, pgen_grammar)
-
-
-class ParsePgenTestCase(unittest.TestCase):
-    def test_self(self):
-        import os
-        filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
-        grammar = load_grammar(filename)
-        self.maxDiff = None
-        self.assertEqual(pgen_grammar.nonterminals, grammar.nonterminals)
-        self.assertEqual(pgen_grammar.variable_terminals, grammar.variable_terminals)
-        self.assertEqual(pgen_grammar.goals(), grammar.goals())
-
-        with open(parse_pgen_generated.__file__) as f:
-            pre_generated = f.read()
-
-        import io
-        out = io.StringIO()
-        gen.generate_parser(out, grammar)
-        generated_from_file = out.getvalue()
-
-        self.maxDiff = None
-        self.assertEqual(pre_generated, generated_from_file)
 
 
 if __name__ == '__main__':

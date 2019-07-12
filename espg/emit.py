@@ -1,12 +1,12 @@
 """Emit code for parser tables in either Python or Rust. """
 
-from pgen_runtime import ERROR
-from ordered import OrderedSet
-from grammar import InitNt, CallMethod, Some, is_concrete_element, Optional
+from .pgen_runtime import ERROR
+from .ordered import OrderedSet
+from .grammar import InitNt, CallMethod, Some, is_concrete_element, Optional
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
-    out.write("import pgen_runtime\n")
-    out.write("from pgen_runtime import Apply\n\n")
+    out.write("from espg import pgen_runtime\n")
+    out.write("from espg.pgen_runtime import Apply\n\n")
     out.write("actions = [\n")
     for i, state in enumerate(states):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))

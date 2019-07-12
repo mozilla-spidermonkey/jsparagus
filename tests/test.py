@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import gen
-import io, unittest
-import re
-import gen
-from gen import Grammar, Production, CallMethod, Apply, Optional, LookaheadRule, Parameterized, ConditionalRhs, Var
-import lexer
+from .context import espg
+import io, re, unittest
+from espg import gen, lexer
+from espg.gen import Grammar, Production, CallMethod, Apply, Optional, LookaheadRule, Parameterized, ConditionalRhs, Var
 
 
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')

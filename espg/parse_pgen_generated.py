@@ -1,5 +1,5 @@
-import pgen_runtime
-from pgen_runtime import Apply
+from espg import pgen_runtime
+from espg.pgen_runtime import Apply
 
 actions = [
     # 0. <empty>

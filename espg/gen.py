@@ -28,17 +28,17 @@ import collections
 import typing
 import io
 import sys
-from ordered import OrderedSet, OrderedFrozenSet
+from .ordered import OrderedSet, OrderedFrozenSet
 
-from grammar import (Grammar,
-                     Production, Some, CallMethod, InitNt,
-                     is_concrete_element,
-                     Optional, is_optional,
-                     Parameterized, ConditionalRhs, Apply, is_apply, Var,
-                     LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
-import emit
-from pgen_runtime import ACCEPT
-from lexer import SyntaxError
+from .grammar import (Grammar,
+                      Production, Some, CallMethod, InitNt,
+                      is_concrete_element,
+                      Optional, is_optional,
+                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
+                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
+from . import emit
+from .pgen_runtime import ACCEPT
+from .lexer import SyntaxError
 
 
 # *** Operations on grammars **************************************************

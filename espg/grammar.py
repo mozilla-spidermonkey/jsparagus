@@ -1,7 +1,7 @@
 """ Data structures for representing grammars. """
 
 import collections
-from ordered import OrderedSet, OrderedFrozenSet
+from .ordered import OrderedSet, OrderedFrozenSet
 import typing
 
 
