@@ -4,11 +4,16 @@ JavaScript is rather hard to parse. Here is an in-depth accounting of
 its syntactic quirks, with an eye toward actually implementing a parser
 from scratch.
 
+With apologies to the generous people who work on the standard. Thanks
+for doing that—better you than me.
+
 Problems are rated in terms of difficulty, from `(*)` = easy to `(***)`
 = hard. We’ll start with the easiest problems.
 
 
 ### Dangling else (*)
+
+If you know what this is, you may be excused.
 
 Statements like `if (EXPR) STMT if (EXPR) STMT else STMT`
 are straight-up ambiguous in the JS formal grammar.
