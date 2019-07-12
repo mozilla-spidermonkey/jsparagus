@@ -723,7 +723,7 @@ class PgenContext:
             # it reduces the number of parser states. So this code is disabled
             # for now.
 
-            expected = seq_start(grammar, start, rhs[item.offset:])
+            expected = self.start_set_cache[item.prod_index][item.offset]
             if item.lookahead.positive:
                 ok_set = expected & item.lookahead.set
             else:
