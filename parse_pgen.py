@@ -6,7 +6,7 @@ I'm not sure I want to keep this pgen mini-language around; ignore this for now.
 """
 
 from lexer import LexicalGrammar
-from grammar import Grammar, Optional
+from grammar import Grammar, Production, CallMethod, is_concrete_element, Optional
 import gen
 import pprint
 import parse_pgen_generated
@@ -21,23 +21,46 @@ pgen_lexer = LexicalGrammar("goal nt var token { } ; ? = =>",
                             STR=r'"[^\\\n"]*"')
 
 
+def list_of(e):
+    nt = e + 's'
+    return [
+        Production(nt, [e], CallMethod('single', (0,))),
+        Production(nt, [nt, e], CallMethod('append', (0, 1))),
+    ]
+
+def call_method(name, body):
+    nargs = sum(1 for e in body if is_concrete_element(e))
+    return CallMethod(name, tuple(range(nargs)))
+
+def prod(nt, body, action):
+    return Production(nt, body, call_method(action, body))
+
 pgen_grammar = Grammar(
     {
         'grammar': [[Optional('token_defs'), 'nt_defs']],
-        'token_defs': [['token_def'], ['token_defs', 'token_def']],
+        'token_defs': list_of('token_def'),
         'token_def': [
-            ['token', 'IDENT', '=', 'STR', ';'],
-            ['var', 'token', 'IDENT', ';']
+            prod('token_def', ['token', 'IDENT', '=', 'STR', ';'], 'const_token'),
+            prod('token_def', ['var', 'token', 'IDENT', ';'], 'var_token'),
         ],
-        'nt_defs': [['nt_def'], ['nt_defs', 'nt_def']],
+        'nt_defs': [
+            prod('nt_defs', ['nt_def'], 'nt_defs_single'),
+            prod('nt_defs', ['nt_defs', 'nt_def'], 'nt_defs_append'),
+        ],
         'nt_def': [
             [Optional('goal'), 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
         ],
-        'prods': [['prod'], ['prods', 'prod']],
+        'prods': list_of('prod'),
         'prod': [['terms', gen.Optional('action'), ';']],
-        'terms': [['term'], ['terms', 'term']],
-        'term': [['symbol'], ['symbol', '?']],
-        'symbol': [['IDENT'], ['STR']],
+        'terms': list_of('term'),
+        'term': [
+            ['symbol'],
+            prod('term', ['symbol', '?'], 'optional'),
+        ],
+        'symbol': [
+            prod('symbol', ['IDENT'], 'ident'),
+            prod('symbol', ['STR'], 'str'),
+        ],
         'action': [['=>', 'IDENT']],
     },
     goal_nts=['grammar'],
@@ -71,25 +94,30 @@ default_token_list = [
 ]
 
 class AstBuilder:
-    def grammar_P0(self, token_defs, nt_defs):
+    def grammar(self, token_defs, nt_defs):
         nonterminals, goal_nts = nt_defs
         return (token_defs or default_token_list, nonterminals, goal_nts)
 
-    def token_defs_P0(self, token_def): return [token_def]
-    def token_defs_P1(self, token_defs, token_def): return token_defs + [token_def]
+    def single(self, value):
+        return [value]
 
-    def token_def_P0(self, token, name, eq, picture, semi):
+    def append(self, values, value):
+        values.append(value)
+        return values
+
+    def const_token(self, token, name, eq, picture, semi):
         assert (token, eq, semi) == ('token', '=', ';')
         assert picture[0] == '"'
         assert picture[-1] == '"'
         return (name, picture[1:-1])
 
-    def token_def_P1(self, var, token, name, semi):
+    def var_token(self, var, token, name, semi):
         assert (var, token, semi) == ('var', 'token', ';')
         return (name, None)
 
-    def nt_defs_P0(self, nt_def): return self.nt_defs_P1(({}, []), nt_def)
-    def nt_defs_P1(self, grammar_in, nt_def):
+    def nt_defs_single(self, nt_def):
+        return self.nt_defs_append(({}, []), nt_def)
+    def nt_defs_append(self, grammar_in, nt_def):
         is_goal, nt, prods = nt_def
         grammar, goal_nts = grammar_in
         if nt in grammar:
@@ -99,35 +127,38 @@ class AstBuilder:
             goal_nts.append(nt)
         return grammar, goal_nts
 
-    def nt_def_P0(self, goal_kw, nt_kw, ident, lc, prods, rc):
+    def nt_def(self, goal_kw, nt_kw, ident, lc, prods, rc):
         is_goal = goal_kw == "goal"
         assert (nt_kw, lc, rc) == ('nt', '{', '}')
+        prods = [Production(ident, body, action) for body, action in prods]
         return (is_goal, ident, prods)
 
-    def prods_P0(self, prod): return [prod]
-    def prods_P1(self, prods, prod): return prods + [prod]
-
-    def prod_P0(self, symbols, action, semi):
+    def prod(self, symbols, action, semi):
         assert semi == ';'
-        return symbols
+        if action is None:
+            if sum(1 for e in symbols if is_concrete_element(e)) == 1:
+                action = 0
+            else:
+                raise ValueError("action required for {!r}".format(symbols))
+        else:
+            assert isinstance(action, str)
+            action = call_method(action, symbols)
+        return (symbols, action)
 
-    def terms_P0(self, term): return [term]
-    def terms_P1(self, terms, term): return terms + [term]
-
-    def term_P0(self, sym): return sym
-    def term_P1(self, sym, q):
+    def optional(self, sym, q):
         assert q == '?'
         return gen.Optional(sym)
 
-    def symbol_P0(self, sym): return sym
-    def symbol_P1(self, sym):
+    def ident(self, sym):
+        return sym
+    def str(self, sym):
         assert len(sym) > 1
         assert sym[0] == '"'
         assert sym[-1] == '"'
         chars = sym[1:-1]  # This is a bit sloppy.
         return Literal(chars)
 
-    def action_P0(self, arrow, ident):
+    def action(self, arrow, ident):
         assert arrow == '=>'
         return ident
 
@@ -166,12 +197,9 @@ def check_grammar(result):
 
     out = {nt: [] for nt in nonterminals}
     for nt, rhs_list in nonterminals.items():
-        for i, rhs in enumerate(rhs_list):
-            out_rhs = []
-            for e in rhs:
-                e = check_element(nt, i, e)
-                out_rhs.append(e)
-            out[nt].append(out_rhs)
+        for i, p in enumerate(rhs_list):
+            out_rhs = [check_element(nt, i, e) for e in p.body]
+            out[nt].append(p.with_body(out_rhs))
 
     return (tokens, out, goal_nts)
 
@@ -196,9 +224,9 @@ class ParsePgenTestCase(unittest.TestCase):
         filename = os.path.join(os.path.dirname(__file__), "pgen.pgen")
         grammar = load_grammar(filename)
         self.maxDiff = None
-        self.assertEqual(grammar.nonterminals, pgen_grammar.nonterminals)
-        self.assertEqual(grammar.variable_terminals, pgen_grammar.variable_terminals)
-        self.assertEqual(grammar.goals(), ['grammar'])
+        self.assertEqual(pgen_grammar.nonterminals, grammar.nonterminals)
+        self.assertEqual(pgen_grammar.variable_terminals, grammar.variable_terminals)
+        self.assertEqual(pgen_grammar.goals(), grammar.goals())
 
         with open(parse_pgen_generated.__file__) as f:
             pre_generated = f.read()
@@ -206,10 +234,10 @@ class ParsePgenTestCase(unittest.TestCase):
         import io
         out = io.StringIO()
         gen.generate_parser(out, grammar)
-        self_generated = out.getvalue()
+        generated_from_file = out.getvalue()
 
         self.maxDiff = None
-        self.assertEqual(pre_generated, self_generated)
+        self.assertEqual(pre_generated, generated_from_file)
 
 
 if __name__ == '__main__':

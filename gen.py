@@ -31,7 +31,8 @@ import sys
 from ordered import OrderedSet, OrderedFrozenSet
 
 from grammar import (Grammar,
-                     Production, CallMethod, InitNt,
+                     Production, Some, CallMethod, InitNt,
+                     is_concrete_element,
                      Optional, is_optional,
                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
@@ -396,7 +397,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 #
 # There may be many productions in a grammar that all have the same `nt` and `index`
 # because they were all produced from the same source production.
-Prod = collections.namedtuple("Prod", "nt index rhs removals")
+Prod = collections.namedtuple("Prod", "nt index rhs removals action")
 
 
 def expand_optional_symbols_in_rhs(rhs, start_index=0):
@@ -445,8 +446,34 @@ def expand_all_optional_elements(grammar):
         expanded_grammar[nt] = []
         for prod_index, p in enumerate(grammar.nonterminals[nt]):
             for expanded_rhs, removals in expand_optional_symbols_in_rhs(p.body):
-                expanded_grammar[nt].append(p.with_body(expanded_rhs))
-                prods.append(Prod(nt, prod_index, expanded_rhs, removals))
+                def adjust_reduce_expr(expr):
+                    if isinstance(expr, int):
+                        if expr in removals:
+                            return None
+                        was_optional = is_optional(p.body[expr])
+                        expr -= sum(1 for r in removals if r < expr)
+                        if was_optional:
+                            return Some(expr)
+                        else:
+                            return expr
+                    elif expr is None:
+                        return None
+                    elif isinstance(expr, Some):
+                        return Some(adjust_reduce_expr(expr.inner))
+                    elif isinstance(expr, CallMethod):
+                        return CallMethod(expr.method, [adjust_reduce_expr(arg)
+                                                        for arg in expr.args])
+                    elif expr == 'accept':
+                        # doesn't need to be adjusted because 'accept' isn't
+                        # turned into code downstream.
+                        return 'accept'
+                    else:
+                        raise TypeError("internal error: unrecognized element {!r}".format(expr))
+
+                adjusted_action = adjust_reduce_expr(p.action)
+                expanded_grammar[nt].append(
+                    Production(nt=p.nt, body=expanded_rhs, action=adjusted_action))
+                prods.append(Prod(nt, prod_index, expanded_rhs, removals, adjusted_action))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
 
     return grammar.with_nonterminals(expanded_grammar), prods, prods_with_indexes_by_nt
@@ -1138,7 +1165,7 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
     # Compute the start states.
     init_state_map = {}
     for init_nt in context.grammar.init_nts:
-        init_prod_index = prods.index(Prod(init_nt, 0, [init_nt.goal], removals=[]))
+        init_prod_index = prods.index(Prod(init_nt, 0, [init_nt.goal], removals=[], action="accept"))
         start_item = context.make_lr_item(init_prod_index,
                                           0,
                                           lookahead=None,

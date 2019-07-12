@@ -2,7 +2,7 @@
 
 from pgen_runtime import ERROR
 from ordered import OrderedSet
-from grammar import InitNt, Optional
+from grammar import InitNt, CallMethod, Some, is_concrete_element, Optional
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("import pgen_runtime\n")
@@ -20,33 +20,40 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
         out.write("    " + repr(state.ctn_row) + ",\n")
     out.write("]\n\n")
 
+    def action(a):
+        """Compile a reduce expression to Python"""
+        if isinstance(a, CallMethod):
+            method_name = a.method.replace(" ", "_P")
+            return "builder.{}({})".format(method_name, ', '.join(map(action, a.args)))
+        elif isinstance(a, Some):
+            return action(a.inner)
+        elif a is None:
+            return "None"
+        else:
+            # can't be 'accept' because we filter out InitNt productions
+            assert isinstance(a, int)
+            return "x{}".format(a)
+
     out.write("reductions = [\n")
     for prod in prods:
         if isinstance(prod.nt, InitNt):
             continue
         nt_name_without_args = prod.nt if isinstance(prod.nt, str) else prod.nt.nt
         reduce_method_name = '{}_P{}'.format(nt_name_without_args, prod.index)
-        names = ["x" + str(i)
-                 for i, e in enumerate(prod.rhs)
-                 if grammar.is_terminal(e) or grammar.is_nt(e)]
-        names_with_none = names[:]
-        for i in prod.removals:
-            names_with_none.insert(i, "None")
+        nparams = sum(1 for e in prod.rhs if is_concrete_element(e))
+        names = ["x" + str(i) for i in range(nparams)]
         fn = ("lambda builder, "
               + ", ".join(names)
-              + ": builder.{}(".format(reduce_method_name)
-              + ", ".join(names_with_none)
-              + ")")
+              + ": " + action(prod.action))
         out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
     out.write("]\n\n")
 
     out.write("class DefaultBuilder:\n")
-    for prod in prods:
-        if not isinstance(prod.nt, InitNt):
-            nt_name_without_args = prod.nt if isinstance(prod.nt, str) else prod.nt.nt
-            reduce_method_name = '{}_P{}'.format(nt_name_without_args, prod.index)
-            out.write("    def {}(self, *args): return ({!r}, {!r}, list(args))\n"
-                      .format(reduce_method_name, prod.nt, prod.index))
+    for tag, nargs in grammar.methods.items():
+        method_name = tag.replace(' ', '_P')
+        args = ", ".join("x{}".format(i) for i in range(nargs))
+        out.write("    def {}(self, {}): return ({!r}, {})\n"
+                  .format(method_name, args, tag, args))
     out.write("\n\n")
 
     for init_nt, index in init_state_map.items():

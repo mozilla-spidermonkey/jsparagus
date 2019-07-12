@@ -22,7 +22,7 @@ goal nt grammar {
 }
 
 nt token_defs {
-    token_def => singleton;
+    token_def => single;
     token_defs token_def => append;
 }
 
@@ -32,8 +32,8 @@ nt token_def {
 }
 
 nt nt_defs {
-    nt_def => singleton;
-    nt_defs nt_def => append;
+    nt_def => nt_defs_single;
+    nt_defs nt_def => nt_defs_append;
 }
 
 nt nt_def {
@@ -41,16 +41,16 @@ nt nt_def {
 }
 
 nt prods {
-    prod => singleton;
+    prod => single;
     prods prod => append;
 }
 
 nt prod {
-    terms action? ";" =>  production;
+    terms action? ";" => prod;
 }
 
 nt terms {
-    term => singleton;
+    term => single;
     terms term => append;
 }
 
@@ -60,10 +60,10 @@ nt term {
 }
 
 nt symbol {
-    IDENT;
-    STR;
+    IDENT => ident;
+    STR => str;
 }
 
 nt action {
-    "=>" IDENT;
+    "=>" IDENT => action;
 }

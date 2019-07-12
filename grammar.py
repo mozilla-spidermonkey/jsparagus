@@ -89,12 +89,21 @@ class Production:
 # *   CallMethod objects pass values to a builder method and return the result.
 #     The `args` are nested reduce expressions.
 #
+# *   None is an expression used as a placeholder when an optional symbol is
+#     omitted.
+#
+# *   Some(expr) is used when an optional symbol is found and parsed.
+#     In Python, this just expands to the same thing as `expr`, but in Rust
+#     this expands to a use of `Option::Some()`.
+#
 # In addition, the special reduce action 'accept' means stop parsing. This is
 # used only in productions for init nonterminals, created automatically by
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
 #
 CallMethod = collections.namedtuple("CallMethod", "method args")
 CallMethod.__iter__ = None
+Some = collections.namedtuple("Some", "inner")
+Some.__iter__ = None
 
 
 # A Grammar object is just an object that contains a bunch of productions, like
@@ -172,20 +181,26 @@ class Grammar:
 
         def check_reduce_action(nt, i, rhs, action):
             if isinstance(action, int):
-                # Don't check. expand_all_optional_elements needs work first.
-                ## if not (0 <= action < len(rhs.body)):
-                ##     raise ValueError("invalid grammar: element number {} out of range in grammar[{!r}][{}].action"
-                ##                      .format(action, nt, i))
-                pass
+                if not (0 <= action < sum(1 for e in rhs.body if is_concrete_element(e))):
+                    raise ValueError("invalid grammar: element number {} out of range for production {!r} in grammar[{!r}][{}].action ({!r})"
+                                     .format(action, nt, rhs.body, i, rhs.action))
             elif isinstance(action, CallMethod):
                 if not isinstance(action.method, str):
                     raise TypeError("invalid grammar: method names must be strings, not {!r}, in grammar[{!r}[{}].action"
                                     .format(action.method, nt, i))
                 if not action.method.isidentifier():
-                    raise ValueError("invalid grammar: invalid method name {!r} (not an identifier), in grammar[{!r}[{}].action"
-                                    .format(action.method, nt, i))
+                    name, space, pn = action.method.partition(' ')
+                    if space == ' ' and name.isidentifier() and pn.isdigit():
+                        pass
+                    else:
+                        raise ValueError("invalid grammar: invalid method name {!r} (not an identifier), in grammar[{!r}[{}].action"
+                                         .format(action.method, nt, i))
                 for arg_expr in action.args:
                     check_reduce_action(nt, i, rhs, arg_expr)
+            elif action is None:
+                pass
+            elif isinstance(action, Some):
+                check_reduce_action(nt, i, rhs, action.inner)
             else:
                 raise TypeError("invalid grammar: unrecognized reduce expression {!r} in grammar[{!r}][{}].action"
                                 .format(action, nt, i))
@@ -214,8 +229,9 @@ class Grammar:
                     if sole_production:
                         method = nt
                     else:
-                        method = '{}_P{}'.format(nt, i)
-                    action = CallMethod(method, args=tuple(range(len(rhs))))
+                        method = '{} {}'.format(nt, i)
+                    nargs = sum(1 for e in rhs if is_concrete_element(e))
+                    action = CallMethod(method, args=tuple(range(nargs)))
                 return copy_rhs(nt, i, sole_production, Production(nt, rhs, action), context_params)
             else:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
@@ -238,7 +254,7 @@ class Grammar:
                 sole_production = len(rhs_list) == 1
                 return [copy_rhs(nt, i, sole_production, rhs, params) for i, rhs in enumerate(rhs_list)]
 
-        for nt, plist_or_fn in nonterminals.items():
+        def validate_nt(nt, plist_or_fn):
             if isinstance(nt, InitNt):
                 # Users don't include init nonterminals when initially creating
                 # a Grammar. They are automatically added below. But if this
@@ -268,11 +284,39 @@ class Grammar:
                         not isinstance(pair[0], str) or
                         not isinstance(pair[1], bool)):
                         raise TypeError("invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
-            elif not isinstance(nt, str):
+            elif isinstance(nt, str):
+                if not nt.isidentifier():
+                    raise ValueError("invalid grammar: nonterminal names must be identifiers, not {!r}".format(nt))
+            else:
                 raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
                 raise TypeError("invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
-            self.nonterminals[nt] = copy_rhs_list(nt, plist_or_fn, [])
+            return copy_rhs_list(nt, plist_or_fn, [])
+
+        for nt, plist_or_fn in nonterminals.items():
+            self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
+
+        self.methods = methods = {}
+        def gather_methods(action):
+            if isinstance(action, CallMethod):
+                if action.method in methods:
+                    if len(action.args) != methods[action.method]:
+                        raise ValueError("invalid grammar: method {!r} is called with {} argument(s) and with {} argument(s)"
+                                         .format(len(action.args), methods[action.method]))
+                    for expr in action.args:
+                        gather_methods(expr)
+                else:
+                    methods[action.method] = len(action.args)
+
+        for nt, plist_or_fn in self.nonterminals.items():
+            if isinstance(plist_or_fn, Parameterized):
+                plist = plist_or_fn.body
+            else:
+                plist = plist_or_fn
+            for p in plist:
+                if isinstance(p, ConditionalRhs):
+                    p = p.rhs
+                gather_methods(p.action)
 
         self.init_nts = []
         for goal in goal_nts:
@@ -420,15 +464,24 @@ a "reduce" action.
 InitNt.__iter__ = None
 
 
-# Optional elements. These are expanded out before states are calculated,
-# so the core of the algorithm never sees them.
-Optional = collections.namedtuple("Optional", "inner")
-Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
-Optional.__iter__ = None
+# *** Elements ****************************************************************
+#
+# Elements are the things that can appear in the .body list of a Production:
+#
+# *   Strings represent terminals and nonterminals (see `Grammar.is_nt`,
+#     `Grammar.is_terminal`)
+#
+# *   `Apply` objects refer to parameterized nonterminals.
+#
+# *   `Optional` objects represent optional elements.
+#
+# *   `LookaheadRule` objects are like lookahead assertions in regular
+#     expressions.
 
 
-def is_optional(element):
-    return type(element) is Optional
+def is_concrete_element(e):
+    """True if parsing the element `e` pushes a value to the parser stack."""
+    return not is_lookahead_rule(e)
 
 
 # Function application. Function nonterminals are expanded out very early in
@@ -454,6 +507,17 @@ productions, one for every different argument tuple that is ever passed to it.
 def is_apply(element):
     """True if `element` smells like apples."""
     return type(element) is Apply
+
+
+# Optional elements. These are expanded out before states are calculated,
+# so the core of the algorithm never sees them.
+Optional = collections.namedtuple("Optional", "inner")
+Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
+Optional.__iter__ = None
+
+
+def is_optional(element):
+    return type(element) is Optional
 
 
 # Lookahead restrictions stay with us throughout the algorithm.

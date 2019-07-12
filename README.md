@@ -21,8 +21,8 @@ grammar = {
         ['-', 'unary'],
     ],
     'prim': [
-        ['NUM'],
-        ['VAR'],
+        ['NUMBER'],
+        ['NAME'],
         ['(', 'expr', ')'],
     ],
 }
@@ -42,8 +42,8 @@ term ::= unary
 unary ::= prim
         | "-" unary
 
-prim ::= NUM
-       | VAR
+prim ::= NUMBER
+       | NAME
        | "(" expr ")"
 ```
 
@@ -51,23 +51,24 @@ It generates a table-driven shift-reduce parser:
 
 ```python
 import pgen_runtime
+from pgen_runtime import Apply
 
 actions = [
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
     {None: -9, '*': -9, '/': -9, '+': -9, '-': -9, ')': -9},
     {None: -10, '*': -10, '/': -10, '+': -10, '-': -10, ')': -10},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
     {'+': 11, '-': 12, None: -9223372036854775807},
     {'*': 13, '/': 14, None: -1, '+': -1, '-': -1, ')': -1},
     {None: -4, '*': -4, '/': -4, '+': -4, '-': -4, ')': -4},
     {None: -7, '*': -7, '/': -7, '+': -7, '-': -7, ')': -7},
     {None: -8, '*': -8, '/': -8, '+': -8, '-': -8, ')': -8},
     {')': 15, '+': 11, '-': 12},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
-    {'-': 1, 'NUM': 2, 'VAR': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
+    {'-': 1, 'NUMBER': 2, 'NAME': 3, '(': 4},
     {None: -11, '*': -11, '/': -11, '+': -11, '-': -11, ')': -11},
     {'*': 13, '/': 14, None: -2, '+': -2, '-': -2, ')': -2},
     {'*': 13, '/': 14, None: -3, '+': -3, '-': -3, ')': -3},
@@ -99,31 +100,26 @@ ctns = [
 ]
 
 reductions = [
-    ('expr', 1, lambda builder, x0: builder.expr_P0(x0)),
+    ('expr', 1, lambda builder, x0: x0),
     ('expr', 3, lambda builder, x0, x1, x2: builder.expr_P1(x0, x1, x2)),
     ('expr', 3, lambda builder, x0, x1, x2: builder.expr_P2(x0, x1, x2)),
-    ('term', 1, lambda builder, x0: builder.term_P0(x0)),
+    ('term', 1, lambda builder, x0: x0),
     ('term', 3, lambda builder, x0, x1, x2: builder.term_P1(x0, x1, x2)),
     ('term', 3, lambda builder, x0, x1, x2: builder.term_P2(x0, x1, x2)),
-    ('unary', 1, lambda builder, x0: builder.unary_P0(x0)),
+    ('unary', 1, lambda builder, x0: x0),
     ('unary', 2, lambda builder, x0, x1: builder.unary_P1(x0, x1)),
-    ('prim', 1, lambda builder, x0: builder.prim_P0(x0)),
-    ('prim', 1, lambda builder, x0: builder.prim_P1(x0)),
+    ('prim', 1, lambda builder, x0: x0),
+    ('prim', 1, lambda builder, x0: x0),
     ('prim', 3, lambda builder, x0, x1, x2: builder.prim_P2(x0, x1, x2)),
 ]
 
 class DefaultBuilder:
-    def expr_P0(self, *args): return ('expr', 0, list(args))
-    def expr_P1(self, *args): return ('expr', 1, list(args))
-    def expr_P2(self, *args): return ('expr', 2, list(args))
-    def term_P0(self, *args): return ('term', 0, list(args))
-    def term_P1(self, *args): return ('term', 1, list(args))
-    def term_P2(self, *args): return ('term', 2, list(args))
-    def unary_P0(self, *args): return ('unary', 0, list(args))
-    def unary_P1(self, *args): return ('unary', 1, list(args))
-    def prim_P0(self, *args): return ('prim', 0, list(args))
-    def prim_P1(self, *args): return ('prim', 1, list(args))
-    def prim_P2(self, *args): return ('prim', 2, list(args))
+    def expr_P1(self, x0, x1, x2): return ('expr 1', x0, x1, x2)
+    def expr_P2(self, x0, x1, x2): return ('expr 2', x0, x1, x2)
+    def term_P1(self, x0, x1, x2): return ('term 1', x0, x1, x2)
+    def term_P2(self, x0, x1, x2): return ('term 2', x0, x1, x2)
+    def unary_P1(self, x0, x1): return ('unary 1', x0, x1)
+    def prim_P2(self, x0, x1, x2): return ('prim 2', x0, x1, x2)
 
 parse_expr = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)
 ```
@@ -131,30 +127,29 @@ parse_expr = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBui
 And the result of parsing the input `2 * ( x + y )` looks like this:
 
 ```python
-('expr', 0, [
-    ('term', 1, [
-        ('term', 0, [('unary', 0, [('prim', 0, ['2'])])]),
-        '*',
-        ('unary', 0, [
-            ('prim', 2, [
-                '(',
-                ('expr', 1, [
-                    ('expr', 0, [('term', 0, [('unary', 0, [('prim', 1, ['x'])])])]),
-                    '+',
-                    ('term', 0, [('unary', 0, [('prim', 1, ['y'])])])
-                ]),
-                ')'
-            ])
-        ])
-    ])
-])
+('term 1',
+    '2',
+    '*',
+    ('prim 2',
+        '(',
+        ('expr 1', 'x', '+', 'y'),
+        ')'
+    )
+)
 ```
+
+The parser spits out tuples by default. It's easy to customize the
+method names of the DefaultBuilder, and it's easy to replace it with
+your own builder class that produces the AST you actually want.
+
 
 ## Limitations
 
-It's *all* limitations, but I'll try to list the ones that are relevant to parsing JS.
+It's *all* limitations, but I'll try to list the ones that are relevant
+to parsing JS.
 
-*   Lookahead assertions are limited to one token. (The JS grammar contains an occasional
+*   Lookahead assertions are limited to one token. (The JS grammar
+    contains an occasional
     ``[lookahead != `let [`]``
     and even
     ``[lookahead != `async [no LineTerminator here] function`]``.)
