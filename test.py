@@ -4,11 +4,15 @@ import gen
 import io, unittest
 import re
 import gen
-from gen import Grammar, Apply, Optional, LookaheadRule, Parameterized, ConditionalRhs, Var
+from gen import Grammar, Production, CallMethod, Apply, Optional, LookaheadRule, Parameterized, ConditionalRhs, Var
 import lexer
 
 
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
+
+
+def prod(nt, body, method_name):
+    return Production(nt, body, CallMethod(method_name, list(range(len(body)))))
 
 
 class GenTestCase(unittest.TestCase):
@@ -898,6 +902,39 @@ class GenTestCase(unittest.TestCase):
         })
         self.compile(tokenize, grammar)
         self.assertParse("! ! ! ! !")
+
+    def testReduceActions(self):
+        tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
+        grammar = Grammar({
+            "expr": [
+                ["term"],
+                prod("expr", ["expr", "+", "term"], "add"),
+                prod("expr", ["expr", "-", "term"], "sub"),
+            ],
+            "term": [
+                ["unary"],
+                prod("term", ["term", "*", "unary"], "mul"),
+                prod("term", ["term", "/", "unary"], "div"),
+            ],
+            "unary": [
+                ["prim"],
+                prod("unary", ["-", "prim"], "neg"),
+            ],
+            "prim": [
+                prod("prim", ["(", "expr", ")"], "parens"),
+                prod("prim", ["NUM"], "num"),
+                prod("prim", ["VAR"], "var"),
+            ],
+        }, goal_nts=['expr'])
+
+        self.compile(tokenize, grammar)
+        self.assertParse("1 / (1 + 1 / (1 + 1 / (1 + 1)))")
+        # Not working yet!
+        ## self.assertEqual(self.parse(tokenize("X")),
+        ##                  ('var', 'X'))
+        ## self.assertEqual(self.parse(tokenize("3 + 4")),
+        ##                  ('add', ('num', '3'), '+', ('num', '4')))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -47,6 +47,56 @@ def example_grammar():
     return Grammar(rules, goal_nts=['expr'], variable_terminals=['NUM', 'VAR'])
 
 
+# A production consists of a left side, a right side, and a reduce action.
+# Incorporating actions lets us transform grammar while preserving behavior.
+#
+# The production `expr ::= term` is represented by
+# `Production("expr", ["term"], 0)`.
+#
+# The production `expr ::= expr + term => add` is represented by
+# `Production("expr", ["expr", "+", "term"], CallMethod("add", (0, 1, 2))`.
+#
+class Production:
+    __slots__ = ['nt', 'body', 'action']
+
+    def __init__(self, nt, body, action):
+        self.nt = nt
+        self.body = body
+        self.action = action
+
+    def __eq__(self, other):
+        return self.nt == other.nt and self.body == other.body and self.action == other.action
+
+    __hash__ = None
+
+    def __repr__(self):
+        return "Production(nt={!r}, body={!r}, action={!r})".format(self.nt, self.body, self.action)
+
+    def with_body(self, body):
+        return Production(self.nt, list(body), self.action)
+
+
+# ### Reduce actions
+#
+# Reduce actions say waht happens when a production is matched.
+#
+# Reduce expressions are a little language used to specify reduce
+# actions. There are two types of reduce expression:
+#
+# *   An integer in the range(0, len(production.body)) returns a previously parsed
+#     value from the parser's stack.
+#
+# *   CallMethod objects pass values to a builder method and return the result.
+#     The `args` are nested reduce expressions.
+#
+# In addition, the special reduce action 'accept' means stop parsing. This is
+# used only in productions for init nonterminals, created automatically by
+# Grammar.__init__(). It's not a reduce expression, so it can't be nested.
+#
+CallMethod = collections.namedtuple("CallMethod", "method args")
+CallMethod.__iter__ = None
+
+
 # A Grammar object is just an object that contains a bunch of productions, like
 # the example grammar above. Since we have no other way of distinguishing
 # terminals from nonterminals, we store the set of terminals and the set of
@@ -120,15 +170,53 @@ class Grammar:
                                 .format(nt, i, j, e))
             return e
 
-        def copy_rhs(nt, i, rhs, context_params):
-            #print("#COPY_RHS", rhs)
+        def check_reduce_action(nt, i, rhs, action):
+            if isinstance(action, int):
+                # Don't check. expand_all_optional_elements needs work first.
+                ## if not (0 <= action < len(rhs.body)):
+                ##     raise ValueError("invalid grammar: element number {} out of range in grammar[{!r}][{}].action"
+                ##                      .format(action, nt, i))
+                pass
+            elif isinstance(action, CallMethod):
+                if not isinstance(action.method, str):
+                    raise TypeError("invalid grammar: method names must be strings, not {!r}, in grammar[{!r}[{}].action"
+                                    .format(action.method, nt, i))
+                if not action.method.isidentifier():
+                    raise ValueError("invalid grammar: invalid method name {!r} (not an identifier), in grammar[{!r}[{}].action"
+                                    .format(action.method, nt, i))
+                for arg_expr in action.args:
+                    check_reduce_action(nt, i, rhs, arg_expr)
+            else:
+                raise TypeError("invalid grammar: unrecognized reduce expression {!r} in grammar[{!r}][{}].action"
+                                .format(action, nt, i))
+
+        def copy_rhs(nt, i, sole_production, rhs, context_params):
             if isinstance(rhs, ConditionalRhs):
                 if rhs.param not in context_params:
                     raise TypeError("invalid grammar: undefined parameter {!r} in conditional for grammar[{!r}][{}]"
                                     .format(rhs.param, nt, i))
-                return ConditionalRhs(rhs.param, rhs.value, copy_rhs(nt, i, rhs.rhs, context_params))
+                return ConditionalRhs(rhs.param, rhs.value, copy_rhs(nt, i, sole_production, rhs.rhs, context_params))
+            elif isinstance(rhs, Production):
+                if rhs.action != 'accept':
+                    check_reduce_action(nt, i, rhs, rhs.action)
+                assert isinstance(rhs.body, list)
+                return rhs.with_body([validate_element(nt, i, j, e, context_params)
+                                      for j, e in enumerate(rhs.body)])
             elif isinstance(rhs, list):
-                return [validate_element(nt, i, j, e, context_params) for j, e in enumerate(rhs)]
+                # Bare list, no action. Desugar to a Production, inferring a
+                # reasonable default action.
+                if len(rhs) == 1:
+                    action = 0  # don't call a method, just propagate the value
+                else:
+                    # Call a method named after the production. If the
+                    # nonterminal has exactly one production, there's no need
+                    # to include the production index `i` to the method name.
+                    if sole_production:
+                        method = nt
+                    else:
+                        method = '{}_P{}'.format(nt, i)
+                    action = CallMethod(method, args=tuple(range(len(rhs))))
+                return copy_rhs(nt, i, sole_production, Production(nt, rhs, action), context_params)
             else:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
                                 .format(nt, i, rhs))
@@ -147,9 +235,10 @@ class Grammar:
                 if not isinstance(rhs_list, list):
                     raise TypeError("invalid grammar: grammar[{!r}] should be either a Parameterized object or a list of right-hand sides, not {!r}"
                                     .format(nt, type(rhs_list).__name__))
-                return [copy_rhs(nt, i, rhs, params) for i, rhs in enumerate(rhs_list)]
+                sole_production = len(rhs_list) == 1
+                return [copy_rhs(nt, i, sole_production, rhs, params) for i, rhs in enumerate(rhs_list)]
 
-        for nt, rhs_list_or_fn in nonterminals.items():
+        for nt, plist_or_fn in nonterminals.items():
             if isinstance(nt, InitNt):
                 # Users don't include init nonterminals when initially creating
                 # a Grammar. They are automatically added below. But if this
@@ -164,11 +253,12 @@ class Grammar:
                 # Check the form of init productions. Initially these look like
                 # [[goal]], but after the pipeline goes to work, they can be
                 # [[Optional(goal)]] or [[], [goal]].
-                if (rhs_list_or_fn != [[nt.goal]] and
-                    rhs_list_or_fn != [[Optional(nt.goal)]] and
-                    rhs_list_or_fn != [[], [nt.goal]]):
+                if (plist_or_fn != [Production(nt, [nt.goal], 'accept')] and
+                    plist_or_fn != [Production(nt, [Optional(nt.goal)], 'accept')] and
+                    plist_or_fn != [Production(nt, [], 'accept'),
+                                    Production(nt, [nt.goal], 'accept')]):
                     raise ValueError("invalid grammar: grammar[{!r}] is not one of the expected forms: got {!r}"
-                                     .format(nt, rhs_list_or_fn))
+                                     .format(nt, plist_or_fn))
             elif isinstance(nt, Apply):
                 if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
                     raise TypeError("invalid grammar: expected str or Apply(nt=str, args=tuple) keys in nonterminals dict, got {!r}".format(nt))
@@ -182,7 +272,7 @@ class Grammar:
                 raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
                 raise TypeError("invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
-            self.nonterminals[nt] = copy_rhs_list(nt, rhs_list_or_fn, [])
+            self.nonterminals[nt] = copy_rhs_list(nt, plist_or_fn, [])
 
         self.init_nts = []
         for goal in goal_nts:
@@ -190,7 +280,7 @@ class Grammar:
                 raise ValueError("goal nonterminal {!r} is undefined".format(goal))
             init_nt = InitNt(goal)
             if init_nt not in self.nonterminals:
-                self.nonterminals[init_nt] = [[goal]]
+                self.nonterminals[init_nt] = [Production(init_nt, [goal], 'accept')]
             self.init_nts.append(init_nt)
 
         self.terminals = OrderedFrozenSet(all_terminals)
@@ -276,6 +366,8 @@ class Grammar:
             return self.symbols_to_str(rhs)
 
     def production_to_str(self, nt, rhs):
+        # As we have two ways of representing productions at the moment, just
+        # take two arguments :(
         return "{} ::= {}".format(nt, self.rhs_to_str(rhs))
 
     def lr_item_to_str(self, prods, item):
@@ -299,7 +391,7 @@ class Grammar:
         return "{{{}}}".format(
             ",  ".join(self.lr_item_to_str(prods, item) for item in item_set)
         )
- 
+
     def dump(self):
         for nt, rhs_list in self.nonterminals.items():
             if isinstance(rhs_list, Parameterized):

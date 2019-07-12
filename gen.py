@@ -31,7 +31,7 @@ import sys
 from ordered import OrderedSet, OrderedFrozenSet
 
 from grammar import (Grammar,
-                     InitNt,
+                     Production, CallMethod, InitNt,
                      Optional, is_optional,
                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
@@ -53,14 +53,14 @@ def fix(f, start):
 def empty_nt_set(grammar):
     """Return the set of all nonterminals in `grammar` that can produce the empty string."""
     def step(empties):
-        def rhs_is_empty(nt, rhs):
+        def production_is_empty(nt, p):
             return all(is_lookahead_rule(e)
                        or is_optional(e)
                        or (grammar.is_nt(e) and e in empties)
-                       for e in rhs)
+                       for e in p.body)
         return set(nt
-                   for nt, rhs_list in grammar.nonterminals.items()
-                   if any(rhs_is_empty(nt, rhs) for rhs in rhs_list))
+                   for nt, prods in grammar.nonterminals.items()
+                   if any(production_is_empty(nt, prod) for prod in prods))
 
     return fix(step, set())
 
@@ -77,8 +77,8 @@ def check_cycle_free(grammar):
     direct_produces = {}
     for orig in grammar.nonterminals:
         direct_produces[orig] = set()
-        for source_rhs in grammar.nonterminals[orig]:
-            for rhs, _r in expand_optional_symbols_in_rhs(source_rhs):
+        for source_production in grammar.nonterminals[orig]:
+            for rhs, _r in expand_optional_symbols_in_rhs(source_production.body):
                 result = []
                 all_possibly_empty_so_far = True
                 # If we break out of the following loop, that means it turns
@@ -128,14 +128,14 @@ def check_lookahead_rules(grammar):
 
     check_cycle_free(grammar)
     for nt in grammar.nonterminals:
-        for rhs_with_options in grammar.nonterminals[nt]:
-            for rhs, _r in expand_optional_symbols_in_rhs(rhs_with_options):
+        for source_production in grammar.nonterminals[nt]:
+            for rhs, _r in expand_optional_symbols_in_rhs(source_production.body):
                 # XXX BUG: The next if-condition is insufficient, since it
                 # fails to detect a lookahead restriction followed by a
                 # nonterminal that can match the empty string.
                 if rhs and is_lookahead_rule(rhs[-1]):
                     raise ValueError("invalid grammar: lookahead restriction at end of production: " +
-                                     grammar.production_to_str(nt, rhs_with_options))
+                                     grammar.production_to_str(nt, source_production.body))
 
 
 def expand_function_nonterminals(grammar):
@@ -186,26 +186,26 @@ def expand_function_nonterminals(grammar):
             else:
                 return e
 
-        def expand_rhs(rhs):
-            return [expand_element(e) for e in rhs]
+        def expand_production(p):
+            return p.with_body([expand_element(e) for e in p.body])
 
-        def expand_rhs_list(rhs_list):
+        def expand_productions(plist):
             result = []
-            for rhs in rhs_list:
-                if isinstance(rhs, ConditionalRhs):
-                    if args_dict[rhs.param] == rhs.value:
-                        result.append(expand_rhs(rhs.rhs))
+            for p in plist:
+                if isinstance(p, ConditionalRhs):
+                    if args_dict[p.param] == p.value:
+                        result.append(expand_production(p.rhs))
                 else:
-                    result.append(expand_rhs(rhs))
+                    result.append(expand_production(p))
             return result
 
         if args is None:
-            return expand_rhs_list(grammar.nonterminals[nt])
+            return expand_productions(grammar.nonterminals[nt])
         else:
             fn = grammar.nonterminals[nt]
             assert len(args) == len(fn.params)
             args = tuple(zip(fn.params, args)) # create activation environment! are we having fun yet
-            return expand_rhs_list(fn.body)
+            return expand_productions(fn.body)
 
     while todo:
         nt, args = todo.popleft()
@@ -251,10 +251,10 @@ def start_sets(grammar):
     done = False
     while not done:
         done = True
-        for nt, rhs_list in grammar.nonterminals.items():
+        for nt, plist in grammar.nonterminals.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
-            nt_start = OrderedFrozenSet(t for rhs in rhs_list for t in seq_start(grammar, start, rhs))
+            nt_start = OrderedFrozenSet(t for p in plist for t in seq_start(grammar, start, p.body))
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -443,9 +443,9 @@ def expand_all_optional_elements(grammar):
 
     for nt in grammar.nonterminals:
         expanded_grammar[nt] = []
-        for prod_index, rhs in enumerate(grammar.nonterminals[nt]):
-            for expanded_rhs, removals in expand_optional_symbols_in_rhs(rhs):
-                expanded_grammar[nt].append(expanded_rhs)
+        for prod_index, p in enumerate(grammar.nonterminals[nt]):
+            for expanded_rhs, removals in expand_optional_symbols_in_rhs(p.body):
+                expanded_grammar[nt].append(p.with_body(expanded_rhs))
                 prods.append(Prod(nt, prod_index, expanded_rhs, removals))
                 prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
 
@@ -467,9 +467,8 @@ def make_epsilon_free_step_1(grammar):
         return e
 
     return grammar.with_nonterminals({
-        nt: [[hack(e) for e in rhs]
-             for rhs in rhs_list]
-        for nt, rhs_list in grammar.nonterminals.items()
+        nt: [p.with_body(map(hack, p.body)) for p in plist]
+        for nt, plist in grammar.nonterminals.items()
     })
 
 
@@ -481,8 +480,8 @@ def make_epsilon_free_step_2(grammar):
     """
     goal_nts = set(grammar.goals())
     return grammar.with_nonterminals({
-        nt: [rhs for rhs in rhs_list if len(rhs) > 0 or nt in goal_nts]
-        for nt, rhs_list in grammar.nonterminals.items()
+        nt: [p for p in plist if len(p.body) > 0 or nt in goal_nts]
+        for nt, plist in grammar.nonterminals.items()
     })
 
 
@@ -972,7 +971,8 @@ class State:
                         # to be modified a bit after that.) So, embarrassingly, we
                         # must now check that the production we just found is
                         # still in the grammar. XXX FIXME
-                        if callee_rhs or callee_rhs in grammar.nonterminals[next_symbol]:
+                        if callee_rhs or any(p.body == callee_rhs
+                                             for p in grammar.nonterminals[next_symbol]):
                             ## print("    Considering stepping from item {} into production {}"
                             ##       .format(grammar.lr_item_to_str(prods, item),
                             ##               grammar.production_to_str(next_symbol, callee_rhs)))
