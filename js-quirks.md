@@ -128,6 +128,9 @@ somehow. It’s just unbelievably confusing.
     .........^
     ```
 
+*   `arguments` and `eval` can't be binding names, and can't be assigned
+    to, in strict mode code.
+
 All keywords are consistently allowed as names of class methods and fields, and
 object literal properties and methods, even in strict mode.
 
