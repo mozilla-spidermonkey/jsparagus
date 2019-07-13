@@ -200,6 +200,34 @@ class GenTestCase(unittest.TestCase):
         self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
                                lambda: gen.generate_parser(out, grammar))
 
+    def testAmbiguousEmpty(self):
+        """Reject grammars that are ambiguous due to productions that match the empty string."""
+
+        def check(rules):
+            grammar = Grammar(rules, goal_nts=['goal'])
+            out = io.StringIO()
+            self.assertRaisesRegex(ValueError, r"ambiguous grammar|reduce-reduce conflict",
+                                   lambda: gen.generate_parser(out, grammar))
+
+        check({'goal': [[], []]})
+        check({'goal': [[Optional('X')], []]})
+        check({'goal': [[Optional('X')], [Optional('Y')]]})
+        check({'goal': [[Optional('X'), Optional('Y')], [Optional('Z')]]})
+
+        # Issue #3: This also has an abiguity; empty string matches either
+        # `goal ::= [empty]` or `goal ::= phrase, phrase ::= [empty]`.
+        check({
+            'goal': [[Optional('phrase')]],
+            'phrase': [[Optional('X')]],
+        })
+
+        # Input "X" is ambiguous, could be ('goal', ('a', None), ('a', 'X'))
+        # or the other 'a' could be the one that's missing.
+        check({
+            'goal': [['a', 'a']],
+            'a': [[Optional('X')]],
+        })
+
     def testLeftFactor(self):
         """Most basic left-factoring test."""
         tokenize = lexer.LexicalGrammar("A B")

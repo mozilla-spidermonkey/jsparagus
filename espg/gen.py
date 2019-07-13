@@ -52,18 +52,67 @@ def fix(f, start):
 
 
 def empty_nt_set(grammar):
-    """Return the set of all nonterminals in `grammar` that can produce the empty string."""
-    def step(empties):
-        def production_is_empty(nt, p):
-            return all(is_lookahead_rule(e)
-                       or is_optional(e)
-                       or (grammar.is_nt(e) and e in empties)
-                       for e in p.body)
-        return set(nt
-                   for nt, prods in grammar.nonterminals.items()
-                   if any(production_is_empty(nt, prod) for prod in prods))
+    """Determine which nonterminals in `grammar` can produce the empty string.
 
-    return fix(step, set())
+    Return a dict {nt: expr} that maps each such nonterminal to the expr
+    that should be evaluated when reducing the empty string to nt.
+    So, for example, if we have a production
+
+        a ::= b? c?  => CallMethod("a", [0, 1])
+
+    then the resulting dictionary will contain the entry
+    `("a", CallMethod("a", [None, None]))`.
+
+    We need this expr to fix issue #1, but it isn't used yet.
+    """
+
+    empties = {}  # maps nts to actions.
+
+    def production_is_empty(nt, p):
+         return all(is_lookahead_rule(e)
+                   or is_optional(e)
+                   or (grammar.is_nt(e) and e in empties)
+                   for e in p.body)
+
+    def evaluate_action_with_empty_matches(p):
+        # partial evaluation of p.action
+        stack = [e for e in p.body if is_concrete_element(e)]
+        def eval(expr):
+            if expr is None:
+                return None
+            elif isinstance(expr, Some):
+                return Some(eval(expr.inner))
+            elif isinstance(expr, CallMethod):
+                return CallMethod(expr.method, tuple(eval(arg_expr) for arg_expr in expr.args))
+            elif isinstance(expr, int):
+                e = stack[expr]
+                if is_optional(e):
+                    return None
+                else:
+                    assert grammar.is_nt(e)
+                    return empties[e]
+            elif expr == 'accept':
+                # Hmm, this is not ideal! Maybe 'accept' needs to take an
+                # argument so that the normal case is Accept(0) and this case
+                # is Accept(eval(expr.args[0])).
+                return 'accept'
+            else:
+                raise TypeError("internal error: unhandled reduce expression type {!r}".format(expr))
+        return eval(p.action)
+
+    done = False
+    while not done:
+        done = True
+        for nt, prods in grammar.nonterminals.items():
+            if nt not in empties:
+                for p in prods:
+                    if production_is_empty(nt, p):
+                        if nt in empties:
+                            raise ValueError("ambiguous grammar: multiple productions for {!r} match the empty string"
+                                             .format(nt))
+                        done = False
+                        empties[nt] = evaluate_action_with_empty_matches(p)
+    return empties
 
 
 def check_cycle_free(grammar):
@@ -489,7 +538,14 @@ def make_epsilon_free_step_1(grammar):
     empties = empty_nt_set(grammar)
 
     def hack(e):
-        if grammar.is_nt(e) and e in empties:
+        if is_optional(e):
+            # If this is already possibly-empty in the input grammar, it's an
+            # error! The grammar is ambiguous.
+            if grammar.is_nt(e.inner) and e.inner in empties:
+                raise ValueError("ambiguous grammar: {} is ambiguous because {} can match the empty string"
+                                 .format(grammar.element_to_str(e), grammar.element_to_str(e.inner)))
+        elif grammar.is_nt(e) and e in empties:
+            # If we do it on purpose, it's ok. Step 2 fixes it.
             return Optional(e)
         return e
 
