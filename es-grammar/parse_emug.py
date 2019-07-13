@@ -1,8 +1,7 @@
 """Parse a grammar written in ECMArkup."""
 
-from lexer import LexicalGrammar
-import parse_pgen
-import gen
+from espg.lexer import LexicalGrammar
+from espg import parse_pgen, gen
 
 tokenize_emug = LexicalGrammar(
     # the operators and keywords:

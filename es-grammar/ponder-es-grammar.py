@@ -4,8 +4,8 @@
 
 import sys; sys.path.append("..")
 
-import gen
 import argparse
+from espg import gen
 import parse_emug
 
 
