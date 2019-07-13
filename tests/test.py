@@ -891,9 +891,10 @@ class GenTestCase(unittest.TestCase):
         }, goal_nts=['expr'])
 
         self.compile(tokenize, grammar)
-        self.assertParse("1 / (1 + 1 / (1 + 1 / (1 + 1)))")
-        self.assertEqual(
-            self.parse(tokenize('2 * 3 + 4 * (5 + 7)')),
+        self.assertParse("X", ('var', 'X'))
+        self.assertParse("3 + 4", ('add', ('num', '3'), '+', ('num', '4')))
+        self.assertParse(
+            "2 * 3 + 4 * (5 + 7)",
             (
                 'add',
                 ('mul', ('num', '2'), '*', ('num', '3')),
@@ -906,12 +907,28 @@ class GenTestCase(unittest.TestCase):
                 )
             )
         )
-        # Not working yet!
-        ## self.assertEqual(self.parse(tokenize("X")),
-        ##                  ('var', 'X'))
-        ## self.assertEqual(self.parse(tokenize("3 + 4")),
-        ##                  ('add', ('num', '3'), '+', ('num', '4')))
-
+        self.assertParse(
+            "1 / (1 + 1 / (1 + 1 / (1 + 1)))",
+            (
+                'div', ('num', '1'), '/', (
+                    'parens', '(', (
+                        'add', ('num', '1'), '+', (
+                            'div', ('num', '1'), '/', (
+                                'parens', '(', (
+                                    'add', ('num', '1'), '+', (
+                                        'div', ('num', '1'), '/', (
+                                            'parens', '(', (
+                                                'add', ('num', '1'), '+', ('num', '1')),
+                                            ')'
+                                        )
+                                    )
+                                ), ')'
+                            )
+                        )
+                    ), ')'
+                )
+            )
+        )
 
 if __name__ == '__main__':
     unittest.main()
