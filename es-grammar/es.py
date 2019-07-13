@@ -8,8 +8,8 @@ See README.md for instructions.
 import sys; sys.path.append("..")
 
 import re
-from lexer import SyntaxError
-from pgen_runtime import ERROR, ACCEPT
+from espg.lexer import SyntaxError
+from espg.pgen_runtime import ERROR, ACCEPT
 import es_parser
 
 TOKEN_RE = re.compile(r'''(?x)
