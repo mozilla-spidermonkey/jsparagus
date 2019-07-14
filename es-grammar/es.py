@@ -8,8 +8,8 @@ See README.md for instructions.
 import sys; sys.path.append("..")
 
 import re
-from espg.lexer import SyntaxError
-from espg.pgen_runtime import ERROR, ACCEPT
+from espg import lexer
+from espg.pgen_runtime import ReplParser, throw_syntax_error, ERROR, ACCEPT
 import es_parser
 
 TOKEN_RE = re.compile(r'''(?x)
@@ -58,7 +58,7 @@ null true false
 endif
 '''.split())
 
-class ESLexer:
+class ESLexer(lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
     def __init__(self, source, parser_can_accept, filename=None):
         self.src = source
@@ -131,18 +131,49 @@ class ESLexer:
         self._next_match = None
         return match.group(1)
 
-    def throw(self, msg):
-        e = SyntaxError(msg)
-        e.filename = self.filename
-        e.lineno, e.column = self.last_point_coords()
-        raise e
-
     def last_point_coords(self):
         src_pre = self.src[:self.last_point]
         lineno = 1 + src_pre.count("\n")
         line_start_index = src_pre.rfind("\n") + 1
         column = self.last_point - line_start_index  # can be zero
         return lineno, column
+
+class ESReplParser(ReplParser):
+    def __init__(self):
+        ReplParser.__init__(
+            self,
+            es_parser.actions,
+            es_parser.ctns,
+            es_parser.reductions,
+            lambda line: ESLexer(line, self.can_accept),
+            Script_entry_state,
+            es_parser.DefaultBuilder()
+        )
+
+    def can_accept(self, t):
+        """Walk the stack to see if the terminal `t` is OK next or an error.
+
+        t can be None, querying if we can accept end-of-input.
+        """
+        stack = self.stack
+        sp = len(stack) - 1
+        state = stack[sp]
+        while True:
+            action = self.actions[state].get(t, ERROR)
+            if action >= 0:  # shift
+                return True
+            elif action > ACCEPT:  # reduce
+                tag_name, n, _reducer = self.reductions[-action - 1]
+                sp -= 2 * n
+                state = stack[sp]
+                sp += 2
+                state = self.ctns[state][tag_name]
+            elif action == ACCEPT:
+                return True
+            else:
+                assert action == ERROR
+                return False
+
 
 def parse(actions, ctns, reductions, entry_state, text, builder):
     """ Table-driven LR parser, customized to implement ASI. """
@@ -194,15 +225,7 @@ def parse(actions, ctns, reductions, entry_state, text, builder):
             return stack[1]
         else:
             assert action == ERROR
-            expected = set(actions[state].keys())
-            if None in expected:
-                expected.remove(None)
-                expected.add("end of input")
-            if len(expected) < 2:
-                tokens.throw("expected {!r}, got {!r}".format(list(expected)[0], t))
-            else:
-                tokens.throw("expected one of {!r}, got {!r}"
-                             .format(sorted(expected), t))
+            throw_syntax_error(actions, state, t, tokens)
 
 
 Script_entry_state = 0 # ew, magic number, get pgen to emit this
@@ -220,16 +243,13 @@ def parse_Script(line):
 
 def main():
     while True:
+        parser = ESReplParser()
         try:
-            line = input('> ')
-        except EOFError as _:
-            break
-        try:
-            result = parse_Script(line)
+            result = parser.read()
         except SyntaxError as exc:
             print(exc.__class__.__name__ + ": " + str(exc))
-        else:
-            print(result)
+            continue
+        print(result)
 
 if __name__ == '__main__':
     main()

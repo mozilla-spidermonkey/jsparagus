@@ -7,6 +7,10 @@ class SyntaxError(__builtins__['SyntaxError']):
     pass
 
 
+class UnexpectedEndError(SyntaxError):
+    pass
+
+
 class LexicalGrammar:
     def __init__(self, tokens, ignore=r'[ \t]*', **regexps):
         def token_to_re(token):
@@ -24,7 +28,21 @@ class LexicalGrammar:
         return Tokenizer(self.ignore_re, self.token_re, self.parser_pairs, source, filename)
 
 
-class Tokenizer:
+class BaseLexer:
+    def throw(self, msg_or_exception):
+        if isinstance(msg_or_exception, Exception):
+            e = msg_or_exception
+        else:
+            e = SyntaxError(msg_or_exception)
+        e.filename = self.filename
+        e.lineno, e.column = self.last_point_coords()
+        raise e
+
+    def throw_unexpected_end(self):
+        self.throw(UnexpectedEndError("unexpected end of input"))
+
+
+class Tokenizer(BaseLexer):
     def __init__(self, ignore_re, token_re, parser_pairs, source, filename=None):
         self.ignore_re = ignore_re
         self.token_re = token_re
@@ -96,9 +114,3 @@ class Tokenizer:
         line_start_index = src_pre.rfind("\n") + 1
         column = self.last_point - line_start_index  # can be zero
         return lineno, column
-
-    def throw(self, msg):
-        e = SyntaxError(msg)
-        e.filename = self.filename
-        e.lineno, e.column = self.last_point_coords()
-        raise e
