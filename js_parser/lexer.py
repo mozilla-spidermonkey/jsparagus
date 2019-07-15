@@ -78,7 +78,7 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         if c.isdigit():
             return 'NumericLiteral'
         elif c.isalpha() or c in '$_':
-            if self.parser_can_accept('IdentifierName'):
+            if self.parser.can_accept('IdentifierName'):
                 return 'IdentifierName'
             elif token in RESERVED_WORDS:  # TODO support strict mode
                 if token == 'null':
@@ -87,13 +87,13 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                     return 'BooleanLiteral'
                 return token
             elif (token in ('let', 'static', 'yield', 'async', 'of') and
-                  self.parser_can_accept(token)):
+                  self.parser.can_accept(token)):
                 # This is not what the standard says but eh
                 return token
             else:
                 return 'Identifier'
         elif c == '/':
-            if self.parser_can_accept('RegularExpressionLiteral'):
+            if self.parser.can_accept('RegularExpressionLiteral'):
                 raise Exception("not supported: regular expression literals")
             else:
                 match = re.match(r'(/=?)', self.src, self.point)
