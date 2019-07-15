@@ -25,7 +25,6 @@ For very basic needs, see `lexer.LexicalGrammar`.
 """
 
 import collections
-import typing
 import io
 import sys
 from .ordered import OrderedSet, OrderedFrozenSet
@@ -34,7 +33,7 @@ from .grammar import (Grammar,
                       Production, Some, CallMethod, InitNt,
                       is_concrete_element,
                       Optional, is_optional,
-                      Parameterized, ConditionalRhs, Apply, is_apply, Var,
+                      ConditionalRhs, Apply, is_apply, Var,
                       LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .pgen_runtime import ACCEPT
@@ -69,7 +68,7 @@ def empty_nt_set(grammar):
     empties = {}  # maps nts to actions.
 
     def production_is_empty(nt, p):
-         return all(is_lookahead_rule(e)
+        return all(is_lookahead_rule(e)
                    or is_optional(e)
                    or (grammar.is_nt(e) and e in empties)
                    for e in p.body)
@@ -77,6 +76,7 @@ def empty_nt_set(grammar):
     def evaluate_action_with_empty_matches(p):
         # partial evaluation of p.action
         stack = [e for e in p.body if is_concrete_element(e)]
+
         def eval(expr):
             if expr is None:
                 return None
@@ -98,6 +98,7 @@ def empty_nt_set(grammar):
                 return 'accept'
             else:
                 raise TypeError("internal error: unhandled reduce expression type {!r}".format(expr))
+
         return eval(p.action)
 
     done = False
@@ -143,7 +144,9 @@ def check_cycle_free(grammar):
                                 result.append(e)
                         else:
                             if not all_possibly_empty_so_far:
-                                break # no good, we have 2+ nonterminals that can't be empty
+                                # Give up - we have 2+ nonterminals that can't
+                                # be empty.
+                                break
                             all_possibly_empty_so_far = False
                             result = [e]
                     elif is_optional(e):
@@ -151,7 +154,9 @@ def check_cycle_free(grammar):
                             result.append(e.inner)
                     else:
                         assert is_lookahead_rule(e)
-                        pass # ignore the restriction - we lose a little precision here
+                        # Ignore the restriction. We lose a little precision
+                        # here; there could be a bug.
+                        pass
                 else:
                     # If we get here, we didn't break, so our results are good!
                     # nt can definitely produce all the nonterminals in result.
@@ -254,7 +259,8 @@ def expand_function_nonterminals(grammar):
         else:
             fn = grammar.nonterminals[nt]
             assert len(args) == len(fn.params)
-            args = tuple(zip(fn.params, args)) # create activation environment! are we having fun yet
+            # Create activation environment! are we having fun yet
+            args = tuple(zip(fn.params, args))
             return expand_productions(fn.body)
 
     while todo:
@@ -422,7 +428,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
     # Now iterate to a fixed point on the subsumes relation.
     done = False
     while not done:
-        done = True # optimistically
+        done = True  # optimistically
         for target, source in subsumes_relation:
             if follow[source] - follow[target]:
                 follow[target] |= follow[source]
@@ -782,7 +788,6 @@ class PgenContext:
         that happen for any grammar yet.
         """
 
-        grammar = self.grammar
         prods = self.prods
 
         item = LRItem(*args, **kwargs)
@@ -792,7 +797,7 @@ class PgenContext:
             item = item._replace(offset=item.offset + 1,
                                  lookahead=lookahead_intersect(item.lookahead, rhs[item.offset]))
 
-        #if item.lookahead is not None:
+        # if item.lookahead is not None:
         if False:  # this block is disabled for now; see comment
             # We want equivalent items to be ==, so the following code
             # canonicalizes lookahead rules, eliminates lookahead rules that
@@ -875,7 +880,6 @@ class PgenContext:
 
         start_points = {}
         for prod_index, prod in enumerate(self.prods):
-            nt1 = prod.nt
             rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
                 if self.grammar.is_nt(rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
@@ -906,8 +910,6 @@ class PgenContext:
         assert t in self.follow[nt]
         grammar = self.grammar
         some_shift_option = next(iter(shift_options))
-        shift_option_nt = self.prods[some_shift_option.prod_index].nt
-        shift_option_nt_str = grammar.element_to_str(shift_option_nt)
         t_str = grammar.element_to_str(t)
         scenario_str = state.traceback()
 
@@ -945,13 +947,13 @@ class State:
 
     __slots__ = [
         'context',
-        '_lr_items', # OrderedSet of LRItems, the actual content here
-        '_debug_traceback',  # State from which this one was first reached
-        'key',  # str, projection from _lr_items used to merge similar-enough states
-        '_hash',  # int, probably useless
-        'action_row',  # output of analysis: {terminal: action}
-        'ctn_row',  # output of analysis: {nonterminal: state_id}
-        'id'  # int, small unique id
+        '_lr_items',            # OrderedSet of LRItems, the actual content here
+        '_debug_traceback',     # State from which this one was first reached
+        'key',                  # str, projection from _lr_items used to merge similar-enough states
+        '_hash',                # int, probably useless
+        'action_row',           # output of analysis: {terminal: action}
+        'ctn_row',              # output of analysis: {nonterminal: state_id}
+        'id'                    # int, small unique id
     ]
 
     def __init__(self, context, items, debug_traceback=None):
@@ -1056,9 +1058,9 @@ class State:
                         # still in the grammar. XXX FIXME
                         if callee_rhs or any(p.body == callee_rhs
                                              for p in grammar.nonterminals[next_symbol]):
-                            ## print("    Considering stepping from item {} into production {}"
-                            ##       .format(grammar.lr_item_to_str(prods, item),
-                            ##               grammar.production_to_str(next_symbol, callee_rhs)))
+                            # print("    Considering stepping from item {} into production {}"
+                            #       .format(grammar.lr_item_to_str(prods, item),
+                            #               grammar.production_to_str(next_symbol, callee_rhs)))
                             followers = specific_follow(start_set_cache,
                                                         item.prod_index, item.offset,
                                                         item.followed_by)
@@ -1105,7 +1107,6 @@ class State:
             offset = item.offset
             prod = prods[item.prod_index]
             nt = prod.nt
-            i = prod.index
             rhs = prod.rhs
             if offset < len(rhs):
                 next_symbol = rhs[offset]
@@ -1290,7 +1291,7 @@ def compile_multi(grammar):
     out = io.StringIO()
     generate_parser(out, grammar)
     scope = {}
-    ##print(out.getvalue())
+    # print(out.getvalue())
     exec(out.getvalue(), scope)
     parser = Parser()
     for goal_nt in grammar.goals():
@@ -1308,6 +1309,7 @@ def compile(grammar):
 # *** Fun demo ****************************************************************
 
 def demo():
+    from .grammar import example_grammar
     grammar = example_grammar()
 
     import lexer
@@ -1327,7 +1329,7 @@ def demo():
     while True:
         try:
             line = input('> ')
-        except EOFError as _:
+        except EOFError:
             break
         try:
             result = parse(tokenize(line))

@@ -2,7 +2,6 @@
 
 import collections
 from .ordered import OrderedSet, OrderedFrozenSet
-import typing
 
 
 # *** What is a grammar? ******************************************************
@@ -160,12 +159,17 @@ class Grammar:
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
                 if e not in nonterminals and e.nt not in nonterminals:
-                    raise ValueError("invalid grammar: unrecognized nonterminal in production `grammar[{!r}][{}][{}]`: {!r}"
-                                    .format(nt, i, j, e.nt))
+                    raise ValueError(
+                        "invalid grammar: unrecognized nonterminal "
+                        "in production `grammar[{!r}][{}][{}]`: {!r}"
+                        .format(nt, i, j, e.nt))
                 args = [pair[0] for pair in e.args]
                 if e.nt in nonterminals and args != list(nonterminals[e.nt].params):
-                    raise ValueError("invalid grammar: wrong arguments passed to {!r} in production `grammar[{!r}][{}][{}]`: passed {!r}, expected {!r}"
-                                    .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
+                    raise ValueError(
+                        "invalid grammar: wrong arguments passed to {!r} "
+                        "in production `grammar[{!r}][{}][{}]`: "
+                        "passed {!r}, expected {!r}"
+                        .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
                 for param_name, arg_expr in e.args:
                     if isinstance(arg_expr, Var):
                         if arg_expr.name not in context_params:
@@ -182,8 +186,10 @@ class Grammar:
         def check_reduce_action(nt, i, rhs, action):
             if isinstance(action, int):
                 if not (0 <= action < sum(1 for e in rhs.body if is_concrete_element(e))):
-                    raise ValueError("invalid grammar: element number {} out of range for production {!r} in grammar[{!r}][{}].action ({!r})"
-                                     .format(action, nt, rhs.body, i, rhs.action))
+                    raise ValueError(
+                        "invalid grammar: element number {} out of range for "
+                        "production {!r} in grammar[{!r}][{}].action ({!r})"
+                        .format(action, nt, rhs.body, i, rhs.action))
             elif isinstance(action, CallMethod):
                 if not isinstance(action.method, str):
                     raise TypeError("invalid grammar: method names must be strings, not {!r}, in grammar[{!r}[{}].action"
@@ -249,8 +255,10 @@ class Grammar:
                 return Parameterized(params, copy_rhs_list(nt, fn.body, params))
             else:
                 if not isinstance(rhs_list, list):
-                    raise TypeError("invalid grammar: grammar[{!r}] should be either a Parameterized object or a list of right-hand sides, not {!r}"
-                                    .format(nt, type(rhs_list).__name__))
+                    raise TypeError(
+                        "invalid grammar: grammar[{!r}] should be either a "
+                        "list of right-hand sides or Parameterized, not {!r}"
+                        .format(nt, type(rhs_list).__name__))
                 sole_production = len(rhs_list) == 1
                 return [copy_rhs(nt, i, sole_production, rhs, params) for i, rhs in enumerate(rhs_list)]
 
@@ -277,12 +285,15 @@ class Grammar:
                                      .format(nt, plist_or_fn))
             elif isinstance(nt, Apply):
                 if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
-                    raise TypeError("invalid grammar: expected str or Apply(nt=str, args=tuple) keys in nonterminals dict, got {!r}".format(nt))
+                    raise TypeError(
+                        "invalid grammar: expected str or Apply(nt=str, "
+                        "args=tuple) keys in nonterminals dict, got {!r}"
+                        .format(nt))
                 for pair in nt.args:
                     if (not isinstance(pair, tuple) or
-                        len(pair) != 2 or
-                        not isinstance(pair[0], str) or
-                        not isinstance(pair[1], bool)):
+                            len(pair) != 2 or
+                            not isinstance(pair[0], str) or
+                            not isinstance(pair[1], bool)):
                         raise TypeError("invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
             elif isinstance(nt, str):
                 if not nt.isidentifier():
@@ -297,6 +308,7 @@ class Grammar:
             self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
 
         self.methods = methods = {}
+
         def gather_methods(action):
             if isinstance(action, CallMethod):
                 if action.method in methods:
@@ -354,15 +366,14 @@ class Grammar:
         """Return a copy of self with the same attributes except different nonterminals."""
         return Grammar(nonterminals, self.goals(), self.variable_terminals)
 
-
     # === A few methods for dumping pieces of grammar.
 
     def element_to_str(self, e):
         if is_apply(e):
             def arg_to_str(name, value):
-                if value == True:
+                if value is True:
                     return '+' + name
-                elif value == False:
+                elif value is False:
                     return '~' + name
                 elif isinstance(value, Var):
                     if value.name == name:
@@ -397,9 +408,9 @@ class Grammar:
 
     def rhs_to_str(self, rhs):
         if isinstance(rhs, ConditionalRhs):
-            if rhs.value == True:
+            if rhs.value is True:
                 condition = "+" + rhs.param
-            elif rhs.value == False:
+            elif rhs.value is False:
                 condition = "~" + rhs.param
             else:
                 condition = "{} == {!r}".format(rhs.param, rhs.value)

@@ -5,7 +5,8 @@
 (This is for testing. pgen will likely go away. Ignore this for now.)
 """
 
-import sys, argparse
+import sys
+import argparse
 from . import parse_pgen
 from . import gen
 

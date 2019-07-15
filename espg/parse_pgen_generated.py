@@ -1,5 +1,4 @@
 from espg import pgen_runtime
-from espg.pgen_runtime import Apply
 
 actions = [
     # 0. <empty>
@@ -212,6 +211,7 @@ reductions = [
     ('symbol', 1, lambda builder, x0: builder.str(x0)),
     ('action', 2, lambda builder, x0, x1: builder.action(x0, x1)),
 ]
+
 
 class DefaultBuilder:
     def grammar(self, x0, x1): return ('grammar', x0, x1)

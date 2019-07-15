@@ -1,5 +1,6 @@
 """ Deterministic data structures. """
 
+
 class OrderedSet:
     """Like set(), but iteration order is insertion order.
 

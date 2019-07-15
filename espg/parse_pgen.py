@@ -27,12 +27,15 @@ def list_of(e):
         Production(nt, [nt, e], CallMethod('append', (0, 1))),
     ]
 
+
 def call_method(name, body):
     nargs = sum(1 for e in body if is_concrete_element(e))
     return CallMethod(name, tuple(range(nargs)))
 
+
 def prod(nt, body, action):
     return Production(nt, body, call_method(action, body))
+
 
 pgen_grammar = Grammar(
     {
@@ -92,6 +95,7 @@ default_token_list = [
     ("Comma", ","),
 ]
 
+
 class AstBuilder:
     def grammar(self, token_defs, nt_defs):
         nonterminals, goal_nts = nt_defs
@@ -116,6 +120,7 @@ class AstBuilder:
 
     def nt_defs_single(self, nt_def):
         return self.nt_defs_append(({}, []), nt_def)
+
     def nt_defs_append(self, grammar_in, nt_def):
         is_goal, nt, prods = nt_def
         grammar, goal_nts = grammar_in
@@ -150,6 +155,7 @@ class AstBuilder:
 
     def ident(self, sym):
         return sym
+
     def str(self, sym):
         assert len(sym) > 1
         assert sym[0] == '"'
@@ -160,6 +166,7 @@ class AstBuilder:
     def action(self, arrow, ident):
         assert arrow == '=>'
         return ident
+
 
 def check_grammar(result):
     tokens, nonterminals, goal_nts = result
@@ -202,6 +209,7 @@ def check_grammar(result):
 
     return (tokens, out, goal_nts)
 
+
 def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
@@ -220,9 +228,6 @@ def regenerate():
 if __name__ == '__main__':
     if sys.argv[1:] == ['--regenerate']:
         regenerate()
-    elif sys.argv[1:2] == ['--test']:
-        del sys.argv[1]
-        unittest.main()
     else:
-        print("usage: ./parse_pgen.py [--renegerate|--test]")
+        print("usage: ./parse_pgen.py --renegerate")
         sys.exit(1)

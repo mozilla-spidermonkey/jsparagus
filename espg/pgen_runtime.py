@@ -1,5 +1,9 @@
+"""Runtime support for generated parsers."""
+
 from .grammar import Apply  # to re-export
 from .lexer import UnexpectedEndError
+
+__all__ = ['ACCEPT', 'ERROR', 'Apply', 'ReplParser', 'make_parse_fn']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
@@ -67,7 +71,7 @@ class ReplParser:
             line = input(prompt)
             try:
                 return self.feed(line + "\n")
-            except UnexpectedEndError as exc:
+            except UnexpectedEndError:
                 prompt = "» "
                 continue
 
@@ -85,7 +89,7 @@ class ReplParser:
                 if t is None:
                     # cope with end of line somehow
                     pass
-            elif action > ACCEPT: # reduce
+            elif action > ACCEPT:  # reduce
                 tag_name, n, reducer = self.reductions[-action - 1]
                 start = len(stack) - 2 * n
                 node = reducer(self.builder, *stack[start::2])
