@@ -1,4 +1,4 @@
-# Parser generator playground
+# jsparagus - A parser generator
 
 This toy parser generator spits out Python 3 code.
 

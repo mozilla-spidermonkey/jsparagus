@@ -5,8 +5,7 @@
 See README.md for instructions.
 """
 
-from jsparagus.pgen_runtime import (ReplParser, throw_syntax_error,
-                                    ERROR, ACCEPT)
+from jsparagus.runtime import ReplParser, throw_syntax_error, ERROR, ACCEPT
 from . import parser_tables
 from .lexer import JSLexer
 

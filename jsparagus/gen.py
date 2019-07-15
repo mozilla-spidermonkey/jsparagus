@@ -36,7 +36,7 @@ from .grammar import (Grammar,
                       ConditionalRhs, Apply, is_apply, Var,
                       LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
 from . import emit
-from .pgen_runtime import ACCEPT
+from .runtime import ACCEPT
 from .lexer import SyntaxError
 
 

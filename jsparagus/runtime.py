@@ -1,4 +1,4 @@
-"""Runtime support for generated parsers."""
+"""Runtime support for jsparagus-generated parsers."""
 
 from .grammar import Apply  # to re-export
 from .lexer import UnexpectedEndError

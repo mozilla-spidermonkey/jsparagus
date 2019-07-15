@@ -1,14 +1,14 @@
 """Emit code for parser tables in either Python or Rust. """
 
-from .pgen_runtime import ERROR
+from .runtime import ERROR
 from .ordered import OrderedSet
 from .grammar import InitNt, CallMethod, Some, is_apply, is_concrete_element, Optional
 
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
-    out.write("from jsparagus import pgen_runtime\n")
+    out.write("from jsparagus import runtime\n")
     if any(is_apply(key) for key in grammar.nonterminals):
-        out.write("from jsparagus.pgen_runtime import Apply\n")
+        out.write("from jsparagus.runtime import Apply\n")
     out.write("\n")
 
     out.write("actions = [\n")
@@ -59,7 +59,7 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("\n\n")
 
     for init_nt, index in init_state_map.items():
-        out.write("parse_{} = pgen_runtime.make_parse_fn(actions, ctns, reductions, {}, DefaultBuilder)\n"
+        out.write("parse_{} = runtime.make_parse_fn(actions, ctns, reductions, {}, DefaultBuilder)\n"
                   .format(init_nt, index))
 
 

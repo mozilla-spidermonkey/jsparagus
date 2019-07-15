@@ -1,4 +1,4 @@
-from jsparagus import pgen_runtime
+from jsparagus import runtime
 
 actions = [
     # 0. <empty>
@@ -229,4 +229,4 @@ class DefaultBuilder:
     def action(self, x0, x1): return ('action', x0, x1)
 
 
-parse_grammar = pgen_runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)
+parse_grammar = runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)

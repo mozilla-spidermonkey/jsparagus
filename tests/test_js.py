@@ -13,7 +13,7 @@ class ESTestCase(unittest.TestCase):
 
         (This should be the case if `s` is a prefix of a valid Script.)
         """
-        self.assertRaises(jsparagus.pgen_runtime.UnexpectedEndError,
+        self.assertRaises(jsparagus.lexer.UnexpectedEndError,
                           lambda: js_parser.parser.parse_Script(s))
 
     def assert_syntax_error(self, s):

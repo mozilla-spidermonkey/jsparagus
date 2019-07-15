@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""pgen.py - Generate a parser from a pgen grammar.
+"""jsparagus/main.py - Generate a parser from a pgen grammar.
 
 (This is for testing. pgen will likely go away. Ignore this for now.)
 """
