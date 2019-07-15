@@ -1,7 +1,7 @@
 """Vague approximation of an ECMAScript lexer."""
 
 import re
-import espg.lexer
+import jsparagus.lexer
 
 
 TOKEN_RE = re.compile(r'''(?x)
@@ -50,7 +50,7 @@ null true false
 endif
 '''.split())
 
-class JSLexer(espg.lexer.BaseLexer):
+class JSLexer(jsparagus.lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
     def __init__(self, source, parser_can_accept, filename=None):
         self.src = source

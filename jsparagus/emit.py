@@ -6,9 +6,9 @@ from .grammar import InitNt, CallMethod, Some, is_apply, is_concrete_element, Op
 
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
-    out.write("from espg import pgen_runtime\n")
+    out.write("from jsparagus import pgen_runtime\n")
     if any(is_apply(key) for key in grammar.nonterminals):
-        out.write("from espg.pgen_runtime import Apply\n")
+        out.write("from jsparagus.pgen_runtime import Apply\n")
     out.write("\n")
 
     out.write("actions = [\n")

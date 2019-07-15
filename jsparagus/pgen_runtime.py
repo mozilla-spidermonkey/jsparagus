@@ -52,7 +52,7 @@ class ReplParser:
     """Object for parsing a single Script that may cover multiple lines.
 
     Usage: Call .feed(line) repeatedly until either it returns an AST or raises
-    an exception other than espg.lexer.UnexpectedEndError.
+    an exception other than jsparagus.lexer.UnexpectedEndError.
 
     Alternatively, just call .read() once, which does all of that, reading
     input lines from stdin as needed.

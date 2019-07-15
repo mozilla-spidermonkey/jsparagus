@@ -20,9 +20,9 @@
 set -eu
 
 cd $(dirname "$0")
-python3 -m espg.parse_pgen --regenerate > espg/parse_pgen_generated_NEW.py
-mv espg/parse_pgen_generated_NEW.py espg/parse_pgen_generated.py
+python3 -m jsparagus.parse_pgen --regenerate > jsparagus/parse_pgen_generated_NEW.py
+mv jsparagus/parse_pgen_generated_NEW.py jsparagus/parse_pgen_generated.py
 python3 -m tests.test_parse_pgen
-python3 -m espg.pgen --target=rust pgen.pgen > client/src/parser_generated.rs
+python3 -m jsparagus.pgen --target=rust pgen.pgen > client/src/parser_generated.rs
 (cd client && cargo build)
 python3 -m tests.test

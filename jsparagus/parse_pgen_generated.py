@@ -1,4 +1,4 @@
-from espg import pgen_runtime
+from jsparagus import pgen_runtime
 
 actions = [
     # 0. <empty>

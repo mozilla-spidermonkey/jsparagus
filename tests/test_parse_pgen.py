@@ -1,7 +1,7 @@
 import unittest
 
-from .context import espg
-from espg import parse_pgen, parse_pgen_generated
+from .context import jsparagus
+from jsparagus import parse_pgen, parse_pgen_generated
 
 class ParsePgenTestCase(unittest.TestCase):
     def test_self(self):
@@ -19,7 +19,7 @@ class ParsePgenTestCase(unittest.TestCase):
 
         import io
         out = io.StringIO()
-        espg.gen.generate_parser(out, grammar)
+        jsparagus.gen.generate_parser(out, grammar)
         generated_from_file = out.getvalue()
 
         self.maxDiff = None

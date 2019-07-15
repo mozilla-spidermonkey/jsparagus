@@ -5,7 +5,7 @@
 import sys; sys.path.append("..")
 
 import argparse
-from espg import gen
+from jsparagus import gen
 import parse_emug
 
 
