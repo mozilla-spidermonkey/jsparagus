@@ -1,27 +1,28 @@
-#![feature(test)]
-
-extern crate test;
+#![cfg_attr(feature = "unstable", feature(test))]
 
 mod ast;
+mod lexer;
 mod parser_generated;
 mod parser_runtime;
-mod lexer;
 
-use std::io::{self, Read};
 use crate::lexer::Lexer;
+use std::io::{self, Read};
 
-#[cfg(test)]
+#[cfg(all(feature = "unstable", test))]
 mod tests {
+    extern crate test;
+
+    use crate::lexer::Lexer;
     use std::fs::File;
     use std::io::Read;
     use test::Bencher;
-    use crate::lexer::Lexer;
 
     #[bench]
     fn bench_parse_grammar(b: &mut Bencher) {
         let mut file = File::open("../mtg/mtg.pgen").expect("opening test file");
         let mut buffer = String::new();
-        file.read_to_string(&mut buffer).expect("reading from test file");
+        file.read_to_string(&mut buffer)
+            .expect("reading from test file");
         b.iter(|| {
             let lexer = Lexer::new(buffer.chars());
             crate::parser_generated::parse_grammar(lexer).unwrap();

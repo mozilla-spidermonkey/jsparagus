@@ -25,4 +25,9 @@ mv jsparagus/parse_pgen_generated_NEW.py jsparagus/parse_pgen_generated.py
 python3 -m tests.test_parse_pgen
 python3 -m jsparagus.main --target=rust pgen.pgen > client/src/parser_generated.rs
 (cd client && cargo build)
+if [[ $(cargo version) == *-nightly* ]]
+then
+    (cd client && cargo bench --features unstable)
+fi
+(cd client && cargo build)
 python3 -m tests.test
