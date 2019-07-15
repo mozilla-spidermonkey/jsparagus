@@ -28,6 +28,7 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error("3 4")
         self.assert_incomplete("3 +")
         self.assert_incomplete("{")
+        self.assert_incomplete("{;")
 
 if __name__ == '__main__':
     unittest.main()
