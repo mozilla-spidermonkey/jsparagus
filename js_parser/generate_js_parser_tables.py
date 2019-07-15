@@ -1,4 +1,4 @@
-"""generate_js_parser_tables.py - Generate parser tables from the ES grammar."""
+"""generate_js_parser_tables.py - Generate tables from the ES grammar."""
 
 import argparse
 import os

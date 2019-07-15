@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" extract-es-grammar.py - Extract the grammar bits from the ECMAScript specification
+""" extract-es-grammar.py - Extract the grammar from the ECMAScript spec
 
 To run this script:
 
