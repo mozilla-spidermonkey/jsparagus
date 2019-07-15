@@ -11,6 +11,9 @@ from . import parser_tables
 from .lexer import JSLexer
 
 
+Script_entry_state = 0 # ew, magic number, get pgen to emit this
+
+
 class JSReplParser(ReplParser):
     def __init__(self):
         ReplParser.__init__(
@@ -18,10 +21,19 @@ class JSReplParser(ReplParser):
             parser_tables.actions,
             parser_tables.ctns,
             parser_tables.reductions,
-            lambda line: JSLexer(line, self.can_accept),
+            lambda line: JSLexer(line, self.can_accept,
+                                 self.can_accept_EmptyStatement),
             Script_entry_state,
             parser_tables.DefaultBuilder()
         )
+
+    def can_accept_EmptyStatement(self):
+        # Note: This relies on the tables not being compressed in a way that
+        # loses this bit of information. Of course there are many ways to
+        # compress and retain this, but the trick is making a clean interface
+        # between the parser, the lexer, and the parser generator.
+        state = self.stack[-1]
+        return "EmptyStatement" in self.ctns[state]
 
     def can_accept(self, t):
         """Walk the stack to see if the terminal `t` is OK next or an error.
@@ -48,68 +60,5 @@ class JSReplParser(ReplParser):
                 return False
 
 
-def parse(actions, ctns, reductions, entry_state, text, builder):
-    """ Table-driven LR parser, customized to implement ASI. """
-
-    stack = [entry_state]  # alternates state-ids and AST nodes
-
-    def can_accept(t):
-        """Walk the stack to see if the terminal `t` is OK next or an error.
-
-        t can be None, querying if we can accept end-of-input.
-        """
-
-        sp = len(stack) - 1
-        state = stack[sp]
-        while True:
-            action = actions[state].get(t, ERROR)
-            if action >= 0:  # shift
-                return True
-            elif action > ACCEPT:  # reduce
-                tag_name, n, _reducer = reductions[-action - 1]
-                sp -= 2 * n
-                state = stack[sp]
-                sp += 2
-                state = ctns[state][tag_name]
-            elif action == ACCEPT:
-                return True
-            else:
-                assert action == ERROR
-                return False
-
-    tokens = JSLexer(text, can_accept)
-    t = tokens.peek()
-
-    while True:
-        state = stack[-1]
-        action = actions[state].get(t, ERROR)
-        # possible actions are: shift, reduce, accept, error; all encoded as integers
-        if action >= 0:  # shift
-            stack.append(tokens.take(t))
-            stack.append(action)
-            t = tokens.peek()
-        elif action > ACCEPT:  # reduce
-            tag_name, n, reducer = reductions[-action - 1]
-            start = len(stack) - 2 * n
-            node = reducer(builder, *stack[start::2])
-            stack[start:] = [node, ctns[stack[start - 1]][tag_name]]
-        elif action == ACCEPT:
-            assert len(stack) == 3
-            return stack[1]
-        else:
-            assert action == ERROR
-            throw_syntax_error(actions, state, t, tokens)
-
-
-Script_entry_state = 0 # ew, magic number, get pgen to emit this
-
-
-def parse_Script(line):
-    return parse(
-        parser_tables.actions,
-        parser_tables.ctns,
-        parser_tables.reductions,
-        Script_entry_state,
-        line,
-        parser_tables.DefaultBuilder()
-    )
+def parse_Script(text):
+    return JSReplParser().feed(text)

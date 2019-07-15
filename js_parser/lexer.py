@@ -52,13 +52,16 @@ endif
 
 class JSLexer(jsparagus.lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
-    def __init__(self, source, parser_can_accept, filename=None):
+    def __init__(self, source, parser_can_accept,
+                 parser_can_accept_EmptyStatement,
+                 filename=None):
         self.src = source
         self.filename = filename
         self.last_point = 0
         self.point = 0
         self._next_kind = None
         self.parser_can_accept = parser_can_accept
+        self.parser_can_accept_EmptyStatement = parser_can_accept_EmptyStatement
 
     def _match(self):
         match = self._next_match = TOKEN_RE.match(self.src, self.point)
@@ -69,7 +72,9 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         if token == '':
             assert match.end() == len(self.src)
             # Implement ASI at the end of the program.
-            if not self.parser_can_accept(None) and self.parser_can_accept(';'):
+            if (not self.parser_can_accept(None) and
+                    self.parser_can_accept(';') and
+                    not self.parser_can_accept_EmptyStatement()):
                 return ';'
             return None
         c = token[0]

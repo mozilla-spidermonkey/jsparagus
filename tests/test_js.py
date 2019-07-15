@@ -21,10 +21,13 @@ class ESTestCase(unittest.TestCase):
         self.assertRaises(jsparagus.lexer.SyntaxError,
                           lambda: js_parser.parser.parse_Script(s))
 
+    # === Tests!
+
     def test_asi_at_end(self):
         self.assert_parses("3 + 4")
         self.assert_syntax_error("3 4")
         self.assert_incomplete("3 +")
+        self.assert_incomplete("{")
 
 if __name__ == '__main__':
     unittest.main()
