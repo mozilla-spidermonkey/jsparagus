@@ -1,13 +1,14 @@
 use crate::ast::Token;
 use crate::parser_runtime::TokenStream;
 
-pub struct Lexer<Iter: Iterator<Item=char>> {
+pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
     current: Option<Token>,
 }
 
 impl<Iter> Lexer<Iter>
-where Iter: Iterator<Item=char>
+where
+    Iter: Iterator<Item = char>,
 {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
@@ -59,15 +60,13 @@ where Iter: Iterator<Item=char>
             Some('{') => Token::OpenBrace,
             Some('}') => Token::CloseBrace,
             Some('?') => Token::QuestionMark,
-            Some('=') => {
-                match self.chars.peek() {
-                    Some('>') => {
-                        self.chars.next();
-                        Token::Arrow
-                    }
-                    _ => Token::EqualSign,
+            Some('=') => match self.chars.peek() {
+                Some('>') => {
+                    self.chars.next();
+                    Token::Arrow
                 }
-            }
+                _ => Token::EqualSign,
+            },
 
             Some('"') => {
                 let mut s = String::new();
@@ -75,7 +74,9 @@ where Iter: Iterator<Item=char>
                     if c == '"' {
                         break;
                     } else if c == '\n' || c == '\\' {
-                        panic!("not implemented: syntax error, string contains newline or backslash");
+                        panic!(
+                            "not implemented: syntax error, string contains newline or backslash"
+                        );
                     } else {
                         s.push(c);
                     }
@@ -86,7 +87,7 @@ where Iter: Iterator<Item=char>
                 Token::String(s)
             }
 
-            Some(c) =>
+            Some(c) => {
                 if Lexer::<Iter>::is_identifier_start(c) {
                     let mut id = String::new();
                     id.push(c);
@@ -105,13 +106,15 @@ where Iter: Iterator<Item=char>
                 } else {
                     panic!("not implemented: syntax error, illegal character {:?}", c);
                 }
+            }
         };
         self.current = Some(token);
     }
 }
 
 impl<Iter> TokenStream for Lexer<Iter>
-where Iter: Iterator<Item=char>
+where
+    Iter: Iterator<Item = char>,
 {
     type Token = Token;
     fn peek(&mut self) -> &Self::Token {

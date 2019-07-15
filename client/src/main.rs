@@ -34,6 +34,7 @@ fn main() -> io::Result<()> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
     let lexer = Lexer::new(buffer.chars());
-    parser_generated::parse_grammar(lexer).expect("parsing grammar on stdin");
+    parser_generated::parse_grammar(&mut parser_generated::DefaultHandler {}, lexer)
+        .expect("parsing grammar on stdin");
     Ok(())
 }

@@ -1,22 +1,21 @@
 use crate::parser_generated::TerminalId;
-use crate::parser_generated::NtNode;
 
 // Danger: The order of these variants is chosen to match TerminalId, so that
 // the .get_id() method is trivial.
 #[derive(Debug)]
 pub enum Token {
-    Nt,  // 'nt' keyword
+    Nt,    // 'nt' keyword
     Goal,  // 'goal' keyword
-    Token,  // 'token' keyword
-    Var,  // 'var' keyword
+    Token, // 'token' keyword
+    Var,   // 'var' keyword
     Identifier(String),
     End,
-    OpenBrace, // {
-    EqualSign, // =
-    Arrow, // =>
+    OpenBrace,  // {
+    EqualSign,  // =
+    Arrow,      // =>
     CloseBrace, // }
     String(String),
-    Semicolon, // ;
+    Semicolon,    // ;
     QuestionMark, // ?
 }
 
@@ -42,7 +41,7 @@ impl Token {
 }
 
 #[derive(Debug)]
-pub enum Node {
+pub enum Node<T> {
     Terminal(Token),
-    Nonterminal(Box<NtNode>),
+    Nonterminal(Box<T>),
 }

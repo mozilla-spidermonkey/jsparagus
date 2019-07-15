@@ -85,12 +85,12 @@ class RustParserWriter:
         self.terminals = list(OrderedSet(
             t for state in self.states for t in state.action_row))
         self.nonterminals = list(OrderedSet(
-            nt for state in states for nt in state.ctn_row))
+            nt for state in self.states for nt in state.ctn_row))
 
         self.prod_optional_element_indexes = {
             (prod.nt, prod.index): set(
                 i
-                for p in prods
+                for p in self.prods
                 if p.nt == prod.nt and p.index == prod.index
                 for i in p.removals
             )
@@ -115,7 +115,9 @@ class RustParserWriter:
         self.actions()
         self.check_camel_case()
         self.check_nt_node_variant()
+        self.handler_trait()
         self.nt_node()
+        self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
         self.reduce()
@@ -168,7 +170,7 @@ class RustParserWriter:
                     seen[cc], nt, cc))
             seen[cc] = nt
 
-    def nt_node_variant(self, grammar, prod):
+    def nt_node_variant(self, prod):
         name = self.to_camel_case(prod.nt)
         if len(self.grammar.nonterminals[prod.nt]) > 1:
             name += "P" + str(prod.index)
@@ -178,7 +180,7 @@ class RustParserWriter:
         seen = {}
         for prod in self.prods:
             if prod.nt in self.nonterminals and not prod.removals:
-                name = self.nt_node_variant(self.grammar, prod)
+                name = self.nt_node_variant(prod)
                 if name in seen:
                     raise ValueError("Productions {} and {} have the same spelling ({})".format(
                         self.grammar.production_to_str(
@@ -187,14 +189,20 @@ class RustParserWriter:
                         name))
                 seen[name] = prod
 
-    def rust_type_of_element(self, prod, i, e):
+    def trait_name(self, prod):
+        name = prod.nt
+        if len(self.grammar.nonterminals[prod.nt]) > 1:
+            name += "_p" + str(prod.index)
+        return name
+
+    def rust_type_of_element(self, prod, i, e, node_ty):
         if self.grammar.is_variable_terminal(e):
-            ty = 'Node'
+            ty = 'Node<{}>'.format(node_ty)
         elif self.grammar.is_terminal(e):
             ty = '()'
         else:
             assert self.grammar.is_nt(e)
-            ty = 'Node'
+            ty = 'Node<{}>'.format(node_ty)
 
         if i in self.prod_optional_element_indexes[(prod.nt, prod.index)]:
             if ty == '()':
@@ -203,9 +211,9 @@ class RustParserWriter:
                 ty = 'Option<{}>'.format(ty)
         return ty
 
-    def nt_node(self):
-        self.out.write("#[derive(Debug)]\n")
-        self.out.write("pub enum NtNode {\n")
+    def handler_trait(self):
+        self.out.write("pub trait Handler {\n")
+        self.out.write("    type ReturnValue;\n")
         for prod in self.prods:
             # Each production with an optional element removed uses the same
             # variant as the corresponding production where the optional element is
@@ -213,14 +221,60 @@ class RustParserWriter:
             if prod.nt in self.nonterminals and not prod.removals:
                 types = []
                 for i, e in enumerate(prod.rhs):
-                    ty = self.rust_type_of_element(prod, i, e)
+                    ty = self.rust_type_of_element(
+                        prod, i, e, "Self::ReturnValue")
                     if ty != '()':
                         types.append(ty)
 
                 self.out.write(
                     "    // {}\n".format(self.grammar.production_to_str(prod.nt, prod.rhs)))
-                name = self.nt_node_variant(self.grammar, prod)
+                name = self.trait_name(prod)
+                args = ", ".join(("a{}: {}".format(i, t)
+                                  for i, t in enumerate(types)))
+                self.out.write("    fn {}(&mut self, {}) -> Self::ReturnValue;\n".format(
+                    name, args))
+        self.out.write("}\n\n")
+
+    def nt_node(self):
+        self.out.write("#[derive(Debug)]\n")
+        self.out.write("pub enum NtNode {\n")
+        for prod in self.prods:
+            if prod.nt in self.nonterminals and not prod.removals:
+                types = []
+                for i, e in enumerate(prod.rhs):
+                    ty = self.rust_type_of_element(prod, i, e, "NtNode")
+                    if ty != '()':
+                        types.append(ty)
+
+                self.out.write(
+                    "    // {}\n".format(self.grammar.production_to_str(prod.nt, prod.rhs)))
+                name = self.nt_node_variant(prod)
                 self.out.write("    {}({}),\n".format(name, ", ".join(types)))
+        self.out.write("}\n\n")
+
+    def nt_node_impl(self):
+        self.out.write("pub struct DefaultHandler {}\n\n")
+        self.out.write("impl Handler for DefaultHandler {\n")
+        self.out.write("    type ReturnValue = NtNode;\n")
+        for prod in self.prods:
+            if prod.nt in self.nonterminals and not prod.removals:
+                types = []
+                for i, e in enumerate(prod.rhs):
+                    ty = self.rust_type_of_element(prod, i, e, "NtNode")
+                    if ty != '()':
+                        types.append(ty)
+
+                trait_name = self.trait_name(prod)
+                nt_node_name = self.nt_node_variant(prod)
+                args = ", ".join(("a{}: {}".format(i, t)
+                                  for i, t in enumerate(types)))
+                params = ", ".join("a{}".format(i)
+                                   for i in range(0, len(types)))
+                self.out.write(
+                    "    fn {}(&mut self, {}) -> NtNode {{\n".format(trait_name, args))
+                self.out.write("        NtNode::{}({})\n" .format(
+                    nt_node_name, params))
+                self.out.write("    }\n")
         self.out.write("}\n\n")
 
     def nonterminal_id(self):
@@ -241,7 +295,7 @@ class RustParserWriter:
 
     def reduce(self):
         self.out.write(
-            "fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {\n")
+            "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<Node<H::ReturnValue>>) -> NonterminalId {\n")
         self.out.write("    match prod {\n")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
@@ -259,7 +313,7 @@ class RustParserWriter:
                     while original_index in prod.removals:
                         e = self.originals[prod.nt, prod.index][original_index]
                         assert isinstance(e, Optional)
-                        if self.rust_type_of_element(prod, original_index, e.inner) == 'bool':
+                        if self.rust_type_of_element(prod, original_index, e.inner, "x") == 'bool':
                             arg = "false"
                         else:
                             arg = "None"
@@ -267,7 +321,7 @@ class RustParserWriter:
                         original_index += 1
 
                     ty = self.rust_type_of_element(
-                        prod, original_index, element)
+                        prod, original_index, element, "x")
                     if ty == '()':
                         var = None
                         arg = '()'
@@ -293,9 +347,9 @@ class RustParserWriter:
                         self.out.write(
                             "            let {} = stack.pop().unwrap();\n".format(var))
 
-                ntv = self.nt_node_variant(self.grammar, prod)
-                self.out.write("            stack.push(Node::Nonterminal(Box::new(NtNode::{}({}))));\n".format(
-                    ntv,
+                trait_name = self.trait_name(prod)
+                self.out.write("            stack.push(Node::Nonterminal(Box::new(handler.{}({}))));\n".format(
+                    trait_name,
                     ", ".join(arguments)
                 ))
                 self.out.write("            NonterminalId::{}\n".format(
@@ -319,11 +373,13 @@ class RustParserWriter:
 
         for init_nt, index in self.init_state_map.items():
             self.out.write(
-                "pub fn parse_{}<In: TokenStream<Token=crate::ast::Token>>(\n".format(init_nt))
+                "pub fn parse_{}<H: Handler, In: TokenStream<Token=crate::ast::Token>>(\n".format(init_nt))
+            self.out.write("    handler: &mut H,\n")
             self.out.write("    tokens: In,\n")
-            self.out.write(") -> Result<Node, &'static str> {\n")
             self.out.write(
-                "    parser_runtime::parse(tokens, {}, &TABLES, reduce)\n".format(index))
+                ") -> Result<Node<H::ReturnValue>, &'static str> {\n")
+            self.out.write(
+                "    parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)\n".format(index))
             self.out.write("}\n\n")
 
 

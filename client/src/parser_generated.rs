@@ -158,44 +158,144 @@ static ACTIONS: [i64; 585] = [
     -12, -12, ERROR, ERROR, ERROR, -12, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 ];
 
+pub trait Handler {
+    type ReturnValue;
+    // grammar ::= token_defs nt_defs
+    fn grammar_p0(&mut self, a0: Option<Node<Self::ReturnValue>>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // token_defs ::= token_def
+    fn token_defs_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // token_defs ::= token_defs token_def
+    fn token_defs_p1(&mut self, a0: Node<Self::ReturnValue>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // token_def ::= "token" IDENT "=" STR ";"
+    fn token_def_p0(&mut self, a0: Node<Self::ReturnValue>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // token_def ::= "var" "token" IDENT ";"
+    fn token_def_p1(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // nt_defs ::= nt_def
+    fn nt_defs_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // nt_defs ::= nt_defs nt_def
+    fn nt_defs_p1(&mut self, a0: Node<Self::ReturnValue>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // nt_def ::= "goal" "nt" IDENT "{" prods "}"
+    fn nt_def_p0(&mut self, a0: bool, a1: Node<Self::ReturnValue>, a2: Option<Node<Self::ReturnValue>>) -> Self::ReturnValue;
+    // prods ::= prod
+    fn prods_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // prods ::= prods prod
+    fn prods_p1(&mut self, a0: Node<Self::ReturnValue>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // prod ::= terms action ";"
+    fn prod_p0(&mut self, a0: Node<Self::ReturnValue>, a1: Option<Node<Self::ReturnValue>>) -> Self::ReturnValue;
+    // terms ::= term
+    fn terms_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // terms ::= terms term
+    fn terms_p1(&mut self, a0: Node<Self::ReturnValue>, a1: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // term ::= symbol
+    fn term_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // term ::= symbol "?"
+    fn term_p1(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // symbol ::= IDENT
+    fn symbol_p0(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // symbol ::= STR
+    fn symbol_p1(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+    // action ::= "=>" IDENT
+    fn action(&mut self, a0: Node<Self::ReturnValue>) -> Self::ReturnValue;
+}
+
 #[derive(Debug)]
 pub enum NtNode {
     // grammar ::= token_defs nt_defs
-    GrammarP0(Option<Node>, Node),
+    GrammarP0(Option<Node<NtNode>>, Node<NtNode>),
     // token_defs ::= token_def
-    TokenDefsP0(Node),
+    TokenDefsP0(Node<NtNode>),
     // token_defs ::= token_defs token_def
-    TokenDefsP1(Node, Node),
+    TokenDefsP1(Node<NtNode>, Node<NtNode>),
     // token_def ::= "token" IDENT "=" STR ";"
-    TokenDefP0(Node, Node),
+    TokenDefP0(Node<NtNode>, Node<NtNode>),
     // token_def ::= "var" "token" IDENT ";"
-    TokenDefP1(Node),
+    TokenDefP1(Node<NtNode>),
     // nt_defs ::= nt_def
-    NtDefsP0(Node),
+    NtDefsP0(Node<NtNode>),
     // nt_defs ::= nt_defs nt_def
-    NtDefsP1(Node, Node),
+    NtDefsP1(Node<NtNode>, Node<NtNode>),
     // nt_def ::= "goal" "nt" IDENT "{" prods "}"
-    NtDefP0(bool, Node, Option<Node>),
+    NtDefP0(bool, Node<NtNode>, Option<Node<NtNode>>),
     // prods ::= prod
-    ProdsP0(Node),
+    ProdsP0(Node<NtNode>),
     // prods ::= prods prod
-    ProdsP1(Node, Node),
+    ProdsP1(Node<NtNode>, Node<NtNode>),
     // prod ::= terms action ";"
-    ProdP0(Node, Option<Node>),
+    ProdP0(Node<NtNode>, Option<Node<NtNode>>),
     // terms ::= term
-    TermsP0(Node),
+    TermsP0(Node<NtNode>),
     // terms ::= terms term
-    TermsP1(Node, Node),
+    TermsP1(Node<NtNode>, Node<NtNode>),
     // term ::= symbol
-    TermP0(Node),
+    TermP0(Node<NtNode>),
     // term ::= symbol "?"
-    TermP1(Node),
+    TermP1(Node<NtNode>),
     // symbol ::= IDENT
-    SymbolP0(Node),
+    SymbolP0(Node<NtNode>),
     // symbol ::= STR
-    SymbolP1(Node),
+    SymbolP1(Node<NtNode>),
     // action ::= "=>" IDENT
-    Action(Node),
+    Action(Node<NtNode>),
+}
+
+pub struct DefaultHandler {}
+
+impl Handler for DefaultHandler {
+    type ReturnValue = NtNode;
+    fn grammar_p0(&mut self, a0: Option<Node<NtNode>>, a1: Node<NtNode>) -> NtNode {
+        NtNode::GrammarP0(a0, a1)
+    }
+    fn token_defs_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::TokenDefsP0(a0)
+    }
+    fn token_defs_p1(&mut self, a0: Node<NtNode>, a1: Node<NtNode>) -> NtNode {
+        NtNode::TokenDefsP1(a0, a1)
+    }
+    fn token_def_p0(&mut self, a0: Node<NtNode>, a1: Node<NtNode>) -> NtNode {
+        NtNode::TokenDefP0(a0, a1)
+    }
+    fn token_def_p1(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::TokenDefP1(a0)
+    }
+    fn nt_defs_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::NtDefsP0(a0)
+    }
+    fn nt_defs_p1(&mut self, a0: Node<NtNode>, a1: Node<NtNode>) -> NtNode {
+        NtNode::NtDefsP1(a0, a1)
+    }
+    fn nt_def_p0(&mut self, a0: bool, a1: Node<NtNode>, a2: Option<Node<NtNode>>) -> NtNode {
+        NtNode::NtDefP0(a0, a1, a2)
+    }
+    fn prods_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::ProdsP0(a0)
+    }
+    fn prods_p1(&mut self, a0: Node<NtNode>, a1: Node<NtNode>) -> NtNode {
+        NtNode::ProdsP1(a0, a1)
+    }
+    fn prod_p0(&mut self, a0: Node<NtNode>, a1: Option<Node<NtNode>>) -> NtNode {
+        NtNode::ProdP0(a0, a1)
+    }
+    fn terms_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::TermsP0(a0)
+    }
+    fn terms_p1(&mut self, a0: Node<NtNode>, a1: Node<NtNode>) -> NtNode {
+        NtNode::TermsP1(a0, a1)
+    }
+    fn term_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::TermP0(a0)
+    }
+    fn term_p1(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::TermP1(a0)
+    }
+    fn symbol_p0(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::SymbolP0(a0)
+    }
+    fn symbol_p1(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::SymbolP1(a0)
+    }
+    fn action(&mut self, a0: Node<NtNode>) -> NtNode {
+        NtNode::Action(a0)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -261,32 +361,32 @@ static GOTO: [usize; 495] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
 
-fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
+fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<Node<H::ReturnValue>>) -> NonterminalId {
     match prod {
         0 => {
             // grammar ::= nt_defs
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(None, x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.grammar_p0(None, x0))));
             NonterminalId::Grammar
         }
         1 => {
             // grammar ::= token_defs nt_defs
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::GrammarP0(Some(x0), x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.grammar_p0(Some(x0), x1))));
             NonterminalId::Grammar
         }
         2 => {
             // token_defs ::= token_def
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefsP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.token_defs_p0(x0))));
             NonterminalId::TokenDefs
         }
         3 => {
             // token_defs ::= token_defs token_def
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefsP1(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.token_defs_p1(x0, x1))));
             NonterminalId::TokenDefs
         }
         4 => {
@@ -296,7 +396,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.pop();
             let x0 = stack.pop().unwrap();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefP0(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.token_def_p0(x0, x1))));
             NonterminalId::TokenDef
         }
         5 => {
@@ -305,20 +405,20 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             let x0 = stack.pop().unwrap();
             stack.pop();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TokenDefP1(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.token_def_p1(x0))));
             NonterminalId::TokenDef
         }
         6 => {
             // nt_defs ::= nt_def
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefsP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_defs_p0(x0))));
             NonterminalId::NtDefs
         }
         7 => {
             // nt_defs ::= nt_defs nt_def
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefsP1(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_defs_p1(x0, x1))));
             NonterminalId::NtDefs
         }
         8 => {
@@ -327,7 +427,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.pop();
             let x0 = stack.pop().unwrap();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(false, x0, None))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_def_p0(false, x0, None))));
             NonterminalId::NtDef
         }
         9 => {
@@ -337,7 +437,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             let x0 = stack.pop().unwrap();
             stack.pop();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(true, x0, None))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_def_p0(true, x0, None))));
             NonterminalId::NtDef
         }
         10 => {
@@ -347,7 +447,7 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.pop();
             let x0 = stack.pop().unwrap();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(false, x0, Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_def_p0(false, x0, Some(x1)))));
             NonterminalId::NtDef
         }
         11 => {
@@ -358,27 +458,27 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             let x0 = stack.pop().unwrap();
             stack.pop();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::NtDefP0(true, x0, Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(handler.nt_def_p0(true, x0, Some(x1)))));
             NonterminalId::NtDef
         }
         12 => {
             // prods ::= prod
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.prods_p0(x0))));
             NonterminalId::Prods
         }
         13 => {
             // prods ::= prods prod
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdsP1(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.prods_p1(x0, x1))));
             NonterminalId::Prods
         }
         14 => {
             // prod ::= terms ";"
             stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdP0(x0, None))));
+            stack.push(Node::Nonterminal(Box::new(handler.prod_p0(x0, None))));
             NonterminalId::Prod
         }
         15 => {
@@ -386,52 +486,52 @@ fn reduce(prod: usize, stack: &mut Vec<Node>) -> NonterminalId {
             stack.pop();
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::ProdP0(x0, Some(x1)))));
+            stack.push(Node::Nonterminal(Box::new(handler.prod_p0(x0, Some(x1)))));
             NonterminalId::Prod
         }
         16 => {
             // terms ::= term
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.terms_p0(x0))));
             NonterminalId::Terms
         }
         17 => {
             // terms ::= terms term
             let x1 = stack.pop().unwrap();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermsP1(x0, x1))));
+            stack.push(Node::Nonterminal(Box::new(handler.terms_p1(x0, x1))));
             NonterminalId::Terms
         }
         18 => {
             // term ::= symbol
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.term_p0(x0))));
             NonterminalId::Term
         }
         19 => {
             // term ::= symbol "?"
             stack.pop();
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::TermP1(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.term_p1(x0))));
             NonterminalId::Term
         }
         20 => {
             // symbol ::= IDENT
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP0(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.symbol_p0(x0))));
             NonterminalId::Symbol
         }
         21 => {
             // symbol ::= STR
             let x0 = stack.pop().unwrap();
-            stack.push(Node::Nonterminal(Box::new(NtNode::SymbolP1(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.symbol_p1(x0))));
             NonterminalId::Symbol
         }
         22 => {
             // action ::= "=>" IDENT
             let x0 = stack.pop().unwrap();
             stack.pop();
-            stack.push(Node::Nonterminal(Box::new(NtNode::Action(x0))));
+            stack.push(Node::Nonterminal(Box::new(handler.action(x0))));
             NonterminalId::Action
         }
         _ => panic!("no such production: {}", prod),
@@ -446,9 +546,10 @@ static TABLES: ParserTables<'static> = ParserTables {
     goto_width: 11,
 };
 
-pub fn parse_grammar<In: TokenStream<Token=crate::ast::Token>>(
+pub fn parse_grammar<H: Handler, In: TokenStream<Token=crate::ast::Token>>(
+    handler: &mut H,
     tokens: In,
-) -> Result<Node, &'static str> {
-    parser_runtime::parse(tokens, 0, &TABLES, reduce)
+) -> Result<Node<H::ReturnValue>, &'static str> {
+    parser_runtime::parse(handler, tokens, 0, &TABLES, reduce)
 }
 

@@ -1,6 +1,5 @@
 pub use crate::ast::Node;
-pub use crate::parser_generated::NonterminalId;
-
+pub use crate::parser_generated::{Handler, NonterminalId};
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -9,25 +8,32 @@ const ERROR: i64 = ACCEPT - 1;
 struct Action(i64);
 
 impl Action {
-    fn is_shift(self) -> bool { 0 <= self.0 }
+    fn is_shift(self) -> bool {
+        0 <= self.0
+    }
 
     fn shift_state(self) -> usize {
         assert!(self.is_shift());
         self.0 as usize
     }
 
-    fn is_reduce(self) -> bool { ACCEPT < self.0 && self.0 < 0 }
+    fn is_reduce(self) -> bool {
+        ACCEPT < self.0 && self.0 < 0
+    }
 
     fn reduce_prod_index(self) -> usize {
         assert!(self.is_reduce());
         (-self.0 - 1) as usize
     }
 
-    fn is_accept(self) -> bool { self.0 == ACCEPT }
+    fn is_accept(self) -> bool {
+        self.0 == ACCEPT
+    }
 
-    fn is_error(self) -> bool { self.0 == ERROR }
+    fn is_error(self) -> bool {
+        self.0 == ERROR
+    }
 }
-
 
 pub trait TokenStream {
     type Token;
@@ -45,22 +51,29 @@ pub struct ParserTables<'a> {
     pub goto_width: usize,
 }
 
-pub fn parse<In, Out>(
+pub fn parse<H: Handler, In, Out>(
+    handler: &mut H,
     mut tokens: In,
     start_state: usize,
     tables: &ParserTables,
     reduce: Out,
-) -> Result<Node, &'static str>
+) -> Result<Node<H::ReturnValue>, &'static str>
 where
-    In: TokenStream<Token=crate::ast::Token>,
-    Out: Fn(usize, &mut Vec<Node>) -> NonterminalId,
+    In: TokenStream<Token = crate::ast::Token>,
+    Out: Fn(&mut H, usize, &mut Vec<Node<H::ReturnValue>>) -> NonterminalId,
 {
-    assert_eq!(tables.action_table.len(), tables.state_count * tables.action_width);
-    assert_eq!(tables.goto_table.len(), tables.state_count * tables.goto_width);
+    assert_eq!(
+        tables.action_table.len(),
+        tables.state_count * tables.action_width
+    );
+    assert_eq!(
+        tables.goto_table.len(),
+        tables.state_count * tables.goto_width
+    );
 
     let mut t = In::token_as_index(tokens.peek());
     let mut state_stack: Vec<usize> = vec![start_state];
-    let mut node_stack: Vec<Node> = vec![];
+    let mut node_stack: Vec<Node<H::ReturnValue>> = vec![];
 
     loop {
         let state = *state_stack.last().unwrap();
@@ -72,7 +85,7 @@ where
             t = In::token_as_index(tokens.peek());
         } else if action.is_reduce() {
             let prod_index = action.reduce_prod_index();
-            let nt = reduce(prod_index, &mut node_stack);
+            let nt = reduce(handler, prod_index, &mut node_stack);
             assert!((nt as usize) < tables.goto_width);
             state_stack.truncate(node_stack.len());
             let prev_state = *state_stack.last().unwrap();
