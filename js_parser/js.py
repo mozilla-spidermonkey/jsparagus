@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""es.py - Repl-like toy to explore parsing of lines of JS.
+"""js.py - Repl-like toy to explore parsing of lines of JS.
 
 See README.md for instructions.
 """
@@ -10,7 +10,7 @@ import sys; sys.path.append("..")
 import re
 from espg import lexer
 from espg.pgen_runtime import ReplParser, throw_syntax_error, ERROR, ACCEPT
-import es_parser
+import js_parser
 
 TOKEN_RE = re.compile(r'''(?x)
   (?:
@@ -142,12 +142,12 @@ class ESReplParser(ReplParser):
     def __init__(self):
         ReplParser.__init__(
             self,
-            es_parser.actions,
-            es_parser.ctns,
-            es_parser.reductions,
+            js_parser.actions,
+            js_parser.ctns,
+            js_parser.reductions,
             lambda line: ESLexer(line, self.can_accept),
             Script_entry_state,
-            es_parser.DefaultBuilder()
+            js_parser.DefaultBuilder()
         )
 
     def can_accept(self, t):
@@ -233,12 +233,12 @@ Script_entry_state = 0 # ew, magic number, get pgen to emit this
 
 def parse_Script(line):
     return parse(
-        es_parser.actions,
-        es_parser.ctns,
-        es_parser.reductions,
+        js_parser.actions,
+        js_parser.ctns,
+        js_parser.reductions,
         Script_entry_state,
         line,
-        es_parser.DefaultBuilder()
+        js_parser.DefaultBuilder()
     )
 
 def main():

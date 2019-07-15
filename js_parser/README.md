@@ -1,4 +1,4 @@
-## pgen/es-grammar: Work towards generating a parser for ECMAScript
+## pgen/js_parser: Work towards generating a parser for JavaScript
 
 In this directory:
 
@@ -25,7 +25,7 @@ $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install --upgrade pip
 $ pip install -r requirements.txt
-$ ./ponder-es-grammar.py --progress -o es_parser.py
+$ ./ponder-es-grammar.py --progress -o js_parser.py
 ```
 
 **Note:** This last step currently takes about 3 minutes to run on my
@@ -34,7 +34,7 @@ laptop.  pgen is slow.
 Once you're done, to see your parser run, try this:
 
 ```console
-$ ./es.py
+$ ./js.py
 ```
 
 
