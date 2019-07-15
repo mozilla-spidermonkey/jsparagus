@@ -141,10 +141,12 @@ class Grammar:
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
         self.nonterminals = {nt: None for nt in nonterminals}
 
+        # Validate, desugar, and copy the grammar. As a side effect, calling
+        # validate_element on every element of the grammar populates
+        # all_terminals.
         all_terminals = OrderedSet(self.variable_terminals)
 
         def validate_element(nt, i, j, e, context_params):
-            # As a side effect, this populates all_terminals
             if isinstance(e, str):
                 if e not in nonterminals:
                     all_terminals.add(e)
@@ -307,6 +309,7 @@ class Grammar:
         for nt, plist_or_fn in nonterminals.items():
             self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
 
+        # Gather the set of methods and how many arguments each method takes.
         self.methods = methods = {}
 
         def gather_methods(action):
@@ -330,6 +333,7 @@ class Grammar:
                     p = p.rhs
                 gather_methods(p.action)
 
+        # Synthesize "init" nonterminals.
         self.init_nts = []
         for goal in goal_nts:
             if goal not in nonterminals:
@@ -339,6 +343,7 @@ class Grammar:
                 self.nonterminals[init_nt] = [Production(init_nt, [goal], 'accept')]
             self.init_nts.append(init_nt)
 
+        # Cache the set of terminals for is_terminal.
         self.terminals = OrderedFrozenSet(all_terminals)
 
     # Terminals are tokens that must appear verbatim in the input wherever they
