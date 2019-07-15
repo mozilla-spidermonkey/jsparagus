@@ -103,11 +103,13 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                 self._next_match = match
                 token = match.group(1)
             return token
-        elif c.startswith('`'):
-            if c.endswith('`'):
+        elif c == '`':
+            if token.endswith('`'):
                 return 'NoSubstitutionTemplate'
             else:
                 return 'TemplateHead'
+        elif c == '"' or c == "'":
+            return 'StringLiteral'
         elif c == '}':
             return token
         else:
