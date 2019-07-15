@@ -5,12 +5,12 @@
 See README.md for instructions.
 """
 
-import sys; sys.path.append("..")
+import sys; sys.path.insert(0, "..")
 
 import re
 from espg import lexer
 from espg.pgen_runtime import ReplParser, throw_syntax_error, ERROR, ACCEPT
-import js_parser
+from js_parser import js_parser
 
 TOKEN_RE = re.compile(r'''(?x)
   (?:
