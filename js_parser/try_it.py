@@ -6,7 +6,7 @@ See README.md for instructions.
 """
 
 from .parser import JSReplParser
-from jsparagus.pgen_runtime import SyntaxError
+from jsparagus.lexer import SyntaxError
 
 def main():
     while True:
