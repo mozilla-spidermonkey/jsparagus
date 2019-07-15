@@ -38,7 +38,10 @@ class GenTestCase(unittest.TestCase):
     def assertNoParse(self, s, *, goal=None, message="banana"):
         tokens = self.tokenize(s)
         method = "parse" if goal is None else "parse_" + goal
-        self.assertRaisesRegex(SyntaxError, re.escape(message), lambda: getattr(self, method)(tokens))
+        self.assertRaisesRegex(
+            SyntaxError,
+            re.escape(message),
+            lambda: getattr(self, method)(tokens))
 
     def testSimple(self):
         grammar = Grammar({
@@ -564,7 +567,11 @@ class GenTestCase(unittest.TestCase):
             lexer.LexicalGrammar('= : _', PUBLIC=r'public\b', IDENT=r'[a-z]+\b', NUM=r'[0-9]\b'),
             Grammar({
                 'decl': [
-                    [LookaheadRule(frozenset({'IDENT'}), True), Optional('attrs'), 'pat', '=', 'NUM'],
+                    [
+                        LookaheadRule(frozenset({'IDENT'}), True),
+                        Optional('attrs'),
+                        'pat', '=', 'NUM'
+                    ],
                 ],
                 'attrs': [
                     ['attr'],
@@ -664,15 +671,24 @@ class GenTestCase(unittest.TestCase):
             #   the operators and keywords:
             "[ ] { } , ~ + ? <! == != but empty here lookahead no not of one or through",
             NL="\n",
-            EQ=r':+',                           # any number of colons together
-            T=r'`[^` \n]+`|```',                # terminals of the ES grammar, quoted with backticks
-            CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',     # also terminals, denoting control characters
-            NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',   # nonterminals that will be followed by boolean parameters
-            NT=r'(?:uri|[A-Z])\w*',             # nonterminals (also, boolean parameters)
-            NTALT=r'\|[A-Z]\w+\|',              # nonterminals wrapped in vertical bars for no apparent reason
-            PRODID=r'#[A-Za-z]\w*',             # the spec also gives a few productions names
-            PROSE=r'>.*',                       # prose to the end of the line
-            WPROSE=r'\[>[^]]*\]'                # prose wrapped in square brackets
+            # any number of colons together
+            EQ=r':+',
+            # terminals of the ES grammar, quoted with backticks
+            T=r'`[^` \n]+`|```',
+            # also terminals, denoting control characters
+            CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',
+            # nonterminals that will be followed by boolean parameters
+            NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',
+            # nonterminals (also, boolean parameters)
+            NT=r'(?:uri|[A-Z])\w*',
+            # nonterminals wrapped in vertical bars for no apparent reason
+            NTALT=r'\|[A-Z]\w+\|',
+            # the spec also gives a few productions names
+            PRODID=r'#[A-Za-z]\w*',
+            # prose to the end of the line
+            PROSE=r'>.*',
+            # prose wrapped in square brackets
+            WPROSE=r'\[>[^]]*\]'
             )
 
         self.compile(emu_grammar_lexer, grammar)
