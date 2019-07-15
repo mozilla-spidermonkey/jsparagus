@@ -1,3 +1,5 @@
 /client/target/
 __pycache__/
 *.pyc
+venv/
+js_parser/parser_tables.py
