@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from .context import jsparagus
-import io, re, unittest
+import io
+import re
+import unittest
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
                                Optional, LookaheadRule, Parameterized,

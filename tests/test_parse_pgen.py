@@ -1,7 +1,8 @@
 import unittest
 
-from .context import jsparagus
+import jsparagus.gen
 from jsparagus import parse_pgen, parse_pgen_generated
+
 
 class ParsePgenTestCase(unittest.TestCase):
     def test_self(self):

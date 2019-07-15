@@ -1,8 +1,9 @@
 """ Tests for the JS parser. """
 
-from .context import jsparagus
 import unittest
+import jsparagus.lexer
 from js_parser.parser import parse_Script
+
 
 class ESTestCase(unittest.TestCase):
     def assert_parses(self, s):
