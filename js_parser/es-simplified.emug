@@ -453,8 +453,8 @@ ExpressionStatement[Yield, Await] :
 
 
 IfStatement[Yield, Await, Return] :
-  `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return] `endif`
-  `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `endif`
+  `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]
+  `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
 
 
 IterationStatement[Yield, Await, Return] :

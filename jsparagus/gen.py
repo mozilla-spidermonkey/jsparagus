@@ -1149,7 +1149,17 @@ class State:
         for t, prod_index in reduce_prods.items():
             prod = prods[prod_index]
             if t in action_row:
-                context.raise_shift_reduce_conflict(self, t, shift_items[t], prod.nt, prod.rhs)
+                if t == "else" and (len(prod.rhs) == 5 and
+                                    prod.rhs[0] == 'if' and
+                                    prod.rhs[1] == '(' and
+                                    prod.rhs[3] == ')'):
+                    # I can't believe I'm doing this, but manually resolve the
+                    # shift-reduce conflict in favor of shifting.
+                    assert action_row[t] >= 0, \
+                        "the action we already have should be a shift"
+                    continue  # leave it alone
+                else:
+                    context.raise_shift_reduce_conflict(self, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
             action_row[t] = ACCEPT if isinstance(prod.nt, InitNt) else -prod_index - 1

@@ -30,5 +30,13 @@ class ESTestCase(unittest.TestCase):
         self.assert_incomplete("{")
         self.assert_incomplete("{;")
 
+    def test_if_else(self):
+        self.assert_parses("if (x) f();")
+        self.assert_incomplete("if (x)")
+        self.assert_parses("if (x) f(); else g();")
+        self.assert_incomplete("if (x) f(); else")
+        self.assert_parses("if (x) if (y) g(); else h();")
+        self.assert_parses("if (x) if (y) g(); else h(); else j();")
+
 if __name__ == '__main__':
     unittest.main()
