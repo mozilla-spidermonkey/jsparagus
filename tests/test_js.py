@@ -2,11 +2,11 @@
 
 from .context import jsparagus
 import unittest
-import js_parser.parser
+from js_parser.parser import parse_Script
 
 class ESTestCase(unittest.TestCase):
     def assert_parses(self, s):
-        js_parser.parser.parse_Script(s)
+        parse_Script(s)
 
     def assert_incomplete(self, s):
         """Assert that s fails to parse with UnexpectedEndError.
@@ -14,12 +14,12 @@ class ESTestCase(unittest.TestCase):
         (This should be the case if `s` is a prefix of a valid Script.)
         """
         self.assertRaises(jsparagus.lexer.UnexpectedEndError,
-                          lambda: js_parser.parser.parse_Script(s))
+                          lambda: parse_Script(s))
 
     def assert_syntax_error(self, s):
         """Assert that s fails to parse."""
         self.assertRaises(jsparagus.lexer.SyntaxError,
-                          lambda: js_parser.parser.parse_Script(s))
+                          lambda: parse_Script(s))
 
     # === Tests!
 
