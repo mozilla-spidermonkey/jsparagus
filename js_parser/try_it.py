@@ -5,12 +5,10 @@
 See README.md for instructions.
 """
 
-import sys; sys.path.insert(0, "..")
-
 from jsparagus.pgen_runtime import (ReplParser, throw_syntax_error,
                                     ERROR, ACCEPT)
-from js_parser import parser_tables
-from js_parser.lexer import JSLexer
+from . import parser_tables
+from .lexer import JSLexer
 
 
 class JSReplParser(ReplParser):

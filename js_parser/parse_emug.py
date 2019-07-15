@@ -1,25 +1,49 @@
 """Parse a grammar written in ECMArkup."""
 
 from jsparagus.lexer import LexicalGrammar
-from jsparagus import parse_pgen, gen
+from jsparagus import parse_pgen, gen, grammar
+import os
+
 
 tokenize_emug = LexicalGrammar(
     # the operators and keywords:
-    "[ ] { } , ~ + ? <! == != but empty here lookahead no not of one or through",
+    "[ ] { } , ~ + ? <! == != "
+    "but empty here lookahead no not of one or through",
+
     NL="\n",
-    EQ=r':+',                           # any number of colons together
-    T=r'`[^` \n]+`|```',                # terminals of the ES grammar, quoted with backticks
-    CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',     # also terminals, denoting control characters
-    NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',   # nonterminals that will be followed by boolean parameters
-    NT=r'(?:uri|[A-Z])\w*',             # nonterminals (also, boolean parameters)
-    NTALT=r'\|[A-Z]\w+\|',              # nonterminals wrapped in vertical bars for no apparent reason
-    PRODID=r'#[A-Za-z]\w*',             # the spec also gives a few productions names
-    PROSE=r'>.*',                       # prose to the end of the line
-    WPROSE=r'\[>[^]]*\]'                # prose wrapped in square brackets
+
+    # any number of colons together
+    EQ=r':+',
+
+    # terminals of the ES grammar, quoted with backticks
+    T=r'`[^` \n]+`|```',
+
+    # also terminals, denoting control characters
+    CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',
+
+    # nonterminals that will be followed by boolean parameters
+    NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',
+
+    # nonterminals (also, boolean parameters)
+    NT=r'(?:uri|[A-Z])\w*',
+
+    # nonterminals wrapped in vertical bars for no apparent reason
+    NTALT=r'\|[A-Z]\w+\|',
+
+    # the spec also gives a few productions names
+    PRODID=r'#[A-Za-z]\w*',
+
+    # prose to the end of the line
+    PROSE=r'>.*',
+
+    # prose wrapped in square brackets
+    WPROSE=r'\[>[^]]*\]'
     )
 
 
-parse_emug_generic = gen.compile(parse_pgen.load_grammar("emug.pgen"))
+parse_emug_generic = gen.compile(
+    parse_pgen.load_grammar(
+        os.path.join(os.path.dirname(__file__), "emug.pgen")))
 
 
 SIGIL_FALSE = '~'
@@ -38,7 +62,7 @@ class EmugBuilder:
     def make_nt_def(self, lhs, eq, rhs_list):
         if isinstance(lhs, tuple):
             name, args = lhs
-            return (name, eq, gen.Parameterized(args, rhs_list))
+            return (name, eq, grammar.Parameterized(args, rhs_list))
         else:
             return (lhs, eq, rhs_list)
 
@@ -77,7 +101,7 @@ class EmugBuilder:
         result = rhs
         if ifdef is not None:
             name, value = ifdef
-            result = gen.ConditionalRhs(name, value, result)
+            result = grammar.ConditionalRhs(name, value, result)
         return result
 
     def rhs_line_prose(self, prose, nl):
@@ -95,7 +119,7 @@ class EmugBuilder:
     def optional(self, nt, q):
         # nonterminal `?`
         assert q == "?"
-        return gen.Optional(nt)
+        return grammar.Optional(nt)
 
     def but_not(self, nt, but, not_, exclusion):
         # nonterminal "but not" exclusion
@@ -114,7 +138,8 @@ class EmugBuilder:
         return look_assert
 
     def no_line_terminator_here(self, ob, no, line_terminator, here, cb):
-        assert (ob, no, line_terminator, here, cb) == ('[', 'no', 'LineTerminator', 'here', ']')
+        assert ((ob, no, line_terminator, here, cb) ==
+                ('[', 'no', 'LineTerminator', 'here', ']'))
         return ("no-LineTerminator-here",)
 
     def nonterminal(self, nt):
@@ -124,14 +149,14 @@ class EmugBuilder:
         assert (ob, cb) == ('[', ']')
         if len(set(k for k, expr in args)) != len(args):
             raise ValueError("parameter passed multiple times")
-        return gen.Apply(name, tuple(args))
+        return grammar.Apply(name, tuple(args))
 
     def args_single(self, arg):
         return dict([arg])
 
     def arg_expr(self, sigil, argname):
         if sigil == '?':
-            return (argname, gen.Var(argname))
+            return (argname, grammar.Var(argname))
         else:
             return (argname, sigil)
 
@@ -143,19 +168,23 @@ class EmugBuilder:
         assert sigil == SIGIL_TRUE
         return True
 
-    def exclusion_terminal(self, t): return ("t", t)
-    def exclusion_nonterminal(self, nt): return ("nt", nt)
+    def exclusion_terminal(self, t):
+        return ("t", t)
+
+    def exclusion_nonterminal(self, nt):
+        return ("nt", nt)
+
     def exclusion_chr_range(self, c1, through, c2):
         assert through == "through"
         return ("range", c1, c2)
 
     def la_eq(self, eq, t):
         assert eq == "=="
-        return gen.LookaheadRule(frozenset([t]), True)
+        return grammar.LookaheadRule(frozenset([t]), True)
 
     def la_ne(self, ne, t):
         assert ne == "!="
-        return gen.LookaheadRule(frozenset([t]), False)
+        return grammar.LookaheadRule(frozenset([t]), False)
 
     def la_not_in_nonterminal(self, notin, nt):
         assert notin == '<!'
@@ -164,8 +193,11 @@ class EmugBuilder:
     def la_not_in_set(self, notin, ob, lookahead_exclusions, cb):
         assert (notin, ob, cb) == ("<!", '{', '}')
         if all(len(excl) == 1 for excl in lookahead_exclusions):
-            return gen.LookaheadRule(frozenset(excl[0] for excl in lookahead_exclusions), False)
-        raise ValueError("unsupported: lookahead > 1 token, " + repr(lookahead_exclusions))
+            return grammar.LookaheadRule(
+                frozenset(excl[0] for excl in lookahead_exclusions),
+                False)
+        raise ValueError("unsupported: lookahead > 1 token, {!r}"
+                         .format(lookahead_exclusions))
 
 
 def finish_grammar(nt_defs, goals):
@@ -175,36 +207,43 @@ def finish_grammar(nt_defs, goals):
         for i, e in enumerate(rhs):
             if isinstance(e, str) and e[:1] == "`":
                 if len(e) < 3 or e[-1:] != "`":
-                    raise ValueError("I don't know what this is: " + repr(e) + "(in " + repr(rhs) + ")")
+                    raise ValueError(
+                        "I don't know what this is: {!r} (in {!r})"
+                        .format(e, rhs))
                 rhs[i] = token = e[1:-1]
                 terminal_set.add(token)
 
-    grammar = {}
+    nonterminals = {}
     variable_terminals = set()
     for nt_name, eq, rhs_list_or_lambda in nt_defs:
         if eq == "::":
             variable_terminals.add(nt_name)
 
-        if isinstance(rhs_list_or_lambda, gen.Parameterized):
-            grammar[nt_name] = rhs_list_or_lambda
+        if isinstance(rhs_list_or_lambda, grammar.Parameterized):
+            nonterminals[nt_name] = rhs_list_or_lambda
         else:
             rhs_list = rhs_list_or_lambda
             for rhs in rhs_list:
                 if not isinstance(rhs, list):
-                    raise ValueError("invalid grammar: ifdef in non-function-call context")
+                    raise ValueError(
+                        "invalid grammar: ifdef in non-function-call context")
                 hack_rhs(rhs)
             if eq == ':':
-                if nt_name in grammar:
-                    raise ValueError("unsupported: multiple definitions for nt " + nt_name)
-                grammar[nt_name] = rhs_list
+                if nt_name in nonterminals:
+                    raise ValueError(
+                        "unsupported: multiple definitions for nt " + nt_name)
+                nonterminals[nt_name] = rhs_list
 
     for t in terminal_set:
-        if t in grammar:
-            raise ValueError("grammar contains both a terminal `{}` and nonterminal {}".format(t, t))
+        if t in nonterminals:
+            raise ValueError(
+                "grammar contains both a terminal `{}` and nonterminal {}"
+                .format(t, t))
 
-    return gen.Grammar(grammar, goals, variable_terminals)
+    return grammar.Grammar(nonterminals, goals, variable_terminals)
 
 
 def parse_emug(text, filename=None, goals=None):
     tokens = tokenize_emug(text, filename=filename)
-    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()), goals=goals)
+    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()),
+                          goals=goals)

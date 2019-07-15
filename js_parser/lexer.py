@@ -84,7 +84,8 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                 elif token in ('true', 'false'):
                     return 'BooleanLiteral'
                 return token
-            elif token in ('let', 'static', 'yield', 'async', 'of') and self.parser_can_accept(token):
+            elif (token in ('let', 'static', 'yield', 'async', 'of') and
+                  self.parser_can_accept(token)):
                 # This is not what the standard says but eh
                 return token
             else:
@@ -93,7 +94,8 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             if self.parser_can_accept('RegularExpressionLiteral'):
                 raise Exception("not supported: regular expression literals")
             else:
-                match = self._next_match = re.match(r'(/=?)', self.src, self.point)
+                match = re.match(r'(/=?)', self.src, self.point)
+                self._next_match = match
                 token = match.group(1)
             return token
         elif c.startswith('`'):

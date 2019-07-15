@@ -21,11 +21,12 @@ In this directory:
 To generate a parser, follow these steps:
 
 ```console
+$ cd ..
 $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install --upgrade pip
 $ pip install -r requirements.txt
-$ ./ponder-es-grammar.py --progress -o parser_tables.py
+$ python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_tables.py
 ```
 
 **Note:** This last step currently takes about 3 minutes to run on my
@@ -34,7 +35,7 @@ laptop.  pgen is slow.
 Once you're done, to see your parser run, try this:
 
 ```console
-$ ./js.py
+$ python -m js_parser.try_it
 ```
 
 
