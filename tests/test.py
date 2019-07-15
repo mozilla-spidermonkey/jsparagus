@@ -13,12 +13,14 @@ LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
 
 
 def prod(nt, body, method_name):
-    return Production(nt, body, CallMethod(method_name, list(range(len(body)))))
+    return Production(
+        nt, body, CallMethod(method_name, list(range(len(body)))))
 
 
 class GenTestCase(unittest.TestCase):
     def compile(self, tokenize, grammar):
-        """Compile a grammar. Use this when you expect compilation to succeed."""
+        """Compile a grammar. Use this when you expect compilation to
+        succeed."""
         self.tokenize = tokenize
         self.parse = gen.compile(grammar)
 
@@ -123,7 +125,10 @@ class GenTestCase(unittest.TestCase):
                     'dog')))
 
     def testArithmetic(self):
-        tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
+        tokenize = lexer.LexicalGrammar(
+            "+ - * / ( )",
+            NUM=r'[0-9]\w*',
+            VAR=r'[A-Za-z]\w*')
         arith_grammar = Grammar({
             'expr': [
                 ['term'],
@@ -157,12 +162,14 @@ class GenTestCase(unittest.TestCase):
                         ('expr 1', '5', '+', '7'),
                         ')'))))
 
-        self.assertRaisesRegex(SyntaxError,
-                               r"unexpected end of input",
-                               lambda: parse(tokenize("(")))
-        self.assertRaisesRegex(SyntaxError,
-                               r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
-                               lambda: parse(tokenize(")")))
+        self.assertRaisesRegex(
+            SyntaxError,
+            r"unexpected end of input",
+            lambda: parse(tokenize("(")))
+        self.assertRaisesRegex(
+            SyntaxError,
+            r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
+            lambda: parse(tokenize(")")))
 
     def testAmbiguous(self):
         # This grammar should fail verification.
@@ -186,13 +193,17 @@ class GenTestCase(unittest.TestCase):
                                lambda: gen.generate_parser(out, grammar))
 
     def testAmbiguousEmpty(self):
-        """Reject grammars that are ambiguous due to productions that match the empty string."""
+        """Reject grammars that are ambiguous due to empty productions.
+
+        (Empty productions are ones that match the empty string.)"""
 
         def check(rules):
             grammar = Grammar(rules, goal_nts=['goal'])
             out = io.StringIO()
-            self.assertRaisesRegex(ValueError, r"ambiguous grammar|reduce-reduce conflict",
-                                   lambda: gen.generate_parser(out, grammar))
+            self.assertRaisesRegex(
+                ValueError,
+                r"ambiguous grammar|reduce-reduce conflict",
+                lambda: gen.generate_parser(out, grammar))
 
         check({'goal': [[], []]})
         check({'goal': [[Optional('X')], []]})
@@ -228,7 +239,7 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("A B", ('goal 1', 'A', 'B'))
 
     def testLeftFactorMulti(self):
-        """Test left-factoring of grammars where some rules have a common prefix of length >1."""
+        """Test left-factoring with common prefix of length >1."""
         tokenize = lexer.LexicalGrammar("A B C D E")
         grammar = Grammar({
             'goal': [
@@ -237,12 +248,18 @@ class GenTestCase(unittest.TestCase):
             ],
         })
         parse = gen.compile(grammar)
-        self.assertEqual(parse(tokenize("A B C D")), ('goal 0', 'A', 'B', 'C', 'D'))
-        self.assertEqual(parse(tokenize("A B C E")), ('goal 1', 'A', 'B', 'C', 'E'))
+        self.assertEqual(
+            parse(tokenize("A B C D")),
+            ('goal 0', 'A', 'B', 'C', 'D'))
+        self.assertEqual(
+            parse(tokenize("A B C E")),
+            ('goal 1', 'A', 'B', 'C', 'E'))
 
     def testLeftFactorMultiLevel(self):
-        """Test left-factoring again on a nonterminal introduced by left-factoring."""
-        tokenize = lexer.LexicalGrammar("FOR IN TO BY ( ) = ;", VAR=r'[A-Za-z]+')
+        """Test left-factoring again on a nonterminal introduced by
+        left-factoring."""
+        tokenize = lexer.LexicalGrammar("FOR IN TO BY ( ) = ;",
+                                        VAR=r'[A-Za-z]+')
 
         # The first left-factoring pass on `stmt` will left-factor `FOR ( VAR`.
         # A second pass is needed to left-factor `= expr TO expr`.
@@ -251,7 +268,8 @@ class GenTestCase(unittest.TestCase):
                 ['expr', ';'],
                 ['FOR', '(', 'VAR', 'IN', 'expr', ')', 'stmt'],
                 ['FOR', '(', 'VAR', '=', 'expr', 'TO', 'expr', ')', 'stmt'],
-                ['FOR', '(', 'VAR', '=', 'expr', 'TO', 'expr', 'BY', 'expr', ')', 'stmt'],
+                ['FOR', '(', 'VAR', '=', 'expr', 'TO', 'expr',
+                 'BY', 'expr', ')', 'stmt'],
                 ['IF', '(', 'expr', ')', 'stmt'],
             ],
             'expr': [
@@ -323,8 +341,9 @@ class GenTestCase(unittest.TestCase):
             })
         )
         self.assertParse("z = x + y")
-        self.assertNoParse("x + y = z",
-                           message="expected one of ['+', 'end of input'], got '='")
+        self.assertNoParse(
+            "x + y = z",
+            message="expected one of ['+', 'end of input'], got '='")
 
     def testDeepRecursion(self):
         grammar = Grammar({
@@ -365,11 +384,13 @@ class GenTestCase(unittest.TestCase):
             list(gen.expand_optional_symbols_in_rhs(['ONE', 'TWO', '3'])),
             [(['ONE', 'TWO', '3'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols_in_rhs(['a', 'b', Optional('c')])),
+            list(gen.expand_optional_symbols_in_rhs(
+                ['a', 'b', Optional('c')])),
             [(['a', 'b'], [2]),
              (['a', 'b', 'c'], [])])
         self.assertEqual(
-            list(gen.expand_optional_symbols_in_rhs([Optional('a'), Optional('b')])),
+            list(gen.expand_optional_symbols_in_rhs(
+                [Optional('a'), Optional('b')])),
             [([], [0, 1]),
              (['a'], [1]),
              (['b'], [0]),
@@ -379,7 +400,9 @@ class GenTestCase(unittest.TestCase):
         tokenize = lexer.LexicalGrammar("X")
         self.compile(tokenize, Grammar({'goal': [[]]}))
         self.assertParse("", ('goal',))
-        self.assertNoParse("X", message="expected 'end of input', got 'X' (line 1)")
+        self.assertNoParse(
+            "X",
+            message="expected 'end of input', got 'X' (line 1)")
 
     def testOptionalEmpty(self):
         tokenize = lexer.LexicalGrammar("X Y")
@@ -457,7 +480,9 @@ class GenTestCase(unittest.TestCase):
                 ]
             })
         )
-        self.assertNoParse("(A)", message="expected one of ['A', 'B'], got '('")
+        self.assertNoParse(
+            "(A)",
+            message="expected one of ['A', 'B'], got '('")
         self.assertParse("A + B")
 
     def testNegativeLookahead(self):
@@ -493,14 +518,17 @@ class GenTestCase(unittest.TestCase):
         )
 
     def disabledNegativeLookaheadDisambiguation(self):
-        tokenize = lexer.LexicalGrammar('( ) { } ; function =', IDENT=r'[A-Za-z_][A-Za-z_0-9]*')
+        tokenize = lexer.LexicalGrammar(
+            '( ) { } ; function =',
+            IDENT=r'[A-Za-z_][A-Za-z_0-9]*')
         grammar = Grammar({
             'stmts': [
                 ['stmt'],
                 ['stmts', 'stmt'],
             ],
             'stmt': [
-                [LookaheadRule(set=frozenset({'function'}), positive=False), 'expr', ';'],
+                [LookaheadRule(set=frozenset({'function'}), positive=False),
+                 'expr', ';'],
                 ['fndecl'],
             ],
             'fndecl': [
@@ -537,7 +565,8 @@ class GenTestCase(unittest.TestCase):
                             ('expr', 0,
                                 ('term', 1,
                                     ('fndecl',
-                                        'function', 'y', '(', ')', '{', None, '}')))),
+                                        'function', 'y', '(', ')',
+                                        '{', None, '}')))),
                         ';'))))
 
         self.assertEqual(
@@ -554,17 +583,23 @@ class GenTestCase(unittest.TestCase):
         grammar = gen.Grammar({
             'stmt': [
                 ['OTHER', ';'],
-                ['IF', '(', 'X', ')', 'stmt', LookaheadRule(frozenset({'ELSE'}), False)],
+                ['IF', '(', 'X', ')', 'stmt',
+                 LookaheadRule(frozenset({'ELSE'}), False)],
                 ['IF', '(', 'X', ')', 'stmt', 'ELSE', 'stmt'],
             ],
         })
-        self.assertRaisesRegex(ValueError,
-                               r"invalid grammar: lookahead restriction at end of production",
-                               lambda: gen.compile(grammar))
+        self.assertRaisesRegex(
+            ValueError,
+            r"invalid grammar: lookahead restriction at end of production",
+            lambda: gen.compile(grammar))
 
     def testLookaheadBeforeOptional(self):
         self.compile(
-            lexer.LexicalGrammar('= : _', PUBLIC=r'public\b', IDENT=r'[a-z]+\b', NUM=r'[0-9]\b'),
+            lexer.LexicalGrammar(
+                '= : _',
+                PUBLIC=r'public\b',
+                IDENT=r'[a-z]+\b',
+                NUM=r'[0-9]\b'),
             Grammar({
                 'decl': [
                     [
@@ -589,7 +624,9 @@ class GenTestCase(unittest.TestCase):
         )
         self.assertParse("x = 0")
         self.assertParse("thread: x = 0")
-        self.assertNoParse("public: x = 0", message="expected 'IDENT', got 'PUBLIC'")
+        self.assertNoParse(
+            "public: x = 0",
+            message="expected 'IDENT', got 'PUBLIC'")
         self.assertNoParse("_ = 0", message="expected 'IDENT', got '_'")
         self.assertParse("funny: public: x = 0")
         self.assertParse("funny: _ = 0")
@@ -619,34 +656,44 @@ class GenTestCase(unittest.TestCase):
     def testHugeExample(self):
         grammar = Grammar(
             {
-                'grammar': [['nt_def_or_blank_line'], ['grammar', 'nt_def_or_blank_line']],
+                'grammar': [['nt_def_or_blank_line'],
+                            ['grammar', 'nt_def_or_blank_line']],
                 'arg': [['sigil', 'NT']],
                 'args': [['arg'], ['args', ',', 'arg']],
                 'definite_sigil': [['~'], ['+']],
-                'exclusion': [['terminal'], ['nonterminal'], ['CHR', 'through', 'CHR']],
-                'exclusion_list': [['exclusion'], ['exclusion_list', 'or', 'exclusion']],
+                'exclusion': [['terminal'],
+                              ['nonterminal'],
+                              ['CHR', 'through', 'CHR']],
+                'exclusion_list': [['exclusion'],
+                                   ['exclusion_list', 'or', 'exclusion']],
                 'ifdef': [['[', 'definite_sigil', 'NT', ']']],
                 'line_terminator': [['NT'], ['NTALT']],
-                'lookahead_assertion': [['==', 'terminal'],
-                                        ['!=', 'terminal'],
-                                        ['<!', 'NT'],
-                                        ['<!', '{', 'lookahead_exclusions', '}']],
+                'lookahead_assertion': [
+                    ['==', 'terminal'],
+                    ['!=', 'terminal'],
+                    ['<!', 'NT'],
+                    ['<!', '{', 'lookahead_exclusions', '}']],
                 'lookahead_exclusion': [['lookahead_exclusion_element'],
                                         ['lookahead_exclusion',
                                          'lookahead_exclusion_element']],
-                'lookahead_exclusion_element': [['terminal'], ['no_line_terminator_here']],
+                'lookahead_exclusion_element': [['terminal'],
+                                                ['no_line_terminator_here']],
                 'lookahead_exclusions': [['lookahead_exclusion'],
-                                         ['lookahead_exclusions', ',', 'lookahead_exclusion']],
-                'no_line_terminator_here': [['[', 'no', 'line_terminator', 'here', ']']],
+                                         ['lookahead_exclusions', ',',
+                                          'lookahead_exclusion']],
+                'no_line_terminator_here': [
+                    ['[', 'no', 'line_terminator', 'here', ']']],
                 'nonterminal': [['NT'], ['NTCALL', '[', 'args', ']']],
                 'nt_def': [['nt_lhs', 'EQ', 'NL', 'rhs_lines', 'NL'],
-                           ['nt_lhs', 'EQ', 'one', 'of', 'NL', 't_list_lines', 'NL']],
+                           ['nt_lhs', 'EQ', 'one', 'of', 'NL',
+                            't_list_lines', 'NL']],
                 'nt_def_or_blank_line': [['NL'], ['nt_def']],
                 'nt_lhs': [['NT'], ['NTCALL', '[', 'params', ']']],
                 'param': [['NT']],
                 'params': [['param'], ['params', ',', 'param']],
                 'rhs': [['symbols'], ['[', 'empty', ']']],
-                'rhs_line': [[Optional(inner='ifdef'), 'rhs', Optional(inner='PRODID'), 'NL'],
+                'rhs_line': [[Optional(inner='ifdef'), 'rhs',
+                              Optional(inner='PRODID'), 'NL'],
                              ['PROSE', 'NL']],
                 'rhs_lines': [['rhs_line'], ['rhs_lines', 'rhs_line']],
                 'sigil': [['definite_sigil'], ['?']],
@@ -654,22 +701,26 @@ class GenTestCase(unittest.TestCase):
                            ['nonterminal'],
                            ['nonterminal', '?'],
                            ['nonterminal', 'but', 'not', 'exclusion'],
-                           ['nonterminal', 'but', 'not', 'one', 'of', 'exclusion_list'],
+                           ['nonterminal', 'but', 'not', 'one', 'of',
+                            'exclusion_list'],
                            ['[', 'lookahead', 'lookahead_assertion', ']'],
                            ['no_line_terminator_here'],
                            ['WPROSE']],
                 'symbols': [['symbol'], ['symbols', 'symbol']],
                 't_list_line': [['terminal_seq', 'NL']],
-                't_list_lines': [['t_list_line'], ['t_list_lines', 't_list_line']],
+                't_list_lines': [['t_list_line'],
+                                 ['t_list_lines', 't_list_line']],
                 'terminal': [['T'], ['CHR']],
                 'terminal_seq': [['terminal'], ['terminal_seq', 'terminal']]
             },
-            variable_terminals='EQ T CHR NTCALL NT NTALT PRODID PROSE WPROSE'.split()
+            variable_terminals='EQ T CHR NTCALL NT NTALT '
+                               'PRODID PROSE WPROSE'.split()
         )
 
         emu_grammar_lexer = lexer.LexicalGrammar(
-            #   the operators and keywords:
-            "[ ] { } , ~ + ? <! == != but empty here lookahead no not of one or through",
+            # the operators and keywords:
+            "[ ] { } , ~ + ? <! == != "
+            "but empty here lookahead no not of one or through",
             NL="\n",
             # any number of colons together
             EQ=r':+',
@@ -714,8 +765,14 @@ class GenTestCase(unittest.TestCase):
                 ['script', 'def'],
             ],
             'def': [
-                ['function', 'IDENT', '(', ')', '{', Apply('stmts', (('Yield', False),)), '}'],
-                ['function', '*', 'IDENT', '(', ')', '{', Apply('stmts', (('Yield', True),)), '}'],
+                [
+                    'function', 'IDENT', '(', ')', '{',
+                    Apply('stmts', (('Yield', False),)), '}'
+                ],
+                [
+                    'function', '*', 'IDENT', '(', ')', '{',
+                    Apply('stmts', (('Yield', True),)), '}'
+                ],
             ],
             'stmts': Parameterized(['Yield'], [
                 [stmt],
@@ -735,10 +792,12 @@ class GenTestCase(unittest.TestCase):
                                           IDENT=r'[A-Za-z]\w*'),
                      grammar)
         self.assertParse("function* farm() { cow = pig; yield cow; }")
-        self.assertNoParse("function city() { yield toOncomingTraffic; }",
-                           message="expected one of ['(', ';', '='], got 'IDENT'")
-        self.assertNoParse("function* farm() { yield = corn; yield yield; }",
-                           message="expected 'IDENT', got '='")
+        self.assertNoParse(
+            "function city() { yield toOncomingTraffic; }",
+            message="expected one of ['(', ';', '='], got 'IDENT'")
+        self.assertNoParse(
+            "function* farm() { yield = corn; yield yield; }",
+            message="expected 'IDENT', got '='")
 
     def testCanonicalLR(self):
         """Example 4.39 (grammar 4.20) from the book."""
@@ -764,7 +823,8 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("id = *id")
         self.assertParse("*id = id")
         self.assertParse("id = 7")
-        self.assertNoParse("7 = id", message="expected 'end of input', got '='")
+        self.assertNoParse("7 = id",
+                           message="expected 'end of input', got '='")
 
     def testLookaheadWithCanonicalLR(self):
         """Only a lookahead assertion makes this grammar unambiguous."""
@@ -778,7 +838,8 @@ class GenTestCase(unittest.TestCase):
                 ["async", "Identifier", "=>", "AsyncConciseBody"],
             ],
             "AsyncConciseBody": [
-                [LookaheadRule(set=frozenset(["{"]), positive=False), "Expression"],
+                [LookaheadRule(set=frozenset(["{"]), positive=False),
+                 "Expression"],
                 ["{", "}"],
             ],
             "PrimaryExpression": [
@@ -816,8 +877,9 @@ class GenTestCase(unittest.TestCase):
         }, goal_nts=["stmts", "expr"])
         self.compile_multi(tokenize, grammar)
         self.assertParse("WHILE ( x ) { decx ( x ) ; }", goal="stmts")
-        self.assertNoParse("WHILE ( x ) { decx ( x ) ; }", goal="expr",
-                           message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")
+        self.assertNoParse(
+            "WHILE ( x ) { decx ( x ) ; }", goal="expr",
+            message="expected one of ['(', 'FN', 'ID'], got 'WHILE'")
         self.assertParse("f(x);", goal="stmts")
         self.assertNoParse("f(x);", goal="expr",
                            message="expected 'end of input', got ';'")
@@ -826,7 +888,7 @@ class GenTestCase(unittest.TestCase):
                            message="unexpected end of input")
 
     def testStaggeredItems(self):
-        """Two items in a state can have different amounts of leading context."""
+        """Items in a state can have different amounts of leading context."""
         # In this example grammar, after "A" "B", we're in a state that
         # contains these two items (ignoring lookahead):
         #       goal ::= "A" "B" · y
@@ -874,7 +936,9 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("! ! ! ! !")
 
     def testReduceActions(self):
-        tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'[0-9]\w*', VAR=r'[A-Za-z]\w*')
+        tokenize = lexer.LexicalGrammar("+ - * / ( )",
+                                        NUM=r'[0-9]\w*',
+                                        VAR=r'[A-Za-z]\w*')
         grammar = Grammar({
             "expr": [
                 ["term"],
@@ -910,10 +974,8 @@ class GenTestCase(unittest.TestCase):
                     'mul',
                     ('num', '4'),
                     '*',
-                    ('parens', '(', ('add', ('num', '5'), '+', ('num', '7')), ')')
-                )
-            )
-        )
+                    ('parens', '(',
+                        ('add', ('num', '5'), '+', ('num', '7')), ')'))))
         self.assertParse(
             "1 / (1 + 1 / (1 + 1 / (1 + 1)))",
             (
@@ -925,17 +987,11 @@ class GenTestCase(unittest.TestCase):
                                     'add', ('num', '1'), '+', (
                                         'div', ('num', '1'), '/', (
                                             'parens', '(', (
-                                                'add', ('num', '1'), '+', ('num', '1')),
-                                            ')'
-                                        )
-                                    )
-                                ), ')'
-                            )
-                        )
-                    ), ')'
-                )
-            )
-        )
+                                                'add', ('num', '1'), '+',
+                                                ('num', '1')),
+                                            ')'))),
+                                ')'))),
+                    ')')))
 
     def disabledEpsilonFreeTransform(self):
         # Test for issue #2.
