@@ -45,6 +45,15 @@ def parse(actions, ctns, reductions, entry_state, tokens, builder):
 
 
 class ReplParser:
+    """Object for parsing a single Script that may cover multiple lines.
+
+    Usage: Call .feed(line) repeatedly until either it returns an AST or raises
+    an exception other than espg.lexer.UnexpectedEndError.
+
+    Alternatively, just call .read() once, which does all of that, reading
+    input lines from stdin as needed.
+    """
+
     def __init__(self, actions, ctns, reductions, lex, entry_state, builder):
         self.actions = actions
         self.ctns = ctns
@@ -61,9 +70,6 @@ class ReplParser:
             except UnexpectedEndError as exc:
                 prompt = "» "
                 continue
-
-    def copy(self):
-        return ReplParser(self.actions, self.ctns, self.reductions, self.lex, self.stack.copy(), self.builder)
 
     def feed(self, line):
         stack = self.stack
