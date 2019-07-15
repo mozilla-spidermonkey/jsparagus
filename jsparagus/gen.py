@@ -37,7 +37,6 @@ from .grammar import (Grammar,
                       LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
-from .lexer import SyntaxError
 
 
 # *** Operations on grammars **************************************************

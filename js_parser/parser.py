@@ -5,12 +5,12 @@
 See README.md for instructions.
 """
 
-from jsparagus.runtime import ReplParser, throw_syntax_error, ERROR, ACCEPT
+from jsparagus.runtime import ReplParser, ERROR, ACCEPT
 from . import parser_tables
 from .lexer import JSLexer
 
 
-Script_entry_state = 0 # ew, magic number, get pgen to emit this
+Script_entry_state = 0  # ew, magic number, get pgen to emit this
 
 
 class JSReplParser(ReplParser):

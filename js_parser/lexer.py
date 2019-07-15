@@ -50,6 +50,7 @@ null true false
 endif
 '''.split())
 
+
 class JSLexer(jsparagus.lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
     def __init__(self, source, parser, filename=None):

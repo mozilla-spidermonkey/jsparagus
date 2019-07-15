@@ -15,6 +15,7 @@ To run this script:
 import html5lib
 from textwrap import dedent
 
+
 def extract(filename):
     with open(filename, "rb") as f:
         document = html5lib.parse(f)
@@ -22,6 +23,7 @@ def extract(filename):
     for e in document.iter("{http://www.w3.org/1999/xhtml}emu-grammar"):
         if e.attrib.get("type") == "definition":
             print(dedent(e.text))
+
 
 if __name__ == '__main__':
     import sys

@@ -8,6 +8,7 @@ See README.md for instructions.
 from .parser import JSReplParser
 from jsparagus.lexer import SyntaxError
 
+
 def main():
     while True:
         parser = JSReplParser()
@@ -17,6 +18,7 @@ def main():
             print(exc.__class__.__name__ + ": " + str(exc))
             continue
         print(result)
+
 
 if __name__ == '__main__':
     main()
