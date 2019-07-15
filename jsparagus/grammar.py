@@ -77,7 +77,7 @@ class Production:
 
 # ### Reduce actions
 #
-# Reduce actions say waht happens when a production is matched.
+# Reduce actions say what happens when a production is matched.
 #
 # Reduce expressions are a little language used to specify reduce
 # actions. There are two types of reduce expression:
