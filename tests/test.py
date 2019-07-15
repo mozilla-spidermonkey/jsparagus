@@ -173,7 +173,7 @@ class GenTestCase(unittest.TestCase):
         )
 
         self.assertRaisesRegex(SyntaxError,
-                               r"expected one of \['\(', 'NUM', 'VAR'], got None",
+                               r"unexpected end of input",
                                lambda: parse(tokenize("(")))
         self.assertRaisesRegex(SyntaxError,
                                r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
@@ -844,7 +844,7 @@ class GenTestCase(unittest.TestCase):
                            message="expected 'end of input', got ';'")
         self.assertParse("(FN x -> f ( x ))(x)", goal="expr")
         self.assertNoParse("(FN x -> f ( x ))(x)", goal="stmts",
-                           message="expected ';', got None")
+                           message="unexpected end of input")
 
     def testStaggeredItems(self):
         """Two items in a state can have different amounts of leading context."""
