@@ -142,6 +142,11 @@ The parser spits out tuples by default. It's easy to customize the
 method names of the DefaultBuilder, and it's easy to replace it with
 your own builder class that produces the AST you actually want.
 
+This has a few more features geared toward being able to parse
+JavaScript, which [has an idiosyncratic syntax](js-quirks.md).
+See [js_parser/README.md](https://github.com/jorendorff/pgen/tree/master/js_parser)
+for details.
+
 
 ## Limitations
 
@@ -185,3 +190,5 @@ to parsing JS.
 
 *   No table compaction or table optimization. I think there's plenty of
     low-hanging fruit there.
+
+*   Documentation. There isn't any.
