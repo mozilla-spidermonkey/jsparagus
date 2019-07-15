@@ -25,7 +25,7 @@ $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install --upgrade pip
 $ pip install -r requirements.txt
-$ ./ponder-es-grammar.py --progress -o js_parser.py
+$ ./ponder-es-grammar.py --progress -o parser_tables.py
 ```
 
 **Note:** This last step currently takes about 3 minutes to run on my
