@@ -39,6 +39,11 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("if (x) if (y) g(); else h();")
         self.assert_parses("if (x) if (y) g(); else h(); else j();")
 
+    def test_lexer_decimal(self):
+        self.assert_parses("0.")
+        self.assert_parses(".5")
+        self.assert_syntax_error(".")
+
     def test_arrow(self):
         self.assert_parses("x => x")
         self.assert_parses("f = x => x;")

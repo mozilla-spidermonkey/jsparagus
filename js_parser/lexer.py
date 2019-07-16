@@ -86,7 +86,7 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                 return ';'
             return None
         c = token[0]
-        if c.isdigit():
+        if c.isdigit() or c == '.' and token != '.':
             return 'NumericLiteral'
         elif c.isalpha() or c in '$_':
             if self.parser.can_accept('IdentifierName'):
