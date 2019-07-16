@@ -14,6 +14,9 @@ def main():
         parser = JSParser()
         try:
             result = parser.read()
+        except EOFError:
+            print()
+            break
         except SyntaxError as exc:
             print(exc.__class__.__name__ + ": " + str(exc))
             continue
