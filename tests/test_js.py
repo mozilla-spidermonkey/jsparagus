@@ -39,6 +39,12 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("if (x) if (y) g(); else h();")
         self.assert_parses("if (x) if (y) g(); else h(); else j();")
 
+    def test_arrow(self):
+        self.assert_parses("x => x")
+        self.assert_parses("f = x => x;")
+        self.assert_parses("(x, y) => [y, x]")
+        self.assert_parses("f = (x, y) => {}")
+        self.assert_syntax_error("(x, y) => {x: x, y: y}")
 
 if __name__ == '__main__':
     unittest.main()

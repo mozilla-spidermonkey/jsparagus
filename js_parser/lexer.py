@@ -3,6 +3,16 @@
 import re
 import jsparagus.lexer
 
+def _get_punctuators():
+    punctuators = '''
+        { ( ) [ ] . ... ; , < > <= >= == != === !== + - * % ** ++ --
+        << >> >>> & | ^ ! ~ && || ? : = += -= *= %=
+        **= ><<= >>= >>>= &= |= ^= =>
+    '''.split()
+
+    return '|'.join(
+        re.escape(token)
+        for token in sorted(punctuators, key=len, reverse=True))
 
 TOKEN_RE = re.compile(r'''(?x)
   (?:
@@ -21,11 +31,7 @@ TOKEN_RE = re.compile(r'''(?x)
     | [0-9][0-9A-Za-z]*(?:\.[0-9A-Za-z]*)?
     | \.[0-9]+
       # Punctuator
-    | [ { ( ) \[ \] ; , ~ \? :]
-    | \.\.\. | \. | <<=? | <= | < | >>>=? | >>=? | >= | >
-    | === | == | = | !== | != | !
-    | \+\+ | \+=? | -- | -=? | \*\*=? | \*=? | %=?
-    | && | &=? | \^=? | \|\| | \|=? | =>
+    | <INSERT_PUNCTUATORS>
       # The slash special case
     | /
       # The curly brace special case
@@ -43,7 +49,7 @@ TOKEN_RE = re.compile(r'''(?x)
     | .
     | \Z #end of string
   )
-''')
+'''.replace("<INSERT_PUNCTUATORS>", _get_punctuators()))
 
 RESERVED_WORDS = set('''
 await break case catch class const continue debugger default delete do else
