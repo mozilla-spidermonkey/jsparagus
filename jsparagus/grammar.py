@@ -271,11 +271,14 @@ class Grammar:
                 # Grammar is being created by hacking on a previous Grammar, it
                 # will already have them.
                 if not isinstance(nt.goal, str):
-                    raise TypeError("invalid grammar: InitNt.goal should be a string, got {!r}".format(nt))
+                    raise TypeError(
+                        "invalid grammar: InitNt.goal should be a string, got {!r}".format(nt))
                 if nt.goal not in nonterminals:
-                    raise TypeError("invalid grammar: undefined nonterminal referenced by InitNt: {!r}".format(nt))
+                    raise TypeError(
+                        "invalid grammar: undefined nonterminal referenced by InitNt: {!r}".format(nt))
                 if nt.goal not in goal_nts:
-                    raise TypeError("invalid grammar: nonterminal referenced by InitNt is not in the list of goals: {!r}".format(nt))
+                    raise TypeError(
+                        "invalid grammar: nonterminal referenced by InitNt is not in the list of goals: {!r}".format(nt))
                 # Check the form of init productions. Initially these look like
                 # [[goal]], but after the pipeline goes to work, they can be
                 # [[Optional(goal)]] or [[], [goal]].
@@ -296,14 +299,18 @@ class Grammar:
                             len(pair) != 2 or
                             not isinstance(pair[0], str) or
                             not isinstance(pair[1], bool)):
-                        raise TypeError("invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
+                        raise TypeError(
+                            "invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
             elif isinstance(nt, str):
                 if not nt.isidentifier():
-                    raise ValueError("invalid grammar: nonterminal names must be identifiers, not {!r}".format(nt))
+                    raise ValueError(
+                        "invalid grammar: nonterminal names must be identifiers, not {!r}".format(nt))
             else:
-                raise TypeError("invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
+                raise TypeError(
+                    "invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
             if nt in self.variable_terminals:
-                raise TypeError("invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
+                raise TypeError(
+                    "invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
             return copy_rhs_list(nt, plist_or_fn, [])
 
         for nt, plist_or_fn in nonterminals.items():
@@ -337,10 +344,12 @@ class Grammar:
         self.init_nts = []
         for goal in goal_nts:
             if goal not in nonterminals:
-                raise ValueError("goal nonterminal {!r} is undefined".format(goal))
+                raise ValueError(
+                    "goal nonterminal {!r} is undefined".format(goal))
             init_nt = InitNt(goal)
             if init_nt not in self.nonterminals:
-                self.nonterminals[init_nt] = [Production(init_nt, [goal], 'accept')]
+                self.nonterminals[init_nt] = [
+                    Production(init_nt, [goal], 'accept')]
             self.init_nts.append(init_nt)
 
         # Cache the set of terminals for is_terminal.

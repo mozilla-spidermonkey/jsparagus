@@ -96,7 +96,8 @@ def empty_nt_set(grammar):
                 # is Accept(eval(expr.args[0])).
                 return 'accept'
             else:
-                raise TypeError("internal error: unhandled reduce expression type {!r}".format(expr))
+                raise TypeError(
+                    "internal error: unhandled reduce expression type {!r}".format(expr))
 
         return eval(p.action)
 
@@ -170,7 +171,8 @@ def check_cycle_free(grammar):
 
     for nt in grammar.nonterminals:
         if nt in produces[nt]:
-            raise ValueError("invalid grammar: nonterminal {} can produce itself".format(nt))
+            raise ValueError(
+                "invalid grammar: nonterminal {} can produce itself".format(nt))
 
 
 def check_lookahead_rules(grammar):
@@ -201,7 +203,8 @@ def expand_function_nonterminals(grammar):
 
     assigned_names = {(goal, None): goal for goal in grammar.goals()}
     todo = collections.deque(assigned_names.keys())
-    result = {nt: None for nt in grammar.nonterminals}  # maybe could start empty now
+    # maybe could start empty now
+    result = {nt: None for nt in grammar.nonterminals}
 
     def get_derived_name(nt, args):
         name = assigned_names.get((nt, args))
@@ -267,7 +270,8 @@ def expand_function_nonterminals(grammar):
         name = assigned_names[nt, args]
         if result[name] is None:  # not already expanded
             result[name] = expand(nt, args)
-    unreachable_keys = [nt for nt, rhs_list in result.items() if rhs_list is None]
+    unreachable_keys = [nt for nt,
+                        rhs_list in result.items() if rhs_list is None]
     for key in unreachable_keys:
         del result[key]
     return grammar.with_nonterminals(result)
@@ -309,7 +313,8 @@ def start_sets(grammar):
         for nt, plist in grammar.nonterminals.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
-            nt_start = OrderedFrozenSet(t for p in plist for t in seq_start(grammar, start, p.body))
+            nt_start = OrderedFrozenSet(
+                t for p in plist for t in seq_start(grammar, start, p.body))
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -366,7 +371,8 @@ def make_start_set_cache(grammar, prods, start):
             assert s == seq_start(grammar, start, rhs[len(rhs) - len(sets):])
             sets.append(s)
         sets.reverse()
-        assert sets == [seq_start(grammar, start, rhs[i:]) for i in range(len(rhs) + 1)]
+        assert sets == [seq_start(grammar, start, rhs[i:])
+                        for i in range(len(rhs) + 1)]
         return sets
 
     return [suffix_start_list(prod.rhs) for prod in prods]
@@ -522,13 +528,16 @@ def expand_all_optional_elements(grammar):
                         # turned into code downstream.
                         return 'accept'
                     else:
-                        raise TypeError("internal error: unrecognized element {!r}".format(expr))
+                        raise TypeError(
+                            "internal error: unrecognized element {!r}".format(expr))
 
                 adjusted_action = adjust_reduce_expr(p.action)
                 expanded_grammar[nt].append(
                     Production(nt=p.nt, body=expanded_rhs, action=adjusted_action))
-                prods.append(Prod(nt, prod_index, expanded_rhs, removals, adjusted_action))
-                prods_with_indexes_by_nt[nt].append((len(prods) - 1, expanded_rhs))
+                prods.append(Prod(nt, prod_index, expanded_rhs,
+                                  removals, adjusted_action))
+                prods_with_indexes_by_nt[nt].append(
+                    (len(prods) - 1, expanded_rhs))
 
     return grammar.with_nonterminals(expanded_grammar), prods, prods_with_indexes_by_nt
 
@@ -739,7 +748,8 @@ def find_path(start_set, successors, test):
 #     `None` is in this set, it means `END`, not that the LRItem is
 #     unrestricted.
 #
-LRItem = collections.namedtuple("LRItem", "prod_index offset lookahead followed_by")
+LRItem = collections.namedtuple(
+    "LRItem", "prod_index offset lookahead followed_by")
 
 
 def assert_items_are_compatible(grammar, prods, items):
@@ -762,6 +772,7 @@ def assert_items_are_compatible(grammar, prods, items):
 
 class PgenContext:
     """ The immutable part of the parser generator's data. """
+
     def __init__(self, grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow):
         self.grammar = grammar
         self.prods = prods
@@ -890,7 +901,8 @@ class PgenContext:
                 if self.grammar.is_nt(last):
                     yield prod_index, last
 
-        path = find_path(start_points.keys(), successors, lambda point: point == nt)
+        path = find_path(start_points.keys(), successors,
+                         lambda point: point == nt)
 
         # Yield productions showing how to produce `nt` in the right context.
         prod_index, offset = start_points[path[0]]
@@ -922,7 +934,8 @@ class PgenContext:
                          "{}"
                          .format(scenario_str,
                                  t_str,
-                                 grammar.lr_item_to_str(self.prods, some_shift_option),
+                                 grammar.lr_item_to_str(
+                                     self.prods, some_shift_option),
                                  grammar.production_to_str(nt, rhs),
                                  t_str,
                                  nt,
@@ -964,7 +977,8 @@ class State:
         a = collections.defaultdict(OrderedSet)
         for item in items:
             a[item.prod_index, item.offset, item.lookahead] |= item.followed_by
-        self._lr_items = OrderedFrozenSet(LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
+        self._lr_items = OrderedFrozenSet(
+            LRItem(*k, OrderedFrozenSet(v)) for k, v in a.items())
 
         # This state should be reused if another state is found that has all
         # the same items except with different .followed_by sets. This line of
@@ -974,7 +988,8 @@ class State:
                            for item in sorted(self._lr_items))
 
         self._hash = hash(self.key)
-        assert_items_are_compatible(context.grammar, context.prods, self._lr_items)
+        assert_items_are_compatible(
+            context.grammar, context.prods, self._lr_items)
 
     def __eq__(self, other):
         return self.key == other.key
@@ -1018,7 +1033,8 @@ class State:
 
         # Really do the work of merging the two states.
         self._lr_items = OrderedFrozenSet(
-            LRItem(*item_key(item), item.followed_by | new_followed_by[item_key(item)])
+            LRItem(*item_key(item), item.followed_by |
+                   new_followed_by[item_key(item)])
             for item in self._lr_items
         )
         return True
@@ -1092,8 +1108,10 @@ class State:
 
         # Step 1. Visit every item and list what we want to do for each
         # possible next token.
-        shift_items = collections.defaultdict(OrderedSet)  # maps terminals to item-sets
-        ctn_items = collections.defaultdict(OrderedSet)  # maps nonterminals to item-sets
+        shift_items = collections.defaultdict(
+            OrderedSet)  # maps terminals to item-sets
+        ctn_items = collections.defaultdict(
+            OrderedSet)  # maps nonterminals to item-sets
         reduce_prods = {}  # maps follow-terminals to production indexes
 
         # Each item has three ways to advance.
@@ -1111,7 +1129,8 @@ class State:
                 next_symbol = rhs[offset]
                 if grammar.is_terminal(next_symbol):
                     if lookahead_contains(item.lookahead, next_symbol):
-                        next_item = context.make_lr_item(item.prod_index, offset + 1, None, item.followed_by)
+                        next_item = context.make_lr_item(
+                            item.prod_index, offset + 1, None, item.followed_by)
                         if next_item is not None:
                             shift_items[next_symbol].add(next_item)
                 else:
@@ -1138,7 +1157,8 @@ class State:
                 for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
-                            context.raise_reduce_reduce_conflict(self, t, reduce_prods[t], item.prod_index)
+                            context.raise_reduce_reduce_conflict(
+                                self, t, reduce_prods[t], item.prod_index)
                         reduce_prods[t] = item.prod_index
 
         # Step 2. Turn that information into table data to drive the parser.
@@ -1159,10 +1179,12 @@ class State:
                         "the action we already have should be a shift"
                     continue  # leave it alone
                 else:
-                    context.raise_shift_reduce_conflict(self, t, shift_items[t], prod.nt, prod.rhs)
+                    context.raise_shift_reduce_conflict(
+                        self, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if isinstance(prod.nt, InitNt) else -prod_index - 1
+            action_row[t] = ACCEPT if isinstance(
+                prod.nt, InitNt) else -prod_index - 1
         ctn_row = {nt: get_state_index(State(context, ss, self))
                    for nt, ss in ctn_items.items()}
         self.action_row = action_row
@@ -1231,7 +1253,8 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
     # Compute the start states.
     init_state_map = {}
     for init_nt in context.grammar.init_nts:
-        init_prod_index = prods.index(Prod(init_nt, 0, [init_nt.goal], removals=[], action="accept"))
+        init_prod_index = prods.index(
+            Prod(init_nt, 0, [init_nt.goal], removals=[], action="accept"))
         start_item = context.make_lr_item(init_prod_index,
                                           0,
                                           lookahead=None,
@@ -1270,7 +1293,8 @@ def generate_parser(out, grammar, *, target='python',
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
     grammar = make_epsilon_free_step_1(grammar)
-    grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(grammar)
+    grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
+        grammar)
     grammar = make_epsilon_free_step_2(grammar)
 
     # Now the grammar is in its final form. Compute information about it that
@@ -1278,7 +1302,8 @@ def generate_parser(out, grammar, *, target='python',
     start = start_sets(grammar)
     start_set_cache = make_start_set_cache(grammar, prods, start)
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache)
-    context = PgenContext(grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
+    context = PgenContext(
+        grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
     states, init_state_map = analyze_states(context, prods, verbose=verbose,
@@ -1286,7 +1311,8 @@ def generate_parser(out, grammar, *, target='python',
 
     # Finally, dump the output.
     if target == 'rust':
-        emit.write_rust_parser(out, grammar, states, prods, init_state_map)
+        emit.RustParserWriter(out, grammar, states,
+                              prods, init_state_map).emit()
     else:
         emit.write_python_parser(out, grammar, states, prods, init_state_map)
 
@@ -1322,7 +1348,8 @@ def demo():
     grammar = example_grammar()
 
     import lexer
-    tokenize = lexer.LexicalGrammar("+ - * / ( )", NUM=r'0|[1-9][0-9]*', VAR=r'[_A-Za-z]\w+')
+    tokenize = lexer.LexicalGrammar(
+        "+ - * / ( )", NUM=r'0|[1-9][0-9]*', VAR=r'[_A-Za-z]\w+')
 
     import io
     out = io.StringIO()

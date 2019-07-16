@@ -2,7 +2,7 @@
 
 from .runtime import ERROR
 from .ordered import OrderedSet
-from .grammar import InitNt, CallMethod, Some, is_apply, is_concrete_element, Optional
+from .grammar import InitNt, CallMethod, Some, is_lookahead_rule, is_apply, is_concrete_element, Optional
 import unicodedata
 
 
@@ -192,20 +192,37 @@ class RustParserWriter:
                 self.out.write("\n")
         self.out.write("];\n\n")
 
-    def to_camel_case(self, id):
-        return ''.join(word.capitalize() for word in id.split('_'))
+    def nonterminal_to_snake(self, ident):
+        if is_apply(ident):
+            base_name = ident.nt
+            args = ''.join((name for name, value in ident.args if value))
+            return base_name + args
+        else:
+            assert isinstance(ident, str)
+            return ident
+
+    def nonterminal_to_camel(self, nt):
+        return self.to_camel_case(self.nonterminal_to_snake(nt))
+
+    def to_camel_case(self, ident):
+        if '_' in ident:
+            return ''.join(word.capitalize() for word in ident.split('_'))
+        elif ident.islower():
+            return ident.capitalize()
+        else:
+            return ident
 
     def check_camel_case(self):
         seen = {}
         for nt in self.nonterminals:
-            cc = self.to_camel_case(nt)
+            cc = self.nonterminal_to_camel(nt)
             if cc in seen:
                 raise ValueError("{} and {} have the same camel-case spelling ({})".format(
                     seen[cc], nt, cc))
             seen[cc] = nt
 
     def nt_node_variant(self, prod):
-        name = self.to_camel_case(prod.nt)
+        name = self.nonterminal_to_camel(prod.nt)
         if len(self.grammar.nonterminals[prod.nt]) > 1:
             name += "P" + str(prod.index)
         return name
@@ -224,21 +241,23 @@ class RustParserWriter:
                 seen[name] = prod
 
     def trait_name(self, prod):
-        name = prod.nt
+        name = self.nonterminal_to_snake(prod.nt)
         if len(self.grammar.nonterminals[prod.nt]) > 1:
             name += "_p" + str(prod.index)
         return name
 
-    def rust_type_of_element(self, prod, i, e, node_ty):
-        if self.grammar.is_variable_terminal(e):
+    def rust_type_of_element(self, prod, index, element, node_ty):
+        if self.grammar.is_variable_terminal(element):
             ty = 'Node<{}>'.format(node_ty)
-        elif self.grammar.is_terminal(e):
+        elif self.grammar.is_terminal(element):
             ty = '()'
+        elif is_lookahead_rule(element):
+            ty = None
         else:
-            assert self.grammar.is_nt(e)
+            assert self.grammar.is_nt(element)
             ty = 'Node<{}>'.format(node_ty)
 
-        if i in self.prod_optional_element_indexes[(prod.nt, prod.index)]:
+        if index in self.prod_optional_element_indexes[(prod.nt, prod.index)]:
             if ty == '()':
                 ty = 'bool'
             else:
@@ -254,10 +273,10 @@ class RustParserWriter:
             # present.
             if prod.nt in self.nonterminals and not prod.removals:
                 types = []
-                for i, e in enumerate(prod.rhs):
+                for index, element in enumerate(prod.rhs):
                     ty = self.rust_type_of_element(
-                        prod, i, e, "Self::ReturnValue")
-                    if ty != '()':
+                        prod, index, element, "Self::ReturnValue")
+                    if ty is not None and ty != '()':
                         types.append(ty)
 
                 self.out.write(
@@ -277,7 +296,7 @@ class RustParserWriter:
                 types = []
                 for i, e in enumerate(prod.rhs):
                     ty = self.rust_type_of_element(prod, i, e, "NtNode")
-                    if ty != '()':
+                    if ty is not None and ty != '()':
                         types.append(ty)
 
                 self.out.write(
@@ -295,7 +314,7 @@ class RustParserWriter:
                 types = []
                 for i, e in enumerate(prod.rhs):
                     ty = self.rust_type_of_element(prod, i, e, "NtNode")
-                    if ty != '()':
+                    if ty is not None and ty != '()':
                         types.append(ty)
 
                 trait_name = self.trait_name(prod)
@@ -315,7 +334,8 @@ class RustParserWriter:
         self.out.write("#[derive(Clone, Copy, Debug, PartialEq)]\n")
         self.out.write("pub enum NonterminalId {\n")
         for i, nt in enumerate(self.nonterminals):
-            self.out.write("    {} = {},\n".format(self.to_camel_case(nt), i))
+            self.out.write("    {} = {},\n".format(
+                self.nonterminal_to_camel(nt), i))
         self.out.write("}\n\n")
 
     def goto(self):
@@ -356,7 +376,10 @@ class RustParserWriter:
 
                     ty = self.rust_type_of_element(
                         prod, original_index, element, "x")
-                    if ty == '()':
+                    if ty is None:
+                        original_index += 1
+                        continue
+                    elif ty == '()':
                         var = None
                         arg = '()'
                     elif ty == 'bool':
@@ -387,7 +410,7 @@ class RustParserWriter:
                     ", ".join(arguments)
                 ))
                 self.out.write("            NonterminalId::{}\n".format(
-                    self.to_camel_case(prod.nt)))
+                    self.nonterminal_to_camel(prod.nt)))
                 self.out.write("        }\n")
         self.out.write(
             '        _ => panic!("no such production: {}", prod),\n')
@@ -415,7 +438,3 @@ class RustParserWriter:
             self.out.write(
                 "    parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)\n".format(index))
             self.out.write("}\n\n")
-
-
-def write_rust_parser(out, grammar, states, prods, init_state_map):
-    RustParserWriter(out, grammar, states, prods, init_state_map).emit()
