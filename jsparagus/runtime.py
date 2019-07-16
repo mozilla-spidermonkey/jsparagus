@@ -25,27 +25,13 @@ def throw_syntax_error(actions, state, t, tokens):
 
 def parse(actions, ctns, reductions, entry_state, tokens, builder):
     """ Table-driven LR parser. """
-    t = tokens.peek()
-    stack = [entry_state]  # alternates state-ids and AST nodes
-    while True:
-        state = stack[-1]
-        action = actions[state].get(t, ERROR)
-        # possible actions are: shift, reduce, accept, error; all encoded as integers
-        if action >= 0:  # shift
-            stack.append(tokens.take(t))
-            stack.append(action)
-            t = tokens.peek()
-        elif action > ACCEPT:  # reduce
-            tag_name, n, reducer = reductions[-action - 1]
-            start = len(stack) - 2 * n
-            node = reducer(builder, *stack[start::2])
-            stack[start:] = [node, ctns[stack[start - 1]][tag_name]]
-        elif action == ACCEPT:
-            assert len(stack) == 3
-            return stack[1]
-        else:
-            assert action == ERROR
-            throw_syntax_error(actions, state, t, tokens)
+    parser = Parser(actions,
+                    ctns,
+                    reductions,
+                    lambda _ignored_bogus_text: tokens,
+                    entry_state,
+                    builder)
+    return parser.feed("")
 
 
 class Parser:
