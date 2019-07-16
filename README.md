@@ -148,6 +148,37 @@ See [js_parser/README.md](https://github.com/jorendorff/pgen/tree/master/js_pars
 for details.
 
 
+## Getting started
+
+First, the usual dance:
+
+```sh
+python3 -m venv venv
+. venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Then you can:
+
+*   Run `./test.sh` to make sure things are working.
+
+*   Generate parser tables for JavaScript (!):
+
+    ```sh
+    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_tables.py
+    ```
+
+    **Note:** This takes about 3 minutes to run on my laptop. jsparagus
+    is slow.
+
+    Then, to see parser run, try this:
+
+    ```sh
+    python -m js_parser.try_it
+    ```
+
+
 ## Limitations
 
 It's *all* limitations, but I'll try to list the ones that are relevant

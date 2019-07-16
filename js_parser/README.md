@@ -4,16 +4,16 @@ In this directory:
 
 *   **emug.pgen** A grammar for "emu-grammar", the ECMArkup grammar language.
 
-*   **es.emug** - The actual grammar for ECMAScript, in emu-grammar format,
-    extracted automatically from the spec.
+*   **es.emug** - The actual grammar for ECMAScript, in emu-grammar
+    format, extracted automatically from the spec.
 
 *   **extract-es-grammar.py** - The script that creates *es.emug*.
 
-*   **es-simplified.emug** - A hacked version of *es.emug* that pgen can actually handle
-    (maybe?).
+*   **es-simplified.emug** - A hacked version of *es.emug* that
+    jsparagus can actually handle, sort of.
 
-*   **ponder-es-grammar.py** - A script to try generating a parser for *es-simplified.emug*.
-    Read on for instructions.
+*   **generate_js_parser_tables.py** - A script to generate a JS parser
+    based on *es-simplified.emug*.  Read on for instructions.
 
 
 ## How to run it
