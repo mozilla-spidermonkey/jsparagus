@@ -80,16 +80,17 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         if token == '':
             assert match.end() == len(self.src)
             # Implement ASI at the end of the program.
-            if (not self.parser.can_accept(None) and
-                    self.parser.can_accept(';') and
-                    not self.parser.can_accept_EmptyStatement()):
+            if (not self.parser.can_accept_terminal(None) and
+                    self.parser.can_accept_terminal(';') and
+                    not self.parser.can_accept_nonterminal(
+                        'EmptyStatement', ';')):
                 return ';'
             return None
         c = token[0]
         if c.isdigit() or c == '.' and token != '.':
             return 'NumericLiteral'
         elif c.isalpha() or c in '$_':
-            if self.parser.can_accept('IdentifierName'):
+            if self.parser.can_accept_terminal('IdentifierName'):
                 return 'IdentifierName'
             elif token in RESERVED_WORDS:  # TODO support strict mode
                 if token == 'null':
@@ -98,13 +99,19 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                     return 'BooleanLiteral'
                 return token
             elif (token in ('let', 'static', 'yield', 'async', 'of') and
-                  self.parser.can_accept(token)):
+                  self.parser.can_accept_terminal(token)):
                 # This is not what the standard says but eh
                 return token
             else:
                 return 'Identifier'
         elif c == '/':
-            if self.parser.can_accept('RegularExpressionLiteral'):
+            # We choose RegExp vs. division based on what the parser can
+            # accept, a literal implementation of the spec.
+            #
+            # To make this correct in combination with end-of-line ASI, make
+            # the parser rewind the lexer one token and ask for it again in
+            # that case, so that the lexer asks the can-accept question again.
+            if self.parser.can_accept_terminal('RegularExpressionLiteral'):
                 raise Exception("not supported: regular expression literals")
             else:
                 match = re.match(r'(/=?)', self.src, self.point)

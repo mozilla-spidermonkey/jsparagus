@@ -101,6 +101,59 @@ class ReplParser:
                 assert action == ERROR
                 throw_syntax_error(self.actions, state, t, tokens)
 
+    def can_accept_terminal(self, t):
+        """Return True if the terminal `t` is OK next.
+
+        False if it's an error. `t` can be None, querying if we can accept
+        end-of-input.
+        """
+        state = self.simulate(t)
+        action = self.actions[state].get(t, ERROR)
+        if action >= 0:  # shift
+            assert t is not None
+            return True
+        elif action == ACCEPT:
+            assert t is None
+            return True
+        else:
+            assert action == ERROR
+            return False
+
+    def can_accept_nonterminal(self, nt, t):
+        """Return True if a nonterminal `nt` starting with `t` is OK next.
+
+        The starting terminal `t` helps in navigating the parser tables;
+        without it, there are too many ways parsing could proceed from the
+        current state, and the check would be slow.
+        """
+        # Note: This relies on the tables not being compressed in a way that
+        # loses this bit of information. Of course there are many ways to
+        # compress and retain this; the only trick is making a clean interface
+        # between the parser, the lexer, and the parser generator.
+        state = self.simulate(t)
+        return nt in self.ctns[state]
+
+    def simulate(self, t):
+        """Simulate receiving the terminal `t` without modifying parser state.
+
+        Walk the current stack to simulate the reduce actions that would occur
+        if the next token from the lexer was `t`. Return the state reached when
+        we're done reducing.
+        """
+        stack = self.stack
+        sp = len(stack) - 1
+        state = stack[sp]
+        while True:
+            action = self.actions[state].get(t, ERROR)
+            if ACCEPT < action < 0:  # reduce
+                tag_name, n, _reducer = self.reductions[-action - 1]
+                sp -= 2 * n
+                state = stack[sp]
+                sp += 2
+                state = self.ctns[state][tag_name]
+            else:
+                return state
+
 
 def make_parse_fn(actions, ctns, reductions, entry_state, builder_cls):
     def parse_fn(tokens, builder=None):
