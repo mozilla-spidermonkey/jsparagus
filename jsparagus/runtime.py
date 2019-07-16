@@ -66,18 +66,20 @@ class Parser:
         return action
 
     def write(self, chunk):
-        stack = self.stack
         tokens = self.lex(chunk)
         t = tokens.peek()
         while t is not None:
-            action = self._reduce(t)
-            if action >= 0:  # shift
-                stack.append(tokens.take(t))
-                stack.append(action)
-                t = tokens.peek()
-            else:
-                assert action == ERROR
-                throw_syntax_error(self.actions, stack[-1], t, tokens)
+            self.write_terminal(tokens, t)
+            t = tokens.peek()
+
+    def write_terminal(self, tokens, t):
+        action = self._reduce(t)
+        if action >= 0:  # shift
+            self.stack.append(tokens.take(t))
+            self.stack.append(action)
+        else:
+            assert action == ERROR
+            throw_syntax_error(self.actions, self.stack[-1], t, tokens)
 
     def close(self):
         action = self._reduce(None)
