@@ -29,6 +29,5 @@ if [[ $(cargo version) == *-nightly* ]]
 then
     (cd client && cargo bench --features unstable)
 fi
-(cd client && cargo build)
 
 ./test.sh

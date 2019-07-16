@@ -1,5 +1,4 @@
-pub use crate::ast::Node;
-pub use crate::parser_generated::{Handler, NonterminalId};
+pub use crate::parser_generated::{Handler, Node, NonterminalId, Token};
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -59,7 +58,7 @@ pub fn parse<H: Handler, In, Out>(
     reduce: Out,
 ) -> Result<Node<H::ReturnValue>, &'static str>
 where
-    In: TokenStream<Token = crate::ast::Token>,
+    In: TokenStream<Token = Token>,
     Out: Fn(&mut H, usize, &mut Vec<Node<H::ReturnValue>>) -> NonterminalId,
 {
     assert_eq!(

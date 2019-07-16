@@ -1,6 +1,5 @@
 #![cfg_attr(feature = "unstable", feature(test))]
 
-mod ast;
 mod lexer;
 mod parser_generated;
 mod parser_runtime;

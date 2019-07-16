@@ -1,5 +1,4 @@
-use crate::ast::Token;
-use crate::parser_runtime::TokenStream;
+use crate::parser_runtime::{Token, TokenStream};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
@@ -57,15 +56,15 @@ where
         let token = match self.chars.next() {
             None => Token::End,
             Some(';') => Token::Semicolon,
-            Some('{') => Token::OpenBrace,
-            Some('}') => Token::CloseBrace,
+            Some('{') => Token::LeftCurlyBracket,
+            Some('}') => Token::RightCurlyBracket,
             Some('?') => Token::QuestionMark,
             Some('=') => match self.chars.peek() {
                 Some('>') => {
                     self.chars.next();
                     Token::Arrow
                 }
-                _ => Token::EqualSign,
+                _ => Token::EqualsSign,
             },
 
             Some('"') => {
@@ -84,7 +83,7 @@ where
                 if self.chars.peek().is_none() {
                     panic!("not implemented: syntax error, unterminated string");
                 }
-                Token::String(s)
+                Token::Str(s)
             }
 
             Some(c) => {
@@ -101,7 +100,7 @@ where
                     } else if id == "var" {
                         Token::Var
                     } else {
-                        Token::Identifier(id)
+                        Token::Ident(id)
                     }
                 } else {
                     panic!("not implemented: syntax error, illegal character {:?}", c);
