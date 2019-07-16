@@ -9,11 +9,20 @@ from .parser import JSParser
 from jsparagus.lexer import SyntaxError
 
 
+def interactive_input(parser, prompt="js> "):
+    while True:
+        line = input(prompt)
+        parser.write(line + "\n")
+        if parser.can_close():
+            return parser.close()
+        prompt = "..> "
+
+
 def main():
     while True:
         parser = JSParser()
         try:
-            result = parser.read()
+            result = interactive_input(parser)
         except EOFError:
             print()
             break

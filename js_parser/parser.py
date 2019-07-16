@@ -27,4 +27,6 @@ class JSParser(Parser):
 
 
 def parse_Script(text):
-    return JSParser().feed(text)
+    parser = JSParser()
+    parser.write(text)
+    return parser.close()

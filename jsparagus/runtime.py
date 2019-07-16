@@ -10,12 +10,11 @@ ERROR = ACCEPT - 1
 
 
 def throw_syntax_error(actions, state, t, tokens):
+    assert t is not None
     expected = set(actions[state].keys())
     if None in expected:
         expected.remove(None)
         expected.add("end of input")
-    elif t is None:
-        tokens.throw_unexpected_end()
     if len(expected) < 2:
         tokens.throw("expected {!r}, got {!r}".format(list(expected)[0], t))
     else:
@@ -31,7 +30,8 @@ def parse(actions, ctns, reductions, entry_state, tokens, builder):
                     lambda _ignored_bogus_text: tokens,
                     entry_state,
                     builder)
-    return parser.feed("")
+    parser.write("")
+    return parser.close()
 
 
 class Parser:
@@ -52,40 +52,41 @@ class Parser:
         self.stack = [entry_state]
         self.builder = builder
 
-    def read(self, prompt="> "):
-        while True:
-            line = input(prompt)
-            try:
-                return self.feed(line + "\n")
-            except UnexpectedEndError:
-                prompt = "» "
-                continue
-
-    def feed(self, line):
+    def _reduce(self, t):
         stack = self.stack
-        tokens = self.lex(line)
-        t = tokens.peek()
-        while True:
+        state = stack[-1]
+        action = self.actions[state].get(t, ERROR)
+        while ACCEPT < action < 0:  # reduce
+            tag_name, n, reducer = self.reductions[-action - 1]
+            start = len(stack) - 2 * n
+            node = reducer(self.builder, *stack[start::2])
+            stack[start:] = [node, self.ctns[stack[start - 1]][tag_name]]
             state = stack[-1]
             action = self.actions[state].get(t, ERROR)
+        return action
+
+    def write(self, chunk):
+        stack = self.stack
+        tokens = self.lex(chunk)
+        t = tokens.peek()
+        while t is not None:
+            action = self._reduce(t)
             if action >= 0:  # shift
                 stack.append(tokens.take(t))
                 stack.append(action)
                 t = tokens.peek()
-                if t is None:
-                    # cope with end of line somehow
-                    pass
-            elif action > ACCEPT:  # reduce
-                tag_name, n, reducer = self.reductions[-action - 1]
-                start = len(stack) - 2 * n
-                node = reducer(self.builder, *stack[start::2])
-                stack[start:] = [node, self.ctns[stack[start - 1]][tag_name]]
-            elif action == ACCEPT:
-                assert len(stack) == 3
-                return stack[1]
             else:
                 assert action == ERROR
-                throw_syntax_error(self.actions, state, t, tokens)
+                throw_syntax_error(self.actions, stack[-1], t, tokens)
+
+    def close(self):
+        action = self._reduce(None)
+        if action == ACCEPT:
+            assert len(self.stack) == 3
+            return self.stack[1]
+        else:
+            assert action == ERROR
+            self.lex("").throw_unexpected_end()
 
     def can_accept_terminal(self, t):
         """Return True if the terminal `t` is OK next.
@@ -104,6 +105,10 @@ class Parser:
         else:
             assert action == ERROR
             return False
+
+    def can_close(self):
+        """Return True if self.close() would succeed."""
+        return self.can_accept_terminal(None)
 
     def can_accept_nonterminal(self, nt, t):
         """Return True if a nonterminal `nt` starting with `t` is OK next.
