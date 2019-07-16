@@ -96,15 +96,7 @@ class Parser:
         """
         state = self.simulate(t)
         action = self.actions[state].get(t, ERROR)
-        if action >= 0:  # shift
-            assert t is not None
-            return True
-        elif action == ACCEPT:
-            assert t is None
-            return True
-        else:
-            assert action == ERROR
-            return False
+        return action != ERROR
 
     def can_close(self):
         """Return True if self.close() would succeed."""
