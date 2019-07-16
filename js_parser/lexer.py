@@ -127,8 +127,11 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             return 'StringLiteral'
         elif c == '}':
             return token
-        else:
+        elif c in '{()[];,~?:.<>=!+-*%&|':
             return token
+        else:
+            assert len(token) == 1
+            self.throw("unexpected character: {!r}".format(c))
 
     def peek(self):
         if self._next_kind is not None:

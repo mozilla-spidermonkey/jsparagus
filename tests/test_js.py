@@ -51,5 +51,9 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("f = (x, y) => {}")
         self.assert_syntax_error("(x, y) => {x: x, y: y}")
 
+    def test_invalid_character(self):
+        self.assert_syntax_error("\0")
+        self.assert_syntax_error("—x;")
+
 if __name__ == '__main__':
     unittest.main()
