@@ -5,13 +5,13 @@
 See README.md for instructions.
 """
 
-from .parser import JSReplParser
+from .parser import JSParser
 from jsparagus.lexer import SyntaxError
 
 
 def main():
     while True:
-        parser = JSReplParser()
+        parser = JSParser()
         try:
             result = parser.read()
         except SyntaxError as exc:

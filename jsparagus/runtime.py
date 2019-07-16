@@ -3,7 +3,7 @@
 from .grammar import Apply  # to re-export
 from .lexer import UnexpectedEndError
 
-__all__ = ['ACCEPT', 'ERROR', 'Apply', 'ReplParser', 'make_parse_fn']
+__all__ = ['ACCEPT', 'ERROR', 'Apply', 'Parser', 'make_parse_fn']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
@@ -48,7 +48,7 @@ def parse(actions, ctns, reductions, entry_state, tokens, builder):
             throw_syntax_error(actions, state, t, tokens)
 
 
-class ReplParser:
+class Parser:
     """Object for parsing a single Script that may cover multiple lines.
 
     Usage: Call .feed(line) repeatedly until either it returns an AST or raises

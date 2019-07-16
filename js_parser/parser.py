@@ -5,7 +5,7 @@
 See README.md for instructions.
 """
 
-from jsparagus.runtime import ReplParser, ERROR, ACCEPT
+from jsparagus.runtime import Parser, ERROR, ACCEPT
 from . import parser_tables
 from .lexer import JSLexer
 
@@ -13,9 +13,9 @@ from .lexer import JSLexer
 Script_entry_state = 0  # ew, magic number, get pgen to emit this
 
 
-class JSReplParser(ReplParser):
+class JSParser(Parser):
     def __init__(self):
-        ReplParser.__init__(
+        Parser.__init__(
             self,
             parser_tables.actions,
             parser_tables.ctns,
@@ -27,4 +27,4 @@ class JSReplParser(ReplParser):
 
 
 def parse_Script(text):
-    return JSReplParser().feed(text)
+    return JSParser().feed(text)
