@@ -3,6 +3,7 @@
 from .runtime import ERROR
 from .ordered import OrderedSet
 from .grammar import InitNt, CallMethod, Some, is_lookahead_rule, is_apply, is_concrete_element, Optional
+import re
 import unicodedata
 
 
@@ -133,7 +134,10 @@ class RustParserWriter:
         elif value in TERMINAL_NAMES:
             return TERMINAL_NAMES[value]
         elif value.isalpha():
-            return value.capitalize()
+            if value.islower():
+                return value.capitalize()
+            else:
+                return value
         else:
             raw_name = " ".join((unicodedata.name(c) for c in value))
             snake_case = raw_name.replace("-", " ").replace(" ", "_").lower()
@@ -194,12 +198,13 @@ class RustParserWriter:
 
     def nonterminal_to_snake(self, ident):
         if is_apply(ident):
-            base_name = ident.nt
-            args = ''.join((name for name, value in ident.args if value))
+            base_name = self.to_snek_case(ident.nt)
+            args = ''.join((("_" + self.to_snek_case(name))
+                            for name, value in ident.args if value))
             return base_name + args
         else:
             assert isinstance(ident, str)
-            return ident
+            return self.to_snek_case(ident)
 
     def nonterminal_to_camel(self, nt):
         return self.to_camel_case(self.nonterminal_to_snake(nt))
@@ -220,6 +225,11 @@ class RustParserWriter:
                 raise ValueError("{} and {} have the same camel-case spelling ({})".format(
                     seen[cc], nt, cc))
             seen[cc] = nt
+
+    def to_snek_case(self, ident):
+        # https://stackoverflow.com/questions/1175208
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', ident)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
     def nt_node_variant(self, prod):
         name = self.nonterminal_to_camel(prod.nt)
@@ -363,7 +373,9 @@ class RustParserWriter:
                 arguments = []       # to pass to constructor
                 original_index = 0
                 variable_index = 0
-                for element in prod.rhs:
+
+                def check_removed():
+                    nonlocal original_index
                     while original_index in prod.removals:
                         e = self.originals[prod.nt, prod.index][original_index]
                         assert isinstance(e, Optional)
@@ -373,6 +385,9 @@ class RustParserWriter:
                             arg = "None"
                         arguments.append(arg)
                         original_index += 1
+
+                for element in prod.rhs:
+                    check_removed()
 
                     ty = self.rust_type_of_element(
                         prod, original_index, element, "x")
@@ -396,6 +411,8 @@ class RustParserWriter:
                     if ty != '()':
                         arguments.append(arg)
                     original_index += 1
+
+                check_removed()
 
                 for var in reversed(stack_elements):
                     if var is None:

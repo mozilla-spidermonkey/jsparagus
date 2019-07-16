@@ -5,7 +5,8 @@ mod parser_generated;
 mod parser_runtime;
 
 use crate::lexer::Lexer;
-use std::io::{self, Read};
+use std::io;
+use std::io::prelude::*;
 
 #[cfg(all(feature = "unstable", test))]
 mod tests {
@@ -24,16 +25,33 @@ mod tests {
             .expect("reading from test file");
         b.iter(|| {
             let lexer = Lexer::new(buffer.chars());
-            crate::parser_generated::parse_grammar(lexer).unwrap();
+            crate::parser_generated::parse_Script(lexer).unwrap();
         });
     }
 }
 
-fn main() -> io::Result<()> {
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer)?;
-    let lexer = Lexer::new(buffer.chars());
-    parser_generated::parse_grammar(&mut parser_generated::DefaultHandler {}, lexer)
-        .expect("parsing grammar on stdin");
-    Ok(())
+fn main() {
+    while let Ok(buffer) = get_input("> ") {
+        let lexer = Lexer::new(buffer.chars());
+        let result =
+            parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
+        println!("{:?}", result);
+    }
 }
+
+pub fn get_input(prompt: &str) -> io::Result<String> {
+    print!("{}", prompt);
+    io::stdout().flush()?;
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    Ok(input.trim().to_string())
+}
+
+// fn main() -> io::Result<()> {
+//     let mut buffer = String::new();
+//     io::stdin().read_to_string(&mut buffer)?;
+//     let lexer = Lexer::new(buffer.chars());
+//     parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer)
+//         .expect("parsing grammar on stdin");
+//     Ok(())
+// }
