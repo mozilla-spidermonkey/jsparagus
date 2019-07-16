@@ -5,6 +5,7 @@ mod parser_generated;
 mod parser_runtime;
 
 use crate::lexer::Lexer;
+use std::error::Error;
 use std::io;
 use std::io::prelude::*;
 
@@ -39,12 +40,15 @@ fn main() {
     }
 }
 
-pub fn get_input(prompt: &str) -> io::Result<String> {
+pub fn get_input(prompt: &str) -> Result<String, Box<Error>> {
     print!("{}", prompt);
     io::stdout().flush()?;
     let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
-    Ok(input.trim().to_string())
+    if let 0 = io::stdin().read_line(&mut input)? {
+        Err("EOF".into())
+    } else {
+        Ok(input.trim().to_string())
+    }
 }
 
 // fn main() -> io::Result<()> {
