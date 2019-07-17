@@ -2,6 +2,7 @@
 
 import collections
 from .ordered import OrderedSet, OrderedFrozenSet
+from . import types
 
 
 # *** What is a grammar? ******************************************************
@@ -105,12 +106,31 @@ Some = collections.namedtuple("Some", "inner")
 Some.__iter__ = None
 
 
+def expr_to_str(expr):
+    if isinstance(expr, int):
+        return "${}".format(expr)
+    elif isinstance(expr, CallMethod):
+        return "{}({})".format(
+            expr.method,
+            ', '.join(expr_to_str(arg) for arg in expr.args))
+    elif expr is None:
+        return "None"
+    else:
+        assert isinstance(expr, Some)
+        return "Some({})".format(expr_to_str(expr.inner))
+
+
 # A Grammar object is just an object that contains a bunch of productions, like
 # the example grammar above. Since we have no other way of distinguishing
 # terminals from nonterminals, we store the set of terminals and the set of
 # nonterminals in the Grammar.
 class Grammar:
-    def __init__(self, nonterminals, goal_nts=None, variable_terminals=()):
+    def __init__(
+            self,
+            nonterminals,
+            goal_nts=None,
+            variable_terminals=(),
+            type_info=None):
 
         # This constructor type-checks the arguments.
         #
@@ -316,29 +336,14 @@ class Grammar:
         for nt, plist_or_fn in nonterminals.items():
             self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
 
-        # Gather the set of methods and how many arguments each method takes.
-        self.methods = methods = {}
-
-        def gather_methods(action):
-            if isinstance(action, CallMethod):
-                if action.method in methods:
-                    if len(action.args) != methods[action.method]:
-                        raise ValueError("invalid grammar: method {!r} is called with {} argument(s) and with {} argument(s)"
-                                         .format(action.method, len(action.args), methods[action.method]))
-                    for expr in action.args:
-                        gather_methods(expr)
-                else:
-                    methods[action.method] = len(action.args)
-
-        for nt, plist_or_fn in self.nonterminals.items():
-            if isinstance(plist_or_fn, Parameterized):
-                plist = plist_or_fn.body
-            else:
-                plist = plist_or_fn
-            for p in plist:
-                if isinstance(p, ConditionalRhs):
-                    p = p.rhs
-                gather_methods(p.action)
+        # Check types of reduce expressions and infer method types. But if the
+        # caller passed in precalculated type info, skip it -- otherwise we
+        # would redo type checking many times as we make minor changes to the
+        # Grammar along the pipeline.
+        if type_info is None:
+            type_info = types.infer_types(
+                self.nonterminals, self.variable_terminals)
+        self.nt_types, self.methods = type_info
 
         # Synthesize "init" nonterminals.
         self.init_nts = []
@@ -378,7 +383,9 @@ class Grammar:
 
     def with_nonterminals(self, nonterminals):
         """Return a copy of self with the same attributes except different nonterminals."""
-        return Grammar(nonterminals, self.goals(), self.variable_terminals)
+        return Grammar(
+            nonterminals, self.goals(), self.variable_terminals,
+            (self.nt_types, self.methods))
 
     # === A few methods for dumping pieces of grammar.
 

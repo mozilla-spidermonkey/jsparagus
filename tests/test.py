@@ -785,7 +785,14 @@ class GenTestCase(unittest.TestCase):
             ]),
             'name': Parameterized(['Yield'], [
                 ["IDENT"],
-                ConditionalRhs('Yield', False, ["yield"]),
+                ConditionalRhs('Yield', False,
+                               # Specifically ask for a method here,
+                               # because otherwise we wouldn't get one
+                               # and then type checking would fail.
+                               Production('name',
+                                          ["yield"],
+                                          CallMethod("yield_as_name", []))
+                ),
             ]),
         }, variable_terminals=["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",

@@ -53,9 +53,9 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("]\n\n\n")  # two blank lines before class.
 
     out.write("class DefaultBuilder:\n")
-    for tag, nargs in grammar.methods.items():
+    for tag, method_type in grammar.methods.items():
         method_name = tag.replace(' ', '_P')
-        args = ", ".join("x{}".format(i) for i in range(nargs))
+        args = ", ".join("x{}".format(i) for i in range(len(method_type.argument_types)))
         out.write("    def {}(self, {}): return ({!r}, {})\n"
                   .format(method_name, args, tag, args))
     out.write("\n\n")
