@@ -1,10 +1,12 @@
 """Emit code for parser tables in either Python or Rust. """
 
+import re
+import unicodedata
+
 from .runtime import ERROR
 from .ordered import OrderedSet
 from .grammar import InitNt, CallMethod, Some, is_lookahead_rule, is_apply, is_concrete_element, Optional
-import re
-import unicodedata
+from . import types
 
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
@@ -250,10 +252,12 @@ class RustParserWriter:
                         name))
                 seen[name] = prod
 
-    def trait_name(self, prod):
-        name = self.nonterminal_to_snake(prod.nt)
-        if len(self.grammar.nonterminals[prod.nt]) > 1:
-            name += "_p" + str(prod.index)
+    def method_name_to_rust(self, name):
+        """Convert jsparagus's internal method name to idiomatic Rust."""
+        nt_name, space, number = name.partition(' ')
+        name = self.nonterminal_to_snake(nt_name)
+        if space:
+            name += "_p" + str(number)
         return name
 
     def rust_type_of_element(self, prod, index, element, node_ty):
@@ -274,28 +278,58 @@ class RustParserWriter:
                 ty = 'Option<{}>'.format(ty)
         return ty
 
+    def get_associated_type_names(self):
+        names = OrderedSet()
+
+        def visit_type(ty):
+            if isinstance(ty, types.NtType):
+                names.add(ty.name)
+            elif isinstance(ty, types.OptionType):
+                visit_type(ty.t)
+
+        for ty in self.grammar.nt_types:
+            visit_type(ty)
+        for method in self.grammar.methods.values():
+            visit_type(method.return_type)
+        return names
+
+    def type_to_rust(self, ty):
+        """Convert a jsparagus type (see types.py) to Rust."""
+        if ty is types.UnitType:
+            return '()'
+        elif ty == 'str':
+            return 'String'
+        elif ty == 'bool':
+            return 'bool'
+        elif isinstance(ty, types.NtType):
+            return 'Self::' + ty.name
+        elif isinstance(ty, types.OptionType):
+            return 'Option<{}>'.format(self.type_to_rust(ty.t))
+        else:
+            raise TypeError("unexpected type: {!r}".format(ty))
+
     def handler_trait(self):
         self.out.write("pub trait Handler {\n")
-        self.out.write("    type ReturnValue;\n")
-        for prod in self.prods:
-            # Each production with an optional element removed uses the same
-            # variant as the corresponding production where the optional element is
-            # present.
-            if prod.nt in self.nonterminals and not prod.removals:
-                types = []
-                for index, element in enumerate(prod.rhs):
-                    ty = self.rust_type_of_element(
-                        prod, index, element, "Self::ReturnValue")
-                    if ty is not None and ty != '()':
-                        types.append(ty)
 
-                self.out.write(
-                    "    // {}\n".format(self.grammar.production_to_str(prod.nt, prod.rhs)))
-                name = self.trait_name(prod)
-                args = ", ".join(("a{}: {}".format(i, t)
-                                  for i, t in enumerate(types)))
-                self.out.write("    fn {}(&mut self, {}) -> Self::ReturnValue;\n".format(
-                    name, args))
+        for name in self.get_associated_type_names():
+            self.out.write("    type {};\n".format(name))
+
+        for tag, method in self.grammar.methods.items():
+            method_name = self.method_name_to_rust(tag)
+            arg_types = [
+                self.type_to_rust(ty)
+                for ty in method.argument_types
+            ]
+            if method.return_type is types.UnitType:
+                return_type_tag = ''
+            else:
+                return_type_tag = ' -> ' + self.type_to_rust(method.return_type)
+
+            args = ", ".join(("a{}: {}".format(i, t)
+                              for i, t in enumerate(arg_types)))
+            self.out.write(
+                "    fn {}(&mut self, {}){};\n"
+                .format(method_name, args, return_type_tag))
         self.out.write("}\n\n")
 
     def nt_node(self):
@@ -318,26 +352,27 @@ class RustParserWriter:
     def nt_node_impl(self):
         self.out.write("pub struct DefaultHandler {}\n\n")
         self.out.write("impl Handler for DefaultHandler {\n")
-        self.out.write("    type ReturnValue = NtNode;\n")
-        for prod in self.prods:
-            if prod.nt in self.nonterminals and not prod.removals:
-                types = []
-                for i, e in enumerate(prod.rhs):
-                    ty = self.rust_type_of_element(prod, i, e, "NtNode")
-                    if ty is not None and ty != '()':
-                        types.append(ty)
-
-                trait_name = self.trait_name(prod)
-                nt_node_name = self.nt_node_variant(prod)
-                args = ", ".join(("a{}: {}".format(i, t)
-                                  for i, t in enumerate(types)))
-                params = ", ".join("a{}".format(i)
-                                   for i in range(0, len(types)))
-                self.out.write(
-                    "    fn {}(&mut self, {}) -> NtNode {{\n".format(trait_name, args))
-                self.out.write("        NtNode::{}({})\n" .format(
-                    nt_node_name, params))
-                self.out.write("    }\n")
+        self.out.write("    // TODO\n")
+        for method in self.grammar.methods:
+            pass
+            # if prod.nt in self.nonterminals and not prod.removals:
+            #     types = []
+            #     for i, e in enumerate(prod.rhs):
+            #         ty = self.rust_type_of_element(prod, i, e, "NtNode")
+            #         if ty is not None and ty != '()':
+            #             types.append(ty)
+            #
+            #     method_name = ?
+            #     nt_node_name = self.nt_node_variant(prod)
+            #     params = ", ".join(("a{}: {}".format(i, t)
+            #                         for i, t in enumerate(types)))
+            #     args = ", ".join("a{}".format(i)
+            #                      for i in range(0, len(types)))
+            #     self.out.write(
+            #         "    fn {}(&mut self, {}) -> NtNode {{\n".format(method_name, params))
+            #     self.out.write("        NtNode::{}({})\n" .format(
+            #         nt_node_name, args))
+            #     self.out.write("    }\n")
         self.out.write("}\n\n")
 
     def nonterminal_id(self):
@@ -421,13 +456,26 @@ class RustParserWriter:
                         self.out.write(
                             "            let {} = stack.pop().unwrap();\n".format(var))
 
-                trait_name = self.trait_name(prod)
-                self.out.write("            stack.push(Node::Nonterminal(Box::new(handler.{}({}))));\n".format(
-                    trait_name,
-                    ", ".join(arguments)
-                ))
-                self.out.write("            NonterminalId::{}\n".format(
-                    self.nonterminal_to_camel(prod.nt)))
+                def compile_reduce_expr(expr):
+                    """Compile a reduce expression to Rust"""
+                    if isinstance(expr, CallMethod):
+                        method_name = expr.method.replace(" ", "_p")
+                        args = ', '.join(map(compile_reduce_expr, expr.args))
+                        call = "handler.{}({})".format(method_name, args)
+                        return "Node::Nonterminal(Box::new({}))".format(call)
+                    elif isinstance(expr, Some):
+                        return "Some({})".format(compile_reduce_expr(expr.inner))
+                    elif expr is None:
+                        return "None"
+                    else:
+                        # can't be 'accept' because we filter out InitNt productions
+                        assert isinstance(expr, int)
+                        return "x{}".format(expr)
+
+                self.out.write("            stack.push({});\n"
+                               .format(compile_reduce_expr(prod.action)))
+                self.out.write("            NonterminalId::{}\n"
+                               .format(self.nonterminal_to_camel(prod.nt)))
                 self.out.write("        }\n")
         self.out.write(
             '        _ => panic!("no such production: {}", prod),\n')
