@@ -79,12 +79,6 @@ class JSLexer(jsparagus.lexer.BaseLexer):
 
         if token == '':
             assert match.end() == len(self.src)
-            # Implement ASI at the end of the program.
-            if (not self.parser.can_accept_terminal(None) and
-                    self.parser.can_accept_terminal(';') and
-                    not self.parser.can_accept_nonterminal(
-                        'EmptyStatement', ';')):
-                return ';'
             return None
         c = token[0]
         if c.isdigit() or c == '.' and token != '.':

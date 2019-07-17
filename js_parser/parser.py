@@ -6,6 +6,7 @@ See README.md for instructions.
 """
 
 from jsparagus.runtime import Parser, ERROR, ACCEPT
+from jsparagus.lexer import SyntaxError
 from . import parser_tables
 from .lexer import JSLexer
 
@@ -25,6 +26,46 @@ class JSParser(Parser):
             parser_tables.DefaultBuilder()
         )
 
+    def can_close(self):
+        """Override the base-class parser to cope with ASI in JS."""
+        # The easy case: the parser actually accepts None from here.
+        if super().can_close():
+            return True
+
+        # The hard case: maybe ASI would work?
+        sim = self.simulator_clone()
+        bogus_lexer = JSLexer(";", self)
+        bogus_lexer.peek()
+        try:
+            sim.write_terminal(bogus_lexer, ';')
+            sim.close()
+        except SyntaxError:
+            return False
+        return True
+
+    def asi(self):
+        """Insert a semicolon."""
+        bogus_lexer = JSLexer(";", self)
+        bogus_lexer.peek()
+        self.write_terminal(bogus_lexer, ';')
+
+    def on_syntax_error(self, tokens, t):
+        if t == '}':
+            # Implement ASI at this point.
+            if (self.can_accept_terminal(';') and
+                    not self.can_accept_nonterminal('EmptyStatement', ';')):
+                self.asi()
+                return 'retry'
+        super().on_syntax_error(tokens, t)
+
+    def close(self):
+        # Implement ASI at the end of the Script.
+        if (not super().can_close() and
+                self.can_accept_terminal(';') and
+                not self.can_accept_nonterminal('EmptyStatement', ';')):
+            self.asi()
+
+        return super().close()
 
 def parse_Script(text):
     parser = JSParser()

@@ -31,6 +31,10 @@ class ESTestCase(unittest.TestCase):
         self.assert_incomplete("{")
         self.assert_incomplete("{;")
 
+    def test_asi_at_block_end(self):
+        self.assert_parses("{ doCrimes() }")
+        self.assert_parses("function f() { ok }")
+
     def test_if_else(self):
         self.assert_parses("if (x) f();")
         self.assert_incomplete("if (x)")

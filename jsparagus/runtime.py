@@ -35,7 +35,7 @@ def parse(actions, ctns, reductions, entry_state, tokens, builder):
 
 
 class Parser:
-    """Object for parsing a single Script that may cover multiple lines.
+    """Parser using jsparagus-generated tables.
 
     Usage: Call .feed(line) repeatedly until either it returns an AST or raises
     an exception other than jsparagus.lexer.UnexpectedEndError.
@@ -51,6 +51,22 @@ class Parser:
         self.lex = lex
         self.stack = [entry_state]
         self.builder = builder
+
+    def simulator_clone(self):
+        """Make a copy of this parser for simulation.
+
+        The copy has a version of the self.reductions table that never actually
+        does anything.
+
+        This is absurdly expensive and is for very odd and special use cases.
+        """
+        p = Parser(self.actions, self.ctns, self.reductions, self.lex, self.stack[0], self.builder)
+        p.stack = self.stack[:]
+        p.reductions = [
+            (tag_name, n, lambda *args: ())
+            for tag_name, n, _reducer in self.reductions
+        ]
+        return p
 
     def _reduce(self, t):
         stack = self.stack
@@ -73,13 +89,27 @@ class Parser:
             t = tokens.peek()
 
     def write_terminal(self, tokens, t):
-        action = self._reduce(t)
-        if action >= 0:  # shift
-            self.stack.append(tokens.take(t))
-            self.stack.append(action)
-        else:
-            assert action == ERROR
-            throw_syntax_error(self.actions, self.stack[-1], t, tokens)
+        while True:
+            action = self._reduce(t)
+            if action >= 0:  # shift
+                self.stack.append(tokens.take(t))
+                self.stack.append(action)
+                break
+            else:
+                assert action == ERROR
+                result = self.on_syntax_error(tokens, t)
+                # If on_syntax_error returns, rather than throwing, it must
+                # return 'retry'.
+                assert result == 'retry'
+
+    def on_syntax_error(self, tokens, t):
+        """Cope with a syntax error (possibly by throwing).
+
+        The base-class implementation always throws. Subclasses may override
+        this to modify the parser state and then return the string 'retry' to
+        try handling the token `t` again.
+        """
+        throw_syntax_error(self.actions, self.stack[-1], t, tokens)
 
     def close(self):
         action = self._reduce(None)
