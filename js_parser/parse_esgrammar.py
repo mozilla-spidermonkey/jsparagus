@@ -1,8 +1,9 @@
 """Parse a grammar written in ECMArkup."""
 
+import os
+import re
 from jsparagus.lexer import LexicalGrammar
 from jsparagus import parse_pgen, gen, grammar
-import os
 
 
 tokenize_esgrammar = LexicalGrammar(
@@ -49,6 +50,25 @@ parse_esgrammar_generic = gen.compile(
 SIGIL_FALSE = '~'
 SIGIL_TRUE = '+'
 
+# Productions like
+#
+#     Expression : AssignmentExpression
+#     PrimaryExpression : ArrayLiteral
+#     Statement : IfStatement
+#
+# should not cause an extra method call; the action for each of these
+# productions should be `$0`, i.e. just return the right-hand side unchanged.
+# Then type inference will make sure that the two nonterminals (Statement and
+# IfStatement, for example) are given the same type.
+#
+# ESGrammarBuilder uses the regular expressions below to determine when to do
+# this. A production gets the special `$0` action if any of the regular
+# expressions matches both sides.
+PRODUCTION_GROUPS = [
+    r'(Expression|^(Array|Object)?Literal)$',
+    r'(Statement|Declaration|StatementListItem)$',
+    r'Method(Definition)?$'
+]
 
 class ESGrammarBuilder:
     def single(self, x): return [x]
@@ -62,8 +82,9 @@ class ESGrammarBuilder:
     def is_matched_pair(self, lhs_name, rhs_element):
         if isinstance(rhs_element, grammar.Apply):
             rhs_element = rhs_element.nt
-        for group in ('Expression', 'Statement'):
-            if lhs_name.endswith(group) and rhs_element.endswith(group):
+        for group in PRODUCTION_GROUPS:
+            if (re.search(group, lhs_name) is not None and
+                    re.search(group, rhs_element) is not None):
                 return True
         return False
 
