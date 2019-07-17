@@ -1,4 +1,28 @@
-"""Type inference for reduce expressions."""
+"""Type inference for reduce expressions.
+
+A type is one of the following:
+
+*   `UnitType`, which is kind of like `void` in Java or `None` in Python,
+    a type that doesn't carry any information.
+
+*   `'str'` or `'bool'` - That is, the Python strings, which stand for the
+    target language's string type and boolean type respectively. 'str' is the
+    type of variable terminals, and 'bool' is the type of optional
+    non-variable terminals.
+
+*   `NtType(name)` - A type. We generate at most one of these per
+    nonterminal in the language.
+
+*   `Option(t)`, an option type.
+
+*   `TypeVar()`, a type variable that might be bound to any type.
+    This is used only during inference.
+
+In addition, MethodType simply gathers together a return type and a list of
+argument types.
+
+See infer_types() for more.
+"""
 
 import collections
 from . import grammar
@@ -10,26 +34,6 @@ class JsparagusTypeError(Exception):
         message = line + "\n" + message
         self.args = message, *rest
 
-
-# A type is one of the following:
-#
-# *   `UnitType`, which is kind of like `void` in Java or `None` in Python,
-#     a type that doesn't carry any information.
-#
-# *   `'str'` or `'bool'` - That is, the Python strings, which stand for the
-#     target language's string type and boolean type respectively. 'str' is the
-#     type of variable terminals, and 'bool' is the type of optional
-#     non-variable terminals.
-#
-# *   `NtType(name)` - A type. We generate at most one of these per
-#     nonterminal in the language.
-#
-# *   `Option(t)`, an option type.
-#
-# *   `TypeVar()`, a type variable that might be bound to any type.
-#     This is used only during inference.
-#
-# In addition, MethodType is just a return type and a list of argument types.
 
 def type_to_str(ty):
     ty = deref(ty)
@@ -153,6 +157,14 @@ class MethodType:
 
 
 def infer_types(nonterminals, variable_terminals):
+    """Assign a type to each nonterminal and each method in a grammar.
+
+    The type system is pretty rigid. We don't have any polymorphism or union
+    types. If two of a nonterminal's productions have different types, this
+    will typically just unify the two types, which can result in mysterious
+    output. If it can't do that (e.g. if one of the types is `str`) then it
+    throws a JsparagusTypeError.
+    """
     nt_types = {
         nt: TypeVar(nt, 2)
         for nt in nonterminals
