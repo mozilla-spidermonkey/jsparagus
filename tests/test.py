@@ -3,6 +3,7 @@
 import io
 import re
 import unittest
+import jsparagus
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
                                Optional, LookaheadRule, Parameterized,
@@ -1010,6 +1011,36 @@ class GenTestCase(unittest.TestCase):
         self.compile(tokenize, grammar)
         self.assertParse("{}", ('goal', '{', ('xlist 0',), '}'))
 
+    def testConvenienceMethodTypeInference(self):
+        """A method can be called only in an intermediate reduce expression."""
+
+        # The action `f(g($0))`.
+        action = CallMethod("f", [CallMethod("g", [0])])
+
+        # The grammar `goal ::= NAME => f(g($1))`.
+        grammar = Grammar(
+            {
+                'goal': [Production('goal', ['NAME'], action)],
+            },
+            variable_terminals=['NAME'])
+
+        # Since the return value of f() is used as the value of a `goal`,
+        # we infer that f() returns a goal.
+        self.assertEqual(
+            grammar.methods['f'].return_type,
+            jsparagus.types.NtType('goal'))
+
+        # Since the return value of g() isn't used except as an argument, we
+        # just give it the type `g`. I guess NtType is a bit of a misnomer for
+        # this.
+        self.assertEqual(
+            grammar.methods['g'].return_type,
+            jsparagus.types.NtType('g'))
+
+        # Since g() is passed to f(), we infer this:
+        self.assertEqual(
+            grammar.methods['f'].argument_types,
+            [jsparagus.types.NtType('g')])
 
 if __name__ == '__main__':
     unittest.main()

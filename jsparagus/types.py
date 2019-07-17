@@ -62,10 +62,27 @@ NtType = collections.namedtuple("NtType", "name")
 
 
 class TypeVar:
-    __slots__ = ['name', 'value']
+    """A type variable, used only during type inference.
 
-    def __init__(self, name=None):
+    The point of type inference is to assign each method and each nonterminal a
+    return type; we start by assigning each one a type variable and then do
+    unification, a la Hindley-Milner.
+
+    Each type variable may be given a str `name` and a positive int
+    `precedence`. These are used at the end of type inference, if we still
+    don't know a concrete type for this variable--which is often the case for
+    nonterminals.
+
+    The precedence is used when two type variables are unified, to choose the
+    better name. (Nonterminal names should take precedence over method names.)
+    Greater precedence numbers mean higher precedence.
+    """
+    __slots__ = ['name', 'precedence', 'value']
+
+    def __init__(self, name=None, precedence=0):
+        assert (precedence > 0) == (name is not None)
         self.name = name
+        self.precedence = precedence
         self.value = None
 
 
@@ -108,8 +125,7 @@ def unify(actual, expected):
         assert expected.value is None
         if actual is not expected:
             if (isinstance(actual, TypeVar) and
-                    actual.name is None and
-                    expected.name is not None):
+                    actual.precedence < expected.precedence):
                 actual.value = expected
             else:
                 expected.value = actual
@@ -138,7 +154,7 @@ class MethodType:
 
 def infer_types(nonterminals, variable_terminals):
     nt_types = {
-        nt: TypeVar(nt)
+        nt: TypeVar(nt, 2)
         for nt in nonterminals
         if not isinstance(nt, grammar.InitNt)
     }
@@ -187,7 +203,7 @@ def infer_types(nonterminals, variable_terminals):
             else:
                 mtype = MethodType(
                     [expr_type(arg) for arg in expr.args],
-                    TypeVar())
+                    TypeVar(expr.method, 1))
                 method_types[expr.method] = mtype
             return mtype.return_type
         else:
