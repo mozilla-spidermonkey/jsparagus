@@ -5,7 +5,7 @@ from jsparagus import parse_pgen, gen, grammar
 import os
 
 
-tokenize_emug = LexicalGrammar(
+tokenize_esgrammar = LexicalGrammar(
     # the operators and keywords:
     "[ ] { } , ~ + ? <! == != "
     "but empty here lookahead no not of one or through",
@@ -41,16 +41,16 @@ tokenize_emug = LexicalGrammar(
     )
 
 
-parse_emug_generic = gen.compile(
+parse_esgrammar_generic = gen.compile(
     parse_pgen.load_grammar(
-        os.path.join(os.path.dirname(__file__), "emug.pgen")))
+        os.path.join(os.path.dirname(__file__), "esgrammar.pgen")))
 
 
 SIGIL_FALSE = '~'
 SIGIL_TRUE = '+'
 
 
-class EmugBuilder:
+class ESGrammarBuilder:
     def single(self, x): return [x]
     def append(self, x, y): return x + [y]
     def append_ignoring_separator(self, x, sep, y): return x + [y]
@@ -243,7 +243,7 @@ def finish_grammar(nt_defs, goals):
     return grammar.Grammar(nonterminals, goals, variable_terminals)
 
 
-def parse_emug(text, filename=None, goals=None):
-    tokens = tokenize_emug(text, filename=filename)
-    return finish_grammar(parse_emug_generic(tokens, EmugBuilder()),
+def parse_esgrammar(text, filename=None, goals=None):
+    tokens = tokenize_esgrammar(text, filename=filename)
+    return finish_grammar(parse_esgrammar_generic(tokens, ESGrammarBuilder()),
                           goals=goals)

@@ -3,7 +3,7 @@
 import argparse
 import os
 import jsparagus.gen
-from .parse_emug import parse_emug
+from .parse_esgrammar import parse_esgrammar
 
 
 ECMASCRIPT_GOAL_NTS = [
@@ -25,10 +25,10 @@ def main():
         description='Ponder the ECMAScript grammar.',
         allow_abbrev=False)
     default_filename = os.path.join(os.path.dirname(__file__),
-                                    "es-simplified.emug")
+                                    "es-simplified.esgrammar")
     parser.add_argument(
         'filename', metavar='FILE', nargs='?', default=default_filename,
-        help="emug file containing the grammar")
+        help="esgrammar input file")
     parser.add_argument(
         '-o', '--output', metavar='FILE', default='/dev/stdout',
         help="output filename for parser tables")
@@ -46,8 +46,8 @@ def main():
     with open(args.filename) as f:
         text = f.read()
 
-    grammar = parse_emug(text, filename=args.filename,
-                         goals=ECMASCRIPT_GOAL_NTS)
+    grammar = parse_esgrammar(text, filename=args.filename,
+                              goals=ECMASCRIPT_GOAL_NTS)
     if args.verbose:
         grammar.dump()
 

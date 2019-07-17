@@ -8,7 +8,7 @@ To run this script:
     . venv/bin/activate
     pip install --upgrade pip
     pip install -r requirements.txt
-    ./extract-es-grammar.py path/to/tc39/ecma262/spec.html > es.emug
+    ./extract-es-grammar.py path/to/tc39/ecma262/spec.html > es.esgrammar
 
 """
 
