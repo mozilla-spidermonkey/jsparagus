@@ -54,6 +54,8 @@ class ESTestCase(unittest.TestCase):
     def test_invalid_character(self):
         self.assert_syntax_error("\0")
         self.assert_syntax_error("—x;")
+        self.assert_syntax_error("const ONE_THIRD = 1 ÷ 3;")
+
 
 if __name__ == '__main__':
     unittest.main()
