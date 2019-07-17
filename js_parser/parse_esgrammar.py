@@ -66,7 +66,7 @@ SIGIL_TRUE = '+'
 # expressions matches both sides.
 PRODUCTION_GROUPS = [
     r'(Expression|^(Array|Object)?Literal)$',
-    r'(Statement|Declaration|StatementListItem)$',
+    r'(Statement|Declaration|^StatementListItem|^ModuleItem)$',
     r'Method(Definition)?$'
 ]
 
