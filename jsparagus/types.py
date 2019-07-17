@@ -99,6 +99,9 @@ def deref(t):
 
 
 def final_deref(ty):
+    """Like deref(), but also replace any remaining unresolved type variables with
+    NtTypes.
+    """
     ty = deref(ty)
     if isinstance(ty, TypeVar):
         if ty.name is not None:
@@ -107,6 +110,8 @@ def final_deref(ty):
             return ty.value
         else:
             raise Exception("internal error: no way to assign a type to variable")
+    elif isinstance(ty, OptionType):
+        return OptionType(final_deref(ty.t))
     else:
         return ty
 
