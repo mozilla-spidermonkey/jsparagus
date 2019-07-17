@@ -2,8 +2,9 @@
 
 import os
 import re
-from jsparagus.lexer import LexicalGrammar
 from jsparagus import parse_pgen, gen, grammar
+from jsparagus.lexer import LexicalGrammar
+from jsparagus.ordered import OrderedFrozenSet
 
 
 tokenize_esgrammar = LexicalGrammar(
@@ -239,11 +240,11 @@ class ESGrammarBuilder:
 
     def la_eq(self, eq, t):
         assert eq == "=="
-        return grammar.LookaheadRule(frozenset([t]), True)
+        return grammar.LookaheadRule(OrderedFrozenSet([t]), True)
 
     def la_ne(self, ne, t):
         assert ne == "!="
-        return grammar.LookaheadRule(frozenset([t]), False)
+        return grammar.LookaheadRule(OrderedFrozenSet([t]), False)
 
     def la_not_in_nonterminal(self, notin, nt):
         assert notin == '<!'
@@ -253,7 +254,7 @@ class ESGrammarBuilder:
         assert (notin, ob, cb) == ("<!", '{', '}')
         if all(len(excl) == 1 for excl in lookahead_exclusions):
             return grammar.LookaheadRule(
-                frozenset(excl[0] for excl in lookahead_exclusions),
+                OrderedFrozenSet(excl[0] for excl in lookahead_exclusions),
                 False)
         raise ValueError("unsupported: lookahead > 1 token, {!r}"
                          .format(lookahead_exclusions))
