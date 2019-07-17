@@ -161,8 +161,6 @@ pip install -r requirements.txt
 
 Then you can:
 
-*   Run `./test.sh` to make sure things are working.
-
 *   Generate parser tables for JavaScript (!):
 
     ```sh
@@ -172,11 +170,23 @@ Then you can:
     **Note:** This takes about 3 minutes to run on my laptop. jsparagus
     is slow.
 
-    Then, to see parser run, try this:
+*   Run `./test.sh` to make sure things are working.
+
+*   Then, to see parser run, try this:
 
     ```sh
     python -m js_parser.try_it
     ```
+
+*   The rust version of the JS parser can be generated using:
+
+    ```sh
+    cd client
+    python3 -m js_parser.generate_js_parser_tables --target=rust --progress -o client/src/parser_generated.rs
+    cargo run
+    ```
+
+    (The middle command is also in `client/update_parser_generated.sh`, so you don't have to remember the command every time)
 
 
 ## Limitations
