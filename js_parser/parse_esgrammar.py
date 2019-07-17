@@ -59,7 +59,38 @@ class ESGrammarBuilder:
     def blank_line(self, nl): return []
     def nt_def_to_list(self, nt_def): return [nt_def]
 
+    def to_production(self, lhs, i, rhs, is_sole_production):
+        """Wrap a list of grammar symbols `rhs` in a Production object."""
+        if isinstance(rhs, grammar.ConditionalRhs):
+            body = rhs.rhs
+            return rhs._replace(
+                rhs=self.to_production(lhs, i, body, is_sole_production))
+
+        if isinstance(lhs, tuple):
+            nt_name = lhs[0]
+        else:
+            nt_name = lhs
+
+        nargs = sum(1 for e in rhs if grammar.is_concrete_element(e))
+        # if (len(rhs) == 1 and
+        #         nargs == 1 and
+        #         nt_name.endswith('Expression') and
+        #         is_expression_nt(rhs[0])):
+        #     action = 0
+        # else:
+        if is_sole_production:
+            method_name = nt_name
+        else:
+            method_name = '{} {}'.format(nt_name, i)
+        action = grammar.CallMethod(method_name, tuple(range(nargs)))
+        return grammar.Production(nt_name, rhs, action)
+
     def make_nt_def(self, lhs, eq, rhs_list):
+        has_sole_production = (len(rhs_list) == 1)
+        rhs_list = [
+            self.to_production(lhs, i, rhs, has_sole_production)
+            for i, rhs in enumerate(rhs_list)
+        ]
         if isinstance(lhs, tuple):
             name, args = lhs
             return (name, eq, grammar.Parameterized(args, rhs_list))
@@ -203,14 +234,14 @@ class ESGrammarBuilder:
 def finish_grammar(nt_defs, goals):
     terminal_set = set()
 
-    def hack_rhs(rhs):
-        for i, e in enumerate(rhs):
+    def hack_production(p):
+        for i, e in enumerate(p.body):
             if isinstance(e, str) and e[:1] == "`":
                 if len(e) < 3 or e[-1:] != "`":
                     raise ValueError(
-                        "I don't know what this is: {!r} (in {!r})"
-                        .format(e, rhs))
-                rhs[i] = token = e[1:-1]
+                        "Unrecognized grammar symbol: {!r} (in {!r})"
+                        .format(e, p))
+                p[i] = token = e[1:-1]
                 terminal_set.add(token)
 
     nonterminals = {}
@@ -223,11 +254,11 @@ def finish_grammar(nt_defs, goals):
             nonterminals[nt_name] = rhs_list_or_lambda
         else:
             rhs_list = rhs_list_or_lambda
-            for rhs in rhs_list:
-                if not isinstance(rhs, list):
+            for p in rhs_list:
+                if not isinstance(p, grammar.Production):
                     raise ValueError(
                         "invalid grammar: ifdef in non-function-call context")
-                hack_rhs(rhs)
+                hack_production(p)
             if eq == ':':
                 if nt_name in nonterminals:
                     raise ValueError(
