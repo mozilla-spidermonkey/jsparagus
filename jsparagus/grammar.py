@@ -248,7 +248,8 @@ class Grammar:
             elif isinstance(rhs, list):
                 # Bare list, no action. Desugar to a Production, inferring a
                 # reasonable default action.
-                if len(rhs) == 1:
+                nargs = sum(1 for e in rhs if is_concrete_element(e))
+                if len(rhs) == 1 and nargs == 1:
                     action = 0  # don't call a method, just propagate the value
                 else:
                     # Call a method named after the production. If the
@@ -258,7 +259,6 @@ class Grammar:
                         method = nt
                     else:
                         method = '{} {}'.format(nt, i)
-                    nargs = sum(1 for e in rhs if is_concrete_element(e))
                     action = CallMethod(method, args=tuple(range(nargs)))
                 return copy_rhs(nt, i, sole_production, Production(nt, rhs, action), context_params)
             else:
