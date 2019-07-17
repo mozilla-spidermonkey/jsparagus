@@ -59,6 +59,14 @@ class ESGrammarBuilder:
     def blank_line(self, nl): return []
     def nt_def_to_list(self, nt_def): return [nt_def]
 
+    def is_matched_pair(self, lhs_name, rhs_element):
+        if isinstance(rhs_element, grammar.Apply):
+            rhs_element = rhs_element.nt
+        for group in ('Expression', 'Statement'):
+            if lhs_name.endswith(group) and rhs_element.endswith(group):
+                return True
+        return False
+
     def to_production(self, lhs, i, rhs, is_sole_production):
         """Wrap a list of grammar symbols `rhs` in a Production object."""
         if isinstance(rhs, grammar.ConditionalRhs):
@@ -72,17 +80,16 @@ class ESGrammarBuilder:
             nt_name = lhs
 
         nargs = sum(1 for e in rhs if grammar.is_concrete_element(e))
-        # if (len(rhs) == 1 and
-        #         nargs == 1 and
-        #         nt_name.endswith('Expression') and
-        #         is_expression_nt(rhs[0])):
-        #     action = 0
-        # else:
-        if is_sole_production:
-            method_name = nt_name
+        if (len(rhs) == 1 and
+                nargs == 1 and
+                self.is_matched_pair(nt_name, rhs[0])):
+            action = 0
         else:
-            method_name = '{} {}'.format(nt_name, i)
-        action = grammar.CallMethod(method_name, tuple(range(nargs)))
+            if is_sole_production:
+                method_name = nt_name
+            else:
+                method_name = '{} {}'.format(nt_name, i)
+            action = grammar.CallMethod(method_name, tuple(range(nargs)))
         return grammar.Production(nt_name, rhs, action)
 
     def make_nt_def(self, lhs, eq, rhs_list):
