@@ -396,8 +396,7 @@ class RustParserWriter:
                 self.write(3, "// {}",
                            self.grammar.production_to_str(prod.nt, prod.rhs))
 
-                for index in range(len(prod.rhs)-1, -1, -1):
-                    self.write(3, "let x{} = stack.pop().unwrap();", index)
+                variable_used = [False] * len(prod.rhs)
 
                 def compile_reduce_expr(expr):
                     """Compile a reduce expression to Rust"""
@@ -417,7 +416,16 @@ class RustParserWriter:
                     else:
                         # can't be 'accept' because we filter out InitNt productions
                         assert isinstance(expr, int)
+                        variable_used[expr] = True
                         return "unsafe {{ *Box::from_raw(x{} as *mut _) }}".format(expr)
+
+                compiled_expr = compile_reduce_expr(prod.action)
+
+                for index in range(len(prod.rhs)-1, -1, -1):
+                    if variable_used[index]:
+                        self.write(3, "let x{} = stack.pop().unwrap();", index)
+                    else:
+                        self.write(3, "stack.pop();", index)
 
                 self.write(3, "stack.push(Box::into_raw(Box::new({})) as *mut ());",
                            compile_reduce_expr(prod.action))
