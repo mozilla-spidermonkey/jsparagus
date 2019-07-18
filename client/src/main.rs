@@ -34,9 +34,9 @@ mod tests {
 fn main() {
     while let Ok(buffer) = get_input("> ") {
         let lexer = Lexer::new(buffer.chars());
-        let result =
-            parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
-        println!("{:?}", result);
+        // let result =
+        //     parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
+        //println!("{:?}", result);
     }
 }
 

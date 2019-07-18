@@ -57,7 +57,8 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("class DefaultBuilder:\n")
     for tag, method_type in grammar.methods.items():
         method_name = tag.replace(' ', '_P')
-        args = ", ".join("x{}".format(i) for i in range(len(method_type.argument_types)))
+        args = ", ".join("x{}".format(i)
+                         for i in range(len(method_type.argument_types)))
         out.write("    def {}(self, {}): return ({!r}, {})\n"
                   .format(method_name, args, tag, args))
     out.write("\n\n")
@@ -110,13 +111,12 @@ class RustParserWriter:
         self.header()
         self.terminal_id()
         self.token()
-        self.node()
         self.actions()
         self.check_camel_case()
         self.check_nt_node_variant()
         self.handler_trait()
-        self.nt_node()
-        self.nt_node_impl()
+        # self.nt_node()
+        # self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
         self.reduce()
@@ -177,13 +177,6 @@ class RustParserWriter:
                 "            Token::{}{} => TerminalId::{},\n".format(name, value, name))
         self.out.write("        }\n")
         self.out.write("    }\n")
-        self.out.write("}\n\n")
-
-    def node(self):
-        self.out.write("#[derive(Debug)]\n")
-        self.out.write("pub enum Node<T> {\n")
-        self.out.write("    Terminal(Token),\n")
-        self.out.write("    Nonterminal(Box<T>),\n")
         self.out.write("}\n\n")
 
     def actions(self):
@@ -260,24 +253,6 @@ class RustParserWriter:
             name += "_p" + str(number)
         return name
 
-    def rust_type_of_element(self, prod, index, element, node_ty):
-        if self.grammar.is_variable_terminal(element):
-            ty = 'Node<{}>'.format(node_ty)
-        elif self.grammar.is_terminal(element):
-            ty = '()'
-        elif is_lookahead_rule(element):
-            ty = None
-        else:
-            assert self.grammar.is_nt(element)
-            ty = 'Node<{}>'.format(node_ty)
-
-        if index in self.prod_optional_element_indexes[(prod.nt, prod.index)]:
-            if ty == '()':
-                ty = 'bool'
-            else:
-                ty = 'Option<{}>'.format(ty)
-        return ty
-
     def get_associated_type_names(self):
         names = OrderedSet()
 
@@ -293,7 +268,7 @@ class RustParserWriter:
             visit_type(method.return_type)
         return names
 
-    def type_to_rust(self, ty):
+    def type_to_rust(self, ty, handler):
         """Convert a jsparagus type (see types.py) to Rust."""
         if ty is types.UnitType:
             return '()'
@@ -302,9 +277,9 @@ class RustParserWriter:
         elif ty == 'bool':
             return 'bool'
         elif isinstance(ty, types.NtType):
-            return 'Self::' + ty.name
+            return handler + '::' + ty.name
         elif isinstance(ty, types.OptionType):
-            return 'Option<{}>'.format(self.type_to_rust(ty.t))
+            return 'Option<{}>'.format(self.type_to_rust(ty.t, handler))
         else:
             raise TypeError("unexpected type: {!r}".format(ty))
 
@@ -317,13 +292,15 @@ class RustParserWriter:
         for tag, method in self.grammar.methods.items():
             method_name = self.method_name_to_rust(tag)
             arg_types = [
-                self.type_to_rust(ty)
+                self.type_to_rust(ty, "Self")
                 for ty in method.argument_types
+                if ty != types.UnitType
             ]
             if method.return_type is types.UnitType:
                 return_type_tag = ''
             else:
-                return_type_tag = ' -> ' + self.type_to_rust(method.return_type)
+                return_type_tag = ' -> ' + \
+                    self.type_to_rust(method.return_type, "Self")
 
             args = ", ".join(("a{}: {}".format(i, t)
                               for i, t in enumerate(arg_types)))
@@ -394,7 +371,7 @@ class RustParserWriter:
 
     def reduce(self):
         self.out.write(
-            "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<Node<H::ReturnValue>>) -> NonterminalId {\n")
+            "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {\n")
         self.out.write("    match prod {\n")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
@@ -404,65 +381,21 @@ class RustParserWriter:
                 self.out.write(
                     "            // {}\n".format(self.grammar.production_to_str(prod.nt, prod.rhs)))
 
-                stack_elements = []  # to remove
-                arguments = []       # to pass to constructor
-                original_index = 0
-                variable_index = 0
-
-                def check_removed():
-                    nonlocal original_index
-                    while original_index in prod.removals:
-                        e = self.originals[prod.nt, prod.index][original_index]
-                        assert isinstance(e, Optional)
-                        if self.rust_type_of_element(prod, original_index, e.inner, "x") == 'bool':
-                            arg = "false"
-                        else:
-                            arg = "None"
-                        arguments.append(arg)
-                        original_index += 1
-
-                for element in prod.rhs:
-                    check_removed()
-
-                    ty = self.rust_type_of_element(
-                        prod, original_index, element, "x")
-                    if ty is None:
-                        original_index += 1
-                        continue
-                    elif ty == '()':
-                        var = None
-                        arg = '()'
-                    elif ty == 'bool':
-                        var = None
-                        arg = 'true'
-                    else:
-                        var = "x" + str(variable_index)
-                        variable_index += 1
-                        arg = var
-                    if ty.startswith('Option<'):
-                        arg = "Some({})".format(arg)
-
-                    stack_elements.append(var)
-                    if ty != '()':
-                        arguments.append(arg)
-                    original_index += 1
-
-                check_removed()
-
-                for var in reversed(stack_elements):
-                    if var is None:
-                        self.out.write("            stack.pop();\n")
-                    else:
-                        self.out.write(
-                            "            let {} = stack.pop().unwrap();\n".format(var))
+                for index in range(len(prod.rhs)-1, -1, -1):
+                    self.out.write(
+                        "            let x{} = stack.pop().unwrap();\n".format(index))
 
                 def compile_reduce_expr(expr):
                     """Compile a reduce expression to Rust"""
                     if isinstance(expr, CallMethod):
-                        method_name = expr.method.replace(" ", "_p")
-                        args = ', '.join(map(compile_reduce_expr, expr.args))
+                        method_type = self.grammar.methods[expr.method]
+                        method_name = self.method_name_to_rust(expr.method)
+                        args = ', '.join(
+                            compile_reduce_expr(arg)
+                            for index, arg in enumerate(expr.args)
+                            if method_type.argument_types[index] is not types.UnitType)
                         call = "handler.{}({})".format(method_name, args)
-                        return "Node::Nonterminal(Box::new({}))".format(call)
+                        return "{}".format(call)
                     elif isinstance(expr, Some):
                         return "Some({})".format(compile_reduce_expr(expr.inner))
                     elif expr is None:
@@ -470,9 +403,9 @@ class RustParserWriter:
                     else:
                         # can't be 'accept' because we filter out InitNt productions
                         assert isinstance(expr, int)
-                        return "x{}".format(expr)
+                        return "unsafe {{ *Box::from_raw(x{} as *mut _) }}".format(expr)
 
-                self.out.write("            stack.push({});\n"
+                self.out.write("            stack.push(Box::into_raw(Box::new({})) as *mut ());\n"
                                .format(compile_reduce_expr(prod.action)))
                 self.out.write("            NonterminalId::{}\n"
                                .format(self.nonterminal_to_camel(prod.nt)))
@@ -494,12 +427,15 @@ class RustParserWriter:
         )
 
         for init_nt, index in self.init_state_map.items():
+            result_type_jsparagus = self.grammar.nt_types[init_nt]
+            result_type = self.type_to_rust(result_type_jsparagus, "H")
             self.out.write(
                 "pub fn parse_{}<H: Handler, In: TokenStream<Token = Token>>(\n".format(init_nt))
             self.out.write("    handler: &mut H,\n")
             self.out.write("    tokens: In,\n")
             self.out.write(
-                ") -> Result<Node<H::ReturnValue>, &'static str> {\n")
+                ") -> Result<{}, &'static str> {{\n".format(result_type))
             self.out.write(
-                "    parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)\n".format(index))
+                "    let result = parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)?;\n".format(index))
+            self.out.write("Ok(Box::from_raw(result as *mut _))")
             self.out.write("}\n\n")

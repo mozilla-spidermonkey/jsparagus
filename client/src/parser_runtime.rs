@@ -1,4 +1,4 @@
-pub use crate::parser_generated::{Handler, Node, NonterminalId, Token};
+pub use crate::parser_generated::{Handler, NonterminalId, Token};
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -56,10 +56,10 @@ pub fn parse<H: Handler, In, Out>(
     start_state: usize,
     tables: &ParserTables,
     reduce: Out,
-) -> Result<Node<H::ReturnValue>, &'static str>
+) -> Result<*mut (), &'static str>
 where
     In: TokenStream<Token = Token>,
-    Out: Fn(&mut H, usize, &mut Vec<Node<H::ReturnValue>>) -> NonterminalId,
+    Out: Fn(&mut H, usize, &mut Vec<*mut ()>) -> NonterminalId,
 {
     assert_eq!(
         tables.action_table.len(),
@@ -72,14 +72,14 @@ where
 
     let mut t = In::token_as_index(tokens.peek());
     let mut state_stack: Vec<usize> = vec![start_state];
-    let mut node_stack: Vec<Node<H::ReturnValue>> = vec![];
+    let mut node_stack = vec![];
 
     loop {
         let state = *state_stack.last().unwrap();
         let action = Action(tables.action_table[state * tables.action_width + t]);
 
         if action.is_shift() {
-            node_stack.push(Node::Terminal(tokens.take()));
+            node_stack.push(Box::into_raw(Box::new(tokens.take()) as *const _));
             state_stack.push(action.shift_state());
             t = In::token_as_index(tokens.peek());
         } else if action.is_reduce() {
