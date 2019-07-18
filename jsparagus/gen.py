@@ -1267,13 +1267,18 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
 
     # Turn the crank.
     i = 0
+    to_feed = str(i)
     while todo:
         if progress:
-            sys.stdout.write(".")
+            if len(to_feed) > 0:
+                sys.stdout.write(to_feed[0])
+                to_feed = to_feed[1:]
+            else:
+                sys.stdout.write(".")
             i += 1
-            if i == 100:
+            if i % 100 == 0:
                 sys.stdout.write("\n")
-                i = 0
+                to_feed = str(i)
             sys.stdout.flush()
         todo.popleft().analyze(get_state_index, verbose=verbose)
 
