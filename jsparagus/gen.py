@@ -584,37 +584,7 @@ def expand_all_optional_elements(grammar):
             prods_with_indexes_by_nt)
 
 
-def make_epsilon_free_step_1(grammar):
-    """ Return a clone of `grammar` in which all uses of nonterminals
-    that match the empty string are wrapped in Optional.
-
-    `grammar` must already be cycle-free.
-    """
-
-    empties = empty_nt_set(grammar)
-
-    def hack(e):
-        if is_optional(e):
-            # If this is already possibly-empty in the input grammar, it's an
-            # error! The grammar is ambiguous.
-            if grammar.is_nt(e.inner) and e.inner in empties:
-                raise ValueError(
-                    "ambiguous grammar: {} is ambiguous "
-                    "because {} can match the empty string"
-                    .format(grammar.element_to_str(e),
-                            grammar.element_to_str(e.inner)))
-        elif grammar.is_nt(e) and e in empties:
-            # If we do it on purpose, it's ok. Step 2 fixes it.
-            return Optional(e)
-        return e
-
-    return grammar.with_nonterminals({
-        nt: [p.with_body(map(hack, p.body)) for p in plist]
-        for nt, plist in grammar.nonterminals.items()
-    })
-
-
-def make_epsilon_free_step_2(grammar):
+def remove_empty_productions(grammar):
     """Return a clone of `grammar` with empty right-hand sides removed.
 
     All empty productions are removed except any for the goal nonterminals,
@@ -1395,10 +1365,9 @@ def generate_parser(out, grammar, *, target='python',
     grammar = expand_function_nonterminals(grammar)
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
-    #grammar = make_epsilon_free_step_1(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
         grammar)
-    grammar = make_epsilon_free_step_2(grammar)
+    grammar = remove_empty_productions(grammar)
 
     # Now the grammar is in its final form. Compute information about it that
     # we can cache and use during the main part of the algorithm below.
