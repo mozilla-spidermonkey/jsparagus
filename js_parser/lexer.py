@@ -27,26 +27,48 @@ TOKEN_RE = re.compile(r'''(?x)
       # IdentifierName
       (?: [$_A-Za-z]     | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})
       (?: [$_0-9A-Za-z]  | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})*
-      # NumericLiteral
-    | [0-9][0-9A-Za-z]*(?:\.[0-9A-Za-z]*)?
-    | \.[0-9]+
-      # Punctuator
-    | <INSERT_PUNCTUATORS>
-      # The slash special case
-    | /
-      # The curly brace special case
-    | }
-      # StringLiteral
-    | ' (?: [^'\\\r\n] | \\['"] | \\x[0-9A-Fa-f]{2}
-         | \\u[0-9A-Fa-f]{4} | \\u\{[0-9A-Fa-f]+\}
-         | \\\r\n? | \\[\n\u2028\u2029] )* ' # TODO finish list of escapes
-    | " (?: [^"\\\r\n] | \\['"] | \\x[0-9A-Fa-f]{2}
-         | \\u[0-9A-Fa-f]{4} | \\u\{[0-9A-Fa-f]+\}
-         | \\\r\n? | \\[\n\u2028\u2029] )* " # TODO finish list of escapes
-      # Template
-    | ` (?: [^`\\$] | \\. )* (?: \${ | ` )
-      # Any other character is an error.
-    | .
+    | # NumericLiteral
+      [0-9][0-9A-Za-z]*(?:\.[0-9A-Za-z]*)?
+    | \.[0-9][0-9A-Za-z]*
+    | # Punctuator
+      <INSERT_PUNCTUATORS>
+    | # The slash special case
+      /
+    | # The curly brace special case
+      }
+    | # StringLiteral
+      '
+        # SingleStringCharacters
+        (?:
+            # SourceCharacter but not one of ' or \\ or LineTerminator
+            # but also allow LINE SEPARATOR or PARAGRAPH SEPARATOR
+            [^'\\\r\n]
+          | \\ [^0-9xu\r\n\u2028\u2029]  # CharacterEscapeSequence
+          | \\ x [0-9A-Fa-f]{2}          # HexEscapeSequence
+          | \\ u [0-9A-Fa-f]{4}          # UnicodeEscapeSequence
+          | \\ u \{ [0-9A-Fa-f]+ \}
+          | \\\r\n?                      # LineContinuation
+          | \\[\n\u2028\u2029]
+        )*
+      '
+    | "
+        # DoubleStringCharacters
+        (?:
+            # SourceCharacter but not one of " or \\ or LineTerminator
+            # but also allow LINE SEPARATOR or PARAGRAPH SEPARATOR
+            [^"\\\r\n]
+          | \\ [^0-9xu\r\n\u2028\u2029]  # CharacterEscapeSequence
+          | \\ x [0-9A-Fa-f]{2}          # HexEscapeSequence
+          | \\ u [0-9A-Fa-f]{4}          # UnicodeEscapeSequence
+          | \\ u \{ [0-9A-Fa-f]+ \}
+          | \\\r\n?                      # LineContinuation
+          | \\[\n\u2028\u2029]
+        )*
+      "
+    | # Template
+      ` (?: [^`\\$] | \\. )* (?: \${ | ` )
+    | # Any other character is an error.
+      .
     | \Z #end of string
   )
 '''.replace("<INSERT_PUNCTUATORS>", _get_punctuators()))
