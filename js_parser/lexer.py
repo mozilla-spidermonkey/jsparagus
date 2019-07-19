@@ -183,7 +183,7 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             return 'StringLiteral'
         elif c == '}':
             return token
-        elif c in '{()[];,~?:.<>=!+-*%&|':
+        elif c in '{()[];,~?:.<>=!+-*%&|^':
             return token
         else:
             assert len(token) == 1
