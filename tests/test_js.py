@@ -61,6 +61,11 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error("const ONE_THIRD = 1 ÷ 3;")
 
     def test_regexp(self):
+        self.assert_parses(r"/\w/")
+        self.assert_parses("/[A-Z]/")
+        self.assert_parses("/[//]/")
+        self.assert_parses("/a*a/")
+        self.assert_parses("/**//x*/")
         self.assert_parses("{} /x/")
         self.assert_parses("of / 2")
 

@@ -53,29 +53,30 @@ TOKEN_RE = re.compile(r'''(?x)
 
 DIV_RE = re.compile(r'(/=?)')
 
-REGEXP_RE = re.compile('''(?x)
+REGEXP_RE = re.compile(r'''(?x)
 (
     /
     (?:
-        # RegularExpressionFirstChar
-        .
+        # RegularExpressionFirstChar - implemented using
+        #     RegularExpressionChars on the theory that we have already
+        #     ruled out the possibility of a comment.
         # RegularExpressionChars
         (?:
-            # RegularExpressionNonTerminator but not one of \ or / or [
-            [^*/\\\[\r\n\u2028\u2029]
+            # RegularExpressionNonTerminator but not one of \\ or / or [
+            [^/\\\[\r\n\u2028\u2029]
           | # RegularExpressionBackslashSequence
             \\ [^\r\n\u2028\u2029]
           | # RegularExpressionClass
             \[
                 # RegularExpressionClassChars
                 (?:
-                    # RegularExpressionNonTerminator but not one of ] or \
-                    [^\]\\\r\n\u2028\u2029]
+                    # RegularExpressionNonTerminator but not one of ] or \\
+                    [^]\\\r\n\u2028\u2029]
                   | # RegularExpressionBackslashSequence
                     \\ [^\r\n\u2028\u2029]
                 )*
             \]
-        )*
+        )+
     )
     /
     (?: \w* )
