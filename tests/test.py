@@ -380,22 +380,25 @@ class GenTestCase(unittest.TestCase):
             result = result[2]
 
     def testExpandOptional(self):
+        grammar = Grammar({'goal': [[]]})
+        empties = {}
         # Unit test for gen.expand_optional_symbols_in_rhs
         self.assertEqual(
-            list(gen.expand_optional_symbols_in_rhs(['ONE', 'TWO', '3'])),
-            [(['ONE', 'TWO', '3'], [])])
+            list(gen.expand_optional_symbols_in_rhs(['ONE', 'TWO', '3'],
+                                                    grammar, empties)),
+            [(['ONE', 'TWO', '3'], {})])
         self.assertEqual(
             list(gen.expand_optional_symbols_in_rhs(
-                ['a', 'b', Optional('c')])),
-            [(['a', 'b'], [2]),
-             (['a', 'b', 'c'], [])])
+                ['a', 'b', Optional('c')], grammar, empties)),
+            [(['a', 'b'], {2: None}),
+             (['a', 'b', 'c'], {})])
         self.assertEqual(
             list(gen.expand_optional_symbols_in_rhs(
-                [Optional('a'), Optional('b')])),
-            [([], [0, 1]),
-             (['a'], [1]),
-             (['b'], [0]),
-             (['a', 'b'], [])])
+                [Optional('a'), Optional('b')], grammar, empties)),
+            [([], {0: None, 1: None}),
+             (['a'], {1: None}),
+             (['b'], {0: None}),
+             (['a', 'b'], {})])
 
     def testEmptyGrammar(self):
         tokenize = lexer.LexicalGrammar("X")
