@@ -60,6 +60,10 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error("—x;")
         self.assert_syntax_error("const ONE_THIRD = 1 ÷ 3;")
 
+    def test_regexp(self):
+        self.assert_parses("{} /x/")
+        self.assert_parses("of / 2")
+
 
 if __name__ == '__main__':
     unittest.main()

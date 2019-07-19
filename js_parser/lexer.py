@@ -51,6 +51,37 @@ TOKEN_RE = re.compile(r'''(?x)
   )
 '''.replace("<INSERT_PUNCTUATORS>", _get_punctuators()))
 
+DIV_RE = re.compile(r'(/=?)')
+
+REGEXP_RE = re.compile('''(?x)
+(
+    /
+    (?:
+        # RegularExpressionFirstChar
+        .
+        # RegularExpressionChars
+        (?:
+            # RegularExpressionNonTerminator but not one of \ or / or [
+            [^*/\\\[\r\n\u2028\u2029]
+          | # RegularExpressionBackslashSequence
+            \\ [^\r\n\u2028\u2029]
+          | # RegularExpressionClass
+            \[
+                # RegularExpressionClassChars
+                (?:
+                    # RegularExpressionNonTerminator but not one of ] or \
+                    [^\]\\\r\n\u2028\u2029]
+                  | # RegularExpressionBackslashSequence
+                    \\ [^\r\n\u2028\u2029]
+                )*
+            \]
+        )*
+    )
+    /
+    (?: \w* )
+)
+''')
+
 RESERVED_WORDS = set('''
 await break case catch class const continue debugger default delete do else
 export extends finally for function if import in instanceof new return super
@@ -106,9 +137,11 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             # the parser rewind the lexer one token and ask for it again in
             # that case, so that the lexer asks the can-accept question again.
             if self.parser.can_accept_terminal('RegularExpressionLiteral'):
-                raise Exception("not supported: regular expression literals")
+                match = REGEXP_RE.match(self.src, self.point)
+                self._next_match = match
+                token = 'RegularExpressionLiteral'
             else:
-                match = re.match(r'(/=?)', self.src, self.point)
+                match = DIV_RE.match(self.src, self.point)
                 self._next_match = match
                 token = match.group(1)
             return token
