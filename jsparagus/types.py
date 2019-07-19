@@ -134,7 +134,7 @@ def unify(actual, expected):
         assert expected.value is None
         if actual is not expected:
             if (isinstance(actual, TypeVar) and
-                    actual.precedence < expected.precedence):
+                    actual.precedence <= expected.precedence):
                 actual.value = expected
             else:
                 expected.value = actual
