@@ -161,7 +161,7 @@ class MethodType:
             final_deref(self.return_type))
 
 
-def infer_types(nonterminals, variable_terminals):
+def infer_types(g):
     """Assign a type to each nonterminal and each method in a grammar.
 
     The type system is pretty rigid. We don't have any polymorphism or union
@@ -170,9 +170,10 @@ def infer_types(nonterminals, variable_terminals):
     output. If it can't do that (e.g. if one of the types is `str`) then it
     throws a JsparagusTypeError.
     """
+
     nt_types = {
         nt: TypeVar(nt, 2)
-        for nt in nonterminals
+        for nt in g.nonterminals
         if not isinstance(nt, grammar.InitNt)
     }
 
@@ -180,9 +181,9 @@ def infer_types(nonterminals, variable_terminals):
 
     def element_type(e):
         if isinstance(e, str):
-            if e in nonterminals:
+            if e in g.nonterminals:
                 return nt_types[e]
-            elif e in variable_terminals:
+            elif e in g.variable_terminals:
                 return 'str'
             else:
                 # constant terminal
@@ -218,15 +219,21 @@ def infer_types(nonterminals, variable_terminals):
                                 grammar.expr_to_str(arg), i + 1, expr.method))
                         raise
             else:
+                # Use method name as fallback type name (but low
+                # precedence--this should be unified with something better).
+                name = expr.method
+                if ' ' in name:
+                    name = name.split(' ')[0]
+
                 mtype = MethodType(
                     [expr_type(arg) for arg in expr.args],
-                    TypeVar(expr.method, 1))
+                    TypeVar(name, 1))
                 method_types[expr.method] = mtype
             return mtype.return_type
         else:
             raise TypeError("unrecognized reduce expr: {!r}".format(expr))
 
-    for nt, plist_or_fn in nonterminals.items():
+    for nt, plist_or_fn in g.nonterminals.items():
         if isinstance(nt, grammar.InitNt):
             continue
         nt_type = nt_types[nt]

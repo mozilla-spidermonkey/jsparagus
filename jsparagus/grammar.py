@@ -336,13 +336,15 @@ class Grammar:
         for nt, plist_or_fn in nonterminals.items():
             self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
 
+        # Cache the set of terminals for is_terminal.
+        self.terminals = OrderedFrozenSet(all_terminals)
+
         # Check types of reduce expressions and infer method types. But if the
         # caller passed in precalculated type info, skip it -- otherwise we
         # would redo type checking many times as we make minor changes to the
         # Grammar along the pipeline.
         if type_info is None:
-            type_info = types.infer_types(
-                self.nonterminals, self.variable_terminals)
+            type_info = types.infer_types(self)
         self.nt_types, self.methods = type_info
 
         # Synthesize "init" nonterminals.
@@ -356,9 +358,6 @@ class Grammar:
                 self.nonterminals[init_nt] = [
                     Production(init_nt, [goal], 'accept')]
             self.init_nts.append(init_nt)
-
-        # Cache the set of terminals for is_terminal.
-        self.terminals = OrderedFrozenSet(all_terminals)
 
     # Terminals are tokens that must appear verbatim in the input wherever they
     # appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
