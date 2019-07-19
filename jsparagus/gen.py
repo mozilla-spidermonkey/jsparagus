@@ -1251,20 +1251,24 @@ class State:
         """
         # _debug_traceback chains all the way back to the initial state.
         traceback = []
-        ss = self
-        while ss is not None:
-            traceback.append(ss)
-            ss = ss._debug_traceback
+        state = self
+        while state is not None:
+            traceback.append(state)
+            state = state._debug_traceback
         assert next(iter(traceback[-1]._lr_items)).offset == 0
         del traceback[-1]
         traceback.reverse()
 
         scenario = []
-        for ss in traceback:
-            item = next(iter(ss._lr_items))
+        for state in traceback:
+            item = next(iter(state._lr_items))
             prod = self.context.prods[item.prod_index]
-            assert item.offset > 0
-            scenario.append(prod.rhs[item.offset - 1])
+            i = item.offset - 1
+            assert i >= 0
+            while is_lookahead_rule(prod.rhs[i]):
+                i -= 1
+                assert i >= 0
+            scenario.append(prod.rhs[i])
         return self.context.grammar.symbols_to_str(scenario)
 
 
