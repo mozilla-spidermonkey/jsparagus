@@ -115,12 +115,12 @@ class RustParserWriter:
         self.check_camel_case()
         self.check_nt_node_variant()
         self.handler_trait()
-        # self.nt_node()
-        # self.nt_node_impl()
+        self.nt_node()
+        self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
-        self.reduce()
-        self.entry()
+        self.reduce(False)
+        self.entry(False)
 
     def write(self, indentation, string, *format_args):
         if len(format_args) == 0:
@@ -288,7 +288,10 @@ class RustParserWriter:
         elif ty == 'bool':
             return 'bool'
         elif isinstance(ty, types.NtType):
-            return handler + '::' + ty.name
+            if handler == "":
+                return ty.name
+            else:
+                return handler + '::' + ty.name
         elif isinstance(ty, types.OptionType):
             return 'Option<{}>'.format(self.type_to_rust(ty.t, handler))
         else:
@@ -321,20 +324,23 @@ class RustParserWriter:
         self.write(0, "")
 
     def nt_node(self):
-        self.write(0, "#[derive(Debug)]")
-        self.write(0, "pub enum NtNode {")
-        for prod in self.prods:
-            if prod.nt in self.nonterminals and not prod.removals:
-                types = []
-                for i, e in enumerate(prod.rhs):
-                    ty = self.rust_type_of_element(prod, i, e, "NtNode")
-                    if ty is not None and ty != '()':
-                        types.append(ty)
-
-                self.write(
-                    1, "// {}", self.grammar.production_to_str(prod.nt, prod.rhs))
-                name = self.nt_node_variant(prod)
-                self.write(1, "{}({}),", name, ", ".join(types))
+        self.write(0, "pub mod concrete {")
+        for name in self.get_associated_type_names():
+            self.write(0, "#[derive(Debug)]")
+            self.write(0, "pub enum {} {{", name)
+            for tag, method in self.grammar.methods.items():
+                # TODO: Make this check better
+                if method.return_type.name != name:
+                    continue
+                method_name = self.to_camel_case(self.method_name_to_rust(tag))
+                arg_types = [
+                    "Box<" + self.type_to_rust(ty, "") + ">"
+                    for ty in method.argument_types
+                    if ty != types.UnitType
+                ]
+                self.write(1, "{}({}),", method_name, ", ".join(arg_types))
+            self.write(0, "}")
+            self.write(0, "")
         self.write(0, "}")
         self.write(0, "")
 
@@ -342,27 +348,33 @@ class RustParserWriter:
         self.write(0, "pub struct DefaultHandler {}")
         self.write(0, "")
         self.write(0, "impl Handler for DefaultHandler {")
-        self.write(1, "// TODO")
-        for method in self.grammar.methods:
-            pass
-            # if prod.nt in self.nonterminals and not prod.removals:
-            #     types = []
-            #     for i, e in enumerate(prod.rhs):
-            #         ty = self.rust_type_of_element(prod, i, e, "NtNode")
-            #         if ty is not None and ty != '()':
-            #             types.append(ty)
-            #
-            #     method_name = ?
-            #     nt_node_name = self.nt_node_variant(prod)
-            #     params = ", ".join(("a{}: {}".format(i, t)
-            #                         for i, t in enumerate(types)))
-            #     args = ", ".join("a{}".format(i)
-            #                      for i in range(0, len(types)))
-            #     self.out.write(
-            #         "    fn {}(&mut self, {}) -> NtNode {{\n".format(method_name, params))
-            #     self.out.write("        NtNode::{}({})\n" .format(
-            #         nt_node_name, args))
-            #     self.out.write("    }\n")
+        for name in self.get_associated_type_names():
+            self.write(1, "type {} = concrete::{};", name, name)
+
+        for tag, method in self.grammar.methods.items():
+            method_name = self.method_name_to_rust(tag)
+            method_name_camel = self.to_camel_case(method_name)
+            arg_types = [
+                self.type_to_rust(ty, "Self")
+                for ty in method.argument_types
+                if ty != types.UnitType
+            ]
+            if method.return_type is types.UnitType:
+                return_type_tag = ''
+            else:
+                return_type_tag = ' -> ' + \
+                    self.type_to_rust(method.return_type, "Self")
+
+            args = ", ".join("a{}: {}".format(i, t)
+                             for i, t in enumerate(arg_types))
+            params = ", ".join("Box::new(a{})".format(i)
+                               for i, t in enumerate(arg_types))
+
+            self.write(1, "fn {}(&mut self, {}){} {{",
+                       method_name, args, return_type_tag)
+            self.write(2, "concrete::{}::{}({})",
+                       method.return_type.name, method_name_camel, params)
+            self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
 
@@ -384,9 +396,13 @@ class RustParserWriter:
         self.write(0, "];")
         self.write(0, "")
 
-    def reduce(self):
-        self.write(0,
-                   "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+    def reduce(self, generic):
+        if generic:
+            self.write(0,
+                       "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+        else:
+            self.write(0,
+                       "fn reduce(handler: &mut DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
@@ -437,7 +453,7 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
 
-    def entry(self):
+    def entry(self, generic):
         self.write(0, "static TABLES: ParserTables<'static> = ParserTables {")
         self.write(1, "state_count: {},", len(self.states))
         self.write(1, "action_table: &ACTIONS,")
@@ -449,10 +465,17 @@ class RustParserWriter:
 
         for init_nt, index in self.init_state_map.items():
             result_type_jsparagus = self.grammar.nt_types[init_nt]
-            result_type = self.type_to_rust(result_type_jsparagus, "H")
-            self.write(0, "pub fn parse_{}<H: Handler, In: TokenStream<Token = Token>>(",
-                       init_nt)
-            self.write(1, "handler: &mut H,")
+            if generic:
+                result_type = self.type_to_rust(result_type_jsparagus, "H")
+                self.write(0, "pub fn parse_{}<H: Handler, In: TokenStream<Token = Token>>(",
+                           init_nt)
+                self.write(1, "handler: &mut H,")
+            else:
+                result_type = self.type_to_rust(
+                    result_type_jsparagus, "concrete")
+                self.write(0, "pub fn parse_{}<In: TokenStream<Token = Token>>(",
+                           init_nt)
+                self.write(1, "handler: &mut DefaultHandler,")
             self.write(1, "tokens: In,")
             self.write(0, ") -> Result<{}, &'static str> {{", result_type)
             self.write(1, "let result = parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)?;",
