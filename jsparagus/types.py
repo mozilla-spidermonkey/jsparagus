@@ -203,20 +203,24 @@ def infer_types(g):
         elif isinstance(expr, grammar.Some):
             return OptionType(expr_type(expr.inner))
         elif isinstance(expr, grammar.CallMethod):
+            arg_types = [expr_type(arg) for arg in expr.args]
             if expr.method in method_types:
                 mtype = method_types[expr.method]
                 if len(expr.args) != len(mtype.argument_types):
                     raise JsparagusTypeError(
                         "method {!r} is called with {} argument(s) and with {} argument(s)"
                         .format(expr.method, len(expr.args), len(mtype.argument_types)))
-                for i, (arg, expected_type) in enumerate(zip(expr.args, mtype.argument_types)):
+                for i, (actual_type, expected_type) in enumerate(
+                        zip(arg_types, mtype.argument_types)):
                     try:
-                        unify(expr_type(arg), expected_type)
+                        unify(actual_type, expected_type)
                     except JsparagusTypeError as exc:
                         exc.annotate(
                             "error passing {} as argument {} to method {!r}:"
                             .format(
-                                grammar.expr_to_str(arg), i + 1, expr.method))
+                                grammar.expr_to_str(expr.args[i]),
+                                i + 1,
+                                expr.method))
                         raise
             else:
                 # Use method name as fallback type name (but low
@@ -225,9 +229,7 @@ def infer_types(g):
                 if ' ' in name:
                     name = name.split(' ')[0]
 
-                mtype = MethodType(
-                    [expr_type(arg) for arg in expr.args],
-                    TypeVar(name, 1))
+                mtype = MethodType(arg_types, TypeVar(name, 1))
                 method_types[expr.method] = mtype
             return mtype.return_type
         else:
