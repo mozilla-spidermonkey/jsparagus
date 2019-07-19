@@ -14,7 +14,8 @@ function; see grammar.Apply for details.
 The user passes to each method an object representing the input sequence.
 This object must support two methods:
 
-*   `src.peek()` returns the kind of the next token, or `None` at the end of input.
+*   `src.peek()` returns the kind of the next token, or `None` at the end of
+    input.
 
 *   `src.take(kind)` throws an exception if `src.peek() != kind`;
     otherwise, it removes the next token from the input stream and returns it.
@@ -22,6 +23,7 @@ This object must support two methods:
     if so, it returns None; if not, it throws.
 
 For very basic needs, see `lexer.LexicalGrammar`.
+
 """
 
 import collections
@@ -34,7 +36,8 @@ from .grammar import (Grammar,
                       is_concrete_element,
                       Optional, is_optional,
                       ConditionalRhs, Apply, is_apply, Var,
-                      LookaheadRule, is_lookahead_rule, lookahead_contains, lookahead_intersect)
+                      LookaheadRule, is_lookahead_rule, lookahead_contains,
+                      lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
 
@@ -82,7 +85,9 @@ def empty_nt_set(grammar):
             elif isinstance(expr, Some):
                 return Some(eval(expr.inner))
             elif isinstance(expr, CallMethod):
-                return CallMethod(expr.method, tuple(eval(arg_expr) for arg_expr in expr.args))
+                return CallMethod(
+                    expr.method,
+                    tuple(eval(arg_expr) for arg_expr in expr.args))
             elif isinstance(expr, int):
                 e = stack[expr]
                 if is_optional(e):
@@ -97,7 +102,8 @@ def empty_nt_set(grammar):
                 return 'accept'
             else:
                 raise TypeError(
-                    "internal error: unhandled reduce expression type {!r}".format(expr))
+                    "internal error: unhandled reduce expression type {!r}"
+                    .format(expr))
 
         return eval(p.action)
 
@@ -109,8 +115,10 @@ def empty_nt_set(grammar):
                 for p in prods:
                     if production_is_empty(nt, p):
                         if nt in empties:
-                            raise ValueError("ambiguous grammar: multiple productions for {!r} match the empty string"
-                                             .format(nt))
+                            raise ValueError(
+                                "ambiguous grammar: multiple productions for "
+                                "{!r} match the empty string"
+                                .format(nt))
                         done = False
                         empties[nt] = evaluate_action_with_empty_matches(p)
     return empties
@@ -129,7 +137,8 @@ def check_cycle_free(grammar):
     for orig in grammar.nonterminals:
         direct_produces[orig] = set()
         for source_production in grammar.nonterminals[orig]:
-            for rhs, _r in expand_optional_symbols_in_rhs(source_production.body):
+            for rhs, _r in expand_optional_symbols_in_rhs(
+                    source_production.body):
                 result = []
                 all_possibly_empty_so_far = True
                 # If we break out of the following loop, that means it turns
@@ -172,7 +181,8 @@ def check_cycle_free(grammar):
     for nt in grammar.nonterminals:
         if nt in produces[nt]:
             raise ValueError(
-                "invalid grammar: nonterminal {} can produce itself".format(nt))
+                "invalid grammar: nonterminal {} can produce itself"
+                .format(nt))
 
 
 def check_lookahead_rules(grammar):
@@ -185,13 +195,16 @@ def check_lookahead_rules(grammar):
     check_cycle_free(grammar)
     for nt in grammar.nonterminals:
         for source_production in grammar.nonterminals[nt]:
-            for rhs, _r in expand_optional_symbols_in_rhs(source_production.body):
+            body = source_production.body
+            for rhs, _r in expand_optional_symbols_in_rhs(body):
                 # XXX BUG: The next if-condition is insufficient, since it
                 # fails to detect a lookahead restriction followed by a
                 # nonterminal that can match the empty string.
                 if rhs and is_lookahead_rule(rhs[-1]):
-                    raise ValueError("invalid grammar: lookahead restriction at end of production: " +
-                                     grammar.production_to_str(nt, source_production.body))
+                    raise ValueError(
+                        "invalid grammar: lookahead restriction "
+                        "at end of production: " +
+                        grammar.production_to_str(nt, body))
 
 
 def expand_function_nonterminals(grammar):
@@ -219,7 +232,11 @@ def expand_function_nonterminals(grammar):
         return name
 
     def expand(nt, args):
-        """ Return an rhs list, the expansion of grammar.nonterminals[nt](**args). """
+        """Expand grammar.nonterminals[nt](**args).
+
+        Returns the expanded rhs list, which contains no ConditionalRhs or
+        Apply objects.
+        """
 
         if args is None:
             args_dict = None
@@ -349,7 +366,8 @@ def make_start_set_cache(grammar, prods, start):
     Returns a list of lists `cache` such that
     `cache[n][i] == seq_start(grammar, start, prods[n][i:])`.
 
-    (The cache is for speed, since seq_start was being called millions of times.)
+    (The cache is for speed, since seq_start was being called millions of
+    times.)
     """
 
     def suffix_start_list(rhs):
@@ -448,20 +466,24 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 # source.  We need to associate them with the original grammar in order to
 # produce correct output, so we use Prod values to represent productions.
 #
-# -   `nt` is the name of the nonterminal as it appears in the original grammar.
+# -   `nt` is the name of the nonterminal as it appears in the original
+#     grammar.
+#
 # -   `index` is the index of the source production, within nt's productions,
 #     in the original grammar.
-# -   `rhs` is the fully lowered/expanded right-hand-side of the production.
-# -   `removals` is the list of indexes of elements in the original rhs
-#     which were optional and are not present in this production.
 #
-# There may be many productions in a grammar that all have the same `nt` and `index`
-# because they were all produced from the same source production.
+# -   `rhs` is the fully lowered/expanded right-hand-side of the production.
+#
+# -   `removals` is the list of indexes of elements in the original rhs which
+#     were optional and are not present in this production.
+#
+# There may be many productions in a grammar that all have the same `nt` and
+# `index` because they were all produced from the same source production.
 Prod = collections.namedtuple("Prod", "nt index rhs removals action")
 
 
 def expand_optional_symbols_in_rhs(rhs, start_index=0):
-    """Expand a sequence that may contain optional symbols into sequences that don't.
+    """Expand a sequence with optional symbols into sequences that have none.
 
     rhs is a list of symbols, possibly containing optional elements. This
     yields every list that can be made by replacing each optional element
@@ -497,15 +519,18 @@ def expand_all_optional_elements(grammar):
     """
     expanded_grammar = {}
 
-    # Put all the productions in one big list, so each one has an index.
-    # We will use the indices in the action table (as arguments to Reduce actions).
+    # Put all the productions in one big list, so each one has an index. We
+    # will use the indices in the action table (as arguments to Reduce
+    # actions).
     prods = []
     prods_with_indexes_by_nt = collections.defaultdict(list)
 
     for nt in grammar.nonterminals:
         expanded_grammar[nt] = []
         for prod_index, p in enumerate(grammar.nonterminals[nt]):
-            for expanded_rhs, removals in expand_optional_symbols_in_rhs(p.body):
+            for pair in expand_optional_symbols_in_rhs(p.body):
+                expanded_rhs, removals = pair
+
                 def adjust_reduce_expr(expr):
                     if isinstance(expr, int):
                         if expr in removals:
@@ -529,17 +554,22 @@ def expand_all_optional_elements(grammar):
                         return 'accept'
                     else:
                         raise TypeError(
-                            "internal error: unrecognized element {!r}".format(expr))
+                            "internal error: unrecognized element {!r}"
+                            .format(expr))
 
                 adjusted_action = adjust_reduce_expr(p.action)
                 expanded_grammar[nt].append(
-                    Production(nt=p.nt, body=expanded_rhs, action=adjusted_action))
+                    Production(nt=p.nt,
+                               body=expanded_rhs,
+                               action=adjusted_action))
                 prods.append(Prod(nt, prod_index, expanded_rhs,
                                   removals, adjusted_action))
                 prods_with_indexes_by_nt[nt].append(
                     (len(prods) - 1, expanded_rhs))
 
-    return grammar.with_nonterminals(expanded_grammar), prods, prods_with_indexes_by_nt
+    return (grammar.with_nonterminals(expanded_grammar),
+            prods,
+            prods_with_indexes_by_nt)
 
 
 def make_epsilon_free_step_1(grammar):
@@ -556,8 +586,11 @@ def make_epsilon_free_step_1(grammar):
             # If this is already possibly-empty in the input grammar, it's an
             # error! The grammar is ambiguous.
             if grammar.is_nt(e.inner) and e.inner in empties:
-                raise ValueError("ambiguous grammar: {} is ambiguous because {} can match the empty string"
-                                 .format(grammar.element_to_str(e), grammar.element_to_str(e.inner)))
+                raise ValueError(
+                    "ambiguous grammar: {} is ambiguous "
+                    "because {} can match the empty string"
+                    .format(grammar.element_to_str(e),
+                            grammar.element_to_str(e.inner)))
         elif grammar.is_nt(e) and e in empties:
             # If we do it on purpose, it's ok. Step 2 fixes it.
             return Optional(e)
@@ -759,7 +792,9 @@ def assert_items_are_compatible(grammar, prods, items):
     the same sequence of terminals and nonterminals.
     """
     def item_history(item):
-        return [e for e in prods[item.prod_index].rhs[:item.offset] if not is_lookahead_rule(e)]
+        return [e
+                for e in prods[item.prod_index].rhs[:item.offset]
+                if not is_lookahead_rule(e)]
 
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
@@ -773,7 +808,8 @@ def assert_items_are_compatible(grammar, prods, items):
 class PgenContext:
     """ The immutable part of the parser generator's data. """
 
-    def __init__(self, grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow):
+    def __init__(self, grammar, prods, prods_with_indexes_by_nt,
+                 start_set_cache, follow):
         self.grammar = grammar
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
@@ -804,8 +840,10 @@ class PgenContext:
         assert isinstance(item.followed_by, OrderedFrozenSet)
         rhs = prods[item.prod_index].rhs
         while item.offset < len(rhs) and is_lookahead_rule(rhs[item.offset]):
-            item = item._replace(offset=item.offset + 1,
-                                 lookahead=lookahead_intersect(item.lookahead, rhs[item.offset]))
+            item = item._replace(
+                offset=item.offset + 1,
+                lookahead=lookahead_intersect(item.lookahead,
+                                              rhs[item.offset]))
 
         # if item.lookahead is not None:
         if False:  # this block is disabled for now; see comment
@@ -851,7 +889,10 @@ class PgenContext:
                     self.grammar.production_to_str(p2.nt, p2.rhs)))
 
     def why_start(self, t, prod_index, offset):
-        """ Yield a sequence of productions showing why `t in START(prods[prod_index][offset:])`.
+        """Explain why `t in START(prods[prod_index][offset:])`.
+
+        Yields a sequence of productions showing how the specified suffix can
+        expand to something starting with `t`.
 
         If `prods[prod_index][offset] is actually t, the sequence is empty.
         """
@@ -886,13 +927,18 @@ class PgenContext:
             yield prod.nt, prod.rhs
 
     def why_follow(self, nt, t):
-        """ Return a sequence of productions showing why the terminal t is in nt's follow set. """
+        """Explain why the terminal t is in nt's follow set.
+
+        Yields a sequence of productions showing how a goal symbol can produce
+        a string of terminals and nonterminals that contains nt followed by t.
+        """
 
         start_points = {}
         for prod_index, prod in enumerate(self.prods):
             rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
-                if self.grammar.is_nt(rhs1[i]) and t in self.start_set_cache[prod_index][i + 1]:
+                if (self.grammar.is_nt(rhs1[i]) and
+                        t in self.start_set_cache[prod_index][i + 1]):
                     start_points[rhs1[i]] = (prod_index, i + 1)
 
         def successors(nt):
@@ -912,7 +958,8 @@ class PgenContext:
             prod = self.prods[index]
             yield prod.nt, prod.rhs
 
-        # Now show how the immediate next token can expand into something that starts with `t`.
+        # Now show how the immediate next token can expand into something that
+        # starts with `t`.
         for xnt, xrhs in self.why_start(t, prod_index, offset):
             yield xnt, xrhs
 
@@ -923,49 +970,55 @@ class PgenContext:
         some_shift_option = next(iter(shift_options))
         t_str = grammar.element_to_str(t)
         scenario_str = state.traceback()
+        productions = "".join(
+            "    " + grammar.production_to_str(nt, rhs) + "\n"
+            for nt, rhs in self.why_follow(nt, t))
 
-        raise ValueError("shift-reduce conflict when looking at {} followed by {}\n"
-                         "can't decide whether to shift into:\n"
-                         "    {}\n"
-                         "or reduce using:\n"
-                         "    {}\n"
-                         "\n"
-                         "These productions show how {} can appear after {} (if we reduce):\n"
-                         "{}"
-                         .format(scenario_str,
-                                 t_str,
-                                 grammar.lr_item_to_str(
-                                     self.prods, some_shift_option),
-                                 grammar.production_to_str(nt, rhs),
-                                 t_str,
-                                 nt,
-                                 "".join("    " + grammar.production_to_str(nt, rhs) + "\n"
-                                         for nt, rhs in self.why_follow(nt, t))))
+        raise ValueError(
+            "shift-reduce conflict when looking at {} followed by {}\n"
+            "can't decide whether to shift into:\n"
+            "    {}\n"
+            "or reduce using:\n"
+            "    {}\n"
+            "\n"
+            "These productions show how {} can appear after {} "
+            "(if we reduce):\n"
+            "{}"
+            .format(
+                scenario_str,
+                t_str,
+                grammar.lr_item_to_str(
+                    self.prods, some_shift_option),
+                grammar.production_to_str(nt, rhs),
+                t_str,
+                nt,
+                productions))
 
 
 class State:
     """A parser state. A state is basically a set of LRItems.
 
     During parser generation, states are annotated with attributes
-    `.action_row` and `.ctn_row` that tell the actual parser what to do at run time.
-    These will become rows of the parser tables.
+    `.action_row` and `.ctn_row` that tell the actual parser what to do at run
+    time. These will become rows of the parser tables.
 
     (For convenience, each State also has an attribute `self.context` that
     points to the PgenContext that has the grammar and various cached data; and
     an attribute `_debug_traceback` used in error messages. But for the most
     part, when we talk about a "state" we only care about the frozen set of
     LRItems in `self._lr_items`.)
+
     """
 
     __slots__ = [
         'context',
-        '_lr_items',            # OrderedSet of LRItems, the actual content here
-        '_debug_traceback',     # State from which this one was first reached
-        'key',                  # str, projection from _lr_items used to merge similar-enough states
-        '_hash',                # int, probably useless
-        'action_row',           # output of analysis: {terminal: action}
-        'ctn_row',              # output of analysis: {nonterminal: state_id}
-        'id'                    # int, small unique id
+        '_lr_items',    # OrderedSet of LRItems, the actual content here
+        '_debug_traceback',  # State from which this one was first reached
+        'key',          # str, projection from _lr_items used to merge states
+        '_hash',        # int, probably useless
+        'action_row',   # output of analysis: {terminal: action}
+        'ctn_row',      # output of analysis: {nonterminal: state_id}
+        'id'            # int, small unique id
     ]
 
     def __init__(self, context, items, debug_traceback=None):
@@ -984,8 +1037,9 @@ class State:
         # the same items except with different .followed_by sets. This line of
         # code is what makes this an LALR parser generator rather than a
         # canonical LR parser generator.
-        self.key = "".join(repr((item.prod_index, item.offset, item.lookahead)) + "\n"
-                           for item in sorted(self._lr_items))
+        self.key = "".join(
+            repr((item.prod_index, item.offset, item.lookahead)) + "\n"
+            for item in sorted(self._lr_items))
 
         self._hash = hash(self.key)
         assert_items_are_compatible(
@@ -999,9 +1053,9 @@ class State:
 
     def __str__(self):
         return "{{{}}}".format(
-            ",  ".join(self.context.grammar.lr_item_to_str(self.context.prods, item)
-                       for item in self._lr_items)
-        )
+            ",  ".join(
+                self.context.grammar.lr_item_to_str(self.context.prods, item)
+                for item in self._lr_items))
 
     def update(self, new_state):
         """Merge another State into self.
@@ -1064,24 +1118,37 @@ class State:
                 next_symbol = rhs[item.offset]
                 if grammar.is_nt(next_symbol):
                     # Step in to each production for this nt.
-                    for dest_prod_index, callee_rhs in prods_with_indexes_by_nt[next_symbol]:
+                    for pair in prods_with_indexes_by_nt[next_symbol]:
+                        dest_prod_index, callee_rhs = pair
+
                         # We may have rewritten the grammar just a tad since
-                        # `prods` was built. (`prods` has to be built during the
-                        # expansion of optional elements, but the grammar has
-                        # to be modified a bit after that.) So, embarrassingly, we
-                        # must now check that the production we just found is
-                        # still in the grammar. XXX FIXME
-                        if callee_rhs or any(p.body == callee_rhs
-                                             for p in grammar.nonterminals[next_symbol]):
-                            # print("    Considering stepping from item {} into production {}"
-                            #       .format(grammar.lr_item_to_str(prods, item),
-                            #               grammar.production_to_str(next_symbol, callee_rhs)))
-                            followers = specific_follow(start_set_cache,
-                                                        item.prod_index, item.offset,
-                                                        item.followed_by)
-                            new_item = context.make_lr_item(dest_prod_index, 0, item.lookahead,
-                                                            followers)
-                            if new_item is not None and new_item not in closure:
+                        # `prods` was built. (`prods` has to be built during
+                        # the expansion of optional elements, but the grammar
+                        # has to be modified a bit after that.) So,
+                        # embarrassingly, we must now check that the production
+                        # we just found is still in the grammar. XXX FIXME
+                        if (callee_rhs or
+                            any(p.body == callee_rhs
+                                for p in grammar.nonterminals[next_symbol])):
+                            # print(
+                            #     "    Considering stepping from item {} "
+                            #     "into production {}"
+                            #     .format(
+                            #         grammar.lr_item_to_str(prods, item),
+                            #         grammar.production_to_str(next_symbol,
+                            #                                   callee_rhs)))
+                            followers = specific_follow(
+                                start_set_cache,
+                                item.prod_index,
+                                item.offset,
+                                item.followed_by)
+                            new_item = context.make_lr_item(
+                                dest_prod_index,
+                                0,
+                                item.lookahead,
+                                followers)
+                            if (new_item is not None and
+                                    new_item not in closure):
                                 closure.add(new_item)
                                 closure_todo.append(new_item)
         return closure
@@ -1130,7 +1197,10 @@ class State:
                 if grammar.is_terminal(next_symbol):
                     if lookahead_contains(item.lookahead, next_symbol):
                         next_item = context.make_lr_item(
-                            item.prod_index, offset + 1, None, item.followed_by)
+                            item.prod_index,
+                            offset + 1,
+                            None,
+                            item.followed_by)
                         if next_item is not None:
                             shift_items[next_symbol].add(next_item)
                 else:
@@ -1141,19 +1211,21 @@ class State:
 
                     # We never reduce with a lookahead restriction still
                     # active, so `lookahead=None` is appropriate.
-                    next_item = context.make_lr_item(item.prod_index,
-                                                     offset + 1,
-                                                     lookahead=None,
-                                                     followed_by=item.followed_by)
+                    next_item = context.make_lr_item(
+                        item.prod_index,
+                        offset + 1,
+                        lookahead=None,
+                        followed_by=item.followed_by)
                     if next_item is not None:
                         ctn_items[next_symbol].add(next_item)
             else:
                 if item.lookahead is not None:
-                    # I think we could improve on this with canonical LR.
-                    # The simplification in LALR might make it too weird though.
-                    raise ValueError("invalid grammar: lookahead restriction still active "
-                                     "at end of production " +
-                                     grammar.production_to_str(nt, rhs))
+                    # I think we could improve on this with canonical LR. The
+                    # simplification in LALR might make it too weird though.
+                    raise ValueError(
+                        "invalid grammar: lookahead restriction still active "
+                        "at end of production " +
+                        grammar.production_to_str(nt, rhs))
                 for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
@@ -1191,7 +1263,10 @@ class State:
         self.ctn_row = ctn_row
 
     def traceback(self):
-        """Return a list of terminals and nonterminals that could have gotten us here."""
+        """Return example input that could have gotten us here.
+
+        The result is a list of terminals and nonterminals.
+        """
         # _debug_traceback chains all the way back to the initial state.
         traceback = []
         ss = self
@@ -1212,7 +1287,7 @@ class State:
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
-    """Return the set of tokens that might appear after the nonterminal rhs[offset],
+    """Return the set of tokens that match after the nonterminal rhs[offset],
     given that after `rhs` the next token will be a terminal in `followed_by`.
     """
 
