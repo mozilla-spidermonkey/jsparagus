@@ -1266,26 +1266,37 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
         init_state_map[init_nt.goal] = get_state_index(init_state)
 
     # Turn the crank.
-    i = 0
-    to_feed = str(i)
-    while todo:
-        if progress:
-            if len(to_feed) > 0:
-                sys.stdout.write(to_feed[0])
-                to_feed = to_feed[1:]
-            else:
-                sys.stdout.write(".")
-            i += 1
-            if i % 100 == 0:
-                sys.stdout.write("\n")
-                to_feed = str(i)
-            sys.stdout.flush()
-        todo.popleft().analyze(get_state_index, verbose=verbose)
+    def analyze_all_states():
+        while todo:
+            yield
+            todo.popleft().analyze(get_state_index, verbose=verbose)
 
-    if progress and i != 0:
-        sys.stdout.write("\n")
+    consume(analyze_all_states(), progress)
 
     return states, init_state_map
+
+
+def consume(iterator, progress):
+    """Drain the iterator. If progress is true, print dots on stdout."""
+    i = 0
+    to_feed = str(i)
+    try:
+        for _ in iterator:
+            if progress:
+                if len(to_feed) > 0:
+                    sys.stdout.write(to_feed[0])
+                    to_feed = to_feed[1:]
+                else:
+                    sys.stdout.write(".")
+                i += 1
+                if i % 100 == 0:
+                    sys.stdout.write("\n")
+                    to_feed = str(i)
+                sys.stdout.flush()
+    finally:
+        if progress and i != 0:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
 
 
 def generate_parser(out, grammar, *, target='python',
