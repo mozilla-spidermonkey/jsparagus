@@ -51,7 +51,7 @@ pub struct ParserTables<'a> {
 }
 
 pub fn parse<H: Handler, In, Out>(
-    handler: &mut H,
+    handler: &H,
     mut tokens: In,
     start_state: usize,
     tables: &ParserTables,
@@ -59,7 +59,7 @@ pub fn parse<H: Handler, In, Out>(
 ) -> Result<*mut (), &'static str>
 where
     In: TokenStream<Token = Token>,
-    Out: Fn(&mut H, usize, &mut Vec<*mut ()>) -> NonterminalId,
+    Out: Fn(&H, usize, &mut Vec<*mut ()>) -> NonterminalId,
 {
     assert_eq!(
         tables.action_table.len(),
@@ -79,7 +79,7 @@ where
         let action = Action(tables.action_table[state * tables.action_width + t]);
 
         if action.is_shift() {
-            node_stack.push(Box::into_raw(Box::new(tokens.take()) as *const _));
+            node_stack.push(Box::into_raw(Box::new(tokens.take())) as *mut _);
             state_stack.push(action.shift_state());
             t = In::token_as_index(tokens.peek());
         } else if action.is_reduce() {

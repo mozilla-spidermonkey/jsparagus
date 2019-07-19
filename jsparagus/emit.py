@@ -1,4 +1,4 @@
-"""Emit code for parser tables in either Python or Rust. """
+"""Emit code pelled the saor parser tables in either Python or Rust. """
 
 import re
 import unicodedata
@@ -85,35 +85,12 @@ class RustParserWriter:
         self.nonterminals = list(OrderedSet(
             nt for state in self.states for nt in state.ctn_row))
 
-        self.prod_optional_element_indexes = {
-            (prod.nt, prod.index): set(
-                i
-                for p in self.prods
-                if p.nt == prod.nt and p.index == prod.index
-                for i in p.removals
-            )
-            for prod in self.prods
-            if prod.nt in self.nonterminals and not prod.removals
-        }
-
-        # Reverse-engineered original productions for everything
-        self.originals = {
-            (prod.nt, prod.index): [
-                (Optional(e)
-                 if i in self.prod_optional_element_indexes[prod.nt, prod.index] else e)
-                for i, e in enumerate(prod.rhs)
-            ]
-            for prod in self.prods
-            if prod.nt in self.nonterminals and not prod.removals
-        }
-
     def emit(self):
         self.header()
         self.terminal_id()
         self.token()
         self.actions()
         self.check_camel_case()
-        self.check_nt_node_variant()
         self.handler_trait()
         self.nt_node()
         self.nt_node_impl()
@@ -237,25 +214,6 @@ class RustParserWriter:
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', ident)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-    def nt_node_variant(self, prod):
-        name = self.nonterminal_to_camel(prod.nt)
-        if len(self.grammar.nonterminals[prod.nt]) > 1:
-            name += "P" + str(prod.index)
-        return name
-
-    def check_nt_node_variant(self):
-        seen = {}
-        for prod in self.prods:
-            if prod.nt in self.nonterminals and not prod.removals:
-                name = self.nt_node_variant(prod)
-                if name in seen:
-                    raise ValueError("Productions {} and {} have the same spelling ({})".format(
-                        self.grammar.production_to_str(
-                            seen[name].nt, seen[name].rhs),
-                        self.grammar.production_to_str(prod.nt, prod.rhs),
-                        name))
-                seen[name] = prod
-
     def method_name_to_rust(self, name):
         """Convert jsparagus's internal method name to idiomatic Rust."""
         nt_name, space, number = name.partition(' ')
@@ -318,7 +276,7 @@ class RustParserWriter:
 
             args = ", ".join(("a{}: {}".format(i, t)
                               for i, t in enumerate(arg_types)))
-            self.write(1, "fn {}(&mut self, {}){};",
+            self.write(1, "fn {}(&self, {}){};",
                        method_name, args, return_type_tag)
         self.write(0, "}")
         self.write(0, "")
@@ -370,7 +328,7 @@ class RustParserWriter:
             params = ", ".join("Box::new(a{})".format(i)
                                for i, t in enumerate(arg_types))
 
-            self.write(1, "fn {}(&mut self, {}){} {{",
+            self.write(1, "fn {}(&self, {}){} {{",
                        method_name, args, return_type_tag)
             self.write(2, "concrete::{}::{}({})",
                        method.return_type.name, method_name_camel, params)
@@ -399,10 +357,10 @@ class RustParserWriter:
     def reduce(self, generic):
         if generic:
             self.write(0,
-                       "fn reduce<H: Handler>(handler: &mut H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+                       "fn reduce<H: Handler>(handler: &H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
         else:
             self.write(0,
-                       "fn reduce(handler: &mut DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+                       "fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
@@ -469,16 +427,16 @@ class RustParserWriter:
                 result_type = self.type_to_rust(result_type_jsparagus, "H")
                 self.write(0, "pub fn parse_{}<H: Handler, In: TokenStream<Token = Token>>(",
                            init_nt)
-                self.write(1, "handler: &mut H,")
+                self.write(1, "handler: &H,")
             else:
                 result_type = self.type_to_rust(
                     result_type_jsparagus, "concrete")
                 self.write(0, "pub fn parse_{}<In: TokenStream<Token = Token>>(",
                            init_nt)
-                self.write(1, "handler: &mut DefaultHandler,")
+                self.write(1, "handler: &DefaultHandler,")
             self.write(1, "tokens: In,")
             self.write(0, ") -> Result<{}, &'static str> {{", result_type)
             self.write(1, "let result = parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)?;",
                        index)
-            self.write(1, "Ok(Box::from_raw(result as *mut _))")
+            self.write(1, "Ok(unsafe { *Box::from_raw(result as *mut _) } )")
             self.write(0, "}")
