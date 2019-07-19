@@ -443,7 +443,8 @@ class Grammar:
     def production_to_str(self, nt, rhs):
         # As we have two ways of representing productions at the moment, just
         # take two arguments :(
-        return "{} ::= {}".format(nt, self.rhs_to_str(rhs))
+        return "{} ::= {}".format(
+            self.element_to_str(nt), self.rhs_to_str(rhs))
 
     def lr_item_to_str(self, prods, item):
         prod = prods[item.prod_index]
