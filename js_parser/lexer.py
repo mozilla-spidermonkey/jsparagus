@@ -3,6 +3,7 @@
 import re
 import jsparagus.lexer
 
+
 def _get_punctuators():
     punctuators = '''
         { ( ) [ ] . ... ; , < > <= >= == != === !== + - * % ** ++ --
@@ -13,6 +14,7 @@ def _get_punctuators():
     return '|'.join(
         re.escape(token)
         for token in sorted(punctuators, key=len, reverse=True))
+
 
 TOKEN_RE = re.compile(r'''(?x)
   (?:
@@ -117,13 +119,17 @@ endif
 
 class JSLexer(jsparagus.lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
-    def __init__(self, source, parser, filename=None):
+    def __init__(self, source, parser, filename=None,
+                 had_line_terminator_before_start=False):
         self.src = source
         self.filename = filename
-        self.last_point = 0
+        self.previous_token_end = 0
+        self.current_token_start = 0
         self.point = 0
         self._next_kind = None
         self.parser = parser
+        self.had_line_terminator_before_start = \
+            had_line_terminator_before_start
 
     def _match(self):
         match = self._next_match = TOKEN_RE.match(self.src, self.point)
@@ -184,14 +190,29 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             self.throw("unexpected character: {!r}".format(c))
 
     def peek(self):
+        self.previous_token_end = self.point
         if self._next_kind is not None:
             return self._next_kind
-        self.last_point = self.point
         hit = self._next_kind = self._match()
         if hit is None:
+            self.current_token_start = self.point = len(self.src)
             return None
-        self.last_point = self._next_match.end()
+        self.current_token_start = self._next_match.start(1)
+        self.point = self._next_match.end()
         return hit
+
+    def saw_line_terminator(self):
+        """True if there's a LineTerminator before the current token.
+
+        Call this only after having called `.peek()` more recently than
+        `.take()`.
+        """
+        assert self._next_kind is not None
+        i = self.previous_token_end
+        j = self.current_token_start
+        ws_between = self.src[i:j]
+        return (any(c in ws_between for c in '\r\n\u2028\u2029') or
+                (i == 0 and self.had_line_terminator_before_start))
 
     def take(self, k):
         match = self._next_match
@@ -201,8 +222,8 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         return match.group(1)
 
     def last_point_coords(self):
-        src_pre = self.src[:self.last_point]
+        src_pre = self.src[:self.current_token_start]
         lineno = 1 + src_pre.count("\n")
         line_start_index = src_pre.rfind("\n") + 1
-        column = self.last_point - line_start_index  # can be zero
+        column = self.current_token_start - line_start_index  # can be zero
         return lineno, column

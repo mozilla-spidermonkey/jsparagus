@@ -35,6 +35,16 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("{ doCrimes() }")
         self.assert_parses("function f() { ok }")
 
+    def test_asi_after_line_terminator(self):
+        self.assert_parses('''\
+           switch (value) {
+             case 1: break
+             case 2: console.log('2');
+           }
+        ''')
+        self.assert_syntax_error(
+            "switch (value) { case 1: break case 2: console.log('2'); }")
+
     def test_if_else(self):
         self.assert_parses("if (x) f();")
         self.assert_incomplete("if (x)")

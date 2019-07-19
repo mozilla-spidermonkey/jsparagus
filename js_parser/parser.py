@@ -21,10 +21,16 @@ class JSParser(Parser):
             parser_tables.actions,
             parser_tables.ctns,
             parser_tables.reductions,
-            lambda line: JSLexer(line, self),
+            self._new_lexer,
             Script_entry_state,
             parser_tables.DefaultBuilder()
         )
+        self.has_written = False
+
+    def _new_lexer(self, line):
+        is_extra_line = self.has_written
+        self.has_written = True
+        return JSLexer(line, self, had_line_terminator_before_start=is_extra_line)
 
     def can_close(self):
         """Override the base-class parser to cope with ASI in JS."""
@@ -52,6 +58,11 @@ class JSParser(Parser):
     def on_syntax_error(self, tokens, t):
         if t == '}':
             # Implement ASI at this point.
+            if (self.can_accept_terminal(';') and
+                    not self.can_accept_nonterminal('EmptyStatement', ';')):
+                self.asi()
+                return 'retry'
+        elif tokens.saw_line_terminator():
             if (self.can_accept_terminal(';') and
                     not self.can_accept_nonterminal('EmptyStatement', ';')):
                 self.asi()
