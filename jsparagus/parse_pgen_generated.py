@@ -187,28 +187,51 @@ ctns = [
 ]
 
 reductions = [
+    # 0. grammar ::= nt_defs => grammar(None, $0)
     ('grammar', 1, lambda builder, x0: builder.grammar(None, x0)),
+    # 1. grammar ::= token_defs nt_defs => grammar(Some($0), $1)
     ('grammar', 2, lambda builder, x0, x1: builder.grammar(x0, x1)),
+    # 2. token_defs ::= token_def => single($0)
     ('token_defs', 1, lambda builder, x0: builder.single(x0)),
+    # 3. token_defs ::= token_defs token_def => append($0, $1)
     ('token_defs', 2, lambda builder, x0, x1: builder.append(x0, x1)),
+    # 4. token_def ::= "token" IDENT "=" STR ";" => const_token($0, $1, $2, $3, $4)
     ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.const_token(x0, x1, x2, x3, x4)),
+    # 5. token_def ::= "var" "token" IDENT ";" => var_token($0, $1, $2, $3)
     ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.var_token(x0, x1, x2, x3)),
+    # 6. nt_defs ::= nt_def => nt_defs_single($0)
     ('nt_defs', 1, lambda builder, x0: builder.nt_defs_single(x0)),
+    # 7. nt_defs ::= nt_defs nt_def => nt_defs_append($0, $1)
     ('nt_defs', 2, lambda builder, x0, x1: builder.nt_defs_append(x0, x1)),
+    # 8. nt_def ::= "nt" IDENT "{" "}" => nt_def(None, $0, $1, $2, None, $3)
     ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def(None, x0, x1, x2, None, x3)),
+    # 9. nt_def ::= "goal" "nt" IDENT "{" "}" => nt_def(Some($0), $1, $2, $3, None, $4)
     ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(x0, x1, x2, x3, None, x4)),
+    # 10. nt_def ::= "nt" IDENT "{" prods "}" => nt_def(None, $0, $1, $2, Some($3), $4)
     ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(None, x0, x1, x2, x3, x4)),
+    # 11. nt_def ::= "goal" "nt" IDENT "{" prods "}" => nt_def(Some($0), $1, $2, $3, Some($4), $5)
     ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def(x0, x1, x2, x3, x4, x5)),
+    # 12. prods ::= prod => single($0)
     ('prods', 1, lambda builder, x0: builder.single(x0)),
+    # 13. prods ::= prods prod => append($0, $1)
     ('prods', 2, lambda builder, x0, x1: builder.append(x0, x1)),
+    # 14. prod ::= terms ";" => prod($0, None, $1)
     ('prod', 2, lambda builder, x0, x1: builder.prod(x0, None, x1)),
+    # 15. prod ::= terms action ";" => prod($0, Some($1), $2)
     ('prod', 3, lambda builder, x0, x1, x2: builder.prod(x0, x1, x2)),
+    # 16. terms ::= term => single($0)
     ('terms', 1, lambda builder, x0: builder.single(x0)),
+    # 17. terms ::= terms term => append($0, $1)
     ('terms', 2, lambda builder, x0, x1: builder.append(x0, x1)),
+    # 18. term ::= symbol => $0
     ('term', 1, lambda builder, x0: x0),
+    # 19. term ::= symbol "?" => optional($0, $1)
     ('term', 2, lambda builder, x0, x1: builder.optional(x0, x1)),
+    # 20. symbol ::= IDENT => ident($0)
     ('symbol', 1, lambda builder, x0: builder.ident(x0)),
+    # 21. symbol ::= STR => str($0)
     ('symbol', 1, lambda builder, x0: builder.str(x0)),
+    # 22. action ::= "=>" IDENT => action($0, $1)
     ('action', 2, lambda builder, x0, x1: builder.action(x0, x1)),
 ]
 

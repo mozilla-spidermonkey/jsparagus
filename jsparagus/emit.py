@@ -43,7 +43,7 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
             return "x{}".format(a)
 
     out.write("reductions = [\n")
-    for prod in prods:
+    for prod_index, prod in enumerate(prods):
         if isinstance(prod.nt, InitNt):
             continue
         nparams = sum(1 for e in prod.rhs if is_concrete_element(e))
@@ -51,6 +51,9 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
         fn = ("lambda builder, "
               + ", ".join(names)
               + ": " + action(prod.action))
+        out.write("    # {}. {}\n".format(
+            prod_index,
+            grammar.production_to_str(prod.nt, prod.rhs)))
         out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
     out.write("]\n\n\n")  # two blank lines before class.
 
