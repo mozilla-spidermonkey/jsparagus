@@ -544,15 +544,26 @@ def expand_all_optional_elements(grammar):
     for nt in grammar.nonterminals:
         expanded_grammar[nt] = []
         for prod_index, p in enumerate(grammar.nonterminals[nt]):
+            # Aggravatingly, a reduce-expression that's an int is not
+            # simply an offset into p.body. It only counts "concrete"
+            # elements. Make a mapping for converting reduce-expressions to
+            # offsets.
+            reduce_expr_to_offset = [
+                i
+                for i, e in enumerate(p.body)
+                if is_concrete_element(e)
+            ]
+
             for pair in expand_optional_symbols_in_rhs(p.body, grammar, empties):
                 expanded_rhs, removals = pair
 
                 def adjust_reduce_expr(expr):
                     if isinstance(expr, int):
-                        if expr in removals:
-                            return removals[expr]
-                        was_optional = is_optional(p.body[expr])
-                        expr -= sum(1 for r in removals if r < expr)
+                        i = reduce_expr_to_offset[expr]
+                        if i in removals:
+                            return removals[i]
+                        was_optional = is_optional(p.body[i])
+                        expr -= sum(1 for r in removals if r < i)
                         if was_optional:
                             return Some(expr)
                         else:

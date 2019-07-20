@@ -626,7 +626,9 @@ class GenTestCase(unittest.TestCase):
                 ],
             })
         )
-        self.assertParse("x = 0")
+        self.assertEqual(
+            self.parse(self.tokenize("x = 0")),
+            ("decl", None, "x", "=", "0"))
         self.assertParse("thread: x = 0")
         self.assertNoParse(
             "public: x = 0",
