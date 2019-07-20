@@ -30,12 +30,12 @@ where
                     continue;
                 }
                 // Idents
-                '$' | '_' | 'a'...'z' | 'A'...'Z' => {
+                '$' | '_' | 'a'..='z' | 'A'..='Z' => {
                     let mut var = String::new();
                     var.push(c);
                     while let Some(&ch) = self.chars.peek() {
                         match ch {
-                            '$' | '_' | 'a'...'z' | 'A'...'Z' | '0'...'9' => {
+                            '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
                                 self.chars.next();
                                 var.push(ch);
                             }
@@ -93,12 +93,12 @@ where
                     }
                 }
                 // Numbers
-                '0'...'9' => {
+                '0'..='9' => {
                     let mut var = String::new();
                     var.push(c);
                     while let Some(next) = self.chars.peek() {
                         match next {
-                            '0'...'9' => {
+                            '0'..='9' => {
                                 self.chars.next();
                                 var.push(c);
                             }
