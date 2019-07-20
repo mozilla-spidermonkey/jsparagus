@@ -494,17 +494,21 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
     yields the two pairs `(["if"], [1])` and `["if", "else"], []`.
     """
 
-    replacement = None
     for i in range(start_index, len(rhs)):
-        if is_optional(rhs[i]):
-            if grammar.is_nt(rhs[i].inner) and rhs[i].inner in empties:
+        e = rhs[i]
+        if is_optional(e):
+            if grammar.is_nt(e.inner) and e.inner in empties:
                 # If this is already possibly-empty in the input grammar, it's an
                 # error! The grammar is ambiguous.
-                raise ValueError("ambiguous grammar: {} is ambiguous because {} can match the empty string"
-                                 .format(grammar.element_to_str(rhs[i]), grammar.element_to_str(rhs[i].inner)))
+                raise ValueError(
+                    "ambiguous grammar: {} is ambiguous because {} can match "
+                    "the empty string"
+                    .format(grammar.element_to_str(e),
+                            grammar.element_to_str(e.inner)))
+            replacement = None
             break
-        elif grammar.is_nt(rhs[i]) and rhs[i] in empties:
-            replacement = empties[rhs[i]]
+        elif grammar.is_nt(e) and e in empties:
+            replacement = empties[e]
             break
     else:
         yield rhs[start_index:], {}
