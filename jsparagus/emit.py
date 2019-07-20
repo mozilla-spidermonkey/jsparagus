@@ -240,8 +240,13 @@ class RustParserWriter:
             visit_type(method.return_type)
         return names
 
-    def type_to_rust(self, ty, handler):
-        """Convert a jsparagus type (see types.py) to Rust."""
+    def type_to_rust(self, ty, handler, boxed=False):
+        """Convert a jsparagus type (see types.py) to Rust.
+
+        Pass boxed=True if you're dealing with concrete types.
+        This is necessary because
+        DefaultHandler::Expression = Box<concrete::Expression>.
+        """
         if ty is types.UnitType:
             return '()'
         elif ty == 'str':
@@ -250,11 +255,15 @@ class RustParserWriter:
             return 'bool'
         elif isinstance(ty, types.NtType):
             if handler == "":
-                return ty.name
+                rty = ty.name
             else:
-                return handler + '::' + ty.name
+                rty = handler + '::' + ty.name
+            if boxed:
+                return 'Box<{}>'.format(rty)
+            else:
+                return rty
         elif isinstance(ty, types.OptionType):
-            return 'Option<{}>'.format(self.type_to_rust(ty.t, handler))
+            return 'Option<{}>'.format(self.type_to_rust(ty.t, handler, boxed))
         else:
             raise TypeError("unexpected type: {!r}".format(ty))
 
@@ -295,7 +304,7 @@ class RustParserWriter:
                     continue
                 method_name = self.to_camel_case(self.method_name_to_rust(tag))
                 arg_types = [
-                    "Box<" + self.type_to_rust(ty, "") + ">"
+                    self.type_to_rust(ty, "", boxed=True)
                     for ty in method.argument_types
                     if ty != types.UnitType
                 ]
@@ -310,7 +319,7 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "impl Handler for DefaultHandler {")
         for name in self.get_associated_type_names():
-            self.write(1, "type {} = concrete::{};", name, name)
+            self.write(1, "type {} = Box<concrete::{}>;", name, name)
 
         for tag, method in self.grammar.methods.items():
             method_name = self.method_name_to_rust(tag)
@@ -326,14 +335,14 @@ class RustParserWriter:
                 return_type_tag = ' -> ' + \
                     self.type_to_rust(method.return_type, "Self")
 
-            args = ", ".join("a{}: {}".format(i, t)
-                             for i, t in enumerate(arg_types))
-            params = ", ".join("Box::new(a{})".format(i)
+            args = "".join(", a{}: {}".format(i, t)
+                           for i, t in enumerate(arg_types))
+            params = ", ".join("a{}".format(i)
                                for i, t in enumerate(arg_types))
 
-            self.write(1, "fn {}(&self, {}){} {{",
+            self.write(1, "fn {}(&self{}){} {{",
                        method_name, args, return_type_tag)
-            self.write(2, "concrete::{}::{}({})",
+            self.write(2, "Box::new(concrete::{}::{}({}))",
                        method.return_type.name, method_name_camel, params)
             self.write(1, "}")
         self.write(0, "}")
@@ -357,6 +366,23 @@ class RustParserWriter:
         self.write(0, "];")
         self.write(0, "")
 
+    def element_type(self, e):
+        # Mostly duplicated from types.py. :(
+        if isinstance(e, str):
+            if e in self.grammar.nonterminals:
+                return self.grammar.nt_types[e]
+            elif e in self.grammar.variable_terminals:
+                return 'str'
+            else:
+                # constant terminal
+                return types.UnitType
+        elif isinstance(e, Optional):
+            return types.OptionType(self.element_type(e.inner))
+        elif is_apply(e):
+            return self.grammar.nt_types[e.nt]
+        else:
+            assert False, "unexpected element type: {!r}".format(e)
+
     def reduce(self, generic):
         if generic:
             self.write(0,
@@ -373,17 +399,20 @@ class RustParserWriter:
                 self.write(3, "// {}",
                            self.grammar.production_to_str(prod.nt, prod.rhs, prod.action))
 
-                variable_used = [False] * len(prod.rhs)
+                elements = [e for e in prod.rhs if is_concrete_element(e)]
+                variable_used = [False] * len(elements)
 
                 def compile_reduce_expr(expr):
                     """Compile a reduce expression to Rust"""
                     if isinstance(expr, CallMethod):
                         method_type = self.grammar.methods[expr.method]
                         method_name = self.method_name_to_rust(expr.method)
+                        assert len(method_type.argument_types) == len(expr.args)
                         args = ', '.join(
                             compile_reduce_expr(arg)
-                            for index, arg in enumerate(expr.args)
-                            if method_type.argument_types[index] is not types.UnitType)
+                            for ty, arg in zip(method_type.argument_types,
+                                               expr.args)
+                            if ty != types.UnitType)
                         call = "handler.{}({})".format(method_name, args)
                         return "{}".format(call)
                     elif isinstance(expr, Some):
@@ -394,17 +423,27 @@ class RustParserWriter:
                         # can't be 'accept' because we filter out InitNt productions
                         assert isinstance(expr, int)
                         variable_used[expr] = True
-                        return "unsafe {{ *Box::from_raw(x{} as *mut _) }}".format(expr)
+                        return "x{}".format(expr)
 
                 compiled_expr = compile_reduce_expr(prod.action)
 
-                for index in range(len(prod.rhs)-1, -1, -1):
+                for index, e in reversed(list(enumerate(elements))):
+                    ty = self.element_type(e)
+                    if isinstance(ty, types.NtType):
+                        rust_ty = "*mut concrete::" + ty.name
+                    else:
+                        rust_ty = "*mut " + self.type_to_rust(ty, "Self")
                     if variable_used[index]:
-                        self.write(3, "let x{} = stack.pop().unwrap();", index)
+                        self.write(
+                            3,
+                            "let x{} = unsafe {{"
+                            " Box::from_raw(stack.pop().unwrap() as {}) }};",
+                            index,
+                            rust_ty)
                     else:
                         self.write(3, "stack.pop();", index)
 
-                self.write(3, "stack.push(Box::into_raw(Box::new({})) as *mut ());",
+                self.write(3, "stack.push(Box::into_raw({}) as *mut ());",
                            compile_reduce_expr(prod.action))
                 self.write(3, "NonterminalId::{}",
                            self.nonterminal_to_camel(prod.nt))
@@ -433,7 +472,7 @@ class RustParserWriter:
                 self.write(1, "handler: &H,")
             else:
                 result_type = self.type_to_rust(
-                    result_type_jsparagus, "concrete")
+                    result_type_jsparagus, "concrete", boxed=True)
                 self.write(0, "pub fn parse_{}<In: TokenStream<Token = Token>>(",
                            init_nt)
                 self.write(1, "handler: &DefaultHandler,")
@@ -441,5 +480,6 @@ class RustParserWriter:
             self.write(0, ") -> Result<{}, &'static str> {{", result_type)
             self.write(1, "let result = parser_runtime::parse(handler, tokens, {}, &TABLES, reduce)?;",
                        index)
-            self.write(1, "Ok(unsafe { *Box::from_raw(result as *mut _) } )")
+            self.write(1, "Ok(unsafe { Box::from_raw(result as *mut _) } )")
             self.write(0, "}")
+            self.write(0, "")
