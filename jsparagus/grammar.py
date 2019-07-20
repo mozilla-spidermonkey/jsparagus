@@ -115,9 +115,12 @@ def expr_to_str(expr):
             ', '.join(expr_to_str(arg) for arg in expr.args))
     elif expr is None:
         return "None"
-    else:
-        assert isinstance(expr, Some)
+    elif isinstance(expr, Some):
         return "Some({})".format(expr_to_str(expr.inner))
+    elif expr == "accept":
+        return "<accept>"
+    else:
+        raise ValueError("unrecognized expression: {!r}".format(expr))
 
 
 # A Grammar object is just an object that contains a bunch of productions, like
@@ -440,11 +443,13 @@ class Grammar:
         else:
             return self.symbols_to_str(rhs)
 
-    def production_to_str(self, nt, rhs):
+    def production_to_str(self, nt, rhs, action=()):
         # As we have two ways of representing productions at the moment, just
-        # take two arguments :(
-        return "{} ::= {}".format(
-            self.element_to_str(nt), self.rhs_to_str(rhs))
+        # take multiple arguments :(
+        return "{} ::= {}{}".format(
+            self.element_to_str(nt),
+            self.rhs_to_str(rhs),
+            "" if action == () else " => " + expr_to_str(action) )
 
     def lr_item_to_str(self, prods, item):
         prod = prods[item.prod_index]

@@ -53,7 +53,7 @@ def write_python_parser(out, grammar, states, prods, init_state_map):
               + ": " + action(prod.action))
         out.write("    # {}. {}\n".format(
             prod_index,
-            grammar.production_to_str(prod.nt, prod.rhs)))
+            grammar.production_to_str(prod.nt, prod.rhs, prod.action)))
         out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
     out.write("]\n\n\n")  # two blank lines before class.
 
@@ -371,7 +371,7 @@ class RustParserWriter:
             if prod.nt in self.nonterminals:
                 self.write(2, "{} => {{", i)
                 self.write(3, "// {}",
-                           self.grammar.production_to_str(prod.nt, prod.rhs))
+                           self.grammar.production_to_str(prod.nt, prod.rhs, prod.action))
 
                 variable_used = [False] * len(prod.rhs)
 
