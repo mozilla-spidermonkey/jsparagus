@@ -40,7 +40,7 @@ fn main() {
     }
 }
 
-pub fn get_input(prompt: &str) -> Result<String, Box<Error>> {
+pub fn get_input(prompt: &str) -> Result<String, Box<dyn Error>> {
     print!("{}", prompt);
     io::stdout().flush()?;
     let mut input = String::new();
