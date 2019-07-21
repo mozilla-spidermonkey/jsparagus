@@ -299,6 +299,15 @@ each parameter could nearly double the size of the parser. Instead, the
 parameters must be tracked at run time somehow.
 
 
+### Lookahead restrictions (**)
+
+*(entangled with: restricted productions)*
+
+TODO (I implemented this by hacking the entire LR algorithm. Most every
+part of it is touched, although in ways that seem almost obvious once
+you understand LR inside and out.)
+
+
 ### Automatic Semicolon Insertion (**)
 
 *(entangled with: restricted productions, slashes)*
@@ -348,20 +357,64 @@ every time it needs to parse a semicolon that might be optional.  The
 special method has to peek at the next token and consume it only if it’s
 a semicolon. This would not be so bad if it weren’t for slashes.
 
-In a parser generator, ASI is a tough problem. Getting started is easy:
+In a parser generator, ASI can be implemented using an error recovery
+mechanism.
 
-1.  Determine which states can accept a semicolon that may be subject to
-    ASI. This part is easy, except for the *LexicalDeclaration*
-    situation.
+I think the [error recovery mechanism in
+yacc/Bison](https://www.gnu.org/software/bison/manual/bison.html#Error-Recovery)
+is too imprecise—when an error happens, it discards states from the
+stack searching for a matching error-handling rule. The manual says
+“Error recovery strategies are necessarily guesses.”
 
-2.  At runtime, in those states, if an error occurs, call a recovery
-    function that checks the conditions for ASI (Did we see a
-    *LineTerminator*, or `}`, or end of file? etc.) and, if ASI is
-    allowed, fixes up the state of the state machine to continue as if
-    we saw a semicolon token.
+But here's how this could work in an LR parser generator:
 
-But the interactions with *LexicalDeclaration* and slashes make it
-harder than it looks.
+1.  For each production in the ES spec grammar where ASI could happen, e.g.
+
+    ```
+    ImportDeclaration ::= `import` ModuleSpecifier `;`
+                                                    { import_declaration($2); }
+    ```
+
+    add an ASI production, like this:
+
+    ```
+    ImportDeclaration ::= `import` ModuleSpecifier [ERROR]
+                                       { check_asi(); import_declaration($2); }
+    ```
+
+    What does this mean? This production can be matched, like any other
+    production, but it's a fallback. All other productions take
+    precedence. The symbol `[ERROR]` does not consume any tokens.
+
+2.  While generating the LR state graph, treat `[ERROR]` as a terminal
+    symbol.
+
+3.  However the lexer is never going to produce `[ERROR]` tokens at run
+    time—it's not a real token type—so don't include a column for
+    `[ERROR]` in the parser table. Instead, hack the parser tables,
+    replacing every table entry that says "error" to say "reduce"
+    instead if there's an error production that matches.
+
+This solves most of the ASI issues:
+
+* [x] Whitespace sensitivity: That's what `check_asi()` is for. It
+    should signal an error if we're not at the end of a line.
+
+* [x] Special treatment of `do`-`while` loops: Make an error production,
+    but don't `check_asi()`.
+
+* [x] Rule banning ASI in *EmptyStatement* or `for(;;)`:
+    Easy, don't create error productions for those.
+
+    * [x] Banning ASI in `for (let x=1 \n x<9; x++)`: Manually adjust
+        the grammar, copying *LexicalDeclaration* so that there's a
+        *LexicalDeclarationNoASI* production used only by `for`
+        statements. Not a big deal, as it turns out.
+
+* [x] Slashes: Perhaps have `check_asi` reset the lexer to rescan the
+    next token, if it starts with `/`.
+
+* [ ] Restricted productions: Not solved. Read on.
 
 
 ### Restricted productions (**)
