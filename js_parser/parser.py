@@ -56,13 +56,8 @@ class JSParser(Parser):
         self.write_terminal(bogus_lexer, ';')
 
     def on_syntax_error(self, tokens, t):
-        if t == '}':
+        if t == '}' or tokens.saw_line_terminator():
             # Implement ASI at this point.
-            if (self.can_accept_terminal(';') and
-                    not self.can_accept_nonterminal('EmptyStatement', ';')):
-                self.asi()
-                return 'retry'
-        elif tokens.saw_line_terminator():
             if (self.can_accept_terminal(';') and
                     not self.can_accept_nonterminal('EmptyStatement', ';')):
                 self.asi()
