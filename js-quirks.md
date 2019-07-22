@@ -366,7 +366,8 @@ is too imprecise—when an error happens, it discards states from the
 stack searching for a matching error-handling rule. The manual says
 “Error recovery strategies are necessarily guesses.”
 
-But here's how this could work in an LR parser generator:
+But here’s a slightly more careful error recovery mechanism that could
+do the job:
 
 1.  For each production in the ES spec grammar where ASI could happen, e.g.
 
@@ -384,16 +385,20 @@ But here's how this could work in an LR parser generator:
 
     What does this mean? This production can be matched, like any other
     production, but it's a fallback. All other productions take
-    precedence. The symbol `[ERROR]` does not consume any tokens.
+    precedence.
 
-2.  While generating the LR state graph, treat `[ERROR]` as a terminal
-    symbol.
+2.  While generating the parser, treat `[ERROR]` as a terminal
+    symbol. It can be included in start sets and follow sets, lookahead,
+    and so forth.
 
-3.  However the lexer is never going to produce `[ERROR]` tokens at run
-    time—it's not a real token type—so don't include a column for
-    `[ERROR]` in the parser table. Instead, hack the parser tables,
-    replacing every table entry that says "error" to say "reduce"
-    instead if there's an error production that matches.
+3.  At run time, when an error happens, synthesize an `[ERROR]` token.
+    Let that bounce through the state machine. It will cause zero or
+    more reductions. Then, it might actually match a production that
+    contains `[ERROR]`, like the ASI production above.
+
+    Otherwise, we’ll get another error—the entry in the parser table for
+    an `[ERROR]` token at this state will be an `error` entry. Then we
+    really have a syntax error.
 
 This solves most of the ASI issues:
 
