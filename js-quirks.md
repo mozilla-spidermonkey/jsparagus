@@ -34,7 +34,8 @@ Yacc aside: This should seem a little outrageous at first, as `else` is
 hardly an operator. It helps if you understand what Yacc is doing. In LR
 parsers, this kind of ambiguity in the grammar manifests as a
 shift-reduce conflict. In this case, when we’ve already parsed `if (
-Expression ) Statement` and are looking at `else`, it’s unclear to Yacc
+Expression ) Statement if ( Expression ) Statement`
+and are looking at `else`, it’s unclear to Yacc
 whether to reduce the if-statement or shift `else`. Yacc does not offer
 a feature that lets us just say "always shift `else` here"; but there
 *is* a Yacc feature that lets us resolve shift-reduce conflicts in a
