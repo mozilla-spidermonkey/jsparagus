@@ -43,7 +43,7 @@ rather odd, indirect way: operator precedence.  We can resolve this
 conflict by making `else` higher-precedence than the preceding symbol
 `)`.
 
-Alternatively, I believe it’s equivalent to add "[lookahead /= `else`]"
+Alternatively, I believe it’s equivalent to add "[lookahead ≠ `else`]"
 at the end of the IfStatement production that doesn’t have an `else`.
 
 
