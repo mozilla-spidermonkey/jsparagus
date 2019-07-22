@@ -529,7 +529,8 @@ approaches, you can skip the first two.
     a line break, and the one we jump to if there is a line break.
 
 In all cases it’ll be hard to have confidence that the resulting parser
-generator is really sound. I don’t know exactly what property of the few
+generator is really sound. (That is, it might not properly reject all
+ambiguous grammars.) I don’t know exactly what property of the few
 special uses in the ES grammar makes them seem benign.
 
 
