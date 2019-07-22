@@ -1,4 +1,4 @@
-/client/target/
+target/
 __pycache__/
 *.pyc
 venv/
