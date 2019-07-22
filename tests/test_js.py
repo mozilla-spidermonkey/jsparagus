@@ -2,12 +2,19 @@
 
 import unittest
 import jsparagus.lexer
-from js_parser.parser import parse_Script
+from js_parser.parser import parse_Script, JSParser
+from js_parser.lexer import JSLexer
 
 
 class ESTestCase(unittest.TestCase):
     def assert_parses(self, s):
-        parse_Script(s)
+        if isinstance(s, list):
+            f = JSLexer(JSParser())
+            for chunk in s:
+                f.write(chunk)
+            f.close()
+        else:
+            parse_Script(s)
 
     def assert_incomplete(self, s):
         """Assert that s fails to parse with UnexpectedEndError.
@@ -79,6 +86,22 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("{} /x/")
         self.assert_parses("of / 2")
 
+    def test_incomplete_comments(self):
+        self.assert_syntax_error("/*")
+        self.assert_syntax_error("/* hello world")
+        self.assert_syntax_error("/* hello world *")
+        self.assert_parses(["/* hello\n", " world */"])
+        self.assert_parses(["// oawfeoiawj", "ioawefoawjie"])
+        self.assert_parses(["// oawfeoiawj", "ioawefoawjie\n ok();"])
+        self.assert_parses(["// oawfeoiawj", "ioawefoawjie", "jiowaeawojefiw"])
+        self.assert_parses(["// oawfeoiawj", "ioawefoawjie", "jiowaeawojefiw\n ok();"])
+
+    def test_awkward_chunks(self):
+        self.assert_parses(["let", "ter.head = 1;"])
+        self.assert_parses(["let", " x = 1;"])
+
+        # `list()` here explodes the string into a list of one-character strings.
+        self.assert_parses(list("function f() { ok(); }"))
 
 if __name__ == '__main__':
     unittest.main()

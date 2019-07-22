@@ -6,22 +6,23 @@ See README.md for instructions.
 """
 
 import argparse
+from .lexer import JSLexer
 from .parser import JSParser
 from jsparagus.lexer import SyntaxError
 
 
-def interactive_input(parser, prompt="js> "):
+def interactive_input(lexer, prompt="js> "):
     while True:
         line = input(prompt)
-        parser.write(line + "\n")
-        if parser.can_close():
-            return parser.close()
+        lexer.write(line + "\n")
+        if lexer.can_close():
+            return lexer.close()
         prompt = "..> "
 
 def rpl():
     """Read-print loop."""
     while True:
-        parser = JSParser()
+        parser = JSLexer(JSParser())
         try:
             result = interactive_input(parser)
         except EOFError:

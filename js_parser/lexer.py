@@ -1,4 +1,24 @@
-"""Vague approximation of an ECMAScript lexer."""
+"""Vague approximation of an ECMAScript lexer.
+
+A parser has two levels: the *lexer* scans bytes to produce tokens. The
+*parser* consumes tokens and produces ASTs.
+
+In a traditional design, the parser drives the process. It *pulls* one token at
+a time from the lexer. However, for a parser that can accept arbitrary slabs of
+data, scan them, then keep going, it makes more sense for the user to feed
+those slabs to the lexer, which then *pushes* tokens to the parser. So that's
+what we do.
+
+Usage:
+
+    from js_parser.lexer import JSLexer
+    from js_parser.parser import JSParser
+
+    lexer = JSLexer(JSParser())
+    lexer.write(some_source_text)
+    lexer.write(some_more_source_text)
+    ast = lexer.close()
+"""
 
 import re
 import jsparagus.lexer
@@ -19,14 +39,18 @@ def _get_punctuators():
 TOKEN_RE = re.compile(r'''(?x)
   (?:
       # WhiteSpace
-      [\ \t\v\r\n\u00a0\ufeff]
+      [\ \t\v\r\n\u00a0\u2028\u2029\ufeff]
       # SingleLineComment
-    | // [^\r\n\u2028\u2029]*
+    | // [^\r\n\u2028\u2029]* (?= [\r\n\u2028\u2029] | \Z )
       # MultiLineComment
     | /\*  (?: [^*] | \*+[^/] )*  \*+/
   )*
   (
-      # IdentifierName
+      # Incomplete MultiLineComment
+      /\*  (?: [^*] | \*+[^/] )*  \**
+    | # Incomplete SingleLineComment
+      // [^\r\n\u2028\u2029]*
+    | # IdentifierName
       (?: [$_A-Za-z]     | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})
       (?: [$_0-9A-Za-z]  | \\ u [0-9A-Fa-f]{4} | \\ u \{ [0-9A-Fa-f]+ \})*
     | # NumericLiteral
@@ -69,9 +93,7 @@ TOKEN_RE = re.compile(r'''(?x)
       "
     | # Template
       ` (?: [^`\\$] | \\. )* (?: \${ | ` )
-    | # Any other character is an error.
-      .
-    | \Z #end of string
+    | # illegal character or end of input (this branch matches no characters)
   )
 '''.replace("<INSERT_PUNCTUATORS>", _get_punctuators()))
 
@@ -119,27 +141,62 @@ endif
 
 class JSLexer(jsparagus.lexer.BaseLexer):
     """Vague approximation of an ECMAScript lexer. """
-    def __init__(self, source, parser, filename=None,
-                 had_line_terminator_before_start=False):
-        self.src = source
+    def __init__(self, parser, filename=None):
+        self.parser = parser
         self.filename = filename
+        self.src = ''
         self.previous_token_end = 0
         self.current_token_start = 0
         self.point = 0
-        self._next_kind = None
-        self.parser = parser
-        self.had_line_terminator_before_start = \
-            had_line_terminator_before_start
 
-    def _match(self):
+    def write(self, text):
+        self.src += text
+        self._drain(closing=False)
+
+    def close(self):
+        self._drain(closing=True)
+        assert self.src == ''
+        return self.parser.close()
+
+    def _drain(self, closing):
+        assert self.previous_token_end == 0
+        assert self.current_token_start == 0
+        assert self.point == 0
+
+        token = self._match(closing)
+        while token is not None:
+            self.parser.write_terminal(self, token)
+            token = self._match(closing)
+
+        self.src = self.src[self.point:]
+        self.point = 0
+        self.previous_token_end = 0
+        self.current_token_start = 0
+
+    def _match(self, closing):
         match = self._next_match = TOKEN_RE.match(self.src, self.point)
-        assert match is not None, "TOKEN_RE should always match"
-        token = match.group(1)
-        self.point = match.start(1)
+        assert match is not None
 
-        if token == '':
-            assert match.end() == len(self.src)
+        if match.end() == len(self.src) and not closing:
+            # The current token runs right up against the end of the current
+            # chunk of source and thus might continue in the next chunk. Do not
+            # move self.point.
             return None
+
+        token = match.group(1)
+        if token == '':
+            # Whitespace followed by end of input or illegal character.
+            if match.end() == len(self.src):
+                # End of input. Success!
+                assert closing
+                self.point = match.end()
+                return None
+            else:
+                c = self.src[match.end()]
+                self.throw("unexpected character: {!r}".format(c))
+
+        self.current_token_start = match.start(1)
+        self.point = match.start(1)
         c = token[0]
         if c.isdigit() or c == '.' and token != '.':
             return 'NumericLiteral'
@@ -159,6 +216,14 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             else:
                 return 'Identifier'
         elif c == '/':
+            if token.startswith(('/*', '//')):
+                # Incomplete comment. (In non-closing mode, this is handled
+                # above, immediately after the match.)
+                assert match.end() == len(self.src)
+                assert closing
+                self.point = len(self.src)
+                self.throw("incomplete comment at end of source")
+
             # We choose RegExp vs. division based on what the parser can
             # accept, a literal implementation of the spec.
             #
@@ -186,20 +251,10 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         elif c in '{()[];,~?:.<>=!+-*%&|^':
             return token
         else:
-            assert len(token) == 1
-            self.throw("unexpected character: {!r}".format(c))
+            assert False
 
     def peek(self):
-        self.previous_token_end = self.point
-        if self._next_kind is not None:
-            return self._next_kind
-        hit = self._next_kind = self._match()
-        if hit is None:
-            self.current_token_start = self.point = len(self.src)
-            return None
-        self.current_token_start = self._next_match.start(1)
-        self.point = self._next_match.end()
-        return hit
+        raise TypeError("this is not a standard lexer")
 
     def saw_line_terminator(self):
         """True if there's a LineTerminator before the current token.
@@ -207,23 +262,25 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         Call this only after having called `.peek()` more recently than
         `.take()`.
         """
-        assert self._next_kind is not None
         i = self.previous_token_end
         j = self.current_token_start
         ws_between = self.src[i:j]
-        return (any(c in ws_between for c in '\r\n\u2028\u2029') or
-                (i == 0 and self.had_line_terminator_before_start))
+        return any(c in ws_between for c in '\r\n\u2028\u2029')
 
     def take(self, k):
         match = self._next_match
         self.point = match.end()
-        self._next_kind = None
         self._next_match = None
         return match.group(1)
 
     def last_point_coords(self):
+        # TODO - count lines and characters as we go
         src_pre = self.src[:self.current_token_start]
         lineno = 1 + src_pre.count("\n")
         line_start_index = src_pre.rfind("\n") + 1
         column = self.current_token_start - line_start_index  # can be zero
         return lineno, column
+
+    def can_close(self):
+        match = TOKEN_RE.match(self.src)
+        return match.group(1) == '' and self.parser.can_close()

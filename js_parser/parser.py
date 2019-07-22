@@ -30,7 +30,10 @@ class JSParser(Parser):
     def _new_lexer(self, line):
         is_extra_line = self.has_written
         self.has_written = True
-        return JSLexer(line, self, had_line_terminator_before_start=is_extra_line)
+        return JSLexer(self)
+
+    def write(self, text):
+        raise TypeError("this is not a standard parser")
 
     def can_close(self):
         """Override the base-class parser to cope with ASI in JS."""
@@ -40,20 +43,19 @@ class JSParser(Parser):
 
         # The hard case: maybe ASI would work?
         sim = self.simulator_clone()
-        bogus_lexer = JSLexer(";", self)
-        bogus_lexer.peek()
+        bogus_lexer = JSLexer(sim)
         try:
-            sim.write_terminal(bogus_lexer, ';')
-            sim.close()
-        except SyntaxError:
+            bogus_lexer.write(";")
+            bogus_lexer.close()
+        except SyntaxError as exc:
+            # If one isn't enough, more semicolons can't succeed.
             return False
         return True
 
     def asi(self):
         """Insert a semicolon."""
-        bogus_lexer = JSLexer(";", self)
-        bogus_lexer.peek()
-        self.write_terminal(bogus_lexer, ';')
+        bogus_lexer = JSLexer(self)
+        bogus_lexer.write("; ")
 
     def on_syntax_error(self, tokens, t):
         if t == '}' or tokens.saw_line_terminator():
@@ -74,6 +76,6 @@ class JSParser(Parser):
         return super().close()
 
 def parse_Script(text):
-    parser = JSParser()
-    parser.write(text)
-    return parser.close()
+    lexer = JSLexer(JSParser())
+    lexer.write(text)
+    return lexer.close()
