@@ -201,7 +201,7 @@ class Grammar:
                             raise ValueError("invalid grammar: undefined variable {!r} in production `grammar[{!r}][{}][{}]`"
                                              .format(arg_expr.name, nt, i, j))
                 return e
-            elif isinstance(e, LookaheadRule):
+            elif isinstance(e, LookaheadRule) or e is ErrorToken:
                 return e
             else:
                 raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}][{}]`: {!r}"
@@ -514,11 +514,16 @@ InitNt.__iter__ = None
 #
 # *   `LookaheadRule` objects are like lookahead assertions in regular
 #     expressions.
+#
+# *   The singleton object `ErrorToken` counts as a nonterminal but is never
+#     produced by the lexer. Instead it is artificially injected into the token
+#     stream just before a token that does not match anything.
 
 
 def is_concrete_element(e):
     """True if parsing the element `e` pushes a value to the parser stack."""
-    return not isinstance(e, LookaheadRule)
+    return (not isinstance(e, LookaheadRule) and
+            e is not ErrorToken)
 
 
 # Function application. Function nonterminals are expanded out very early in
@@ -591,6 +596,19 @@ def lookahead_intersect(a, b):
             return LookaheadRule(b.set - a.set, True)
         else:
             return LookaheadRule(a.set | b.set, False)
+
+
+class ErrorToken:
+    """Special token that can be consumed to handle a syntax error."""
+
+    def __str__(self):
+        return 'ErrorToken'
+
+    def __repr__(self):
+        return 'jsparagus.grammar.ErrorToken'
+
+
+ErrorToken = ErrorToken()
 
 
 Parameterized = collections.namedtuple("Parameterized", "params body")

@@ -34,7 +34,7 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, ConditionalRhs, Apply, Var,
+                      Optional, ConditionalRhs, Apply, Var, ErrorToken,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
@@ -158,11 +158,13 @@ def check_cycle_free(grammar):
                     elif isinstance(e, Optional):
                         if grammar.is_nt(e.inner):
                             result.append(e.inner)
-                    else:
-                        assert isinstance(e, LookaheadRule)
+                    elif isinstance(e, LookaheadRule):
                         # Ignore the restriction. We lose a little precision
                         # here; there could be a bug.
                         pass
+                    else:
+                        # ErrorToken matches the empty terminal-string.
+                        assert e is ErrorToken
                 else:
                     # If we get here, we didn't break, so our results are good!
                     # nt can definitely produce all the nonterminals in result.
@@ -344,7 +346,7 @@ def seq_start(grammar, start, seq):
         if EMPTY not in s:  # preceding elements never match the empty string
             break
         s.remove(EMPTY)
-        if grammar.is_terminal(e):
+        if grammar.is_terminal(e) or e is ErrorToken:
             s.add(e)
         elif grammar.is_nt(e):
             s |= start[e]
@@ -372,7 +374,7 @@ def make_start_set_cache(grammar, prods, start):
     def suffix_start_list(rhs):
         sets = [OrderedFrozenSet([EMPTY])]
         for e in reversed(rhs):
-            if grammar.is_terminal(e):
+            if grammar.is_terminal(e) or e is ErrorToken:
                 s = OrderedFrozenSet([e])
             elif grammar.is_nt(e):
                 s = start[e]
@@ -1190,7 +1192,8 @@ class State:
             rhs = prod.rhs
             if offset < len(rhs):
                 next_symbol = rhs[offset]
-                if grammar.is_terminal(next_symbol):
+                if (grammar.is_terminal(next_symbol) or
+                        next_symbol is ErrorToken):
                     if lookahead_contains(item.lookahead, next_symbol):
                         next_item = context.make_lr_item(
                             item.prod_index,
