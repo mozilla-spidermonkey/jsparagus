@@ -634,7 +634,9 @@ class ErrorToken:
         return 'ErrorToken'
 
     def __repr__(self):
-        return 'jsparagus.grammar.ErrorToken'
+        # Note: If you change this, you're likely to break Python output, since
+        # emit.py uses repr() in emitting parser tables.
+        return 'ErrorToken'
 
 
 ErrorToken = ErrorToken()

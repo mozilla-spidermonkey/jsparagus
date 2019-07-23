@@ -12,7 +12,7 @@ from . import types
 def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Apply) for key in grammar.nonterminals):
-        out.write("from jsparagus.runtime import Apply\n")
+        out.write("from jsparagus.runtime import Apply, ErrorToken\n")
     out.write("\n")
 
     out.write("actions = [\n")
