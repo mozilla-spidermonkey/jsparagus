@@ -262,7 +262,7 @@ def expand_function_nonterminals(grammar):
                 return e
 
         def expand_production(p):
-            return p.with_body([expand_element(e) for e in p.body])
+            return p.copy_with(body=[expand_element(e) for e in p.body])
 
         def expand_productions(plist):
             result = []

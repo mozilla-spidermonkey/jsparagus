@@ -72,8 +72,10 @@ class Production:
     def __repr__(self):
         return "Production(nt={!r}, body={!r}, action={!r})".format(self.nt, self.body, self.action)
 
-    def with_body(self, body):
-        return Production(self.nt, list(body), self.action)
+    def copy_with(self, **kwargs):
+        return Production(nt=kwargs.get('nt', self.nt),
+                          body=kwargs.get('body', self.body),
+                          action=kwargs.get('action', self.action))
 
 
 # ### Reduce actions
@@ -263,8 +265,10 @@ class Grammar:
                 if rhs.action != 'accept':
                     check_reduce_action(nt, i, rhs, rhs.action)
                 assert isinstance(rhs.body, list)
-                return rhs.with_body([validate_element(nt, i, j, e, context_params)
-                                      for j, e in enumerate(rhs.body)])
+                return rhs.copy_with(body=[
+                    validate_element(nt, i, j, e, context_params)
+                    for j, e in enumerate(rhs.body)
+                ])
             elif isinstance(rhs, list):
                 # Bare list, no action. Desugar to a Production, inferring a
                 # reasonable default action.

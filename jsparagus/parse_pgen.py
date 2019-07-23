@@ -205,7 +205,7 @@ def check_grammar(result):
     for nt, rhs_list in nonterminals.items():
         for i, p in enumerate(rhs_list):
             out_rhs = [check_element(nt, i, e) for e in p.body]
-            out[nt].append(p.with_body(out_rhs))
+            out[nt].append(p.copy_with(body=out_rhs))
 
     return (tokens, out, goal_nts)
 
