@@ -117,6 +117,7 @@ class Tokenizer(FlatStringLexer):
         if point == len(self.src):
             if closing:
                 self.point = point
+            self._current_match = None
             return None
 
         # Try the token_re.
@@ -147,6 +148,7 @@ class Tokenizer(FlatStringLexer):
         # entire remainder of self.src is a match.
         if not closing and match.end() == len(self.src):
             # This token might be extensible. Refuse to match.
+            self._current_match = None
             return None
 
         # This token definitely is not extensible.
