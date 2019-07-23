@@ -5,13 +5,13 @@ import unicodedata
 
 from .runtime import ERROR
 from .ordered import OrderedSet
-from .grammar import InitNt, CallMethod, Some, is_lookahead_rule, is_apply, is_concrete_element, Optional
+from .grammar import InitNt, CallMethod, Some, is_concrete_element, Apply, Optional
 from . import types
 
 
 def write_python_parser(out, grammar, states, prods, init_state_map):
     out.write("from jsparagus import runtime\n")
-    if any(is_apply(key) for key in grammar.nonterminals):
+    if any(isinstance(key, Apply) for key in grammar.nonterminals):
         out.write("from jsparagus.runtime import Apply\n")
     out.write("\n")
 
@@ -183,7 +183,7 @@ class RustParserWriter:
         self.write(0, "")
 
     def nonterminal_to_snake(self, ident):
-        if is_apply(ident):
+        if isinstance(ident, Apply):
             base_name = self.to_snek_case(ident.nt)
             args = ''.join((("_" + self.to_snek_case(name))
                             for name, value in ident.args if value))
@@ -378,7 +378,7 @@ class RustParserWriter:
                 return types.UnitType
         elif isinstance(e, Optional):
             return types.OptionType(self.element_type(e.inner))
-        elif is_apply(e):
+        elif isinstance(e, Apply):
             return self.grammar.nt_types[e.nt]
         else:
             assert False, "unexpected element type: {!r}".format(e)

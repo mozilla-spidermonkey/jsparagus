@@ -392,7 +392,7 @@ class Grammar:
     # === A few methods for dumping pieces of grammar.
 
     def element_to_str(self, e):
-        if is_apply(e):
+        if isinstance(e, Apply):
             def arg_to_str(name, value):
                 if value is True:
                     return '+' + name
@@ -413,9 +413,9 @@ class Grammar:
             if self.is_variable_terminal(e):
                 return e
             return '"' + repr(e)[1:-1] + '"'
-        elif is_optional(e):
+        elif isinstance(e, Optional):
             return self.element_to_str(e.inner) + "?"
-        elif is_lookahead_rule(e):
+        elif isinstance(e, LookaheadRule):
             if len(e.set) == 1:
                 op = "==" if e.positive else "!="
                 s = repr(list(e.set)[0])
@@ -518,7 +518,7 @@ InitNt.__iter__ = None
 
 def is_concrete_element(e):
     """True if parsing the element `e` pushes a value to the parser stack."""
-    return not is_lookahead_rule(e)
+    return not isinstance(e, LookaheadRule)
 
 
 # Function application. Function nonterminals are expanded out very early in
@@ -541,20 +541,11 @@ productions, one for every different argument tuple that is ever passed to it.
 """
 
 
-def is_apply(element):
-    """True if `element` smells like apples."""
-    return type(element) is Apply
-
-
 # Optional elements. These are expanded out before states are calculated,
 # so the core of the algorithm never sees them.
 Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
 Optional.__iter__ = None
-
-
-def is_optional(element):
-    return type(element) is Optional
 
 
 # Lookahead restrictions stay with us throughout the algorithm.
@@ -566,10 +557,6 @@ It never consumes any tokens itself. Instead, the right-hand side
 [LookaheadRule(frozenset(['a', 'b']), False), 'Thing']
 matches a Thing that does not start with the token `a` or `b`.
 """
-
-
-def is_lookahead_rule(element):
-    return type(element) is LookaheadRule
 
 
 # A lookahead restriction really just specifies a set of allowed terminals.

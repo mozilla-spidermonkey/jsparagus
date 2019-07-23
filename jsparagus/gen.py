@@ -34,10 +34,8 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, is_optional,
-                      ConditionalRhs, Apply, is_apply, Var,
-                      LookaheadRule, is_lookahead_rule, lookahead_contains,
-                      lookahead_intersect)
+                      Optional, ConditionalRhs, Apply, Var,
+                      LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
 
@@ -70,8 +68,8 @@ def empty_nt_set(grammar):
     empties = {}  # maps nts to actions.
 
     def production_is_empty(nt, p):
-        return all(is_lookahead_rule(e)
-                   or is_optional(e)
+        return all(isinstance(e, LookaheadRule)
+                   or isinstance(e, Optional)
                    or (grammar.is_nt(e) and e in empties)
                    for e in p.body)
 
@@ -90,7 +88,7 @@ def empty_nt_set(grammar):
                     tuple(eval(arg_expr) for arg_expr in expr.args))
             elif isinstance(expr, int):
                 e = stack[expr]
-                if is_optional(e):
+                if isinstance(e, Optional):
                     return None
                 else:
                     assert grammar.is_nt(e)
@@ -157,11 +155,11 @@ def check_cycle_free(grammar):
                                 break
                             all_possibly_empty_so_far = False
                             result = [e]
-                    elif is_optional(e):
+                    elif isinstance(e, Optional):
                         if grammar.is_nt(e.inner):
                             result.append(e.inner)
                     else:
-                        assert is_lookahead_rule(e)
+                        assert isinstance(e, LookaheadRule)
                         # Ignore the restriction. We lose a little precision
                         # here; there could be a bug.
                         pass
@@ -201,7 +199,7 @@ def check_lookahead_rules(grammar):
                 # XXX BUG: The next if-condition is insufficient, since it
                 # fails to detect a lookahead restriction followed by a
                 # nonterminal that can match the empty string.
-                if rhs and is_lookahead_rule(rhs[-1]):
+                if rhs and isinstance(rhs[-1], LookaheadRule):
                     raise ValueError(
                         "invalid grammar: lookahead restriction "
                         "at end of production: " +
@@ -253,9 +251,9 @@ def expand_function_nonterminals(grammar):
         def expand_element(e):
             if grammar.is_nt(e):
                 return get_derived_name(e, None)
-            elif is_optional(e):
+            elif isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
-            elif is_apply(e):
+            elif isinstance(e, Apply):
                 return get_derived_name(e.nt, tuple((name, evaluate_arg(arg))
                                                     for name, arg in e.args))
             else:
@@ -351,7 +349,7 @@ def seq_start(grammar, start, seq):
         elif grammar.is_nt(e):
             s |= start[e]
         else:
-            assert is_lookahead_rule(e)
+            assert isinstance(e, LookaheadRule)
             future = seq_start(grammar, start, seq[i + 1:])
             if e.positive:
                 future &= e.set
@@ -381,7 +379,7 @@ def make_start_set_cache(grammar, prods, start):
                 if EMPTY in s:
                     s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
             else:
-                assert is_lookahead_rule(e)
+                assert isinstance(e, LookaheadRule)
                 if e.positive:
                     s = OrderedFrozenSet(sets[-1] & e.set)
                 else:
@@ -496,7 +494,7 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
 
     for i in range(start_index, len(rhs)):
         e = rhs[i]
-        if is_optional(e):
+        if isinstance(e, Optional):
             if grammar.is_nt(e.inner) and e.inner in empties:
                 # If this is already possibly-empty in the input grammar, it's an
                 # error! The grammar is ambiguous.
@@ -515,7 +513,7 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
         return
 
     for expanded, r in expand_optional_symbols_in_rhs(rhs, grammar, empties, i + 1):
-        rhs_inner = rhs[i].inner if is_optional(rhs[i]) else rhs[i]
+        rhs_inner = rhs[i].inner if isinstance(rhs[i], Optional) else rhs[i]
         # without rhs[i]
         r2 = r.copy()
         r2[i] = replacement
@@ -562,7 +560,7 @@ def expand_all_optional_elements(grammar):
                         i = reduce_expr_to_offset[expr]
                         if i in removals:
                             return removals[i]
-                        was_optional = is_optional(p.body[i])
+                        was_optional = isinstance(p.body[i], Optional)
                         expr -= sum(1 for r in removals if r < i)
                         if was_optional:
                             return Some(expr)
@@ -791,7 +789,7 @@ def assert_items_are_compatible(grammar, prods, items):
     def item_history(item):
         return [e
                 for e in prods[item.prod_index].rhs[:item.offset]
-                if not is_lookahead_rule(e)]
+                if not isinstance(e, LookaheadRule)]
 
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
@@ -836,7 +834,8 @@ class PgenContext:
         item = LRItem(*args, **kwargs)
         assert isinstance(item.followed_by, OrderedFrozenSet)
         rhs = prods[item.prod_index].rhs
-        while item.offset < len(rhs) and is_lookahead_rule(rhs[item.offset]):
+        while (item.offset < len(rhs) and
+               isinstance(rhs[item.offset], LookaheadRule)):
             item = item._replace(
                 offset=item.offset + 1,
                 lookahead=lookahead_intersect(item.lookahead,
@@ -1280,7 +1279,7 @@ class State:
             prod = self.context.prods[item.prod_index]
             i = item.offset - 1
             assert i >= 0
-            while is_lookahead_rule(prod.rhs[i]):
+            while isinstance(prod.rhs[i], LookaheadRule):
                 i -= 1
                 assert i >= 0
             scenario.append(prod.rhs[i])
