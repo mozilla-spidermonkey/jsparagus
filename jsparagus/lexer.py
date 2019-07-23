@@ -47,20 +47,25 @@ class FlatStringLexer:
         self.current_token_start = 0
         self.point = 0
         self.filename = filename
+        self.closed = False
 
     def write(self, text):
+        assert not self.closed
         self.src += text
         self._drain(closing=False)
 
     def close(self):
+        assert not self.closed
         self._drain(closing=True)
         assert self.src == ''
+        self.closed = True
         return self.parser.close(self)
 
     def _drain(self, closing):
         assert self.previous_token_end == 0
         assert self.current_token_start == 0
         assert self.point == 0
+        assert not self.closed
 
         terminal_id = self._match(closing)
         while terminal_id is not None:
