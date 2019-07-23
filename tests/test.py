@@ -745,8 +745,8 @@ class GenTestCase(unittest.TestCase):
             # prose to the end of the line
             PROSE=r'>.*',
             # prose wrapped in square brackets
-            WPROSE=r'\[>[^]]*\]'
-            )
+            WPROSE=r'\[>[^]]*\]',
+        )
 
         self.compile(emu_grammar_lexer, grammar)
 
@@ -791,14 +791,14 @@ class GenTestCase(unittest.TestCase):
             ]),
             'name': Parameterized(['Yield'], [
                 ["IDENT"],
-                ConditionalRhs('Yield', False,
-                               # Specifically ask for a method here,
-                               # because otherwise we wouldn't get one
-                               # and then type checking would fail.
-                               Production('name',
-                                          ["yield"],
-                                          CallMethod("yield_as_name", []))
-                ),
+                ConditionalRhs(
+                    'Yield',
+                    False,
+                    # Specifically ask for a method here, because otherwise we
+                    # wouldn't get one and then type checking would fail.
+                    Production('name',
+                               ["yield"],
+                               CallMethod("yield_as_name", []))),
             ]),
         }, variable_terminals=["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",
@@ -1046,6 +1046,7 @@ class GenTestCase(unittest.TestCase):
         self.assertEqual(
             grammar.methods['f'].argument_types,
             [jsparagus.types.NtType('g')])
+
 
 if __name__ == '__main__':
     unittest.main()

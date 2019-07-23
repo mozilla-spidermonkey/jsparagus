@@ -140,7 +140,8 @@ class Tokenizer(FlatStringLexer):
         elif match is not None:
             pass
         else:
-            self.throw("unexpected characters {!r}".format(self.src[point:point+12]))
+            self.throw("unexpected characters {!r}"
+                       .format(self.src[point:point + 12]))
 
         # But how do we know subsequent .write() calls won't provide more text,
         # extending this token? Here we take advantage of the odd requirement

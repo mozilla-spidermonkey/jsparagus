@@ -19,6 +19,7 @@ def interactive_input(lexer, prompt="js> "):
             return lexer.close()
         prompt = "..> "
 
+
 def rpl():
     """Read-print loop."""
     while True:
@@ -32,6 +33,7 @@ def rpl():
             print(exc.__class__.__name__ + ": " + str(exc))
             continue
         print(result)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Try out the JS parser.")

@@ -176,8 +176,10 @@ class Grammar:
                 return e
             elif isinstance(e, Optional):
                 if not isinstance(e.inner, (str, Apply)):
-                    raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}][{}].inner`: {!r}"
-                                    .format(nt, i, j, e.inner))
+                    raise TypeError(
+                        "invalid grammar: unrecognized element "
+                        "in production `grammar[{!r}][{}][{}].inner`: {!r}"
+                        .format(nt, i, j, e.inner))
                 validate_element(nt, i, j, e.inner, context_params)
                 return e
             elif isinstance(e, Apply):
@@ -194,38 +196,49 @@ class Grammar:
                         "invalid grammar: wrong arguments passed to {!r} "
                         "in production `grammar[{!r}][{}][{}]`: "
                         "passed {!r}, expected {!r}"
-                        .format(e.nt, nt, i, j, e.nt, args, list(nonterminals[e.nt].params)))
+                        .format(e.nt, nt, i, j, e.nt,
+                                args, list(nonterminals[e.nt].params)))
                 for param_name, arg_expr in e.args:
                     if isinstance(arg_expr, Var):
                         if arg_expr.name not in context_params:
-                            raise ValueError("invalid grammar: undefined variable {!r} in production `grammar[{!r}][{}][{}]`"
-                                             .format(arg_expr.name, nt, i, j))
+                            raise ValueError(
+                                "invalid grammar: undefined variable {!r} "
+                                "in production `grammar[{!r}][{}][{}]`"
+                                .format(arg_expr.name, nt, i, j))
                 return e
             elif isinstance(e, LookaheadRule) or e is ErrorToken:
                 return e
             else:
-                raise TypeError("invalid grammar: unrecognized element in production `grammar[{!r}][{}][{}]`: {!r}"
-                                .format(nt, i, j, e))
+                raise TypeError(
+                    "invalid grammar: unrecognized element in production "
+                    "`grammar[{!r}][{}][{}]`: {!r}"
+                    .format(nt, i, j, e))
             return e
 
         def check_reduce_action(nt, i, rhs, action):
             if isinstance(action, int):
-                if not (0 <= action < sum(1 for e in rhs.body if is_concrete_element(e))):
+                concrete_len = sum(1 for e in rhs.body
+                                   if is_concrete_element(e))
+                if not (0 <= action < concrete_len):
                     raise ValueError(
                         "invalid grammar: element number {} out of range for "
                         "production {!r} in grammar[{!r}][{}].action ({!r})"
                         .format(action, nt, rhs.body, i, rhs.action))
             elif isinstance(action, CallMethod):
                 if not isinstance(action.method, str):
-                    raise TypeError("invalid grammar: method names must be strings, not {!r}, in grammar[{!r}[{}].action"
-                                    .format(action.method, nt, i))
+                    raise TypeError(
+                        "invalid grammar: method names must be strings, "
+                        "not {!r}, in grammar[{!r}[{}].action"
+                        .format(action.method, nt, i))
                 if not action.method.isidentifier():
                     name, space, pn = action.method.partition(' ')
                     if space == ' ' and name.isidentifier() and pn.isdigit():
                         pass
                     else:
-                        raise ValueError("invalid grammar: invalid method name {!r} (not an identifier), in grammar[{!r}[{}].action"
-                                         .format(action.method, nt, i))
+                        raise ValueError(
+                            "invalid grammar: invalid method name {!r} "
+                            "(not an identifier), in grammar[{!r}[{}].action"
+                            .format(action.method, nt, i))
                 for arg_expr in action.args:
                     check_reduce_action(nt, i, rhs, arg_expr)
             elif action is None:
@@ -233,14 +246,18 @@ class Grammar:
             elif isinstance(action, Some):
                 check_reduce_action(nt, i, rhs, action.inner)
             else:
-                raise TypeError("invalid grammar: unrecognized reduce expression {!r} in grammar[{!r}][{}].action"
-                                .format(action, nt, i))
+                raise TypeError(
+                    "invalid grammar: unrecognized reduce expression {!r} "
+                    "in grammar[{!r}][{}].action"
+                    .format(action, nt, i))
 
         def copy_rhs(nt, i, sole_production, rhs, context_params):
             if isinstance(rhs, ConditionalRhs):
                 if rhs.param not in context_params:
-                    raise TypeError("invalid grammar: undefined parameter {!r} in conditional for grammar[{!r}][{}]"
-                                    .format(rhs.param, nt, i))
+                    raise TypeError(
+                        "invalid grammar: undefined parameter {!r} "
+                        "in conditional for grammar[{!r}][{}]"
+                        .format(rhs.param, nt, i))
                 return ConditionalRhs(rhs.param, rhs.value, copy_rhs(nt, i, sole_production, rhs.rhs, context_params))
             elif isinstance(rhs, Production):
                 if rhs.action != 'accept':
@@ -295,22 +312,30 @@ class Grammar:
                 # will already have them.
                 if not isinstance(nt.goal, str):
                     raise TypeError(
-                        "invalid grammar: InitNt.goal should be a string, got {!r}".format(nt))
+                        "invalid grammar: InitNt.goal should be a string, "
+                        "got {!r}"
+                        .format(nt))
                 if nt.goal not in nonterminals:
                     raise TypeError(
-                        "invalid grammar: undefined nonterminal referenced by InitNt: {!r}".format(nt))
+                        "invalid grammar: undefined nonterminal referenced "
+                        "by InitNt: {!r}"
+                        .format(nt))
                 if nt.goal not in goal_nts:
                     raise TypeError(
-                        "invalid grammar: nonterminal referenced by InitNt is not in the list of goals: {!r}".format(nt))
+                        "invalid grammar: nonterminal referenced by InitNt "
+                        "is not in the list of goals: {!r}"
+                        .format(nt))
                 # Check the form of init productions. Initially these look like
                 # [[goal]], but after the pipeline goes to work, they can be
                 # [[Optional(goal)]] or [[], [goal]].
-                if (plist_or_fn != [Production(nt, [nt.goal], 'accept')] and
-                    plist_or_fn != [Production(nt, [Optional(nt.goal)], 'accept')] and
-                    plist_or_fn != [Production(nt, [], 'accept'),
-                                    Production(nt, [nt.goal], 'accept')]):
-                    raise ValueError("invalid grammar: grammar[{!r}] is not one of the expected forms: got {!r}"
-                                     .format(nt, plist_or_fn))
+                if (plist_or_fn != [Production(nt, [nt.goal], 'accept')]
+                        and plist_or_fn != [Production(nt, [Optional(nt.goal)], 'accept')]
+                        and plist_or_fn != [Production(nt, [], 'accept'),
+                                            Production(nt, [nt.goal], 'accept')]):
+                    raise ValueError(
+                        "invalid grammar: grammar[{!r}] is not one of "
+                        "the expected forms: got {!r}"
+                        .format(nt, plist_or_fn))
             elif isinstance(nt, Apply):
                 if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
                     raise TypeError(
@@ -318,10 +343,10 @@ class Grammar:
                         "args=tuple) keys in nonterminals dict, got {!r}"
                         .format(nt))
                 for pair in nt.args:
-                    if (not isinstance(pair, tuple) or
-                            len(pair) != 2 or
-                            not isinstance(pair[0], str) or
-                            not isinstance(pair[1], bool)):
+                    if (not isinstance(pair, tuple)
+                            or len(pair) != 2
+                            or not isinstance(pair[0], str)
+                            or not isinstance(pair[1], bool)):
                         raise TypeError(
                             "invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
             elif isinstance(nt, str):
@@ -449,7 +474,7 @@ class Grammar:
         return "{} ::= {}{}".format(
             self.element_to_str(nt),
             self.rhs_to_str(rhs),
-            "" if action == () else " => " + expr_to_str(action) )
+            "" if action == () else " => " + expr_to_str(action))
 
     def lr_item_to_str(self, prods, item):
         prod = prods[item.prod_index]
@@ -522,8 +547,8 @@ InitNt.__iter__ = None
 
 def is_concrete_element(e):
     """True if parsing the element `e` pushes a value to the parser stack."""
-    return (not isinstance(e, LookaheadRule) and
-            e is not ErrorToken)
+    return (not isinstance(e, LookaheadRule)
+            and e is not ErrorToken)
 
 
 # Function application. Function nonterminals are expanded out very early in

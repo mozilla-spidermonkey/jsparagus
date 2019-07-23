@@ -1,7 +1,6 @@
 """Runtime support for jsparagus-generated parsers."""
 
 from .grammar import Apply  # to re-export
-from .lexer import UnexpectedEndError
 
 __all__ = ['ACCEPT', 'ERROR', 'Apply', 'Parser', 'make_parse_fn']
 

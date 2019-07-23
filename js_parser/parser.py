@@ -5,7 +5,7 @@
 See README.md for instructions.
 """
 
-from jsparagus.runtime import Parser, ERROR, ACCEPT
+import jsparagus
 from jsparagus.lexer import SyntaxError
 from . import parser_tables
 from .lexer import JSLexer
@@ -14,9 +14,9 @@ from .lexer import JSLexer
 Script_entry_state = 0  # ew, magic number, get pgen to emit this
 
 
-class JSParser(Parser):
+class JSParser(jsparagus.runtime.Parser):
     def __init__(self):
-        Parser.__init__(
+        jsparagus.runtime.Parser.__init__(
             self,
             parser_tables.actions,
             parser_tables.ctns,
@@ -38,7 +38,7 @@ class JSParser(Parser):
         try:
             bogus_lexer.write(";")
             bogus_lexer.close()
-        except SyntaxError as exc:
+        except SyntaxError:
             # If one isn't enough, more semicolons can't succeed.
             return False
         return True
@@ -51,20 +51,21 @@ class JSParser(Parser):
     def on_syntax_error(self, tokens, t):
         if t == '}' or tokens.saw_line_terminator():
             # Implement ASI at this point.
-            if (self.can_accept_terminal(';') and
-                    not self.can_accept_nonterminal('EmptyStatement', ';')):
+            if (self.can_accept_terminal(';')
+                    and not self.can_accept_nonterminal('EmptyStatement', ';')):
                 self.asi()
                 return 'retry'
         super().on_syntax_error(tokens, t)
 
     def close(self, lexer):
         # Implement ASI at the end of the Script.
-        if (not super().can_close() and
-                self.can_accept_terminal(';') and
-                not self.can_accept_nonterminal('EmptyStatement', ';')):
+        if (not super().can_close()
+                and self.can_accept_terminal(';')
+                and not self.can_accept_nonterminal('EmptyStatement', ';')):
             self.asi()
 
         return super().close(lexer)
+
 
 def parse_Script(text):
     lexer = JSLexer(JSParser())

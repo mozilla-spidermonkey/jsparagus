@@ -180,8 +180,8 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
                     t = 'BooleanLiteral'
                 else:
                     t = token
-            elif (token in ('let', 'static', 'yield', 'async', 'of') and
-                  self.parser.can_accept_terminal(token)):
+            elif (token in ('let', 'static', 'yield', 'async', 'of')
+                  and self.parser.can_accept_terminal(token)):
                 # This is not what the standard says but eh
                 t = token
             else:

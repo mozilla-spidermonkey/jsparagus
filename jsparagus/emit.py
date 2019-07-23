@@ -280,7 +280,7 @@ class RustParserWriter:
                 for ty in method.argument_types
                 if ty != types.UnitType
             ]
-            if method.return_type is types.UnitType:
+            if method.return_type == types.UnitType:
                 return_type_tag = ''
             else:
                 return_type_tag = ' -> ' + \
@@ -329,7 +329,7 @@ class RustParserWriter:
                 for ty in method.argument_types
                 if ty != types.UnitType
             ]
-            if method.return_type is types.UnitType:
+            if method.return_type == types.UnitType:
                 return_type_tag = ''
             else:
                 return_type_tag = ' -> ' + \
@@ -424,8 +424,6 @@ class RustParserWriter:
                         assert isinstance(expr, int)
                         variable_used[expr] = True
                         return "x{}".format(expr)
-
-                compiled_expr = compile_reduce_expr(prod.action)
 
                 for index, e in reversed(list(enumerate(elements))):
                     ty = self.element_type(e)

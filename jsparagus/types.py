@@ -133,8 +133,8 @@ def unify(actual, expected):
     elif isinstance(expected, TypeVar):
         assert expected.value is None
         if actual is not expected:
-            if (isinstance(actual, TypeVar) and
-                    actual.precedence <= expected.precedence):
+            if (isinstance(actual, TypeVar)
+                    and actual.precedence <= expected.precedence):
                 actual.value = expected
             else:
                 expected.value = actual

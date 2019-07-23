@@ -39,8 +39,8 @@ tokenize_esgrammar = LexicalGrammar(
     PROSE=r'>.*',
 
     # prose wrapped in square brackets
-    WPROSE=r'\[>[^]]*\]'
-    )
+    WPROSE=r'\[>[^]]*\]',
+)
 
 
 parse_esgrammar_generic = gen.compile(
@@ -71,21 +71,32 @@ PRODUCTION_GROUPS = [
     r'Method(Definition)?$'
 ]
 
-class ESGrammarBuilder:
-    def single(self, x): return [x]
-    def append(self, x, y): return x + [y]
-    def append_ignoring_separator(self, x, sep, y): return x + [y]
-    def concat(self, x, y): return x + y
 
-    def blank_line(self, nl): return []
-    def nt_def_to_list(self, nt_def): return [nt_def]
+class ESGrammarBuilder:
+    def single(self, x):
+        return [x]
+
+    def append(self, x, y):
+        return x + [y]
+
+    def append_ignoring_separator(self, x, sep, y):
+        return x + [y]
+
+    def concat(self, x, y):
+        return x + y
+
+    def blank_line(self, nl):
+        return []
+
+    def nt_def_to_list(self, nt_def):
+        return [nt_def]
 
     def is_matched_pair(self, lhs_name, rhs_element):
         if isinstance(rhs_element, grammar.Apply):
             rhs_element = rhs_element.nt
         for group in PRODUCTION_GROUPS:
-            if (re.search(group, lhs_name) is not None and
-                    re.search(group, rhs_element) is not None):
+            if (re.search(group, lhs_name) is not None
+                    and re.search(group, rhs_element) is not None):
                 return True
         return False
 
@@ -102,9 +113,9 @@ class ESGrammarBuilder:
             nt_name = lhs
 
         nargs = sum(1 for e in rhs if grammar.is_concrete_element(e))
-        if (len(rhs) == 1 and
-                nargs == 1 and
-                self.is_matched_pair(nt_name, rhs[0])):
+        if (len(rhs) == 1
+                and nargs == 1
+                and self.is_matched_pair(nt_name, rhs[0])):
             action = 0
         else:
             if is_sole_production:
@@ -146,7 +157,8 @@ class ESGrammarBuilder:
         assert cb == ']'
         return (name, params)
 
-    def t_list_line(self, terminals, nl): return terminals
+    def t_list_line(self, terminals, nl):
+        return terminals
 
     def terminal(self, t):
         assert t[0] == "`"
@@ -198,8 +210,8 @@ class ESGrammarBuilder:
         return look_assert
 
     def no_line_terminator_here(self, ob, no, line_terminator, here, cb):
-        assert ((ob, no, line_terminator, here, cb) ==
-                ('[', 'no', 'LineTerminator', 'here', ']'))
+        assert ((ob, no, line_terminator, here, cb)
+                == ('[', 'no', 'LineTerminator', 'here', ']'))
         return ("no-LineTerminator-here",)
 
     def nonterminal(self, nt):

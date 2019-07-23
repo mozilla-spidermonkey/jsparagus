@@ -204,8 +204,8 @@ def check_lookahead_rules(grammar):
                 if rhs and isinstance(rhs[-1], LookaheadRule):
                     raise ValueError(
                         "invalid grammar: lookahead restriction "
-                        "at end of production: " +
-                        grammar.production_to_str(nt, body))
+                        "at end of production: {}"
+                        .format(grammar.production_to_str(nt, body)))
 
 
 def expand_function_nonterminals(grammar):
@@ -836,8 +836,8 @@ class PgenContext:
         item = LRItem(*args, **kwargs)
         assert isinstance(item.followed_by, OrderedFrozenSet)
         rhs = prods[item.prod_index].rhs
-        while (item.offset < len(rhs) and
-               isinstance(rhs[item.offset], LookaheadRule)):
+        while (item.offset < len(rhs)
+               and isinstance(rhs[item.offset], LookaheadRule)):
             item = item._replace(
                 offset=item.offset + 1,
                 lookahead=lookahead_intersect(item.lookahead,
@@ -935,8 +935,8 @@ class PgenContext:
         for prod_index, prod in enumerate(self.prods):
             rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
-                if (self.grammar.is_nt(rhs1[i]) and
-                        t in self.start_set_cache[prod_index][i + 1]):
+                if (self.grammar.is_nt(rhs1[i])
+                        and t in self.start_set_cache[prod_index][i + 1]):
                     start_points[rhs1[i]] = (prod_index, i + 1)
 
         def successors(nt):
@@ -1085,8 +1085,8 @@ class State:
 
         # Really do the work of merging the two states.
         self._lr_items = OrderedFrozenSet(
-            LRItem(*item_key(item), item.followed_by |
-                   new_followed_by[item_key(item)])
+            LRItem(*item_key(item),
+                   item.followed_by | new_followed_by[item_key(item)])
             for item in self._lr_items
         )
         return True
@@ -1125,9 +1125,9 @@ class State:
                         # has to be modified a bit after that.) So,
                         # embarrassingly, we must now check that the production
                         # we just found is still in the grammar. XXX FIXME
-                        if (callee_rhs or
-                            any(p.body == callee_rhs
-                                for p in grammar.nonterminals[next_symbol])):
+                        if (callee_rhs
+                                or any(p.body == callee_rhs
+                                       for p in grammar.nonterminals[next_symbol])):
                             # print(
                             #     "    Considering stepping from item {} "
                             #     "into production {}"
@@ -1145,8 +1145,8 @@ class State:
                                 0,
                                 item.lookahead,
                                 followers)
-                            if (new_item is not None and
-                                    new_item not in closure):
+                            if (new_item is not None
+                                    and new_item not in closure):
                                 closure.add(new_item)
                                 closure_todo.append(new_item)
         return closure
@@ -1192,8 +1192,8 @@ class State:
             rhs = prod.rhs
             if offset < len(rhs):
                 next_symbol = rhs[offset]
-                if (grammar.is_terminal(next_symbol) or
-                        next_symbol is ErrorToken):
+                if (grammar.is_terminal(next_symbol)
+                        or next_symbol is ErrorToken):
                     if lookahead_contains(item.lookahead, next_symbol):
                         next_item = context.make_lr_item(
                             item.prod_index,
@@ -1223,8 +1223,8 @@ class State:
                     # simplification in LALR might make it too weird though.
                     raise ValueError(
                         "invalid grammar: lookahead restriction still active "
-                        "at end of production " +
-                        grammar.production_to_str(nt, rhs))
+                        "at end of production {}"
+                        .format(grammar.production_to_str(nt, rhs)))
                 for t in item.followed_by:
                     if t in follow[nt]:
                         if t in reduce_prods:
@@ -1240,10 +1240,10 @@ class State:
         for t, prod_index in reduce_prods.items():
             prod = prods[prod_index]
             if t in action_row:
-                if t == "else" and (len(prod.rhs) == 5 and
-                                    prod.rhs[0] == 'if' and
-                                    prod.rhs[1] == '(' and
-                                    prod.rhs[3] == ')'):
+                if t == "else" and (len(prod.rhs) == 5
+                                    and prod.rhs[0] == 'if'
+                                    and prod.rhs[1] == '('
+                                    and prod.rhs[3] == ')'):
                     # I can't believe I'm doing this, but manually resolve the
                     # shift-reduce conflict in favor of shifting.
                     assert action_row[t] >= 0, \
@@ -1295,7 +1295,7 @@ def specific_follow(start_set_cache, prod_id, offset, followed_by):
     """
 
     # First, which tokens might follow rhs[offset] *within* the rest of rhs?
-    result = start_set_cache[prod_id][offset+1]
+    result = start_set_cache[prod_id][offset + 1]
     if EMPTY in result:
         # The rest of rhs might be empty, so we might also see `followed_by`.
         result = OrderedSet(result)
