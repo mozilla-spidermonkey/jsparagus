@@ -55,6 +55,25 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error(
             "switch (value) { case 1: break case 2: console.log('2'); }")
 
+    def test_asi_suppressed(self):
+        # The specification says ASI does not happen in the production
+        # EmptyStatement : `;`.
+        self.assert_syntax_error("if (true)")
+        self.assert_syntax_error("{ for (;;) }")
+
+        # ASI does not happen in for(;;) loops.
+        self.assert_syntax_error("for ( \n ; ) {}")
+        self.assert_syntax_error("for ( ; \n ) {}")
+        self.assert_syntax_error("for ( \n \n ) {}")
+        self.assert_syntax_error("for (var i = 0 \n i < 9;   i++) {}")
+        self.assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}")
+        self.assert_syntax_error("for (i = 0 \n i < 9;   i++) {}")
+        self.assert_syntax_error("for (i = 0;   i < 9 \n i++) {}")
+
+        # ASI is suppressed in the production ClassElement[Yield, Await] : `;`
+        # to prevent an infinite loop of ASI. lol
+        self.assert_syntax_error("class Fail { \n +1; }")
+
     def test_if_else(self):
         self.assert_parses("if (x) f();")
         self.assert_incomplete("if (x)")
@@ -112,8 +131,7 @@ class ESTestCase(unittest.TestCase):
              ('ScriptBody',
               ('StatementList 0',
                ('ExpressionStatement',
-                ('PrimaryExpression 10', '/xyzzy/g'),
-                ';')))))
+                ('PrimaryExpression 10', '/xyzzy/g'))))))
 
         self.assertEqual(
             self.parse(['x/', '=2;']),
@@ -124,8 +142,7 @@ class ESTestCase(unittest.TestCase):
                 ('AssignmentExpression 5',
                  ('PrimaryExpression 1', ('IdentifierReference 0', 'x')),
                  ('AssignmentOperator 1', '/='),
-                 ('Literal 2', '2')),
-                ';')))))
+                 ('Literal 2', '2')))))))
 
 
 if __name__ == '__main__':

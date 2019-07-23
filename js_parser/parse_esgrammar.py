@@ -125,17 +125,66 @@ class ESGrammarBuilder:
             action = grammar.CallMethod(method_name, tuple(range(nargs)))
         return grammar.Production(nt_name, rhs, action)
 
+    def needs_asi(self, p):
+        """True if p is a production in which ASI can happen."""
+        # Two productions have body == [";"] -- one for EmptyStatement and one
+        # for ClassMember. Neither should trigger ASI. The only other
+        # semicolons that should not trigger ASI are the ones in `for`
+        # statements, which happen to be exactly those semicolons that are not
+        # at the end of a production.
+        if isinstance(p, grammar.ConditionalRhs):
+            return self.needs_asi(p.rhs)
+        else:
+            return len(p.body) > 1 and p.body[-1] == ';'
+
+    def apply_asi(self, p):
+        """Return two rules based on p, so that ASI can be applied."""
+        assert self.needs_asi(p)
+
+        if isinstance(p, grammar.ConditionalRhs):
+            return p._replace(rhs=self.apply_asi(p.rhs))
+
+        assert isinstance(p.action, grammar.CallMethod)
+
+        # Don't pass the semicolon to the method.
+        action = grammar.CallMethod(p.action.method,
+                                    p.action.args[:-1])
+
+        # Except for do-while loops, check at runtime that ASI occurs only at
+        # the end of a line.
+        if (len(p.body) == 7
+                and p.body[0] == 'do'
+                and p.body[2] == 'while'
+                and p.body[3] == '('
+                and p.body[5] == ')'
+                and p.body[6] == ';'):
+            asi_action = action
+        else:
+            asi_action = grammar.CallMethod('check_asi', (action,))
+
+        return [
+            # The preferred production, with the semicolon in.
+            p.copy_with(body=p.body[:],
+                        action=action),
+            # The fallback production, performing ASI.
+            p.copy_with(body=p.body[:-1] + [grammar.ErrorToken],
+                        action=asi_action),
+        ]
+
     def make_nt_def(self, lhs, eq, rhs_list):
         has_sole_production = (len(rhs_list) == 1)
-        rhs_list = [
-            self.to_production(lhs, i, rhs, has_sole_production)
-            for i, rhs in enumerate(rhs_list)
-        ]
+        production_list = []
+        for i, rhs in enumerate(rhs_list):
+            p = self.to_production(lhs, i, rhs, has_sole_production)
+            if self.needs_asi(p):
+                production_list += self.apply_asi(p)
+            else:
+                production_list.append(p)
         if isinstance(lhs, tuple):
             name, args = lhs
-            return (name, eq, grammar.Parameterized(args, rhs_list))
+            return (name, eq, grammar.Parameterized(args, production_list))
         else:
-            return (lhs, eq, rhs_list)
+            return (lhs, eq, production_list)
 
     def nt_def(self, nt_lhs, eq, nl, rhs_lines, nl2):
         # nt_lhs EQ NL rhs_lines NL
