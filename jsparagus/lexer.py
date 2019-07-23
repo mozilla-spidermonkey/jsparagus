@@ -62,12 +62,9 @@ class FlatStringLexer:
         assert self.current_token_start == 0
         assert self.point == 0
 
-        __prev_point = self.point
         terminal_id = self._match(closing)
         while terminal_id is not None:
-            assert self.point > __prev_point
             self.parser.write_terminal(self, terminal_id)
-            __prev_point = self.point
             terminal_id = self._match(closing)
 
         self.src = self.src[self.point:]
