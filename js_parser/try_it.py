@@ -42,11 +42,11 @@ def main():
     if options.input_file is not None:
         with open(options.input_file) as f:
             source = f.readlines()
-        parser = JSParser()
+        lexer = JSLexer(JSParser())
         for line in source:
             print(line.rstrip())
-            parser.write(line)
-        ast = parser.close()
+            lexer.write(line)
+        ast = lexer.close()
         print(ast)
     else:
         rpl()

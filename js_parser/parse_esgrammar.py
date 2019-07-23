@@ -304,6 +304,6 @@ def finish_grammar(nt_defs, goals):
 
 
 def parse_esgrammar(text, filename=None, goals=None):
-    tokens = tokenize_esgrammar(text, filename=filename)
-    return finish_grammar(parse_esgrammar_generic(tokens, ESGrammarBuilder()),
-                          goals=goals)
+    return finish_grammar(
+        parse_esgrammar_generic(tokenize_esgrammar, text, ESGrammarBuilder()),
+        goals=goals)

@@ -34,17 +34,16 @@ class GenTestCase(unittest.TestCase):
 
     def assertParse(self, s, expected=None, *, goal=None):
         method = "parse" if goal is None else "parse_" + goal
-        result = getattr(self, method)(self.tokenize(s))
+        result = getattr(self, method)(self.tokenize, s)
         if expected is not None:
             self.assertEqual(expected, result)
 
     def assertNoParse(self, s, *, goal=None, message="banana"):
-        tokens = self.tokenize(s)
         method = "parse" if goal is None else "parse_" + goal
         self.assertRaisesRegex(
             SyntaxError,
             re.escape(message),
-            lambda: getattr(self, method)(tokens))
+            lambda: getattr(self, method)(self.tokenize, s))
 
     def testSimple(self):
         grammar = Grammar({
@@ -59,7 +58,7 @@ class GenTestCase(unittest.TestCase):
         })
         parse = gen.compile(grammar)
 
-        parsed = parse(LispTokenizer("(lambda (x) (* x x))"))
+        parsed = parse(LispTokenizer, "(lambda (x) (* x x))")
         self.assertEqual(
             parsed,
             ('expr 1',
@@ -104,9 +103,9 @@ class GenTestCase(unittest.TestCase):
             ],
         })
         parse = gen.compile(list_grammar)
-        tokens = LispTokenizer("the quick brown fox jumped over the lazy dog")
         self.assertEqual(
-            parse(tokens),
+            parse(LispTokenizer,
+                  "the quick brown fox jumped over the lazy dog"),
             ('prelist',
                 'the',
                 ('list 1',
@@ -149,9 +148,8 @@ class GenTestCase(unittest.TestCase):
         })
         parse = gen.compile(arith_grammar)
 
-        tokens = tokenize('2 * 3 + 4 * (5 + 7)')
         self.assertEqual(
-            parse(tokens),
+            parse(tokenize, '2 * 3 + 4 * (5 + 7)'),
             ('expr 1',
                 ('term 1', '2', '*', '3'),
                 '+',
@@ -166,11 +164,11 @@ class GenTestCase(unittest.TestCase):
         self.assertRaisesRegex(
             SyntaxError,
             r"unexpected end of input",
-            lambda: parse(tokenize("(")))
+            lambda: parse(tokenize, "("))
         self.assertRaisesRegex(
             SyntaxError,
             r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
-            lambda: parse(tokenize(")")))
+            lambda: parse(tokenize, ")"))
 
     def testAmbiguous(self):
         # This grammar should fail verification.
@@ -250,10 +248,10 @@ class GenTestCase(unittest.TestCase):
         })
         parse = gen.compile(grammar)
         self.assertEqual(
-            parse(tokenize("A B C D")),
+            parse(tokenize, "A B C D"),
             ('goal 0', 'A', 'B', 'C', 'D'))
         self.assertEqual(
-            parse(tokenize("A B C E")),
+            parse(tokenize, "A B C E"),
             ('goal 1', 'A', 'B', 'C', 'E'))
 
     def testLeftFactorMultiLevel(self):
@@ -279,15 +277,15 @@ class GenTestCase(unittest.TestCase):
         })
         parse = gen.compile(grammar)
         self.assertEqual(
-            parse(tokenize("FOR (x IN y) z;")),
+            parse(tokenize, "FOR (x IN y) z;"),
             ('stmt 1', 'FOR', '(', 'x', 'IN', 'y', ')',
              ('stmt 0', 'z', ';')))
         self.assertEqual(
-            parse(tokenize("FOR (x = y TO z) x;")),
+            parse(tokenize, "FOR (x = y TO z) x;"),
             ('stmt 2', 'FOR', '(', 'x', '=', 'y', 'TO', 'z', ')',
              ('stmt 0', 'x', ';')))
         self.assertEqual(
-            parse(tokenize("FOR (x = y TO z BY w) x;")),
+            parse(tokenize, "FOR (x = y TO z BY w) x;"),
             ('stmt 3', 'FOR', '(', 'x', '=', 'y', 'TO', 'z', 'BY', 'w', ')',
              ('stmt 0', 'x', ';')))
 
@@ -367,7 +365,7 @@ class GenTestCase(unittest.TestCase):
             s = "(" + s + ")"
             t = ('expr 2', '(', t, ')')
 
-        result = parse(LispTokenizer(s))
+        result = parse(LispTokenizer, s)
 
         # Python can't check that result == t; it causes a RecursionError.
         # Testing that repr(result) == repr(t), same deal. So:
@@ -422,10 +420,10 @@ class GenTestCase(unittest.TestCase):
             ]
         })
         parse = gen.compile(grammar)
-        self.assertEqual(parse(tokenize("")), ('a', None, None))
-        self.assertEqual(parse(tokenize("X")), ('a', ('b', 'X'), None))
-        self.assertEqual(parse(tokenize("Y")), ('a', None, ('c', 'Y')))
-        self.assertEqual(parse(tokenize("X Y")), ('a', ('b', 'X'), ('c', 'Y')))
+        self.assertEqual(parse(tokenize, ""), ('a', None, None))
+        self.assertEqual(parse(tokenize, "X"), ('a', ('b', 'X'), None))
+        self.assertEqual(parse(tokenize, "Y"), ('a', None, ('c', 'Y')))
+        self.assertEqual(parse(tokenize, "X Y"), ('a', ('b', 'X'), ('c', 'Y')))
 
     def testOptional(self):
         tokenize = lexer.LexicalGrammar('[ ] , X')
@@ -445,12 +443,12 @@ class GenTestCase(unittest.TestCase):
             ]
         })
         parse = gen.compile(grammar)
-        self.assertEqual(parse(tokenize("[]")),
+        self.assertEqual(parse(tokenize, "[]"),
                          ('array 0', '[', None, ']'))
-        self.assertEqual(parse(tokenize("[,]")),
+        self.assertEqual(parse(tokenize, "[,]"),
                          ('array 0', '[', ',', ']'))
         self.assertEqual(
-            parse(tokenize("[,,X,,X,]")),
+            parse(tokenize, "[,,X,,X,]"),
             ('array 2',
                 '[',
                 ('elements 1',
@@ -506,9 +504,9 @@ class GenTestCase(unittest.TestCase):
         parse = gen.compile(Grammar(rules))
         self.assertRaisesRegex(SyntaxError,
                                r"expected 'b', got 'a'",
-                               lambda: parse(tokenize("a b")))
+                               lambda: parse(tokenize, "a b"))
         self.assertEqual(
-            parse(tokenize('b a')),
+            parse(tokenize, 'b a'),
             ('goal', ('abs 2', 'b', 'a'))
         )
 
@@ -517,7 +515,7 @@ class GenTestCase(unittest.TestCase):
         rules['goal'].append(prod('goal', ['a'], 'goal_a'))
         parse = gen.compile(Grammar(rules))
         self.assertEqual(
-            parse(tokenize('a')),
+            parse(tokenize, 'a'),
             ('goal_a', 'a')
         )
 
@@ -558,7 +556,7 @@ class GenTestCase(unittest.TestCase):
                                lambda: gen.compile(grammar))
 
         self.assertEqual(
-            parse(tokenize('function f() { x = function y() {}; }')),
+            parse(tokenize, 'function f() { x = function y() {}; }'),
             ('stmt', 1,
                 ('fndecl',
                     'function', 'f', '(', ')', '{',
@@ -574,7 +572,7 @@ class GenTestCase(unittest.TestCase):
                         ';'))))
 
         self.assertEqual(
-            parse(tokenize('(function g(){});')),
+            parse(tokenize, '(function g(){});'),
             ('stmts', 0,
                 ('stmt', 0,
                     ('term', 1,
@@ -627,7 +625,7 @@ class GenTestCase(unittest.TestCase):
             })
         )
         self.assertEqual(
-            self.parse(self.tokenize("x = 0")),
+            self.parse(self.tokenize, "x = 0"),
             ("decl", None, "x", "=", "0"))
         self.assertParse("thread: x = 0")
         self.assertNoParse(
@@ -723,6 +721,8 @@ class GenTestCase(unittest.TestCase):
                                'PRODID PROSE WPROSE'.split()
         )
 
+        # Note: This lexical grammar is not suitable for use with incremental
+        # parsing.
         emu_grammar_lexer = lexer.LexicalGrammar(
             # the operators and keywords:
             "[ ] { } , ~ + ? <! == != "

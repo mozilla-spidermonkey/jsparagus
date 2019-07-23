@@ -22,33 +22,44 @@ def throw_syntax_error(actions, state, t, tokens):
                      .format(sorted(expected), t))
 
 
-def parse(actions, ctns, reductions, entry_state, tokens, builder):
+def parse(actions, ctns, reductions, entry_state, lexer_cls, text, builder):
     """ Table-driven LR parser. """
     parser = Parser(actions,
                     ctns,
                     reductions,
-                    lambda _ignored_bogus_text: tokens,
                     entry_state,
                     builder)
-    parser.write("")
-    return parser.close()
+    lexer = lexer_cls(parser)
+    lexer.write(text)
+    return lexer.close()
 
 
 class Parser:
     """Parser using jsparagus-generated tables.
 
-    Usage: Call .feed(line) repeatedly until either it returns an AST or raises
-    an exception other than jsparagus.lexer.UnexpectedEndError.
+    The usual design is, a parser object consumes a token iterator.
+    This Parser is not like that. Instead, the lexer feeds tokens to it
+    by calling `parser.write_terminal(lexer, token)` repeatedly, then
+    `parser.close(lexer)`.
 
-    Alternatively, just call .read() once, which does all of that, reading
-    input lines from stdin as needed.
+    The parser uses these methods of the lexer object:
+
+    *   lexer.take() - Return data associated with a token, like the
+        numeric value of an int literal token.
+
+    *   lexer.throw(message) - Throw a syntax error. (This is on the lexer
+        because the lexer has the current position.)
+
+    *   lexer.throw_unexpected_end() - Throw a syntax error after we
+        successfully parsed the whole file except more tokens were expected at
+        the end.
+
     """
 
-    def __init__(self, actions, ctns, reductions, lex, entry_state, builder):
+    def __init__(self, actions, ctns, reductions, entry_state, builder):
         self.actions = actions
         self.ctns = ctns
         self.reductions = reductions
-        self.lex = lex
         self.stack = [entry_state]
         self.builder = builder
 
@@ -60,7 +71,7 @@ class Parser:
 
         This is absurdly expensive and is for very odd and special use cases.
         """
-        p = Parser(self.actions, self.ctns, self.reductions, self.lex, self.stack[0], self.builder)
+        p = Parser(self.actions, self.ctns, self.reductions, self.stack[0], self.builder)
         p.stack = self.stack[:]
         p.reductions = [
             (tag_name, n, lambda *args: ())
@@ -81,44 +92,37 @@ class Parser:
             action = self.actions[state].get(t, ERROR)
         return action
 
-    def write(self, chunk):
-        tokens = self.lex(chunk)
-        t = tokens.peek()
-        while t is not None:
-            self.write_terminal(tokens, t)
-            t = tokens.peek()
-
-    def write_terminal(self, tokens, t):
+    def write_terminal(self, lexer, t):
         while True:
             action = self._reduce(t)
             if action >= 0:  # shift
-                self.stack.append(tokens.take(t))
+                self.stack.append(lexer.take())
                 self.stack.append(action)
                 break
             else:
                 assert action == ERROR
-                result = self.on_syntax_error(tokens, t)
+                result = self.on_syntax_error(lexer, t)
                 # If on_syntax_error returns, rather than throwing, it must
                 # return 'retry'.
                 assert result == 'retry'
 
-    def on_syntax_error(self, tokens, t):
+    def on_syntax_error(self, lexer, t):
         """Cope with a syntax error (possibly by throwing).
 
         The base-class implementation always throws. Subclasses may override
         this to modify the parser state and then return the string 'retry' to
         try handling the token `t` again.
         """
-        throw_syntax_error(self.actions, self.stack[-1], t, tokens)
+        throw_syntax_error(self.actions, self.stack[-1], t, lexer)
 
-    def close(self):
+    def close(self, lexer):
         action = self._reduce(None)
         if action == ACCEPT:
             assert len(self.stack) == 3
             return self.stack[1]
         else:
             assert action == ERROR
-            self.lex("").throw_unexpected_end()
+            lexer.throw_unexpected_end()
 
     def can_accept_terminal(self, t):
         """Return True if the terminal `t` is OK next.
@@ -172,8 +176,8 @@ class Parser:
 
 
 def make_parse_fn(actions, ctns, reductions, entry_state, builder_cls):
-    def parse_fn(tokens, builder=None):
+    def parse_fn(lexer_cls, text, builder=None):
         if builder is None:
             builder = builder_cls()
-        return parse(actions, ctns, reductions, entry_state, tokens, builder)
+        return parse(actions, ctns, reductions, entry_state, lexer_cls, text, builder)
     return parse_fn

@@ -214,7 +214,7 @@ def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
     builder = AstBuilder()
-    result = parse_pgen_generated.parse_grammar(pgen_lexer(text, filename=filename), builder)
+    result = parse_pgen_generated.parse_grammar(pgen_lexer, text, builder)
     tokens, nonterminals, goals = check_grammar(result)
     variable_terminals = [name for name, image in tokens if image is None]
     return Grammar(nonterminals, goals, variable_terminals)

@@ -139,42 +139,13 @@ endif
 '''.split())
 
 
-class JSLexer(jsparagus.lexer.BaseLexer):
+class JSLexer(jsparagus.lexer.FlatStringLexer):
     """Vague approximation of an ECMAScript lexer. """
     def __init__(self, parser, filename=None):
-        self.parser = parser
-        self.filename = filename
-        self.src = ''
-        self.previous_token_end = 0
-        self.current_token_start = 0
-        self.point = 0
-
-    def write(self, text):
-        self.src += text
-        self._drain(closing=False)
-
-    def close(self):
-        self._drain(closing=True)
-        assert self.src == ''
-        return self.parser.close()
-
-    def _drain(self, closing):
-        assert self.previous_token_end == 0
-        assert self.current_token_start == 0
-        assert self.point == 0
-
-        token = self._match(closing)
-        while token is not None:
-            self.parser.write_terminal(self, token)
-            token = self._match(closing)
-
-        self.src = self.src[self.point:]
-        self.point = 0
-        self.previous_token_end = 0
-        self.current_token_start = 0
+        super().__init__(parser, filename)
 
     def _match(self, closing):
-        match = self._next_match = TOKEN_RE.match(self.src, self.point)
+        match = TOKEN_RE.match(self.src, self.point)
         assert match is not None
 
         if match.end() == len(self.src) and not closing:
@@ -195,26 +166,26 @@ class JSLexer(jsparagus.lexer.BaseLexer):
                 c = self.src[match.end()]
                 self.throw("unexpected character: {!r}".format(c))
 
-        self.current_token_start = match.start(1)
-        self.point = match.start(1)
         c = token[0]
+        t = None
         if c.isdigit() or c == '.' and token != '.':
-            return 'NumericLiteral'
+            t = 'NumericLiteral'
         elif c.isalpha() or c in '$_':
             if self.parser.can_accept_terminal('IdentifierName'):
-                return 'IdentifierName'
+                t = 'IdentifierName'
             elif token in RESERVED_WORDS:  # TODO support strict mode
                 if token == 'null':
-                    return 'NullLiteral'
+                    t = 'NullLiteral'
                 elif token in ('true', 'false'):
-                    return 'BooleanLiteral'
-                return token
+                    t = 'BooleanLiteral'
+                else:
+                    t = token
             elif (token in ('let', 'static', 'yield', 'async', 'of') and
                   self.parser.can_accept_terminal(token)):
                 # This is not what the standard says but eh
-                return token
+                t = token
             else:
-                return 'Identifier'
+                t = 'Identifier'
         elif c == '/':
             if token.startswith(('/*', '//')):
                 # Incomplete comment. (In non-closing mode, this is handled
@@ -231,30 +202,47 @@ class JSLexer(jsparagus.lexer.BaseLexer):
             # the parser rewind the lexer one token and ask for it again in
             # that case, so that the lexer asks the can-accept question again.
             if self.parser.can_accept_terminal('RegularExpressionLiteral'):
-                match = REGEXP_RE.match(self.src, self.point)
-                self._next_match = match
+                point = match.start(1)
+                match = REGEXP_RE.match(self.src, point)
+                if match is None:
+                    if closing:
+                        self.throw("unterminated regexp literal")
+                    else:
+                        return None
                 token = 'RegularExpressionLiteral'
             else:
                 match = DIV_RE.match(self.src, self.point)
-                self._next_match = match
                 token = match.group(1)
-            return token
+
+            if not closing and match.end() == len(self.src):
+                # At the end of a chunk, `/a*b/` could be the start of
+                # `/a*b/g`, and `/` could be the start of `/=`.
+                return None
+
+            t = token
         elif c == '`':
             if token.endswith('`'):
-                return 'NoSubstitutionTemplate'
+                t = 'NoSubstitutionTemplate'
             else:
-                return 'TemplateHead'
+                t = 'TemplateHead'
         elif c == '"' or c == "'":
-            return 'StringLiteral'
+            t = 'StringLiteral'
         elif c == '}':
-            return token
+            # TODO: TemplateTail
+            t = token
         elif c in '{()[];,~?:.<>=!+-*%&|^':
-            return token
+            t = token
         else:
             assert False
 
-    def peek(self):
-        raise TypeError("this is not a standard lexer")
+        self._current_match = match
+        self.previous_token_end = self.point
+        self.current_token_start = match.start(1)
+        self.point = match.end()
+        return t
+
+    def take(self):
+        return self._current_match.group(1)
 
     def saw_line_terminator(self):
         """True if there's a LineTerminator before the current token.
@@ -266,20 +254,6 @@ class JSLexer(jsparagus.lexer.BaseLexer):
         j = self.current_token_start
         ws_between = self.src[i:j]
         return any(c in ws_between for c in '\r\n\u2028\u2029')
-
-    def take(self, k):
-        match = self._next_match
-        self.point = match.end()
-        self._next_match = None
-        return match.group(1)
-
-    def last_point_coords(self):
-        # TODO - count lines and characters as we go
-        src_pre = self.src[:self.current_token_start]
-        lineno = 1 + src_pre.count("\n")
-        line_start_index = src_pre.rfind("\n") + 1
-        column = self.current_token_start - line_start_index  # can be zero
-        return lineno, column
 
     def can_close(self):
         match = TOKEN_RE.match(self.src)
