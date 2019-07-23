@@ -29,8 +29,8 @@ class ESTestCase(unittest.TestCase):
 
     def assert_syntax_error(self, s):
         """Assert that s fails to parse."""
-        self.assertRaises(jsparagus.lexer.SyntaxError,
-                          lambda: parse_Script(s))
+        with self.assertRaises(jsparagus.lexer.SyntaxError):
+            parse_Script(s)
 
     # === Tests!
 
