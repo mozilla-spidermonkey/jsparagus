@@ -164,7 +164,8 @@ Then you can:
 *   Generate parser tables for JavaScript (!):
 
     ```sh
-    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_tables.py
+    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
+    python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o js_parser/parser_tables.py
     ```
 
     **Note:** This takes about 3 minutes to run on my laptop. jsparagus
@@ -181,12 +182,11 @@ Then you can:
 *   The rust version of the JS parser can be generated using:
 
     ```sh
+    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
+    python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
     cd client
-    python3 -m js_parser.generate_js_parser_tables --target=rust --progress -o client/src/parser_generated.rs
     cargo run
     ```
-
-    (The middle command is also in `client/update_parser_generated.sh`, so you don't have to remember the command every time)
 
 
 ## Limitations

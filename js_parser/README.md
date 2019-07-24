@@ -26,11 +26,13 @@ $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install --upgrade pip
 $ pip install -r requirements.txt
-$ python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_tables.py
+
+$ python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
+$ python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o js_parser/parser_tables.py
 ```
 
-**Note:** This last step currently takes about 3 minutes to run on my
-laptop.  pgen is slow.
+**Note:** The last two steps together currently take about 3 minutes to
+run on my laptop.  jsparagus is slow.
 
 Once you're done, to see your parser run, try this:
 
@@ -38,12 +40,13 @@ Once you're done, to see your parser run, try this:
 $ python -m js_parser.try_it
 ```
 
+
 ### Or the Rust version
 
 Run all the steps above, except substitute this command for the one that ends in `.py`:
 
 ```console
-$ python -m js_parser.generate_js_parser_tables --progress --target=rust -o client/src/parser_generated.rs
+$ python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
 ```
 
 Then, to see your parser run, try this:

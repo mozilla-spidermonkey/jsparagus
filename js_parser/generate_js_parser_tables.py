@@ -21,6 +21,7 @@ ECMASCRIPT_GOAL_NTS = [
 
 
 def main():
+    # Read command-line options.
     parser = argparse.ArgumentParser(
         description='Ponder the ECMAScript grammar.',
         allow_abbrev=False)
@@ -28,13 +29,10 @@ def main():
                                     "es-simplified.esgrammar")
     parser.add_argument(
         'filename', metavar='FILE', nargs='?', default=default_filename,
-        help="esgrammar input file")
+        help=".esgrammar (or .jsparagus_dump) input file")
     parser.add_argument(
         '-o', '--output', metavar='FILE', default='/dev/stdout',
         help="output filename for parser tables")
-    parser.add_argument(
-        '--target', choices=['python', 'rust'], default='python',
-        help="target language to use when printing the parser tables")
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help="print some debug output")
@@ -43,20 +41,57 @@ def main():
         help="print a dot each time a state is analyzed (thousands of them)")
     args = parser.parse_args()
 
-    with open(args.filename) as f:
-        text = f.read()
+    # Check filenames.
+    in_filename = args.filename
+    if in_filename.endswith('.esgrammar'):
+        from_source = True
+    elif in_filename.endswith('.jsparagus_dump'):
+        from_source = False
+    else:
+        raise ValueError("input file extension should be .esgrammar or .jsparagus_dump")
 
-    grammar = parse_esgrammar(text, filename=args.filename,
-                              goals=ECMASCRIPT_GOAL_NTS)
-    if args.verbose:
-        grammar.dump()
+    out_filename = args.output
+    if out_filename.endswith('.py'):
+        target = 'python'
+    elif out_filename.endswith('.rs'):
+        target = 'rust'
+    elif out_filename.endswith('.jsparagus_dump'):
+        target = 'dump'
+    else:
+        raise ValueError("-o file extension should be .py, .rs, or .jsparagus_dump")
 
-    with open(args.output, 'w') as f:
-        jsparagus.gen.generate_parser(f, grammar,
-                                      target=args.target,
-                                      verbose=args.verbose,
-                                      progress=args.progress)
+    # Load input and analyze it.
+    if from_source:
+        with open(in_filename) as f:
+            text = f.read()
 
+        grammar = parse_esgrammar(text, filename=args.filename,
+                                  goals=ECMASCRIPT_GOAL_NTS)
+        if args.verbose:
+            grammar.dump()
+
+        states = jsparagus.gen.generate_parser_states(
+            grammar, verbose=args.verbose, progress=args.progress)
+    else:
+        states = jsparagus.gen.ParserStates.load(in_filename)
+
+    # Generate output.
+    try:
+        if target in ('python', 'rust'):
+            with open(out_filename, 'w') as f:
+                jsparagus.gen.generate_parser(f, states,
+                                              target=target,
+                                              verbose=args.verbose)
+        else:
+            assert target == 'dump'
+            states.save(out_filename)
+    except Exception:
+        # On failure, don't leave a partial output file lying around.
+        try:
+            os.remove(out_filename)
+        except Exception:
+            pass
+        raise
 
 if __name__ == '__main__':
     main()
