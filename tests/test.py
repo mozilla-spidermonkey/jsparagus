@@ -1049,5 +1049,6 @@ class GenTestCase(unittest.TestCase):
         self.compile(tokenize, grammar)
         self.assertParse("{}", ('goal', '{', ('xlist 0',), '}'))
 
+
 if __name__ == '__main__':
     unittest.main()

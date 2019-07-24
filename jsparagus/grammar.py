@@ -653,6 +653,7 @@ class ErrorTokenClass:
 ErrorToken = None
 ErrorToken = ErrorTokenClass()
 
+
 class NtDef:
     """Definition of a nonterminal.
 
@@ -716,6 +717,7 @@ class NtDef:
                 and (self.params, self.rhs_list) == (other.params, other.rhs_list))
 
     __hash__ = None
+
 
 ConditionalRhs = collections.namedtuple("ConditionalRhs", "param value rhs")
 ConditionalRhs.__doc__ = """\
