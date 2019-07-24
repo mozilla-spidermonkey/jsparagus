@@ -5,7 +5,10 @@ import unicodedata
 
 from .runtime import ERROR
 from .ordered import OrderedSet
-from .grammar import InitNt, CallMethod, Some, is_concrete_element, Apply, Optional
+
+from .grammar import (InitNt, CallMethod, Some, is_concrete_element, Apply,
+                      Optional, ErrorToken)
+
 from . import types
 
 
@@ -126,6 +129,8 @@ class RustParserWriter:
     def terminal_name(self, value):
         if value is None:
             return "End"
+        elif value is ErrorToken:
+            return "ErrorToken"
         elif value in TERMINAL_NAMES:
             return TERMINAL_NAMES[value]
         elif value.isalpha():
