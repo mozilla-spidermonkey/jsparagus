@@ -1047,6 +1047,19 @@ class GenTestCase(unittest.TestCase):
             grammar.methods['f'].argument_types,
             [jsparagus.types.NtType('g')])
 
+    def testEpsilonFreeTransform(self):
+        tokenize = lexer.LexicalGrammar('{ } X')
+        grammar = Grammar({
+            'goal': [
+                ['{', 'xlist', '}'],
+            ],
+            'xlist': [
+                [],
+                ['xlist', 'X'],
+            ],
+        })
+        self.compile(tokenize, grammar)
+        self.assertParse("{}", ('goal', '{', ('xlist 0',), '}'))
 
 if __name__ == '__main__':
     unittest.main()
