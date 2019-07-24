@@ -239,7 +239,7 @@ def infer_types(g):
         if isinstance(nt, grammar.InitNt):
             continue
         nt_type = nt_types[nt]
-        if isinstance(plist_or_fn, grammar.Parameterized):
+        if isinstance(plist_or_fn, grammar.NtDef):
             plist = plist_or_fn.body
         else:
             plist = plist_or_fn

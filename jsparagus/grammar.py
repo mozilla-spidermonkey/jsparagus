@@ -287,7 +287,7 @@ class Grammar:
                                 .format(nt, i, rhs))
 
         def copy_rhs_list(nt, rhs_list, params):
-            if isinstance(rhs_list, Parameterized):
+            if isinstance(rhs_list, NtDef):
                 fn = rhs_list
                 params = list(fn.params)
                 for i, param in enumerate(params):
@@ -295,12 +295,12 @@ class Grammar:
                         raise TypeError("invalid grammar: parameter {} of {} should be a string, not {!r}"
                                         .format(i + 1, nt, param))
                 assert isinstance(fn.body, list)
-                return Parameterized(params, copy_rhs_list(nt, fn.body, params))
+                return NtDef(params, copy_rhs_list(nt, fn.body, params))
             else:
                 if not isinstance(rhs_list, list):
                     raise TypeError(
                         "invalid grammar: grammar[{!r}] should be either a "
-                        "list of right-hand sides or Parameterized, not {!r}"
+                        "list of right-hand sides or NtDef, not {!r}"
                         .format(nt, type(rhs_list).__name__))
                 sole_production = len(rhs_list) == 1
                 return [copy_rhs(nt, i, sole_production, rhs, params) for i, rhs in enumerate(rhs_list)]
@@ -501,7 +501,7 @@ class Grammar:
 
     def dump(self):
         for nt, rhs_list in self.nonterminals.items():
-            if isinstance(rhs_list, Parameterized):
+            if isinstance(rhs_list, NtDef):
                 nt += "[" + ", ".join(rhs_list.params) + "]"
                 rhs_list = rhs_list.body
             print(nt + " ::=")
@@ -559,7 +559,7 @@ Apply.__doc__ = """\
 Apply(nt, ((param0, arg0), ...)) is a call to a nonterminal that's a function.
 
 Each nonterminal in a grammar is defined by either a list of lists (its
-productions) or a Parameterized, a lambda that returns a list of lists.
+productions) or a NtDef, a lambda that returns a list of lists.
 
 To refer to the first kind of nonterminal in a right-hand-side, just use the
 nonterminal's name. To use the second kind, we have to represent a function call
@@ -643,9 +643,9 @@ class ErrorTokenClass:
 ErrorToken = None
 ErrorToken = ErrorTokenClass()
 
-Parameterized = collections.namedtuple("Parameterized", "params body")
-Parameterized.__doc__ = """\
-Parameterized(params, rhs_list) - Lambda for nonterminals.
+NtDef = collections.namedtuple("NtDef", "params body")
+NtDef.__doc__ = """\
+NtDef(params, rhs_list) - Lambda for nonterminals.
 
 Some langauges have constructs that are allowed or disallowed in particular
 situations. For example, in many languages `return` statements are allowed only
@@ -665,9 +665,9 @@ This is an abbreviation for:
         ReturnStatement
         ExpressionStatement
 
-We offer Parameterized as a way of representing this in our system.
+We offer NtDef.params as a way of representing this in our system.
 
-    "StatementList": Parameterized(["Return"], [
+    "StatementList": NtDef(["Return"], [
         Conditional("Return", True, ["ReturnStatement"]),
         ["ExpressionStatement"],
     ]),

@@ -182,7 +182,7 @@ class ESGrammarBuilder:
                 production_list.append(p)
         if isinstance(lhs, tuple):
             name, args = lhs
-            return (name, eq, grammar.Parameterized(args, production_list))
+            return (name, eq, grammar.NtDef(args, production_list))
         else:
             return (lhs, eq, production_list)
 
@@ -340,7 +340,7 @@ def finish_grammar(nt_defs, goals):
         if eq == "::":
             variable_terminals.add(nt_name)
 
-        if isinstance(rhs_list_or_lambda, grammar.Parameterized):
+        if isinstance(rhs_list_or_lambda, grammar.NtDef):
             nonterminals[nt_name] = rhs_list_or_lambda
         else:
             rhs_list = rhs_list_or_lambda

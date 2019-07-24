@@ -6,7 +6,7 @@ import unittest
 import jsparagus
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
-                               Optional, LookaheadRule, Parameterized,
+                               Optional, LookaheadRule, NtDef,
                                ConditionalRhs, Var)
 
 
@@ -779,16 +779,16 @@ class GenTestCase(unittest.TestCase):
                     Apply('stmts', (('Yield', True),)), '}'
                 ],
             ],
-            'stmts': Parameterized(['Yield'], [
+            'stmts': NtDef(['Yield'], [
                 [stmt],
                 [stmts, stmt],
             ]),
-            'stmt': Parameterized(['Yield'], [
+            'stmt': NtDef(['Yield'], [
                 [name, "(", ")", ";"],
                 [name, "=", name, ";"],
                 ConditionalRhs('Yield', True, ["yield", name, ";"]),
             ]),
-            'name': Parameterized(['Yield'], [
+            'name': NtDef(['Yield'], [
                 ["IDENT"],
                 ConditionalRhs(
                     'Yield',
