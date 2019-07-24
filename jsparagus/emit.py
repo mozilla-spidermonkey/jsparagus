@@ -395,11 +395,15 @@ class RustParserWriter:
 
     def reduce(self, generic):
         if generic:
-            self.write(0,
-                       "fn reduce<H: Handler>(handler: &H, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+            self.write(
+                0,
+                "fn reduce<H: Handler>(handler: &H, prod: usize, "
+                "stack: &mut Vec<*mut ()>) -> NonterminalId {")
         else:
-            self.write(0,
-                       "fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {")
+            self.write(
+                0,
+                "fn reduce(handler: &DefaultHandler, prod: usize, "
+                "stack: &mut Vec<*mut ()>) -> NonterminalId {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal

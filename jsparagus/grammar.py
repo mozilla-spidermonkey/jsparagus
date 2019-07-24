@@ -257,7 +257,10 @@ class Grammar:
                         "invalid grammar: undefined parameter {!r} "
                         "in conditional for grammar[{!r}][{}]"
                         .format(rhs.param, nt, i))
-                return ConditionalRhs(rhs.param, rhs.value, copy_rhs(nt, i, sole_production, rhs.rhs, context_params))
+                return ConditionalRhs(
+                    rhs.param,
+                    rhs.value,
+                    copy_rhs(nt, i, sole_production, rhs.rhs, context_params))
             elif isinstance(rhs, Production):
                 if rhs.action != 'accept':
                     check_reduce_action(nt, i, rhs, rhs.action)
@@ -283,15 +286,19 @@ class Grammar:
                     action = CallMethod(method, args=tuple(range(nargs)))
                 return copy_rhs(nt, i, sole_production, Production(rhs, action), context_params)
             else:
-                raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
-                                .format(nt, i, rhs))
+                raise TypeError(
+                    "invalid grammar: grammar[{!r}][{}] should be "
+                    "a list of grammar symbols, not {!r}"
+                    .format(nt, i, rhs))
 
         def copy_nt_def(nt, nt_def, params):
             if isinstance(nt_def, NtDef):
                 for i, param in enumerate(nt_def.params):
                     if not isinstance(param, str):
-                        raise TypeError("invalid grammar: parameter {} of {} should be a string, not {!r}"
-                                        .format(i + 1, nt, param))
+                        raise TypeError(
+                            "invalid grammar: parameter {} of {} should be "
+                            "a string, not {!r}"
+                            .format(i + 1, nt, param))
                 params = nt_def.params[:]
                 rhs_list = nt_def.rhs_list
             else:
@@ -357,17 +364,21 @@ class Grammar:
                             or not isinstance(pair[0], str)
                             or not isinstance(pair[1], bool)):
                         raise TypeError(
-                            "invalid grammar: expected tuple((str, bool)) args, got {!r}".format(nt))
+                            "invalid grammar: expected tuple((str, bool)) args, got {!r}"
+                            .format(nt))
             elif isinstance(nt, str):
                 if not nt.isidentifier():
                     raise ValueError(
-                        "invalid grammar: nonterminal names must be identifiers, not {!r}".format(nt))
+                        "invalid grammar: nonterminal names must be identifiers, not {!r}"
+                        .format(nt))
             else:
                 raise TypeError(
-                    "invalid grammar: expected string keys in nonterminals dict, got {!r}".format(nt))
+                    "invalid grammar: expected string keys in nonterminals dict, got {!r}"
+                    .format(nt))
             if nt in self.variable_terminals:
                 raise TypeError(
-                    "invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
+                    "invalid grammar: {!r} is both a nonterminal and a variable terminal"
+                    .format(nt))
             return copy_nt_def(nt, nt_def, [])
 
         for nt, nt_def in nonterminals.items():
