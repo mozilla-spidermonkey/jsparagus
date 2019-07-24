@@ -240,7 +240,7 @@ def infer_types(g):
             continue
         nt_type = nt_types[nt]
         if isinstance(plist_or_fn, grammar.NtDef):
-            plist = plist_or_fn.body
+            plist = plist_or_fn.rhs_list
         else:
             plist = plist_or_fn
         for i, p in enumerate(plist):

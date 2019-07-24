@@ -286,26 +286,30 @@ class Grammar:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
                                 .format(nt, i, rhs))
 
-        def copy_rhs_list(nt, rhs_list, params):
-            if isinstance(rhs_list, NtDef):
-                fn = rhs_list
-                params = list(fn.params)
-                for i, param in enumerate(params):
+        def copy_rhs_list(nt, nt_def, params):
+            if isinstance(nt_def, NtDef):
+                for i, param in enumerate(nt_def.params):
                     if not isinstance(param, str):
                         raise TypeError("invalid grammar: parameter {} of {} should be a string, not {!r}"
                                         .format(i + 1, nt, param))
-                assert isinstance(fn.body, list)
-                return NtDef(params, copy_rhs_list(nt, fn.body, params))
+                params = nt_def.params[:]
+                rhs_list = nt_def.rhs_list
             else:
-                if not isinstance(rhs_list, list):
-                    raise TypeError(
-                        "invalid grammar: grammar[{!r}] should be either a "
-                        "list of right-hand sides or NtDef, not {!r}"
-                        .format(nt, type(rhs_list).__name__))
-                sole_production = len(rhs_list) == 1
-                return [copy_rhs(nt, i, sole_production, rhs, params) for i, rhs in enumerate(rhs_list)]
+                params = []
+                rhs_list = nt_def
 
-        def validate_nt(nt, plist_or_fn):
+            if not isinstance(rhs_list, list):
+                raise TypeError(
+                    "invalid grammar: grammar[{!r}] should be either a "
+                    "list of right-hand sides or NtDef, not {!r}"
+                    .format(nt, type(rhs_list).__name__))
+
+            sole_production = len(rhs_list) == 1
+            rhs_list = [copy_rhs(nt, i, sole_production, rhs, params)
+                        for i, rhs in enumerate(rhs_list)]
+            return NtDef(params, rhs_list)
+
+        def validate_nt(nt, nt_def):
             if isinstance(nt, InitNt):
                 # Users don't include init nonterminals when initially creating
                 # a Grammar. They are automatically added below. But if this
@@ -329,14 +333,18 @@ class Grammar:
                 # Check the form of init productions. Initially these look like
                 # [[goal]], but after the pipeline goes to work, they can be
                 # [[Optional(goal)]] or [[], [goal]].
-                if (plist_or_fn != [Production([nt.goal], 'accept')]
-                        and plist_or_fn != [Production([Optional(nt.goal)], 'accept')]
-                        and plist_or_fn != [Production([], 'accept'),
-                                            Production([nt.goal], 'accept')]):
+                if isinstance(nt_def, NtDef):
+                    rhs_list = nt_def.rhs_list
+                else:
+                    rhs_list = nt_def
+                if (rhs_list != [Production([nt.goal], 'accept')]
+                        and rhs_list != [Production([Optional(nt.goal)], 'accept')]
+                        and rhs_list != [Production([], 'accept'),
+                                         Production([nt.goal], 'accept')]):
                     raise ValueError(
                         "invalid grammar: grammar[{!r}] is not one of "
                         "the expected forms: got {!r}"
-                        .format(nt, plist_or_fn))
+                        .format(nt, rhs_list))
             elif isinstance(nt, Apply):
                 if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
                     raise TypeError(
@@ -360,10 +368,10 @@ class Grammar:
             if nt in self.variable_terminals:
                 raise TypeError(
                     "invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
-            return copy_rhs_list(nt, plist_or_fn, [])
+            return copy_rhs_list(nt, nt_def, [])
 
-        for nt, plist_or_fn in nonterminals.items():
-            self.nonterminals[nt] = validate_nt(nt, plist_or_fn)
+        for nt, nt_def in nonterminals.items():
+            self.nonterminals[nt] = validate_nt(nt, nt_def)
 
         # Cache the set of terminals for is_terminal.
         self.terminals = OrderedFrozenSet(all_terminals)
@@ -384,8 +392,8 @@ class Grammar:
                     "goal nonterminal {!r} is undefined".format(goal))
             init_nt = InitNt(goal)
             if init_nt not in self.nonterminals:
-                self.nonterminals[init_nt] = [
-                    Production([goal], 'accept')]
+                self.nonterminals[init_nt] = NtDef(
+                    [], [Production([goal], 'accept')])
             self.init_nts.append(init_nt)
 
     # Terminals are tokens that must appear verbatim in the input wherever they
@@ -558,11 +566,11 @@ Apply = collections.namedtuple("Apply", "nt args")
 Apply.__doc__ = """\
 Apply(nt, ((param0, arg0), ...)) is a call to a nonterminal that's a function.
 
-Each nonterminal in a grammar is defined by either a list of lists (its
-productions) or a NtDef, a lambda that returns a list of lists.
+Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
+NtDef which has 0 or more parameters.
 
-To refer to the first kind of nonterminal in a right-hand-side, just use the
-nonterminal's name. To use the second kind, we have to represent a function call
+To refer to a nonterminal that has 0 parameters, just use the nonterminal's
+name. To use a parameterized nonterminal, we have to represent a function call
 somehow; for that, use Apply.
 
 Parameter names are strings. The arguments are typically booleans. They can be
@@ -643,55 +651,69 @@ class ErrorTokenClass:
 ErrorToken = None
 ErrorToken = ErrorTokenClass()
 
-NtDef = collections.namedtuple("NtDef", "params body")
-NtDef.__doc__ = """\
-NtDef(params, rhs_list) - Lambda for nonterminals.
+class NtDef:
+    """Definition of a nonterminal.
 
-Some langauges have constructs that are allowed or disallowed in particular
-situations. For example, in many languages `return` statements are allowed only
-inside functions or methods. The ECMAScript standard (5.1.5 "Grammar Notation")
-offers this example of the notation it uses to specify this sort of thing:
+    Instances have two attributes:
 
-    StatementList [Return] :
-        [+Return] ReturnStatement
-        ExpressionStatement
+    .params - List of strings, the names of the parameters.
 
-This is an abbreviation for:
+    .rhs_list - List of right-hand sides. Each element of rhs_list is either a
+    Production or a ConditionalRhs (see below). Also, arguments to Apply
+    elements in the productions in rhs_list can be Var(s) where `s in params`,
+    indicating that parameter should be passed through unchanged.
 
-    StatementList :
-        ExpressionStatement
+    An NtDef is a sort of lambda.
 
-    StatementList_Return :
-        ReturnStatement
-        ExpressionStatement
+    Some langauges have constructs that are allowed or disallowed in particular
+    situations. For example, in many languages `return` statements are allowed
+    only inside functions or methods. The ECMAScript standard (5.1.5 "Grammar
+    Notation") offers this example of the notation it uses to specify this sort
+    of thing:
 
-We offer NtDef.params as a way of representing this in our system.
+        StatementList [Return] :
+            [+Return] ReturnStatement
+            ExpressionStatement
 
-    "StatementList": NtDef(["Return"], [
-        Conditional("Return", True, ["ReturnStatement"]),
-        ["ExpressionStatement"],
-    ]),
+    This is an abbreviation for:
 
-This is an abbreviation for:
+        StatementList :
+            ExpressionStatement
 
-    "StatementList_0": [
-        ["ExpressionStatement"],
-    ],
-    "StatementList_1": [
-        ["ReturnStatement"],
-        ["ExpressionStatement"],
-    ],
+        StatementList_Return :
+            ReturnStatement
+            ExpressionStatement
 
-Fields:
+    We offer NtDef.params as a way of representing this in our system.
 
-params - List of strings, the names of the parameters.
+        "StatementList": NtDef(["Return"], [
+            Conditional("Return", True, ["ReturnStatement"]),
+            ["ExpressionStatement"],
+        ]),
 
-body - List of right-hand sides. Each element of rhs_list is either a list
-of grammar elements or a ConditionalRhs (see below). Also, arguments to Apply
-elements in the productions in rhs_list can be Var(s) where s in params,
-indicating that parameter should be passed through unchanged.
-"""
+    This is an abbreviation for:
 
+        "StatementList_0": [
+            ["ExpressionStatement"],
+        ],
+        "StatementList_1": [
+            ["ReturnStatement"],
+            ["ExpressionStatement"],
+        ],
+
+    """
+
+    __slots__ = ['params', 'rhs_list']
+
+    def __init__(self, params, rhs_list):
+        self.params = params
+        self.rhs_list = rhs_list
+
+    def __eq__(self, other):
+        return (isinstance(other, NtDef)
+                and (self.params, self.rhs_list) == (other.params, other.rhs_list))
+
+    __hash__ = None
 
 ConditionalRhs = collections.namedtuple("ConditionalRhs", "param value rhs")
 ConditionalRhs.__doc__ = """\

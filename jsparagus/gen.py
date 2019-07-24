@@ -34,7 +34,7 @@ import sys
 from .ordered import OrderedSet, OrderedFrozenSet
 
 from .grammar import (Grammar,
-                      Production, Some, CallMethod, InitNt,
+                      NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
                       Optional, ConditionalRhs, Apply, Var, ErrorToken,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
@@ -110,9 +110,9 @@ def empty_nt_set(grammar):
     done = False
     while not done:
         done = True
-        for nt, prods in grammar.nonterminals.items():
+        for nt, nt_def in grammar.nonterminals.items():
             if nt not in empties:
-                for p in prods:
+                for p in nt_def.rhs_list:
                     if production_is_empty(nt, p):
                         if nt in empties:
                             raise ValueError(
@@ -136,7 +136,7 @@ def check_cycle_free(grammar):
     direct_produces = {}
     for orig in grammar.nonterminals:
         direct_produces[orig] = set()
-        for source_production in grammar.nonterminals[orig]:
+        for source_production in grammar.nonterminals[orig].rhs_list:
             for rhs, _r in expand_optional_symbols_in_rhs(source_production.body, grammar, empties):
                 result = []
                 all_possibly_empty_so_far = True
@@ -197,7 +197,7 @@ def check_lookahead_rules(grammar):
 
     check_cycle_free(grammar)
     for nt in grammar.nonterminals:
-        for source_production in grammar.nonterminals[nt]:
+        for source_production in grammar.nonterminals[nt].rhs_list:
             body = source_production.body
             for rhs, _r in expand_optional_symbols_in_rhs(body, grammar, empties):
                 # XXX BUG: The next if-condition is insufficient, since it
@@ -211,10 +211,15 @@ def check_lookahead_rules(grammar):
 
 
 def expand_function_nonterminals(grammar):
-    """Replace function nonterminals with production lists.
+    """Replace parameterized nonterminals with specialized copies.
 
-    Also replaces Apply elements with nt elements and eliminates Var and
-    ConditionalRhs objects from the grammar.
+    For example, a single pair `nt_name: NtDef(params=['A', 'B'], ...)` in
+    `grammar.nonterminals` will be replaced with (assuming A and B are boolean
+    parameters) up to four pairs, each having an Apply object as the key and an
+    NtDef with no parameters as the value.
+
+    Returns a new copy of `grammar` whose NtDefs all have
+    `nt_def.params == []`.
     """
 
     assigned_names = {(goal, None): goal for goal in grammar.goals()}
@@ -274,16 +279,16 @@ def expand_function_nonterminals(grammar):
                         result.append(expand_production(p.rhs))
                 else:
                     result.append(expand_production(p))
-            return result
+            return NtDef([], result)
 
         if args is None:
-            return expand_productions(grammar.nonterminals[nt])
+            return expand_productions(grammar.nonterminals[nt].rhs_list)
         else:
-            fn = grammar.nonterminals[nt]
-            assert len(args) == len(fn.params)
+            nt_def = grammar.nonterminals[nt]
+            assert len(args) == len(nt_def.params)
             # Create activation environment! are we having fun yet
-            args = tuple(zip(fn.params, args))
-            return expand_productions(fn.body)
+            args = tuple(zip(nt_def.params, args))
+            return expand_productions(nt_def.rhs_list)
 
     while todo:
         nt, args = todo.popleft()
@@ -330,11 +335,11 @@ def start_sets(grammar):
     done = False
     while not done:
         done = True
-        for nt, plist in grammar.nonterminals.items():
+        for nt, nt_def in grammar.nonterminals.items():
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
             nt_start = OrderedFrozenSet(
-                t for p in plist for t in seq_start(grammar, start, p.body))
+                t for p in nt_def.rhs_list for t in seq_start(grammar, start, p.body))
             if nt_start != start[nt]:
                 start[nt] = nt_start
                 done = False
@@ -545,7 +550,7 @@ def expand_all_optional_elements(grammar):
 
     for nt in grammar.nonterminals:
         expanded_grammar[nt] = []
-        for prod_index, p in enumerate(grammar.nonterminals[nt]):
+        for prod_index, p in enumerate(grammar.nonterminals[nt].rhs_list):
             # Aggravatingly, a reduce-expression that's an int is not
             # simply an offset into p.body. It only counts "concrete"
             # elements. Make a mapping for converting reduce-expressions to
@@ -608,8 +613,9 @@ def remove_empty_productions(grammar):
     """
     goal_nts = set(grammar.goals())
     return grammar.with_nonterminals({
-        nt: [p for p in plist if len(p.body) > 0 or nt in goal_nts]
-        for nt, plist in grammar.nonterminals.items()
+        nt: NtDef([], [p for p in nt_def.rhs_list
+                       if len(p.body) > 0 or nt in goal_nts])
+        for nt, nt_def in grammar.nonterminals.items()
     })
 
 
@@ -1128,7 +1134,7 @@ class State:
                         # we just found is still in the grammar. XXX FIXME
                         if (callee_rhs
                                 or any(p.body == callee_rhs
-                                       for p in grammar.nonterminals[next_symbol])):
+                                       for p in grammar.nonterminals[next_symbol].rhs_list)):
                             # print(
                             #     "    Considering stepping from item {} "
                             #     "into production {}"
