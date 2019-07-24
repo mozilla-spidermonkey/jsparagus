@@ -1440,13 +1440,13 @@ def demo():
     from .grammar import example_grammar
     grammar = example_grammar()
 
-    import lexer
+    from . import lexer
     tokenize = lexer.LexicalGrammar(
         "+ - * / ( )", NUM=r'0|[1-9][0-9]*', VAR=r'[_A-Za-z]\w+')
 
     import io
     out = io.StringIO()
-    generate_parser(out, grammar, ['expr'])
+    generate_parser(out, grammar)
     code = out.getvalue()
     print(code)
     print("----")
@@ -1460,8 +1460,9 @@ def demo():
             line = input('> ')
         except EOFError:
             break
+
         try:
-            result = parse(tokenize(line))
+            result = parse(tokenize, line)
         except Exception as exc:
             print(exc.__class__.__name__ + ": " + str(exc))
         else:
