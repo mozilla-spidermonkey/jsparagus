@@ -103,9 +103,7 @@ class Production:
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
 #
 CallMethod = collections.namedtuple("CallMethod", "method args")
-CallMethod.__iter__ = None
 Some = collections.namedtuple("Some", "inner")
-Some.__iter__ = None
 
 
 def expr_to_str(expr):
@@ -527,7 +525,6 @@ structure makes it easier to get into and out of parsing at run time.
 When an init nonterminal is matched, we take the "accept" action rather than
 a "reduce" action.
 """
-InitNt.__iter__ = None
 
 
 # *** Elements ****************************************************************
@@ -579,7 +576,6 @@ productions, one for every different argument tuple that is ever passed to it.
 # so the core of the algorithm never sees them.
 Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
-Optional.__iter__ = None
 
 
 # Lookahead restrictions stay with us throughout the algorithm.
@@ -627,8 +623,14 @@ def lookahead_intersect(a, b):
             return LookaheadRule(a.set | b.set, False)
 
 
-class ErrorToken:
+class ErrorTokenClass:
     """Special token that can be consumed to handle a syntax error."""
+
+    def __new__(cls):
+        global ErrorToken
+        if ErrorToken is None:
+            ErrorToken = object.__new__(ErrorTokenClass)
+        return ErrorToken
 
     def __str__(self):
         return 'ErrorToken'
@@ -639,8 +641,8 @@ class ErrorToken:
         return 'ErrorToken'
 
 
-ErrorToken = ErrorToken()
-
+ErrorToken = None
+ErrorToken = ErrorTokenClass()
 
 Parameterized = collections.namedtuple("Parameterized", "params body")
 Parameterized.__doc__ = """\
