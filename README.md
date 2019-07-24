@@ -164,26 +164,28 @@ Then you can:
 *   Generate parser tables for JavaScript (!):
 
     ```sh
-    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
-    python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o js_parser/parser_tables.py
+    make js_parser/parser_tables.py
     ```
 
     **Note:** This takes about 3 minutes to run on my laptop. jsparagus
     is slow.
 
-*   Run `./test.sh` to make sure things are working.
-
-*   Then, to see parser run, try this:
+    If you don't have `make`, you can run the commands by hand:
 
     ```sh
-    python -m js_parser.try_it
+    python3 -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
+    python3 -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o js_parser/parser_tables.py
     ```
+
+*   Run `make check` (or `./test.sh`) to make sure things are working.
+
+*   To see your parser run, `make jsdemo` (or `python -m js_parser.try_it`).
 
 *   The rust version of the JS parser can be generated using:
 
     ```sh
-    python -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
-    python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
+    python3 -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
+    python3 -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
     cd client
     cargo run
     ```
@@ -200,20 +202,8 @@ to parsing JS.
     and even
     ``[lookahead != `async [no LineTerminator here] function`]``.)
 
-*   No support for any kind of dangling `else` workaround.
-
-    Since `else` is a nonterminal, the cleanest and easiest workaround
-    would be an explicit way to say in the grammar, "shifting with this
-    next token is preferred over reducing with other rules".
-
 *   There is nothing like the level of weirdness that would be needed to
-    implement automatic semicolon insertion and restricted productions
-    ("`[no LineTerminator here]`").
-
-*   The input grammar can't contain actions (code to execute while parsing,
-    useful for building a nice AST;
-    contextually selecting the tokenizer goal symbol;
-    and emitting good error messages)
+    implement restricted productions ("`[no LineTerminator here]`").
 
 *   Errors are poor:
     `(` produces "expected one of {'(', 'VAR', 'NUM', '-'}, got None".
@@ -222,8 +212,9 @@ to parsing JS.
 
 *   Rust support is extremely rudimentary.
 
-*   No support for feedback from syntactic context to lexical analysis
-    (selecting the lexical goal symbol).
+*   Support for feedback from syntactic context to lexical analysis
+    (selecting the lexical goal symbol) is present in the Python version
+    only, not yet in Rust.
 
     This is needed for resolving the conflict in the lexical grammar
     between RegExps and division operators, at least. It might also be
