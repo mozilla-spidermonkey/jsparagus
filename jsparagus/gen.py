@@ -28,7 +28,9 @@ For very basic needs, see `lexer.LexicalGrammar`.
 
 import collections
 import io
+import pickle
 import sys
+
 from .ordered import OrderedSet, OrderedFrozenSet
 
 from .grammar import (Grammar,
@@ -1351,7 +1353,7 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
 
     consume(analyze_all_states(), progress)
 
-    return states, init_state_map
+    return ParserStates(context.grammar, prods, states, init_state_map)
 
 
 def consume(iterator, progress):
@@ -1377,10 +1379,33 @@ def consume(iterator, progress):
             sys.stdout.flush()
 
 
-def generate_parser(out, grammar, *, target='python',
-                    verbose=False, progress=False):
+class ParserStates:
+    """The output of LALR analysis of a Grammar."""
+
+    def __init__(self, grammar, prods, states, init_state_map):
+        self.grammar = grammar
+        self.prods = prods
+        self.states = states
+        self.init_state_map = init_state_map
+
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'rb') as f:
+            obj = pickle.load(f)
+            if len(f.read()) != 0:
+                raise ValueError("file has unexpected extra bytes at end")
+        if not isinstance(obj, cls):
+            raise TypeError("file contains wrong kind of object: expected {}, got {}"
+                            .format(cls.__name__, obj.__class__.__name__))
+        return obj
+
+
+def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
-    assert target in ('python', 'rust')
 
     # Step by step, we check the grammar and lower it to a more primitive form.
     grammar = expand_function_nonterminals(grammar)
@@ -1399,15 +1424,24 @@ def generate_parser(out, grammar, *, target='python',
         grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
-    states, init_state_map = analyze_states(context, prods, verbose=verbose,
-                                            progress=progress)
+    return analyze_states(context, prods, verbose=verbose, progress=progress)
 
-    # Finally, dump the output.
-    if target == 'rust':
-        emit.RustParserWriter(out, grammar, states,
-                              prods, init_state_map).emit()
+
+def generate_parser(out, source, *, verbose=False, progress=False, target='python'):
+    assert target in ('python', 'rust')
+
+    if isinstance(source, Grammar):
+        parser_states = generate_parser_states(
+            source, verbose=verbose, progress=progress)
+    elif isinstance(source, ParserStates):
+        parser_states = source
     else:
-        emit.write_python_parser(out, grammar, states, prods, init_state_map)
+        raise TypeError("unrecognized source: {!r}".format(source))
+
+    if target == 'rust':
+        emit.write_rust_parser(out, parser_states)
+    else:
+        emit.write_python_parser(out, parser_states)
 
 
 class Parser:

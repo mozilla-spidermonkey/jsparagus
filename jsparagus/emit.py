@@ -9,7 +9,12 @@ from .grammar import InitNt, CallMethod, Some, is_concrete_element, Apply, Optio
 from . import types
 
 
-def write_python_parser(out, grammar, states, prods, init_state_map):
+def write_python_parser(out, parser_states):
+    grammar = parser_states.grammar
+    states = parser_states.states
+    prods = parser_states.prods
+    init_state_map = parser_states.init_state_map
+
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Apply) for key in grammar.nonterminals):
         out.write("from jsparagus.runtime import Apply, ErrorToken\n")
@@ -77,12 +82,12 @@ TERMINAL_NAMES = {
 
 
 class RustParserWriter:
-    def __init__(self, out, grammar, states, prods, init_state_map):
+    def __init__(self, out, parser_states):
         self.out = out
-        self.grammar = grammar
-        self.states = states
-        self.prods = prods
-        self.init_state_map = init_state_map
+        self.grammar = parser_states.grammar
+        self.prods = parser_states.prods
+        self.states = parser_states.states
+        self.init_state_map = parser_states.init_state_map
         self.terminals = list(OrderedSet(
             t for state in self.states for t in state.action_row))
         self.nonterminals = list(OrderedSet(
@@ -481,3 +486,7 @@ class RustParserWriter:
             self.write(1, "Ok(unsafe { Box::from_raw(result as *mut _) } )")
             self.write(0, "}")
             self.write(0, "")
+
+
+def write_rust_parser(out, parser_states):
+    RustParserWriter(out, parser_states).emit()
