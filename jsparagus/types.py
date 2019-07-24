@@ -235,15 +235,11 @@ def infer_types(g):
         else:
             raise TypeError("unrecognized reduce expr: {!r}".format(expr))
 
-    for nt, plist_or_fn in g.nonterminals.items():
+    for nt, nt_def in g.nonterminals.items():
         if isinstance(nt, grammar.InitNt):
             continue
         nt_type = nt_types[nt]
-        if isinstance(plist_or_fn, grammar.NtDef):
-            plist = plist_or_fn.rhs_list
-        else:
-            plist = plist_or_fn
-        for i, p in enumerate(plist):
+        for i, p in enumerate(nt_def.rhs_list):
             if isinstance(p, grammar.ConditionalRhs):
                 p = p.rhs
             concrete_element_types = [

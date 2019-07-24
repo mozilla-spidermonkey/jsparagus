@@ -286,7 +286,7 @@ class Grammar:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
                                 .format(nt, i, rhs))
 
-        def copy_rhs_list(nt, nt_def, params):
+        def copy_nt_def(nt, nt_def, params):
             if isinstance(nt_def, NtDef):
                 for i, param in enumerate(nt_def.params):
                     if not isinstance(param, str):
@@ -368,7 +368,7 @@ class Grammar:
             if nt in self.variable_terminals:
                 raise TypeError(
                     "invalid grammar: {!r} is both a nonterminal and a variable terminal".format(nt))
-            return copy_rhs_list(nt, nt_def, [])
+            return copy_nt_def(nt, nt_def, [])
 
         for nt, nt_def in nonterminals.items():
             self.nonterminals[nt] = validate_nt(nt, nt_def)
@@ -472,6 +472,8 @@ class Grammar:
             else:
                 condition = "{} == {!r}".format(rhs.param, rhs.value)
             return "#[if {}] ".format(condition) + self.rhs_to_str(rhs.rhs)
+        elif isinstance(rhs, Production):
+            return self.rhs_to_str(rhs.body)
         elif len(rhs) == 0:
             return "[empty]"
         else:
@@ -508,12 +510,12 @@ class Grammar:
         )
 
     def dump(self):
-        for nt, rhs_list in self.nonterminals.items():
-            if isinstance(rhs_list, NtDef):
-                nt += "[" + ", ".join(rhs_list.params) + "]"
-                rhs_list = rhs_list.body
-            print(nt + " ::=")
-            for rhs in rhs_list:
+        for nt, nt_def in self.nonterminals.items():
+            left_side = self.element_to_str(nt)
+            if nt_def.params:
+                left_side += "[" + ", ".join(nt_def.params) + "]"
+            print(left_side + " ::=")
+            for rhs in nt_def.rhs_list:
                 print("   ", self.rhs_to_str(rhs))
             print()
 
