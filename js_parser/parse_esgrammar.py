@@ -188,7 +188,7 @@ class ESGrammarBuilder:
         assert of == "of"
         assert nl == "\n"
         assert nl2 == "\n"
-        return self.make_nt_def(nt_lhs, eq, [[t] for t in terminals])
+        return self.make_nt_def(nt_lhs, eq, [([t], None) for t in terminals])
 
     def nt_lhs_fn(self, name, ob, params, cb):
         # NTCALL [ params ]
