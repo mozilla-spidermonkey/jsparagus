@@ -23,8 +23,8 @@ pgen_lexer = LexicalGrammar("goal nt var token { } ; ? = =>",
 def list_of(e):
     nt = e + 's'
     return [
-        Production(nt, [e], CallMethod('single', (0,))),
-        Production(nt, [nt, e], CallMethod('append', (0, 1))),
+        Production([e], CallMethod('single', (0,))),
+        Production([nt, e], CallMethod('append', (0, 1))),
     ]
 
 
@@ -33,8 +33,8 @@ def call_method(name, body):
     return CallMethod(name, tuple(range(nargs)))
 
 
-def prod(nt, body, action):
-    return Production(nt, body, call_method(action, body))
+def prod(body, action):
+    return Production(body, call_method(action, body))
 
 
 pgen_grammar = Grammar(
@@ -42,12 +42,12 @@ pgen_grammar = Grammar(
         'grammar': [[Optional('token_defs'), 'nt_defs']],
         'token_defs': list_of('token_def'),
         'token_def': [
-            prod('token_def', ['token', 'IDENT', '=', 'STR', ';'], 'const_token'),
-            prod('token_def', ['var', 'token', 'IDENT', ';'], 'var_token'),
+            prod(['token', 'IDENT', '=', 'STR', ';'], 'const_token'),
+            prod(['var', 'token', 'IDENT', ';'], 'var_token'),
         ],
         'nt_defs': [
-            prod('nt_defs', ['nt_def'], 'nt_defs_single'),
-            prod('nt_defs', ['nt_defs', 'nt_def'], 'nt_defs_append'),
+            prod(['nt_def'], 'nt_defs_single'),
+            prod(['nt_defs', 'nt_def'], 'nt_defs_append'),
         ],
         'nt_def': [
             [Optional('goal'), 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
@@ -57,11 +57,11 @@ pgen_grammar = Grammar(
         'terms': list_of('term'),
         'term': [
             ['symbol'],
-            prod('term', ['symbol', '?'], 'optional'),
+            prod(['symbol', '?'], 'optional'),
         ],
         'symbol': [
-            prod('symbol', ['IDENT'], 'ident'),
-            prod('symbol', ['STR'], 'str'),
+            prod(['IDENT'], 'ident'),
+            prod(['STR'], 'str'),
         ],
         'action': [['=>', 'IDENT']],
     },
@@ -134,7 +134,7 @@ class AstBuilder:
     def nt_def(self, goal_kw, nt_kw, ident, lc, prods, rc):
         is_goal = goal_kw == "goal"
         assert (nt_kw, lc, rc) == ('nt', '{', '}')
-        prods = [Production(ident, body, action) for body, action in prods]
+        prods = [Production(body, action) for body, action in prods]
         return (is_goal, ident, prods)
 
     def prod(self, symbols, action, semi):

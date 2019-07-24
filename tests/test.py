@@ -13,9 +13,8 @@ from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
 
 
-def prod(nt, body, method_name):
-    return Production(
-        nt, body, CallMethod(method_name, list(range(len(body)))))
+def prod(body, method_name):
+    return Production(body, CallMethod(method_name, list(range(len(body)))))
 
 
 class GenTestCase(unittest.TestCase):
@@ -302,10 +301,10 @@ class GenTestCase(unittest.TestCase):
                 ['y', 'C'],
             ],
             'x': [
-                prod("x", ['A'], "x"),
+                prod(['A'], "x"),
             ],
             'y': [
-                prod("y", ['A'], "y"),
+                prod(['A'], "y"),
             ],
         })
         self.compile(tokenize, grammar)
@@ -413,10 +412,10 @@ class GenTestCase(unittest.TestCase):
                 [Optional('b'), Optional('c')],
             ],
             'b': [
-                prod('b', ['X'], 'b'),
+                prod(['X'], 'b'),
             ],
             'c': [
-                prod('b', ['Y'], 'c'),
+                prod(['Y'], 'c'),
             ]
         })
         parse = gen.compile(grammar)
@@ -512,7 +511,7 @@ class GenTestCase(unittest.TestCase):
 
         # In simple cases like this, the lookahead restriction can even
         # disambiguate a grammar that would otherwise be ambiguous.
-        rules['goal'].append(prod('goal', ['a'], 'goal_a'))
+        rules['goal'].append(prod(['a'], 'goal_a'))
         parse = gen.compile(Grammar(rules))
         self.assertEqual(
             parse(tokenize, 'a'),
@@ -796,8 +795,7 @@ class GenTestCase(unittest.TestCase):
                     False,
                     # Specifically ask for a method here, because otherwise we
                     # wouldn't get one and then type checking would fail.
-                    Production('name',
-                               ["yield"],
+                    Production(["yield"],
                                CallMethod("yield_as_name", []))),
             ]),
         }, variable_terminals=["IDENT"])
@@ -955,22 +953,22 @@ class GenTestCase(unittest.TestCase):
         grammar = Grammar({
             "expr": [
                 ["term"],
-                prod("expr", ["expr", "+", "term"], "add"),
-                prod("expr", ["expr", "-", "term"], "sub"),
+                prod(["expr", "+", "term"], "add"),
+                prod(["expr", "-", "term"], "sub"),
             ],
             "term": [
                 ["unary"],
-                prod("term", ["term", "*", "unary"], "mul"),
-                prod("term", ["term", "/", "unary"], "div"),
+                prod(["term", "*", "unary"], "mul"),
+                prod(["term", "/", "unary"], "div"),
             ],
             "unary": [
                 ["prim"],
-                prod("unary", ["-", "prim"], "neg"),
+                prod(["-", "prim"], "neg"),
             ],
             "prim": [
-                prod("prim", ["(", "expr", ")"], "parens"),
-                prod("prim", ["NUM"], "num"),
-                prod("prim", ["VAR"], "var"),
+                prod(["(", "expr", ")"], "parens"),
+                prod(["NUM"], "num"),
+                prod(["VAR"], "var"),
             ],
         }, goal_nts=['expr'])
 
@@ -1015,7 +1013,7 @@ class GenTestCase(unittest.TestCase):
         # The grammar `goal ::= NAME => f(g($1))`.
         grammar = Grammar(
             {
-                'goal': [Production('goal', ['NAME'], action)],
+                'goal': [Production(['NAME'], action)],
             },
             variable_terminals=['NAME'])
 

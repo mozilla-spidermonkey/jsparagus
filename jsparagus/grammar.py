@@ -48,33 +48,32 @@ def example_grammar():
 
 
 # A production consists of a left side, a right side, and a reduce action.
+# A `Production` value includes the latter two elements.
 # Incorporating actions lets us transform grammar while preserving behavior.
 #
 # The production `expr ::= term` is represented by
-# `Production("expr", ["term"], 0)`.
+# `Production(["term"], 0)`.
 #
 # The production `expr ::= expr + term => add` is represented by
-# `Production("expr", ["expr", "+", "term"], CallMethod("add", (0, 1, 2))`.
+# `Production(["expr", "+", "term"], CallMethod("add", (0, 1, 2))`.
 #
 class Production:
-    __slots__ = ['nt', 'body', 'action']
+    __slots__ = ['body', 'action']
 
-    def __init__(self, nt, body, action):
-        self.nt = nt
+    def __init__(self, body, action):
         self.body = body
         self.action = action
 
     def __eq__(self, other):
-        return self.nt == other.nt and self.body == other.body and self.action == other.action
+        return self.body == other.body and self.action == other.action
 
     __hash__ = None
 
     def __repr__(self):
-        return "Production(nt={!r}, body={!r}, action={!r})".format(self.nt, self.body, self.action)
+        return "Production(body={!r}, action={!r})".format(self.body, self.action)
 
     def copy_with(self, **kwargs):
-        return Production(nt=kwargs.get('nt', self.nt),
-                          body=kwargs.get('body', self.body),
+        return Production(body=kwargs.get('body', self.body),
                           action=kwargs.get('action', self.action))
 
 
@@ -282,7 +281,7 @@ class Grammar:
                     else:
                         method = '{} {}'.format(nt, i)
                     action = CallMethod(method, args=tuple(range(nargs)))
-                return copy_rhs(nt, i, sole_production, Production(nt, rhs, action), context_params)
+                return copy_rhs(nt, i, sole_production, Production(rhs, action), context_params)
             else:
                 raise TypeError("invalid grammar: grammar[{!r}][{}] should be a list of grammar symbols, not {!r}"
                                 .format(nt, i, rhs))
@@ -330,10 +329,10 @@ class Grammar:
                 # Check the form of init productions. Initially these look like
                 # [[goal]], but after the pipeline goes to work, they can be
                 # [[Optional(goal)]] or [[], [goal]].
-                if (plist_or_fn != [Production(nt, [nt.goal], 'accept')]
-                        and plist_or_fn != [Production(nt, [Optional(nt.goal)], 'accept')]
-                        and plist_or_fn != [Production(nt, [], 'accept'),
-                                            Production(nt, [nt.goal], 'accept')]):
+                if (plist_or_fn != [Production([nt.goal], 'accept')]
+                        and plist_or_fn != [Production([Optional(nt.goal)], 'accept')]
+                        and plist_or_fn != [Production([], 'accept'),
+                                            Production([nt.goal], 'accept')]):
                     raise ValueError(
                         "invalid grammar: grammar[{!r}] is not one of "
                         "the expected forms: got {!r}"
@@ -386,7 +385,7 @@ class Grammar:
             init_nt = InitNt(goal)
             if init_nt not in self.nonterminals:
                 self.nonterminals[init_nt] = [
-                    Production(init_nt, [goal], 'accept')]
+                    Production([goal], 'accept')]
             self.init_nts.append(init_nt)
 
     # Terminals are tokens that must appear verbatim in the input wherever they

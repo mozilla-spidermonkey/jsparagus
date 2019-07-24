@@ -588,8 +588,7 @@ def expand_all_optional_elements(grammar):
 
                 adjusted_action = adjust_reduce_expr(p.action)
                 expanded_grammar[nt].append(
-                    Production(nt=p.nt,
-                               body=expanded_rhs,
+                    Production(body=expanded_rhs,
                                action=adjusted_action))
                 prods.append(Prod(nt, prod_index, expanded_rhs,
                                   adjusted_action))

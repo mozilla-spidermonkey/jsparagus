@@ -123,7 +123,7 @@ class ESGrammarBuilder:
             else:
                 method_name = '{} {}'.format(nt_name, i)
             action = grammar.CallMethod(method_name, tuple(range(nargs)))
-        return grammar.Production(nt_name, rhs, action)
+        return grammar.Production(rhs, action)
 
     def needs_asi(self, p):
         """True if p is a production in which ASI can happen."""
