@@ -240,8 +240,6 @@ def infer_types(g):
             continue
         nt_type = nt_types[nt]
         for i, p in enumerate(nt_def.rhs_list):
-            if isinstance(p, grammar.ConditionalRhs):
-                p = p.rhs
             concrete_element_types = [
                 element_type(e)
                 for e in p.body

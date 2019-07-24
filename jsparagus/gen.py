@@ -36,7 +36,7 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, ConditionalRhs, Apply, Var, ErrorToken,
+                      Optional, Apply, Var, ErrorToken,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
@@ -242,8 +242,8 @@ def expand_function_nonterminals(grammar):
     def expand(nt, args):
         """Expand grammar.nonterminals[nt](**args).
 
-        Returns the expanded rhs list, which contains no ConditionalRhs or
-        Apply objects.
+        Returns the expanded rhs list, which contains no conditional
+        productions or Apply objects.
         """
 
         if args is None:
@@ -269,15 +269,19 @@ def expand_function_nonterminals(grammar):
                 return e
 
         def expand_production(p):
-            return p.copy_with(body=[expand_element(e) for e in p.body])
+            return p.copy_with(
+                body=[expand_element(e) for e in p.body],
+                condition=None)
 
         def expand_productions(plist):
             result = []
             for p in plist:
-                if isinstance(p, ConditionalRhs):
-                    if args_dict[p.param] == p.value:
-                        result.append(expand_production(p.rhs))
+                if p.condition is None:
+                    included = True
                 else:
+                    param, value = p.condition
+                    included = (args_dict[param] == value)
+                if included:
                     result.append(expand_production(p))
             return NtDef([], result)
 

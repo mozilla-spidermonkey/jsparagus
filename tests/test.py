@@ -6,8 +6,7 @@ import unittest
 import jsparagus
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
-                               Optional, LookaheadRule, NtDef,
-                               ConditionalRhs, Var)
+                               Optional, LookaheadRule, NtDef, Var)
 
 
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
@@ -786,17 +785,17 @@ class GenTestCase(unittest.TestCase):
             'stmt': NtDef(['Yield'], [
                 [name, "(", ")", ";"],
                 [name, "=", name, ";"],
-                ConditionalRhs('Yield', True, ["yield", name, ";"]),
+                Production(["yield", name, ";"],
+                           action=CallMethod("yield_stmt", [1]),
+                           condition=('Yield', True)),
             ]),
             'name': NtDef(['Yield'], [
                 ["IDENT"],
-                ConditionalRhs(
-                    'Yield',
-                    False,
-                    # Specifically ask for a method here, because otherwise we
-                    # wouldn't get one and then type checking would fail.
-                    Production(["yield"],
-                               CallMethod("yield_as_name", []))),
+                # Specifically ask for a method here, because otherwise we
+                # wouldn't get one and then type checking would fail.
+                Production(["yield"],
+                           CallMethod("yield_as_name", []),
+                           condition=('Yield', False)),
             ]),
         }, variable_terminals=["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",

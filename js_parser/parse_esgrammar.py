@@ -102,20 +102,16 @@ class ESGrammarBuilder:
 
     def to_production(self, lhs, i, rhs, is_sole_production):
         """Wrap a list of grammar symbols `rhs` in a Production object."""
-        if isinstance(rhs, grammar.ConditionalRhs):
-            body = rhs.rhs
-            return rhs._replace(
-                rhs=self.to_production(lhs, i, body, is_sole_production))
-
         if isinstance(lhs, tuple):
             nt_name = lhs[0]
         else:
             nt_name = lhs
 
-        nargs = sum(1 for e in rhs if grammar.is_concrete_element(e))
-        if (len(rhs) == 1
+        body, condition = rhs
+        nargs = sum(1 for e in body if grammar.is_concrete_element(e))
+        if (len(body) == 1
                 and nargs == 1
-                and self.is_matched_pair(nt_name, rhs[0])):
+                and self.is_matched_pair(nt_name, body[0])):
             action = 0
         else:
             if is_sole_production:
@@ -123,7 +119,7 @@ class ESGrammarBuilder:
             else:
                 method_name = '{} {}'.format(nt_name, i)
             action = grammar.CallMethod(method_name, tuple(range(nargs)))
-        return grammar.Production(rhs, action)
+        return grammar.Production(body, action, condition=condition)
 
     def needs_asi(self, p):
         """True if p is a production in which ASI can happen."""
@@ -132,17 +128,11 @@ class ESGrammarBuilder:
         # semicolons that should not trigger ASI are the ones in `for`
         # statements, which happen to be exactly those semicolons that are not
         # at the end of a production.
-        if isinstance(p, grammar.ConditionalRhs):
-            return self.needs_asi(p.rhs)
-        else:
-            return len(p.body) > 1 and p.body[-1] == ';'
+        return len(p.body) > 1 and p.body[-1] == ';'
 
     def apply_asi(self, p):
         """Return two rules based on p, so that ASI can be applied."""
         assert self.needs_asi(p)
-
-        if isinstance(p, grammar.ConditionalRhs):
-            return p._replace(rhs=self.apply_asi(p.rhs))
 
         assert isinstance(p.action, grammar.CallMethod)
 
@@ -219,11 +209,7 @@ class ESGrammarBuilder:
 
     def rhs_line(self, ifdef, rhs, prodid, nl):
         assert nl == "\n"
-        result = rhs
-        if ifdef is not None:
-            name, value = ifdef
-            result = grammar.ConditionalRhs(name, value, result)
-        return result
+        return (rhs, ifdef)
 
     def rhs_line_prose(self, prose, nl):
         assert nl == "\n"

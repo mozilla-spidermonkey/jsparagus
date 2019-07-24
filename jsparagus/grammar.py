@@ -47,9 +47,10 @@ def example_grammar():
     return Grammar(rules, goal_nts=['expr'], variable_terminals=['NUM', 'VAR'])
 
 
-# A production consists of a left side, a right side, and a reduce action.
-# A `Production` value includes the latter two elements.
-# Incorporating actions lets us transform grammar while preserving behavior.
+# A production consists of a left side, an optional condition, a right side,
+# and a reduce action.  A `Production` object includes everything except the
+# left side.  Incorporating actions lets us transform grammar while preserving
+# behavior.
 #
 # The production `expr ::= term` is represented by
 # `Production(["term"], 0)`.
@@ -58,23 +59,31 @@ def example_grammar():
 # `Production(["expr", "+", "term"], CallMethod("add", (0, 1, 2))`.
 #
 class Production:
-    __slots__ = ['body', 'action']
+    __slots__ = ['body', 'action', 'condition']
 
-    def __init__(self, body, action):
+    def __init__(self, body, action, *, condition=None):
         self.body = body
         self.action = action
+        self.condition = condition
 
     def __eq__(self, other):
-        return self.body == other.body and self.action == other.action
+        return (self.body == other.body
+                and self.action == other.action
+                and self.condition == other.condition)
 
     __hash__ = None
 
     def __repr__(self):
-        return "Production(body={!r}, action={!r})".format(self.body, self.action)
+        if self.condition is None:
+            return "Production({!r}, action={!r})".format(self.body, self.action)
+        else:
+            return ("Production({!r}, action={!r}, condition={!r})"
+                    .format(self.body, self.action, self.condition))
 
     def copy_with(self, **kwargs):
         return Production(body=kwargs.get('body', self.body),
-                          action=kwargs.get('action', self.action))
+                          action=kwargs.get('action', self.action),
+                          condition=kwargs.get('condition', self.condition))
 
 
 # ### Reduce actions
@@ -251,17 +260,14 @@ class Grammar:
                     .format(action, nt, i))
 
         def copy_rhs(nt, i, sole_production, rhs, context_params):
-            if isinstance(rhs, ConditionalRhs):
-                if rhs.param not in context_params:
-                    raise TypeError(
-                        "invalid grammar: undefined parameter {!r} "
-                        "in conditional for grammar[{!r}][{}]"
-                        .format(rhs.param, nt, i))
-                return ConditionalRhs(
-                    rhs.param,
-                    rhs.value,
-                    copy_rhs(nt, i, sole_production, rhs.rhs, context_params))
-            elif isinstance(rhs, Production):
+            if isinstance(rhs, Production):
+                if rhs.condition is not None:
+                    param, value = rhs.condition
+                    if param not in context_params:
+                        raise TypeError(
+                            "invalid grammar: undefined parameter {!r} "
+                            "in conditional for grammar[{!r}][{}]"
+                            .format(param, nt, i))
                 if rhs.action != 'accept':
                     check_reduce_action(nt, i, rhs, rhs.action)
                 assert isinstance(rhs.body, list)
@@ -475,14 +481,19 @@ class Grammar:
         return " ".join(self.element_to_str(e) for e in rhs)
 
     def rhs_to_str(self, rhs):
-        if isinstance(rhs, ConditionalRhs):
-            if rhs.value is True:
-                condition = "+" + rhs.param
-            elif rhs.value is False:
-                condition = "~" + rhs.param
+        if isinstance(rhs, Production):
+            if rhs.condition is None:
+                prefix = ''
             else:
-                condition = "{} == {!r}".format(rhs.param, rhs.value)
-            return "#[if {}] ".format(condition) + self.rhs_to_str(rhs.rhs)
+                param, value = rhs.condition
+                if value is True:
+                    condition = "+" + param
+                elif value is False:
+                    condition = "~" + param
+                else:
+                    condition = "{} == {!r}".format(param, value)
+                prefix = "#[if {}] ".format(condition)
+            return prefix + self.rhs_to_str(rhs.body)
         elif isinstance(rhs, Production):
             return self.rhs_to_str(rhs.body)
         elif len(rhs) == 0:
@@ -672,10 +683,9 @@ class NtDef:
 
     .params - List of strings, the names of the parameters.
 
-    .rhs_list - List of right-hand sides. Each element of rhs_list is either a
-    Production or a ConditionalRhs (see below). Also, arguments to Apply
-    elements in the productions in rhs_list can be Var(s) where `s in params`,
-    indicating that parameter should be passed through unchanged.
+    .rhs_list - List of Production objects. Arguments to Apply elements in the
+    productions can be Var(s) where `s in params`, indicating that parameter
+    should be passed through unchanged.
 
     An NtDef is a sort of lambda.
 
@@ -701,7 +711,7 @@ class NtDef:
     We offer NtDef.params as a way of representing this in our system.
 
         "StatementList": NtDef(["Return"], [
-            Conditional("Return", True, ["ReturnStatement"]),
+            Production(["ReturnStatement"], condition=("Return", True)),
             ["ExpressionStatement"],
         ]),
 
@@ -728,12 +738,6 @@ class NtDef:
                 and (self.params, self.rhs_list) == (other.params, other.rhs_list))
 
     __hash__ = None
-
-
-ConditionalRhs = collections.namedtuple("ConditionalRhs", "param value rhs")
-ConditionalRhs.__doc__ = """\
-ConditionalRhs(param, value, rhs) is just like rhs but conditionally ignored.
-"""
 
 
 Var = collections.namedtuple("Var", "name")
