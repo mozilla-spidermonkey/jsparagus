@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 venv/
 js_parser/parser_tables.py
+example_pgen.rs
