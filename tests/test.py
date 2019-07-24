@@ -1006,16 +1006,6 @@ class GenTestCase(unittest.TestCase):
                                 ')'))),
                     ')')))
 
-    def disabledEpsilonFreeTransform(self):
-        # Test for issue #2.
-        tokenize = lexer.LexicalGrammar('{ } X')
-        grammar = Grammar({
-            'goal': [['{', 'xlist', '}']],
-            'xlist': [[], ['xlist', 'X']]
-        })
-        self.compile(tokenize, grammar)
-        self.assertParse("{}", ('goal', '{', ('xlist 0',), '}'))
-
     def testConvenienceMethodTypeInference(self):
         """A method can be called only in an intermediate reduce expression."""
 
