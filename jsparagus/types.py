@@ -191,7 +191,7 @@ def infer_types(g):
         elif isinstance(e, grammar.Optional):
             return OptionType(element_type(e.inner))
         elif isinstance(e, grammar.Apply):
-            return nt_types[e.nt]
+            return nt_types[e.name]
         else:
             assert False, "unexpected element type: {!r}".format(e)
 

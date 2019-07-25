@@ -193,19 +193,20 @@ class Grammar:
             elif isinstance(e, Apply):
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
-                if e not in nonterminals and e.nt not in nonterminals:
+                if e not in nonterminals and e.name not in nonterminals:
                     raise ValueError(
                         "invalid grammar: unrecognized nonterminal "
                         "in production `grammar[{!r}][{}][{}]`: {!r}"
-                        .format(nt, i, j, e.nt))
+                        .format(nt, i, j, e.name))
                 args = [pair[0] for pair in e.args]
-                if e.nt in nonterminals and args != list(nonterminals[e.nt].params):
+                if (e.name in nonterminals
+                        and args != list(nonterminals[e.name].params)):
                     raise ValueError(
                         "invalid grammar: wrong arguments passed to {!r} "
                         "in production `grammar[{!r}][{}][{}]`: "
                         "passed {!r}, expected {!r}"
-                        .format(e.nt, nt, i, j, e.nt,
-                                args, list(nonterminals[e.nt].params)))
+                        .format(e.name, nt, i, j, e.name,
+                                args, list(nonterminals[e.name].params)))
                 for param_name, arg_expr in e.args:
                     if isinstance(arg_expr, Var):
                         if arg_expr.name not in context_params:
@@ -359,9 +360,9 @@ class Grammar:
                         "the expected forms: got {!r}"
                         .format(nt, rhs_list))
             elif isinstance(nt, Apply):
-                if not isinstance(nt.nt, str) or not isinstance(nt.args, tuple):
+                if not isinstance(nt.name, str) or not isinstance(nt.args, tuple):
                     raise TypeError(
-                        "invalid grammar: expected str or Apply(nt=str, "
+                        "invalid grammar: expected str or Apply(name=str, "
                         "args=tuple) keys in nonterminals dict, got {!r}"
                         .format(nt))
                 for pair in nt.args:
@@ -456,8 +457,9 @@ class Grammar:
                 else:
                     return name + "=" + repr(value)
 
-            return "{}[{}]".format(e.nt, ", ".join(arg_to_str(name, value)
-                                                   for name, value in e.args))
+            return "{}[{}]".format(e.name,
+                                   ", ".join(arg_to_str(name, value)
+                                             for name, value in e.args))
         elif self.is_nt(e):
             return e
         elif self.is_terminal(e):
@@ -586,9 +588,9 @@ def is_concrete_element(e):
 # Function application. Function nonterminals are expanded out very early in
 # the process, before states are calculated, so most of the algorithm doesn't
 # see these. They're replaced with gensym names.
-Apply = collections.namedtuple("Apply", "nt args")
+Apply = collections.namedtuple("Apply", "name args")
 Apply.__doc__ = """\
-Apply(nt, ((param0, arg0), ...)) is a call to a nonterminal that's a function.
+Apply(name, ((param0, arg0), ...)) is a call to a nonterminal function.
 
 Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
 NtDef which has 0 or more parameters.

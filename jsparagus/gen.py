@@ -263,8 +263,8 @@ def expand_function_nonterminals(grammar):
             elif isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
             elif isinstance(e, Apply):
-                return get_derived_name(e.nt, tuple((name, evaluate_arg(arg))
-                                                    for name, arg in e.args))
+                return get_derived_name(e.name, tuple((name, evaluate_arg(arg))
+                                                      for name, arg in e.args))
             else:
                 return e
 

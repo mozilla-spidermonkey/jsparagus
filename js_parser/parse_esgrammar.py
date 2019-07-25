@@ -93,7 +93,7 @@ class ESGrammarBuilder:
 
     def is_matched_pair(self, lhs_name, rhs_element):
         if isinstance(rhs_element, grammar.Apply):
-            rhs_element = rhs_element.nt
+            rhs_element = rhs_element.name
         for group in PRODUCTION_GROUPS:
             if (re.search(group, lhs_name) is not None
                     and re.search(group, rhs_element) is not None):

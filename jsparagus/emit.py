@@ -194,7 +194,7 @@ class RustParserWriter:
 
     def nonterminal_to_snake(self, ident):
         if isinstance(ident, Apply):
-            base_name = self.to_snek_case(ident.nt)
+            base_name = self.to_snek_case(ident.name)
             args = ''.join((("_" + self.to_snek_case(name))
                             for name, value in ident.args if value))
             return base_name + args
@@ -389,7 +389,7 @@ class RustParserWriter:
         elif isinstance(e, Optional):
             return types.OptionType(self.element_type(e.inner))
         elif isinstance(e, Apply):
-            return self.grammar.nt_types[e.nt]
+            return self.grammar.nt_types[e.name]
         else:
             assert False, "unexpected element type: {!r}".format(e)
 
