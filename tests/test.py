@@ -5,7 +5,7 @@ import re
 import unittest
 import jsparagus
 from jsparagus import gen, lexer
-from jsparagus.grammar import (Grammar, Production, CallMethod, Apply,
+from jsparagus.grammar import (Grammar, Production, CallMethod, Nt,
                                Optional, LookaheadRule, NtDef, Var)
 
 
@@ -760,9 +760,9 @@ class GenTestCase(unittest.TestCase):
 
     def testParameterizedProductions(self):
         passthru = ('Yield', Var('Yield')),
-        name = Apply("name", passthru)
-        stmt = Apply("stmt", passthru)
-        stmts = Apply("stmts", passthru)
+        name = Nt("name", passthru)
+        stmt = Nt("stmt", passthru)
+        stmts = Nt("stmts", passthru)
         grammar = Grammar({
             'script': [
                 ['def'],
@@ -771,11 +771,11 @@ class GenTestCase(unittest.TestCase):
             'def': [
                 [
                     'function', 'IDENT', '(', ')', '{',
-                    Apply('stmts', (('Yield', False),)), '}'
+                    Nt('stmts', (('Yield', False),)), '}'
                 ],
                 [
                     'function', '*', 'IDENT', '(', ')', '{',
-                    Apply('stmts', (('Yield', True),)), '}'
+                    Nt('stmts', (('Yield', True),)), '}'
                 ],
             ],
             'stmts': NtDef(['Yield'], [

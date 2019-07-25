@@ -1,10 +1,10 @@
 """Runtime support for jsparagus-generated parsers."""
 
-# Apply is unused here, but we re-export it.
-from .grammar import Apply, ErrorToken
+# Nt is unused here, but we re-export it.
+from .grammar import Nt, ErrorToken
 from .lexer import UnexpectedEndError
 
-__all__ = ['ACCEPT', 'ERROR', 'Apply', 'Parser', 'ErrorToken', 'make_parse_fn']
+__all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken', 'make_parse_fn']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1

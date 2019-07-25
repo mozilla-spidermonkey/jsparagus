@@ -92,7 +92,7 @@ class ESGrammarBuilder:
         return [nt_def]
 
     def is_matched_pair(self, lhs_name, rhs_element):
-        if isinstance(rhs_element, grammar.Apply):
+        if isinstance(rhs_element, grammar.Nt):
             rhs_element = rhs_element.name
         for group in PRODUCTION_GROUPS:
             if (re.search(group, lhs_name) is not None
@@ -256,7 +256,7 @@ class ESGrammarBuilder:
         assert (ob, cb) == ('[', ']')
         if len(set(k for k, expr in args)) != len(args):
             raise ValueError("parameter passed multiple times")
-        return grammar.Apply(name, tuple(args))
+        return grammar.Nt(name, tuple(args))
 
     def args_single(self, arg):
         return dict([arg])

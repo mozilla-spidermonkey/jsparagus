@@ -10,7 +10,7 @@ from . import types
 # A grammar is a dictionary mapping nonterminal names to lists of right-hand
 # sides. Each right-hand side (also called a "production") is a list whose
 # elements can include terminals, nonterminals, Optional elements, LookaheadRules,
-# and Apply elements (function calls).
+# and Nt elements (function calls).
 #
 # The most common elements are terminals and nonterminals, so a grammar usually
 # looks something like this:
@@ -183,14 +183,14 @@ class Grammar:
                     all_terminals.add(e)
                 return e
             elif isinstance(e, Optional):
-                if not isinstance(e.inner, (str, Apply)):
+                if not isinstance(e.inner, (str, Nt)):
                     raise TypeError(
                         "invalid grammar: unrecognized element "
                         "in production `grammar[{!r}][{}][{}].inner`: {!r}"
                         .format(nt, i, j, e.inner))
                 validate_element(nt, i, j, e.inner, context_params)
                 return e
-            elif isinstance(e, Apply):
+            elif isinstance(e, Nt):
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
                 if e not in nonterminals and e.name not in nonterminals:
@@ -359,10 +359,10 @@ class Grammar:
                         "invalid grammar: grammar[{!r}] is not one of "
                         "the expected forms: got {!r}"
                         .format(nt, rhs_list))
-            elif isinstance(nt, Apply):
+            elif isinstance(nt, Nt):
                 if not isinstance(nt.name, str) or not isinstance(nt.args, tuple):
                     raise TypeError(
-                        "invalid grammar: expected str or Apply(name=str, "
+                        "invalid grammar: expected str or Nt(name=str, "
                         "args=tuple) keys in nonterminals dict, got {!r}"
                         .format(nt))
                 for pair in nt.args:
@@ -425,7 +425,7 @@ class Grammar:
 
     # Nonterminals refer to other rules.
     def is_nt(self, element):
-        return isinstance(element, (str, Apply)) and element in self.nonterminals
+        return isinstance(element, (str, Nt)) and element in self.nonterminals
 
     def goals(self):
         """Return a list of this grammar's goal nonterminals."""
@@ -444,7 +444,7 @@ class Grammar:
     # === A few methods for dumping pieces of grammar.
 
     def element_to_str(self, e):
-        if isinstance(e, Apply):
+        if isinstance(e, Nt):
             def arg_to_str(name, value):
                 if value is True:
                     return '+' + name
@@ -567,7 +567,7 @@ a "reduce" action.
 # *   Strings represent terminals and nonterminals (see `Grammar.is_nt`,
 #     `Grammar.is_terminal`)
 #
-# *   `Apply` objects refer to parameterized nonterminals.
+# *   `Nt` objects refer to parameterized nonterminals.
 #
 # *   `Optional` objects represent optional elements.
 #
@@ -588,16 +588,16 @@ def is_concrete_element(e):
 # Function application. Function nonterminals are expanded out very early in
 # the process, before states are calculated, so most of the algorithm doesn't
 # see these. They're replaced with gensym names.
-Apply = collections.namedtuple("Apply", "name args")
-Apply.__doc__ = """\
-Apply(name, ((param0, arg0), ...)) is a call to a nonterminal function.
+Nt = collections.namedtuple("Nt", "name args")
+Nt.__doc__ = """\
+Nt(name, ((param0, arg0), ...)) is a call to a nonterminal function.
 
 Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
 NtDef which has 0 or more parameters.
 
 To refer to a nonterminal that has 0 parameters, just use the nonterminal's
 name. To use a parameterized nonterminal, we have to represent a function call
-somehow; for that, use Apply.
+somehow; for that, use Nt.
 
 Parameter names are strings. The arguments are typically booleans. They can be
 whatever you want, but each function nonterminal gets expanded into a set of
@@ -685,7 +685,7 @@ class NtDef:
 
     .params - List of strings, the names of the parameters.
 
-    .rhs_list - List of Production objects. Arguments to Apply elements in the
+    .rhs_list - List of Production objects. Arguments to Nt elements in the
     productions can be Var(s) where `s in params`, indicating that parameter
     should be passed through unchanged.
 

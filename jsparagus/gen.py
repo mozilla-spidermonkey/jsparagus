@@ -8,7 +8,7 @@ lists of right-hand sides. Each right-hand side is a list of symbols. There
 are several kinds of symbols; see grammar.py to learn more.
 
 Instead of a list of right-hand sides, the value of a grammar entry may be a
-function; see grammar.Apply for details.
+function; see grammar.Nt for details.
 
 **Token streams.**
 The user passes to each method an object representing the input sequence.
@@ -36,7 +36,7 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, Apply, Var, ErrorToken,
+                      Optional, Nt, Var, ErrorToken,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT
@@ -215,7 +215,7 @@ def expand_function_nonterminals(grammar):
 
     For example, a single pair `nt_name: NtDef(params=['A', 'B'], ...)` in
     `grammar.nonterminals` will be replaced with (assuming A and B are boolean
-    parameters) up to four pairs, each having an Apply object as the key and an
+    parameters) up to four pairs, each having an Nt object as the key and an
     NtDef with no parameters as the value.
 
     Returns a new copy of `grammar` whose NtDefs all have
@@ -233,7 +233,7 @@ def expand_function_nonterminals(grammar):
             if args is None:
                 name = nt
             else:
-                name = Apply(nt, args)
+                name = Nt(nt, args)
             assigned_names[nt, args] = name
             todo.append((nt, args))
             result[name] = None  # maybe unnecessary now
@@ -243,7 +243,7 @@ def expand_function_nonterminals(grammar):
         """Expand grammar.nonterminals[nt](**args).
 
         Returns the expanded rhs list, which contains no conditional
-        productions or Apply objects.
+        productions or Nt objects.
         """
 
         if args is None:
@@ -262,7 +262,7 @@ def expand_function_nonterminals(grammar):
                 return get_derived_name(e, None)
             elif isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
-            elif isinstance(e, Apply):
+            elif isinstance(e, Nt):
                 return get_derived_name(e.name, tuple((name, evaluate_arg(arg))
                                                       for name, arg in e.args))
             else:
@@ -1215,7 +1215,7 @@ class State:
                             shift_items[next_symbol].add(next_item)
                 else:
                     # The next element is always a terminal or nonterminal,
-                    # never an Optional or Apply (those are preprocessed out of
+                    # never an Optional or Nt (those are preprocessed out of
                     # the grammar) or LookaheadRule (see make_lr_item).
                     assert grammar.is_nt(next_symbol)
 
