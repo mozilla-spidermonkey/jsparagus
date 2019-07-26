@@ -131,11 +131,32 @@ def expr_to_str(expr):
         raise ValueError("unrecognized expression: {!r}".format(expr))
 
 
-# A Grammar object is just an object that contains a bunch of productions, like
-# the example grammar above. Since we have no other way of distinguishing
-# terminals from nonterminals, we store the set of terminals and the set of
-# nonterminals in the Grammar.
 class Grammar:
+    """A collection of productions.
+
+    *   self.variable_terminals - OrderedFrozenSet(str) - Terminals that carry
+        data, like (in JS) numeric literals and RegExps.
+
+    *   self.terminals - OrderedFrozenSet(str) - All terminals used in the
+        language, including those in self.variable_terminals.
+
+    *   self.nonterminals - {key: NtDef} - Keys are either (str|InitNt), early
+        in the pipeline, or Nt objects later on. Values are the NtDef objects
+        that contain the actual Productions.
+
+    *   self.nt_types - {str: jsparagus type} - Type information for each
+        nonterminal.  Regardless of whether we've expanded parameterized
+        nonterminals yet, this dict uses string keys. A parameterized
+        nonterminal must always expand to a set of nonterminals that share
+        a type.
+
+    *   self.methods - {str: MethodType} - Type information for methods.
+
+    *   self.init_nts - [InitNt or Nt] - The list of all elements of
+        self.nonterminals.keys() that are init nonterminals.
+
+    """
+
     def __init__(
             self,
             nonterminals,
