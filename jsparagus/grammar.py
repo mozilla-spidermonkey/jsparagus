@@ -143,20 +143,13 @@ class Grammar:
             variable_terminals=(),
             type_info=None):
 
-        # This constructor type-checks the arguments.
+        # This constructor supports passing in a sort of jumbled blob of
+        # strings, lists, and actual objects, and normalizes it all to a more
+        # typeful structure. Being able to interpret simple
+        # "list-of-lists-of-strings" input is super useful for tests.
         #
-        # This only checks types. It doesn't check that the grammar is LR, that
-        # it's cycle-free, or any other nice properties.
-        #
-        # Normally, good Python style is never to check types but to plow ahead
-        # and let the language throw if the caller has erred. Here, the values
-        # are quite large, errors are likely, and if we don't check, the
-        # eventual TypeError doesn't usefully point to the location of the
-        # problem. So we check up front.
-        #
-        # (More justification: it's very sad to throw a bad error message while
-        # building a good one or while debugging. Passing these checks means a
-        # grammar can be used safely with `dump`, `rhs_to_str`, and so on.)
+        # We don't check here that the grammar is LR, that it's cycle-free, or
+        # any other nice properties.
 
         nonterminals = dict(nonterminals.items())
 
