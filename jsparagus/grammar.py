@@ -86,15 +86,15 @@ class Production:
                           condition=kwargs.get('condition', self.condition))
 
 
-# ### Reduce actions
+# *** Reduce actions **********************************************************
 #
 # Reduce actions say what happens when a production is matched.
 #
 # Reduce expressions are a little language used to specify reduce
 # actions. There are two types of reduce expression:
 #
-# *   An integer in the range(0, len(production.body)) returns a previously parsed
-#     value from the parser's stack.
+# *   An integer in the range(0, len(production.body)) returns a previously
+#     parsed value from the parser's stack.
 #
 # *   CallMethod objects pass values to a builder method and return the result.
 #     The `args` are nested reduce expressions.
