@@ -1,4 +1,5 @@
 from jsparagus import runtime
+from jsparagus.runtime import Nt, ErrorToken
 
 actions = [
     # 0. <empty>
@@ -26,7 +27,7 @@ actions = [
     {'token': 3, 'var': 4, 'nt': 1, 'goal': 2},
 
     # 8. nt_def
-    {None: -7, 'nt': -7, 'goal': -7},
+    {None: -5, 'nt': -5, 'goal': -5},
 
     # 9. token_def
     {'nt': -3, 'goal': -3, 'token': -3, 'var': -3},
@@ -44,7 +45,7 @@ actions = [
     {'IDENT': 20},
 
     # 14. nt_defs nt_def
-    {None: -8, 'nt': -8, 'goal': -8},
+    {None: -6, 'nt': -6, 'goal': -6},
 
     # 15. token_defs nt_defs
     {'nt': 1, 'goal': 2, None: -2},
@@ -68,10 +69,10 @@ actions = [
     {None: -9, 'nt': -9, 'goal': -9},
 
     # 22. "nt" IDENT "{" IDENT
-    {';': -21, '?': -21, '=>': -21, 'IDENT': -21, 'STR': -21},
+    {';': -22, '?': -22, '=>': -22, 'IDENT': -22, 'STR': -22},
 
     # 23. "nt" IDENT "{" STR
-    {';': -22, '?': -22, '=>': -22, 'IDENT': -22, 'STR': -22},
+    {';': -23, '?': -23, '=>': -23, 'IDENT': -23, 'STR': -23},
 
     # 24. "nt" IDENT "{" prods
     {'}': 32, 'IDENT': 22, 'STR': 23},
@@ -86,7 +87,7 @@ actions = [
     {';': -17, '=>': -17, 'IDENT': -17, 'STR': -17},
 
     # 28. "nt" IDENT "{" symbol
-    {'?': 38, ';': -19, '=>': -19, 'IDENT': -19, 'STR': -19},
+    {'?': 38, ';': -20, '=>': -20, 'IDENT': -20, 'STR': -20},
 
     # 29. "goal" "nt" IDENT "{"
     {'}': 39, 'IDENT': 22, 'STR': 23},
@@ -95,7 +96,7 @@ actions = [
     {';': 41},
 
     # 31. "var" "token" IDENT ";"
-    {'nt': -6, 'goal': -6, 'token': -6, 'var': -6},
+    {'nt': -8, 'goal': -8, 'token': -8, 'var': -8},
 
     # 32. "nt" IDENT "{" prods "}"
     {None: -11, 'nt': -11, 'goal': -11},
@@ -116,7 +117,7 @@ actions = [
     {';': -18, '=>': -18, 'IDENT': -18, 'STR': -18},
 
     # 38. "nt" IDENT "{" symbol "?"
-    {';': -20, '=>': -20, 'IDENT': -20, 'STR': -20},
+    {';': -21, '=>': -21, 'IDENT': -21, 'STR': -21},
 
     # 39. "goal" "nt" IDENT "{" "}"
     {None: -10, 'nt': -10, 'goal': -10},
@@ -125,10 +126,10 @@ actions = [
     {'}': 44, 'IDENT': 22, 'STR': 23},
 
     # 41. "token" IDENT "=" STR ";"
-    {'nt': -5, 'goal': -5, 'token': -5, 'var': -5},
+    {'nt': -7, 'goal': -7, 'token': -7, 'var': -7},
 
     # 42. "nt" IDENT "{" terms "=>" IDENT
-    {';': -23},
+    {';': -19},
 
     # 43. "nt" IDENT "{" terms action ";"
     {'}': -16, 'IDENT': -16, 'STR': -16},
@@ -195,14 +196,14 @@ reductions = [
     ('token_defs', 1, lambda builder, x0: builder.single(x0)),
     # 3. token_defs ::= token_defs token_def => append($0, $1)
     ('token_defs', 2, lambda builder, x0, x1: builder.append(x0, x1)),
-    # 4. token_def ::= "token" IDENT "=" STR ";" => const_token($0, $1, $2, $3, $4)
-    ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.const_token(x0, x1, x2, x3, x4)),
-    # 5. token_def ::= "var" "token" IDENT ";" => var_token($0, $1, $2, $3)
-    ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.var_token(x0, x1, x2, x3)),
-    # 6. nt_defs ::= nt_def => nt_defs_single($0)
+    # 4. nt_defs ::= nt_def => nt_defs_single($0)
     ('nt_defs', 1, lambda builder, x0: builder.nt_defs_single(x0)),
-    # 7. nt_defs ::= nt_defs nt_def => nt_defs_append($0, $1)
+    # 5. nt_defs ::= nt_defs nt_def => nt_defs_append($0, $1)
     ('nt_defs', 2, lambda builder, x0, x1: builder.nt_defs_append(x0, x1)),
+    # 6. token_def ::= "token" IDENT "=" STR ";" => const_token($0, $1, $2, $3, $4)
+    ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.const_token(x0, x1, x2, x3, x4)),
+    # 7. token_def ::= "var" "token" IDENT ";" => var_token($0, $1, $2, $3)
+    ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.var_token(x0, x1, x2, x3)),
     # 8. nt_def ::= "nt" IDENT "{" "}" => nt_def(None, $0, $1, $2, None, $3)
     ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def(None, x0, x1, x2, None, x3)),
     # 9. nt_def ::= "goal" "nt" IDENT "{" "}" => nt_def(Some($0), $1, $2, $3, None, $4)
@@ -223,16 +224,16 @@ reductions = [
     ('terms', 1, lambda builder, x0: builder.single(x0)),
     # 17. terms ::= terms term => append($0, $1)
     ('terms', 2, lambda builder, x0, x1: builder.append(x0, x1)),
-    # 18. term ::= symbol => $0
-    ('term', 1, lambda builder, x0: x0),
-    # 19. term ::= symbol "?" => optional($0, $1)
-    ('term', 2, lambda builder, x0, x1: builder.optional(x0, x1)),
-    # 20. symbol ::= IDENT => ident($0)
-    ('symbol', 1, lambda builder, x0: builder.ident(x0)),
-    # 21. symbol ::= STR => str($0)
-    ('symbol', 1, lambda builder, x0: builder.str(x0)),
-    # 22. action ::= "=>" IDENT => action($0, $1)
+    # 18. action ::= "=>" IDENT => action($0, $1)
     ('action', 2, lambda builder, x0, x1: builder.action(x0, x1)),
+    # 19. term ::= symbol => $0
+    ('term', 1, lambda builder, x0: x0),
+    # 20. term ::= symbol "?" => optional($0, $1)
+    ('term', 2, lambda builder, x0, x1: builder.optional(x0, x1)),
+    # 21. symbol ::= IDENT => ident($0)
+    ('symbol', 1, lambda builder, x0: builder.ident(x0)),
+    # 22. symbol ::= STR => str($0)
+    ('symbol', 1, lambda builder, x0: builder.str(x0)),
 ]
 
 

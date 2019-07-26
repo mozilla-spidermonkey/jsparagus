@@ -151,8 +151,8 @@ class Grammar:
         # We don't check here that the grammar is LR, that it's cycle-free, or
         # any other nice properties.
 
+        # Copy/infer the arguments.
         nonterminals = dict(nonterminals.items())
-
         if goal_nts is None:
             # Default to the first nonterminal in the dictionary.
             goal_nts = []
@@ -161,9 +161,44 @@ class Grammar:
                 break
         else:
             goal_nts = list(goal_nts)
-
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
-        self.nonterminals = {nt: None for nt in nonterminals}
+
+        keys_are_nt = isinstance(next(iter(nonterminals)), Nt)
+        key_type = Nt if keys_are_nt else str
+
+        # Gather some information just by looking at keys (without examining
+        # every production).
+        #
+        # str_to_nt maps the name of each non-parameterized
+        # nonterminal to `Nt(name)`, a cache.
+        str_to_nt = {}  # {str: Nt}
+        # nt_params lists the names of each nonterminal's parameters (empty
+        # tuple for non-parameterized nts).
+        nt_params = {}  # {str: tuple(str)}
+        for key in nonterminals:
+            if not isinstance(key, key_type):
+                raise ValueError(
+                    "invalid grammar: conflicting key types in nonterminals dict - "
+                    "expected either all str or all Nt, got {!r} and {!r}"
+                    .format(key_type.__name__, key.__class__.__name__))
+            if keys_are_nt:
+                name = key.name
+                param_names = tuple(name for name, value in key.args)
+            else:
+                name = key
+                param_names = ()
+                if isinstance(nonterminals[key], NtDef):
+                    param_names = tuple(nonterminals[key].params)
+            if name not in nt_params:
+                nt_params[name] = param_names
+            else:
+                if nt_params[name] != param_names:
+                    raise ValueError(
+                        "conflicting parameter name lists for nt {!r}: "
+                        "both {!r} and {!r}"
+                        .format(name, nt_params[name], param_names))
+            if param_names == () and name not in str_to_nt:
+                str_to_nt[name] = Nt(name, ())
 
         # Validate, desugar, and copy the grammar. As a side effect, calling
         # validate_element on every element of the grammar populates
@@ -172,17 +207,22 @@ class Grammar:
 
         def validate_element(nt, i, j, e, context_params):
             if isinstance(e, str):
-                if e not in nonterminals:
+                if e in str_to_nt:
+                    return str_to_nt[e]
+                else:
                     all_terminals.add(e)
-                return e
+                    return e
             elif isinstance(e, Optional):
                 if not isinstance(e.inner, (str, Nt)):
                     raise TypeError(
                         "invalid grammar: unrecognized element "
                         "in production `grammar[{!r}][{}][{}].inner`: {!r}"
                         .format(nt, i, j, e.inner))
-                validate_element(nt, i, j, e.inner, context_params)
-                return e
+                inner = validate_element(nt, i, j, e.inner, context_params)
+                if inner is e.inner:
+                    return e
+                else:
+                    return Optional(inner)
             elif isinstance(e, Nt):
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
@@ -191,15 +231,14 @@ class Grammar:
                         "invalid grammar: unrecognized nonterminal "
                         "in production `grammar[{!r}][{}][{}]`: {!r}"
                         .format(nt, i, j, e.name))
-                args = [pair[0] for pair in e.args]
-                if (e.name in nonterminals
-                        and args != list(nonterminals[e.name].params)):
+                args = tuple(pair[0] for pair in e.args)
+                if e.name in nt_params and args != nt_params[e.name]:
                     raise ValueError(
                         "invalid grammar: wrong arguments passed to {!r} "
                         "in production `grammar[{!r}][{}][{}]`: "
                         "passed {!r}, expected {!r}"
-                        .format(e.name, nt, i, j, e.name,
-                                args, list(nonterminals[e.name].params)))
+                        .format(e.name, nt, i, j,
+                                args, nt_params[e.name]))
                 for param_name, arg_expr in e.args:
                     if isinstance(arg_expr, Var):
                         if arg_expr.name not in context_params:
@@ -254,22 +293,7 @@ class Grammar:
                     .format(action, nt, i))
 
         def copy_rhs(nt, i, sole_production, rhs, context_params):
-            if isinstance(rhs, Production):
-                if rhs.condition is not None:
-                    param, value = rhs.condition
-                    if param not in context_params:
-                        raise TypeError(
-                            "invalid grammar: undefined parameter {!r} "
-                            "in conditional for grammar[{!r}][{}]"
-                            .format(param, nt, i))
-                if rhs.action != 'accept':
-                    check_reduce_action(nt, i, rhs, rhs.action)
-                assert isinstance(rhs.body, list)
-                return rhs.copy_with(body=[
-                    validate_element(nt, i, j, e, context_params)
-                    for j, e in enumerate(rhs.body)
-                ])
-            elif isinstance(rhs, list):
+            if isinstance(rhs, list):
                 # Bare list, no action. Desugar to a Production, inferring a
                 # reasonable default action.
                 nargs = sum(1 for e in rhs if is_concrete_element(e))
@@ -284,12 +308,28 @@ class Grammar:
                     else:
                         method = '{} {}'.format(nt, i)
                     action = CallMethod(method, args=tuple(range(nargs)))
-                return copy_rhs(nt, i, sole_production, Production(rhs, action), context_params)
-            else:
+                rhs = Production(rhs, action)
+
+            if not isinstance(rhs, Production):
                 raise TypeError(
                     "invalid grammar: grammar[{!r}][{}] should be "
-                    "a list of grammar symbols, not {!r}"
+                    "a Production or list of grammar symbols, not {!r}"
                     .format(nt, i, rhs))
+
+            if rhs.condition is not None:
+                param, value = rhs.condition
+                if param not in context_params:
+                    raise TypeError(
+                        "invalid grammar: undefined parameter {!r} "
+                        "in conditional for grammar[{!r}][{}]"
+                        .format(param, nt, i))
+            if rhs.action != 'accept':
+                check_reduce_action(nt, i, rhs, rhs.action)
+            assert isinstance(rhs.body, list)
+            return rhs.copy_with(body=[
+                validate_element(nt, i, j, e, context_params)
+                for j, e in enumerate(rhs.body)
+            ])
 
         def copy_nt_def(nt, nt_def, params):
             if isinstance(nt_def, NtDef):
@@ -316,48 +356,25 @@ class Grammar:
                         for i, rhs in enumerate(rhs_list)]
             return NtDef(params, rhs_list)
 
-        def validate_nt(nt, nt_def):
-            if isinstance(nt, InitNt):
-                # Users don't include init nonterminals when initially creating
-                # a Grammar. They are automatically added below. But if this
-                # Grammar is being created by hacking on a previous Grammar, it
-                # will already have them.
-                if not isinstance(nt.goal, str):
-                    raise TypeError(
-                        "invalid grammar: InitNt.goal should be a string, "
-                        "got {!r}"
-                        .format(nt))
-                if nt.goal not in nonterminals:
-                    raise TypeError(
-                        "invalid grammar: undefined nonterminal referenced "
-                        "by InitNt: {!r}"
-                        .format(nt))
-                if nt.goal not in goal_nts:
-                    raise TypeError(
-                        "invalid grammar: nonterminal referenced by InitNt "
-                        "is not in the list of goals: {!r}"
-                        .format(nt))
-                # Check the form of init productions. Initially these look like
-                # [[goal]], but after the pipeline goes to work, they can be
-                # [[Optional(goal)]] or [[], [goal]].
-                if isinstance(nt_def, NtDef):
-                    rhs_list = nt_def.rhs_list
-                else:
-                    rhs_list = nt_def
-                if (rhs_list != [Production([nt.goal], 'accept')]
-                        and rhs_list != [Production([Optional(nt.goal)], 'accept')]
-                        and rhs_list != [Production([], 'accept'),
-                                         Production([nt.goal], 'accept')]):
+        def check_nt_key(nt):
+            if isinstance(nt, str):
+                if not nt.isidentifier():
                     raise ValueError(
-                        "invalid grammar: grammar[{!r}] is not one of "
-                        "the expected forms: got {!r}"
-                        .format(nt, rhs_list))
+                        "invalid grammar: nonterminal names must be identifiers, not {!r}"
+                        .format(nt))
+                if nt in self.variable_terminals:
+                    raise TypeError(
+                        "invalid grammar: {!r} is both a nonterminal and a variable terminal"
+                        .format(nt))
             elif isinstance(nt, Nt):
-                if not isinstance(nt.name, str) or not isinstance(nt.args, tuple):
+                assert keys_are_nt  # checked earlier
+                if not (isinstance(nt.name, (str, InitNt))
+                        and isinstance(nt.args, tuple)):
                     raise TypeError(
                         "invalid grammar: expected str or Nt(name=str, "
                         "args=tuple) keys in nonterminals dict, got {!r}"
                         .format(nt))
+                check_nt_key(nt.name)
                 for pair in nt.args:
                     if (not isinstance(pair, tuple)
                             or len(pair) != 2
@@ -366,25 +383,58 @@ class Grammar:
                         raise TypeError(
                             "invalid grammar: expected tuple((str, bool)) args, got {!r}"
                             .format(nt))
-            elif isinstance(nt, str):
-                if not nt.isidentifier():
-                    raise ValueError(
-                        "invalid grammar: nonterminal names must be identifiers, not {!r}"
+            elif isinstance(nt, InitNt):
+                # Users don't include init nonterminals when initially creating
+                # a Grammar. They are automatically added below. But if this
+                # Grammar is being created by hacking on a previous Grammar, it
+                # will already have them.
+                if not isinstance(nt.goal, Nt):
+                    raise TypeError(
+                        "invalid grammar: InitNt.goal should be a nonterminal, "
+                        "got {!r}"
+                        .format(nt))
+                # nt.goal is a "use", not a "def". Check it like a use.
+                # Bogus question marks appear in error messages :-|
+                validate_element(nt, '?', '?', nt.goal, [])
+                if nt.goal not in goal_nts:
+                    raise TypeError(
+                        "invalid grammar: nonterminal referenced by InitNt "
+                        "is not in the list of goals: {!r}"
                         .format(nt))
             else:
                 raise TypeError(
                     "invalid grammar: expected string keys in nonterminals dict, got {!r}"
                     .format(nt))
-            if nt in self.variable_terminals:
-                raise TypeError(
-                    "invalid grammar: {!r} is both a nonterminal and a variable terminal"
-                    .format(nt))
-            return copy_nt_def(nt, nt_def, [])
 
+        def validate_nt(nt, nt_def):
+            check_nt_key(nt)
+            if isinstance(nt, InitNt):
+                # Check the form of init productions. Initially these look like
+                # [[goal]], but after the pipeline goes to work, they can be
+                # [[Optional(goal)]] or [[], [goal]].
+                if not isinstance(nt_def, NtDef):
+                    raise TypeError(
+                        "invalid grammar: key {!r} must map to "
+                        "value of type NtDef, not {!r}"
+                        .format(nt, nt_def))
+                rhs_list = nt_def.rhs_list
+                g = nt.goal
+                if (rhs_list != [Production([g], 'accept')]
+                        and rhs_list != [Production([Optional(g)], 'accept')]
+                        and rhs_list != [Production([], 'accept'),
+                                         Production([g], 'accept')]):
+                    raise ValueError(
+                        "invalid grammar: grammar[{!r}] is not one of "
+                        "the expected forms: got {!r}"
+                        .format(nt, rhs_list))
+
+            return nt, copy_nt_def(nt, nt_def, [])
+
+        self.nonterminals = {}
         for nt, nt_def in nonterminals.items():
-            self.nonterminals[nt] = validate_nt(nt, nt_def)
+            nt, nt_def = validate_nt(nt, nt_def)
+            self.nonterminals[nt] = nt_def
 
-        # Cache the set of terminals for is_terminal.
         self.terminals = OrderedFrozenSet(all_terminals)
 
         # Check types of reduce expressions and infer method types. But if the
@@ -398,12 +448,29 @@ class Grammar:
         # Synthesize "init" nonterminals.
         self.init_nts = []
         for goal in goal_nts:
-            if goal not in nonterminals:
+            # Convert str goals to Nt objects and validate.
+            if isinstance(goal, str):
+                ok = goal in str_to_nt
+                if ok:
+                    goal = str_to_nt[goal]
+            elif isinstance(goal, Nt):
+                if keys_are_nt:
+                    ok = goal in nonterminals
+                else:
+                    ok = goal.name in nonterminals
+            if not ok:
                 raise ValueError(
                     "goal nonterminal {!r} is undefined".format(goal))
-            init_nt = InitNt(goal)
-            if init_nt not in self.nonterminals:
-                self.nonterminals[init_nt] = NtDef(
+
+            # Weird, but the key of an init nonterminal really is
+            # `Nt(InitNt(Nt(goal_name, goal_args)), ())`. It takes no arguments,
+            # but it refers to a goal that might take arguments.
+            init_key = InitNt(goal)
+            init_nt = Nt(init_key, ())
+            if keys_are_nt:
+                init_key = init_nt
+            if init_key not in self.nonterminals:
+                self.nonterminals[init_key] = NtDef(
                     [], [Production([goal], 'accept')])
             self.init_nts.append(init_nt)
 
@@ -411,18 +478,14 @@ class Grammar:
     # appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
     # in the example grammar.
     def is_terminal(self, element):
-        return type(element) is str and element in self.terminals
+        return type(element) is str
 
     def is_variable_terminal(self, element):
         return type(element) is str and element in self.variable_terminals
 
-    # Nonterminals refer to other rules.
-    def is_nt(self, element):
-        return isinstance(element, (str, Nt)) and element in self.nonterminals
-
     def goals(self):
         """Return a list of this grammar's goal nonterminals."""
-        return [init_nt.goal for init_nt in self.init_nts]
+        return [init_nt.name.goal for init_nt in self.init_nts]
 
     def clone(self):
         """Return a deep copy of a grammar (which must contain no functions)."""
@@ -438,23 +501,7 @@ class Grammar:
 
     def element_to_str(self, e):
         if isinstance(e, Nt):
-            def arg_to_str(name, value):
-                if value is True:
-                    return '+' + name
-                elif value is False:
-                    return '~' + name
-                elif isinstance(value, Var):
-                    if value.name == name:
-                        return '?' + value.name
-                    return name + "=" + value.name
-                else:
-                    return name + "=" + repr(value)
-
-            return "{}[{}]".format(e.name,
-                                   ", ".join(arg_to_str(name, value)
-                                             for name, value in e.args))
-        elif self.is_nt(e):
-            return e
+            return e.pretty()
         elif self.is_terminal(e):
             if self.is_variable_terminal(e):
                 return e
@@ -557,10 +604,9 @@ a "reduce" action.
 #
 # Elements are the things that can appear in the .body list of a Production:
 #
-# *   Strings represent terminals and nonterminals (see `Grammar.is_nt`,
-#     `Grammar.is_terminal`)
+# *   Strings represent terminals (see `Grammar.is_terminal`)
 #
-# *   `Nt` objects refer to parameterized nonterminals.
+# *   `Nt` objects refer to nonterminals.
 #
 # *   `Optional` objects represent optional elements.
 #
@@ -578,24 +624,59 @@ def is_concrete_element(e):
             and e is not ErrorToken)
 
 
-# Function application. Function nonterminals are expanded out very early in
-# the process, before states are calculated, so most of the algorithm doesn't
-# see these. They're replaced with gensym names.
-Nt = collections.namedtuple("Nt", "name args")
-Nt.__doc__ = """\
-Nt(name, ((param0, arg0), ...)) is a call to a nonterminal function.
+class Nt:
+    """Nt(name, ((param0, arg0), ...)) - An invocation of a nonterminal.
 
-Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
-NtDef which has 0 or more parameters.
+    Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
+    NtDef which has 0 or more parameters.
 
-To refer to a nonterminal that has 0 parameters, just use the nonterminal's
-name. To use a parameterized nonterminal, we have to represent a function call
-somehow; for that, use Nt.
+    Parameter names are strings. The arguments are typically booleans. They can be
+    whatever you want, but each function nonterminal gets expanded into a set of
+    productions, one for every different argument tuple that is ever passed to it.
+    """
 
-Parameter names are strings. The arguments are typically booleans. They can be
-whatever you want, but each function nonterminal gets expanded into a set of
-productions, one for every different argument tuple that is ever passed to it.
-"""
+    __slots__ = ['name', 'args']
+
+    def __init__(self, name, args=()):
+        assert isinstance(name, (str, InitNt))
+        self.name = name
+        self.args = args
+
+    def __hash__(self):
+        return hash(('nt', self.name, self.args))
+
+    def __eq__(self, other):
+        return (isinstance(other, Nt)
+                and (self.name, self.args) == (other.name, other.args))
+
+    def __repr__(self):
+        if self.args:
+            return 'Nt({!r}, {!r})'.format(self.name, self.args)
+        else:
+            return 'Nt({!r})'.format(self.name)
+
+    def pretty(self):
+        """Unique version of this Nt to use in the Python runtime.
+
+        Also used in debug/verbose output.
+        """
+        def arg_to_str(name, value):
+            if value is True:
+                return '+' + name
+            elif value is False:
+                return '~' + name
+            elif isinstance(value, Var):
+                if value.name == name:
+                    return '?' + value.name
+                return name + "=" + value.name
+            else:
+                return name + "=" + repr(value)
+
+        if len(self.args) == 0:
+            return self.name
+        return "{}[{}]".format(self.name,
+                               ", ".join(arg_to_str(name, value)
+                                         for name, value in self.args))
 
 
 # Optional elements. These are expanded out before states are calculated,

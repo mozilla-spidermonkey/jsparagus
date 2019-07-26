@@ -52,7 +52,7 @@ def write_python_parser(out, parser_states):
 
     out.write("reductions = [\n")
     for prod_index, prod in enumerate(prods):
-        if isinstance(prod.nt, InitNt):
+        if isinstance(prod.nt.name, InitNt):
             continue
         nparams = sum(1 for e in prod.rhs if is_concrete_element(e))
         names = ["x" + str(i) for i in range(nparams)]
@@ -62,7 +62,7 @@ def write_python_parser(out, parser_states):
         out.write("    # {}. {}\n".format(
             prod_index,
             grammar.production_to_str(prod.nt, prod.rhs, prod.action)))
-        out.write("    ({!r}, {!r}, {}),\n".format(prod.nt, len(names), fn))
+        out.write("    ({!r}, {!r}, {}),\n".format(prod.nt.pretty(), len(names), fn))
     out.write("]\n\n\n")  # two blank lines before class.
 
     out.write("class DefaultBuilder:\n")
@@ -76,7 +76,7 @@ def write_python_parser(out, parser_states):
 
     for init_nt, index in init_state_map.items():
         out.write("parse_{} = runtime.make_parse_fn(actions, ctns, reductions, {}, DefaultBuilder)\n"
-                  .format(init_nt, index))
+                  .format(init_nt.name, index))
 
 
 TERMINAL_NAMES = {
@@ -476,17 +476,18 @@ class RustParserWriter:
         self.write(0, "")
 
         for init_nt, index in self.init_state_map.items():
-            result_type_jsparagus = self.grammar.nt_types[init_nt]
+            assert init_nt.args == ()
+            result_type_jsparagus = self.grammar.nt_types[init_nt.name]
             if generic:
                 result_type = self.type_to_rust(result_type_jsparagus, "H")
                 self.write(0, "pub fn parse_{}<H: Handler, In: TokenStream<Token = Token>>(",
-                           init_nt)
+                           init_nt.name)
                 self.write(1, "handler: &H,")
             else:
                 result_type = self.type_to_rust(
                     result_type_jsparagus, "concrete", boxed=True)
                 self.write(0, "pub fn parse_{}<In: TokenStream<Token = Token>>(",
-                           init_nt)
+                           init_nt.name)
                 self.write(1, "handler: &DefaultHandler,")
             self.write(1, "tokens: In,")
             self.write(0, ") -> Result<{}, &'static str> {{", result_type)

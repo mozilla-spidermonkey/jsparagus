@@ -72,7 +72,7 @@ def empty_nt_set(grammar):
     def production_is_empty(nt, p):
         return all(isinstance(e, LookaheadRule)
                    or isinstance(e, Optional)
-                   or (grammar.is_nt(e) and e in empties)
+                   or (isinstance(e, Nt) and e in empties)
                    for e in p.body)
 
     def evaluate_action_with_empty_matches(p):
@@ -93,7 +93,7 @@ def empty_nt_set(grammar):
                 if isinstance(e, Optional):
                     return None
                 else:
-                    assert grammar.is_nt(e)
+                    assert isinstance(e, Nt)
                     return empties[e]
             elif expr == 'accept':
                 # Hmm, this is not ideal! Maybe 'accept' needs to take an
@@ -146,7 +146,7 @@ def check_cycle_free(grammar):
                 for e in rhs:
                     if grammar.is_terminal(e):
                         break  # no good, this production contains a terminal
-                    elif grammar.is_nt(e):
+                    elif isinstance(e, Nt):
                         if e in empties:
                             if all_possibly_empty_so_far:
                                 result.append(e)
@@ -158,7 +158,8 @@ def check_cycle_free(grammar):
                             all_possibly_empty_so_far = False
                             result = [e]
                     elif isinstance(e, Optional):
-                        if grammar.is_nt(e.inner):
+                        if isinstance(e.inner, Nt):
+                            # XXX FIXME BUG this can't be right
                             result.append(e.inner)
                     elif isinstance(e, LookaheadRule):
                         # Ignore the restriction. We lose a little precision
@@ -218,38 +219,26 @@ def expand_function_nonterminals(grammar):
     parameters) up to four pairs, each having an Nt object as the key and an
     NtDef with no parameters as the value.
 
-    Returns a new copy of `grammar` whose NtDefs all have
+    `grammar.nonterminals` must have string keys.
+
+    Returns a new copy of `grammar` with Nt keys, whose NtDefs all have
     `nt_def.params == []`.
     """
 
-    assigned_names = {(goal, None): goal for goal in grammar.goals()}
-    todo = collections.deque(assigned_names.keys())
-    # maybe could start empty now
-    result = {nt: None for nt in grammar.nonterminals}
+    todo = collections.deque(grammar.goals())
+    new_nonterminals = {}
 
-    def get_derived_name(nt, args):
-        name = assigned_names.get((nt, args))
-        if name is None:
-            if args is None:
-                name = nt
-            else:
-                name = Nt(nt, args)
-            assigned_names[nt, args] = name
-            todo.append((nt, args))
-            result[name] = None  # maybe unnecessary now
-        return name
-
-    def expand(nt, args):
+    def expand(nt):
         """Expand grammar.nonterminals[nt](**args).
 
         Returns the expanded rhs list, which contains no conditional
         productions or Nt objects.
         """
 
-        if args is None:
+        if nt.args is None:
             args_dict = None
         else:
-            args_dict = dict(args)
+            args_dict = dict(nt.args)
 
         def evaluate_arg(arg):
             if isinstance(arg, Var):
@@ -258,13 +247,15 @@ def expand_function_nonterminals(grammar):
                 return arg
 
         def expand_element(e):
-            if grammar.is_nt(e):
-                return get_derived_name(e, None)
-            elif isinstance(e, Optional):
+            if isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
             elif isinstance(e, Nt):
-                return get_derived_name(e.name, tuple((name, evaluate_arg(arg))
-                                                      for name, arg in e.args))
+                args = tuple((name, evaluate_arg(arg))
+                             for name, arg in e.args)
+                e = Nt(e.name, args)
+                if e not in new_nonterminals:
+                    todo.append(e)
+                return e
             else:
                 return e
 
@@ -285,25 +276,16 @@ def expand_function_nonterminals(grammar):
                     result.append(expand_production(p))
             return NtDef([], result)
 
-        if args is None:
-            return expand_productions(grammar.nonterminals[nt].rhs_list)
-        else:
-            nt_def = grammar.nonterminals[nt]
-            assert len(args) == len(nt_def.params)
-            # Create activation environment! are we having fun yet
-            args = tuple(zip(nt_def.params, args))
-            return expand_productions(nt_def.rhs_list)
+        nt_def = grammar.nonterminals[nt.name]
+        assert [name for name, value in nt.args] == nt_def.params
+        return expand_productions(nt_def.rhs_list)
 
     while todo:
-        nt, args = todo.popleft()
-        name = assigned_names[nt, args]
-        if result[name] is None:  # not already expanded
-            result[name] = expand(nt, args)
-    unreachable_keys = [nt for nt,
-                        rhs_list in result.items() if rhs_list is None]
-    for key in unreachable_keys:
-        del result[key]
-    return grammar.with_nonterminals(result)
+        nt = todo.popleft()
+        if nt not in new_nonterminals:  # not already expanded
+            new_nonterminals[nt] = expand(nt)
+
+    return grammar.with_nonterminals(new_nonterminals)
 
 
 # *** Start sets and follow sets **********************************************
@@ -359,7 +341,7 @@ def seq_start(grammar, start, seq):
         s.remove(EMPTY)
         if grammar.is_terminal(e) or e is ErrorToken:
             s.add(e)
-        elif grammar.is_nt(e):
+        elif isinstance(e, Nt):
             s |= start[e]
         else:
             assert isinstance(e, LookaheadRule)
@@ -387,7 +369,7 @@ def make_start_set_cache(grammar, prods, start):
         for e in reversed(rhs):
             if grammar.is_terminal(e) or e is ErrorToken:
                 s = OrderedFrozenSet([e])
-            elif grammar.is_nt(e):
+            elif isinstance(e, Nt):
                 s = start[e]
                 if EMPTY in s:
                     s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
@@ -415,10 +397,6 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
     of terminals that can appear immediately to the right of `A` in some
     sentential form"; plus, "If `A` can be the rightmost symbol in some
     sentential form, then $ is in FOLLOW(A)."
-
-    The `init_nts` argument is necessary to specify what a sentential form is,
-    since sentential forms are partial derivations of a particular goal
-    nonterminal.
 
     Returns a default-dictionary mapping nts to follow sets.
     """
@@ -449,7 +427,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
         visited.add(nt)
         for prod_index, rhs in prods_with_indexes_by_nt[nt]:
             for i, symbol in enumerate(rhs):
-                if grammar.is_nt(symbol):
+                if isinstance(symbol, Nt):
                     visit(symbol)
                     after = start_set_cache[prod_index][i + 1]
                     if EMPTY in after:
@@ -508,7 +486,7 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
     for i in range(start_index, len(rhs)):
         e = rhs[i]
         if isinstance(e, Optional):
-            if grammar.is_nt(e.inner) and e.inner in empties:
+            if isinstance(e.inner, Nt) and e.inner in empties:
                 # If this is already possibly-empty in the input grammar, it's an
                 # error! The grammar is ambiguous.
                 raise ValueError(
@@ -518,7 +496,7 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
                             grammar.element_to_str(e.inner)))
             replacement = None
             break
-        elif grammar.is_nt(e) and e in empties:
+        elif isinstance(e, Nt) and e in empties:
             replacement = empties[e]
             break
     else:
@@ -914,7 +892,7 @@ class PgenContext:
             prod_index, offset = pair
             rhs = self.prods[prod_index].rhs
             nt = rhs[offset]
-            if not self.grammar.is_nt(nt):
+            if not isinstance(nt, Nt):
                 return
             for next_prod_index, next_rhs in self.prods_with_indexes_by_nt[nt]:
                 if t in self.start_set_cache[next_prod_index][0]:
@@ -946,14 +924,14 @@ class PgenContext:
         for prod_index, prod in enumerate(self.prods):
             rhs1 = prod.rhs
             for i in range(len(rhs1) - 1):
-                if (self.grammar.is_nt(rhs1[i])
+                if (isinstance(rhs1[i], Nt)
                         and t in self.start_set_cache[prod_index][i + 1]):
                     start_points[rhs1[i]] = (prod_index, i + 1)
 
         def successors(nt):
             for prod_index, rhs in self.prods_with_indexes_by_nt[nt]:
                 last = rhs[-1]
-                if self.grammar.is_nt(last):
+                if isinstance(last, Nt):
                     yield prod_index, last
 
         path = find_path(start_points.keys(), successors,
@@ -1125,7 +1103,7 @@ class State:
             rhs = prods[item.prod_index].rhs
             if item.offset < len(rhs):
                 next_symbol = rhs[item.offset]
-                if grammar.is_nt(next_symbol):
+                if isinstance(next_symbol, Nt):
                     # Step in to each production for this nt.
                     for pair in prods_with_indexes_by_nt[next_symbol]:
                         dest_prod_index, callee_rhs = pair
@@ -1215,9 +1193,9 @@ class State:
                             shift_items[next_symbol].add(next_item)
                 else:
                     # The next element is always a terminal or nonterminal,
-                    # never an Optional or Nt (those are preprocessed out of
-                    # the grammar) or LookaheadRule (see make_lr_item).
-                    assert grammar.is_nt(next_symbol)
+                    # never an Optional (already preprocessed out of the
+                    # grammar) or LookaheadRule (see make_lr_item).
+                    assert isinstance(next_symbol, Nt)
 
                     # We never reduce with a lookahead restriction still
                     # active, so `lookahead=None` is appropriate.
@@ -1265,9 +1243,10 @@ class State:
                         self, t, shift_items[t], prod.nt, prod.rhs)
             # Encode reduce actions as negative numbers.
             # Negative zero is the same as zero, hence the "- 1".
-            action_row[t] = ACCEPT if isinstance(
-                prod.nt, InitNt) else -prod_index - 1
-        ctn_row = {nt: get_state_index(State(context, ss, self))
+            action_row[t] = (
+                ACCEPT if isinstance(prod.nt.name, InitNt)
+                else -prod_index - 1)
+        ctn_row = {nt.pretty(): get_state_index(State(context, ss, self))
                    for nt, ss in ctn_items.items()}
         self.action_row = action_row
         self.ctn_row = ctn_row
@@ -1343,7 +1322,7 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
     init_state_map = {}
     for init_nt in context.grammar.init_nts:
         init_prod_index = prods.index(
-            Prod(init_nt, 0, [init_nt.goal], action="accept"))
+            Prod(init_nt, 0, [init_nt.name.goal], action="accept"))
         start_item = context.make_lr_item(init_prod_index,
                                           0,
                                           lookahead=None,
@@ -1352,7 +1331,7 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
             init_state = State(context, [])
         else:
             init_state = State(context, [start_item])
-        init_state_map[init_nt.goal] = get_state_index(init_state)
+        init_state_map[init_nt.name.goal] = get_state_index(init_state)
 
     # Turn the crank.
     def analyze_all_states():
@@ -1466,7 +1445,8 @@ def compile_multi(grammar):
     exec(out.getvalue(), scope)
     parser = Parser()
     for goal_nt in grammar.goals():
-        name = "parse_" + goal_nt
+        assert goal_nt.args == ()
+        name = "parse_" + goal_nt.name
         setattr(parser, name, scope[name])
     return parser
 
@@ -1474,7 +1454,8 @@ def compile_multi(grammar):
 def compile(grammar):
     assert isinstance(grammar, Grammar)
     [goal] = grammar.goals()
-    return getattr(compile_multi(grammar), "parse_" + goal)
+    assert goal.args == ()
+    return getattr(compile_multi(grammar), "parse_" + goal.name)
 
 
 # *** Fun demo ****************************************************************
