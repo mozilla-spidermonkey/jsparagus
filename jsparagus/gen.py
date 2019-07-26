@@ -1246,7 +1246,7 @@ class State:
             action_row[t] = (
                 ACCEPT if isinstance(prod.nt.name, InitNt)
                 else -prod_index - 1)
-        ctn_row = {nt.pretty(): get_state_index(State(context, ss, self))
+        ctn_row = {nt: get_state_index(State(context, ss, self))
                    for nt, ss in ctn_items.items()}
         self.action_row = action_row
         self.ctn_row = ctn_row

@@ -33,7 +33,11 @@ def write_python_parser(out, parser_states):
     out.write("]\n\n")
     out.write("ctns = [\n")
     for state in states:
-        out.write("    " + repr(state.ctn_row) + ",\n")
+        row = {
+            nt.pretty(): state_id
+            for nt, state_id in state.ctn_row.items()
+        }
+        out.write("    " + repr(row) + ",\n")
     out.write("]\n\n")
 
     def action(a):
