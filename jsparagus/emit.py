@@ -443,6 +443,8 @@ class RustParserWriter:
                         variable_used[expr] = True
                         return "x{}".format(expr)
 
+                compiled_expr = compile_reduce_expr(prod.action)
+
                 for index, e in reversed(list(enumerate(elements))):
                     ty = self.element_type(e)
                     if isinstance(ty, types.NtType):
@@ -460,7 +462,7 @@ class RustParserWriter:
                         self.write(3, "stack.pop();", index)
 
                 self.write(3, "stack.push(Box::into_raw({}) as *mut ());",
-                           compile_reduce_expr(prod.action))
+                           compiled_expr)
                 self.write(3, "NonterminalId::{}",
                            self.nonterminal_to_camel(prod.nt))
                 self.write(2, "}")
