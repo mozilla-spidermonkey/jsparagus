@@ -39,6 +39,13 @@ def write_python_parser(out, parser_states):
         }
         out.write("    " + repr(row) + ",\n")
     out.write("]\n\n")
+    out.write("error_codes = [\n")
+    SLICE_LEN = 16
+    for i in range(0, len(states) + SLICE_LEN - 1, SLICE_LEN):
+        slice = states[i:i + SLICE_LEN]
+        out.write("    {}\n".format(
+            " ".join(repr(e.error_code) + "," for e in slice)))
+    out.write("]\n\n")
 
     def action(a):
         """Compile a reduce expression to Python"""
