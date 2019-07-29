@@ -1,38 +1,5 @@
 pub use crate::parser_generated::{Handler, NonterminalId, Token};
-
-const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
-const ERROR: i64 = ACCEPT - 1;
-
-#[derive(Clone, Copy)]
-struct Action(i64);
-
-impl Action {
-    fn is_shift(self) -> bool {
-        0 <= self.0
-    }
-
-    fn shift_state(self) -> usize {
-        assert!(self.is_shift());
-        self.0 as usize
-    }
-
-    fn is_reduce(self) -> bool {
-        ACCEPT < self.0 && self.0 < 0
-    }
-
-    fn reduce_prod_index(self) -> usize {
-        assert!(self.is_reduce());
-        (-self.0 - 1) as usize
-    }
-
-    fn is_accept(self) -> bool {
-        self.0 == ACCEPT
-    }
-
-    fn is_error(self) -> bool {
-        self.0 == ERROR
-    }
-}
+use crate::parser::{Parser, Result};
 
 pub trait TokenStream {
     type Token;
@@ -50,54 +17,38 @@ pub struct ParserTables<'a> {
     pub goto_width: usize,
 }
 
+impl<'a> ParserTables<'a> {
+    pub fn check(&self) {
+        assert_eq!(
+            self.action_table.len(),
+            self.state_count * self.action_width
+        );
+        assert_eq!(
+            self.goto_table.len(),
+            self.state_count * self.goto_width
+        );
+    }
+}
+
 pub fn parse<H: Handler, In, Out>(
     handler: &H,
     mut tokens: In,
     start_state: usize,
     tables: &ParserTables,
     reduce: Out,
-) -> Result<*mut (), &'static str>
+) -> Result<*mut ()>
 where
     In: TokenStream<Token = Token>,
     Out: Fn(&H, usize, &mut Vec<*mut ()>) -> NonterminalId,
 {
-    assert_eq!(
-        tables.action_table.len(),
-        tables.state_count * tables.action_width
-    );
-    assert_eq!(
-        tables.goto_table.len(),
-        tables.state_count * tables.goto_width
-    );
+    tables.check();
 
-    let mut t = In::token_as_index(tokens.peek());
-    let mut state_stack: Vec<usize> = vec![start_state];
-    let mut node_stack = vec![];
+    let mut parser = Parser::new(tables, reduce, handler, start_state);
 
-    loop {
-        let state = *state_stack.last().unwrap();
-        let action = Action(tables.action_table[state * tables.action_width + t]);
-
-        if action.is_shift() {
-            node_stack.push(Box::into_raw(Box::new(tokens.take())) as *mut _);
-            state_stack.push(action.shift_state());
-            t = In::token_as_index(tokens.peek());
-        } else if action.is_reduce() {
-            let prod_index = action.reduce_prod_index();
-            let nt = reduce(handler, prod_index, &mut node_stack);
-            assert!((nt as usize) < tables.goto_width);
-            state_stack.truncate(node_stack.len());
-            let prev_state = *state_stack.last().unwrap();
-            let state_after = tables.goto_table[prev_state * tables.goto_width + nt as usize];
-            assert!(state_after < tables.state_count);
-            state_stack.push(state_after);
-        } else if action.is_accept() {
-            assert_eq!(state_stack.len(), 2);
-            assert_eq!(node_stack.len(), 1);
-            return Ok(node_stack.pop().unwrap());
-        } else {
-            assert!(action.is_error());
-            return Err("syntax error lol");
-        }
+    let mut t = tokens.peek();
+    while *t != Token::End {
+        parser.write_token(tokens.take())?;
+        t = tokens.peek();
     }
+    parser.close()
 }

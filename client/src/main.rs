@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "unstable", feature(test))]
 
 mod lexer;
+mod parser;
 mod parser_generated;
 mod parser_runtime;
 
@@ -34,9 +35,15 @@ mod tests {
 fn main() {
     while let Ok(buffer) = get_input("> ") {
         let lexer = Lexer::new(buffer.chars());
-        let result =
-            parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
-        println!("{:?}", result);
+        let parse_result =
+            parser_generated::parse_Script(
+                &mut parser_generated::DefaultHandler {},
+                lexer,
+            );
+        match parse_result {
+            Ok(ast) => println!("{:?}", ast),
+            Err(err) => println!("{}", err.message()),
+        }
     }
 }
 
