@@ -70,12 +70,3 @@ pub fn get_input(prompt: &str) -> Result<String, Box<dyn Error>> {
         Ok(input.trim().to_string())
     }
 }
-
-// fn main() -> io::Result<()> {
-//     let mut buffer = String::new();
-//     io::stdin().read_to_string(&mut buffer)?;
-//     let lexer = Lexer::new(buffer.chars());
-//     parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer)
-//         .expect("parsing grammar on stdin");
-//     Ok(())
-// }

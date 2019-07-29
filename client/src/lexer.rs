@@ -388,7 +388,6 @@ where
     fn take(&mut self) -> Self::Token {
         let result = self.current.take().unwrap();
         self.current = self.advance();
-        println!("{:?}", result);
         result
     }
     fn token_as_index(t: &Self::Token) -> usize {

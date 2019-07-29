@@ -122,24 +122,16 @@ where
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
-            if self.try_write_token(token) {
+            let action = self.reduce_all(token.terminal_id);
+            if action.is_shift() {
+                self.node_stack
+                    .push(Box::into_raw(Box::new(token)) as *mut _);
+                self.state_stack.push(action.shift_state());
                 return Ok(());
             } else {
-                self.try_error_handling(&token)?;
+                assert!(action.is_error());
+                self.try_error_handling(token)?;
             }
-        }
-    }
-
-    fn try_write_token(&mut self, token: &Token) -> bool {
-        let action = self.reduce_all(token.terminal_id);
-        if action.is_shift() {
-            self.node_stack
-                .push(Box::into_raw(Box::new(token)) as *mut _);
-            self.state_stack.push(action.shift_state());
-            true
-        } else {
-            assert!(action.is_error());
-            false
         }
     }
 
@@ -162,19 +154,12 @@ where
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
 
-        // TODO: Fancy ASI cases.
-        if t.saw_newline
+        let can_asi = t.saw_newline
             || t.terminal_id == TerminalId::End
-            || t.terminal_id == TerminalId::RightCurlyBracket
-        {
-            if self.try_write_token(&Token::basic_token(TerminalId::Semicolon)) {
-                // The next loop in write_token will push `t`.
-                return Ok(());
-            }
-        }
+            || t.terminal_id == TerminalId::RightCurlyBracket;
 
         let action = self.reduce_all(TerminalId::ErrorToken);
-        if action.is_shift() {
+        if action.is_shift() && can_asi {
             // Don't actually push an ErrorToken onto the stack here. Treat the
             // ErrorToken as having been consumed and move to the recovered
             // state.
