@@ -188,7 +188,7 @@ class Grammar:
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
 
         keys_are_nt = isinstance(next(iter(nonterminals)), Nt)
-        key_type = Nt if keys_are_nt else str
+        key_type = Nt if keys_are_nt else (str, InitNt)
 
         self._cache = {}
 
@@ -205,8 +205,8 @@ class Grammar:
             if not isinstance(key, key_type):
                 raise ValueError(
                     "invalid grammar: conflicting key types in nonterminals dict - "
-                    "expected either all str or all Nt, got {!r} and {!r}"
-                    .format(key_type.__name__, key.__class__.__name__))
+                    "expected either all str or all Nt, got {!r}"
+                    .format(key.__class__.__name__))
             if keys_are_nt:
                 name = key.name
                 param_names = tuple(name for name, value in key.args)
