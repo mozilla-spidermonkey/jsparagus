@@ -145,7 +145,7 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
         super().__init__(parser, filename)
 
         # Very dirty hack for checking that ASI happens at end of line.
-        parser.builder.check_asi = self._check_asi
+        parser.builder.handle_error = self._handle_error
 
     def _match(self, closing):
         match = TOKEN_RE.match(self.src, self.point)
@@ -258,23 +258,25 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
         ws_between = self.src[i:j]
         return any(c in ws_between for c in '\r\n\u2028\u2029')
 
-    def _check_asi(self, ast):
+    def _handle_error(self, error_code):
         """This method is monkeypatched onto the builder to enforce some ASI rules.
 
         I'm not proud of this hack.
         """
-        # ASI is allowed in three places:
-        # - at the end of the source text
-        # - before a close brace `}`
-        # - after a LineTerminator
-        # Hence the three-part if-condition below.
-        #
-        # The other quirks of ASI are implemented by massaging the syntax, in
-        # parse_esgrammar.py.
-
-        if not self.closed and self.take() != '}' and not self.saw_line_terminator():
-            self.throw("missing semicolon")
-        return ast
+        if error_code == 'asi':
+            # ASI is allowed in three places:
+            # - at the end of the source text
+            # - before a close brace `}`
+            # - after a LineTerminator
+            # Hence the three-part if-condition below.
+            #
+            # The other quirks of ASI are implemented by massaging the syntax,
+            # in parse_esgrammar.py.
+            if not self.closed and self.take() != '}' and not self.saw_line_terminator():
+                self.throw("missing semicolon")
+        else:
+            # ASI is always allowed in this one state.
+            assert error_code == 'do_while_asi'
 
     def can_close(self):
         match = TOKEN_RE.match(self.src)

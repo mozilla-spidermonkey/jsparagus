@@ -187,6 +187,12 @@ ctns = [
     {},
 ]
 
+error_codes = [
+    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None, None, None,
+]
+
 reductions = [
     # 0. grammar ::= nt_defs => grammar(None, $0)
     ('grammar', 1, lambda builder, x0: builder.grammar(None, x0)),
@@ -253,4 +259,5 @@ class DefaultBuilder:
     def action(self, x0, x1): return ('action', x0, x1)
 
 
-parse_grammar = runtime.make_parse_fn(actions, ctns, reductions, 0, DefaultBuilder)
+parse_grammar = runtime.make_parse_fn(
+actions, ctns, reductions, error_codes, 0, DefaultBuilder)

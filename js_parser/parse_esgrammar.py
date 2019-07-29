@@ -148,17 +148,17 @@ class ESGrammarBuilder:
                 and p.body[3] == '('
                 and p.body[5] == ')'
                 and p.body[6] == ';'):
-            asi_action = action
+            code = "do_while_asi"
         else:
-            asi_action = grammar.CallMethod('check_asi', (action,))
+            code = "asi"
 
         return [
             # The preferred production, with the semicolon in.
             p.copy_with(body=p.body[:],
                         action=action),
             # The fallback production, performing ASI.
-            p.copy_with(body=p.body[:-1] + [grammar.ErrorToken],
-                        action=asi_action),
+            p.copy_with(body=p.body[:-1] + [grammar.ErrorSymbol(code)],
+                        action=action),
         ]
 
     def make_nt_def(self, lhs, eq, rhs_list):

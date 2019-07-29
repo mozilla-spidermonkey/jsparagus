@@ -54,11 +54,12 @@ def throw_syntax_error(actions, state, t, tokens):
                      .format(sorted(expected), t))
 
 
-def parse(actions, ctns, reductions, entry_state, lexer_cls, text, builder):
+def parse(actions, ctns, reductions, error_codes, entry_state, lexer_cls, text, builder):
     """ Table-driven LR parser. """
     parser = Parser(actions,
                     ctns,
                     reductions,
+                    error_codes,
                     entry_state,
                     builder)
     lexer = lexer_cls(parser)
@@ -88,10 +89,11 @@ class Parser:
 
     """
 
-    def __init__(self, actions, ctns, reductions, entry_state, builder):
+    def __init__(self, actions, ctns, reductions, error_codes, entry_state, builder):
         self.actions = actions
         self.ctns = ctns
         self.reductions = reductions
+        self.error_codes = error_codes
         self.stack = [entry_state]
         self.builder = builder
 
@@ -103,7 +105,8 @@ class Parser:
 
         This is absurdly expensive and is for very odd and special use cases.
         """
-        p = Parser(self.actions, self.ctns, self.reductions, self.stack[0], self.builder)
+        p = Parser(self.actions, self.ctns, self.reductions, self.error_codes,
+                   self.stack[0], self.builder)
         p.stack = self.stack[:]
         # This doesn't need to be so expensive. We could proxy it instead of copying.
         p.reductions = [
@@ -161,8 +164,14 @@ class Parser:
         action = self._reduce(ErrorToken)
         if action >= 0:  # shift
             # 2. Don't actually push an ErrorToken onto the stack or call
-            # lexer.take() here. Treat the ErrorToken as having been consumed
-            # and move to the recovered state.
+            # lexer.take() here. Instead, call builder.handle_error() to check
+            # whether it's ok to proceed. If it doesn't throw, treat the
+            # ErrorToken as having been consumed and move on.
+            state = self.stack[-1]
+            error_code = self.error_codes[state]
+            assert error_code is not None, \
+                "state that accepts an ErrorToken must have an error_code"
+            self.builder.handle_error(error_code)
             self.stack[-1] = action
         else:
             # 3. On error, don't attempt error handling again. Throw.
@@ -239,9 +248,9 @@ class Parser:
                 return state
 
 
-def make_parse_fn(actions, ctns, reductions, entry_state, builder_cls):
+def make_parse_fn(actions, ctns, reductions, error_codes, entry_state, builder_cls):
     def parse_fn(lexer_cls, text, builder=None):
         if builder is None:
             builder = builder_cls()
-        return parse(actions, ctns, reductions, entry_state, lexer_cls, text, builder)
+        return parse(actions, ctns, reductions, error_codes, entry_state, lexer_cls, text, builder)
     return parse_fn

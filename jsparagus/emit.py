@@ -3,7 +3,7 @@
 import re
 import unicodedata
 
-from .runtime import ERROR
+from .runtime import (ERROR, ErrorToken)
 from .ordered import OrderedSet
 
 from .grammar import (InitNt, CallMethod, Some, is_concrete_element, Nt,
@@ -41,7 +41,7 @@ def write_python_parser(out, parser_states):
     out.write("]\n\n")
     out.write("error_codes = [\n")
     SLICE_LEN = 16
-    for i in range(0, len(states) + SLICE_LEN - 1, SLICE_LEN):
+    for i in range(0, len(states), SLICE_LEN):
         slice = states[i:i + SLICE_LEN]
         out.write("    {}\n".format(
             " ".join(repr(e.error_code) + "," for e in slice)))
@@ -86,8 +86,10 @@ def write_python_parser(out, parser_states):
     out.write("\n\n")
 
     for init_nt, index in init_state_map.items():
-        out.write("parse_{} = runtime.make_parse_fn(actions, ctns, reductions, {}, DefaultBuilder)\n"
-                  .format(init_nt.name, index))
+        out.write("parse_{} = runtime.make_parse_fn(\n"
+                  .format(init_nt.name))
+        out.write("actions, ctns, reductions, error_codes, {}, DefaultBuilder)\n"
+                  .format(index))
 
 
 TERMINAL_NAMES = {
