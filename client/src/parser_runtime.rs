@@ -1,10 +1,9 @@
-use crate::parser::{Parser, Result};
+use crate::parser::{ParseError, Parser, Result};
 pub use crate::parser_generated::{Handler, NonterminalId, TerminalId, Token};
 
 pub trait TokenStream {
     type Token;
-    fn peek(&mut self) -> &Self::Token;
-    fn take(&mut self) -> Self::Token;
+    fn next(&mut self) -> Option<Self::Token>;
     fn token_as_index(t: &Self::Token) -> usize;
 }
 
@@ -42,10 +41,15 @@ where
 
     let mut parser = Parser::new(tables, reduce, handler, start_state);
 
-    let mut t = tokens.peek();
-    while t.terminal_id != TerminalId::End {
-        parser.write_token(&tokens.take())?;
-        t = tokens.peek();
+    loop {
+        if let Some(t) = tokens.next() {
+            if t.terminal_id == TerminalId::End {
+                break;
+            }
+            parser.write_token(&t)?;
+        } else {
+            return Err(ParseError::LexerError);
+        }
     }
     parser.close()
 }

@@ -2,7 +2,6 @@ use crate::parser_runtime::{TerminalId, Token, TokenStream};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
-    current: Option<Token>,
 }
 
 impl<Iter> Lexer<Iter>
@@ -10,12 +9,9 @@ where
     Iter: Iterator<Item = char>,
 {
     pub fn new(chars: Iter) -> Lexer<Iter> {
-        let mut result = Lexer {
+        Lexer {
             chars: chars.into_iter().peekable(),
-            current: None,
-        };
-        result.current = result.advance();
-        result
+        }
     }
 
     fn advance(&mut self) -> Option<Token> {
@@ -382,13 +378,8 @@ where
     Iter: Iterator<Item = char>,
 {
     type Token = Token;
-    fn peek(&mut self) -> &Self::Token {
-        self.current.as_ref().unwrap()
-    }
-    fn take(&mut self) -> Self::Token {
-        let result = self.current.take().unwrap();
-        self.current = self.advance();
-        result
+    fn next(&mut self) -> Option<Self::Token> {
+        self.advance()
     }
     fn token_as_index(t: &Self::Token) -> usize {
         t.terminal_id as usize

@@ -36,15 +36,17 @@ impl Action {
 }
 
 pub enum ParseError {
-    SyntaxError,
+    SyntaxError(Token),
     UnexpectedEnd,
+    LexerError,
 }
 
 impl ParseError {
     pub fn message(&self) -> String {
-        match *self {
-            ParseError::SyntaxError => format!("syntax error, lol"),
+        match self {
+            ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
+            ParseError::LexerError => format!("lexical error"),
         }
     }
 }
@@ -154,24 +156,31 @@ where
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
 
-        let can_asi = t.saw_newline
-            || t.terminal_id == TerminalId::End
-            || t.terminal_id == TerminalId::RightCurlyBracket;
-
         let action = self.reduce_all(TerminalId::ErrorToken);
-        if action.is_shift() && can_asi {
-            // Don't actually push an ErrorToken onto the stack here. Treat the
-            // ErrorToken as having been consumed and move to the recovered
-            // state.
-            *self.state_stack.last_mut().unwrap() = action.shift_state();
-            Ok(())
+        if action.is_shift() {
+            if t.saw_newline
+                || t.terminal_id == TerminalId::End
+                || t.terminal_id == TerminalId::RightCurlyBracket
+            {
+                // Don't actually push an ErrorToken onto the stack here. Treat the
+                // ErrorToken as having been consumed and move to the recovered
+                // state.
+                *self.state_stack.last_mut().unwrap() = action.shift_state();
+                Ok(())
+            } else {
+                Err(if t.terminal_id == TerminalId::End {
+                    ParseError::UnexpectedEnd
+                } else {
+                    ParseError::SyntaxError(t.clone())
+                })
+            }
         } else {
             // On error, don't attempt error handling again.
             assert!(action.is_error());
             Err(if t.terminal_id == TerminalId::End {
                 ParseError::UnexpectedEnd
             } else {
-                ParseError::SyntaxError
+                ParseError::SyntaxError(t.clone())
             })
         }
     }
