@@ -155,6 +155,9 @@ class Grammar:
     *   self.init_nts - [InitNt or Nt] - The list of all elements of
         self.nonterminals.keys() that are init nonterminals.
 
+    *   self._cache - {object: object} - Cache of immutable objects used by
+        Grammar.intern().
+
     """
 
     def __init__(
@@ -186,6 +189,8 @@ class Grammar:
 
         keys_are_nt = isinstance(next(iter(nonterminals)), Nt)
         key_type = Nt if keys_are_nt else str
+
+        self._cache = {}
 
         # Gather some information just by looking at keys (without examining
         # every production).
@@ -219,7 +224,7 @@ class Grammar:
                         "both {!r} and {!r}"
                         .format(name, nt_params[name], param_names))
             if param_names == () and name not in str_to_nt:
-                str_to_nt[name] = Nt(name, ())
+                str_to_nt[name] = self.intern(Nt(name))
 
         # Validate, desugar, and copy the grammar. As a side effect, calling
         # validate_element on every element of the grammar populates
@@ -228,7 +233,12 @@ class Grammar:
 
         def validate_element(nt, i, j, e, context_params):
             if isinstance(e, str):
-                if e in str_to_nt:
+                if e in nt_params:
+                    if nt_params[e] != ():
+                        raise ValueError(
+                            "invalid grammar: missing parameters for {!r} "
+                            "in production `grammar[{!r}][{}][{}].inner`: {!r}"
+                            .format(nt, i, j, e))
                     return str_to_nt[e]
                 else:
                     all_terminals.add(e)
@@ -240,10 +250,7 @@ class Grammar:
                         "in production `grammar[{!r}][{}][{}].inner`: {!r}"
                         .format(nt, i, j, e.inner))
                 inner = validate_element(nt, i, j, e.inner, context_params)
-                if inner is e.inner:
-                    return e
-                else:
-                    return Optional(inner)
+                return self.intern(Optional(inner))
             elif isinstance(e, Nt):
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
@@ -267,15 +274,15 @@ class Grammar:
                                 "invalid grammar: undefined variable {!r} "
                                 "in production `grammar[{!r}][{}][{}]`"
                                 .format(arg_expr.name, nt, i, j))
-                return e
+                return self.intern(e)
             elif isinstance(e, LookaheadRule) or e is ErrorToken:
-                return e
+                return self.intern(e)
             else:
                 raise TypeError(
                     "invalid grammar: unrecognized element in production "
                     "`grammar[{!r}][{}][{}]`: {!r}"
                     .format(nt, i, j, e))
-            return e
+            assert False, "unreachable"
 
         def check_reduce_action(nt, i, rhs, action):
             if isinstance(action, int):
@@ -494,6 +501,18 @@ class Grammar:
                 self.nonterminals[init_key] = NtDef(
                     [], [Production([goal], 'accept')])
             self.init_nts.append(init_nt)
+
+    def intern(self, obj):
+        """Return a shared copy of the immutable object `obj`.
+
+        This saves memory and consistent use allows code to use `is` for
+        equality testing.
+        """
+        try:
+            return self._cache[obj]
+        except KeyError:
+            self._cache[obj] = obj
+            return obj
 
     # Terminals are tokens that must appear verbatim in the input wherever they
     # appear in the grammar, like the operators '+' '-' *' '/' and brackets '(' ')'
