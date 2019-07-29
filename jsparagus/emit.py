@@ -7,7 +7,7 @@ from .runtime import ERROR
 from .ordered import OrderedSet
 
 from .grammar import (InitNt, CallMethod, Some, is_concrete_element, Nt,
-                      Optional, ErrorToken)
+                      Optional)
 
 from . import types
 

@@ -1,13 +1,35 @@
 """Runtime support for jsparagus-generated parsers."""
 
 # Nt is unused here, but we re-export it.
-from .grammar import Nt, ErrorToken
+from .grammar import Nt
 from .lexer import UnexpectedEndError
 
 __all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken', 'make_parse_fn']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
+
+
+class ErrorTokenClass:
+    """Special token that can be consumed to handle a syntax error."""
+
+    def __new__(cls):
+        global ErrorToken
+        if ErrorToken is None:
+            ErrorToken = object.__new__(ErrorTokenClass)
+        return ErrorToken
+
+    def __str__(self):
+        return 'ErrorToken'
+
+    def __repr__(self):
+        # Note: If you change this, you're likely to break Python output, since
+        # emit.py uses repr() in emitting parser tables.
+        return 'ErrorToken'
+
+
+ErrorToken = None
+ErrorToken = ErrorTokenClass()
 
 
 def throw_syntax_error(actions, state, t, tokens):

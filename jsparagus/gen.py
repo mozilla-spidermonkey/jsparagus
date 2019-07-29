@@ -36,10 +36,10 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, Nt, Var, ErrorToken,
+                      Optional, Nt, Var, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
-from .runtime import ACCEPT
+from .runtime import ACCEPT, ErrorToken
 
 
 # *** Operations on grammars **************************************************
@@ -166,8 +166,9 @@ def check_cycle_free(grammar):
                         # here; there could be a bug.
                         pass
                     else:
-                        # ErrorToken matches the empty terminal-string.
-                        assert e is ErrorToken
+                        # ErrorSymbol effectively matches the empty string
+                        # (though only if nothing else matches).
+                        assert isinstance(e, ErrorSymbol)
                 else:
                     # If we get here, we didn't break, so our results are good!
                     # nt can definitely produce all the nonterminals in result.
@@ -339,8 +340,10 @@ def seq_start(grammar, start, seq):
         if EMPTY not in s:  # preceding elements never match the empty string
             break
         s.remove(EMPTY)
-        if grammar.is_terminal(e) or e is ErrorToken:
+        if grammar.is_terminal(e):
             s.add(e)
+        elif isinstance(e, ErrorSymbol):
+            s.add(ErrorToken)
         elif isinstance(e, Nt):
             s |= start[e]
         else:
@@ -367,8 +370,10 @@ def make_start_set_cache(grammar, prods, start):
     def suffix_start_list(rhs):
         sets = [OrderedFrozenSet([EMPTY])]
         for e in reversed(rhs):
-            if grammar.is_terminal(e) or e is ErrorToken:
+            if grammar.is_terminal(e):
                 s = OrderedFrozenSet([e])
+            elif isinstance(e, ErrorSymbol):
+                s = OrderedFrozenSet([ErrorToken])
             elif isinstance(e, Nt):
                 s = start[e]
                 if EMPTY in s:
@@ -1005,6 +1010,7 @@ class State:
         '_hash',        # int, probably useless
         'action_row',   # output of analysis: {terminal: action}
         'ctn_row',      # output of analysis: {nonterminal: state_id}
+        'error_code',   # error code to generate at runtime in this state
         'id'            # int, small unique id
     ]
 
@@ -1167,6 +1173,8 @@ class State:
         ctn_items = collections.defaultdict(
             OrderedSet)  # maps nonterminals to item-sets
         reduce_prods = {}  # maps follow-terminals to production indexes
+        error_item = None  # item that contains an ErrorSymbol that could match here
+        error_code = None  # that ErrorSymbol's error code
 
         # Each item has three ways to advance.
         # - We can step over a terminal.
@@ -1182,15 +1190,24 @@ class State:
             if offset < len(rhs):
                 next_symbol = rhs[offset]
                 if (grammar.is_terminal(next_symbol)
-                        or next_symbol is ErrorToken):
-                    if lookahead_contains(item.lookahead, next_symbol):
+                        or isinstance(next_symbol, ErrorSymbol)):
+                    t = next_symbol
+                    if isinstance(next_symbol, ErrorSymbol):
+                        t = ErrorToken
+                        if error_item is None:
+                            error_item = item
+                            error_code = next_symbol.error_code
+                        else:
+                            context.raise_error_conflict(error_item, item)
+
+                    if lookahead_contains(item.lookahead, t):
                         next_item = context.make_lr_item(
                             item.prod_index,
                             offset + 1,
                             None,
                             item.followed_by)
                         if next_item is not None:
-                            shift_items[next_symbol].add(next_item)
+                            shift_items[t].add(next_item)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
@@ -1250,6 +1267,7 @@ class State:
                    for nt, ss in ctn_items.items()}
         self.action_row = action_row
         self.ctn_row = ctn_row
+        self.error_code = error_code
 
     def traceback(self):
         """Return example input that could have gotten us here.

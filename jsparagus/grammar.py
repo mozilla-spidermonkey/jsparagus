@@ -275,7 +275,7 @@ class Grammar:
                                 "in production `grammar[{!r}][{}][{}]`"
                                 .format(arg_expr.name, nt, i, j))
                 return self.intern(e)
-            elif isinstance(e, LookaheadRule) or e is ErrorToken:
+            elif isinstance(e, (LookaheadRule, ErrorSymbol)):
                 return self.intern(e)
             else:
                 raise TypeError(
@@ -653,15 +653,15 @@ a "reduce" action.
 # *   `LookaheadRule` objects are like lookahead assertions in regular
 #     expressions.
 #
-# *   The singleton object `ErrorToken` counts as a nonterminal but is never
-#     produced by the lexer. Instead it is artificially injected into the token
-#     stream just before a token that does not match anything.
+# *   `ErrorSymbol` objects count as nonterminals but are never produced by the
+#     lexer. Instead they match an ErrorToken that's artificially injected into
+#     the token stream at runtime, by the parser itself, just before a token
+#     that does not match anything else.
 
 
 def is_concrete_element(e):
     """True if parsing the element `e` pushes a value to the parser stack."""
-    return (not isinstance(e, LookaheadRule)
-            and e is not ErrorToken)
+    return not isinstance(e, (LookaheadRule, ErrorSymbol))
 
 
 class Nt:
@@ -770,26 +770,18 @@ def lookahead_intersect(a, b):
             return LookaheadRule(a.set | b.set, False)
 
 
-class ErrorTokenClass:
-    """Special token that can be consumed to handle a syntax error."""
+class ErrorSymbol:
+    """Special grammar symbol that can be consumed to handle a syntax error.
 
-    def __new__(cls):
-        global ErrorToken
-        if ErrorToken is None:
-            ErrorToken = object.__new__(ErrorTokenClass)
-        return ErrorToken
+    The error code is passed to an error-handling routine at run time which
+    decides if the error is recoverable or not.
+    """
+
+    def __init__(self, error_code):
+        self.error_code = error_code
 
     def __str__(self):
-        return 'ErrorToken'
-
-    def __repr__(self):
-        # Note: If you change this, you're likely to break Python output, since
-        # emit.py uses repr() in emitting parser tables.
-        return 'ErrorToken'
-
-
-ErrorToken = None
-ErrorToken = ErrorTokenClass()
+        return 'ErrorSymbol({})'.format(self.error_code)
 
 
 class NtDef:
