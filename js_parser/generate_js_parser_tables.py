@@ -3,21 +3,47 @@
 import argparse
 import os
 import jsparagus.gen
+import jsparagus.grammar
 from .parse_esgrammar import parse_esgrammar
 
 
 ECMASCRIPT_GOAL_NTS = [
     'Script',
     'Module',
-    # 'FunctionBody[~Yield, ~Await]',
-    # 'GeneratorBody',
-    # 'AsyncFunctionBody',
-    # 'AsyncGeneratorBody',
-    # 'FormalParameters[~Yield, ~Await]',
-    # 'FormalParameters[~Yield, +Await]',
-    # 'FormalParameters[+Yield, ~Await]',
-    # 'FormalParameters[+Yield, +Await]',
+    # 'FormalParameters',
+    # 'FunctionBody',
 ]
+
+
+def hack_grammar(g):
+    # We throw away all parameterized productions, as the current parser
+    # generator's approach of fully expanding them is a huge pain. We also
+    # throw away "in" expressions to avoid a shift-reduce conflict.
+
+    def strip_args(e):
+        """ Strip nt arguments. """
+        if isinstance(e, jsparagus.grammar.Nt):
+            return jsparagus.grammar.Nt(e.name)
+        elif isinstance(e, jsparagus.grammar.Optional):
+            return jsparagus.grammar.Optional(strip_args(e.inner))
+        else:
+            return e
+
+    def strip_args_in_production(p):
+        """ Discard production conditions and nt arguments. """
+        body = [strip_args(e) for e in p.body]
+        return jsparagus.grammar.Production(body, p.action)
+
+    nonterminals = {}
+    for nt, nt_def in g.nonterminals.items():
+        rhs_list = [
+            strip_args_in_production(p)
+            for p in nt_def.rhs_list
+            if p.condition != ('In', True)
+        ]
+        nt_def = jsparagus.grammar.NtDef([], rhs_list)
+        nonterminals[nt] = nt_def
+    return g.with_nonterminals(nonterminals)
 
 
 def main():
@@ -67,6 +93,7 @@ def main():
 
         grammar = parse_esgrammar(text, filename=args.filename,
                                   goals=ECMASCRIPT_GOAL_NTS)
+        grammar = hack_grammar(grammar)
         if args.verbose:
             grammar.dump()
 

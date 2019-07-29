@@ -140,7 +140,7 @@ class ESTestCase(unittest.TestCase):
               ('StatementList 0',
                ('ExpressionStatement',
                 ('AssignmentExpression 5',
-                 ('PrimaryExpression 1', ('IdentifierReference 0', 'x')),
+                 ('PrimaryExpression 1', ('IdentifierReference', 'x')),
                  ('AssignmentOperator 1', '/='),
                  ('Literal 2', '2')))))))
 

@@ -63,6 +63,10 @@ Here are the differences between *es.emug*, the actual ES grammar, and
 *es-simplified.emug*, the simplified version that pgen can actually
 handle:
 
+*   The four productions with [~Yield] and [~Await] conditions are dropped.
+    This means that `yield` and `await` do not match IdentifierReference
+    or LabelIdentifier. I think it's better to do that in the lexer.
+
 *   Syntactic layer only.
 
     The simplified grammar does not contain the lexical grammar or any

@@ -1,7 +1,5 @@
 IdentifierReference[Yield, Await] :
   Identifier
-  [~Yield] `yield`
-  [~Await] `await`
 
 BindingIdentifier[Yield, Await] :
   Identifier
@@ -10,8 +8,6 @@ BindingIdentifier[Yield, Await] :
 
 LabelIdentifier[Yield, Await] :
   Identifier
-  [~Yield] `yield`
-  [~Await] `await`
 
 PrimaryExpression[Yield, Await] :
   `this`
