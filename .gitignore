@@ -1,6 +1,7 @@
-target/
 __pycache__/
-*.pyc
+target/
 venv/
-js_parser/parser_tables.py
+*.jsparagus_dump
+*.pyc
 example_pgen.rs
+js_parser/parser_tables.py

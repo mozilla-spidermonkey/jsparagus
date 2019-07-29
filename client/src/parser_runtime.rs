@@ -1,5 +1,5 @@
-pub use crate::parser_generated::{Handler, NonterminalId, Token};
 use crate::parser::{Parser, Result};
+pub use crate::parser_generated::{Handler, NonterminalId, TerminalId, Token};
 
 pub trait TokenStream {
     type Token;
@@ -23,10 +23,7 @@ impl<'a> ParserTables<'a> {
             self.action_table.len(),
             self.state_count * self.action_width
         );
-        assert_eq!(
-            self.goto_table.len(),
-            self.state_count * self.goto_width
-        );
+        assert_eq!(self.goto_table.len(), self.state_count * self.goto_width);
     }
 }
 
@@ -46,8 +43,8 @@ where
     let mut parser = Parser::new(tables, reduce, handler, start_state);
 
     let mut t = tokens.peek();
-    while *t != Token::End {
-        parser.write_token(tokens.take())?;
+    while t.terminal_id != TerminalId::End {
+        parser.write_token(&tokens.take())?;
         t = tokens.peek();
     }
     parser.close()

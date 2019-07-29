@@ -37,7 +37,7 @@ impl Action {
 
 pub enum ParseError {
     SyntaxError,
-    UnexpectedEnd
+    UnexpectedEnd,
 }
 
 impl ParseError {
@@ -95,9 +95,7 @@ where
     fn action(&self, t: TerminalId) -> Action {
         let t = t as usize;
         debug_assert!(t < self.tables.action_width);
-        Action(self.tables.action_table[
-            self.state() * self.tables.action_width + t
-        ])
+        Action(self.tables.action_table[self.state() * self.tables.action_width + t])
     }
 
     fn reduce_all(&mut self, t: TerminalId) -> Action {
@@ -120,22 +118,28 @@ where
         action
     }
 
-    pub fn write_token(&mut self, token: Token) -> Result<()> {
+    pub fn write_token(&mut self, token: &Token) -> Result<()> {
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
-            let t = token.get_id();
-            let action = self.reduce_all(t);
-            if action.is_shift() {
-                self.node_stack.push(
-                    Box::into_raw(Box::new(token)) as *mut _
-                );
-                self.state_stack.push(action.shift_state());
+            if self.try_write_token(token) {
                 return Ok(());
             } else {
-                assert!(action.is_error());
-                self.try_error_handling(t)?;
+                self.try_error_handling(&token)?;
             }
+        }
+    }
+
+    fn try_write_token(&mut self, token: &Token) -> bool {
+        let action = self.reduce_all(token.terminal_id);
+        if action.is_shift() {
+            self.node_stack
+                .push(Box::into_raw(Box::new(token)) as *mut _);
+            self.state_stack.push(action.shift_state());
+            true
+        } else {
+            assert!(action.is_error());
+            false
         }
     }
 
@@ -148,15 +152,26 @@ where
                 return Ok(self.node_stack.pop().unwrap());
             } else {
                 assert!(action.is_error());
-                self.try_error_handling(TerminalId::End)?;
+                self.try_error_handling(&Token::basic_token(TerminalId::End))?;
             }
         }
     }
 
-    fn try_error_handling(&mut self, t: TerminalId) -> Result<()> {
+    fn try_error_handling(&mut self, t: &Token) -> Result<()> {
         // Error recovery version of the code in write_terminal. Differences
         // between this and write_terminal are commented below.
-        assert!(t != TerminalId::ErrorToken);
+        assert!(t.terminal_id != TerminalId::ErrorToken);
+
+        // TODO: Fancy ASI cases.
+        if t.saw_newline
+            || t.terminal_id == TerminalId::End
+            || t.terminal_id == TerminalId::RightCurlyBracket
+        {
+            if self.try_write_token(&Token::basic_token(TerminalId::Semicolon)) {
+                // The next loop in write_token will push `t`.
+                return Ok(());
+            }
+        }
 
         let action = self.reduce_all(TerminalId::ErrorToken);
         if action.is_shift() {
@@ -168,13 +183,11 @@ where
         } else {
             // On error, don't attempt error handling again.
             assert!(action.is_error());
-            Err(
-                if t == TerminalId::End {
-                    ParseError::UnexpectedEnd
-                } else {
-                    ParseError::SyntaxError
-                }
-            )
+            Err(if t.terminal_id == TerminalId::End {
+                ParseError::UnexpectedEnd
+            } else {
+                ParseError::SyntaxError
+            })
         }
     }
 
@@ -184,7 +197,6 @@ where
         // really acceptable.
         !self.action(t).is_error()
     }
-
 
     /// Return true if self.close() would succeed.
     fn can_close(&self) -> bool {

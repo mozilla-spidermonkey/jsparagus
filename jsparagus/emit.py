@@ -163,23 +163,19 @@ class RustParserWriter:
 
     def token(self):
         self.write(0, "#[derive(Clone, Debug, PartialEq)]")
-        self.write(0, "pub enum Token {")
-        for i, t in enumerate(self.terminals):
-            name = self.terminal_name(t)
-            value = "(String)" if t in self.grammar.variable_terminals else ""
-            self.write(1, "{}{}, // {}", name, value, repr(t))
+        self.write(0, "pub struct Token {")
+        self.write(1, "pub terminal_id: TerminalId,")
+        self.write(1, "pub saw_newline: bool,")
+        self.write(1, "pub value: Option<String>,")
         self.write(0, "}")
         self.write(0, "")
 
         self.write(0, "impl Token {")
-        self.write(1, "pub fn get_id(&self) -> TerminalId {")
-        self.write(2, "// This switch should be optimized away.")
-        self.write(2, "match self {")
-        for i, t in enumerate(self.terminals):
-            name = self.terminal_name(t)
-            value = "(_)" if t in self.grammar.variable_terminals else ""
-            self.write(3, "Token::{}{} => TerminalId::{},",
-                       name, value, name)
+        self.write(1, "pub fn basic_token(terminal_id: TerminalId) -> Self {")
+        self.write(2, "Self {")
+        self.write(3, "terminal_id,")
+        self.write(3, "saw_newline: false,")
+        self.write(3, "value: None,")
         self.write(2, "}")
         self.write(1, "}")
         self.write(0, "}")

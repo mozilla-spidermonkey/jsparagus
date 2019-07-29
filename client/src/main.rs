@@ -6,9 +6,12 @@ mod parser_generated;
 mod parser_runtime;
 
 use crate::lexer::Lexer;
+use std::env;
 use std::error::Error;
+use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::io::BufReader;
 
 #[cfg(all(feature = "unstable", test))]
 mod tests {
@@ -33,17 +36,27 @@ mod tests {
 }
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 2 {
+        let file = File::open(&args[1]).unwrap();
+        let mut buf_reader = BufReader::new(file);
+        let mut contents = String::new();
+        buf_reader.read_to_string(&mut contents).unwrap();
+        run(&contents);
+        return;
+    }
     while let Ok(buffer) = get_input("> ") {
-        let lexer = Lexer::new(buffer.chars());
-        let parse_result =
-            parser_generated::parse_Script(
-                &mut parser_generated::DefaultHandler {},
-                lexer,
-            );
-        match parse_result {
-            Ok(ast) => println!("{:?}", ast),
-            Err(err) => println!("{}", err.message()),
-        }
+        run(&buffer);
+    }
+}
+
+fn run(buffer: &str) {
+    let lexer = Lexer::new(buffer.chars());
+    let parse_result =
+        parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
+    match parse_result {
+        Ok(ast) => println!("{:#?}", ast),
+        Err(err) => println!("{}", err.message()),
     }
 }
 
