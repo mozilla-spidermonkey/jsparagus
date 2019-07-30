@@ -25,6 +25,23 @@ class JSParser(jsparagus.runtime.Parser):
             parser_tables.DefaultBuilder()
         )
 
+    def on_recover(self, error_code, lexer, t):
+        """Check that ASI error recovery is really acceptable."""
+        if error_code == 'asi':
+            # ASI is allowed in three places:
+            # - at the end of the source text
+            # - before a close brace `}`
+            # - after a LineTerminator
+            # Hence the three-part if-condition below.
+            #
+            # The other quirks of ASI are implemented by massaging the syntax,
+            # in parse_esgrammar.py.
+            if not self.closed and t != '}' and not lexer.saw_line_terminator():
+                lexer.throw("missing semicolon")
+        else:
+            # ASI is always allowed in this one state.
+            assert error_code == 'do_while_asi'
+
 
 def parse_Script(text):
     lexer = JSLexer(JSParser())

@@ -96,6 +96,7 @@ class Parser:
         self.error_codes = error_codes
         self.stack = [entry_state]
         self.builder = builder
+        self.closed = False
 
     def simulator_clone(self):
         """Make a copy of this parser for simulation.
@@ -129,6 +130,8 @@ class Parser:
         return action
 
     def write_terminal(self, lexer, t):
+        assert not self.closed
+
         # The loop is here for error-handling; the normal path through this
         # code reaches the `break` statement.
         while True:
@@ -142,6 +145,9 @@ class Parser:
                 self._try_error_handling(lexer, t)
 
     def close(self, lexer):
+        assert not self.closed
+        self.closed = True
+
         # The loop is here for error-handling only.
         while True:
             action = self._reduce(None)
@@ -164,14 +170,14 @@ class Parser:
         action = self._reduce(ErrorToken)
         if action >= 0:  # shift
             # 2. Don't actually push an ErrorToken onto the stack or call
-            # lexer.take() here. Instead, call builder.handle_error() to check
-            # whether it's ok to proceed. If it doesn't throw, treat the
-            # ErrorToken as having been consumed and move on.
+            # lexer.take() here. Instead, call the user extension point
+            # self.on_recover() to check whether it's ok to proceed. If it
+            # doesn't throw, consider the ErrorToken consumed and move on.
             state = self.stack[-1]
             error_code = self.error_codes[state]
             assert error_code is not None, \
                 "state that accepts an ErrorToken must have an error_code"
-            self.builder.handle_error(error_code)
+            self.on_recover(error_code, lexer, t)
             self.stack[-1] = action
         else:
             # 3. On error, don't attempt error handling again. Throw.
@@ -181,6 +187,15 @@ class Parser:
                 lexer.throw_unexpected_end()
             else:
                 throw_syntax_error(self.actions, self.stack[-1], t, lexer)
+
+    def on_recover(self, error_code, lexer, t):
+        """Called when the grammar says to recover from a parse error.
+
+        Subclasses can override this to add custom code when an ErrorSymbol in
+        a production is matched. This base-class implementation does nothing,
+        allowing the parser to recover from the error silently.
+        """
+        pass
 
     def can_accept_terminal(self, t):
         """Return True if the terminal `t` is OK next.

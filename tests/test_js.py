@@ -32,6 +32,17 @@ class ESTestCase(unittest.TestCase):
         with self.assertRaises(jsparagus.lexer.SyntaxError):
             parse_Script(s)
 
+    def assert_can_close_after(self, s):
+        parser = JSParser()
+        lexer = JSLexer(parser)
+        if isinstance(s, list):
+            for chunk in s:
+                lexer.write(chunk)
+        else:
+            lexer.write(s)
+        self.assertTrue(lexer.can_close())
+
+
     # === Tests!
 
     def test_asi_at_end(self):
@@ -143,6 +154,15 @@ class ESTestCase(unittest.TestCase):
                  ('PrimaryExpression 1', ('IdentifierReference', 'x')),
                  ('AssignmentOperator 1', '/='),
                  ('Literal 2', '2')))))))
+
+    def test_can_close(self):
+        self.assert_can_close_after([])
+        self.assert_can_close_after("")
+        self.assert_can_close_after("2 + 2;\n")
+        self.assert_can_close_after("// seems ok\n")
+
+    def test_can_close_with_asi(self):
+        self.assert_can_close_after("2 + 2\n")
 
 
 if __name__ == '__main__':
