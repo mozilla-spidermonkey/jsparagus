@@ -121,19 +121,23 @@ class ESGrammarBuilder:
             action = grammar.CallMethod(method_name, tuple(range(nargs)))
         return grammar.Production(body, action, condition=condition)
 
-    def needs_asi(self, p):
+    def needs_asi(self, lhs, p):
         """True if p is a production in which ASI can happen."""
+        # The purpose of the fake ForLexicalDeclaration production is to have a
+        # copy of LexicalDeclaration that does not trigger ASI.
+        #
         # Two productions have body == [";"] -- one for EmptyStatement and one
-        # for ClassMember. Neither should trigger ASI. The only other
-        # semicolons that should not trigger ASI are the ones in `for`
-        # statements, which happen to be exactly those semicolons that are not
-        # at the end of a production.
-        return len(p.body) > 1 and p.body[-1] == ';'
+        # for ClassMember. Neither should trigger ASI.
+        #
+        # The only other semicolons that should not trigger ASI are the ones in
+        # `for` statement productions, which happen to be exactly those
+        # semicolons that are not at the end of a production.
+        return (not (isinstance(lhs, tuple) and lhs[0] == 'ForLexicalDeclaration')
+                and len(p.body) > 1
+                and p.body[-1] == ';')
 
     def apply_asi(self, p):
         """Return two rules based on p, so that ASI can be applied."""
-        assert self.needs_asi(p)
-
         assert isinstance(p.action, grammar.CallMethod)
 
         # Don't pass the semicolon to the method.
@@ -166,7 +170,7 @@ class ESGrammarBuilder:
         production_list = []
         for i, rhs in enumerate(rhs_list):
             p = self.to_production(lhs, i, rhs, has_sole_production)
-            if self.needs_asi(p):
+            if self.needs_asi(lhs, p):
                 production_list += self.apply_asi(p)
             else:
                 production_list.append(p)

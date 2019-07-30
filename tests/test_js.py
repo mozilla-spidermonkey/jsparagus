@@ -78,8 +78,9 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error("for ( \n \n ) {}")
         self.assert_syntax_error("for (var i = 0 \n i < 9;   i++) {}")
         self.assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}")
-        self.assert_syntax_error("for (i = 0 \n i < 9;   i++) {}")
-        self.assert_syntax_error("for (i = 0;   i < 9 \n i++) {}")
+        self.assert_syntax_error("for (i = 0     \n i < 9;   i++) {}")
+        self.assert_syntax_error("for (i = 0;       i < 9 \n i++) {}")
+        self.assert_syntax_error("for (let i = 0 \n i < 9;   i++) {}")
 
         # ASI is suppressed in the production ClassElement[Yield, Await] : `;`
         # to prevent an infinite loop of ASI. lol
