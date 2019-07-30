@@ -201,8 +201,8 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
             # To make this correct in combination with end-of-line ASI, make
             # the parser rewind the lexer one token and ask for it again in
             # that case, so that the lexer asks the can-accept question again.
+            point = match.start(1)
             if self.parser.can_accept_terminal('RegularExpressionLiteral'):
-                point = match.start(1)
                 match = REGEXP_RE.match(self.src, point)
                 if match is None:
                     if closing:
@@ -211,7 +211,7 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
                         return None
                 token = 'RegularExpressionLiteral'
             else:
-                match = DIV_RE.match(self.src, self.point)
+                match = DIV_RE.match(self.src, point)
                 token = match.group(1)
 
             if not closing and match.end() == len(self.src):

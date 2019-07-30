@@ -52,7 +52,7 @@ class ESTestCase(unittest.TestCase):
         self.assert_incomplete("{")
         self.assert_incomplete("{;")
 
-    def disabled_test_asi_at_block_end(self):
+    def test_asi_at_block_end(self):
         self.assert_parses("{ doCrimes() }")
         self.assert_parses("function f() { ok }")
 
@@ -111,7 +111,7 @@ class ESTestCase(unittest.TestCase):
         self.assert_syntax_error("—x;")
         self.assert_syntax_error("const ONE_THIRD = 1 ÷ 3;")
 
-    def disabled_test_regexp(self):
+    def test_regexp(self):
         self.assert_parses(r"/\w/")
         self.assert_parses("/[A-Z]/")
         self.assert_parses("/[//]/")
