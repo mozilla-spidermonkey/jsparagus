@@ -185,8 +185,8 @@ Then you can:
 
     ```sh
     python3 -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
-    python3 -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
-    cd client
+    python3 -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o rust/parser/src/parser_generated.rs
+    cd rust/parser
     cargo run
     ```
 

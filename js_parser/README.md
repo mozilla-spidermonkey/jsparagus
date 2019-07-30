@@ -46,13 +46,13 @@ $ python -m js_parser.try_it
 Run all the steps above, except substitute this command for the one that ends in `.py`:
 
 ```console
-$ python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o client/src/parser_generated.rs
+$ python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o rust/parser/src/parser_generated.rs
 ```
 
 Then, to see your parser run, try this:
 
 ```console
-$ cd client
+$ cd rust/parser
 $ cargo run --release
 ```
 

@@ -18,6 +18,6 @@ fn main() {
         2 => if let Err(err) = demo::parse_file_or_dir(&args[1]) {
             eprintln!("{}", err);
         }
-        _ => eprintln!("usage: client [FILE/DIR]"),
+        _ => eprintln!("usage: parser [FILE/DIR]"),
     }
 }
