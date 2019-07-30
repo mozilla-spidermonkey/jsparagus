@@ -1,4 +1,4 @@
-pub use crate::parser_generated::{Handler, NonterminalId, TerminalId, Token};
+pub use crate::parser_generated::{ErrorCode, Handler, NonterminalId, TerminalId, Token};
 use crate::parser_runtime::ParserTables;
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
@@ -151,6 +151,14 @@ where
         }
     }
 
+    fn parse_error(t: &Token) -> Result<()> {
+        Err(if t.terminal_id == TerminalId::End {
+            ParseError::UnexpectedEnd
+        } else {
+            ParseError::SyntaxError(t.clone())
+        })
+    }
+
     fn try_error_handling(&mut self, t: &Token) -> Result<()> {
         // Error recovery version of the code in write_terminal. Differences
         // between this and write_terminal are commented below.
@@ -158,30 +166,41 @@ where
 
         let action = self.reduce_all(TerminalId::ErrorToken);
         if action.is_shift() {
-            if t.saw_newline
-                || t.terminal_id == TerminalId::End
-                || t.terminal_id == TerminalId::RightCurlyBracket
-            {
-                // Don't actually push an ErrorToken onto the stack here. Treat the
-                // ErrorToken as having been consumed and move to the recovered
-                // state.
-                *self.state_stack.last_mut().unwrap() = action.shift_state();
-                Ok(())
-            } else {
-                Err(if t.terminal_id == TerminalId::End {
-                    ParseError::UnexpectedEnd
-                } else {
-                    ParseError::SyntaxError(t.clone())
-                })
-            }
+            let state = *self.state_stack.last().unwrap();
+            let error_code = self.tables.error_codes[state]
+                .as_ref()
+                .expect("state that accepts an ErrorToken must have an error_code")
+                .clone();
+
+            self.recover(t, error_code, action.shift_state())
         } else {
             // On error, don't attempt error handling again.
             assert!(action.is_error());
-            Err(if t.terminal_id == TerminalId::End {
-                ParseError::UnexpectedEnd
-            } else {
-                ParseError::SyntaxError(t.clone())
-            })
+            Self::parse_error(t)
+        }
+    }
+
+    fn recover(&mut self, t: &Token, error_code: ErrorCode, next_state: usize) -> Result<()> {
+        match error_code {
+            ErrorCode::Asi => {
+                if t.saw_newline
+                    || t.terminal_id == TerminalId::End
+                    || t.terminal_id == TerminalId::RightCurlyBracket
+                {
+                    // Don't actually push an ErrorToken onto the stack here. Treat the
+                    // ErrorToken as having been consumed and move to the recovered
+                    // state.
+                    *self.state_stack.last_mut().unwrap() = next_state;
+                    Ok(())
+                } else {
+                    Self::parse_error(t)
+                }
+            }
+            ErrorCode::DoWhileAsi => {
+                // do-while always succeeds in inserting a semicolon.
+                *self.state_stack.last_mut().unwrap() = next_state;
+                Ok(())
+            }
         }
     }
 

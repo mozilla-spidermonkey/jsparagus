@@ -110,18 +110,20 @@ class RustParserWriter:
             nt for state in self.states for nt in state.ctn_row))
 
     def emit(self):
+        generic = False
         self.header()
         self.terminal_id()
         self.token()
         self.actions()
+        self.error_codes()
         self.check_camel_case()
         self.handler_trait()
         self.nt_node()
         self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
-        self.reduce(False)
-        self.entry(False)
+        self.reduce(generic)
+        self.entry(generic)
 
     def write(self, indentation, string, *format_args):
         if len(format_args) == 0:
@@ -199,6 +201,27 @@ class RustParserWriter:
                        ' '.join("{},".format(state.action_row.get(t, "ERROR")) for t in self.terminals))
             if i < len(self.states) - 1:
                 self.write(0, "")
+        self.write(0, "];")
+        self.write(0, "")
+
+    def error_codes(self):
+        self.write(0, "#[derive(Clone, Debug, PartialEq)]")
+        self.write(0, "pub enum ErrorCode {")
+        for error_code in set(s.error_code for s in self.states):
+            if error_code is not None:
+                self.write(1, "{},", self.to_camel_case(error_code))
+        self.write(0, "}")
+        self.write(0, "")
+
+        self.write(0, "static STATE_TO_ERROR_CODE: [Option<ErrorCode>; {}] = [",
+                   len(self.states))
+        for i, state in enumerate(self.states):
+            self.write(1, "// {}. {}", i, state.traceback() or "<empty>")
+            if state.error_code is None:
+                self.write(1, "None,")
+            else:
+                self.write(1, "Some(ErrorCode::{}),",
+                           self.to_camel_case(state.error_code))
         self.write(0, "];")
         self.write(0, "")
 
@@ -482,6 +505,7 @@ class RustParserWriter:
         self.write(1, "state_count: {},", len(self.states))
         self.write(1, "action_table: &ACTIONS,")
         self.write(1, "action_width: {},", len(self.terminals))
+        self.write(1, "error_codes: &STATE_TO_ERROR_CODE,")
         self.write(1, "goto_table: &GOTO,")
         self.write(1, "goto_width: {},".format(len(self.nonterminals)))
         self.write(0, "};")

@@ -567,7 +567,7 @@ static ACTIONS: [i64; 109404] = [
     // 143. "continue" ";"
     -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, -59, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 144. "continue" ErrorToken
+    // 144. "continue" ErrorSymbol(asi)
     -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 145. "continue" "Identifier"
@@ -579,7 +579,7 @@ static ACTIONS: [i64; 109404] = [
     // 147. "break" ";"
     -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, -63, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 148. "break" ErrorToken
+    // 148. "break" ErrorSymbol(asi)
     -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, -64, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 149. "break" LabelIdentifier
@@ -588,7 +588,7 @@ static ACTIONS: [i64; 109404] = [
     // 150. "return" ";"
     -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, -67, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 151. "return" ErrorToken
+    // 151. "return" ErrorSymbol(asi)
     -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, -68, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 152. "return" "async"
@@ -621,7 +621,7 @@ static ACTIONS: [i64; 109404] = [
     // 161. "debugger" ";"
     -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, -78, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 162. "debugger" ErrorToken
+    // 162. "debugger" ErrorSymbol(asi)
     -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, -79, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 163. "class" "{"
@@ -792,7 +792,7 @@ static ACTIONS: [i64; 109404] = [
     // 218. Expression ";"
     -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, -53, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 219. Expression ErrorToken
+    // 219. Expression ErrorSymbol(asi)
     -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, -54, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 220. Expression ","
@@ -1089,7 +1089,7 @@ static ACTIONS: [i64; 109404] = [
     // 317. "var" VariableDeclarationList ";"
     -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 318. "var" VariableDeclarationList ErrorToken
+    // 318. "var" VariableDeclarationList ErrorSymbol(asi)
     -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, -51, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 319. "var" VariableDeclarationList ","
@@ -1110,13 +1110,13 @@ static ACTIONS: [i64; 109404] = [
     // 324. "continue" LabelIdentifier ";"
     -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, -61, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 325. "continue" LabelIdentifier ErrorToken
+    // 325. "continue" LabelIdentifier ErrorSymbol(asi)
     -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, -62, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 326. "break" LabelIdentifier ";"
     -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, -65, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 327. "break" LabelIdentifier ErrorToken
+    // 327. "break" LabelIdentifier ErrorSymbol(asi)
     -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, -66, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 328. "return" "async" "function"
@@ -1191,7 +1191,7 @@ static ACTIONS: [i64; 109404] = [
     // 351. "return" Expression ";"
     -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, -69, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 352. "return" Expression ErrorToken
+    // 352. "return" Expression ErrorSymbol(asi)
     -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, -70, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 353. "with" "(" Expression
@@ -1200,7 +1200,7 @@ static ACTIONS: [i64; 109404] = [
     // 354. "throw" Expression ";"
     -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, -73, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 355. "throw" Expression ErrorToken
+    // 355. "throw" Expression ErrorSymbol(asi)
     -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, -74, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 356. "try" Block "catch"
@@ -1413,7 +1413,7 @@ static ACTIONS: [i64; 109404] = [
     // 425. LetOrConst BindingList ";"
     -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, -86, ERROR, -86, -86, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 426. LetOrConst BindingList ErrorToken
+    // 426. LetOrConst BindingList ErrorSymbol(asi)
     -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, -87, ERROR, -87, -87, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 427. LetOrConst BindingList ","
@@ -1554,7 +1554,7 @@ static ACTIONS: [i64; 109404] = [
     // 472. "import" ModuleSpecifier ";"
     -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, -35, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 473. "import" ModuleSpecifier ErrorToken
+    // 473. "import" ModuleSpecifier ErrorSymbol(asi)
     -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, -36, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 474. "import" ImportedDefaultBinding ","
@@ -1587,7 +1587,7 @@ static ACTIONS: [i64; 109404] = [
     // 483. "export" ExportClause ";"
     -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 484. "export" ExportClause ErrorToken
+    // 484. "export" ExportClause ErrorSymbol(asi)
     -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, -42, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 485. "export" ExportClause FromClause
@@ -1944,7 +1944,7 @@ static ACTIONS: [i64; 109404] = [
     // 602. "import" ImportClause FromClause ";"
     -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, -33, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 603. "import" ImportClause FromClause ErrorToken
+    // 603. "import" ImportClause FromClause ErrorSymbol(asi)
     -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 604. "import" ImportedDefaultBinding "," NameSpaceImport
@@ -1956,13 +1956,13 @@ static ACTIONS: [i64; 109404] = [
     // 606. "export" "*" FromClause ";"
     -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, -37, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 607. "export" "*" FromClause ErrorToken
+    // 607. "export" "*" FromClause ErrorSymbol(asi)
     -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, -38, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 608. "export" "default" AssignmentExpression ";"
     -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, -47, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 609. "export" "default" AssignmentExpression ErrorToken
+    // 609. "export" "default" AssignmentExpression ErrorSymbol(asi)
     -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, -48, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 610. "export" "{" "IdentifierName" "as"
@@ -1977,7 +1977,7 @@ static ACTIONS: [i64; 109404] = [
     // 613. "export" ExportClause FromClause ";"
     -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, -39, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 614. "export" ExportClause FromClause ErrorToken
+    // 614. "export" ExportClause FromClause ErrorSymbol(asi)
     -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 615. "var" "{" "[" AssignmentExpression "]"
@@ -2640,7 +2640,7 @@ static ACTIONS: [i64; 109404] = [
     // 834. "do" Statement "while" "(" Expression ")" ";"
     -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, -110, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 835. "do" Statement "while" "(" Expression ")" ErrorToken
+    // 835. "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi)
     -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, -111, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 836. "for" "(" ";" ";" Expression ")" Statement
@@ -3175,6 +3175,2041 @@ static ACTIONS: [i64; 109404] = [
     ERROR, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, -450, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -450, -450, -450, ERROR, ERROR, -450, ERROR, ERROR,
 ];
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ErrorCode {
+    Asi,
+    DoWhileAsi,
+}
+
+static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1013] = [
+    // 0. <empty>
+    None,
+    // 1. <empty>
+    None,
+    // 2. "var"
+    None,
+    // 3. ";"
+    None,
+    // 4. "if"
+    None,
+    // 5. "continue"
+    Some(ErrorCode::Asi),
+    // 6. "break"
+    Some(ErrorCode::Asi),
+    // 7. "return"
+    Some(ErrorCode::Asi),
+    // 8. "with"
+    None,
+    // 9. "throw"
+    None,
+    // 10. "try"
+    None,
+    // 11. "debugger"
+    Some(ErrorCode::Asi),
+    // 12. "class"
+    None,
+    // 13. "{"
+    None,
+    // 14. "do"
+    None,
+    // 15. "while"
+    None,
+    // 16. "for"
+    None,
+    // 17. "switch"
+    None,
+    // 18. "Identifier"
+    None,
+    // 19. "function"
+    None,
+    // 20. "async"
+    None,
+    // 21. "let"
+    None,
+    // 22. "const"
+    None,
+    // 23. "yield"
+    None,
+    // 24. "new"
+    None,
+    // 25. "await"
+    None,
+    // 26. "("
+    None,
+    // 27. "super"
+    None,
+    // 28. "this"
+    None,
+    // 29. "RegularExpressionLiteral"
+    None,
+    // 30. "NullLiteral"
+    None,
+    // 31. "BooleanLiteral"
+    None,
+    // 32. "NumericLiteral"
+    None,
+    // 33. "StringLiteral"
+    None,
+    // 34. "["
+    None,
+    // 35. "NoSubstitutionTemplate"
+    None,
+    // 36. "TemplateHead"
+    None,
+    // 37. "delete"
+    None,
+    // 38. "void"
+    None,
+    // 39. "typeof"
+    None,
+    // 40. "+"
+    None,
+    // 41. "-"
+    None,
+    // 42. "~"
+    None,
+    // 43. "!"
+    None,
+    // 44. "++"
+    None,
+    // 45. "--"
+    None,
+    // 46. Script
+    None,
+    // 47. ScriptBody
+    None,
+    // 48. StatementList
+    None,
+    // 49. StatementListItem
+    None,
+    // 50. Statement
+    None,
+    // 51. Declaration
+    None,
+    // 52. BlockStatement
+    None,
+    // 53. VariableStatement
+    None,
+    // 54. EmptyStatement
+    None,
+    // 55. ExpressionStatement
+    None,
+    // 56. IfStatement
+    None,
+    // 57. BreakableStatement
+    None,
+    // 58. ContinueStatement
+    None,
+    // 59. BreakStatement
+    None,
+    // 60. ReturnStatement
+    None,
+    // 61. WithStatement
+    None,
+    // 62. LabelledStatement
+    None,
+    // 63. ThrowStatement
+    None,
+    // 64. TryStatement
+    None,
+    // 65. DebuggerStatement
+    None,
+    // 66. HoistableDeclaration
+    None,
+    // 67. ClassDeclaration
+    None,
+    // 68. LexicalDeclaration
+    None,
+    // 69. Block
+    None,
+    // 70. Expression
+    Some(ErrorCode::Asi),
+    // 71. IterationStatement
+    None,
+    // 72. SwitchStatement
+    None,
+    // 73. LabelIdentifier
+    None,
+    // 74. FunctionDeclaration
+    None,
+    // 75. GeneratorDeclaration
+    None,
+    // 76. AsyncFunctionDeclaration
+    None,
+    // 77. AsyncGeneratorDeclaration
+    None,
+    // 78. LetOrConst
+    None,
+    // 79. AssignmentExpression
+    None,
+    // 80. ConditionalExpression
+    None,
+    // 81. YieldExpression
+    None,
+    // 82. ArrowFunction
+    None,
+    // 83. AsyncArrowFunction
+    None,
+    // 84. LeftHandSideExpression
+    None,
+    // 85. LogicalORExpression
+    None,
+    // 86. ArrowParameters
+    None,
+    // 87. CoverCallExpressionAndAsyncArrowHead
+    None,
+    // 88. NewExpression
+    None,
+    // 89. CallExpression
+    None,
+    // 90. LogicalANDExpression
+    None,
+    // 91. BindingIdentifier
+    None,
+    // 92. CoverParenthesizedExpressionAndArrowParameterList
+    None,
+    // 93. MemberExpression
+    None,
+    // 94. SuperCall
+    None,
+    // 95. BitwiseORExpression
+    None,
+    // 96. PrimaryExpression
+    None,
+    // 97. SuperProperty
+    None,
+    // 98. MetaProperty
+    None,
+    // 99. BitwiseXORExpression
+    None,
+    // 100. IdentifierReference
+    None,
+    // 101. Literal
+    None,
+    // 102. ArrayLiteral
+    None,
+    // 103. ObjectLiteral
+    None,
+    // 104. FunctionExpression
+    None,
+    // 105. ClassExpression
+    None,
+    // 106. GeneratorExpression
+    None,
+    // 107. AsyncFunctionExpression
+    None,
+    // 108. AsyncGeneratorExpression
+    None,
+    // 109. TemplateLiteral
+    None,
+    // 110. NewTarget
+    None,
+    // 111. BitwiseANDExpression
+    None,
+    // 112. SubstitutionTemplate
+    None,
+    // 113. EqualityExpression
+    None,
+    // 114. RelationalExpression
+    None,
+    // 115. ShiftExpression
+    None,
+    // 116. AdditiveExpression
+    None,
+    // 117. MultiplicativeExpression
+    None,
+    // 118. ExponentiationExpression
+    None,
+    // 119. UnaryExpression
+    None,
+    // 120. UpdateExpression
+    None,
+    // 121. AwaitExpression
+    None,
+    // 122. "import"
+    None,
+    // 123. "export"
+    None,
+    // 124. Module
+    None,
+    // 125. ModuleBody
+    None,
+    // 126. ModuleItemList
+    None,
+    // 127. ModuleItem
+    None,
+    // 128. ImportDeclaration
+    None,
+    // 129. ExportDeclaration
+    None,
+    // 130. StatementListItem
+    None,
+    // 131. "var" "Identifier"
+    None,
+    // 132. "var" "yield"
+    None,
+    // 133. "var" "await"
+    None,
+    // 134. "var" "{"
+    None,
+    // 135. "var" "["
+    None,
+    // 136. "var" VariableDeclarationList
+    Some(ErrorCode::Asi),
+    // 137. "var" VariableDeclaration
+    None,
+    // 138. "var" BindingIdentifier
+    None,
+    // 139. "var" BindingPattern
+    None,
+    // 140. "var" ObjectBindingPattern
+    None,
+    // 141. "var" ArrayBindingPattern
+    None,
+    // 142. "if" "("
+    None,
+    // 143. "continue" ";"
+    None,
+    // 144. "continue" ErrorSymbol(asi)
+    None,
+    // 145. "continue" "Identifier"
+    None,
+    // 146. "continue" LabelIdentifier
+    Some(ErrorCode::Asi),
+    // 147. "break" ";"
+    None,
+    // 148. "break" ErrorSymbol(asi)
+    None,
+    // 149. "break" LabelIdentifier
+    Some(ErrorCode::Asi),
+    // 150. "return" ";"
+    None,
+    // 151. "return" ErrorSymbol(asi)
+    None,
+    // 152. "return" "async"
+    None,
+    // 153. "return" "Identifier"
+    None,
+    // 154. "return" "{"
+    None,
+    // 155. "return" "function"
+    None,
+    // 156. "return" "class"
+    None,
+    // 157. "return" Expression
+    Some(ErrorCode::Asi),
+    // 158. "with" "("
+    None,
+    // 159. "throw" Expression
+    Some(ErrorCode::Asi),
+    // 160. "try" Block
+    None,
+    // 161. "debugger" ";"
+    None,
+    // 162. "debugger" ErrorSymbol(asi)
+    None,
+    // 163. "class" "{"
+    None,
+    // 164. "class" "extends"
+    None,
+    // 165. "class" BindingIdentifier
+    None,
+    // 166. "class" ClassTail
+    None,
+    // 167. "class" ClassHeritage
+    None,
+    // 168. "{" "}"
+    None,
+    // 169. "{" StatementList
+    None,
+    // 170. "do" Statement
+    None,
+    // 171. "while" "("
+    None,
+    // 172. "for" "("
+    None,
+    // 173. "for" "await"
+    None,
+    // 174. "switch" "("
+    None,
+    // 175. "function" "("
+    None,
+    // 176. "function" "*"
+    None,
+    // 177. "function" BindingIdentifier
+    None,
+    // 178. "async" "function"
+    None,
+    // 179. "yield" "*"
+    None,
+    // 180. "yield" AssignmentExpression
+    None,
+    // 181. "new" "."
+    None,
+    // 182. "new" "super"
+    None,
+    // 183. "new" "Identifier"
+    None,
+    // 184. "new" "async"
+    None,
+    // 185. "new" NewExpression
+    None,
+    // 186. "new" MemberExpression
+    None,
+    // 187. "new" CoverParenthesizedExpressionAndArrowParameterList
+    None,
+    // 188. "await" "await"
+    None,
+    // 189. "await" UnaryExpression
+    None,
+    // 190. "await" UpdateExpression
+    None,
+    // 191. "await" LeftHandSideExpression
+    None,
+    // 192. "await" CoverCallExpressionAndAsyncArrowHead
+    None,
+    // 193. "(" ")"
+    None,
+    // 194. "(" "..."
+    None,
+    // 195. "(" Expression
+    None,
+    // 196. "super" "["
+    None,
+    // 197. "super" "."
+    None,
+    // 198. "super" "("
+    None,
+    // 199. "super" Arguments
+    None,
+    // 200. "[" "]"
+    None,
+    // 201. "[" ","
+    None,
+    // 202. "[" "..."
+    None,
+    // 203. "[" Elision
+    None,
+    // 204. "[" ElementList
+    None,
+    // 205. "[" AssignmentExpression
+    None,
+    // 206. "[" SpreadElement
+    None,
+    // 207. "TemplateHead" Expression
+    None,
+    // 208. "delete" UnaryExpression
+    None,
+    // 209. "void" UnaryExpression
+    None,
+    // 210. "typeof" UnaryExpression
+    None,
+    // 211. "+" UnaryExpression
+    None,
+    // 212. "-" UnaryExpression
+    None,
+    // 213. "~" UnaryExpression
+    None,
+    // 214. "!" UnaryExpression
+    None,
+    // 215. "++" UnaryExpression
+    None,
+    // 216. "--" UnaryExpression
+    None,
+    // 217. StatementList StatementListItem
+    None,
+    // 218. Expression ";"
+    None,
+    // 219. Expression ErrorSymbol(asi)
+    None,
+    // 220. Expression ","
+    None,
+    // 221. LabelIdentifier ":"
+    None,
+    // 222. LetOrConst BindingList
+    Some(ErrorCode::Asi),
+    // 223. LetOrConst LexicalBinding
+    None,
+    // 224. LetOrConst BindingIdentifier
+    None,
+    // 225. LetOrConst BindingPattern
+    None,
+    // 226. LeftHandSideExpression "="
+    None,
+    // 227. LeftHandSideExpression "++"
+    None,
+    // 228. LeftHandSideExpression "--"
+    None,
+    // 229. LeftHandSideExpression "*="
+    None,
+    // 230. LeftHandSideExpression "/="
+    None,
+    // 231. LeftHandSideExpression "%="
+    None,
+    // 232. LeftHandSideExpression "+="
+    None,
+    // 233. LeftHandSideExpression "-="
+    None,
+    // 234. LeftHandSideExpression "<<="
+    None,
+    // 235. LeftHandSideExpression ">>="
+    None,
+    // 236. LeftHandSideExpression ">>>="
+    None,
+    // 237. LeftHandSideExpression "&="
+    None,
+    // 238. LeftHandSideExpression "^="
+    None,
+    // 239. LeftHandSideExpression "|="
+    None,
+    // 240. LeftHandSideExpression "**="
+    None,
+    // 241. LeftHandSideExpression AssignmentOperator
+    None,
+    // 242. LogicalORExpression "?"
+    None,
+    // 243. LogicalORExpression "||"
+    None,
+    // 244. ArrowParameters "=>"
+    None,
+    // 245. CoverCallExpressionAndAsyncArrowHead "=>"
+    None,
+    // 246. CallExpression "["
+    None,
+    // 247. CallExpression "."
+    None,
+    // 248. CallExpression Arguments
+    None,
+    // 249. CallExpression TemplateLiteral
+    None,
+    // 250. LogicalANDExpression "&&"
+    None,
+    // 251. MemberExpression "["
+    None,
+    // 252. MemberExpression "."
+    None,
+    // 253. MemberExpression Arguments
+    None,
+    // 254. MemberExpression TemplateLiteral
+    None,
+    // 255. BitwiseORExpression "|"
+    None,
+    // 256. BitwiseXORExpression "^"
+    None,
+    // 257. BitwiseANDExpression "&"
+    None,
+    // 258. EqualityExpression "=="
+    None,
+    // 259. EqualityExpression "!="
+    None,
+    // 260. EqualityExpression "==="
+    None,
+    // 261. EqualityExpression "!=="
+    None,
+    // 262. RelationalExpression "<"
+    None,
+    // 263. RelationalExpression ">"
+    None,
+    // 264. RelationalExpression "<="
+    None,
+    // 265. RelationalExpression ">="
+    None,
+    // 266. RelationalExpression "instanceof"
+    None,
+    // 267. ShiftExpression "<<"
+    None,
+    // 268. ShiftExpression ">>"
+    None,
+    // 269. ShiftExpression ">>>"
+    None,
+    // 270. AdditiveExpression "+"
+    None,
+    // 271. AdditiveExpression "-"
+    None,
+    // 272. MultiplicativeExpression "*"
+    None,
+    // 273. MultiplicativeExpression "/"
+    None,
+    // 274. MultiplicativeExpression "%"
+    None,
+    // 275. MultiplicativeExpression MultiplicativeOperator
+    None,
+    // 276. UpdateExpression "**"
+    None,
+    // 277. "import" "StringLiteral"
+    None,
+    // 278. "import" "*"
+    None,
+    // 279. "import" "{"
+    None,
+    // 280. "import" ImportClause
+    None,
+    // 281. "import" ModuleSpecifier
+    Some(ErrorCode::Asi),
+    // 282. "import" ImportedDefaultBinding
+    None,
+    // 283. "import" NameSpaceImport
+    None,
+    // 284. "import" NamedImports
+    None,
+    // 285. "import" ImportedBinding
+    None,
+    // 286. "import" BindingIdentifier
+    None,
+    // 287. "export" "*"
+    None,
+    // 288. "export" "default"
+    None,
+    // 289. "export" "{"
+    None,
+    // 290. "export" ExportClause
+    Some(ErrorCode::Asi),
+    // 291. "export" VariableStatement
+    None,
+    // 292. "export" Declaration
+    None,
+    // 293. ModuleItemList ModuleItem
+    None,
+    // 294. "var" "{" "}"
+    None,
+    // 295. "var" "{" "..."
+    None,
+    // 296. "var" "{" "IdentifierName"
+    None,
+    // 297. "var" "{" "StringLiteral"
+    None,
+    // 298. "var" "{" "NumericLiteral"
+    None,
+    // 299. "var" "{" "["
+    None,
+    // 300. "var" "{" BindingRestProperty
+    None,
+    // 301. "var" "{" BindingPropertyList
+    None,
+    // 302. "var" "{" BindingProperty
+    None,
+    // 303. "var" "{" SingleNameBinding
+    None,
+    // 304. "var" "{" PropertyName
+    None,
+    // 305. "var" "{" BindingIdentifier
+    None,
+    // 306. "var" "{" LiteralPropertyName
+    None,
+    // 307. "var" "{" ComputedPropertyName
+    None,
+    // 308. "var" "[" "]"
+    None,
+    // 309. "var" "[" "..."
+    None,
+    // 310. "var" "[" Elision
+    None,
+    // 311. "var" "[" BindingRestElement
+    None,
+    // 312. "var" "[" BindingElementList
+    None,
+    // 313. "var" "[" BindingElisionElement
+    None,
+    // 314. "var" "[" BindingElement
+    None,
+    // 315. "var" "[" SingleNameBinding
+    None,
+    // 316. "var" "[" BindingPattern
+    None,
+    // 317. "var" VariableDeclarationList ";"
+    None,
+    // 318. "var" VariableDeclarationList ErrorSymbol(asi)
+    None,
+    // 319. "var" VariableDeclarationList ","
+    None,
+    // 320. "var" BindingIdentifier "="
+    None,
+    // 321. "var" BindingIdentifier Initializer
+    None,
+    // 322. "var" BindingPattern Initializer
+    None,
+    // 323. "if" "(" Expression
+    None,
+    // 324. "continue" LabelIdentifier ";"
+    None,
+    // 325. "continue" LabelIdentifier ErrorSymbol(asi)
+    None,
+    // 326. "break" LabelIdentifier ";"
+    None,
+    // 327. "break" LabelIdentifier ErrorSymbol(asi)
+    None,
+    // 328. "return" "async" "function"
+    None,
+    // 329. "return" "async" AsyncArrowBindingIdentifier
+    None,
+    // 330. "return" "async" BindingIdentifier
+    None,
+    // 331. "return" "{" "}"
+    None,
+    // 332. "return" "{" "..."
+    None,
+    // 333. "return" "{" "get"
+    None,
+    // 334. "return" "{" "set"
+    None,
+    // 335. "return" "{" "*"
+    None,
+    // 336. "return" "{" "async"
+    None,
+    // 337. "return" "{" PropertyDefinitionList
+    None,
+    // 338. "return" "{" PropertyDefinition
+    None,
+    // 339. "return" "{" IdentifierReference
+    None,
+    // 340. "return" "{" CoverInitializedName
+    None,
+    // 341. "return" "{" PropertyName
+    None,
+    // 342. "return" "{" MethodDefinition
+    None,
+    // 343. "return" "{" GeneratorMethod
+    None,
+    // 344. "return" "{" AsyncMethod
+    None,
+    // 345. "return" "{" AsyncGeneratorMethod
+    None,
+    // 346. "return" "function" "("
+    None,
+    // 347. "return" "function" "*"
+    None,
+    // 348. "return" "function" BindingIdentifier
+    None,
+    // 349. "return" "class" ClassTail
+    None,
+    // 350. "return" "class" BindingIdentifier
+    None,
+    // 351. "return" Expression ";"
+    None,
+    // 352. "return" Expression ErrorSymbol(asi)
+    None,
+    // 353. "with" "(" Expression
+    None,
+    // 354. "throw" Expression ";"
+    None,
+    // 355. "throw" Expression ErrorSymbol(asi)
+    None,
+    // 356. "try" Block "catch"
+    None,
+    // 357. "try" Block "finally"
+    None,
+    // 358. "try" Block Catch
+    None,
+    // 359. "try" Block Finally
+    None,
+    // 360. "class" "{" "}"
+    None,
+    // 361. "class" "{" "static"
+    None,
+    // 362. "class" "{" ";"
+    None,
+    // 363. "class" "{" ClassBody
+    None,
+    // 364. "class" "{" ClassElementList
+    None,
+    // 365. "class" "{" ClassElement
+    None,
+    // 366. "class" "{" MethodDefinition
+    None,
+    // 367. "class" "{" PropertyName
+    None,
+    // 368. "class" "extends" LeftHandSideExpression
+    None,
+    // 369. "class" BindingIdentifier ClassTail
+    None,
+    // 370. "class" ClassHeritage "{"
+    None,
+    // 371. "{" StatementList "}"
+    None,
+    // 372. "do" Statement "while"
+    None,
+    // 373. "while" "(" Expression
+    None,
+    // 374. "for" "(" ";"
+    None,
+    // 375. "for" "(" "var"
+    None,
+    // 376. "for" "(" Expression
+    None,
+    // 377. "for" "(" LexicalDeclaration
+    None,
+    // 378. "for" "(" LeftHandSideExpression
+    None,
+    // 379. "for" "(" ForDeclaration
+    None,
+    // 380. "for" "(" LetOrConst
+    None,
+    // 381. "for" "await" "("
+    None,
+    // 382. "switch" "(" Expression
+    None,
+    // 383. "function" "(" ")"
+    None,
+    // 384. "function" "(" FormalParameters
+    None,
+    // 385. "function" "(" FunctionRestParameter
+    None,
+    // 386. "function" "(" FormalParameterList
+    None,
+    // 387. "function" "(" BindingRestElement
+    None,
+    // 388. "function" "(" FormalParameter
+    None,
+    // 389. "function" "(" BindingElement
+    None,
+    // 390. "function" "*" "("
+    None,
+    // 391. "function" "*" BindingIdentifier
+    None,
+    // 392. "function" BindingIdentifier "("
+    None,
+    // 393. "async" "function" "("
+    None,
+    // 394. "async" "function" "*"
+    None,
+    // 395. "async" "function" BindingIdentifier
+    None,
+    // 396. "yield" "*" AssignmentExpression
+    None,
+    // 397. "new" "." "target"
+    None,
+    // 398. "new" MemberExpression Arguments
+    None,
+    // 399. "(" "..." BindingIdentifier
+    None,
+    // 400. "(" "..." BindingPattern
+    None,
+    // 401. "(" Expression ")"
+    None,
+    // 402. "(" Expression ","
+    None,
+    // 403. "super" "[" Expression
+    None,
+    // 404. "super" "." "IdentifierName"
+    None,
+    // 405. "super" "(" ")"
+    None,
+    // 406. "super" "(" "..."
+    None,
+    // 407. "super" "(" ArgumentList
+    None,
+    // 408. "super" "(" AssignmentExpression
+    None,
+    // 409. "[" "..." AssignmentExpression
+    None,
+    // 410. "[" Elision "]"
+    None,
+    // 411. "[" Elision ","
+    None,
+    // 412. "[" Elision AssignmentExpression
+    None,
+    // 413. "[" Elision SpreadElement
+    None,
+    // 414. "[" ElementList "]"
+    None,
+    // 415. "[" ElementList ","
+    None,
+    // 416. "TemplateHead" Expression "TemplateTail"
+    None,
+    // 417. "TemplateHead" Expression "TemplateMiddle"
+    None,
+    // 418. "TemplateHead" Expression TemplateSpans
+    None,
+    // 419. "TemplateHead" Expression TemplateMiddleList
+    None,
+    // 420. Expression "," AssignmentExpression
+    None,
+    // 421. LabelIdentifier ":" "function"
+    None,
+    // 422. LabelIdentifier ":" LabelledItem
+    None,
+    // 423. LabelIdentifier ":" Statement
+    None,
+    // 424. LabelIdentifier ":" FunctionDeclaration
+    None,
+    // 425. LetOrConst BindingList ";"
+    None,
+    // 426. LetOrConst BindingList ErrorSymbol(asi)
+    None,
+    // 427. LetOrConst BindingList ","
+    None,
+    // 428. LetOrConst BindingIdentifier Initializer
+    None,
+    // 429. LetOrConst BindingPattern Initializer
+    None,
+    // 430. LeftHandSideExpression "=" AssignmentExpression
+    None,
+    // 431. LeftHandSideExpression AssignmentOperator AssignmentExpression
+    None,
+    // 432. LogicalORExpression "?" AssignmentExpression
+    None,
+    // 433. LogicalORExpression "||" LogicalANDExpression
+    None,
+    // 434. ArrowParameters "=>" "{"
+    None,
+    // 435. ArrowParameters "=>" ConciseBody
+    None,
+    // 436. ArrowParameters "=>" AssignmentExpression
+    None,
+    // 437. CoverCallExpressionAndAsyncArrowHead "=>" "{"
+    None,
+    // 438. CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody
+    None,
+    // 439. CoverCallExpressionAndAsyncArrowHead "=>" AssignmentExpression
+    None,
+    // 440. CallExpression "[" Expression
+    None,
+    // 441. CallExpression "." "IdentifierName"
+    None,
+    // 442. LogicalANDExpression "&&" BitwiseORExpression
+    None,
+    // 443. MemberExpression "[" Expression
+    None,
+    // 444. MemberExpression "." "IdentifierName"
+    None,
+    // 445. BitwiseORExpression "|" BitwiseXORExpression
+    None,
+    // 446. BitwiseXORExpression "^" BitwiseANDExpression
+    None,
+    // 447. BitwiseANDExpression "&" EqualityExpression
+    None,
+    // 448. EqualityExpression "==" RelationalExpression
+    None,
+    // 449. EqualityExpression "!=" RelationalExpression
+    None,
+    // 450. EqualityExpression "===" RelationalExpression
+    None,
+    // 451. EqualityExpression "!==" RelationalExpression
+    None,
+    // 452. RelationalExpression "<" ShiftExpression
+    None,
+    // 453. RelationalExpression ">" ShiftExpression
+    None,
+    // 454. RelationalExpression "<=" ShiftExpression
+    None,
+    // 455. RelationalExpression ">=" ShiftExpression
+    None,
+    // 456. RelationalExpression "instanceof" ShiftExpression
+    None,
+    // 457. ShiftExpression "<<" AdditiveExpression
+    None,
+    // 458. ShiftExpression ">>" AdditiveExpression
+    None,
+    // 459. ShiftExpression ">>>" AdditiveExpression
+    None,
+    // 460. AdditiveExpression "+" MultiplicativeExpression
+    None,
+    // 461. AdditiveExpression "-" MultiplicativeExpression
+    None,
+    // 462. MultiplicativeExpression MultiplicativeOperator ExponentiationExpression
+    None,
+    // 463. UpdateExpression "**" ExponentiationExpression
+    None,
+    // 464. "import" "*" "as"
+    None,
+    // 465. "import" "{" "}"
+    None,
+    // 466. "import" "{" "IdentifierName"
+    None,
+    // 467. "import" "{" ImportsList
+    None,
+    // 468. "import" "{" ImportSpecifier
+    None,
+    // 469. "import" "{" ImportedBinding
+    None,
+    // 470. "import" ImportClause "from"
+    None,
+    // 471. "import" ImportClause FromClause
+    Some(ErrorCode::Asi),
+    // 472. "import" ModuleSpecifier ";"
+    None,
+    // 473. "import" ModuleSpecifier ErrorSymbol(asi)
+    None,
+    // 474. "import" ImportedDefaultBinding ","
+    None,
+    // 475. "export" "*" FromClause
+    Some(ErrorCode::Asi),
+    // 476. "export" "default" HoistableDeclaration
+    None,
+    // 477. "export" "default" ClassDeclaration
+    None,
+    // 478. "export" "default" AssignmentExpression
+    Some(ErrorCode::Asi),
+    // 479. "export" "{" "}"
+    None,
+    // 480. "export" "{" "IdentifierName"
+    None,
+    // 481. "export" "{" ExportsList
+    None,
+    // 482. "export" "{" ExportSpecifier
+    None,
+    // 483. "export" ExportClause ";"
+    None,
+    // 484. "export" ExportClause ErrorSymbol(asi)
+    None,
+    // 485. "export" ExportClause FromClause
+    Some(ErrorCode::Asi),
+    // 486. "var" "{" "..." BindingIdentifier
+    None,
+    // 487. "var" "{" "[" AssignmentExpression
+    None,
+    // 488. "var" "{" BindingRestProperty "}"
+    None,
+    // 489. "var" "{" BindingPropertyList "}"
+    None,
+    // 490. "var" "{" BindingPropertyList ","
+    None,
+    // 491. "var" "{" PropertyName ":"
+    None,
+    // 492. "var" "{" BindingIdentifier Initializer
+    None,
+    // 493. "var" "[" "..." BindingIdentifier
+    None,
+    // 494. "var" "[" "..." BindingPattern
+    None,
+    // 495. "var" "[" Elision "]"
+    None,
+    // 496. "var" "[" Elision BindingRestElement
+    None,
+    // 497. "var" "[" Elision BindingElement
+    None,
+    // 498. "var" "[" BindingRestElement "]"
+    None,
+    // 499. "var" "[" BindingElementList "]"
+    None,
+    // 500. "var" "[" BindingElementList ","
+    None,
+    // 501. "var" "[" BindingPattern Initializer
+    None,
+    // 502. "var" VariableDeclarationList "," VariableDeclaration
+    None,
+    // 503. "var" BindingIdentifier "=" AssignmentExpression
+    None,
+    // 504. "if" "(" Expression ")"
+    None,
+    // 505. "return" "async" "function" "("
+    None,
+    // 506. "return" "async" "function" "*"
+    None,
+    // 507. "return" "async" "function" BindingIdentifier
+    None,
+    // 508. "return" "async" AsyncArrowBindingIdentifier "=>"
+    None,
+    // 509. "return" "{" "..." AssignmentExpression
+    None,
+    // 510. "return" "{" "get" PropertyName
+    None,
+    // 511. "return" "{" "set" PropertyName
+    None,
+    // 512. "return" "{" "*" PropertyName
+    None,
+    // 513. "return" "{" "async" "*"
+    None,
+    // 514. "return" "{" "async" PropertyName
+    None,
+    // 515. "return" "{" PropertyDefinitionList "}"
+    None,
+    // 516. "return" "{" PropertyDefinitionList ","
+    None,
+    // 517. "return" "{" IdentifierReference Initializer
+    None,
+    // 518. "return" "{" PropertyName ":"
+    None,
+    // 519. "return" "{" PropertyName "("
+    None,
+    // 520. "return" "function" "(" ")"
+    None,
+    // 521. "return" "function" "(" FormalParameters
+    None,
+    // 522. "return" "function" "*" "("
+    None,
+    // 523. "return" "function" "*" BindingIdentifier
+    None,
+    // 524. "return" "function" BindingIdentifier "("
+    None,
+    // 525. "return" "class" BindingIdentifier ClassTail
+    None,
+    // 526. "with" "(" Expression ")"
+    None,
+    // 527. "try" Block "catch" "("
+    None,
+    // 528. "try" Block "finally" Block
+    None,
+    // 529. "try" Block Catch Finally
+    None,
+    // 530. "class" "{" "static" MethodDefinition
+    None,
+    // 531. "class" "{" ClassBody "}"
+    None,
+    // 532. "class" "{" ClassElementList ClassElement
+    None,
+    // 533. "class" ClassHeritage "{" "}"
+    None,
+    // 534. "class" ClassHeritage "{" ClassBody
+    None,
+    // 535. "do" Statement "while" "("
+    None,
+    // 536. "while" "(" Expression ")"
+    None,
+    // 537. "for" "(" ";" ";"
+    None,
+    // 538. "for" "(" ";" Expression
+    None,
+    // 539. "for" "(" "var" VariableDeclarationList
+    None,
+    // 540. "for" "(" "var" ForBinding
+    None,
+    // 541. "for" "(" "var" BindingIdentifier
+    None,
+    // 542. "for" "(" "var" BindingPattern
+    None,
+    // 543. "for" "(" Expression ";"
+    None,
+    // 544. "for" "(" LexicalDeclaration ";"
+    None,
+    // 545. "for" "(" LexicalDeclaration Expression
+    None,
+    // 546. "for" "(" LeftHandSideExpression "in"
+    None,
+    // 547. "for" "(" LeftHandSideExpression "of"
+    None,
+    // 548. "for" "(" ForDeclaration "in"
+    None,
+    // 549. "for" "(" ForDeclaration "of"
+    None,
+    // 550. "for" "(" LetOrConst ForBinding
+    None,
+    // 551. "for" "(" LetOrConst BindingIdentifier
+    None,
+    // 552. "for" "(" LetOrConst BindingPattern
+    None,
+    // 553. "for" "await" "(" "var"
+    None,
+    // 554. "for" "await" "(" LeftHandSideExpression
+    None,
+    // 555. "for" "await" "(" ForDeclaration
+    None,
+    // 556. "for" "await" "(" LetOrConst
+    None,
+    // 557. "switch" "(" Expression ")"
+    None,
+    // 558. "function" "(" ")" "{"
+    None,
+    // 559. "function" "(" FormalParameters ")"
+    None,
+    // 560. "function" "(" FormalParameterList ","
+    None,
+    // 561. "function" "*" "(" ")"
+    None,
+    // 562. "function" "*" "(" FormalParameters
+    None,
+    // 563. "function" "*" BindingIdentifier "("
+    None,
+    // 564. "function" BindingIdentifier "(" ")"
+    None,
+    // 565. "function" BindingIdentifier "(" FormalParameters
+    None,
+    // 566. "async" "function" "(" ")"
+    None,
+    // 567. "async" "function" "(" FormalParameters
+    None,
+    // 568. "async" "function" "*" "("
+    None,
+    // 569. "async" "function" "*" BindingIdentifier
+    None,
+    // 570. "async" "function" BindingIdentifier "("
+    None,
+    // 571. "(" "..." BindingIdentifier ")"
+    None,
+    // 572. "(" "..." BindingPattern ")"
+    None,
+    // 573. "(" Expression "," ")"
+    None,
+    // 574. "(" Expression "," "..."
+    None,
+    // 575. "super" "[" Expression "]"
+    None,
+    // 576. "super" "(" "..." AssignmentExpression
+    None,
+    // 577. "super" "(" ArgumentList ")"
+    None,
+    // 578. "super" "(" ArgumentList ","
+    None,
+    // 579. "[" ElementList "," "]"
+    None,
+    // 580. "[" ElementList "," Elision
+    None,
+    // 581. "[" ElementList "," AssignmentExpression
+    None,
+    // 582. "[" ElementList "," SpreadElement
+    None,
+    // 583. "TemplateHead" Expression "TemplateMiddle" Expression
+    None,
+    // 584. "TemplateHead" Expression TemplateMiddleList "TemplateTail"
+    None,
+    // 585. "TemplateHead" Expression TemplateMiddleList "TemplateMiddle"
+    None,
+    // 586. LetOrConst BindingList "," LexicalBinding
+    None,
+    // 587. LogicalORExpression "?" AssignmentExpression ":"
+    None,
+    // 588. ArrowParameters "=>" "{" "}"
+    None,
+    // 589. ArrowParameters "=>" "{" FunctionBody
+    None,
+    // 590. ArrowParameters "=>" "{" FunctionStatementList
+    None,
+    // 591. ArrowParameters "=>" "{" StatementList
+    None,
+    // 592. CoverCallExpressionAndAsyncArrowHead "=>" "{" "}"
+    None,
+    // 593. CoverCallExpressionAndAsyncArrowHead "=>" "{" AsyncFunctionBody
+    None,
+    // 594. CoverCallExpressionAndAsyncArrowHead "=>" "{" FunctionBody
+    None,
+    // 595. CallExpression "[" Expression "]"
+    None,
+    // 596. MemberExpression "[" Expression "]"
+    None,
+    // 597. "import" "*" "as" ImportedBinding
+    None,
+    // 598. "import" "{" "IdentifierName" "as"
+    None,
+    // 599. "import" "{" ImportsList "}"
+    None,
+    // 600. "import" "{" ImportsList ","
+    None,
+    // 601. "import" ImportClause "from" ModuleSpecifier
+    None,
+    // 602. "import" ImportClause FromClause ";"
+    None,
+    // 603. "import" ImportClause FromClause ErrorSymbol(asi)
+    None,
+    // 604. "import" ImportedDefaultBinding "," NameSpaceImport
+    None,
+    // 605. "import" ImportedDefaultBinding "," NamedImports
+    None,
+    // 606. "export" "*" FromClause ";"
+    None,
+    // 607. "export" "*" FromClause ErrorSymbol(asi)
+    None,
+    // 608. "export" "default" AssignmentExpression ";"
+    None,
+    // 609. "export" "default" AssignmentExpression ErrorSymbol(asi)
+    None,
+    // 610. "export" "{" "IdentifierName" "as"
+    None,
+    // 611. "export" "{" ExportsList "}"
+    None,
+    // 612. "export" "{" ExportsList ","
+    None,
+    // 613. "export" ExportClause FromClause ";"
+    None,
+    // 614. "export" ExportClause FromClause ErrorSymbol(asi)
+    None,
+    // 615. "var" "{" "[" AssignmentExpression "]"
+    None,
+    // 616. "var" "{" BindingPropertyList "," "}"
+    None,
+    // 617. "var" "{" BindingPropertyList "," BindingRestProperty
+    None,
+    // 618. "var" "{" BindingPropertyList "," BindingProperty
+    None,
+    // 619. "var" "{" PropertyName ":" BindingElement
+    None,
+    // 620. "var" "[" Elision BindingRestElement "]"
+    None,
+    // 621. "var" "[" BindingElementList "," "]"
+    None,
+    // 622. "var" "[" BindingElementList "," Elision
+    None,
+    // 623. "var" "[" BindingElementList "," BindingRestElement
+    None,
+    // 624. "var" "[" BindingElementList "," BindingElisionElement
+    None,
+    // 625. "if" "(" Expression ")" Statement
+    None,
+    // 626. "return" "async" "function" "(" ")"
+    None,
+    // 627. "return" "async" "function" "(" FormalParameters
+    None,
+    // 628. "return" "async" "function" "*" "("
+    None,
+    // 629. "return" "async" "function" "*" BindingIdentifier
+    None,
+    // 630. "return" "async" "function" BindingIdentifier "("
+    None,
+    // 631. "return" "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody
+    None,
+    // 632. "return" "{" "get" PropertyName "("
+    None,
+    // 633. "return" "{" "set" PropertyName "("
+    None,
+    // 634. "return" "{" "*" PropertyName "("
+    None,
+    // 635. "return" "{" "async" "*" PropertyName
+    None,
+    // 636. "return" "{" "async" PropertyName "("
+    None,
+    // 637. "return" "{" PropertyDefinitionList "," "}"
+    None,
+    // 638. "return" "{" PropertyDefinitionList "," PropertyDefinition
+    None,
+    // 639. "return" "{" PropertyName ":" AssignmentExpression
+    None,
+    // 640. "return" "{" PropertyName "(" ")"
+    None,
+    // 641. "return" "{" PropertyName "(" UniqueFormalParameters
+    None,
+    // 642. "return" "{" PropertyName "(" FormalParameters
+    None,
+    // 643. "return" "function" "(" ")" "{"
+    None,
+    // 644. "return" "function" "(" FormalParameters ")"
+    None,
+    // 645. "return" "function" "*" "(" ")"
+    None,
+    // 646. "return" "function" "*" "(" FormalParameters
+    None,
+    // 647. "return" "function" "*" BindingIdentifier "("
+    None,
+    // 648. "return" "function" BindingIdentifier "(" ")"
+    None,
+    // 649. "return" "function" BindingIdentifier "(" FormalParameters
+    None,
+    // 650. "with" "(" Expression ")" Statement
+    None,
+    // 651. "try" Block "catch" "(" CatchParameter
+    None,
+    // 652. "try" Block "catch" "(" BindingIdentifier
+    None,
+    // 653. "try" Block "catch" "(" BindingPattern
+    None,
+    // 654. "class" ClassHeritage "{" ClassBody "}"
+    None,
+    // 655. "do" Statement "while" "(" Expression
+    None,
+    // 656. "while" "(" Expression ")" Statement
+    None,
+    // 657. "for" "(" ";" ";" ")"
+    None,
+    // 658. "for" "(" ";" ";" Expression
+    None,
+    // 659. "for" "(" ";" Expression ";"
+    None,
+    // 660. "for" "(" "var" VariableDeclarationList ";"
+    None,
+    // 661. "for" "(" "var" ForBinding "in"
+    None,
+    // 662. "for" "(" "var" ForBinding "of"
+    None,
+    // 663. "for" "(" Expression ";" ";"
+    None,
+    // 664. "for" "(" Expression ";" Expression
+    None,
+    // 665. "for" "(" LexicalDeclaration ";" ")"
+    None,
+    // 666. "for" "(" LexicalDeclaration ";" Expression
+    None,
+    // 667. "for" "(" LexicalDeclaration Expression ";"
+    None,
+    // 668. "for" "(" LeftHandSideExpression "in" Expression
+    None,
+    // 669. "for" "(" LeftHandSideExpression "of" AssignmentExpression
+    None,
+    // 670. "for" "(" ForDeclaration "in" Expression
+    None,
+    // 671. "for" "(" ForDeclaration "of" AssignmentExpression
+    None,
+    // 672. "for" "await" "(" "var" ForBinding
+    None,
+    // 673. "for" "await" "(" "var" BindingIdentifier
+    None,
+    // 674. "for" "await" "(" "var" BindingPattern
+    None,
+    // 675. "for" "await" "(" LeftHandSideExpression "of"
+    None,
+    // 676. "for" "await" "(" ForDeclaration "of"
+    None,
+    // 677. "switch" "(" Expression ")" "{"
+    None,
+    // 678. "switch" "(" Expression ")" CaseBlock
+    None,
+    // 679. "function" "(" ")" "{" "}"
+    None,
+    // 680. "function" "(" ")" "{" FunctionBody
+    None,
+    // 681. "function" "(" FormalParameters ")" "{"
+    None,
+    // 682. "function" "(" FormalParameterList "," FunctionRestParameter
+    None,
+    // 683. "function" "(" FormalParameterList "," FormalParameter
+    None,
+    // 684. "function" "*" "(" ")" "{"
+    None,
+    // 685. "function" "*" "(" FormalParameters ")"
+    None,
+    // 686. "function" "*" BindingIdentifier "(" ")"
+    None,
+    // 687. "function" "*" BindingIdentifier "(" FormalParameters
+    None,
+    // 688. "function" BindingIdentifier "(" ")" "{"
+    None,
+    // 689. "function" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 690. "async" "function" "(" ")" "{"
+    None,
+    // 691. "async" "function" "(" FormalParameters ")"
+    None,
+    // 692. "async" "function" "*" "(" ")"
+    None,
+    // 693. "async" "function" "*" "(" FormalParameters
+    None,
+    // 694. "async" "function" "*" BindingIdentifier "("
+    None,
+    // 695. "async" "function" BindingIdentifier "(" ")"
+    None,
+    // 696. "async" "function" BindingIdentifier "(" FormalParameters
+    None,
+    // 697. "(" Expression "," "..." BindingIdentifier
+    None,
+    // 698. "(" Expression "," "..." BindingPattern
+    None,
+    // 699. "super" "(" ArgumentList "," ")"
+    None,
+    // 700. "super" "(" ArgumentList "," "..."
+    None,
+    // 701. "super" "(" ArgumentList "," AssignmentExpression
+    None,
+    // 702. "[" ElementList "," Elision "]"
+    None,
+    // 703. "[" ElementList "," Elision AssignmentExpression
+    None,
+    // 704. "[" ElementList "," Elision SpreadElement
+    None,
+    // 705. "TemplateHead" Expression TemplateMiddleList "TemplateMiddle" Expression
+    None,
+    // 706. LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression
+    None,
+    // 707. ArrowParameters "=>" "{" FunctionBody "}"
+    None,
+    // 708. CoverCallExpressionAndAsyncArrowHead "=>" "{" AsyncFunctionBody "}"
+    None,
+    // 709. "import" "{" "IdentifierName" "as" ImportedBinding
+    None,
+    // 710. "import" "{" ImportsList "," "}"
+    None,
+    // 711. "import" "{" ImportsList "," ImportSpecifier
+    None,
+    // 712. "export" "{" "IdentifierName" "as" "IdentifierName"
+    None,
+    // 713. "export" "{" ExportsList "," "}"
+    None,
+    // 714. "export" "{" ExportsList "," ExportSpecifier
+    None,
+    // 715. "var" "{" BindingPropertyList "," BindingRestProperty "}"
+    None,
+    // 716. "var" "[" BindingElementList "," Elision "]"
+    None,
+    // 717. "var" "[" BindingElementList "," Elision BindingRestElement
+    None,
+    // 718. "var" "[" BindingElementList "," BindingRestElement "]"
+    None,
+    // 719. "if" "(" Expression ")" Statement "else"
+    None,
+    // 720. "return" "async" "function" "(" ")" "{"
+    None,
+    // 721. "return" "async" "function" "(" FormalParameters ")"
+    None,
+    // 722. "return" "async" "function" "*" "(" ")"
+    None,
+    // 723. "return" "async" "function" "*" "(" FormalParameters
+    None,
+    // 724. "return" "async" "function" "*" BindingIdentifier "("
+    None,
+    // 725. "return" "async" "function" BindingIdentifier "(" ")"
+    None,
+    // 726. "return" "async" "function" BindingIdentifier "(" FormalParameters
+    None,
+    // 727. "return" "{" "get" PropertyName "(" ")"
+    None,
+    // 728. "return" "{" "set" PropertyName "(" PropertySetParameterList
+    None,
+    // 729. "return" "{" "set" PropertyName "(" FormalParameter
+    None,
+    // 730. "return" "{" "*" PropertyName "(" ")"
+    None,
+    // 731. "return" "{" "*" PropertyName "(" UniqueFormalParameters
+    None,
+    // 732. "return" "{" "async" "*" PropertyName "("
+    None,
+    // 733. "return" "{" "async" PropertyName "(" ")"
+    None,
+    // 734. "return" "{" "async" PropertyName "(" UniqueFormalParameters
+    None,
+    // 735. "return" "{" PropertyName "(" ")" "{"
+    None,
+    // 736. "return" "{" PropertyName "(" UniqueFormalParameters ")"
+    None,
+    // 737. "return" "function" "(" ")" "{" "}"
+    None,
+    // 738. "return" "function" "(" ")" "{" FunctionBody
+    None,
+    // 739. "return" "function" "(" FormalParameters ")" "{"
+    None,
+    // 740. "return" "function" "*" "(" ")" "{"
+    None,
+    // 741. "return" "function" "*" "(" FormalParameters ")"
+    None,
+    // 742. "return" "function" "*" BindingIdentifier "(" ")"
+    None,
+    // 743. "return" "function" "*" BindingIdentifier "(" FormalParameters
+    None,
+    // 744. "return" "function" BindingIdentifier "(" ")" "{"
+    None,
+    // 745. "return" "function" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 746. "try" Block "catch" "(" CatchParameter ")"
+    None,
+    // 747. "do" Statement "while" "(" Expression ")"
+    Some(ErrorCode::DoWhileAsi),
+    // 748. "for" "(" ";" ";" ")" Statement
+    None,
+    // 749. "for" "(" ";" ";" Expression ")"
+    None,
+    // 750. "for" "(" ";" Expression ";" ")"
+    None,
+    // 751. "for" "(" ";" Expression ";" Expression
+    None,
+    // 752. "for" "(" "var" VariableDeclarationList ";" ";"
+    None,
+    // 753. "for" "(" "var" VariableDeclarationList ";" Expression
+    None,
+    // 754. "for" "(" "var" ForBinding "in" Expression
+    None,
+    // 755. "for" "(" "var" ForBinding "of" AssignmentExpression
+    None,
+    // 756. "for" "(" Expression ";" ";" ")"
+    None,
+    // 757. "for" "(" Expression ";" ";" Expression
+    None,
+    // 758. "for" "(" Expression ";" Expression ";"
+    None,
+    // 759. "for" "(" LexicalDeclaration ";" ")" Statement
+    None,
+    // 760. "for" "(" LexicalDeclaration ";" Expression ")"
+    None,
+    // 761. "for" "(" LexicalDeclaration Expression ";" ")"
+    None,
+    // 762. "for" "(" LexicalDeclaration Expression ";" Expression
+    None,
+    // 763. "for" "(" LeftHandSideExpression "in" Expression ")"
+    None,
+    // 764. "for" "(" LeftHandSideExpression "of" AssignmentExpression ")"
+    None,
+    // 765. "for" "(" ForDeclaration "in" Expression ")"
+    None,
+    // 766. "for" "(" ForDeclaration "of" AssignmentExpression ")"
+    None,
+    // 767. "for" "await" "(" "var" ForBinding "of"
+    None,
+    // 768. "for" "await" "(" LeftHandSideExpression "of" AssignmentExpression
+    None,
+    // 769. "for" "await" "(" ForDeclaration "of" AssignmentExpression
+    None,
+    // 770. "switch" "(" Expression ")" "{" "}"
+    None,
+    // 771. "switch" "(" Expression ")" "{" "default"
+    None,
+    // 772. "switch" "(" Expression ")" "{" "case"
+    None,
+    // 773. "switch" "(" Expression ")" "{" CaseClauses
+    None,
+    // 774. "switch" "(" Expression ")" "{" DefaultClause
+    None,
+    // 775. "switch" "(" Expression ")" "{" CaseClause
+    None,
+    // 776. "function" "(" ")" "{" FunctionBody "}"
+    None,
+    // 777. "function" "(" FormalParameters ")" "{" "}"
+    None,
+    // 778. "function" "(" FormalParameters ")" "{" FunctionBody
+    None,
+    // 779. "function" "*" "(" ")" "{" "}"
+    None,
+    // 780. "function" "*" "(" ")" "{" GeneratorBody
+    None,
+    // 781. "function" "*" "(" ")" "{" FunctionBody
+    None,
+    // 782. "function" "*" "(" FormalParameters ")" "{"
+    None,
+    // 783. "function" "*" BindingIdentifier "(" ")" "{"
+    None,
+    // 784. "function" "*" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 785. "function" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 786. "function" BindingIdentifier "(" ")" "{" FunctionBody
+    None,
+    // 787. "function" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 788. "async" "function" "(" ")" "{" "}"
+    None,
+    // 789. "async" "function" "(" ")" "{" AsyncFunctionBody
+    None,
+    // 790. "async" "function" "(" FormalParameters ")" "{"
+    None,
+    // 791. "async" "function" "*" "(" ")" "{"
+    None,
+    // 792. "async" "function" "*" "(" FormalParameters ")"
+    None,
+    // 793. "async" "function" "*" BindingIdentifier "(" ")"
+    None,
+    // 794. "async" "function" "*" BindingIdentifier "(" FormalParameters
+    None,
+    // 795. "async" "function" BindingIdentifier "(" ")" "{"
+    None,
+    // 796. "async" "function" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 797. "(" Expression "," "..." BindingIdentifier ")"
+    None,
+    // 798. "(" Expression "," "..." BindingPattern ")"
+    None,
+    // 799. "super" "(" ArgumentList "," "..." AssignmentExpression
+    None,
+    // 800. "var" "[" BindingElementList "," Elision BindingRestElement "]"
+    None,
+    // 801. "if" "(" Expression ")" Statement "else" Statement
+    None,
+    // 802. "return" "async" "function" "(" ")" "{" "}"
+    None,
+    // 803. "return" "async" "function" "(" ")" "{" AsyncFunctionBody
+    None,
+    // 804. "return" "async" "function" "(" FormalParameters ")" "{"
+    None,
+    // 805. "return" "async" "function" "*" "(" ")" "{"
+    None,
+    // 806. "return" "async" "function" "*" "(" FormalParameters ")"
+    None,
+    // 807. "return" "async" "function" "*" BindingIdentifier "(" ")"
+    None,
+    // 808. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters
+    None,
+    // 809. "return" "async" "function" BindingIdentifier "(" ")" "{"
+    None,
+    // 810. "return" "async" "function" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 811. "return" "{" "get" PropertyName "(" ")" "{"
+    None,
+    // 812. "return" "{" "set" PropertyName "(" PropertySetParameterList ")"
+    None,
+    // 813. "return" "{" "*" PropertyName "(" ")" "{"
+    None,
+    // 814. "return" "{" "*" PropertyName "(" UniqueFormalParameters ")"
+    None,
+    // 815. "return" "{" "async" "*" PropertyName "(" ")"
+    None,
+    // 816. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters
+    None,
+    // 817. "return" "{" "async" PropertyName "(" ")" "{"
+    None,
+    // 818. "return" "{" "async" PropertyName "(" UniqueFormalParameters ")"
+    None,
+    // 819. "return" "{" PropertyName "(" ")" "{" "}"
+    None,
+    // 820. "return" "{" PropertyName "(" ")" "{" FunctionBody
+    None,
+    // 821. "return" "{" PropertyName "(" UniqueFormalParameters ")" "{"
+    None,
+    // 822. "return" "function" "(" ")" "{" FunctionBody "}"
+    None,
+    // 823. "return" "function" "(" FormalParameters ")" "{" "}"
+    None,
+    // 824. "return" "function" "(" FormalParameters ")" "{" FunctionBody
+    None,
+    // 825. "return" "function" "*" "(" ")" "{" "}"
+    None,
+    // 826. "return" "function" "*" "(" ")" "{" GeneratorBody
+    None,
+    // 827. "return" "function" "*" "(" FormalParameters ")" "{"
+    None,
+    // 828. "return" "function" "*" BindingIdentifier "(" ")" "{"
+    None,
+    // 829. "return" "function" "*" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 830. "return" "function" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 831. "return" "function" BindingIdentifier "(" ")" "{" FunctionBody
+    None,
+    // 832. "return" "function" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 833. "try" Block "catch" "(" CatchParameter ")" Block
+    None,
+    // 834. "do" Statement "while" "(" Expression ")" ";"
+    None,
+    // 835. "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi)
+    None,
+    // 836. "for" "(" ";" ";" Expression ")" Statement
+    None,
+    // 837. "for" "(" ";" Expression ";" ")" Statement
+    None,
+    // 838. "for" "(" ";" Expression ";" Expression ")"
+    None,
+    // 839. "for" "(" "var" VariableDeclarationList ";" ";" ")"
+    None,
+    // 840. "for" "(" "var" VariableDeclarationList ";" ";" Expression
+    None,
+    // 841. "for" "(" "var" VariableDeclarationList ";" Expression ";"
+    None,
+    // 842. "for" "(" "var" ForBinding "in" Expression ")"
+    None,
+    // 843. "for" "(" "var" ForBinding "of" AssignmentExpression ")"
+    None,
+    // 844. "for" "(" Expression ";" ";" ")" Statement
+    None,
+    // 845. "for" "(" Expression ";" ";" Expression ")"
+    None,
+    // 846. "for" "(" Expression ";" Expression ";" ")"
+    None,
+    // 847. "for" "(" Expression ";" Expression ";" Expression
+    None,
+    // 848. "for" "(" LexicalDeclaration ";" Expression ")" Statement
+    None,
+    // 849. "for" "(" LexicalDeclaration Expression ";" ")" Statement
+    None,
+    // 850. "for" "(" LexicalDeclaration Expression ";" Expression ")"
+    None,
+    // 851. "for" "(" LeftHandSideExpression "in" Expression ")" Statement
+    None,
+    // 852. "for" "(" LeftHandSideExpression "of" AssignmentExpression ")" Statement
+    None,
+    // 853. "for" "(" ForDeclaration "in" Expression ")" Statement
+    None,
+    // 854. "for" "(" ForDeclaration "of" AssignmentExpression ")" Statement
+    None,
+    // 855. "for" "await" "(" "var" ForBinding "of" AssignmentExpression
+    None,
+    // 856. "for" "await" "(" LeftHandSideExpression "of" AssignmentExpression ")"
+    None,
+    // 857. "for" "await" "(" ForDeclaration "of" AssignmentExpression ")"
+    None,
+    // 858. "switch" "(" Expression ")" "{" "default" ":"
+    None,
+    // 859. "switch" "(" Expression ")" "{" "case" Expression
+    None,
+    // 860. "switch" "(" Expression ")" "{" CaseClauses "}"
+    None,
+    // 861. "switch" "(" Expression ")" "{" CaseClauses DefaultClause
+    None,
+    // 862. "switch" "(" Expression ")" "{" CaseClauses CaseClause
+    None,
+    // 863. "switch" "(" Expression ")" "{" DefaultClause "}"
+    None,
+    // 864. "switch" "(" Expression ")" "{" DefaultClause CaseClauses
+    None,
+    // 865. "function" "(" FormalParameters ")" "{" FunctionBody "}"
+    None,
+    // 866. "function" "*" "(" ")" "{" GeneratorBody "}"
+    None,
+    // 867. "function" "*" "(" FormalParameters ")" "{" "}"
+    None,
+    // 868. "function" "*" "(" FormalParameters ")" "{" GeneratorBody
+    None,
+    // 869. "function" "*" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 870. "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody
+    None,
+    // 871. "function" "*" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 872. "function" BindingIdentifier "(" ")" "{" FunctionBody "}"
+    None,
+    // 873. "function" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 874. "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody
+    None,
+    // 875. "async" "function" "(" ")" "{" AsyncFunctionBody "}"
+    None,
+    // 876. "async" "function" "(" FormalParameters ")" "{" "}"
+    None,
+    // 877. "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody
+    None,
+    // 878. "async" "function" "*" "(" ")" "{" "}"
+    None,
+    // 879. "async" "function" "*" "(" ")" "{" AsyncGeneratorBody
+    None,
+    // 880. "async" "function" "*" "(" ")" "{" FunctionBody
+    None,
+    // 881. "async" "function" "*" "(" FormalParameters ")" "{"
+    None,
+    // 882. "async" "function" "*" BindingIdentifier "(" ")" "{"
+    None,
+    // 883. "async" "function" "*" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 884. "async" "function" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 885. "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody
+    None,
+    // 886. "async" "function" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 887. "return" "async" "function" "(" ")" "{" AsyncFunctionBody "}"
+    None,
+    // 888. "return" "async" "function" "(" FormalParameters ")" "{" "}"
+    None,
+    // 889. "return" "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody
+    None,
+    // 890. "return" "async" "function" "*" "(" ")" "{" "}"
+    None,
+    // 891. "return" "async" "function" "*" "(" ")" "{" AsyncGeneratorBody
+    None,
+    // 892. "return" "async" "function" "*" "(" FormalParameters ")" "{"
+    None,
+    // 893. "return" "async" "function" "*" BindingIdentifier "(" ")" "{"
+    None,
+    // 894. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters ")"
+    None,
+    // 895. "return" "async" "function" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 896. "return" "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody
+    None,
+    // 897. "return" "async" "function" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 898. "return" "{" "get" PropertyName "(" ")" "{" "}"
+    None,
+    // 899. "return" "{" "get" PropertyName "(" ")" "{" FunctionBody
+    None,
+    // 900. "return" "{" "set" PropertyName "(" PropertySetParameterList ")" "{"
+    None,
+    // 901. "return" "{" "*" PropertyName "(" ")" "{" "}"
+    None,
+    // 902. "return" "{" "*" PropertyName "(" ")" "{" GeneratorBody
+    None,
+    // 903. "return" "{" "*" PropertyName "(" UniqueFormalParameters ")" "{"
+    None,
+    // 904. "return" "{" "async" "*" PropertyName "(" ")" "{"
+    None,
+    // 905. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters ")"
+    None,
+    // 906. "return" "{" "async" PropertyName "(" ")" "{" "}"
+    None,
+    // 907. "return" "{" "async" PropertyName "(" ")" "{" AsyncFunctionBody
+    None,
+    // 908. "return" "{" "async" PropertyName "(" UniqueFormalParameters ")" "{"
+    None,
+    // 909. "return" "{" PropertyName "(" ")" "{" FunctionBody "}"
+    None,
+    // 910. "return" "{" PropertyName "(" UniqueFormalParameters ")" "{" "}"
+    None,
+    // 911. "return" "{" PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody
+    None,
+    // 912. "return" "function" "(" FormalParameters ")" "{" FunctionBody "}"
+    None,
+    // 913. "return" "function" "*" "(" ")" "{" GeneratorBody "}"
+    None,
+    // 914. "return" "function" "*" "(" FormalParameters ")" "{" "}"
+    None,
+    // 915. "return" "function" "*" "(" FormalParameters ")" "{" GeneratorBody
+    None,
+    // 916. "return" "function" "*" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 917. "return" "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody
+    None,
+    // 918. "return" "function" "*" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 919. "return" "function" BindingIdentifier "(" ")" "{" FunctionBody "}"
+    None,
+    // 920. "return" "function" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 921. "return" "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody
+    None,
+    // 922. "for" "(" ";" Expression ";" Expression ")" Statement
+    None,
+    // 923. "for" "(" "var" VariableDeclarationList ";" ";" ")" Statement
+    None,
+    // 924. "for" "(" "var" VariableDeclarationList ";" ";" Expression ")"
+    None,
+    // 925. "for" "(" "var" VariableDeclarationList ";" Expression ";" ")"
+    None,
+    // 926. "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression
+    None,
+    // 927. "for" "(" "var" ForBinding "in" Expression ")" Statement
+    None,
+    // 928. "for" "(" "var" ForBinding "of" AssignmentExpression ")" Statement
+    None,
+    // 929. "for" "(" Expression ";" ";" Expression ")" Statement
+    None,
+    // 930. "for" "(" Expression ";" Expression ";" ")" Statement
+    None,
+    // 931. "for" "(" Expression ";" Expression ";" Expression ")"
+    None,
+    // 932. "for" "(" LexicalDeclaration Expression ";" Expression ")" Statement
+    None,
+    // 933. "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")"
+    None,
+    // 934. "for" "await" "(" LeftHandSideExpression "of" AssignmentExpression ")" Statement
+    None,
+    // 935. "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement
+    None,
+    // 936. "switch" "(" Expression ")" "{" "default" ":" StatementList
+    None,
+    // 937. "switch" "(" Expression ")" "{" "case" Expression ":"
+    None,
+    // 938. "switch" "(" Expression ")" "{" CaseClauses DefaultClause "}"
+    None,
+    // 939. "switch" "(" Expression ")" "{" CaseClauses DefaultClause CaseClauses
+    None,
+    // 940. "switch" "(" Expression ")" "{" DefaultClause CaseClauses "}"
+    None,
+    // 941. "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}"
+    None,
+    // 942. "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}"
+    None,
+    // 943. "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 944. "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody
+    None,
+    // 945. "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}"
+    None,
+    // 946. "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}"
+    None,
+    // 947. "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 948. "async" "function" "*" "(" FormalParameters ")" "{" "}"
+    None,
+    // 949. "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody
+    None,
+    // 950. "async" "function" "*" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 951. "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody
+    None,
+    // 952. "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 953. "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}"
+    None,
+    // 954. "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 955. "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody
+    None,
+    // 956. "return" "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}"
+    None,
+    // 957. "return" "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 958. "return" "async" "function" "*" "(" FormalParameters ")" "{" "}"
+    None,
+    // 959. "return" "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody
+    None,
+    // 960. "return" "async" "function" "*" BindingIdentifier "(" ")" "{" "}"
+    None,
+    // 961. "return" "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody
+    None,
+    // 962. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{"
+    None,
+    // 963. "return" "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}"
+    None,
+    // 964. "return" "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 965. "return" "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody
+    None,
+    // 966. "return" "{" "get" PropertyName "(" ")" "{" FunctionBody "}"
+    None,
+    // 967. "return" "{" "set" PropertyName "(" PropertySetParameterList ")" "{" "}"
+    None,
+    // 968. "return" "{" "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody
+    None,
+    // 969. "return" "{" "*" PropertyName "(" ")" "{" GeneratorBody "}"
+    None,
+    // 970. "return" "{" "*" PropertyName "(" UniqueFormalParameters ")" "{" "}"
+    None,
+    // 971. "return" "{" "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody
+    None,
+    // 972. "return" "{" "async" "*" PropertyName "(" ")" "{" "}"
+    None,
+    // 973. "return" "{" "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody
+    None,
+    // 974. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters ")" "{"
+    None,
+    // 975. "return" "{" "async" PropertyName "(" ")" "{" AsyncFunctionBody "}"
+    None,
+    // 976. "return" "{" "async" PropertyName "(" UniqueFormalParameters ")" "{" "}"
+    None,
+    // 977. "return" "{" "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody
+    None,
+    // 978. "return" "{" PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}"
+    None,
+    // 979. "return" "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}"
+    None,
+    // 980. "return" "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}"
+    None,
+    // 981. "return" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 982. "return" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody
+    None,
+    // 983. "return" "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}"
+    None,
+    // 984. "for" "(" "var" VariableDeclarationList ";" ";" Expression ")" Statement
+    None,
+    // 985. "for" "(" "var" VariableDeclarationList ";" Expression ";" ")" Statement
+    None,
+    // 986. "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")"
+    None,
+    // 987. "for" "(" Expression ";" Expression ";" Expression ")" Statement
+    None,
+    // 988. "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement
+    None,
+    // 989. "switch" "(" Expression ")" "{" "case" Expression ":" StatementList
+    None,
+    // 990. "switch" "(" Expression ")" "{" CaseClauses DefaultClause CaseClauses "}"
+    None,
+    // 991. "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}"
+    None,
+    // 992. "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 993. "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 994. "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 995. "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody
+    None,
+    // 996. "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}"
+    None,
+    // 997. "return" "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 998. "return" "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 999. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}"
+    None,
+    // 1000. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody
+    None,
+    // 1001. "return" "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}"
+    None,
+    // 1002. "return" "{" "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}"
+    None,
+    // 1003. "return" "{" "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}"
+    None,
+    // 1004. "return" "{" "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 1005. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" "}"
+    None,
+    // 1006. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody
+    None,
+    // 1007. "return" "{" "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}"
+    None,
+    // 1008. "return" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}"
+    None,
+    // 1009. "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement
+    None,
+    // 1010. "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 1011. "return" "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}"
+    None,
+    // 1012. "return" "{" "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}"
+    None,
+];
+
 pub trait Handler {
     type IdentifierReference;
     type BindingIdentifier;
@@ -3450,7 +5485,6 @@ pub trait Handler {
     fn statement_list_p0(&self, a0: Self::ModuleItem) -> Self::StatementList;
     fn statement_list_p1(&self, a0: Self::StatementList, a1: Self::ModuleItem) -> Self::StatementList;
     fn lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ModuleItem;
-    fn check_asi(&self, a0: Self::ModuleItem) -> Self::ModuleItem;
     fn let_or_const_p0(&self, ) -> Self::LetOrConst;
     fn let_or_const_p1(&self, ) -> Self::LetOrConst;
     fn binding_list_p0(&self, a0: Self::LexicalBinding) -> Self::BindingList;
@@ -3968,7 +6002,6 @@ pub enum DestructuringAssignmentTarget {
 pub enum ModuleItem {
     BlockStatement(Box<Block>),
     LexicalDeclaration(Box<LetOrConst>, Box<BindingList>),
-    CheckAsi(Box<ModuleItem>),
     VariableStatement(Box<VariableDeclarationList>),
     EmptyStatement(),
     ExpressionStatement(Box<Expression>),
@@ -5033,9 +7066,6 @@ impl Handler for DefaultHandler {
     }
     fn lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ModuleItem {
         Box::new(concrete::ModuleItem::LexicalDeclaration(a0, a1))
-    }
-    fn check_asi(&self, a0: Self::ModuleItem) -> Self::ModuleItem {
-        Box::new(concrete::ModuleItem::CheckAsi(a0))
     }
     fn let_or_const_p0(&self) -> Self::LetOrConst {
         Box::new(concrete::LetOrConst::LetOrConstP0())
@@ -6970,11 +9000,11 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ImportDeclaration
         }
         33 => {
-            // ImportDeclaration ::= "import" ImportClause FromClause ErrorToken => check_asi(ImportDeclaration 0($0, $1, $2))
+            // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
             let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportClause) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.import_declaration_p0(x1, x2))) as *mut ());
+            stack.push(Box::into_raw(handler.import_declaration_p0(x1, x2)) as *mut ());
             NonterminalId::ImportDeclaration
         }
         34 => {
@@ -6986,10 +9016,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ImportDeclaration
         }
         35 => {
-            // ImportDeclaration ::= "import" ModuleSpecifier ErrorToken => check_asi(ImportDeclaration 1($0, $1))
+            // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleSpecifier) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.import_declaration_p1(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.import_declaration_p1(x1)) as *mut ());
             NonterminalId::ImportDeclaration
         }
         36 => {
@@ -7002,11 +9032,11 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ExportDeclaration
         }
         37 => {
-            // ExportDeclaration ::= "export" "*" FromClause ErrorToken => check_asi(ExportDeclaration 0($0, $1, $2))
+            // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
             let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.export_declaration_p0(x2))) as *mut ());
+            stack.push(Box::into_raw(handler.export_declaration_p0(x2)) as *mut ());
             NonterminalId::ExportDeclaration
         }
         38 => {
@@ -7019,11 +9049,11 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ExportDeclaration
         }
         39 => {
-            // ExportDeclaration ::= "export" ExportClause FromClause ErrorToken => check_asi(ExportDeclaration 1($0, $1, $2))
+            // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
             let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.export_declaration_p1(x1, x2))) as *mut ());
+            stack.push(Box::into_raw(handler.export_declaration_p1(x1, x2)) as *mut ());
             NonterminalId::ExportDeclaration
         }
         40 => {
@@ -7035,10 +9065,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ExportDeclaration
         }
         41 => {
-            // ExportDeclaration ::= "export" ExportClause ErrorToken => check_asi(ExportDeclaration 2($0, $1))
+            // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.export_declaration_p2(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.export_declaration_p2(x1)) as *mut ());
             NonterminalId::ExportDeclaration
         }
         42 => {
@@ -7081,11 +9111,11 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ExportDeclaration
         }
         47 => {
-            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorToken => check_asi(ExportDeclaration 7($0, $1, $2))
+            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
             let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.export_declaration_p7(x2))) as *mut ());
+            stack.push(Box::into_raw(handler.export_declaration_p7(x2)) as *mut ());
             NonterminalId::ExportDeclaration
         }
         48 => {
@@ -7103,10 +9133,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::VariableStatement
         }
         50 => {
-            // VariableStatement ::= "var" VariableDeclarationList ErrorToken => check_asi(VariableStatement($0, $1))
+            // VariableStatement ::= "var" VariableDeclarationList ErrorSymbol(asi) => VariableStatement($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.variable_statement(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.variable_statement(x1)) as *mut ());
             NonterminalId::VariableStatement
         }
         51 => {
@@ -7123,9 +9153,9 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ExpressionStatement
         }
         53 => {
-            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorToken => check_asi(ExpressionStatement($0))
+            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorSymbol(asi) => ExpressionStatement($0)
             let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.check_asi(handler.expression_statement(x0))) as *mut ());
+            stack.push(Box::into_raw(handler.expression_statement(x0)) as *mut ());
             NonterminalId::ExpressionStatement
         }
         54 => {
@@ -7170,9 +9200,9 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ContinueStatement
         }
         59 => {
-            // ContinueStatement ::= "continue" ErrorToken => check_asi(ContinueStatement 0($0))
+            // ContinueStatement ::= "continue" ErrorSymbol(asi) => ContinueStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.continue_statement_p0())) as *mut ());
+            stack.push(Box::into_raw(handler.continue_statement_p0()) as *mut ());
             NonterminalId::ContinueStatement
         }
         60 => {
@@ -7184,10 +9214,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ContinueStatement
         }
         61 => {
-            // ContinueStatement ::= "continue" LabelIdentifier ErrorToken => check_asi(ContinueStatement 1($0, $1))
+            // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => ContinueStatement 1($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.continue_statement_p1(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.continue_statement_p1(x1)) as *mut ());
             NonterminalId::ContinueStatement
         }
         62 => {
@@ -7198,9 +9228,9 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::BreakStatement
         }
         63 => {
-            // BreakStatement ::= "break" ErrorToken => check_asi(BreakStatement 0($0))
+            // BreakStatement ::= "break" ErrorSymbol(asi) => BreakStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.break_statement_p0())) as *mut ());
+            stack.push(Box::into_raw(handler.break_statement_p0()) as *mut ());
             NonterminalId::BreakStatement
         }
         64 => {
@@ -7212,10 +9242,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::BreakStatement
         }
         65 => {
-            // BreakStatement ::= "break" LabelIdentifier ErrorToken => check_asi(BreakStatement 1($0, $1))
+            // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => BreakStatement 1($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.break_statement_p1(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.break_statement_p1(x1)) as *mut ());
             NonterminalId::BreakStatement
         }
         66 => {
@@ -7226,9 +9256,9 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ReturnStatement
         }
         67 => {
-            // ReturnStatement ::= "return" ErrorToken => check_asi(ReturnStatement 0($0))
+            // ReturnStatement ::= "return" ErrorSymbol(asi) => ReturnStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.return_statement_p0())) as *mut ());
+            stack.push(Box::into_raw(handler.return_statement_p0()) as *mut ());
             NonterminalId::ReturnStatement
         }
         68 => {
@@ -7240,10 +9270,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ReturnStatement
         }
         69 => {
-            // ReturnStatement ::= "return" Expression ErrorToken => check_asi(ReturnStatement 1($0, $1))
+            // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => ReturnStatement 1($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.return_statement_p1(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.return_statement_p1(x1)) as *mut ());
             NonterminalId::ReturnStatement
         }
         70 => {
@@ -7273,10 +9303,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::ThrowStatement
         }
         73 => {
-            // ThrowStatement ::= "throw" Expression ErrorToken => check_asi(ThrowStatement($0, $1))
+            // ThrowStatement ::= "throw" Expression ErrorSymbol(asi) => ThrowStatement($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.throw_statement(x1))) as *mut ());
+            stack.push(Box::into_raw(handler.throw_statement(x1)) as *mut ());
             NonterminalId::ThrowStatement
         }
         74 => {
@@ -7312,9 +9342,9 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::DebuggerStatement
         }
         78 => {
-            // DebuggerStatement ::= "debugger" ErrorToken => check_asi(DebuggerStatement($0))
+            // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => DebuggerStatement($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.check_asi(handler.debugger_statement())) as *mut ());
+            stack.push(Box::into_raw(handler.debugger_statement()) as *mut ());
             NonterminalId::DebuggerStatement
         }
         79 => {
@@ -7365,10 +9395,10 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::LexicalDeclaration
         }
         86 => {
-            // LexicalDeclaration ::= LetOrConst BindingList ErrorToken => check_asi(LexicalDeclaration($0, $1))
+            // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => LexicalDeclaration($0, $1)
             let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingList) };
             let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LetOrConst) };
-            stack.push(Box::into_raw(handler.check_asi(handler.lexical_declaration(x0, x1))) as *mut ());
+            stack.push(Box::into_raw(handler.lexical_declaration(x0, x1)) as *mut ());
             NonterminalId::LexicalDeclaration
         }
         87 => {
@@ -7538,7 +9568,7 @@ fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> No
             NonterminalId::IterationStatement
         }
         110 => {
-            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorToken => IterationStatement 0($0, $1, $2, $3, $4, $5)
+            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi) => IterationStatement 0($0, $1, $2, $3, $4, $5)
             stack.pop();
             let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
             stack.pop();
@@ -10992,6 +13022,7 @@ static TABLES: ParserTables<'static> = ParserTables {
     state_count: 1013,
     action_table: &ACTIONS,
     action_width: 108,
+    error_codes: &STATE_TO_ERROR_CODE,
     goto_table: &GOTO,
     goto_width: 158,
 };

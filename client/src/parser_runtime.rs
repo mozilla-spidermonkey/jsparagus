@@ -1,5 +1,5 @@
 use crate::parser::{ParseError, Parser, Result};
-pub use crate::parser_generated::{Handler, NonterminalId, TerminalId, Token};
+pub use crate::parser_generated::{ErrorCode, Handler, NonterminalId, TerminalId, Token};
 
 pub trait TokenStream {
     type Token;
@@ -12,6 +12,7 @@ pub struct ParserTables<'a> {
     pub state_count: usize,
     pub action_table: &'a [i64],
     pub action_width: usize,
+    pub error_codes: &'a [Option<ErrorCode>],
     pub goto_table: &'a [usize],
     pub goto_width: usize,
 }
