@@ -110,7 +110,7 @@ where
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             self.state_stack.truncate(self.node_stack.len());
             let prev_state = *self.state_stack.last().unwrap();
-            let state_after = tables.goto_table[prev_state * tables.goto_width + nt as usize];
+            let state_after = tables.goto_table[prev_state * tables.goto_width + nt as usize] as usize;
             debug_assert!(state_after < tables.state_count);
             self.state_stack.push(state_after);
             action = self.action(t);

@@ -13,7 +13,7 @@ pub struct ParserTables<'a> {
     pub action_table: &'a [i64],
     pub action_width: usize,
     pub error_codes: &'a [Option<ErrorCode>],
-    pub goto_table: &'a [usize],
+    pub goto_table: &'a [u16],
     pub goto_width: usize,
 }
 

@@ -400,7 +400,7 @@ class RustParserWriter:
         self.write(0, "")
 
     def goto(self):
-        self.write(0, "static GOTO: [usize; {}] = [",
+        self.write(0, "static GOTO: [u16; {}] = [",
                    len(self.states) * len(self.nonterminals))
         for state in self.states:
             row = state.ctn_row
