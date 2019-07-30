@@ -29,6 +29,12 @@ struct Arguments {
     args: Vec<Argument>,
 }
 
+impl Arguments {
+    fn new(args: Vec<Argument>) -> Self {
+        Self { args }
+    }
+}
+
 // typedef DOMString string;
 
 // typedef string Identifier;
@@ -36,14 +42,32 @@ struct Identifier {
     value: String,
 }
 
+impl Identifier {
+    fn new(value: String) -> Self {
+        Self { value }
+    }
+}
+
 // typedef string IdentifierName;
 struct IdentifierName {
     value: String,
 }
 
+impl IdentifierName {
+    fn new(value: String) -> Self {
+        Self { value }
+    }
+}
+
 // typedef string Label;
 struct Label {
     value: String,
+}
+
+impl Label {
+    fn new(value: String) -> Self {
+        Self { value }
+    }
 }
 
 enum VariableDeclarationKind {
@@ -118,6 +142,17 @@ struct Function {
     isGenerator: bool,
     params: FormalParameters,
     body: FunctionBody,
+}
+
+impl Function {
+    fn new(isAsync: bool, isGenerator: bool, params: FormalParameters, body: FunctionBody) -> Self {
+        Self {
+            isAsync,
+            isGenerator,
+            params,
+            body,
+        }
+    }
 }
 
 // node classes
@@ -371,13 +406,31 @@ struct BindingWithDefault {
     init: Box<Expression>,
 }
 
+impl BindingWithDefault {
+    fn new(binding: Binding, init: Box<Expression>) -> Self {
+        Self { binding, init }
+    }
+}
+
 // interface BindingIdentifier : VariableReference { };
 
 struct BindingIdentifier {}
 
+impl BindingIdentifier {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
 // interface AssignmentTargetIdentifier : VariableReference { };
 
 struct AssignmentTargetIdentifier {}
+
+impl AssignmentTargetIdentifier {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 enum ExpressionOrSuper {
     Expression(Box<Expression>),
@@ -403,6 +456,12 @@ struct ComputedMemberAssignmentTarget {
     expression: Box<Expression>,
 }
 
+impl ComputedMemberAssignmentTarget {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
+}
+
 // interface StaticMemberAssignmentTarget : MemberAssignmentTarget {
 //   // The name of the property to be accessed.
 //   attribute IdentifierName property;
@@ -410,6 +469,12 @@ struct ComputedMemberAssignmentTarget {
 
 struct StaticMemberAssignmentTarget {
     property: IdentifierName,
+}
+
+impl StaticMemberAssignmentTarget {
+    fn new(property: IdentifierName) -> Self {
+        Self { property }
+    }
 }
 
 // `ArrayBindingPattern`
@@ -424,12 +489,24 @@ struct ArrayBinding {
     rest: Option<Box<Binding>>,
 }
 
+impl ArrayBinding {
+    fn new(elements: Vec<Option<Parameter>>, rest: Option<Box<Binding>>) -> Self {
+        Self { elements, rest }
+    }
+}
+
 //interface ObjectBinding : Node {
 //  attribute BindingProperty[] properties;
 //};
 
 struct ObjectBinding {
     properties: Vec<BindingProperty>,
+}
+
+impl ObjectBinding {
+    fn new(properties: Vec<BindingProperty>) -> Self {
+        Self { properties }
+    }
 }
 
 // interface BindingProperty : Node { };
@@ -450,6 +527,12 @@ struct BindingPropertyIdentifier {
     init: Option<Box<Expression>>,
 }
 
+impl BindingPropertyIdentifier {
+    fn new(binding: BindingIdentifier, init: Option<Box<Expression>>) -> Self {
+        Self { binding, init }
+    }
+}
+
 // `BindingProperty :: PropertyName : BindingElement`
 // interface BindingPropertyProperty : BindingProperty {
 //   attribute PropertyName name;
@@ -461,6 +544,12 @@ struct BindingPropertyProperty {
     binding: Parameter,
 }
 
+impl BindingPropertyProperty {
+    fn new(name: PropertyName, binding: Parameter) -> Self {
+        Self { name, binding }
+    }
+}
+
 // This interface represents the case where the initializer is present in `AssignmentElement :: DestructuringAssignmentTarget Initializer_opt`.
 // interface AssignmentTargetWithDefault : Node {
 //   attribute AssignmentTarget binding;
@@ -470,6 +559,12 @@ struct BindingPropertyProperty {
 struct AssignmentTargetWithDefault {
     binding: AssignmentTarget,
     init: Box<Expression>,
+}
+
+impl AssignmentTargetWithDefault {
+    fn new(binding: AssignmentTarget, init: Box<Expression>) -> Self {
+        Self { binding, init }
+    }
 }
 
 // `ArrayAssignmentPattern`
@@ -489,6 +584,15 @@ struct ArrayAssignmentTarget {
     rest: Option<Box<AssignmentTarget>>,
 }
 
+impl ArrayAssignmentTarget {
+    fn new(
+        elements: Vec<Option<AssignmentTargetMaybeDefault>>,
+        rest: Option<Box<AssignmentTarget>>,
+    ) -> Self {
+        Self { elements, rest }
+    }
+}
+
 // `ObjectAssignmentPattern`
 // interface ObjectAssignmentTarget : Node {
 //   attribute AssignmentTargetProperty[] properties;
@@ -496,6 +600,12 @@ struct ArrayAssignmentTarget {
 
 struct ObjectAssignmentTarget {
     properties: Vec<AssignmentTargetProperty>,
+}
+
+impl ObjectAssignmentTarget {
+    fn new(properties: Vec<AssignmentTargetProperty>) -> Self {
+        Self { properties }
+    }
 }
 
 // `AssignmentProperty`
@@ -517,6 +627,12 @@ struct AssignmentTargetPropertyIdentifier {
     init: Option<Box<Expression>>,
 }
 
+impl AssignmentTargetPropertyIdentifier {
+    fn new(binding: AssignmentTargetIdentifier, init: Option<Box<Expression>>) -> Self {
+        Self { binding, init }
+    }
+}
+
 // `AssignmentProperty :: PropertyName : AssignmentElement`
 // interface AssignmentTargetPropertyProperty : AssignmentTargetProperty {
 //   attribute PropertyName name;
@@ -526,6 +642,12 @@ struct AssignmentTargetPropertyIdentifier {
 struct AssignmentTargetPropertyProperty {
     name: PropertyName,
     binding: AssignmentTargetMaybeDefault,
+}
+
+impl AssignmentTargetPropertyProperty {
+    fn new(name: PropertyName, binding: AssignmentTargetMaybeDefault) -> Self {
+        Self { name, binding }
+    }
 }
 
 // classes
@@ -551,6 +673,20 @@ struct ClassExpression {
     elements: Vec<ClassElement>,
 }
 
+impl ClassExpression {
+    fn new(
+        name: Option<BindingIdentifier>,
+        super_: Option<Box<Expression>>,
+        elements: Vec<ClassElement>,
+    ) -> Self {
+        Self {
+            name,
+            super_,
+            elements,
+        }
+    }
+}
+
 // interface ClassDeclaration : Statement {
 //   attribute BindingIdentifier name;
 // };
@@ -562,6 +698,20 @@ struct ClassDeclaration {
     elements: Vec<ClassElement>,
 }
 
+impl ClassDeclaration {
+    fn new(
+        name: BindingIdentifier,
+        super_: Option<Box<Expression>>,
+        elements: Vec<ClassElement>,
+    ) -> Self {
+        Self {
+            name,
+            super_,
+            elements,
+        }
+    }
+}
+
 // interface ClassElement : Node {
 //   // True iff `IsStatic` of ClassElement is true.
 //   attribute boolean isStatic;
@@ -571,6 +721,12 @@ struct ClassDeclaration {
 struct ClassElement {
     isStatic: bool,
     method: MethodDefinition,
+}
+
+impl ClassElement {
+    fn new(isStatic: bool, method: MethodDefinition) -> Self {
+        Self { isStatic, method }
+    }
 }
 
 // modules
@@ -591,6 +747,12 @@ struct Module {
     items: Vec<ModuleItems>,
 }
 
+impl Module {
+    fn new(directives: Vec<Directive>, items: Vec<ModuleItems>) -> Self {
+        Self { directives, items }
+    }
+}
+
 // An `ImportDeclaration` not including a namespace import.
 // interface Import : ImportDeclaration {
 //   // `ImportedDefaultBinding`, if present.
@@ -601,6 +763,15 @@ struct Module {
 struct Import {
     defaultBinding: Option<BindingIdentifier>,
     namedImports: Vec<ImportSpecifier>,
+}
+
+impl Import {
+    fn new(defaultBinding: Option<BindingIdentifier>, namedImports: Vec<ImportSpecifier>) -> Self {
+        Self {
+            defaultBinding,
+            namedImports,
+        }
+    }
 }
 
 // An `ImportDeclaration` including a namespace import.
@@ -615,6 +786,15 @@ struct ImportNamespace {
     namespaceBinding: BindingIdentifier,
 }
 
+impl ImportNamespace {
+    fn new(defaultBinding: Option<BindingIdentifier>, namespaceBinding: BindingIdentifier) -> Self {
+        Self {
+            defaultBinding,
+            namespaceBinding,
+        }
+    }
+}
+
 // interface ImportSpecifier : Node {
 //   // The `IdentifierName` in the production `ImportSpecifier :: IdentifierName as ImportedBinding`; absent if this specifier represents the production `ImportSpecifier :: ImportedBinding`.
 //   attribute IdentifierName? name;
@@ -626,6 +806,12 @@ struct ImportSpecifier {
     binding: BindingIdentifier,
 }
 
+impl ImportSpecifier {
+    fn new(name: Option<IdentifierName>, binding: BindingIdentifier) -> Self {
+        Self { name, binding }
+    }
+}
+
 // `export * FromClause;`
 // interface ExportAllFrom : ExportDeclaration {
 //   attribute string moduleSpecifier;
@@ -633,6 +819,12 @@ struct ImportSpecifier {
 
 struct ExportAllFrom {
     moduleSpecifier: String,
+}
+
+impl ExportAllFrom {
+    fn new(moduleSpecifier: String) -> Self {
+        Self { moduleSpecifier }
+    }
 }
 
 // `export ExportClause FromClause;`
@@ -646,6 +838,15 @@ struct ExportFrom {
     moduleSpecifier: String,
 }
 
+impl ExportFrom {
+    fn new(namedExports: Vec<ExportFromSpecifier>, moduleSpecifier: String) -> Self {
+        Self {
+            namedExports,
+            moduleSpecifier,
+        }
+    }
+}
+
 // `export ExportClause;`
 // interface ExportLocals : ExportDeclaration {
 //   attribute ExportLocalSpecifier[] namedExports;
@@ -653,6 +854,12 @@ struct ExportFrom {
 
 struct ExportLocals {
     namedExports: Vec<ExportLocalSpecifier>,
+}
+
+impl ExportLocals {
+    fn new(namedExports: Vec<ExportLocalSpecifier>) -> Self {
+        Self { namedExports }
+    }
 }
 
 // `export VariableStatement`, `export Declaration`
@@ -690,6 +897,12 @@ struct ExportFromSpecifier {
     exportedName: Option<IdentifierName>,
 }
 
+impl ExportFromSpecifier {
+    fn new(name: IdentifierName, exportedName: Option<IdentifierName>) -> Self {
+        Self { name, exportedName }
+    }
+}
+
 // `ExportSpecifier`, as part of an `ExportLocals`.
 // interface ExportLocalSpecifier : Node {
 //   // The only `IdentifierName in `ExportSpecifier :: IdentifierName`, or the first in `ExportSpecifier :: IdentifierName as IdentifierName`.
@@ -701,6 +914,12 @@ struct ExportFromSpecifier {
 struct ExportLocalSpecifier {
     name: IdentifierExpression,
     exportedName: Option<IdentifierName>,
+}
+
+impl ExportLocalSpecifier {
+    fn new(name: IdentifierExpression, exportedName: Option<IdentifierName>) -> Self {
+        Self { name, exportedName }
+    }
 }
 
 // property definition
@@ -721,10 +940,26 @@ struct Method {
     params: FormalParameters,
 }
 
+impl Method {
+    fn new(isAsync: bool, isGenerator: bool, params: FormalParameters) -> Self {
+        Self {
+            isAsync,
+            isGenerator,
+            params,
+        }
+    }
+}
+
 // `get PropertyName ( ) { FunctionBody }`
 // interface Getter : MethodDefinition { };
 
 struct Getter {}
+
+impl Getter {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // `set PropertyName ( PropertySetParameterList ) { FunctionBody }`
 // interface Setter : MethodDefinition {
@@ -734,6 +969,12 @@ struct Getter {}
 
 struct Setter {
     param: Parameter,
+}
+
+impl Setter {
+    fn new(param: Parameter) -> Self {
+        Self { param }
+    }
 }
 
 // `PropertyDefinition :: PropertyName : AssignmentExpression`
@@ -746,6 +987,12 @@ struct DataProperty {
     expression: Box<Expression>,
 }
 
+impl DataProperty {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
+}
+
 // `PropertyDefinition :: IdentifierReference`
 // interface ShorthandProperty : ObjectProperty {
 //   // The `IdentifierReference`.
@@ -756,12 +1003,24 @@ struct ShorthandProperty {
     name: IdentifierExpression,
 }
 
+impl ShorthandProperty {
+    fn new(name: IdentifierExpression) -> Self {
+        Self { name }
+    }
+}
+
 // interface ComputedPropertyName : PropertyName {
 //   attribute Expression expression;
 // };
 
 struct ComputedPropertyName {
     expression: Box<Expression>,
+}
+
+impl ComputedPropertyName {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
 }
 
 // `LiteralPropertyName`
@@ -771,6 +1030,12 @@ struct ComputedPropertyName {
 
 struct StaticPropertyName {
     value: String,
+}
+
+impl StaticPropertyName {
+    fn new(value: String) -> Self {
+        Self { value }
+    }
 }
 
 // literals
@@ -784,15 +1049,33 @@ struct LiteralBooleanExpression {
     value: bool,
 }
 
+impl LiteralBooleanExpression {
+    fn new(value: bool) -> Self {
+        Self { value }
+    }
+}
+
 // A `NumericLiteral` for which the Number value of its MV is positive infinity.
 // interface LiteralInfinityExpression : Expression { };
 
 struct LiteralInfinityExpression {}
 
+impl LiteralInfinityExpression {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
 // `NullLiteral`
 // interface LiteralNullExpression : Expression { };
 
 struct LiteralNullExpression {}
+
+impl LiteralNullExpression {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // `NumericLiteral`
 // interface LiteralNumericExpression : Expression {
@@ -801,6 +1084,12 @@ struct LiteralNullExpression {}
 
 struct LiteralNumericExpression {
     value: f64,
+}
+
+impl LiteralNumericExpression {
+    fn new(value: f64) -> Self {
+        Self { value }
+    }
 }
 
 // `RegularExpressionLiteral`
@@ -827,6 +1116,26 @@ struct LiteralRegExpExpression {
     unicode: bool,
 }
 
+impl LiteralRegExpExpression {
+    fn new(
+        pattern: String,
+        global: bool,
+        ignoreCase: bool,
+        multiLine: bool,
+        sticky: bool,
+        unicode: bool,
+    ) -> Self {
+        Self {
+            pattern,
+            global,
+            ignoreCase,
+            multiLine,
+            sticky,
+            unicode,
+        }
+    }
+}
+
 // `StringLiteral`
 // interface LiteralStringExpression : Expression {
 //   attribute string value;
@@ -834,6 +1143,12 @@ struct LiteralRegExpExpression {
 
 struct LiteralStringExpression {
     value: String,
+}
+
+impl LiteralStringExpression {
+    fn new(value: String) -> Self {
+        Self { value }
+    }
 }
 
 // other expressions
@@ -852,6 +1167,12 @@ enum ArrayExpressionElement {
 
 struct ArrayExpression {
     elements: Vec<ArrayExpressionElement>,
+}
+
+impl ArrayExpression {
+    fn new(elements: Vec<ArrayExpressionElement>) -> Self {
+        Self { elements }
+    }
 }
 
 // `ArrowFunction`, `AsyncArrowFunction`
@@ -873,6 +1194,16 @@ struct ArrowExpression {
     body: ArrowExpressionBody,
 }
 
+impl ArrowExpression {
+    fn new(isAsync: bool, params: FormalParameters, body: ArrowExpressionBody) -> Self {
+        Self {
+            isAsync,
+            params,
+            body,
+        }
+    }
+}
+
 // `AssignmentExpression :: LeftHandSideExpression = AssignmentExpression`
 // interface AssignmentExpression : Expression {
 //   // The `LeftHandSideExpression`.
@@ -884,6 +1215,15 @@ struct ArrowExpression {
 struct AssignmentExpression {
     binding: AssignmentTarget,
     expression: Box<Expression>,
+}
+
+impl AssignmentExpression {
+    fn new(binding: AssignmentTarget, expression: Box<Expression>) -> Self {
+        Self {
+            binding,
+            expression,
+        }
+    }
 }
 
 // `ExponentiationExpression`, `MultiplicativeExpression`, `AdditiveExpression`, `ShiftExpression`, `RelationalExpression`, `EqualityExpression`, `BitwiseANDExpression`, `BitwiseXORExpression`, `BitwiseORExpression`, `LogicalANDExpression`, `LogicalORExpression`
@@ -901,6 +1241,16 @@ struct BinaryExpression {
     right: Box<Expression>,
 }
 
+impl BinaryExpression {
+    fn new(operator: BinaryOperator, left: Box<Expression>, right: Box<Expression>) -> Self {
+        Self {
+            operator,
+            left,
+            right,
+        }
+    }
+}
+
 // interface CallExpression : Expression {
 //   attribute (Expression or Super) callee;
 //   attribute Arguments arguments;
@@ -909,6 +1259,12 @@ struct BinaryExpression {
 struct CallExpression {
     callee: ExpressionOrSuper,
     arguments: Arguments,
+}
+
+impl CallExpression {
+    fn new(callee: ExpressionOrSuper, arguments: Arguments) -> Self {
+        Self { callee, arguments }
+    }
 }
 
 // `AssignmentExpression :: LeftHandSideExpression AssignmentOperator AssignmentExpression`
@@ -926,6 +1282,20 @@ struct CompoundAssignmentExpression {
     expression: Box<Expression>,
 }
 
+impl CompoundAssignmentExpression {
+    fn new(
+        operator: CompoundAssignmentOperator,
+        binding: SimpleAssignmentTarget,
+        expression: Box<Expression>,
+    ) -> Self {
+        Self {
+            operator,
+            binding,
+            expression,
+        }
+    }
+}
+
 // interface ComputedMemberExpression : MemberExpression {
 //   // The expression resolving to the name of the property to be accessed.
 //   attribute Expression expression;
@@ -933,6 +1303,12 @@ struct CompoundAssignmentExpression {
 
 struct ComputedMemberExpression {
     expression: Box<Expression>,
+}
+
+impl ComputedMemberExpression {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
 }
 
 // `ConditionalExpression :: LogicalORExpression ? AssignmentExpression : AssignmentExpression`
@@ -951,6 +1327,16 @@ struct ConditionalExpression {
     alternate: Box<Expression>,
 }
 
+impl ConditionalExpression {
+    fn new(test: Box<Expression>, consequent: Box<Expression>, alternate: Box<Expression>) -> Self {
+        Self {
+            test,
+            consequent,
+            alternate,
+        }
+    }
+}
+
 // interface FunctionExpression : Expression {
 //   attribute BindingIdentifier? name;
 // };
@@ -966,6 +1352,24 @@ struct FunctionExpression {
     body: FunctionBody,
 }
 
+impl FunctionExpression {
+    fn new(
+        name: Option<BindingIdentifier>,
+        isAsync: bool,
+        isGenerator: bool,
+        params: FormalParameters,
+        body: FunctionBody,
+    ) -> Self {
+        Self {
+            name,
+            isAsync,
+            isGenerator,
+            params,
+            body,
+        }
+    }
+}
+
 // `IdentifierReference`
 // interface IdentifierExpression : Expression { };
 // IdentifierExpression implements VariableReference;
@@ -973,6 +1377,12 @@ struct FunctionExpression {
 // TODO
 struct IdentifierExpression {
     var: VariableReference,
+}
+
+impl IdentifierExpression {
+    fn new(var: VariableReference) -> Self {
+        Self { var }
+    }
 }
 
 // interface NewExpression : Expression {
@@ -985,9 +1395,21 @@ struct NewExpression {
     arguments: Arguments,
 }
 
+impl NewExpression {
+    fn new(callee: Box<Expression>, arguments: Arguments) -> Self {
+        Self { callee, arguments }
+    }
+}
+
 // interface NewTargetExpression : Expression { };
 
 struct NewTargetExpression {}
+
+impl NewTargetExpression {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // interface ObjectExpression : Expression {
 //   attribute ObjectProperty[] properties;
@@ -995,6 +1417,12 @@ struct NewTargetExpression {}
 
 struct ObjectExpression {
     properties: Vec<ObjectProperty>,
+}
+
+impl ObjectExpression {
+    fn new(properties: Vec<ObjectProperty>) -> Self {
+        Self { properties }
+    }
 }
 
 // interface UnaryExpression : Expression {
@@ -1007,6 +1435,12 @@ struct UnaryExpression {
     operand: Box<Expression>,
 }
 
+impl UnaryExpression {
+    fn new(operator: UnaryOperator, operand: Box<Expression>) -> Self {
+        Self { operator, operand }
+    }
+}
+
 // interface StaticMemberExpression : MemberExpression {
 //   // The name of the property to be accessed.
 //   attribute IdentifierName property;
@@ -1014,6 +1448,12 @@ struct UnaryExpression {
 
 struct StaticMemberExpression {
     property: IdentifierName,
+}
+
+impl StaticMemberExpression {
+    fn new(property: IdentifierName) -> Self {
+        Self { property }
+    }
 }
 
 // `TemplateLiteral`, `MemberExpression :: MemberExpression TemplateLiteral`, `CallExpression : CallExpression TemplateLiteral`
@@ -1034,10 +1474,22 @@ struct TemplateExpression {
     elements: Vec<TemplateExpressionElement>,
 }
 
+impl TemplateExpression {
+    fn new(tag: Option<Box<Expression>>, elements: Vec<TemplateExpressionElement>) -> Self {
+        Self { tag, elements }
+    }
+}
+
 // `PrimaryExpression :: this`
 // interface ThisExpression : Expression { };
 
 struct ThisExpression {}
+
+impl ThisExpression {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // `UpdateExpression :: LeftHandSideExpression ++`, `UpdateExpression :: LeftHandSideExpression --`, `UpdateExpression :: ++ LeftHandSideExpression`, ``UpdateExpression :: -- LeftHandSideExpression`
 // interface UpdateExpression : Expression {
@@ -1053,6 +1505,16 @@ struct UpdateExpression {
     operand: SimpleAssignmentTarget,
 }
 
+impl UpdateExpression {
+    fn new(isPrefix: bool, operator: UpdateOperator, operand: SimpleAssignmentTarget) -> Self {
+        Self {
+            isPrefix,
+            operator,
+            operand,
+        }
+    }
+}
+
 // `YieldExpression :: yield`, `YieldExpression :: yield AssignmentExpression`
 // interface YieldExpression : Expression {
 //   // The `AssignmentExpression`, if present.
@@ -1061,6 +1523,12 @@ struct UpdateExpression {
 
 struct YieldExpression {
     expression: Option<Box<Expression>>,
+}
+
+impl YieldExpression {
+    fn new(expression: Option<Box<Expression>>) -> Self {
+        Self { expression }
+    }
 }
 
 // `YieldExpression :: yield * AssignmentExpression`
@@ -1072,12 +1540,24 @@ struct YieldGeneratorExpression {
     expression: Box<Expression>,
 }
 
+impl YieldGeneratorExpression {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
+}
+
 // interface AwaitExpression : Expression {
 //   attribute Expression expression;
 // };
 
 struct AwaitExpression {
     expression: Box<Expression>,
+}
+
+impl AwaitExpression {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
 }
 
 // other statements
@@ -1090,12 +1570,24 @@ struct BlockStatement {
     block: Block,
 }
 
+impl BlockStatement {
+    fn new(block: Block) -> Self {
+        Self { block }
+    }
+}
+
 // interface BreakStatement : Statement {
 //   attribute Label? label;
 // };
 
 struct BreakStatement {
     label: Option<Label>,
+}
+
+impl BreakStatement {
+    fn new(label: Option<Label>) -> Self {
+        Self { label }
+    }
 }
 
 // interface ContinueStatement : Statement {
@@ -1106,9 +1598,21 @@ struct ContinueStatement {
     label: Option<Label>,
 }
 
+impl ContinueStatement {
+    fn new(label: Option<Label>) -> Self {
+        Self { label }
+    }
+}
+
 // interface DebuggerStatement : Statement { };
 
 struct DebuggerStatement {}
+
+impl DebuggerStatement {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // interface DoWhileStatement : IterationStatement {
 //   attribute Expression test;
@@ -1118,9 +1622,21 @@ struct DoWhileStatement {
     test: Box<Expression>,
 }
 
+impl DoWhileStatement {
+    fn new(test: Box<Expression>) -> Self {
+        Self { test }
+    }
+}
+
 // interface EmptyStatement : Statement { };
 
 struct EmptyStatement {}
+
+impl EmptyStatement {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 //interface ExpressionStatement : Statement {
 //  attribute Expression expression;
@@ -1128,6 +1644,12 @@ struct EmptyStatement {}
 
 struct ExpressionStatement {
     expression: Box<Expression>,
+}
+
+impl ExpressionStatement {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
 }
 
 // `for ( LeftHandSideExpression in Expression ) Statement`, `for ( var ForBinding in Expression ) Statement`, `for ( ForDeclaration in Expression ) Statement`, `for ( var BindingIdentifier Initializer in Expression ) Statement`
@@ -1148,6 +1670,12 @@ struct ForInStatement {
     right: Box<Expression>,
 }
 
+impl ForInStatement {
+    fn new(left: VariableDeclarationOrAssignmentTarget, right: Box<Expression>) -> Self {
+        Self { left, right }
+    }
+}
+
 // `for ( LeftHandSideExpression of Expression ) Statement`, `for ( var ForBinding of Expression ) Statement`, `for ( ForDeclaration of Expression ) Statement`
 // interface ForOfStatement : IterationStatement {
 //   // The expression or declaration before `of`.
@@ -1159,6 +1687,12 @@ struct ForInStatement {
 struct ForOfStatement {
     left: VariableDeclarationOrAssignmentTarget,
     right: Box<Expression>,
+}
+
+impl ForOfStatement {
+    fn new(left: VariableDeclarationOrAssignmentTarget, right: Box<Expression>) -> Self {
+        Self { left, right }
+    }
 }
 
 // `for ( Expression ; Expression ; Expression ) Statement`, `for ( var VariableDeclarationlist ; Expression ; Expression ) Statement`
@@ -1182,6 +1716,16 @@ struct ForStatement {
     update: Option<Box<Expression>>,
 }
 
+impl ForStatement {
+    fn new(
+        init: Option<VariableDeclarationOrExpression>,
+        test: Option<Box<Expression>>,
+        update: Option<Box<Expression>>,
+    ) -> Self {
+        Self { init, test, update }
+    }
+}
+
 // `if ( Expression ) Statement`, `if ( Expression ) Statement else Statement`,
 // interface IfStatement : Statement {
 //   attribute Expression test;
@@ -1197,6 +1741,20 @@ struct IfStatement {
     alternate: Option<Box<Statement>>,
 }
 
+impl IfStatement {
+    fn new(
+        test: Box<Expression>,
+        consequent: Box<Statement>,
+        alternate: Option<Box<Statement>>,
+    ) -> Self {
+        Self {
+            test,
+            consequent,
+            alternate,
+        }
+    }
+}
+
 // interface LabeledStatement : Statement {
 //   attribute Label label;
 //   attribute Statement body;
@@ -1207,12 +1765,24 @@ struct LabeledStatement {
     body: Box<Statement>,
 }
 
+impl LabeledStatement {
+    fn new(label: Label, body: Box<Statement>) -> Self {
+        Self { label, body }
+    }
+}
+
 // interface ReturnStatement : Statement {
 //   attribute Expression? expression;
 // };
 
 struct ReturnStatement {
     expression: Option<Box<Expression>>,
+}
+
+impl ReturnStatement {
+    fn new(expression: Option<Box<Expression>>) -> Self {
+        Self { expression }
+    }
 }
 
 // A `SwitchStatement` whose `CaseBlock` is `CaseBlock :: { CaseClauses }`.
@@ -1224,6 +1794,15 @@ struct ReturnStatement {
 struct SwitchStatement {
     discriminant: Box<Expression>,
     cases: Vec<SwitchCase>,
+}
+
+impl SwitchStatement {
+    fn new(discriminant: Box<Expression>, cases: Vec<SwitchCase>) -> Self {
+        Self {
+            discriminant,
+            cases,
+        }
+    }
 }
 
 // A `SwitchStatement` whose `CaseBlock` is `CaseBlock :: { CaseClauses DefaultClause CaseClauses }`.
@@ -1244,12 +1823,34 @@ struct SwitchStatementWithDefault {
     postDefaultCases: Vec<SwitchCase>,
 }
 
+impl SwitchStatementWithDefault {
+    fn new(
+        discriminant: Box<Expression>,
+        preDefaultCases: Vec<SwitchCase>,
+        defaultCase: SwitchDefault,
+        postDefaultCases: Vec<SwitchCase>,
+    ) -> Self {
+        Self {
+            discriminant,
+            preDefaultCases,
+            defaultCase,
+            postDefaultCases,
+        }
+    }
+}
+
 // interface ThrowStatement : Statement {
 //   attribute Expression expression;
 // };
 
 struct ThrowStatement {
     expression: Box<Expression>,
+}
+
+impl ThrowStatement {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
 }
 
 // `TryStatement :: try Block Catch`
@@ -1261,6 +1862,12 @@ struct ThrowStatement {
 struct TryCatchStatement {
     body: Block,
     catchClause: CatchClause,
+}
+
+impl TryCatchStatement {
+    fn new(body: Block, catchClause: CatchClause) -> Self {
+        Self { body, catchClause }
+    }
 }
 
 // `TryStatement :: try Block Finally`, `TryStatement :: try Block Catch Finally`
@@ -1279,6 +1886,16 @@ struct TryFinallyStatement {
     finalizer: Block,
 }
 
+impl TryFinallyStatement {
+    fn new(body: Block, catchClause: Option<CatchClause>, finalizer: Block) -> Self {
+        Self {
+            body,
+            catchClause,
+            finalizer,
+        }
+    }
+}
+
 // interface VariableDeclarationStatement : Statement {
 //   attribute VariableDeclaration declaration;
 // };
@@ -1287,12 +1904,24 @@ struct VariableDeclarationStatement {
     declaration: VariableDeclaration,
 }
 
+impl VariableDeclarationStatement {
+    fn new(declaration: VariableDeclaration) -> Self {
+        Self { declaration }
+    }
+}
+
 // interface WhileStatement : IterationStatement {
 //   attribute Expression test;
 // };
 
 struct WhileStatement {
     test: Box<Expression>,
+}
+
+impl WhileStatement {
+    fn new(test: Box<Expression>) -> Self {
+        Self { test }
+    }
 }
 
 // interface WithStatement : Statement {
@@ -1305,6 +1934,12 @@ struct WithStatement {
     body: Box<Statement>,
 }
 
+impl WithStatement {
+    fn new(object: Box<Expression>, body: Box<Statement>) -> Self {
+        Self { object, body }
+    }
+}
+
 // other nodes
 
 // interface Block : Node {
@@ -1313,6 +1948,12 @@ struct WithStatement {
 
 struct Block {
     statements: Vec<Statement>,
+}
+
+impl Block {
+    fn new(statements: Vec<Statement>) -> Self {
+        Self { statements }
+    }
 }
 
 // `Catch`
@@ -1326,6 +1967,12 @@ struct CatchClause {
     body: Block,
 }
 
+impl CatchClause {
+    fn new(binding: Binding, body: Block) -> Self {
+        Self { binding, body }
+    }
+}
+
 // An item in a `DirectivePrologue`
 // interface Directive : Node {
 //   attribute string rawValue;
@@ -1333,6 +1980,12 @@ struct CatchClause {
 
 struct Directive {
     rawValue: String,
+}
+
+impl Directive {
+    fn new(rawValue: String) -> Self {
+        Self { rawValue }
+    }
 }
 
 // interface FormalParameters : Node {
@@ -1345,6 +1998,12 @@ struct FormalParameters {
     rest: Option<Binding>,
 }
 
+impl FormalParameters {
+    fn new(items: Vec<Parameter>, rest: Option<Binding>) -> Self {
+        Self { items, rest }
+    }
+}
+
 // interface FunctionBody : Node {
 //   attribute Directive[] directives;
 //   attribute Statement[] statements;
@@ -1353,6 +2012,15 @@ struct FormalParameters {
 struct FunctionBody {
     directives: Vec<Directive>,
     statements: Vec<Statement>,
+}
+
+impl FunctionBody {
+    fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
+        Self {
+            directives,
+            statements,
+        }
+    }
 }
 
 // interface FunctionDeclaration : Statement {
@@ -1370,6 +2038,24 @@ struct FunctionDeclaration {
     body: FunctionBody,
 }
 
+impl FunctionDeclaration {
+    fn new(
+        name: BindingIdentifier,
+        isAsync: bool,
+        isGenerator: bool,
+        params: FormalParameters,
+        body: FunctionBody,
+    ) -> Self {
+        Self {
+            name,
+            isAsync,
+            isGenerator,
+            params,
+            body,
+        }
+    }
+}
+
 // interface Script : Program {
 //   attribute Directive[] directives;
 //   attribute Statement[] statements;
@@ -1380,6 +2066,15 @@ struct Script {
     statements: Vec<Statement>,
 }
 
+impl Script {
+    fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
+        Self {
+            directives,
+            statements,
+        }
+    }
+}
+
 // interface SpreadElement : Node {
 //   attribute Expression expression;
 // };
@@ -1388,10 +2083,22 @@ struct SpreadElement {
     expression: Box<Expression>,
 }
 
+impl SpreadElement {
+    fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
+}
+
 // `super`
 // interface Super : Node { };
 
 struct Super {}
+
+impl Super {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
 // `CaseClause`
 // interface SwitchCase : Node {
@@ -1404,6 +2111,12 @@ struct SwitchCase {
     consequent: Vec<Statement>,
 }
 
+impl SwitchCase {
+    fn new(test: Box<Expression>, consequent: Vec<Statement>) -> Self {
+        Self { test, consequent }
+    }
+}
+
 // `DefaultClause`
 // interface SwitchDefault : Node {
 //   attribute Statement[] consequent;
@@ -1413,6 +2126,12 @@ struct SwitchDefault {
     consequent: Vec<Statement>,
 }
 
+impl SwitchDefault {
+    fn new(consequent: Vec<Statement>) -> Self {
+        Self { consequent }
+    }
+}
+
 // `TemplateCharacters`
 // interface TemplateElement : Node {
 //   attribute string rawValue;
@@ -1420,6 +2139,12 @@ struct SwitchDefault {
 
 struct TemplateElement {
     rawValue: String,
+}
+
+impl TemplateElement {
+    fn new(rawValue: String) -> Self {
+        Self { rawValue }
+    }
 }
 
 // interface VariableDeclaration : Node {
@@ -1432,6 +2157,12 @@ struct VariableDeclaration {
     declarators: Vec<VariableDeclarator>,
 }
 
+impl VariableDeclaration {
+    fn new(kind: VariableDeclarationKind, declarators: Vec<VariableDeclarator>) -> Self {
+        Self { kind, declarators }
+    }
+}
+
 // interface VariableDeclarator : Node {
 //   attribute Binding binding;
 //   attribute Expression? init;
@@ -1440,4 +2171,10 @@ struct VariableDeclaration {
 struct VariableDeclarator {
     binding: Binding,
     init: Option<Box<Expression>>,
+}
+
+impl VariableDeclarator {
+    fn new(binding: Binding, init: Option<Box<Expression>>) -> Self {
+        Self { binding, init }
+    }
 }
