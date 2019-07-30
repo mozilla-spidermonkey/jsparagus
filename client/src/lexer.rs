@@ -1,4 +1,6 @@
-use crate::parser_runtime::{TerminalId, Token, TokenStream};
+use crate::parser::{Node, Parser};
+use crate::parser_generated::Handler;
+use crate::parser_runtime::{NonterminalId, TerminalId, Token, TokenStream};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
@@ -14,10 +16,14 @@ where
         }
     }
 
-    fn advance(&mut self) -> Option<Token> {
+    fn advance<'a, Out, Reduce>(&mut self, parser: &Parser<'a, Out, Reduce>) -> Option<Token>
+    where
+        Out: Handler,
+        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
+    {
         let mut text = String::new();
         let mut saw_newline = false;
-        if let Some(terminal_id) = self.advance_impl(&mut text, &mut saw_newline) {
+        if let Some(terminal_id) = self.advance_impl(parser, &mut text, &mut saw_newline) {
             Some(Token {
                 terminal_id,
                 saw_newline,
@@ -28,7 +34,16 @@ where
         }
     }
 
-    fn advance_impl(&mut self, text: &mut String, saw_newline: &mut bool) -> Option<TerminalId> {
+    fn advance_impl<'a, Out, Reduce>(
+        &mut self,
+        parser: &Parser<'a, Out, Reduce>,
+        text: &mut String,
+        saw_newline: &mut bool,
+    ) -> Option<TerminalId>
+    where
+        Out: Handler,
+        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
+    {
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace
@@ -52,6 +67,10 @@ where
                             }
                             _ => break,
                         }
+                    }
+                    if parser.can_accept_terminal(TerminalId::IdentifierName) {
+                        *text = var;
+                        return Some(TerminalId::IdentifierName);
                     }
                     match &var as &str {
                         "as" => return Some(TerminalId::As),
@@ -378,8 +397,12 @@ where
     Iter: Iterator<Item = char>,
 {
     type Token = Token;
-    fn next(&mut self) -> Option<Self::Token> {
-        self.advance()
+    fn next<'a, Out, Reduce>(&mut self, parser: &Parser<'a, Out, Reduce>) -> Option<Self::Token>
+    where
+        Out: Handler,
+        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
+    {
+        self.advance(parser)
     }
     fn token_as_index(t: &Self::Token) -> usize {
         t.terminal_id as usize

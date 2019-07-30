@@ -123,6 +123,7 @@ class RustParserWriter:
         self.nonterminal_id()
         self.goto()
         self.reduce(generic)
+        self.reduce_simulator()
         self.entry(generic)
 
     def write(self, indentation, string, *format_args):
@@ -500,12 +501,22 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
 
+    def reduce_simulator(self):
+        prods = [prod for prod in self.prods if prod.nt in self.nonterminals]
+        self.write(0, "static REDUCE_SIMULATOR: [(usize, NonterminalId); {}] = [", len(prods))
+        for prod in prods:
+            elements = [e for e in prod.rhs if is_concrete_element(e)]
+            self.write(1, "({}, NonterminalId::{}),", len(elements), self.nonterminal_to_camel(prod.nt))
+        self.write(0, "];")
+        self.write(0, "")
+
     def entry(self, generic):
         self.write(0, "static TABLES: ParserTables<'static> = ParserTables {")
         self.write(1, "state_count: {},", len(self.states))
         self.write(1, "action_table: &ACTIONS,")
         self.write(1, "action_width: {},", len(self.terminals))
         self.write(1, "error_codes: &STATE_TO_ERROR_CODE,")
+        self.write(1, "reduce_simulator: &REDUCE_SIMULATOR,")
         self.write(1, "goto_table: &GOTO,")
         self.write(1, "goto_width: {},".format(len(self.nonterminals)))
         self.write(0, "};")

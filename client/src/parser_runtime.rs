@@ -1,9 +1,12 @@
-use crate::parser::{ParseError, Parser, Result};
+use crate::parser::{Node, ParseError, Parser, Result};
 pub use crate::parser_generated::{ErrorCode, Handler, NonterminalId, TerminalId, Token};
 
 pub trait TokenStream {
     type Token;
-    fn next(&mut self) -> Option<Self::Token>;
+    fn next<'a, Out, Reduce>(&mut self, parser: &Parser<'a, Out, Reduce>) -> Option<Self::Token>
+    where
+        Out: Handler,
+        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId;
     fn token_as_index(t: &Self::Token) -> usize;
 }
 
@@ -13,6 +16,7 @@ pub struct ParserTables<'a> {
     pub action_table: &'a [i64],
     pub action_width: usize,
     pub error_codes: &'a [Option<ErrorCode>],
+    pub reduce_simulator: &'a [(usize, NonterminalId)],
     pub goto_table: &'a [u16],
     pub goto_width: usize,
 }
@@ -43,7 +47,7 @@ where
     let mut parser = Parser::new(tables, reduce, handler, start_state);
 
     loop {
-        if let Some(t) = tokens.next() {
+        if let Some(t) = tokens.next(&parser) {
             if t.terminal_id == TerminalId::End {
                 break;
             }

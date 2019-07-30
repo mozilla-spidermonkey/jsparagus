@@ -95,9 +95,14 @@ where
     }
 
     fn action(&self, t: TerminalId) -> Action {
+        self.action_at_state(t, self.state())
+    }
+
+    fn action_at_state(&self, t: TerminalId, state: usize) -> Action {
         let t = t as usize;
         debug_assert!(t < self.tables.action_width);
-        Action(self.tables.action_table[self.state() * self.tables.action_width + t])
+        debug_assert!(state < self.tables.state_count);
+        Action(self.tables.action_table[state * self.tables.action_width + t])
     }
 
     fn reduce_all(&mut self, t: TerminalId) -> Action {
@@ -204,11 +209,30 @@ where
         }
     }
 
-    fn can_accept_terminal(&self, t: TerminalId) -> bool {
-        // BUG: This is wrong. Because this parser may be LALR, if we see a
-        // reduce action, we need to simulate the reduce before we know if t is
-        // really acceptable.
-        !self.action(t).is_error()
+    pub fn can_accept_terminal(&self, t: TerminalId) -> bool {
+        let state = self.simulate(t);
+        !self.action_at_state(t, state).is_error()
+    }
+
+    fn simulate(&self, t: TerminalId) -> usize {
+        let mut sp = self.state_stack.len() - 1;
+        let mut state = self.state_stack[sp];
+        let mut action = self.action_at_state(t, state);
+        while action.is_reduce() {
+            let prod_index = action.reduce_prod_index();
+            let (num_pops, nt) = self.tables.reduce_simulator[prod_index];
+            debug_assert!((nt as usize) < self.tables.goto_width);
+            debug_assert!(self.state_stack.len() >= self.node_stack.len());
+            sp = sp - num_pops;
+            let prev_state = self.state_stack[sp];
+            state = self.tables.goto_table[prev_state * self.tables.goto_width + nt as usize];
+            debug_assert!(state < self.tables.state_count);
+            sp += 1;
+            action = self.action_at_state(t, state);
+        }
+
+        debug_assert_eq!(self.state_stack.len(), self.node_stack.len() + 1);
+        state
     }
 
     /// Return true if self.close() would succeed.
