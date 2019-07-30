@@ -1,5 +1,5 @@
 PY_OUT = js_parser/parser_tables.py
-RS_OUT = rust/parser/src/parser_generated.rs
+RS_OUT = rust/generated_parser/src/lib.rs
 PYTHON = python3
 
 all: $(PY_OUT) $(RS_OUT)

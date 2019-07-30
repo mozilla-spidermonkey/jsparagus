@@ -5,6 +5,4 @@ authors = ["Jason Orendorff <jason.orendorff@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-
-[features]
-unstable = []
+generated_parser = { path = "../generated_parser" }

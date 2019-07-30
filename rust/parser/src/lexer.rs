@@ -1,6 +1,5 @@
-use crate::parser::{Node, Parser};
-use crate::parser_generated::Handler;
-use crate::parser_runtime::{NonterminalId, TerminalId, Token, TokenStream};
+use crate::parser::Parser;
+use generated_parser::{TerminalId, Token};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
@@ -16,11 +15,7 @@ where
         }
     }
 
-    fn advance<'a, Out, Reduce>(&mut self, parser: &Parser<'a, Out, Reduce>) -> Option<Token>
-    where
-        Out: Handler,
-        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
-    {
+    pub fn next(&mut self, parser: &Parser) -> Option<Token> {
         let mut text = String::new();
         let mut saw_newline = false;
         if let Some(terminal_id) = self.advance_impl(parser, &mut text, &mut saw_newline) {
@@ -34,16 +29,12 @@ where
         }
     }
 
-    fn advance_impl<'a, Out, Reduce>(
+    fn advance_impl(
         &mut self,
-        parser: &Parser<'a, Out, Reduce>,
+        parser: &Parser,
         text: &mut String,
         saw_newline: &mut bool,
-    ) -> Option<TerminalId>
-    where
-        Out: Handler,
-        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
-    {
+    ) -> Option<TerminalId> {
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace
@@ -389,22 +380,5 @@ where
             }
         }
         Some(TerminalId::End)
-    }
-}
-
-impl<Iter> TokenStream for Lexer<Iter>
-where
-    Iter: Iterator<Item = char>,
-{
-    type Token = Token;
-    fn next<'a, Out, Reduce>(&mut self, parser: &Parser<'a, Out, Reduce>) -> Option<Self::Token>
-    where
-        Out: Handler,
-        Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
-    {
-        self.advance(parser)
-    }
-    fn token_as_index(t: &Self::Token) -> usize {
-        t.terminal_id as usize
     }
 }

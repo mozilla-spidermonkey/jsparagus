@@ -1,15 +1,13 @@
 //! Functions to exercise the parser from the command line.
 
-use crate::parser_generated;
-
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
-use std::io::prelude::*;  // flush() at least
+use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use crate::lexer::Lexer;
+use parser::parse_script;
 
 fn parse_file(path: &Path) -> io::Result<()> {
     print!("{}:", path.display());
@@ -21,10 +19,7 @@ fn parse_file(path: &Path) -> io::Result<()> {
         }
         Ok(s) => s,
     };
-    let result = parser_generated::parse_Script(
-        &mut parser_generated::DefaultHandler {},
-        Lexer::new(contents.chars())
-    );
+    let result = parse_script(&contents);
     match result {
         Ok(_ast) => println!(" ok"),
         Err(err) => println!(" error: {}", err.message()),
@@ -48,9 +43,7 @@ pub fn parse_file_or_dir(filename: &str) -> io::Result<()> {
 }
 
 fn run(buffer: &str) {
-    let lexer = Lexer::new(buffer.chars());
-    let parse_result =
-        parser_generated::parse_Script(&mut parser_generated::DefaultHandler {}, lexer);
+    let parse_result = parse_script(buffer);
     match parse_result {
         Ok(ast) => println!("{:#?}", ast),
         Err(err) => println!("{}", err.message()),

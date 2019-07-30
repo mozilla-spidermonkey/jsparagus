@@ -4,10 +4,3 @@
 name = "generated_parser"
 version = "0.1.0"
 
-[[package]]
-name = "parser"
-version = "0.1.0"
-dependencies = [
- "generated_parser 0.1.0",
-]
-

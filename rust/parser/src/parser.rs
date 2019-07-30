@@ -1,5 +1,6 @@
-pub use crate::parser_generated::{ErrorCode, Handler, NonterminalId, TerminalId, Token};
-use crate::parser_runtime::ParserTables;
+use generated_parser::{reduce, DefaultHandler, ErrorCode, TerminalId, Token, TABLES};
+
+use crate::Result;
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -51,41 +52,22 @@ impl ParseError {
     }
 }
 
-pub type Result<T> = std::result::Result<T, ParseError>;
-
 pub type Node = *mut ();
 
-pub struct Parser<'a, Out, Reduce>
-where
-    Out: Handler,
-    Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
-{
-    tables: &'a ParserTables<'a>,
+pub struct Parser {
     state_stack: Vec<usize>,
     node_stack: Vec<Node>,
-    reduce: Reduce,
-    handler: &'a Out,
+    handler: DefaultHandler,
 }
 
-impl<'a, Out, Reduce> Parser<'a, Out, Reduce>
-where
-    Out: Handler,
-    Reduce: Fn(&Out, usize, &mut Vec<Node>) -> NonterminalId,
-{
-    pub fn new(
-        tables: &'a ParserTables<'a>,
-        reduce: Reduce,
-        handler: &'a Out,
-        entry_state: usize,
-    ) -> Parser<'a, Out, Reduce> {
-        tables.check();
-        assert!(entry_state < tables.state_count);
+impl Parser {
+    pub fn new(handler: DefaultHandler, entry_state: usize) -> Self {
+        TABLES.check();
+        assert!(entry_state < TABLES.state_count);
 
-        Parser {
-            tables,
+        Self {
             state_stack: vec![entry_state],
             node_stack: vec![],
-            reduce,
             handler,
         }
     }
@@ -100,22 +82,23 @@ where
 
     fn action_at_state(&self, t: TerminalId, state: usize) -> Action {
         let t = t as usize;
-        debug_assert!(t < self.tables.action_width);
-        debug_assert!(state < self.tables.state_count);
-        Action(self.tables.action_table[state * self.tables.action_width + t])
+        debug_assert!(t < TABLES.action_width);
+        debug_assert!(state < TABLES.state_count);
+        Action(TABLES.action_table[state * TABLES.action_width + t])
     }
 
     fn reduce_all(&mut self, t: TerminalId) -> Action {
-        let tables = self.tables;
+        let tables = TABLES;
         let mut action = self.action(t);
         while action.is_reduce() {
             let prod_index = action.reduce_prod_index();
-            let nt = (self.reduce)(self.handler, prod_index, &mut self.node_stack);
+            let nt = reduce(&self.handler, prod_index, &mut self.node_stack);
             debug_assert!((nt as usize) < tables.goto_width);
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             self.state_stack.truncate(self.node_stack.len());
             let prev_state = *self.state_stack.last().unwrap();
-            let state_after = tables.goto_table[prev_state * tables.goto_width + nt as usize] as usize;
+            let state_after =
+                tables.goto_table[prev_state * tables.goto_width + nt as usize] as usize;
             debug_assert!(state_after < tables.state_count);
             self.state_stack.push(state_after);
             action = self.action(t);
@@ -172,7 +155,7 @@ where
         let action = self.reduce_all(TerminalId::ErrorToken);
         if action.is_shift() {
             let state = *self.state_stack.last().unwrap();
-            let error_code = self.tables.error_codes[state]
+            let error_code = TABLES.error_codes[state]
                 .as_ref()
                 .expect("state that accepts an ErrorToken must have an error_code")
                 .clone();
@@ -220,13 +203,13 @@ where
         let mut action = self.action_at_state(t, state);
         while action.is_reduce() {
             let prod_index = action.reduce_prod_index();
-            let (num_pops, nt) = self.tables.reduce_simulator[prod_index];
-            debug_assert!((nt as usize) < self.tables.goto_width);
+            let (num_pops, nt) = TABLES.reduce_simulator[prod_index];
+            debug_assert!((nt as usize) < TABLES.goto_width);
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             sp = sp - num_pops;
             let prev_state = self.state_stack[sp];
-            state = self.tables.goto_table[prev_state * self.tables.goto_width + nt as usize] as usize;
-            debug_assert!(state < self.tables.state_count);
+            state = TABLES.goto_table[prev_state * TABLES.goto_width + nt as usize] as usize;
+            debug_assert!(state < TABLES.state_count);
             sp += 1;
             action = self.action_at_state(t, state);
         }

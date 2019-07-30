@@ -1,0 +1,8 @@
+[package]
+name = "driver"
+version = "0.1.0"
+authors = ["khyperia <khyperia@live.com>"]
+edition = "2018"
+
+[dependencies]
+parser = { path = "../parser" }
