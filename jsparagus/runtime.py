@@ -226,21 +226,6 @@ class Parser:
             return False
         return True
 
-    def can_accept_nonterminal(self, nt, t):
-        """Return True if a nonterminal `nt` starting with `t` is OK next.
-
-        The starting terminal `t` helps in navigating the parser tables;
-        without it, there are too many ways parsing could proceed from the
-        current state, and the check would be slow--it would have to
-        brute-force the state machine.
-        """
-        # Note: This relies on the tables not being compressed in a way that
-        # loses this bit of information. Of course there are many ways to
-        # compress and retain this; the only trick is making a clean interface
-        # between the parser, the lexer, and the parser generator.
-        state = self.simulate(t)
-        return nt in self.ctns[state]
-
     def simulate(self, t):
         """Simulate receiving the terminal `t` without modifying parser state.
 
