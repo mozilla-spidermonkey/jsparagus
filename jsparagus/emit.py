@@ -208,7 +208,7 @@ class RustParserWriter:
     def error_codes(self):
         self.write(0, "#[derive(Clone, Debug, PartialEq)]")
         self.write(0, "pub enum ErrorCode {")
-        for error_code in set(s.error_code for s in self.states):
+        for error_code in OrderedSet(s.error_code for s in self.states):
             if error_code is not None:
                 self.write(1, "{},", self.to_camel_case(error_code))
         self.write(0, "}")
