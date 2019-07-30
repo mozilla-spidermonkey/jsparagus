@@ -225,7 +225,7 @@ where
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             sp = sp - num_pops;
             let prev_state = self.state_stack[sp];
-            state = self.tables.goto_table[prev_state * self.tables.goto_width + nt as usize];
+            state = self.tables.goto_table[prev_state * self.tables.goto_width + nt as usize] as usize;
             debug_assert!(state < self.tables.state_count);
             sp += 1;
             action = self.action_at_state(t, state);
