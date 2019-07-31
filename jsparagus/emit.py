@@ -120,6 +120,7 @@ class RustParserWriter:
         self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
+        self.stack_value()
         self.reduce()
         self.reduce_simulator()
         self.entry()
@@ -279,11 +280,10 @@ class RustParserWriter:
         return names
 
     def type_to_rust(self, ty, namespace, boxed=False):
-        """Convert a jsparagus type (see types.py) to Rust.
+        """
+        Convert a jsparagus type (see types.py) to Rust.
 
-        Pass boxed=True if you're dealing with concrete types.
-        This is necessary because
-        DefaultHandler::Expression = Box<concrete::Expression>.
+        Pass boxed=True if the type needs to be boxed.
         """
         if ty is types.UnitType:
             return '()'
@@ -335,7 +335,7 @@ class RustParserWriter:
     def nt_node(self):
         self.write(0, "pub mod concrete {")
         for name in self.get_associated_type_names():
-            self.write(0, "#[derive(Debug)]")
+            self.write(0, "#[derive(Debug, PartialEq)]")
             self.write(0, "pub enum {} {{", name)
             for tag, method in self.grammar.methods.items():
                 # TODO: Make this check better
@@ -420,11 +420,47 @@ class RustParserWriter:
         else:
             assert False, "unexpected element type: {!r}".format(e)
 
+    def stack_value(self):
+        self.write(0, "#[derive(Debug, PartialEq)]")
+        self.write(0, "pub enum StackValue {")
+        return_types = set((self.type_to_rust(method.return_type, ""),
+                            self.type_to_rust(method.return_type, "concrete", boxed=True))
+                           for tag, method in self.grammar.methods.items())
+        return_types.add(("Token", "Token"))
+        for return_type_plain, return_type_boxed in return_types:
+            assert return_type_plain != "()"
+            # This might happen, but doesn't happen in practice, so just assert
+            # and deal with it later.
+            assert "Option" not in return_type_plain
+            self.write(0, "{}({}),", return_type_plain, return_type_boxed)
+        self.write(0, "}")
+        self.write(0, "")
+
+        self.write(0, "impl StackValue {")
+        for return_type_plain, return_type_boxed in return_types:
+            self.write(1, "fn unwrap_{}(self) -> {} {{",
+                       self.to_snek_case(return_type_plain), return_type_boxed)
+            self.write(2, "match self {")
+            self.write(3, "StackValue::{}(v) => v,", return_type_plain)
+            self.write(3, "_ => panic!(\"StackValue expected {}, got {{:?}}\", self)", return_type_plain)
+            self.write(2, "}")
+            self.write(1, "}")
+        self.write(0, "}")
+        self.write(0, "")
+
+        for return_type_plain, return_type_boxed in return_types:
+            self.write(0, "impl From<{}> for StackValue {{", return_type_boxed)
+            self.write(1, "fn from(val: {}) -> StackValue {{", return_type_boxed)
+            self.write(2, "StackValue::{}(val)", return_type_plain)
+            self.write(1, "}")
+            self.write(0, "}")
+            self.write(0, "")
+
     def reduce(self):
         self.write(
             0,
             "pub fn reduce(handler: &DefaultHandler, prod: usize, "
-            "stack: &mut Vec<*mut ()>) -> NonterminalId {")
+            "stack: &mut Vec<StackValue>) -> NonterminalId {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
@@ -464,18 +500,17 @@ class RustParserWriter:
 
                 for index, e in reversed(list(enumerate(elements))):
                     ty = self.element_type(e)
-                    rust_ty = "*mut " + self.type_to_rust(ty, "concrete")
+                    rust_ty = self.type_to_rust(ty, "")
                     if variable_used[index]:
                         self.write(
                             3,
-                            "let x{} = unsafe {{"
-                            " Box::from_raw(stack.pop().unwrap() as {}) }};",
+                            "let x{} = StackValue::unwrap_{}(stack.pop().unwrap());",
                             index,
-                            rust_ty)
+                            self.to_snek_case(rust_ty))
                     else:
                         self.write(3, "stack.pop();", index)
 
-                self.write(3, "stack.push(Box::into_raw({}) as *mut ());",
+                self.write(3, "stack.push(StackValue::from({}));",
                            compiled_expr)
                 self.write(3, "NonterminalId::{}",
                            self.nonterminal_to_camel(prod.nt))
@@ -532,14 +567,14 @@ class RustParserWriter:
         for init_nt, index in self.init_state_map.items():
             assert init_nt.args == ()
             result_type_jsparagus = self.grammar.nt_types[init_nt.name]
-            result_type = self.type_to_rust(
-                result_type_jsparagus, "concrete")
+            result_type_name = self.type_to_rust(result_type_jsparagus, "")
+            result_type_concrete = self.type_to_rust(result_type_jsparagus, "concrete", boxed=True)
             self.write(0, "pub static START_STATE_{}: usize = {};",
                        self.to_snek_case(init_nt.name).upper(), index)
             self.write(0, "")
-            self.write(0, "pub fn get_result_{}(node: *mut ()) -> {} {{",
-                       self.to_snek_case(init_nt.name), result_type)
-            self.write(1, "unsafe { *Box::from_raw(node as *mut _) }")
+            self.write(0, "pub fn get_result_{}(node: StackValue) -> {} {{",
+                       self.to_snek_case(init_nt.name), result_type_concrete)
+            self.write(1, "node.unwrap_{}()", self.to_snek_case(result_type_name))
             self.write(0, "}")
             self.write(0, "")
 

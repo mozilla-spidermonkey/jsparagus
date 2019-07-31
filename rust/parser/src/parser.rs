@@ -1,4 +1,4 @@
-use generated_parser::{reduce, DefaultHandler, ErrorCode, TerminalId, Token, TABLES};
+use generated_parser::{reduce, DefaultHandler, ErrorCode, StackValue, TerminalId, Token, TABLES};
 
 use crate::Result;
 
@@ -53,11 +53,9 @@ impl ParseError {
     }
 }
 
-pub type Node = *mut ();
-
 pub struct Parser {
     state_stack: Vec<usize>,
-    node_stack: Vec<Node>,
+    node_stack: Vec<StackValue>,
     handler: DefaultHandler,
 }
 
@@ -115,8 +113,7 @@ impl Parser {
         loop {
             let action = self.reduce_all(token.terminal_id);
             if action.is_shift() {
-                self.node_stack
-                    .push(Box::into_raw(Box::new(token)) as *mut _);
+                self.node_stack.push(StackValue::Token(token.clone()));
                 self.state_stack.push(action.shift_state());
                 return Ok(());
             } else {
@@ -126,7 +123,7 @@ impl Parser {
         }
     }
 
-    pub fn close(&mut self) -> Result<Node> {
+    pub fn close(&mut self) -> Result<StackValue> {
         // Loop for error-handling.
         loop {
             let action = self.reduce_all(TerminalId::End);

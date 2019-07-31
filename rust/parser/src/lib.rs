@@ -8,26 +8,26 @@ mod parser;
 #[cfg(test)]
 mod tests;
 
-use lexer::Lexer;
 use crate::parser::{ParseError, Parser};
+use lexer::Lexer;
 
 use generated_parser::concrete::{Module, Script};
 use generated_parser::{
-    get_result_module, get_result_script, DefaultHandler,
-    TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
+    get_result_module, get_result_script, DefaultHandler, StackValue, TerminalId,
+    START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
 };
 
 pub type Result<T> = std::result::Result<T, ParseError>;
 
-pub fn parse_script(source: &str) -> Result<Script> {
+pub fn parse_script(source: &str) -> Result<Box<Script>> {
     Ok(get_result_script(parse(source, START_STATE_SCRIPT)?))
 }
 
-pub fn parse_module(source: &str) -> Result<Module> {
+pub fn parse_module(source: &str) -> Result<Box<Module>> {
     Ok(get_result_module(parse(source, START_STATE_MODULE)?))
 }
 
-fn parse(source: &str, start_state: usize) -> Result<*mut ()> {
+fn parse(source: &str, start_state: usize) -> Result<StackValue> {
     let mut tokens = Lexer::new(source.chars());
 
     TABLES.check();

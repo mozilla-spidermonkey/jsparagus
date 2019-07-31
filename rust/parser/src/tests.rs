@@ -56,7 +56,7 @@ fn chunks_to_string<'a, T: IntoChunks<'a>>(code: T) -> String {
     buf
 }
 
-fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<Script> {
+fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<Box<Script>> {
     let buf = chunks_to_string(code);
     parse_script(&buf)
 }

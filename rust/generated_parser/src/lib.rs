@@ -5218,24 +5218,24 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
 ];
 
 pub mod concrete {
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum IdentifierReference {
     IdentifierReference(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingIdentifier {
     BindingIdentifierP0(),
     BindingIdentifierP1(),
     BindingIdentifierP2(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LabelIdentifier {
     LabelIdentifier(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     PrimaryExpressionP0(),
     PrimaryExpressionP1(Box<IdentifierReference>),
@@ -5316,7 +5316,7 @@ pub enum Expression {
     AwaitExpression(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CoverParenthesizedExpressionAndArrowParameterList {
     CoverParenthesizedExpressionAndArrowParameterListP0(Box<Expression>),
     CoverParenthesizedExpressionAndArrowParameterListP1(Box<Expression>),
@@ -5327,12 +5327,12 @@ pub enum CoverParenthesizedExpressionAndArrowParameterList {
     CoverParenthesizedExpressionAndArrowParameterListP6(Box<Expression>, Box<BindingPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParenthesizedExpression {
     ParenthesizedExpression(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ElementList {
     ElementListP0(Option<Box<Elision>>, Box<Expression>),
     ElementListP1(Option<Box<Elision>>, Box<SpreadElement>),
@@ -5340,24 +5340,24 @@ pub enum ElementList {
     ElementListP3(Box<ElementList>, Option<Box<Elision>>, Box<SpreadElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Elision {
     ElisionP0(),
     ElisionP1(Box<Elision>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SpreadElement {
     SpreadElement(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PropertyDefinitionList {
     PropertyDefinitionListP0(Box<PropertyDefinition>),
     PropertyDefinitionListP1(Box<PropertyDefinitionList>, Box<PropertyDefinition>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PropertyDefinition {
     PropertyDefinitionP0(Box<IdentifierReference>),
     PropertyDefinitionP1(Box<CoverInitializedName>),
@@ -5366,86 +5366,86 @@ pub enum PropertyDefinition {
     PropertyDefinitionP4(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PropertyName {
     PropertyNameP0(Box<LiteralPropertyName>),
     PropertyNameP1(Box<ComputedPropertyName>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LiteralPropertyName {
     LiteralPropertyNameP0(),
     LiteralPropertyNameP1(),
     LiteralPropertyNameP2(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ComputedPropertyName {
     ComputedPropertyName(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CoverInitializedName {
     CoverInitializedName(Box<IdentifierReference>, Box<Initializer>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Initializer {
     Initializer(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TemplateLiteral {
     TemplateLiteralP0(),
     TemplateLiteralP1(Box<SubstitutionTemplate>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SubstitutionTemplate {
     SubstitutionTemplate(Box<Expression>, Box<TemplateSpans>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TemplateSpans {
     TemplateSpansP0(),
     TemplateSpansP1(Box<TemplateMiddleList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TemplateMiddleList {
     TemplateMiddleListP0(Box<Expression>),
     TemplateMiddleListP1(Box<TemplateMiddleList>, Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SuperProperty {
     SuperPropertyP0(Box<Expression>),
     SuperPropertyP1(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MetaProperty {
     MetaProperty(Box<NewTarget>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NewTarget {
     NewTarget(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SuperCall {
     SuperCall(Box<Arguments>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Arguments {
     ArgumentsP0(),
     ArgumentsP1(Box<ArgumentList>),
     ArgumentsP2(Box<ArgumentList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArgumentList {
     ArgumentListP0(Box<Expression>),
     ArgumentListP1(Box<Expression>),
@@ -5453,19 +5453,19 @@ pub enum ArgumentList {
     ArgumentListP3(Box<ArgumentList>, Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CallMemberExpression {
     CallMemberExpression(Box<Expression>, Box<Arguments>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MultiplicativeOperator {
     MultiplicativeOperatorP0(),
     MultiplicativeOperatorP1(),
     MultiplicativeOperatorP2(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentOperator {
     AssignmentOperatorP0(),
     AssignmentOperatorP1(),
@@ -5481,13 +5481,13 @@ pub enum AssignmentOperator {
     AssignmentOperatorP11(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentPattern {
     AssignmentPatternP0(Box<ObjectAssignmentPattern>),
     AssignmentPatternP1(Box<ArrayAssignmentPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ObjectAssignmentPattern {
     ObjectAssignmentPatternP0(),
     ObjectAssignmentPatternP1(Box<AssignmentRestProperty>),
@@ -5495,57 +5495,57 @@ pub enum ObjectAssignmentPattern {
     ObjectAssignmentPatternP3(Box<AssignmentPropertyList>, Option<Box<AssignmentRestProperty>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArrayAssignmentPattern {
     ArrayAssignmentPatternP0(Option<Box<Elision>>, Option<Box<AssignmentRestElement>>),
     ArrayAssignmentPatternP1(Box<AssignmentElementList>),
     ArrayAssignmentPatternP2(Box<AssignmentElementList>, Option<Box<Elision>>, Option<Box<AssignmentRestElement>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentRestProperty {
     AssignmentRestProperty(Box<DestructuringAssignmentTarget>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentPropertyList {
     AssignmentPropertyListP0(Box<AssignmentProperty>),
     AssignmentPropertyListP1(Box<AssignmentPropertyList>, Box<AssignmentProperty>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentElementList {
     AssignmentElementListP0(Box<AssignmentElisionElement>),
     AssignmentElementListP1(Box<AssignmentElementList>, Box<AssignmentElisionElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentElisionElement {
     AssignmentElisionElement(Option<Box<Elision>>, Box<AssignmentElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentProperty {
     AssignmentPropertyP0(Box<IdentifierReference>, Option<Box<Initializer>>),
     AssignmentPropertyP1(Box<PropertyName>, Box<AssignmentElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentElement {
     AssignmentElement(Box<DestructuringAssignmentTarget>, Option<Box<Initializer>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AssignmentRestElement {
     AssignmentRestElement(Box<DestructuringAssignmentTarget>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DestructuringAssignmentTarget {
     DestructuringAssignmentTarget(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ModuleItem {
     BlockStatement(Box<Block>),
     LexicalDeclaration(Box<LetOrConst>, Box<BindingList>),
@@ -5604,59 +5604,59 @@ pub enum ModuleItem {
     ExportDeclarationP7(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Block {
     Block(Option<Box<StatementList>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StatementList {
     StatementListP0(Box<ModuleItem>),
     StatementListP1(Box<StatementList>, Box<ModuleItem>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ForLexicalDeclaration {
     ForLexicalDeclaration(Box<LetOrConst>, Box<BindingList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LetOrConst {
     LetOrConstP0(),
     LetOrConstP1(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingList {
     BindingListP0(Box<LexicalBinding>),
     BindingListP1(Box<BindingList>, Box<LexicalBinding>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LexicalBinding {
     LexicalBindingP0(Box<BindingIdentifier>, Option<Box<Initializer>>),
     LexicalBindingP1(Box<BindingPattern>, Box<Initializer>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VariableDeclarationList {
     VariableDeclarationListP0(Box<VariableDeclaration>),
     VariableDeclarationListP1(Box<VariableDeclarationList>, Box<VariableDeclaration>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VariableDeclaration {
     VariableDeclarationP0(Box<BindingIdentifier>, Option<Box<Initializer>>),
     VariableDeclarationP1(Box<BindingPattern>, Box<Initializer>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingPattern {
     BindingPatternP0(Box<ObjectBindingPattern>),
     BindingPatternP1(Box<ArrayBindingPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ObjectBindingPattern {
     ObjectBindingPatternP0(),
     ObjectBindingPatternP1(Box<BindingRestProperty>),
@@ -5664,119 +5664,119 @@ pub enum ObjectBindingPattern {
     ObjectBindingPatternP3(Box<BindingPropertyList>, Option<Box<BindingRestProperty>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArrayBindingPattern {
     ArrayBindingPatternP0(Option<Box<Elision>>, Option<Box<BindingRestElement>>),
     ArrayBindingPatternP1(Box<BindingElementList>),
     ArrayBindingPatternP2(Box<BindingElementList>, Option<Box<Elision>>, Option<Box<BindingRestElement>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingRestProperty {
     BindingRestProperty(Box<BindingIdentifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingPropertyList {
     BindingPropertyListP0(Box<BindingProperty>),
     BindingPropertyListP1(Box<BindingPropertyList>, Box<BindingProperty>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingElementList {
     BindingElementListP0(Box<BindingElisionElement>),
     BindingElementListP1(Box<BindingElementList>, Box<BindingElisionElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingElisionElement {
     BindingElisionElement(Option<Box<Elision>>, Box<BindingElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingProperty {
     BindingPropertyP0(Box<SingleNameBinding>),
     BindingPropertyP1(Box<PropertyName>, Box<BindingElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingElement {
     BindingElementP0(Box<SingleNameBinding>),
     BindingElementP1(Box<BindingPattern>, Option<Box<Initializer>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SingleNameBinding {
     SingleNameBinding(Box<BindingIdentifier>, Option<Box<Initializer>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BindingRestElement {
     BindingRestElementP0(Box<BindingIdentifier>),
     BindingRestElementP1(Box<BindingPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ForDeclaration {
     ForDeclaration(Box<LetOrConst>, Box<ForBinding>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ForBinding {
     ForBindingP0(Box<BindingIdentifier>),
     ForBindingP1(Box<BindingPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CaseBlock {
     CaseBlockP0(Option<Box<CaseClauses>>),
     CaseBlockP1(Option<Box<CaseClauses>>, Box<DefaultClause>, Option<Box<CaseClauses>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CaseClauses {
     CaseClausesP0(Box<CaseClause>),
     CaseClausesP1(Box<CaseClauses>, Box<CaseClause>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CaseClause {
     CaseClause(Box<Expression>, Option<Box<StatementList>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DefaultClause {
     DefaultClause(Option<Box<StatementList>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LabelledItem {
     LabelledItemP0(Box<ModuleItem>),
     LabelledItemP1(Box<ModuleItem>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Catch {
     Catch(Box<CatchParameter>, Box<Block>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Finally {
     Finally(Box<Block>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CatchParameter {
     CatchParameterP0(Box<BindingIdentifier>),
     CatchParameterP1(Box<BindingPattern>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UniqueFormalParameters {
     UniqueFormalParameters(Box<FormalParameters>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FormalParameters {
     FormalParametersP0(),
     FormalParametersP1(Box<FunctionRestParameter>),
@@ -5785,55 +5785,55 @@ pub enum FormalParameters {
     FormalParametersP4(Box<FormalParameterList>, Box<FunctionRestParameter>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FormalParameterList {
     FormalParameterListP0(Box<FormalParameter>),
     FormalParameterListP1(Box<FormalParameterList>, Box<FormalParameter>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FunctionRestParameter {
     FunctionRestParameter(Box<BindingRestElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FormalParameter {
     FormalParameter(Box<BindingElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FunctionBody {
     FunctionBody(Box<FunctionStatementList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FunctionStatementList {
     FunctionStatementList(Option<Box<StatementList>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArrowFunction {
     ArrowFunction(Box<ArrowParameters>, Box<ConciseBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArrowParameters {
     ArrowParametersP0(Box<BindingIdentifier>),
     ArrowParametersP1(Box<CoverParenthesizedExpressionAndArrowParameterList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ConciseBody {
     ConciseBodyP0(Box<Expression>),
     ConciseBodyP1(Box<FunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArrowFormalParameters {
     ArrowFormalParameters(Box<UniqueFormalParameters>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MethodDefinition {
     MethodDefinitionP0(Box<PropertyName>, Box<UniqueFormalParameters>, Box<FunctionBody>),
     MethodDefinitionP4(Box<PropertyName>, Box<FunctionBody>),
@@ -5843,108 +5843,108 @@ pub enum MethodDefinition {
     AsyncMethod(Box<PropertyName>, Box<UniqueFormalParameters>, Box<AsyncFunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PropertySetParameterList {
     PropertySetParameterList(Box<FormalParameter>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum GeneratorBody {
     GeneratorBody(Box<FunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncGeneratorBody {
     AsyncGeneratorBody(Box<FunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ClassTail {
     ClassTail(Option<Box<ClassHeritage>>, Option<Box<ClassBody>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ClassHeritage {
     ClassHeritage(Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ClassBody {
     ClassBody(Box<ClassElementList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ClassElementList {
     ClassElementListP0(Box<ClassElement>),
     ClassElementListP1(Box<ClassElementList>, Box<ClassElement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ClassElement {
     ClassElementP0(Box<MethodDefinition>),
     ClassElementP1(Box<MethodDefinition>),
     ClassElementP2(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncFunctionBody {
     AsyncFunctionBody(Box<FunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncArrowFunction {
     AsyncArrowFunctionP0(Box<AsyncArrowBindingIdentifier>, Box<AsyncConciseBody>),
     AsyncArrowFunctionP1(Box<CoverCallExpressionAndAsyncArrowHead>, Box<AsyncConciseBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncConciseBody {
     AsyncConciseBodyP0(Box<Expression>),
     AsyncConciseBodyP1(Box<AsyncFunctionBody>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncArrowBindingIdentifier {
     AsyncArrowBindingIdentifier(Box<BindingIdentifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CoverCallExpressionAndAsyncArrowHead {
     CoverCallExpressionAndAsyncArrowHead(Box<Expression>, Box<Arguments>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AsyncArrowHead {
     AsyncArrowHead(Box<ArrowFormalParameters>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Script {
     Script(Option<Box<ScriptBody>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ScriptBody {
     ScriptBody(Box<StatementList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Module {
     Module(Option<Box<ModuleBody>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ModuleBody {
     ModuleBody(Box<ModuleItemList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ModuleItemList {
     ModuleItemListP0(Box<ModuleItem>),
     ModuleItemListP1(Box<ModuleItemList>, Box<ModuleItem>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportClause {
     ImportClauseP0(Box<ImportedDefaultBinding>),
     ImportClauseP1(Box<NameSpaceImport>),
@@ -5953,64 +5953,64 @@ pub enum ImportClause {
     ImportClauseP4(Box<ImportedDefaultBinding>, Box<NamedImports>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportedDefaultBinding {
     ImportedDefaultBinding(Box<ImportedBinding>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NameSpaceImport {
     NameSpaceImport(Box<ImportedBinding>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NamedImports {
     NamedImportsP0(),
     NamedImportsP1(Box<ImportsList>),
     NamedImportsP2(Box<ImportsList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FromClause {
     FromClause(Box<ModuleSpecifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportsList {
     ImportsListP0(Box<ImportSpecifier>),
     ImportsListP1(Box<ImportsList>, Box<ImportSpecifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportSpecifier {
     ImportSpecifierP0(Box<ImportedBinding>),
     ImportSpecifierP1(Box<ImportedBinding>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ModuleSpecifier {
     ModuleSpecifier(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportedBinding {
     ImportedBinding(Box<BindingIdentifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ExportClause {
     ExportClauseP0(),
     ExportClauseP1(Box<ExportsList>),
     ExportClauseP2(Box<ExportsList>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ExportsList {
     ExportsListP0(Box<ExportSpecifier>),
     ExportsListP1(Box<ExportsList>, Box<ExportSpecifier>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ExportSpecifier {
     ExportSpecifierP0(),
     ExportSpecifierP1(),
@@ -8242,1159 +8242,2648 @@ static GOTO: [u16; 161385] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
 
-pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -> NonterminalId {
+#[derive(Debug, PartialEq)]
+pub enum StackValue {
+ExportSpecifier(Box<concrete::ExportSpecifier>),
+AsyncConciseBody(Box<concrete::AsyncConciseBody>),
+ComputedPropertyName(Box<concrete::ComputedPropertyName>),
+StatementList(Box<concrete::StatementList>),
+ForDeclaration(Box<concrete::ForDeclaration>),
+SubstitutionTemplate(Box<concrete::SubstitutionTemplate>),
+AssignmentPropertyList(Box<concrete::AssignmentPropertyList>),
+FormalParameter(Box<concrete::FormalParameter>),
+BindingRestElement(Box<concrete::BindingRestElement>),
+ArrowParameters(Box<concrete::ArrowParameters>),
+ElementList(Box<concrete::ElementList>),
+PropertyDefinition(Box<concrete::PropertyDefinition>),
+CaseClause(Box<concrete::CaseClause>),
+LetOrConst(Box<concrete::LetOrConst>),
+MultiplicativeOperator(Box<concrete::MultiplicativeOperator>),
+ImportedBinding(Box<concrete::ImportedBinding>),
+ScriptBody(Box<concrete::ScriptBody>),
+ArrayBindingPattern(Box<concrete::ArrayBindingPattern>),
+Block(Box<concrete::Block>),
+Expression(Box<concrete::Expression>),
+PropertySetParameterList(Box<concrete::PropertySetParameterList>),
+ImportsList(Box<concrete::ImportsList>),
+LabelledItem(Box<concrete::LabelledItem>),
+ParenthesizedExpression(Box<concrete::ParenthesizedExpression>),
+BindingPropertyList(Box<concrete::BindingPropertyList>),
+ImportSpecifier(Box<concrete::ImportSpecifier>),
+AssignmentOperator(Box<concrete::AssignmentOperator>),
+Elision(Box<concrete::Elision>),
+AsyncGeneratorBody(Box<concrete::AsyncGeneratorBody>),
+MethodDefinition(Box<concrete::MethodDefinition>),
+AsyncArrowHead(Box<concrete::AsyncArrowHead>),
+AssignmentRestProperty(Box<concrete::AssignmentRestProperty>),
+PropertyName(Box<concrete::PropertyName>),
+TemplateSpans(Box<concrete::TemplateSpans>),
+ClassHeritage(Box<concrete::ClassHeritage>),
+NewTarget(Box<concrete::NewTarget>),
+SuperProperty(Box<concrete::SuperProperty>),
+PropertyDefinitionList(Box<concrete::PropertyDefinitionList>),
+CaseBlock(Box<concrete::CaseBlock>),
+ArrowFormalParameters(Box<concrete::ArrowFormalParameters>),
+ArrayAssignmentPattern(Box<concrete::ArrayAssignmentPattern>),
+BindingElementList(Box<concrete::BindingElementList>),
+BindingElement(Box<concrete::BindingElement>),
+FromClause(Box<concrete::FromClause>),
+ForBinding(Box<concrete::ForBinding>),
+ObjectBindingPattern(Box<concrete::ObjectBindingPattern>),
+GeneratorBody(Box<concrete::GeneratorBody>),
+NamedImports(Box<concrete::NamedImports>),
+Finally(Box<concrete::Finally>),
+ImportedDefaultBinding(Box<concrete::ImportedDefaultBinding>),
+AsyncFunctionBody(Box<concrete::AsyncFunctionBody>),
+UniqueFormalParameters(Box<concrete::UniqueFormalParameters>),
+MetaProperty(Box<concrete::MetaProperty>),
+BindingList(Box<concrete::BindingList>),
+FunctionRestParameter(Box<concrete::FunctionRestParameter>),
+VariableDeclarationList(Box<concrete::VariableDeclarationList>),
+ClassElement(Box<concrete::ClassElement>),
+ForLexicalDeclaration(Box<concrete::ForLexicalDeclaration>),
+Catch(Box<concrete::Catch>),
+ModuleSpecifier(Box<concrete::ModuleSpecifier>),
+AsyncArrowBindingIdentifier(Box<concrete::AsyncArrowBindingIdentifier>),
+SpreadElement(Box<concrete::SpreadElement>),
+ObjectAssignmentPattern(Box<concrete::ObjectAssignmentPattern>),
+FunctionBody(Box<concrete::FunctionBody>),
+CallMemberExpression(Box<concrete::CallMemberExpression>),
+ArrowFunction(Box<concrete::ArrowFunction>),
+CaseClauses(Box<concrete::CaseClauses>),
+ClassBody(Box<concrete::ClassBody>),
+ModuleItemList(Box<concrete::ModuleItemList>),
+Module(Box<concrete::Module>),
+FormalParameters(Box<concrete::FormalParameters>),
+ExportsList(Box<concrete::ExportsList>),
+AssignmentElisionElement(Box<concrete::AssignmentElisionElement>),
+BindingIdentifier(Box<concrete::BindingIdentifier>),
+BindingElisionElement(Box<concrete::BindingElisionElement>),
+LexicalBinding(Box<concrete::LexicalBinding>),
+ModuleBody(Box<concrete::ModuleBody>),
+AssignmentRestElement(Box<concrete::AssignmentRestElement>),
+ExportClause(Box<concrete::ExportClause>),
+CatchParameter(Box<concrete::CatchParameter>),
+TemplateMiddleList(Box<concrete::TemplateMiddleList>),
+AssignmentElement(Box<concrete::AssignmentElement>),
+SingleNameBinding(Box<concrete::SingleNameBinding>),
+Script(Box<concrete::Script>),
+Token(Token),
+CoverInitializedName(Box<concrete::CoverInitializedName>),
+VariableDeclaration(Box<concrete::VariableDeclaration>),
+ClassTail(Box<concrete::ClassTail>),
+AsyncArrowFunction(Box<concrete::AsyncArrowFunction>),
+FunctionStatementList(Box<concrete::FunctionStatementList>),
+NameSpaceImport(Box<concrete::NameSpaceImport>),
+ModuleItem(Box<concrete::ModuleItem>),
+AssignmentElementList(Box<concrete::AssignmentElementList>),
+Initializer(Box<concrete::Initializer>),
+ArgumentList(Box<concrete::ArgumentList>),
+DefaultClause(Box<concrete::DefaultClause>),
+FormalParameterList(Box<concrete::FormalParameterList>),
+Arguments(Box<concrete::Arguments>),
+ImportClause(Box<concrete::ImportClause>),
+BindingPattern(Box<concrete::BindingPattern>),
+SuperCall(Box<concrete::SuperCall>),
+LiteralPropertyName(Box<concrete::LiteralPropertyName>),
+BindingProperty(Box<concrete::BindingProperty>),
+AssignmentProperty(Box<concrete::AssignmentProperty>),
+AssignmentPattern(Box<concrete::AssignmentPattern>),
+ConciseBody(Box<concrete::ConciseBody>),
+ClassElementList(Box<concrete::ClassElementList>),
+CoverCallExpressionAndAsyncArrowHead(Box<concrete::CoverCallExpressionAndAsyncArrowHead>),
+IdentifierReference(Box<concrete::IdentifierReference>),
+CoverParenthesizedExpressionAndArrowParameterList(Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>),
+LabelIdentifier(Box<concrete::LabelIdentifier>),
+DestructuringAssignmentTarget(Box<concrete::DestructuringAssignmentTarget>),
+TemplateLiteral(Box<concrete::TemplateLiteral>),
+BindingRestProperty(Box<concrete::BindingRestProperty>),
+}
+
+impl StackValue {
+    fn unwrap_export_specifier(self) -> Box<concrete::ExportSpecifier> {
+        match self {
+            StackValue::ExportSpecifier(v) => v,
+            _ => panic!("StackValue expected ExportSpecifier, got {:?}", self)
+        }
+    }
+    fn unwrap_async_concise_body(self) -> Box<concrete::AsyncConciseBody> {
+        match self {
+            StackValue::AsyncConciseBody(v) => v,
+            _ => panic!("StackValue expected AsyncConciseBody, got {:?}", self)
+        }
+    }
+    fn unwrap_computed_property_name(self) -> Box<concrete::ComputedPropertyName> {
+        match self {
+            StackValue::ComputedPropertyName(v) => v,
+            _ => panic!("StackValue expected ComputedPropertyName, got {:?}", self)
+        }
+    }
+    fn unwrap_statement_list(self) -> Box<concrete::StatementList> {
+        match self {
+            StackValue::StatementList(v) => v,
+            _ => panic!("StackValue expected StatementList, got {:?}", self)
+        }
+    }
+    fn unwrap_for_declaration(self) -> Box<concrete::ForDeclaration> {
+        match self {
+            StackValue::ForDeclaration(v) => v,
+            _ => panic!("StackValue expected ForDeclaration, got {:?}", self)
+        }
+    }
+    fn unwrap_substitution_template(self) -> Box<concrete::SubstitutionTemplate> {
+        match self {
+            StackValue::SubstitutionTemplate(v) => v,
+            _ => panic!("StackValue expected SubstitutionTemplate, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_property_list(self) -> Box<concrete::AssignmentPropertyList> {
+        match self {
+            StackValue::AssignmentPropertyList(v) => v,
+            _ => panic!("StackValue expected AssignmentPropertyList, got {:?}", self)
+        }
+    }
+    fn unwrap_formal_parameter(self) -> Box<concrete::FormalParameter> {
+        match self {
+            StackValue::FormalParameter(v) => v,
+            _ => panic!("StackValue expected FormalParameter, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_rest_element(self) -> Box<concrete::BindingRestElement> {
+        match self {
+            StackValue::BindingRestElement(v) => v,
+            _ => panic!("StackValue expected BindingRestElement, got {:?}", self)
+        }
+    }
+    fn unwrap_arrow_parameters(self) -> Box<concrete::ArrowParameters> {
+        match self {
+            StackValue::ArrowParameters(v) => v,
+            _ => panic!("StackValue expected ArrowParameters, got {:?}", self)
+        }
+    }
+    fn unwrap_element_list(self) -> Box<concrete::ElementList> {
+        match self {
+            StackValue::ElementList(v) => v,
+            _ => panic!("StackValue expected ElementList, got {:?}", self)
+        }
+    }
+    fn unwrap_property_definition(self) -> Box<concrete::PropertyDefinition> {
+        match self {
+            StackValue::PropertyDefinition(v) => v,
+            _ => panic!("StackValue expected PropertyDefinition, got {:?}", self)
+        }
+    }
+    fn unwrap_case_clause(self) -> Box<concrete::CaseClause> {
+        match self {
+            StackValue::CaseClause(v) => v,
+            _ => panic!("StackValue expected CaseClause, got {:?}", self)
+        }
+    }
+    fn unwrap_let_or_const(self) -> Box<concrete::LetOrConst> {
+        match self {
+            StackValue::LetOrConst(v) => v,
+            _ => panic!("StackValue expected LetOrConst, got {:?}", self)
+        }
+    }
+    fn unwrap_multiplicative_operator(self) -> Box<concrete::MultiplicativeOperator> {
+        match self {
+            StackValue::MultiplicativeOperator(v) => v,
+            _ => panic!("StackValue expected MultiplicativeOperator, got {:?}", self)
+        }
+    }
+    fn unwrap_imported_binding(self) -> Box<concrete::ImportedBinding> {
+        match self {
+            StackValue::ImportedBinding(v) => v,
+            _ => panic!("StackValue expected ImportedBinding, got {:?}", self)
+        }
+    }
+    fn unwrap_script_body(self) -> Box<concrete::ScriptBody> {
+        match self {
+            StackValue::ScriptBody(v) => v,
+            _ => panic!("StackValue expected ScriptBody, got {:?}", self)
+        }
+    }
+    fn unwrap_array_binding_pattern(self) -> Box<concrete::ArrayBindingPattern> {
+        match self {
+            StackValue::ArrayBindingPattern(v) => v,
+            _ => panic!("StackValue expected ArrayBindingPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_block(self) -> Box<concrete::Block> {
+        match self {
+            StackValue::Block(v) => v,
+            _ => panic!("StackValue expected Block, got {:?}", self)
+        }
+    }
+    fn unwrap_expression(self) -> Box<concrete::Expression> {
+        match self {
+            StackValue::Expression(v) => v,
+            _ => panic!("StackValue expected Expression, got {:?}", self)
+        }
+    }
+    fn unwrap_property_set_parameter_list(self) -> Box<concrete::PropertySetParameterList> {
+        match self {
+            StackValue::PropertySetParameterList(v) => v,
+            _ => panic!("StackValue expected PropertySetParameterList, got {:?}", self)
+        }
+    }
+    fn unwrap_imports_list(self) -> Box<concrete::ImportsList> {
+        match self {
+            StackValue::ImportsList(v) => v,
+            _ => panic!("StackValue expected ImportsList, got {:?}", self)
+        }
+    }
+    fn unwrap_labelled_item(self) -> Box<concrete::LabelledItem> {
+        match self {
+            StackValue::LabelledItem(v) => v,
+            _ => panic!("StackValue expected LabelledItem, got {:?}", self)
+        }
+    }
+    fn unwrap_parenthesized_expression(self) -> Box<concrete::ParenthesizedExpression> {
+        match self {
+            StackValue::ParenthesizedExpression(v) => v,
+            _ => panic!("StackValue expected ParenthesizedExpression, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_property_list(self) -> Box<concrete::BindingPropertyList> {
+        match self {
+            StackValue::BindingPropertyList(v) => v,
+            _ => panic!("StackValue expected BindingPropertyList, got {:?}", self)
+        }
+    }
+    fn unwrap_import_specifier(self) -> Box<concrete::ImportSpecifier> {
+        match self {
+            StackValue::ImportSpecifier(v) => v,
+            _ => panic!("StackValue expected ImportSpecifier, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_operator(self) -> Box<concrete::AssignmentOperator> {
+        match self {
+            StackValue::AssignmentOperator(v) => v,
+            _ => panic!("StackValue expected AssignmentOperator, got {:?}", self)
+        }
+    }
+    fn unwrap_elision(self) -> Box<concrete::Elision> {
+        match self {
+            StackValue::Elision(v) => v,
+            _ => panic!("StackValue expected Elision, got {:?}", self)
+        }
+    }
+    fn unwrap_async_generator_body(self) -> Box<concrete::AsyncGeneratorBody> {
+        match self {
+            StackValue::AsyncGeneratorBody(v) => v,
+            _ => panic!("StackValue expected AsyncGeneratorBody, got {:?}", self)
+        }
+    }
+    fn unwrap_method_definition(self) -> Box<concrete::MethodDefinition> {
+        match self {
+            StackValue::MethodDefinition(v) => v,
+            _ => panic!("StackValue expected MethodDefinition, got {:?}", self)
+        }
+    }
+    fn unwrap_async_arrow_head(self) -> Box<concrete::AsyncArrowHead> {
+        match self {
+            StackValue::AsyncArrowHead(v) => v,
+            _ => panic!("StackValue expected AsyncArrowHead, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_rest_property(self) -> Box<concrete::AssignmentRestProperty> {
+        match self {
+            StackValue::AssignmentRestProperty(v) => v,
+            _ => panic!("StackValue expected AssignmentRestProperty, got {:?}", self)
+        }
+    }
+    fn unwrap_property_name(self) -> Box<concrete::PropertyName> {
+        match self {
+            StackValue::PropertyName(v) => v,
+            _ => panic!("StackValue expected PropertyName, got {:?}", self)
+        }
+    }
+    fn unwrap_template_spans(self) -> Box<concrete::TemplateSpans> {
+        match self {
+            StackValue::TemplateSpans(v) => v,
+            _ => panic!("StackValue expected TemplateSpans, got {:?}", self)
+        }
+    }
+    fn unwrap_class_heritage(self) -> Box<concrete::ClassHeritage> {
+        match self {
+            StackValue::ClassHeritage(v) => v,
+            _ => panic!("StackValue expected ClassHeritage, got {:?}", self)
+        }
+    }
+    fn unwrap_new_target(self) -> Box<concrete::NewTarget> {
+        match self {
+            StackValue::NewTarget(v) => v,
+            _ => panic!("StackValue expected NewTarget, got {:?}", self)
+        }
+    }
+    fn unwrap_super_property(self) -> Box<concrete::SuperProperty> {
+        match self {
+            StackValue::SuperProperty(v) => v,
+            _ => panic!("StackValue expected SuperProperty, got {:?}", self)
+        }
+    }
+    fn unwrap_property_definition_list(self) -> Box<concrete::PropertyDefinitionList> {
+        match self {
+            StackValue::PropertyDefinitionList(v) => v,
+            _ => panic!("StackValue expected PropertyDefinitionList, got {:?}", self)
+        }
+    }
+    fn unwrap_case_block(self) -> Box<concrete::CaseBlock> {
+        match self {
+            StackValue::CaseBlock(v) => v,
+            _ => panic!("StackValue expected CaseBlock, got {:?}", self)
+        }
+    }
+    fn unwrap_arrow_formal_parameters(self) -> Box<concrete::ArrowFormalParameters> {
+        match self {
+            StackValue::ArrowFormalParameters(v) => v,
+            _ => panic!("StackValue expected ArrowFormalParameters, got {:?}", self)
+        }
+    }
+    fn unwrap_array_assignment_pattern(self) -> Box<concrete::ArrayAssignmentPattern> {
+        match self {
+            StackValue::ArrayAssignmentPattern(v) => v,
+            _ => panic!("StackValue expected ArrayAssignmentPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_element_list(self) -> Box<concrete::BindingElementList> {
+        match self {
+            StackValue::BindingElementList(v) => v,
+            _ => panic!("StackValue expected BindingElementList, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_element(self) -> Box<concrete::BindingElement> {
+        match self {
+            StackValue::BindingElement(v) => v,
+            _ => panic!("StackValue expected BindingElement, got {:?}", self)
+        }
+    }
+    fn unwrap_from_clause(self) -> Box<concrete::FromClause> {
+        match self {
+            StackValue::FromClause(v) => v,
+            _ => panic!("StackValue expected FromClause, got {:?}", self)
+        }
+    }
+    fn unwrap_for_binding(self) -> Box<concrete::ForBinding> {
+        match self {
+            StackValue::ForBinding(v) => v,
+            _ => panic!("StackValue expected ForBinding, got {:?}", self)
+        }
+    }
+    fn unwrap_object_binding_pattern(self) -> Box<concrete::ObjectBindingPattern> {
+        match self {
+            StackValue::ObjectBindingPattern(v) => v,
+            _ => panic!("StackValue expected ObjectBindingPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_generator_body(self) -> Box<concrete::GeneratorBody> {
+        match self {
+            StackValue::GeneratorBody(v) => v,
+            _ => panic!("StackValue expected GeneratorBody, got {:?}", self)
+        }
+    }
+    fn unwrap_named_imports(self) -> Box<concrete::NamedImports> {
+        match self {
+            StackValue::NamedImports(v) => v,
+            _ => panic!("StackValue expected NamedImports, got {:?}", self)
+        }
+    }
+    fn unwrap_finally(self) -> Box<concrete::Finally> {
+        match self {
+            StackValue::Finally(v) => v,
+            _ => panic!("StackValue expected Finally, got {:?}", self)
+        }
+    }
+    fn unwrap_imported_default_binding(self) -> Box<concrete::ImportedDefaultBinding> {
+        match self {
+            StackValue::ImportedDefaultBinding(v) => v,
+            _ => panic!("StackValue expected ImportedDefaultBinding, got {:?}", self)
+        }
+    }
+    fn unwrap_async_function_body(self) -> Box<concrete::AsyncFunctionBody> {
+        match self {
+            StackValue::AsyncFunctionBody(v) => v,
+            _ => panic!("StackValue expected AsyncFunctionBody, got {:?}", self)
+        }
+    }
+    fn unwrap_unique_formal_parameters(self) -> Box<concrete::UniqueFormalParameters> {
+        match self {
+            StackValue::UniqueFormalParameters(v) => v,
+            _ => panic!("StackValue expected UniqueFormalParameters, got {:?}", self)
+        }
+    }
+    fn unwrap_meta_property(self) -> Box<concrete::MetaProperty> {
+        match self {
+            StackValue::MetaProperty(v) => v,
+            _ => panic!("StackValue expected MetaProperty, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_list(self) -> Box<concrete::BindingList> {
+        match self {
+            StackValue::BindingList(v) => v,
+            _ => panic!("StackValue expected BindingList, got {:?}", self)
+        }
+    }
+    fn unwrap_function_rest_parameter(self) -> Box<concrete::FunctionRestParameter> {
+        match self {
+            StackValue::FunctionRestParameter(v) => v,
+            _ => panic!("StackValue expected FunctionRestParameter, got {:?}", self)
+        }
+    }
+    fn unwrap_variable_declaration_list(self) -> Box<concrete::VariableDeclarationList> {
+        match self {
+            StackValue::VariableDeclarationList(v) => v,
+            _ => panic!("StackValue expected VariableDeclarationList, got {:?}", self)
+        }
+    }
+    fn unwrap_class_element(self) -> Box<concrete::ClassElement> {
+        match self {
+            StackValue::ClassElement(v) => v,
+            _ => panic!("StackValue expected ClassElement, got {:?}", self)
+        }
+    }
+    fn unwrap_for_lexical_declaration(self) -> Box<concrete::ForLexicalDeclaration> {
+        match self {
+            StackValue::ForLexicalDeclaration(v) => v,
+            _ => panic!("StackValue expected ForLexicalDeclaration, got {:?}", self)
+        }
+    }
+    fn unwrap_catch(self) -> Box<concrete::Catch> {
+        match self {
+            StackValue::Catch(v) => v,
+            _ => panic!("StackValue expected Catch, got {:?}", self)
+        }
+    }
+    fn unwrap_module_specifier(self) -> Box<concrete::ModuleSpecifier> {
+        match self {
+            StackValue::ModuleSpecifier(v) => v,
+            _ => panic!("StackValue expected ModuleSpecifier, got {:?}", self)
+        }
+    }
+    fn unwrap_async_arrow_binding_identifier(self) -> Box<concrete::AsyncArrowBindingIdentifier> {
+        match self {
+            StackValue::AsyncArrowBindingIdentifier(v) => v,
+            _ => panic!("StackValue expected AsyncArrowBindingIdentifier, got {:?}", self)
+        }
+    }
+    fn unwrap_spread_element(self) -> Box<concrete::SpreadElement> {
+        match self {
+            StackValue::SpreadElement(v) => v,
+            _ => panic!("StackValue expected SpreadElement, got {:?}", self)
+        }
+    }
+    fn unwrap_object_assignment_pattern(self) -> Box<concrete::ObjectAssignmentPattern> {
+        match self {
+            StackValue::ObjectAssignmentPattern(v) => v,
+            _ => panic!("StackValue expected ObjectAssignmentPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_function_body(self) -> Box<concrete::FunctionBody> {
+        match self {
+            StackValue::FunctionBody(v) => v,
+            _ => panic!("StackValue expected FunctionBody, got {:?}", self)
+        }
+    }
+    fn unwrap_call_member_expression(self) -> Box<concrete::CallMemberExpression> {
+        match self {
+            StackValue::CallMemberExpression(v) => v,
+            _ => panic!("StackValue expected CallMemberExpression, got {:?}", self)
+        }
+    }
+    fn unwrap_arrow_function(self) -> Box<concrete::ArrowFunction> {
+        match self {
+            StackValue::ArrowFunction(v) => v,
+            _ => panic!("StackValue expected ArrowFunction, got {:?}", self)
+        }
+    }
+    fn unwrap_case_clauses(self) -> Box<concrete::CaseClauses> {
+        match self {
+            StackValue::CaseClauses(v) => v,
+            _ => panic!("StackValue expected CaseClauses, got {:?}", self)
+        }
+    }
+    fn unwrap_class_body(self) -> Box<concrete::ClassBody> {
+        match self {
+            StackValue::ClassBody(v) => v,
+            _ => panic!("StackValue expected ClassBody, got {:?}", self)
+        }
+    }
+    fn unwrap_module_item_list(self) -> Box<concrete::ModuleItemList> {
+        match self {
+            StackValue::ModuleItemList(v) => v,
+            _ => panic!("StackValue expected ModuleItemList, got {:?}", self)
+        }
+    }
+    fn unwrap_module(self) -> Box<concrete::Module> {
+        match self {
+            StackValue::Module(v) => v,
+            _ => panic!("StackValue expected Module, got {:?}", self)
+        }
+    }
+    fn unwrap_formal_parameters(self) -> Box<concrete::FormalParameters> {
+        match self {
+            StackValue::FormalParameters(v) => v,
+            _ => panic!("StackValue expected FormalParameters, got {:?}", self)
+        }
+    }
+    fn unwrap_exports_list(self) -> Box<concrete::ExportsList> {
+        match self {
+            StackValue::ExportsList(v) => v,
+            _ => panic!("StackValue expected ExportsList, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_elision_element(self) -> Box<concrete::AssignmentElisionElement> {
+        match self {
+            StackValue::AssignmentElisionElement(v) => v,
+            _ => panic!("StackValue expected AssignmentElisionElement, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_identifier(self) -> Box<concrete::BindingIdentifier> {
+        match self {
+            StackValue::BindingIdentifier(v) => v,
+            _ => panic!("StackValue expected BindingIdentifier, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_elision_element(self) -> Box<concrete::BindingElisionElement> {
+        match self {
+            StackValue::BindingElisionElement(v) => v,
+            _ => panic!("StackValue expected BindingElisionElement, got {:?}", self)
+        }
+    }
+    fn unwrap_lexical_binding(self) -> Box<concrete::LexicalBinding> {
+        match self {
+            StackValue::LexicalBinding(v) => v,
+            _ => panic!("StackValue expected LexicalBinding, got {:?}", self)
+        }
+    }
+    fn unwrap_module_body(self) -> Box<concrete::ModuleBody> {
+        match self {
+            StackValue::ModuleBody(v) => v,
+            _ => panic!("StackValue expected ModuleBody, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_rest_element(self) -> Box<concrete::AssignmentRestElement> {
+        match self {
+            StackValue::AssignmentRestElement(v) => v,
+            _ => panic!("StackValue expected AssignmentRestElement, got {:?}", self)
+        }
+    }
+    fn unwrap_export_clause(self) -> Box<concrete::ExportClause> {
+        match self {
+            StackValue::ExportClause(v) => v,
+            _ => panic!("StackValue expected ExportClause, got {:?}", self)
+        }
+    }
+    fn unwrap_catch_parameter(self) -> Box<concrete::CatchParameter> {
+        match self {
+            StackValue::CatchParameter(v) => v,
+            _ => panic!("StackValue expected CatchParameter, got {:?}", self)
+        }
+    }
+    fn unwrap_template_middle_list(self) -> Box<concrete::TemplateMiddleList> {
+        match self {
+            StackValue::TemplateMiddleList(v) => v,
+            _ => panic!("StackValue expected TemplateMiddleList, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_element(self) -> Box<concrete::AssignmentElement> {
+        match self {
+            StackValue::AssignmentElement(v) => v,
+            _ => panic!("StackValue expected AssignmentElement, got {:?}", self)
+        }
+    }
+    fn unwrap_single_name_binding(self) -> Box<concrete::SingleNameBinding> {
+        match self {
+            StackValue::SingleNameBinding(v) => v,
+            _ => panic!("StackValue expected SingleNameBinding, got {:?}", self)
+        }
+    }
+    fn unwrap_script(self) -> Box<concrete::Script> {
+        match self {
+            StackValue::Script(v) => v,
+            _ => panic!("StackValue expected Script, got {:?}", self)
+        }
+    }
+    fn unwrap_token(self) -> Token {
+        match self {
+            StackValue::Token(v) => v,
+            _ => panic!("StackValue expected Token, got {:?}", self)
+        }
+    }
+    fn unwrap_cover_initialized_name(self) -> Box<concrete::CoverInitializedName> {
+        match self {
+            StackValue::CoverInitializedName(v) => v,
+            _ => panic!("StackValue expected CoverInitializedName, got {:?}", self)
+        }
+    }
+    fn unwrap_variable_declaration(self) -> Box<concrete::VariableDeclaration> {
+        match self {
+            StackValue::VariableDeclaration(v) => v,
+            _ => panic!("StackValue expected VariableDeclaration, got {:?}", self)
+        }
+    }
+    fn unwrap_class_tail(self) -> Box<concrete::ClassTail> {
+        match self {
+            StackValue::ClassTail(v) => v,
+            _ => panic!("StackValue expected ClassTail, got {:?}", self)
+        }
+    }
+    fn unwrap_async_arrow_function(self) -> Box<concrete::AsyncArrowFunction> {
+        match self {
+            StackValue::AsyncArrowFunction(v) => v,
+            _ => panic!("StackValue expected AsyncArrowFunction, got {:?}", self)
+        }
+    }
+    fn unwrap_function_statement_list(self) -> Box<concrete::FunctionStatementList> {
+        match self {
+            StackValue::FunctionStatementList(v) => v,
+            _ => panic!("StackValue expected FunctionStatementList, got {:?}", self)
+        }
+    }
+    fn unwrap_name_space_import(self) -> Box<concrete::NameSpaceImport> {
+        match self {
+            StackValue::NameSpaceImport(v) => v,
+            _ => panic!("StackValue expected NameSpaceImport, got {:?}", self)
+        }
+    }
+    fn unwrap_module_item(self) -> Box<concrete::ModuleItem> {
+        match self {
+            StackValue::ModuleItem(v) => v,
+            _ => panic!("StackValue expected ModuleItem, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_element_list(self) -> Box<concrete::AssignmentElementList> {
+        match self {
+            StackValue::AssignmentElementList(v) => v,
+            _ => panic!("StackValue expected AssignmentElementList, got {:?}", self)
+        }
+    }
+    fn unwrap_initializer(self) -> Box<concrete::Initializer> {
+        match self {
+            StackValue::Initializer(v) => v,
+            _ => panic!("StackValue expected Initializer, got {:?}", self)
+        }
+    }
+    fn unwrap_argument_list(self) -> Box<concrete::ArgumentList> {
+        match self {
+            StackValue::ArgumentList(v) => v,
+            _ => panic!("StackValue expected ArgumentList, got {:?}", self)
+        }
+    }
+    fn unwrap_default_clause(self) -> Box<concrete::DefaultClause> {
+        match self {
+            StackValue::DefaultClause(v) => v,
+            _ => panic!("StackValue expected DefaultClause, got {:?}", self)
+        }
+    }
+    fn unwrap_formal_parameter_list(self) -> Box<concrete::FormalParameterList> {
+        match self {
+            StackValue::FormalParameterList(v) => v,
+            _ => panic!("StackValue expected FormalParameterList, got {:?}", self)
+        }
+    }
+    fn unwrap_arguments(self) -> Box<concrete::Arguments> {
+        match self {
+            StackValue::Arguments(v) => v,
+            _ => panic!("StackValue expected Arguments, got {:?}", self)
+        }
+    }
+    fn unwrap_import_clause(self) -> Box<concrete::ImportClause> {
+        match self {
+            StackValue::ImportClause(v) => v,
+            _ => panic!("StackValue expected ImportClause, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_pattern(self) -> Box<concrete::BindingPattern> {
+        match self {
+            StackValue::BindingPattern(v) => v,
+            _ => panic!("StackValue expected BindingPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_super_call(self) -> Box<concrete::SuperCall> {
+        match self {
+            StackValue::SuperCall(v) => v,
+            _ => panic!("StackValue expected SuperCall, got {:?}", self)
+        }
+    }
+    fn unwrap_literal_property_name(self) -> Box<concrete::LiteralPropertyName> {
+        match self {
+            StackValue::LiteralPropertyName(v) => v,
+            _ => panic!("StackValue expected LiteralPropertyName, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_property(self) -> Box<concrete::BindingProperty> {
+        match self {
+            StackValue::BindingProperty(v) => v,
+            _ => panic!("StackValue expected BindingProperty, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_property(self) -> Box<concrete::AssignmentProperty> {
+        match self {
+            StackValue::AssignmentProperty(v) => v,
+            _ => panic!("StackValue expected AssignmentProperty, got {:?}", self)
+        }
+    }
+    fn unwrap_assignment_pattern(self) -> Box<concrete::AssignmentPattern> {
+        match self {
+            StackValue::AssignmentPattern(v) => v,
+            _ => panic!("StackValue expected AssignmentPattern, got {:?}", self)
+        }
+    }
+    fn unwrap_concise_body(self) -> Box<concrete::ConciseBody> {
+        match self {
+            StackValue::ConciseBody(v) => v,
+            _ => panic!("StackValue expected ConciseBody, got {:?}", self)
+        }
+    }
+    fn unwrap_class_element_list(self) -> Box<concrete::ClassElementList> {
+        match self {
+            StackValue::ClassElementList(v) => v,
+            _ => panic!("StackValue expected ClassElementList, got {:?}", self)
+        }
+    }
+    fn unwrap_cover_call_expression_and_async_arrow_head(self) -> Box<concrete::CoverCallExpressionAndAsyncArrowHead> {
+        match self {
+            StackValue::CoverCallExpressionAndAsyncArrowHead(v) => v,
+            _ => panic!("StackValue expected CoverCallExpressionAndAsyncArrowHead, got {:?}", self)
+        }
+    }
+    fn unwrap_identifier_reference(self) -> Box<concrete::IdentifierReference> {
+        match self {
+            StackValue::IdentifierReference(v) => v,
+            _ => panic!("StackValue expected IdentifierReference, got {:?}", self)
+        }
+    }
+    fn unwrap_cover_parenthesized_expression_and_arrow_parameter_list(self) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
+        match self {
+            StackValue::CoverParenthesizedExpressionAndArrowParameterList(v) => v,
+            _ => panic!("StackValue expected CoverParenthesizedExpressionAndArrowParameterList, got {:?}", self)
+        }
+    }
+    fn unwrap_label_identifier(self) -> Box<concrete::LabelIdentifier> {
+        match self {
+            StackValue::LabelIdentifier(v) => v,
+            _ => panic!("StackValue expected LabelIdentifier, got {:?}", self)
+        }
+    }
+    fn unwrap_destructuring_assignment_target(self) -> Box<concrete::DestructuringAssignmentTarget> {
+        match self {
+            StackValue::DestructuringAssignmentTarget(v) => v,
+            _ => panic!("StackValue expected DestructuringAssignmentTarget, got {:?}", self)
+        }
+    }
+    fn unwrap_template_literal(self) -> Box<concrete::TemplateLiteral> {
+        match self {
+            StackValue::TemplateLiteral(v) => v,
+            _ => panic!("StackValue expected TemplateLiteral, got {:?}", self)
+        }
+    }
+    fn unwrap_binding_rest_property(self) -> Box<concrete::BindingRestProperty> {
+        match self {
+            StackValue::BindingRestProperty(v) => v,
+            _ => panic!("StackValue expected BindingRestProperty, got {:?}", self)
+        }
+    }
+}
+
+impl From<Box<concrete::ExportSpecifier>> for StackValue {
+    fn from(val: Box<concrete::ExportSpecifier>) -> StackValue {
+        StackValue::ExportSpecifier(val)
+    }
+}
+
+impl From<Box<concrete::AsyncConciseBody>> for StackValue {
+    fn from(val: Box<concrete::AsyncConciseBody>) -> StackValue {
+        StackValue::AsyncConciseBody(val)
+    }
+}
+
+impl From<Box<concrete::ComputedPropertyName>> for StackValue {
+    fn from(val: Box<concrete::ComputedPropertyName>) -> StackValue {
+        StackValue::ComputedPropertyName(val)
+    }
+}
+
+impl From<Box<concrete::StatementList>> for StackValue {
+    fn from(val: Box<concrete::StatementList>) -> StackValue {
+        StackValue::StatementList(val)
+    }
+}
+
+impl From<Box<concrete::ForDeclaration>> for StackValue {
+    fn from(val: Box<concrete::ForDeclaration>) -> StackValue {
+        StackValue::ForDeclaration(val)
+    }
+}
+
+impl From<Box<concrete::SubstitutionTemplate>> for StackValue {
+    fn from(val: Box<concrete::SubstitutionTemplate>) -> StackValue {
+        StackValue::SubstitutionTemplate(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentPropertyList>> for StackValue {
+    fn from(val: Box<concrete::AssignmentPropertyList>) -> StackValue {
+        StackValue::AssignmentPropertyList(val)
+    }
+}
+
+impl From<Box<concrete::FormalParameter>> for StackValue {
+    fn from(val: Box<concrete::FormalParameter>) -> StackValue {
+        StackValue::FormalParameter(val)
+    }
+}
+
+impl From<Box<concrete::BindingRestElement>> for StackValue {
+    fn from(val: Box<concrete::BindingRestElement>) -> StackValue {
+        StackValue::BindingRestElement(val)
+    }
+}
+
+impl From<Box<concrete::ArrowParameters>> for StackValue {
+    fn from(val: Box<concrete::ArrowParameters>) -> StackValue {
+        StackValue::ArrowParameters(val)
+    }
+}
+
+impl From<Box<concrete::ElementList>> for StackValue {
+    fn from(val: Box<concrete::ElementList>) -> StackValue {
+        StackValue::ElementList(val)
+    }
+}
+
+impl From<Box<concrete::PropertyDefinition>> for StackValue {
+    fn from(val: Box<concrete::PropertyDefinition>) -> StackValue {
+        StackValue::PropertyDefinition(val)
+    }
+}
+
+impl From<Box<concrete::CaseClause>> for StackValue {
+    fn from(val: Box<concrete::CaseClause>) -> StackValue {
+        StackValue::CaseClause(val)
+    }
+}
+
+impl From<Box<concrete::LetOrConst>> for StackValue {
+    fn from(val: Box<concrete::LetOrConst>) -> StackValue {
+        StackValue::LetOrConst(val)
+    }
+}
+
+impl From<Box<concrete::MultiplicativeOperator>> for StackValue {
+    fn from(val: Box<concrete::MultiplicativeOperator>) -> StackValue {
+        StackValue::MultiplicativeOperator(val)
+    }
+}
+
+impl From<Box<concrete::ImportedBinding>> for StackValue {
+    fn from(val: Box<concrete::ImportedBinding>) -> StackValue {
+        StackValue::ImportedBinding(val)
+    }
+}
+
+impl From<Box<concrete::ScriptBody>> for StackValue {
+    fn from(val: Box<concrete::ScriptBody>) -> StackValue {
+        StackValue::ScriptBody(val)
+    }
+}
+
+impl From<Box<concrete::ArrayBindingPattern>> for StackValue {
+    fn from(val: Box<concrete::ArrayBindingPattern>) -> StackValue {
+        StackValue::ArrayBindingPattern(val)
+    }
+}
+
+impl From<Box<concrete::Block>> for StackValue {
+    fn from(val: Box<concrete::Block>) -> StackValue {
+        StackValue::Block(val)
+    }
+}
+
+impl From<Box<concrete::Expression>> for StackValue {
+    fn from(val: Box<concrete::Expression>) -> StackValue {
+        StackValue::Expression(val)
+    }
+}
+
+impl From<Box<concrete::PropertySetParameterList>> for StackValue {
+    fn from(val: Box<concrete::PropertySetParameterList>) -> StackValue {
+        StackValue::PropertySetParameterList(val)
+    }
+}
+
+impl From<Box<concrete::ImportsList>> for StackValue {
+    fn from(val: Box<concrete::ImportsList>) -> StackValue {
+        StackValue::ImportsList(val)
+    }
+}
+
+impl From<Box<concrete::LabelledItem>> for StackValue {
+    fn from(val: Box<concrete::LabelledItem>) -> StackValue {
+        StackValue::LabelledItem(val)
+    }
+}
+
+impl From<Box<concrete::ParenthesizedExpression>> for StackValue {
+    fn from(val: Box<concrete::ParenthesizedExpression>) -> StackValue {
+        StackValue::ParenthesizedExpression(val)
+    }
+}
+
+impl From<Box<concrete::BindingPropertyList>> for StackValue {
+    fn from(val: Box<concrete::BindingPropertyList>) -> StackValue {
+        StackValue::BindingPropertyList(val)
+    }
+}
+
+impl From<Box<concrete::ImportSpecifier>> for StackValue {
+    fn from(val: Box<concrete::ImportSpecifier>) -> StackValue {
+        StackValue::ImportSpecifier(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentOperator>> for StackValue {
+    fn from(val: Box<concrete::AssignmentOperator>) -> StackValue {
+        StackValue::AssignmentOperator(val)
+    }
+}
+
+impl From<Box<concrete::Elision>> for StackValue {
+    fn from(val: Box<concrete::Elision>) -> StackValue {
+        StackValue::Elision(val)
+    }
+}
+
+impl From<Box<concrete::AsyncGeneratorBody>> for StackValue {
+    fn from(val: Box<concrete::AsyncGeneratorBody>) -> StackValue {
+        StackValue::AsyncGeneratorBody(val)
+    }
+}
+
+impl From<Box<concrete::MethodDefinition>> for StackValue {
+    fn from(val: Box<concrete::MethodDefinition>) -> StackValue {
+        StackValue::MethodDefinition(val)
+    }
+}
+
+impl From<Box<concrete::AsyncArrowHead>> for StackValue {
+    fn from(val: Box<concrete::AsyncArrowHead>) -> StackValue {
+        StackValue::AsyncArrowHead(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentRestProperty>> for StackValue {
+    fn from(val: Box<concrete::AssignmentRestProperty>) -> StackValue {
+        StackValue::AssignmentRestProperty(val)
+    }
+}
+
+impl From<Box<concrete::PropertyName>> for StackValue {
+    fn from(val: Box<concrete::PropertyName>) -> StackValue {
+        StackValue::PropertyName(val)
+    }
+}
+
+impl From<Box<concrete::TemplateSpans>> for StackValue {
+    fn from(val: Box<concrete::TemplateSpans>) -> StackValue {
+        StackValue::TemplateSpans(val)
+    }
+}
+
+impl From<Box<concrete::ClassHeritage>> for StackValue {
+    fn from(val: Box<concrete::ClassHeritage>) -> StackValue {
+        StackValue::ClassHeritage(val)
+    }
+}
+
+impl From<Box<concrete::NewTarget>> for StackValue {
+    fn from(val: Box<concrete::NewTarget>) -> StackValue {
+        StackValue::NewTarget(val)
+    }
+}
+
+impl From<Box<concrete::SuperProperty>> for StackValue {
+    fn from(val: Box<concrete::SuperProperty>) -> StackValue {
+        StackValue::SuperProperty(val)
+    }
+}
+
+impl From<Box<concrete::PropertyDefinitionList>> for StackValue {
+    fn from(val: Box<concrete::PropertyDefinitionList>) -> StackValue {
+        StackValue::PropertyDefinitionList(val)
+    }
+}
+
+impl From<Box<concrete::CaseBlock>> for StackValue {
+    fn from(val: Box<concrete::CaseBlock>) -> StackValue {
+        StackValue::CaseBlock(val)
+    }
+}
+
+impl From<Box<concrete::ArrowFormalParameters>> for StackValue {
+    fn from(val: Box<concrete::ArrowFormalParameters>) -> StackValue {
+        StackValue::ArrowFormalParameters(val)
+    }
+}
+
+impl From<Box<concrete::ArrayAssignmentPattern>> for StackValue {
+    fn from(val: Box<concrete::ArrayAssignmentPattern>) -> StackValue {
+        StackValue::ArrayAssignmentPattern(val)
+    }
+}
+
+impl From<Box<concrete::BindingElementList>> for StackValue {
+    fn from(val: Box<concrete::BindingElementList>) -> StackValue {
+        StackValue::BindingElementList(val)
+    }
+}
+
+impl From<Box<concrete::BindingElement>> for StackValue {
+    fn from(val: Box<concrete::BindingElement>) -> StackValue {
+        StackValue::BindingElement(val)
+    }
+}
+
+impl From<Box<concrete::FromClause>> for StackValue {
+    fn from(val: Box<concrete::FromClause>) -> StackValue {
+        StackValue::FromClause(val)
+    }
+}
+
+impl From<Box<concrete::ForBinding>> for StackValue {
+    fn from(val: Box<concrete::ForBinding>) -> StackValue {
+        StackValue::ForBinding(val)
+    }
+}
+
+impl From<Box<concrete::ObjectBindingPattern>> for StackValue {
+    fn from(val: Box<concrete::ObjectBindingPattern>) -> StackValue {
+        StackValue::ObjectBindingPattern(val)
+    }
+}
+
+impl From<Box<concrete::GeneratorBody>> for StackValue {
+    fn from(val: Box<concrete::GeneratorBody>) -> StackValue {
+        StackValue::GeneratorBody(val)
+    }
+}
+
+impl From<Box<concrete::NamedImports>> for StackValue {
+    fn from(val: Box<concrete::NamedImports>) -> StackValue {
+        StackValue::NamedImports(val)
+    }
+}
+
+impl From<Box<concrete::Finally>> for StackValue {
+    fn from(val: Box<concrete::Finally>) -> StackValue {
+        StackValue::Finally(val)
+    }
+}
+
+impl From<Box<concrete::ImportedDefaultBinding>> for StackValue {
+    fn from(val: Box<concrete::ImportedDefaultBinding>) -> StackValue {
+        StackValue::ImportedDefaultBinding(val)
+    }
+}
+
+impl From<Box<concrete::AsyncFunctionBody>> for StackValue {
+    fn from(val: Box<concrete::AsyncFunctionBody>) -> StackValue {
+        StackValue::AsyncFunctionBody(val)
+    }
+}
+
+impl From<Box<concrete::UniqueFormalParameters>> for StackValue {
+    fn from(val: Box<concrete::UniqueFormalParameters>) -> StackValue {
+        StackValue::UniqueFormalParameters(val)
+    }
+}
+
+impl From<Box<concrete::MetaProperty>> for StackValue {
+    fn from(val: Box<concrete::MetaProperty>) -> StackValue {
+        StackValue::MetaProperty(val)
+    }
+}
+
+impl From<Box<concrete::BindingList>> for StackValue {
+    fn from(val: Box<concrete::BindingList>) -> StackValue {
+        StackValue::BindingList(val)
+    }
+}
+
+impl From<Box<concrete::FunctionRestParameter>> for StackValue {
+    fn from(val: Box<concrete::FunctionRestParameter>) -> StackValue {
+        StackValue::FunctionRestParameter(val)
+    }
+}
+
+impl From<Box<concrete::VariableDeclarationList>> for StackValue {
+    fn from(val: Box<concrete::VariableDeclarationList>) -> StackValue {
+        StackValue::VariableDeclarationList(val)
+    }
+}
+
+impl From<Box<concrete::ClassElement>> for StackValue {
+    fn from(val: Box<concrete::ClassElement>) -> StackValue {
+        StackValue::ClassElement(val)
+    }
+}
+
+impl From<Box<concrete::ForLexicalDeclaration>> for StackValue {
+    fn from(val: Box<concrete::ForLexicalDeclaration>) -> StackValue {
+        StackValue::ForLexicalDeclaration(val)
+    }
+}
+
+impl From<Box<concrete::Catch>> for StackValue {
+    fn from(val: Box<concrete::Catch>) -> StackValue {
+        StackValue::Catch(val)
+    }
+}
+
+impl From<Box<concrete::ModuleSpecifier>> for StackValue {
+    fn from(val: Box<concrete::ModuleSpecifier>) -> StackValue {
+        StackValue::ModuleSpecifier(val)
+    }
+}
+
+impl From<Box<concrete::AsyncArrowBindingIdentifier>> for StackValue {
+    fn from(val: Box<concrete::AsyncArrowBindingIdentifier>) -> StackValue {
+        StackValue::AsyncArrowBindingIdentifier(val)
+    }
+}
+
+impl From<Box<concrete::SpreadElement>> for StackValue {
+    fn from(val: Box<concrete::SpreadElement>) -> StackValue {
+        StackValue::SpreadElement(val)
+    }
+}
+
+impl From<Box<concrete::ObjectAssignmentPattern>> for StackValue {
+    fn from(val: Box<concrete::ObjectAssignmentPattern>) -> StackValue {
+        StackValue::ObjectAssignmentPattern(val)
+    }
+}
+
+impl From<Box<concrete::FunctionBody>> for StackValue {
+    fn from(val: Box<concrete::FunctionBody>) -> StackValue {
+        StackValue::FunctionBody(val)
+    }
+}
+
+impl From<Box<concrete::CallMemberExpression>> for StackValue {
+    fn from(val: Box<concrete::CallMemberExpression>) -> StackValue {
+        StackValue::CallMemberExpression(val)
+    }
+}
+
+impl From<Box<concrete::ArrowFunction>> for StackValue {
+    fn from(val: Box<concrete::ArrowFunction>) -> StackValue {
+        StackValue::ArrowFunction(val)
+    }
+}
+
+impl From<Box<concrete::CaseClauses>> for StackValue {
+    fn from(val: Box<concrete::CaseClauses>) -> StackValue {
+        StackValue::CaseClauses(val)
+    }
+}
+
+impl From<Box<concrete::ClassBody>> for StackValue {
+    fn from(val: Box<concrete::ClassBody>) -> StackValue {
+        StackValue::ClassBody(val)
+    }
+}
+
+impl From<Box<concrete::ModuleItemList>> for StackValue {
+    fn from(val: Box<concrete::ModuleItemList>) -> StackValue {
+        StackValue::ModuleItemList(val)
+    }
+}
+
+impl From<Box<concrete::Module>> for StackValue {
+    fn from(val: Box<concrete::Module>) -> StackValue {
+        StackValue::Module(val)
+    }
+}
+
+impl From<Box<concrete::FormalParameters>> for StackValue {
+    fn from(val: Box<concrete::FormalParameters>) -> StackValue {
+        StackValue::FormalParameters(val)
+    }
+}
+
+impl From<Box<concrete::ExportsList>> for StackValue {
+    fn from(val: Box<concrete::ExportsList>) -> StackValue {
+        StackValue::ExportsList(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentElisionElement>> for StackValue {
+    fn from(val: Box<concrete::AssignmentElisionElement>) -> StackValue {
+        StackValue::AssignmentElisionElement(val)
+    }
+}
+
+impl From<Box<concrete::BindingIdentifier>> for StackValue {
+    fn from(val: Box<concrete::BindingIdentifier>) -> StackValue {
+        StackValue::BindingIdentifier(val)
+    }
+}
+
+impl From<Box<concrete::BindingElisionElement>> for StackValue {
+    fn from(val: Box<concrete::BindingElisionElement>) -> StackValue {
+        StackValue::BindingElisionElement(val)
+    }
+}
+
+impl From<Box<concrete::LexicalBinding>> for StackValue {
+    fn from(val: Box<concrete::LexicalBinding>) -> StackValue {
+        StackValue::LexicalBinding(val)
+    }
+}
+
+impl From<Box<concrete::ModuleBody>> for StackValue {
+    fn from(val: Box<concrete::ModuleBody>) -> StackValue {
+        StackValue::ModuleBody(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentRestElement>> for StackValue {
+    fn from(val: Box<concrete::AssignmentRestElement>) -> StackValue {
+        StackValue::AssignmentRestElement(val)
+    }
+}
+
+impl From<Box<concrete::ExportClause>> for StackValue {
+    fn from(val: Box<concrete::ExportClause>) -> StackValue {
+        StackValue::ExportClause(val)
+    }
+}
+
+impl From<Box<concrete::CatchParameter>> for StackValue {
+    fn from(val: Box<concrete::CatchParameter>) -> StackValue {
+        StackValue::CatchParameter(val)
+    }
+}
+
+impl From<Box<concrete::TemplateMiddleList>> for StackValue {
+    fn from(val: Box<concrete::TemplateMiddleList>) -> StackValue {
+        StackValue::TemplateMiddleList(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentElement>> for StackValue {
+    fn from(val: Box<concrete::AssignmentElement>) -> StackValue {
+        StackValue::AssignmentElement(val)
+    }
+}
+
+impl From<Box<concrete::SingleNameBinding>> for StackValue {
+    fn from(val: Box<concrete::SingleNameBinding>) -> StackValue {
+        StackValue::SingleNameBinding(val)
+    }
+}
+
+impl From<Box<concrete::Script>> for StackValue {
+    fn from(val: Box<concrete::Script>) -> StackValue {
+        StackValue::Script(val)
+    }
+}
+
+impl From<Token> for StackValue {
+    fn from(val: Token) -> StackValue {
+        StackValue::Token(val)
+    }
+}
+
+impl From<Box<concrete::CoverInitializedName>> for StackValue {
+    fn from(val: Box<concrete::CoverInitializedName>) -> StackValue {
+        StackValue::CoverInitializedName(val)
+    }
+}
+
+impl From<Box<concrete::VariableDeclaration>> for StackValue {
+    fn from(val: Box<concrete::VariableDeclaration>) -> StackValue {
+        StackValue::VariableDeclaration(val)
+    }
+}
+
+impl From<Box<concrete::ClassTail>> for StackValue {
+    fn from(val: Box<concrete::ClassTail>) -> StackValue {
+        StackValue::ClassTail(val)
+    }
+}
+
+impl From<Box<concrete::AsyncArrowFunction>> for StackValue {
+    fn from(val: Box<concrete::AsyncArrowFunction>) -> StackValue {
+        StackValue::AsyncArrowFunction(val)
+    }
+}
+
+impl From<Box<concrete::FunctionStatementList>> for StackValue {
+    fn from(val: Box<concrete::FunctionStatementList>) -> StackValue {
+        StackValue::FunctionStatementList(val)
+    }
+}
+
+impl From<Box<concrete::NameSpaceImport>> for StackValue {
+    fn from(val: Box<concrete::NameSpaceImport>) -> StackValue {
+        StackValue::NameSpaceImport(val)
+    }
+}
+
+impl From<Box<concrete::ModuleItem>> for StackValue {
+    fn from(val: Box<concrete::ModuleItem>) -> StackValue {
+        StackValue::ModuleItem(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentElementList>> for StackValue {
+    fn from(val: Box<concrete::AssignmentElementList>) -> StackValue {
+        StackValue::AssignmentElementList(val)
+    }
+}
+
+impl From<Box<concrete::Initializer>> for StackValue {
+    fn from(val: Box<concrete::Initializer>) -> StackValue {
+        StackValue::Initializer(val)
+    }
+}
+
+impl From<Box<concrete::ArgumentList>> for StackValue {
+    fn from(val: Box<concrete::ArgumentList>) -> StackValue {
+        StackValue::ArgumentList(val)
+    }
+}
+
+impl From<Box<concrete::DefaultClause>> for StackValue {
+    fn from(val: Box<concrete::DefaultClause>) -> StackValue {
+        StackValue::DefaultClause(val)
+    }
+}
+
+impl From<Box<concrete::FormalParameterList>> for StackValue {
+    fn from(val: Box<concrete::FormalParameterList>) -> StackValue {
+        StackValue::FormalParameterList(val)
+    }
+}
+
+impl From<Box<concrete::Arguments>> for StackValue {
+    fn from(val: Box<concrete::Arguments>) -> StackValue {
+        StackValue::Arguments(val)
+    }
+}
+
+impl From<Box<concrete::ImportClause>> for StackValue {
+    fn from(val: Box<concrete::ImportClause>) -> StackValue {
+        StackValue::ImportClause(val)
+    }
+}
+
+impl From<Box<concrete::BindingPattern>> for StackValue {
+    fn from(val: Box<concrete::BindingPattern>) -> StackValue {
+        StackValue::BindingPattern(val)
+    }
+}
+
+impl From<Box<concrete::SuperCall>> for StackValue {
+    fn from(val: Box<concrete::SuperCall>) -> StackValue {
+        StackValue::SuperCall(val)
+    }
+}
+
+impl From<Box<concrete::LiteralPropertyName>> for StackValue {
+    fn from(val: Box<concrete::LiteralPropertyName>) -> StackValue {
+        StackValue::LiteralPropertyName(val)
+    }
+}
+
+impl From<Box<concrete::BindingProperty>> for StackValue {
+    fn from(val: Box<concrete::BindingProperty>) -> StackValue {
+        StackValue::BindingProperty(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentProperty>> for StackValue {
+    fn from(val: Box<concrete::AssignmentProperty>) -> StackValue {
+        StackValue::AssignmentProperty(val)
+    }
+}
+
+impl From<Box<concrete::AssignmentPattern>> for StackValue {
+    fn from(val: Box<concrete::AssignmentPattern>) -> StackValue {
+        StackValue::AssignmentPattern(val)
+    }
+}
+
+impl From<Box<concrete::ConciseBody>> for StackValue {
+    fn from(val: Box<concrete::ConciseBody>) -> StackValue {
+        StackValue::ConciseBody(val)
+    }
+}
+
+impl From<Box<concrete::ClassElementList>> for StackValue {
+    fn from(val: Box<concrete::ClassElementList>) -> StackValue {
+        StackValue::ClassElementList(val)
+    }
+}
+
+impl From<Box<concrete::CoverCallExpressionAndAsyncArrowHead>> for StackValue {
+    fn from(val: Box<concrete::CoverCallExpressionAndAsyncArrowHead>) -> StackValue {
+        StackValue::CoverCallExpressionAndAsyncArrowHead(val)
+    }
+}
+
+impl From<Box<concrete::IdentifierReference>> for StackValue {
+    fn from(val: Box<concrete::IdentifierReference>) -> StackValue {
+        StackValue::IdentifierReference(val)
+    }
+}
+
+impl From<Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>> for StackValue {
+    fn from(val: Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>) -> StackValue {
+        StackValue::CoverParenthesizedExpressionAndArrowParameterList(val)
+    }
+}
+
+impl From<Box<concrete::LabelIdentifier>> for StackValue {
+    fn from(val: Box<concrete::LabelIdentifier>) -> StackValue {
+        StackValue::LabelIdentifier(val)
+    }
+}
+
+impl From<Box<concrete::DestructuringAssignmentTarget>> for StackValue {
+    fn from(val: Box<concrete::DestructuringAssignmentTarget>) -> StackValue {
+        StackValue::DestructuringAssignmentTarget(val)
+    }
+}
+
+impl From<Box<concrete::TemplateLiteral>> for StackValue {
+    fn from(val: Box<concrete::TemplateLiteral>) -> StackValue {
+        StackValue::TemplateLiteral(val)
+    }
+}
+
+impl From<Box<concrete::BindingRestProperty>> for StackValue {
+    fn from(val: Box<concrete::BindingRestProperty>) -> StackValue {
+        StackValue::BindingRestProperty(val)
+    }
+}
+
+pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<StackValue>) -> NonterminalId {
     match prod {
         0 => {
             // Script ::= [empty] => Script(None)
-            stack.push(Box::into_raw(handler.script(None)) as *mut ());
+            stack.push(StackValue::from(handler.script(None)));
             NonterminalId::Script
         }
         1 => {
             // Script ::= ScriptBody => Script(Some($0))
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ScriptBody) };
-            stack.push(Box::into_raw(handler.script(Some(x0))) as *mut ());
+            let x0 = StackValue::unwrap_script_body(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.script(Some(x0))));
             NonterminalId::Script
         }
         2 => {
             // Module ::= [empty] => Module(None)
-            stack.push(Box::into_raw(handler.module(None)) as *mut ());
+            stack.push(StackValue::from(handler.module(None)));
             NonterminalId::Module
         }
         3 => {
             // Module ::= ModuleBody => Module(Some($0))
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleBody) };
-            stack.push(Box::into_raw(handler.module(Some(x0))) as *mut ());
+            let x0 = StackValue::unwrap_module_body(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.module(Some(x0))));
             NonterminalId::Module
         }
         4 => {
             // ScriptBody ::= StatementList => ScriptBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
-            stack.push(Box::into_raw(handler.script_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_statement_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.script_body(x0)));
             NonterminalId::ScriptBody
         }
         5 => {
             // ModuleBody ::= ModuleItemList => ModuleBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItemList) };
-            stack.push(Box::into_raw(handler.module_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_module_item_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.module_body(x0)));
             NonterminalId::ModuleBody
         }
         6 => {
             // StatementList ::= StatementListItem => StatementList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(handler.statement_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.statement_list_p0(x0)));
             NonterminalId::StatementList
         }
         7 => {
             // StatementList ::= StatementList StatementListItem => StatementList 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
-            stack.push(Box::into_raw(handler.statement_list_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_statement_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.statement_list_p1(x0, x1)));
             NonterminalId::StatementList
         }
         8 => {
             // ModuleItemList ::= ModuleItem => ModuleItemList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(handler.module_item_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.module_item_list_p0(x0)));
             NonterminalId::ModuleItemList
         }
         9 => {
             // ModuleItemList ::= ModuleItemList ModuleItem => ModuleItemList 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItemList) };
-            stack.push(Box::into_raw(handler.module_item_list_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_module_item_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.module_item_list_p1(x0, x1)));
             NonterminalId::ModuleItemList
         }
         10 => {
             // StatementListItem ::= Statement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::StatementListItem
         }
         11 => {
             // StatementListItem ::= Declaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::StatementListItem
         }
         12 => {
             // ModuleItem ::= ImportDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ModuleItem
         }
         13 => {
             // ModuleItem ::= ExportDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ModuleItem
         }
         14 => {
             // ModuleItem ::= StatementListItem => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ModuleItem
         }
         15 => {
             // Statement ::= BlockStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         16 => {
             // Statement ::= VariableStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         17 => {
             // Statement ::= EmptyStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         18 => {
             // Statement ::= ExpressionStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         19 => {
             // Statement ::= IfStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         20 => {
             // Statement ::= BreakableStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         21 => {
             // Statement ::= ContinueStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         22 => {
             // Statement ::= BreakStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         23 => {
             // Statement ::= ReturnStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         24 => {
             // Statement ::= WithStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         25 => {
             // Statement ::= LabelledStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         26 => {
             // Statement ::= ThrowStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         27 => {
             // Statement ::= TryStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         28 => {
             // Statement ::= DebuggerStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Statement
         }
         29 => {
             // Declaration ::= HoistableDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Declaration
         }
         30 => {
             // Declaration ::= ClassDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Declaration
         }
         31 => {
             // Declaration ::= LexicalDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Declaration
         }
         32 => {
             // ImportDeclaration ::= "import" ImportClause FromClause ";" => ImportDeclaration 0($0, $1, $2)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_import_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.import_declaration_p0(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.import_declaration_p0(x1, x2)));
             NonterminalId::ImportDeclaration
         }
         33 => {
             // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_import_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.import_declaration_p0(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.import_declaration_p0(x1, x2)));
             NonterminalId::ImportDeclaration
         }
         34 => {
             // ImportDeclaration ::= "import" ModuleSpecifier ";" => ImportDeclaration 1($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleSpecifier) };
+            let x1 = StackValue::unwrap_module_specifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.import_declaration_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.import_declaration_p1(x1)));
             NonterminalId::ImportDeclaration
         }
         35 => {
             // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleSpecifier) };
+            let x1 = StackValue::unwrap_module_specifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.import_declaration_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.import_declaration_p1(x1)));
             NonterminalId::ImportDeclaration
         }
         36 => {
             // ExportDeclaration ::= "export" "*" FromClause ";" => ExportDeclaration 0($0, $1, $2)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p0(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p0(x2)));
             NonterminalId::ExportDeclaration
         }
         37 => {
             // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p0(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p0(x2)));
             NonterminalId::ExportDeclaration
         }
         38 => {
             // ExportDeclaration ::= "export" ExportClause FromClause ";" => ExportDeclaration 1($0, $1, $2)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_export_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p1(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p1(x1, x2)));
             NonterminalId::ExportDeclaration
         }
         39 => {
             // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FromClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
+            let x2 = StackValue::unwrap_from_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_export_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p1(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p1(x1, x2)));
             NonterminalId::ExportDeclaration
         }
         40 => {
             // ExportDeclaration ::= "export" ExportClause ";" => ExportDeclaration 2($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
+            let x1 = StackValue::unwrap_export_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p2(x1)));
             NonterminalId::ExportDeclaration
         }
         41 => {
             // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportClause) };
+            let x1 = StackValue::unwrap_export_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p2(x1)));
             NonterminalId::ExportDeclaration
         }
         42 => {
             // ExportDeclaration ::= "export" VariableStatement => ExportDeclaration 3($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p3(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p3(x1)));
             NonterminalId::ExportDeclaration
         }
         43 => {
             // ExportDeclaration ::= "export" Declaration => ExportDeclaration 4($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p4(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p4(x1)));
             NonterminalId::ExportDeclaration
         }
         44 => {
             // ExportDeclaration ::= "export" "default" HoistableDeclaration => ExportDeclaration 5($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x2 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p5(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p5(x2)));
             NonterminalId::ExportDeclaration
         }
         45 => {
             // ExportDeclaration ::= "export" "default" ClassDeclaration => ExportDeclaration 6($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x2 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p6(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p6(x2)));
             NonterminalId::ExportDeclaration
         }
         46 => {
             // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ";" => ExportDeclaration 7($0, $1, $2)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p7(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p7(x2)));
             NonterminalId::ExportDeclaration
         }
         47 => {
             // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_declaration_p7(x2)) as *mut ());
+            stack.push(StackValue::from(handler.export_declaration_p7(x2)));
             NonterminalId::ExportDeclaration
         }
         48 => {
             // BlockStatement ::= Block => BlockStatement($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
-            stack.push(Box::into_raw(handler.block_statement(x0)) as *mut ());
+            let x0 = StackValue::unwrap_block(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.block_statement(x0)));
             NonterminalId::BlockStatement
         }
         49 => {
             // VariableStatement ::= "var" VariableDeclarationList ";" => VariableStatement($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x1 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.variable_statement(x1)) as *mut ());
+            stack.push(StackValue::from(handler.variable_statement(x1)));
             NonterminalId::VariableStatement
         }
         50 => {
             // VariableStatement ::= "var" VariableDeclarationList ErrorSymbol(asi) => VariableStatement($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x1 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.variable_statement(x1)) as *mut ());
+            stack.push(StackValue::from(handler.variable_statement(x1)));
             NonterminalId::VariableStatement
         }
         51 => {
             // EmptyStatement ::= ";" => EmptyStatement($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.empty_statement()) as *mut ());
+            stack.push(StackValue::from(handler.empty_statement()));
             NonterminalId::EmptyStatement
         }
         52 => {
             // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ";" => ExpressionStatement($0)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.expression_statement(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.expression_statement(x0)));
             NonterminalId::ExpressionStatement
         }
         53 => {
             // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorSymbol(asi) => ExpressionStatement($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.expression_statement(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.expression_statement(x0)));
             NonterminalId::ExpressionStatement
         }
         54 => {
             // IfStatement ::= "if" "(" Expression ")" Statement "else" Statement => IfStatement 0($0, $1, $2, $3, $4, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x4 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.if_statement_p0(x2, x4, x6)) as *mut ());
+            stack.push(StackValue::from(handler.if_statement_p0(x2, x4, x6)));
             NonterminalId::IfStatement
         }
         55 => {
             // IfStatement ::= "if" "(" Expression ")" Statement => IfStatement 1($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x4 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.if_statement_p1(x2, x4)) as *mut ());
+            stack.push(StackValue::from(handler.if_statement_p1(x2, x4)));
             NonterminalId::IfStatement
         }
         56 => {
             // BreakableStatement ::= IterationStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::BreakableStatement
         }
         57 => {
             // BreakableStatement ::= SwitchStatement => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::BreakableStatement
         }
         58 => {
             // ContinueStatement ::= "continue" ";" => ContinueStatement 0($0)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.continue_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.continue_statement_p0()));
             NonterminalId::ContinueStatement
         }
         59 => {
             // ContinueStatement ::= "continue" ErrorSymbol(asi) => ContinueStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.continue_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.continue_statement_p0()));
             NonterminalId::ContinueStatement
         }
         60 => {
             // ContinueStatement ::= "continue" LabelIdentifier ";" => ContinueStatement 1($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
+            let x1 = StackValue::unwrap_label_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.continue_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.continue_statement_p1(x1)));
             NonterminalId::ContinueStatement
         }
         61 => {
             // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => ContinueStatement 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
+            let x1 = StackValue::unwrap_label_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.continue_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.continue_statement_p1(x1)));
             NonterminalId::ContinueStatement
         }
         62 => {
             // BreakStatement ::= "break" ";" => BreakStatement 0($0)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.break_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.break_statement_p0()));
             NonterminalId::BreakStatement
         }
         63 => {
             // BreakStatement ::= "break" ErrorSymbol(asi) => BreakStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.break_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.break_statement_p0()));
             NonterminalId::BreakStatement
         }
         64 => {
             // BreakStatement ::= "break" LabelIdentifier ";" => BreakStatement 1($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
+            let x1 = StackValue::unwrap_label_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.break_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.break_statement_p1(x1)));
             NonterminalId::BreakStatement
         }
         65 => {
             // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => BreakStatement 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
+            let x1 = StackValue::unwrap_label_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.break_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.break_statement_p1(x1)));
             NonterminalId::BreakStatement
         }
         66 => {
             // ReturnStatement ::= "return" ";" => ReturnStatement 0($0)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.return_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.return_statement_p0()));
             NonterminalId::ReturnStatement
         }
         67 => {
             // ReturnStatement ::= "return" ErrorSymbol(asi) => ReturnStatement 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.return_statement_p0()) as *mut ());
+            stack.push(StackValue::from(handler.return_statement_p0()));
             NonterminalId::ReturnStatement
         }
         68 => {
             // ReturnStatement ::= "return" Expression ";" => ReturnStatement 1($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.return_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.return_statement_p1(x1)));
             NonterminalId::ReturnStatement
         }
         69 => {
             // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => ReturnStatement 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.return_statement_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.return_statement_p1(x1)));
             NonterminalId::ReturnStatement
         }
         70 => {
             // WithStatement ::= "with" "(" Expression ")" Statement => WithStatement($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x4 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.with_statement(x2, x4)) as *mut ());
+            stack.push(StackValue::from(handler.with_statement(x2, x4)));
             NonterminalId::WithStatement
         }
         71 => {
             // LabelledStatement ::= LabelIdentifier ":" LabelledItem => LabelledStatement($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelledItem) };
+            let x2 = StackValue::unwrap_labelled_item(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LabelIdentifier) };
-            stack.push(Box::into_raw(handler.labelled_statement(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_label_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.labelled_statement(x0, x2)));
             NonterminalId::LabelledStatement
         }
         72 => {
             // ThrowStatement ::= "throw" Expression ";" => ThrowStatement($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.throw_statement(x1)) as *mut ());
+            stack.push(StackValue::from(handler.throw_statement(x1)));
             NonterminalId::ThrowStatement
         }
         73 => {
             // ThrowStatement ::= "throw" Expression ErrorSymbol(asi) => ThrowStatement($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.throw_statement(x1)) as *mut ());
+            stack.push(StackValue::from(handler.throw_statement(x1)));
             NonterminalId::ThrowStatement
         }
         74 => {
             // TryStatement ::= "try" Block Catch => TryStatement 0($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Catch) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
+            let x2 = StackValue::unwrap_catch(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_block(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.try_statement_p0(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.try_statement_p0(x1, x2)));
             NonterminalId::TryStatement
         }
         75 => {
             // TryStatement ::= "try" Block Finally => TryStatement 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Finally) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
+            let x2 = StackValue::unwrap_finally(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_block(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.try_statement_p1(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.try_statement_p1(x1, x2)));
             NonterminalId::TryStatement
         }
         76 => {
             // TryStatement ::= "try" Block Catch Finally => TryStatement 2($0, $1, $2, $3)
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Finally) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Catch) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
+            let x3 = StackValue::unwrap_finally(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_catch(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_block(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.try_statement_p2(x1, x2, x3)) as *mut ());
+            stack.push(StackValue::from(handler.try_statement_p2(x1, x2, x3)));
             NonterminalId::TryStatement
         }
         77 => {
             // DebuggerStatement ::= "debugger" ";" => DebuggerStatement($0)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.debugger_statement()) as *mut ());
+            stack.push(StackValue::from(handler.debugger_statement()));
             NonterminalId::DebuggerStatement
         }
         78 => {
             // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => DebuggerStatement($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.debugger_statement()) as *mut ());
+            stack.push(StackValue::from(handler.debugger_statement()));
             NonterminalId::DebuggerStatement
         }
         79 => {
             // HoistableDeclaration ::= FunctionDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::HoistableDeclaration
         }
         80 => {
             // HoistableDeclaration ::= GeneratorDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::HoistableDeclaration
         }
         81 => {
             // HoistableDeclaration ::= AsyncFunctionDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::HoistableDeclaration
         }
         82 => {
             // HoistableDeclaration ::= AsyncGeneratorDeclaration => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::HoistableDeclaration
         }
         83 => {
             // ClassDeclaration ::= "class" BindingIdentifier ClassTail => ClassDeclaration 0($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassTail) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_class_tail(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_declaration_p0(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.class_declaration_p0(x1, x2)));
             NonterminalId::ClassDeclaration
         }
         84 => {
             // ClassDeclaration ::= "class" ClassTail => ClassDeclaration 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassTail) };
+            let x1 = StackValue::unwrap_class_tail(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_declaration_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.class_declaration_p1(x1)));
             NonterminalId::ClassDeclaration
         }
         85 => {
             // LexicalDeclaration ::= LetOrConst BindingList ";" => LexicalDeclaration($0, $1)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingList) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LetOrConst) };
-            stack.push(Box::into_raw(handler.lexical_declaration(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_binding_list(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_let_or_const(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.lexical_declaration(x0, x1)));
             NonterminalId::LexicalDeclaration
         }
         86 => {
             // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => LexicalDeclaration($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingList) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LetOrConst) };
-            stack.push(Box::into_raw(handler.lexical_declaration(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_binding_list(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_let_or_const(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.lexical_declaration(x0, x1)));
             NonterminalId::LexicalDeclaration
         }
         87 => {
             // ImportClause ::= ImportedDefaultBinding => ImportClause 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedDefaultBinding) };
-            stack.push(Box::into_raw(handler.import_clause_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_imported_default_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_clause_p0(x0)));
             NonterminalId::ImportClause
         }
         88 => {
             // ImportClause ::= NameSpaceImport => ImportClause 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::NameSpaceImport) };
-            stack.push(Box::into_raw(handler.import_clause_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_name_space_import(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_clause_p1(x0)));
             NonterminalId::ImportClause
         }
         89 => {
             // ImportClause ::= NamedImports => ImportClause 2($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::NamedImports) };
-            stack.push(Box::into_raw(handler.import_clause_p2(x0)) as *mut ());
+            let x0 = StackValue::unwrap_named_imports(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_clause_p2(x0)));
             NonterminalId::ImportClause
         }
         90 => {
             // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => ImportClause 3($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::NameSpaceImport) };
+            let x2 = StackValue::unwrap_name_space_import(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedDefaultBinding) };
-            stack.push(Box::into_raw(handler.import_clause_p3(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_imported_default_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_clause_p3(x0, x2)));
             NonterminalId::ImportClause
         }
         91 => {
             // ImportClause ::= ImportedDefaultBinding "," NamedImports => ImportClause 4($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::NamedImports) };
+            let x2 = StackValue::unwrap_named_imports(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedDefaultBinding) };
-            stack.push(Box::into_raw(handler.import_clause_p4(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_imported_default_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_clause_p4(x0, x2)));
             NonterminalId::ImportClause
         }
         92 => {
             // FromClause ::= "from" ModuleSpecifier => FromClause($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleSpecifier) };
+            let x1 = StackValue::unwrap_module_specifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.from_clause(x1)) as *mut ());
+            stack.push(StackValue::from(handler.from_clause(x1)));
             NonterminalId::FromClause
         }
         93 => {
             // ModuleSpecifier ::= "StringLiteral" => ModuleSpecifier($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.module_specifier()) as *mut ());
+            stack.push(StackValue::from(handler.module_specifier()));
             NonterminalId::ModuleSpecifier
         }
         94 => {
             // ExportClause ::= "{" "}" => ExportClause 0($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_clause_p0()) as *mut ());
+            stack.push(StackValue::from(handler.export_clause_p0()));
             NonterminalId::ExportClause
         }
         95 => {
             // ExportClause ::= "{" ExportsList "}" => ExportClause 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportsList) };
+            let x1 = StackValue::unwrap_exports_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_clause_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_clause_p1(x1)));
             NonterminalId::ExportClause
         }
         96 => {
             // ExportClause ::= "{" ExportsList "," "}" => ExportClause 2($0, $1, $2, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportsList) };
+            let x1 = StackValue::unwrap_exports_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.export_clause_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.export_clause_p2(x1)));
             NonterminalId::ExportClause
         }
         97 => {
             // AssignmentExpression ::= ConditionalExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::AssignmentExpression
         }
         98 => {
             // AssignmentExpression ::= YieldExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::AssignmentExpression
         }
         99 => {
             // AssignmentExpression ::= ArrowFunction => AssignmentExpression 2($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArrowFunction) };
-            stack.push(Box::into_raw(handler.assignment_expression_p2(x0)) as *mut ());
+            let x0 = StackValue::unwrap_arrow_function(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.assignment_expression_p2(x0)));
             NonterminalId::AssignmentExpression
         }
         100 => {
             // AssignmentExpression ::= AsyncArrowFunction => AssignmentExpression 3($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncArrowFunction) };
-            stack.push(Box::into_raw(handler.assignment_expression_p3(x0)) as *mut ());
+            let x0 = StackValue::unwrap_async_arrow_function(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.assignment_expression_p3(x0)));
             NonterminalId::AssignmentExpression
         }
         101 => {
             // AssignmentExpression ::= LeftHandSideExpression "=" AssignmentExpression => AssignmentExpression 4($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.assignment_expression_p4(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.assignment_expression_p4(x0, x2)));
             NonterminalId::AssignmentExpression
         }
         102 => {
             // AssignmentExpression ::= LeftHandSideExpression AssignmentOperator AssignmentExpression => AssignmentExpression 5($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AssignmentOperator) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.assignment_expression_p5(x0, x1, x2)) as *mut ());
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_assignment_operator(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.assignment_expression_p5(x0, x1, x2)));
             NonterminalId::AssignmentExpression
         }
         103 => {
             // Block ::= "{" "}" => Block($0, None, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.block(None)) as *mut ());
+            stack.push(StackValue::from(handler.block(None)));
             NonterminalId::Block
         }
         104 => {
             // Block ::= "{" StatementList "}" => Block($0, Some($1), $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
+            let x1 = StackValue::unwrap_statement_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.block(Some(x1))) as *mut ());
+            stack.push(StackValue::from(handler.block(Some(x1))));
             NonterminalId::Block
         }
         105 => {
             // VariableDeclarationList ::= VariableDeclaration => VariableDeclarationList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclaration) };
-            stack.push(Box::into_raw(handler.variable_declaration_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_variable_declaration(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.variable_declaration_list_p0(x0)));
             NonterminalId::VariableDeclarationList
         }
         106 => {
             // VariableDeclarationList ::= VariableDeclarationList "," VariableDeclaration => VariableDeclarationList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclaration) };
+            let x2 = StackValue::unwrap_variable_declaration(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
-            stack.push(Box::into_raw(handler.variable_declaration_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.variable_declaration_list_p1(x0, x2)));
             NonterminalId::VariableDeclarationList
         }
         107 => {
             // Expression ::= AssignmentExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::Expression
         }
         108 => {
             // Expression ::= Expression "," AssignmentExpression => Expression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.expression_p1(x0, x2)));
             NonterminalId::Expression
         }
         109 => {
             // IterationStatement ::= "do" Statement "while" "(" Expression ")" ";" => IterationStatement 0($0, $1, $2, $3, $4, $5)
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p0(x1, x4)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p0(x1, x4)));
             NonterminalId::IterationStatement
         }
         110 => {
             // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi) => IterationStatement 0($0, $1, $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x1 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p0(x1, x4)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p0(x1, x4)));
             NonterminalId::IterationStatement
         }
         111 => {
             // IterationStatement ::= "while" "(" Expression ")" Statement => IterationStatement 1($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x4 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p1(x2, x4)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p1(x2, x4)));
             NonterminalId::IterationStatement
         }
         112 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => IterationStatement 2($0, $1, None, $2, None, $3, None, $4, $5)
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x5 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(None, None, None, x5)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(None, None, None, x5)));
             NonterminalId::IterationStatement
         }
         113 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" ")" Statement => IterationStatement 2($0, $1, Some($2), $3, None, $4, None, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(Some(x2), None, None, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), None, None, x6)));
             NonterminalId::IterationStatement
         }
         114 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" ")" Statement => IterationStatement 2($0, $1, None, $2, Some($3), $4, None, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(None, Some(x3), None, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(None, Some(x3), None, x6)));
             NonterminalId::IterationStatement
         }
         115 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" ")" Statement => IterationStatement 2($0, $1, Some($2), $3, Some($4), $5, None, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(Some(x2), Some(x4), None, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), Some(x4), None, x7)));
             NonterminalId::IterationStatement
         }
         116 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression ")" Statement => IterationStatement 2($0, $1, None, $2, None, $3, Some($4), $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.pop();
-            stack.pop();
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(None, None, Some(x4), x6)) as *mut ());
+            stack.pop();
+            stack.pop();
+            stack.push(StackValue::from(handler.iteration_statement_p2(None, None, Some(x4), x6)));
             NonterminalId::IterationStatement
         }
         117 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" Expression ")" Statement => IterationStatement 2($0, $1, Some($2), $3, None, $4, Some($5), $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.pop();
-            stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(Some(x2), None, Some(x5), x7)) as *mut ());
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.pop();
+            stack.pop();
+            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), None, Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         118 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" Expression ")" Statement => IterationStatement 2($0, $1, None, $2, Some($3), $4, Some($5), $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(None, Some(x3), Some(x5), x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(None, Some(x3), Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         119 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" Expression ")" Statement => IterationStatement 2($0, $1, Some($2), $3, Some($4), $5, Some($6), $7, $8)
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x8 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x6 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p2(Some(x2), Some(x4), Some(x6), x8)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), Some(x4), Some(x6), x8)));
             NonterminalId::IterationStatement
         }
         120 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, None, $5, None, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x3 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p3(x3, None, None, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p3(x3, None, None, x7)));
             NonterminalId::IterationStatement
         }
         121 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, Some($5), $6, None, $7, $8)
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x8 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x3 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p3(x3, Some(x5), None, x8)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p3(x3, Some(x5), None, x8)));
             NonterminalId::IterationStatement
         }
         122 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" Expression ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, None, $5, Some($6), $7, $8)
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x8 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.pop();
-            stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x6 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
+            let x3 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p3(x3, None, Some(x6), x8)) as *mut ());
+            stack.pop();
+            stack.pop();
+            stack.push(StackValue::from(handler.iteration_statement_p3(x3, None, Some(x6), x8)));
             NonterminalId::IterationStatement
         }
         123 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, Some($5), $6, Some($7), $8, $9)
-            let x9 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x9 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x7 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::VariableDeclarationList) };
+            let x3 = StackValue::unwrap_variable_declaration_list(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p3(x3, Some(x5), Some(x7), x9)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p3(x3, Some(x5), Some(x7), x9)));
             NonterminalId::IterationStatement
         }
         124 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" ")" Statement => IterationStatement 4($0, $1, $2, None, $3, None, $4, $5)
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x5 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForLexicalDeclaration) };
+            let x2 = StackValue::unwrap_for_lexical_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p4(x2, None, None, x5)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p4(x2, None, None, x5)));
             NonterminalId::IterationStatement
         }
         125 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" ")" Statement => IterationStatement 4($0, $1, $2, Some($3), $4, None, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForLexicalDeclaration) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_for_lexical_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p4(x2, Some(x3), None, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p4(x2, Some(x3), None, x6)));
             NonterminalId::IterationStatement
         }
         126 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" Expression ")" Statement => IterationStatement 4($0, $1, $2, None, $3, Some($4), $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForLexicalDeclaration) };
+            let x2 = StackValue::unwrap_for_lexical_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p4(x2, None, Some(x4), x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p4(x2, None, Some(x4), x6)));
             NonterminalId::IterationStatement
         }
         127 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" Expression ")" Statement => IterationStatement 4($0, $1, $2, Some($3), $4, Some($5), $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForLexicalDeclaration) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_for_lexical_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p4(x2, Some(x3), Some(x5), x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p4(x2, Some(x3), Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         128 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression ")" Statement => IterationStatement 5($0, $1, $2, $3, $4, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p5(x2, x4, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p5(x2, x4, x6)));
             NonterminalId::IterationStatement
         }
         129 => {
             // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression ")" Statement => IterationStatement 6($0, $1, $2, $3, $4, $5, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForBinding) };
+            let x3 = StackValue::unwrap_for_binding(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p6(x3, x5, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p6(x3, x5, x7)));
             NonterminalId::IterationStatement
         }
         130 => {
             // IterationStatement ::= "for" "(" ForDeclaration "in" Expression ")" Statement => IterationStatement 7($0, $1, $2, $3, $4, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForDeclaration) };
+            let x2 = StackValue::unwrap_for_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p7(x2, x4, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p7(x2, x4, x6)));
             NonterminalId::IterationStatement
         }
         131 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 8($0, $1, $2, $3, $4, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p8(x2, x4, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p8(x2, x4, x6)));
             NonterminalId::IterationStatement
         }
         132 => {
             // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 9($0, $1, $2, $3, $4, $5, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForBinding) };
+            let x3 = StackValue::unwrap_for_binding(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p9(x3, x5, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p9(x3, x5, x7)));
             NonterminalId::IterationStatement
         }
         133 => {
             // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 10($0, $1, $2, $3, $4, $5, $6)
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x6 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForDeclaration) };
+            let x2 = StackValue::unwrap_for_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p10(x2, x4, x6)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p10(x2, x4, x6)));
             NonterminalId::IterationStatement
         }
         134 => {
             // IterationStatement ::= "for" "await" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 11($0, $1, $2, $3, $4, $5, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p11(x3, x5, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p11(x3, x5, x7)));
             NonterminalId::IterationStatement
         }
         135 => {
             // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 12($0, $1, $2, $3, $4, $5, $6, $7, $8)
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x8 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x6 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForBinding) };
-            stack.pop();
-            stack.pop();
+            let x4 = StackValue::unwrap_for_binding(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p12(x4, x6, x8)) as *mut ());
+            stack.pop();
+            stack.pop();
+            stack.push(StackValue::from(handler.iteration_statement_p12(x4, x6, x8)));
             NonterminalId::IterationStatement
         }
         136 => {
             // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 13($0, $1, $2, $3, $4, $5, $6, $7)
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
+            let x7 = StackValue::unwrap_module_item(stack.pop().unwrap());
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x5 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForDeclaration) };
+            let x3 = StackValue::unwrap_for_declaration(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.iteration_statement_p13(x3, x5, x7)) as *mut ());
+            stack.push(StackValue::from(handler.iteration_statement_p13(x3, x5, x7)));
             NonterminalId::IterationStatement
         }
         137 => {
             // SwitchStatement ::= "switch" "(" Expression ")" CaseBlock => SwitchStatement($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseBlock) };
+            let x4 = StackValue::unwrap_case_block(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.switch_statement(x2, x4)) as *mut ());
+            stack.push(StackValue::from(handler.switch_statement(x2, x4)));
             NonterminalId::SwitchStatement
         }
         138 => {
             // LabelIdentifier ::= "Identifier" => LabelIdentifier($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.label_identifier()) as *mut ());
+            stack.push(StackValue::from(handler.label_identifier()));
             NonterminalId::LabelIdentifier
         }
         139 => {
             // LabelledItem ::= Statement => LabelledItem 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(handler.labelled_item_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.labelled_item_p0(x0)));
             NonterminalId::LabelledItem
         }
         140 => {
             // LabelledItem ::= FunctionDeclaration => LabelledItem 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ModuleItem) };
-            stack.push(Box::into_raw(handler.labelled_item_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_module_item(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.labelled_item_p1(x0)));
             NonterminalId::LabelledItem
         }
         141 => {
             // Catch ::= "catch" "(" CatchParameter ")" Block => Catch($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
+            let x4 = StackValue::unwrap_block(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CatchParameter) };
+            let x2 = StackValue::unwrap_catch_parameter(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.catch(x2, x4)) as *mut ());
+            stack.push(StackValue::from(handler.catch(x2, x4)));
             NonterminalId::Catch
         }
         142 => {
             // Finally ::= "finally" Block => Finally($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Block) };
+            let x1 = StackValue::unwrap_block(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.finally(x1)) as *mut ());
+            stack.push(StackValue::from(handler.finally(x1)));
             NonterminalId::Finally
         }
         143 => {
@@ -9403,9 +10892,9 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p0(x1, handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p0(x1, handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionDeclaration
         }
         144 => {
@@ -9413,36 +10902,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p0(x1, x3, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p0(x1, x3, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionDeclaration
         }
         145 => {
             // FunctionDeclaration ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => FunctionDeclaration 0($0, $1, $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p0(x1, handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p0(x1, handler.formal_parameters_p0(), x5)));
             NonterminalId::FunctionDeclaration
         }
         146 => {
             // FunctionDeclaration ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => FunctionDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x6 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p0(x1, x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p0(x1, x3, x6)));
             NonterminalId::FunctionDeclaration
         }
         147 => {
@@ -9452,7 +10941,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p1(handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p1(handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionDeclaration
         }
         148 => {
@@ -9460,33 +10949,33 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x2 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p1(x2, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p1(x2, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionDeclaration
         }
         149 => {
             // FunctionDeclaration ::= "function" "(" ")" "{" FunctionBody "}" => FunctionDeclaration 1($0, $1, FormalParameters 0(), $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x4 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p1(handler.formal_parameters_p0(), x4)) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p1(handler.formal_parameters_p0(), x4)));
             NonterminalId::FunctionDeclaration
         }
         150 => {
             // FunctionDeclaration ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => FunctionDeclaration 1($0, $1, $2, $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x2 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_declaration_p1(x2, x5)) as *mut ());
+            stack.push(StackValue::from(handler.function_declaration_p1(x2, x5)));
             NonterminalId::FunctionDeclaration
         }
         151 => {
@@ -9495,10 +10984,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p0(x2, handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p0(x2, handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorDeclaration
         }
         152 => {
@@ -9506,39 +10995,39 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p0(x2, x4, handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p0(x2, x4, handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorDeclaration
         }
         153 => {
             // GeneratorDeclaration ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => GeneratorDeclaration 0($0, $1, $2, $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x6 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p0(x2, handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p0(x2, handler.formal_parameters_p0(), x6)));
             NonterminalId::GeneratorDeclaration
         }
         154 => {
             // GeneratorDeclaration ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x7 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p0(x2, x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p0(x2, x4, x7)));
             NonterminalId::GeneratorDeclaration
         }
         155 => {
@@ -9549,7 +11038,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p1(handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p1(handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorDeclaration
         }
         156 => {
@@ -9557,36 +11046,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p1(x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p1(x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorDeclaration
         }
         157 => {
             // GeneratorDeclaration ::= "function" "*" "(" ")" "{" GeneratorBody "}" => GeneratorDeclaration 1($0, $1, $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x5 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p1(handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p1(handler.formal_parameters_p0(), x5)));
             NonterminalId::GeneratorDeclaration
         }
         158 => {
             // GeneratorDeclaration ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x6 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_declaration_p1(x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.generator_declaration_p1(x3, x6)));
             NonterminalId::GeneratorDeclaration
         }
         159 => {
@@ -9595,10 +11084,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p0(x2, handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p0(x2, handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         160 => {
@@ -9606,39 +11095,39 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p0(x2, x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p0(x2, x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         161 => {
             // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 0($0, $1, $2, $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x6 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p0(x2, handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p0(x2, handler.formal_parameters_p0(), x6)));
             NonterminalId::AsyncFunctionDeclaration
         }
         162 => {
             // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x7 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p0(x2, x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p0(x2, x4, x7)));
             NonterminalId::AsyncFunctionDeclaration
         }
         163 => {
@@ -9649,7 +11138,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p1(handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p1(handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         164 => {
@@ -9657,36 +11146,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p1(x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p1(x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         165 => {
             // AsyncFunctionDeclaration ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 1($0, $1, $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x5 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p1(handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p1(handler.formal_parameters_p0(), x5)));
             NonterminalId::AsyncFunctionDeclaration
         }
         166 => {
             // AsyncFunctionDeclaration ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x6 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_declaration_p1(x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_declaration_p1(x3, x6)));
             NonterminalId::AsyncFunctionDeclaration
         }
         167 => {
@@ -9695,11 +11184,11 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p0(x3, handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p0(x3, handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorDeclaration
         }
         168 => {
@@ -9707,42 +11196,42 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x5 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p0(x3, x5, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p0(x3, x5, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorDeclaration
         }
         169 => {
             // AsyncGeneratorDeclaration ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 0($0, $1, $2, $3, $4, FormalParameters 0(), $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x7 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p0(x3, handler.formal_parameters_p0(), x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p0(x3, handler.formal_parameters_p0(), x7)));
             NonterminalId::AsyncGeneratorDeclaration
         }
         170 => {
             // AsyncGeneratorDeclaration ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8, $9)
             stack.pop();
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x8 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x5 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p0(x3, x5, x8)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p0(x3, x5, x8)));
             NonterminalId::AsyncGeneratorDeclaration
         }
         171 => {
@@ -9754,7 +11243,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p1(handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p1(handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorDeclaration
         }
         172 => {
@@ -9762,558 +11251,558 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p1(x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p1(x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorDeclaration
         }
         173 => {
             // AsyncGeneratorDeclaration ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 1($0, $1, $2, $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x6 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p1(handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p1(handler.formal_parameters_p0(), x6)));
             NonterminalId::AsyncGeneratorDeclaration
         }
         174 => {
             // AsyncGeneratorDeclaration ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x7 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_declaration_p1(x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_declaration_p1(x4, x7)));
             NonterminalId::AsyncGeneratorDeclaration
         }
         175 => {
             // BindingIdentifier ::= "Identifier" => BindingIdentifier 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_identifier_p0()) as *mut ());
+            stack.push(StackValue::from(handler.binding_identifier_p0()));
             NonterminalId::BindingIdentifier
         }
         176 => {
             // BindingIdentifier ::= "yield" => BindingIdentifier 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_identifier_p1()) as *mut ());
+            stack.push(StackValue::from(handler.binding_identifier_p1()));
             NonterminalId::BindingIdentifier
         }
         177 => {
             // BindingIdentifier ::= "await" => BindingIdentifier 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_identifier_p2()) as *mut ());
+            stack.push(StackValue::from(handler.binding_identifier_p2()));
             NonterminalId::BindingIdentifier
         }
         178 => {
             // ClassTail ::= "{" "}" => ClassTail(None, $0, None, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.class_tail(None, None)) as *mut ());
+            stack.push(StackValue::from(handler.class_tail(None, None)));
             NonterminalId::ClassTail
         }
         179 => {
             // ClassTail ::= ClassHeritage "{" "}" => ClassTail(Some($0), $1, None, $2)
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassHeritage) };
-            stack.push(Box::into_raw(handler.class_tail(Some(x0), None)) as *mut ());
+            let x0 = StackValue::unwrap_class_heritage(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_tail(Some(x0), None)));
             NonterminalId::ClassTail
         }
         180 => {
             // ClassTail ::= "{" ClassBody "}" => ClassTail(None, $0, Some($1), $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassBody) };
+            let x1 = StackValue::unwrap_class_body(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_tail(None, Some(x1))) as *mut ());
+            stack.push(StackValue::from(handler.class_tail(None, Some(x1))));
             NonterminalId::ClassTail
         }
         181 => {
             // ClassTail ::= ClassHeritage "{" ClassBody "}" => ClassTail(Some($0), $1, Some($2), $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassBody) };
+            let x2 = StackValue::unwrap_class_body(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassHeritage) };
-            stack.push(Box::into_raw(handler.class_tail(Some(x0), Some(x2))) as *mut ());
+            let x0 = StackValue::unwrap_class_heritage(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_tail(Some(x0), Some(x2))));
             NonterminalId::ClassTail
         }
         182 => {
             // LetOrConst ::= "let" => LetOrConst 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.let_or_const_p0()) as *mut ());
+            stack.push(StackValue::from(handler.let_or_const_p0()));
             NonterminalId::LetOrConst
         }
         183 => {
             // LetOrConst ::= "const" => LetOrConst 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.let_or_const_p1()) as *mut ());
+            stack.push(StackValue::from(handler.let_or_const_p1()));
             NonterminalId::LetOrConst
         }
         184 => {
             // BindingList ::= LexicalBinding => BindingList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LexicalBinding) };
-            stack.push(Box::into_raw(handler.binding_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_lexical_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_list_p0(x0)));
             NonterminalId::BindingList
         }
         185 => {
             // BindingList ::= BindingList "," LexicalBinding => BindingList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LexicalBinding) };
+            let x2 = StackValue::unwrap_lexical_binding(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingList) };
-            stack.push(Box::into_raw(handler.binding_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_binding_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_list_p1(x0, x2)));
             NonterminalId::BindingList
         }
         186 => {
             // ImportedDefaultBinding ::= ImportedBinding => ImportedDefaultBinding($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedBinding) };
-            stack.push(Box::into_raw(handler.imported_default_binding(x0)) as *mut ());
+            let x0 = StackValue::unwrap_imported_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.imported_default_binding(x0)));
             NonterminalId::ImportedDefaultBinding
         }
         187 => {
             // NameSpaceImport ::= "*" "as" ImportedBinding => NameSpaceImport($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedBinding) };
+            let x2 = StackValue::unwrap_imported_binding(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.name_space_import(x2)) as *mut ());
+            stack.push(StackValue::from(handler.name_space_import(x2)));
             NonterminalId::NameSpaceImport
         }
         188 => {
             // NamedImports ::= "{" "}" => NamedImports 0($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.named_imports_p0()) as *mut ());
+            stack.push(StackValue::from(handler.named_imports_p0()));
             NonterminalId::NamedImports
         }
         189 => {
             // NamedImports ::= "{" ImportsList "}" => NamedImports 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportsList) };
+            let x1 = StackValue::unwrap_imports_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.named_imports_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.named_imports_p1(x1)));
             NonterminalId::NamedImports
         }
         190 => {
             // NamedImports ::= "{" ImportsList "," "}" => NamedImports 2($0, $1, $2, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportsList) };
+            let x1 = StackValue::unwrap_imports_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.named_imports_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.named_imports_p2(x1)));
             NonterminalId::NamedImports
         }
         191 => {
             // ExportsList ::= ExportSpecifier => ExportsList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportSpecifier) };
-            stack.push(Box::into_raw(handler.exports_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_export_specifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.exports_list_p0(x0)));
             NonterminalId::ExportsList
         }
         192 => {
             // ExportsList ::= ExportsList "," ExportSpecifier => ExportsList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportSpecifier) };
+            let x2 = StackValue::unwrap_export_specifier(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ExportsList) };
-            stack.push(Box::into_raw(handler.exports_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_exports_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.exports_list_p1(x0, x2)));
             NonterminalId::ExportsList
         }
         193 => {
             // ConditionalExpression ::= LogicalORExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ConditionalExpression
         }
         194 => {
             // ConditionalExpression ::= LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression => ConditionalExpression 1($0, $1, $2, $3, $4)
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x4 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.conditional_expression_p1(x0, x2, x4)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.conditional_expression_p1(x0, x2, x4)));
             NonterminalId::ConditionalExpression
         }
         195 => {
             // YieldExpression ::= "yield" => YieldExpression 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.yield_expression_p0()) as *mut ());
+            stack.push(StackValue::from(handler.yield_expression_p0()));
             NonterminalId::YieldExpression
         }
         196 => {
             // YieldExpression ::= "yield" AssignmentExpression => YieldExpression 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.yield_expression_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.yield_expression_p1(x1)));
             NonterminalId::YieldExpression
         }
         197 => {
             // YieldExpression ::= "yield" "*" AssignmentExpression => YieldExpression 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.yield_expression_p2(x2)) as *mut ());
+            stack.push(StackValue::from(handler.yield_expression_p2(x2)));
             NonterminalId::YieldExpression
         }
         198 => {
             // ArrowFunction ::= ArrowParameters "=>" ConciseBody => ArrowFunction($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ConciseBody) };
+            let x2 = StackValue::unwrap_concise_body(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArrowParameters) };
-            stack.push(Box::into_raw(handler.arrow_function(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_arrow_parameters(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.arrow_function(x0, x2)));
             NonterminalId::ArrowFunction
         }
         199 => {
             // AsyncArrowFunction ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody => AsyncArrowFunction 0($0, $1, $2, $3)
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncConciseBody) };
+            let x3 = StackValue::unwrap_async_concise_body(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncArrowBindingIdentifier) };
+            let x1 = StackValue::unwrap_async_arrow_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_arrow_function_p0(x1, x3)) as *mut ());
+            stack.push(StackValue::from(handler.async_arrow_function_p0(x1, x3)));
             NonterminalId::AsyncArrowFunction
         }
         200 => {
             // AsyncArrowFunction ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody => AsyncArrowFunction 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncConciseBody) };
+            let x2 = StackValue::unwrap_async_concise_body(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CoverCallExpressionAndAsyncArrowHead) };
-            stack.push(Box::into_raw(handler.async_arrow_function_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_cover_call_expression_and_async_arrow_head(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.async_arrow_function_p1(x0, x2)));
             NonterminalId::AsyncArrowFunction
         }
         201 => {
             // LeftHandSideExpression ::= NewExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::LeftHandSideExpression
         }
         202 => {
             // LeftHandSideExpression ::= CallExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::LeftHandSideExpression
         }
         203 => {
             // AssignmentOperator ::= "*=" => AssignmentOperator 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p0()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p0()));
             NonterminalId::AssignmentOperator
         }
         204 => {
             // AssignmentOperator ::= "/=" => AssignmentOperator 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p1()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p1()));
             NonterminalId::AssignmentOperator
         }
         205 => {
             // AssignmentOperator ::= "%=" => AssignmentOperator 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p2()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p2()));
             NonterminalId::AssignmentOperator
         }
         206 => {
             // AssignmentOperator ::= "+=" => AssignmentOperator 3($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p3()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p3()));
             NonterminalId::AssignmentOperator
         }
         207 => {
             // AssignmentOperator ::= "-=" => AssignmentOperator 4($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p4()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p4()));
             NonterminalId::AssignmentOperator
         }
         208 => {
             // AssignmentOperator ::= "<<=" => AssignmentOperator 5($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p5()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p5()));
             NonterminalId::AssignmentOperator
         }
         209 => {
             // AssignmentOperator ::= ">>=" => AssignmentOperator 6($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p6()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p6()));
             NonterminalId::AssignmentOperator
         }
         210 => {
             // AssignmentOperator ::= ">>>=" => AssignmentOperator 7($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p7()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p7()));
             NonterminalId::AssignmentOperator
         }
         211 => {
             // AssignmentOperator ::= "&=" => AssignmentOperator 8($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p8()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p8()));
             NonterminalId::AssignmentOperator
         }
         212 => {
             // AssignmentOperator ::= "^=" => AssignmentOperator 9($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p9()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p9()));
             NonterminalId::AssignmentOperator
         }
         213 => {
             // AssignmentOperator ::= "|=" => AssignmentOperator 10($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p10()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p10()));
             NonterminalId::AssignmentOperator
         }
         214 => {
             // AssignmentOperator ::= "**=" => AssignmentOperator 11($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.assignment_operator_p11()) as *mut ());
+            stack.push(StackValue::from(handler.assignment_operator_p11()));
             NonterminalId::AssignmentOperator
         }
         215 => {
             // VariableDeclaration ::= BindingIdentifier => VariableDeclaration 0($0, None)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.variable_declaration_p0(x0, None)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.variable_declaration_p0(x0, None)));
             NonterminalId::VariableDeclaration
         }
         216 => {
             // VariableDeclaration ::= BindingIdentifier Initializer => VariableDeclaration 0($0, Some($1))
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.variable_declaration_p0(x0, Some(x1))) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.variable_declaration_p0(x0, Some(x1))));
             NonterminalId::VariableDeclaration
         }
         217 => {
             // VariableDeclaration ::= BindingPattern Initializer => VariableDeclaration 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.variable_declaration_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.variable_declaration_p1(x0, x1)));
             NonterminalId::VariableDeclaration
         }
         218 => {
             // ForLexicalDeclaration ::= LetOrConst BindingList ";" => ForLexicalDeclaration($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingList) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LetOrConst) };
-            stack.push(Box::into_raw(handler.for_lexical_declaration(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_binding_list(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_let_or_const(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.for_lexical_declaration(x0, x1)));
             NonterminalId::ForLexicalDeclaration
         }
         219 => {
             // ForBinding ::= BindingIdentifier => ForBinding 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.for_binding_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.for_binding_p0(x0)));
             NonterminalId::ForBinding
         }
         220 => {
             // ForBinding ::= BindingPattern => ForBinding 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.for_binding_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.for_binding_p1(x0)));
             NonterminalId::ForBinding
         }
         221 => {
             // ForDeclaration ::= LetOrConst ForBinding => ForDeclaration($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ForBinding) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LetOrConst) };
-            stack.push(Box::into_raw(handler.for_declaration(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_for_binding(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_let_or_const(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.for_declaration(x0, x1)));
             NonterminalId::ForDeclaration
         }
         222 => {
             // CaseBlock ::= "{" "}" => CaseBlock 0($0, None, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p0(None)) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p0(None)));
             NonterminalId::CaseBlock
         }
         223 => {
             // CaseBlock ::= "{" CaseClauses "}" => CaseBlock 0($0, Some($1), $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
+            let x1 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p0(Some(x1))) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p0(Some(x1))));
             NonterminalId::CaseBlock
         }
         224 => {
             // CaseBlock ::= "{" DefaultClause "}" => CaseBlock 1($0, None, $1, None, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::DefaultClause) };
+            let x1 = StackValue::unwrap_default_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p1(None, x1, None)) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p1(None, x1, None)));
             NonterminalId::CaseBlock
         }
         225 => {
             // CaseBlock ::= "{" CaseClauses DefaultClause "}" => CaseBlock 1($0, Some($1), $2, None, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::DefaultClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
+            let x2 = StackValue::unwrap_default_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p1(Some(x1), x2, None)) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p1(Some(x1), x2, None)));
             NonterminalId::CaseBlock
         }
         226 => {
             // CaseBlock ::= "{" DefaultClause CaseClauses "}" => CaseBlock 1($0, None, $1, Some($2), $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::DefaultClause) };
+            let x2 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_default_clause(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p1(None, x1, Some(x2))) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p1(None, x1, Some(x2))));
             NonterminalId::CaseBlock
         }
         227 => {
             // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => CaseBlock 1($0, Some($1), $2, Some($3), $4)
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::DefaultClause) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
+            let x3 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_default_clause(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_block_p1(Some(x1), x2, Some(x3))) as *mut ());
+            stack.push(StackValue::from(handler.case_block_p1(Some(x1), x2, Some(x3))));
             NonterminalId::CaseBlock
         }
         228 => {
             // CatchParameter ::= BindingIdentifier => CatchParameter 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.catch_parameter_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.catch_parameter_p0(x0)));
             NonterminalId::CatchParameter
         }
         229 => {
             // CatchParameter ::= BindingPattern => CatchParameter 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.catch_parameter_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.catch_parameter_p1(x0)));
             NonterminalId::CatchParameter
         }
         230 => {
             // FormalParameters ::= [empty] => FormalParameters 0()
-            stack.push(Box::into_raw(handler.formal_parameters_p0()) as *mut ());
+            stack.push(StackValue::from(handler.formal_parameters_p0()));
             NonterminalId::FormalParameters
         }
         231 => {
             // FormalParameters ::= FunctionRestParameter => FormalParameters 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionRestParameter) };
-            stack.push(Box::into_raw(handler.formal_parameters_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_function_rest_parameter(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameters_p1(x0)));
             NonterminalId::FormalParameters
         }
         232 => {
             // FormalParameters ::= FormalParameterList => FormalParameters 2($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameterList) };
-            stack.push(Box::into_raw(handler.formal_parameters_p2(x0)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameters_p2(x0)));
             NonterminalId::FormalParameters
         }
         233 => {
             // FormalParameters ::= FormalParameterList "," => FormalParameters 3($0, $1)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameterList) };
-            stack.push(Box::into_raw(handler.formal_parameters_p3(x0)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameters_p3(x0)));
             NonterminalId::FormalParameters
         }
         234 => {
             // FormalParameters ::= FormalParameterList "," FunctionRestParameter => FormalParameters 4($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionRestParameter) };
+            let x2 = StackValue::unwrap_function_rest_parameter(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameterList) };
-            stack.push(Box::into_raw(handler.formal_parameters_p4(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameters_p4(x0, x2)));
             NonterminalId::FormalParameters
         }
         235 => {
             // FunctionBody ::= [empty] => FunctionBody(FunctionStatementList(None))
-            stack.push(Box::into_raw(handler.function_body(handler.function_statement_list(None))) as *mut ());
+            stack.push(StackValue::from(handler.function_body(handler.function_statement_list(None))));
             NonterminalId::FunctionBody
         }
         236 => {
             // FunctionBody ::= FunctionStatementList => FunctionBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionStatementList) };
-            stack.push(Box::into_raw(handler.function_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_function_statement_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.function_body(x0)));
             NonterminalId::FunctionBody
         }
         237 => {
             // GeneratorBody ::= [empty] => GeneratorBody(FunctionBody(FunctionStatementList(None)))
-            stack.push(Box::into_raw(handler.generator_body(handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.generator_body(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::GeneratorBody
         }
         238 => {
             // GeneratorBody ::= FunctionBody => GeneratorBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
-            stack.push(Box::into_raw(handler.generator_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_function_body(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.generator_body(x0)));
             NonterminalId::GeneratorBody
         }
         239 => {
             // AsyncFunctionBody ::= [empty] => AsyncFunctionBody(FunctionBody(FunctionStatementList(None)))
-            stack.push(Box::into_raw(handler.async_function_body(handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_body(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::AsyncFunctionBody
         }
         240 => {
             // AsyncFunctionBody ::= FunctionBody => AsyncFunctionBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
-            stack.push(Box::into_raw(handler.async_function_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_function_body(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.async_function_body(x0)));
             NonterminalId::AsyncFunctionBody
         }
         241 => {
             // AsyncGeneratorBody ::= [empty] => AsyncGeneratorBody(FunctionBody(FunctionStatementList(None)))
-            stack.push(Box::into_raw(handler.async_generator_body(handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_body(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::AsyncGeneratorBody
         }
         242 => {
             // AsyncGeneratorBody ::= FunctionBody => AsyncGeneratorBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
-            stack.push(Box::into_raw(handler.async_generator_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_function_body(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.async_generator_body(x0)));
             NonterminalId::AsyncGeneratorBody
         }
         243 => {
             // ClassHeritage ::= "extends" LeftHandSideExpression => ClassHeritage($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_heritage(x1)) as *mut ());
+            stack.push(StackValue::from(handler.class_heritage(x1)));
             NonterminalId::ClassHeritage
         }
         244 => {
             // ClassBody ::= ClassElementList => ClassBody($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassElementList) };
-            stack.push(Box::into_raw(handler.class_body(x0)) as *mut ());
+            let x0 = StackValue::unwrap_class_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_body(x0)));
             NonterminalId::ClassBody
         }
         245 => {
             // LexicalBinding ::= BindingIdentifier => LexicalBinding 0($0, None)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.lexical_binding_p0(x0, None)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.lexical_binding_p0(x0, None)));
             NonterminalId::LexicalBinding
         }
         246 => {
             // LexicalBinding ::= BindingIdentifier Initializer => LexicalBinding 0($0, Some($1))
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.lexical_binding_p0(x0, Some(x1))) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.lexical_binding_p0(x0, Some(x1))));
             NonterminalId::LexicalBinding
         }
         247 => {
             // LexicalBinding ::= BindingPattern Initializer => LexicalBinding 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.lexical_binding_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.lexical_binding_p1(x0, x1)));
             NonterminalId::LexicalBinding
         }
         248 => {
             // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.imported_binding(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.imported_binding(x0)));
             NonterminalId::ImportedBinding
         }
         249 => {
             // ImportsList ::= ImportSpecifier => ImportsList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportSpecifier) };
-            stack.push(Box::into_raw(handler.imports_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_import_specifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.imports_list_p0(x0)));
             NonterminalId::ImportsList
         }
         250 => {
             // ImportsList ::= ImportsList "," ImportSpecifier => ImportsList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportSpecifier) };
+            let x2 = StackValue::unwrap_import_specifier(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportsList) };
-            stack.push(Box::into_raw(handler.imports_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_imports_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.imports_list_p1(x0, x2)));
             NonterminalId::ImportsList
         }
         251 => {
             // ExportSpecifier ::= "IdentifierName" => ExportSpecifier 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.export_specifier_p0()) as *mut ());
+            stack.push(StackValue::from(handler.export_specifier_p0()));
             NonterminalId::ExportSpecifier
         }
         252 => {
@@ -10321,699 +11810,699 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.export_specifier_p1()) as *mut ());
+            stack.push(StackValue::from(handler.export_specifier_p1()));
             NonterminalId::ExportSpecifier
         }
         253 => {
             // LogicalORExpression ::= LogicalANDExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::LogicalOrExpression
         }
         254 => {
             // LogicalORExpression ::= LogicalORExpression "||" LogicalANDExpression => LogicalORExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.logical_or_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.logical_or_expression_p1(x0, x2)));
             NonterminalId::LogicalOrExpression
         }
         255 => {
             // ArrowParameters ::= BindingIdentifier => ArrowParameters 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.arrow_parameters_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.arrow_parameters_p0(x0)));
             NonterminalId::ArrowParameters
         }
         256 => {
             // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => ArrowParameters 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CoverParenthesizedExpressionAndArrowParameterList) };
-            stack.push(Box::into_raw(handler.arrow_parameters_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_cover_parenthesized_expression_and_arrow_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.arrow_parameters_p1(x0)));
             NonterminalId::ArrowParameters
         }
         257 => {
             // ConciseBody ::= [lookahead != '{'] AssignmentExpression => ConciseBody 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.concise_body_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.concise_body_p0(x0)));
             NonterminalId::ConciseBody
         }
         258 => {
             // ConciseBody ::= "{" "}" => ConciseBody 1($0, FunctionBody(FunctionStatementList(None)), $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.concise_body_p1(handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.concise_body_p1(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::ConciseBody
         }
         259 => {
             // ConciseBody ::= "{" FunctionBody "}" => ConciseBody 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x1 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.concise_body_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.concise_body_p1(x1)));
             NonterminalId::ConciseBody
         }
         260 => {
             // AsyncArrowBindingIdentifier ::= BindingIdentifier => AsyncArrowBindingIdentifier($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.async_arrow_binding_identifier(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.async_arrow_binding_identifier(x0)));
             NonterminalId::AsyncArrowBindingIdentifier
         }
         261 => {
             // AsyncConciseBody ::= [lookahead != '{'] AssignmentExpression => AsyncConciseBody 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.async_concise_body_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.async_concise_body_p0(x0)));
             NonterminalId::AsyncConciseBody
         }
         262 => {
             // AsyncConciseBody ::= "{" "}" => AsyncConciseBody 1($0, AsyncFunctionBody(FunctionBody(FunctionStatementList(None))), $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_concise_body_p1(handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_concise_body_p1(handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncConciseBody
         }
         263 => {
             // AsyncConciseBody ::= "{" AsyncFunctionBody "}" => AsyncConciseBody 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x1 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_concise_body_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.async_concise_body_p1(x1)));
             NonterminalId::AsyncConciseBody
         }
         264 => {
             // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => CoverCallExpressionAndAsyncArrowHead($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Arguments) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.cover_call_expression_and_async_arrow_head(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_arguments(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.cover_call_expression_and_async_arrow_head(x0, x1)));
             NonterminalId::CoverCallExpressionAndAsyncArrowHead
         }
         265 => {
             // NewExpression ::= MemberExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::NewExpression
         }
         266 => {
             // NewExpression ::= "new" NewExpression => NewExpression 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.new_expression_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.new_expression_p1(x1)));
             NonterminalId::NewExpression
         }
         267 => {
             // CallExpression ::= CoverCallExpressionAndAsyncArrowHead => CallExpression 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CoverCallExpressionAndAsyncArrowHead) };
-            stack.push(Box::into_raw(handler.call_expression_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_cover_call_expression_and_async_arrow_head(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p0(x0)));
             NonterminalId::CallExpression
         }
         268 => {
             // CallExpression ::= SuperCall => CallExpression 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SuperCall) };
-            stack.push(Box::into_raw(handler.call_expression_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_super_call(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p1(x0)));
             NonterminalId::CallExpression
         }
         269 => {
             // CallExpression ::= CallExpression Arguments => CallExpression 2($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Arguments) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.call_expression_p2(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_arguments(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p2(x0, x1)));
             NonterminalId::CallExpression
         }
         270 => {
             // CallExpression ::= CallExpression "[" Expression "]" => CallExpression 3($0, $1, $2, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.call_expression_p3(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p3(x0, x2)));
             NonterminalId::CallExpression
         }
         271 => {
             // CallExpression ::= CallExpression "." "IdentifierName" => CallExpression 4($0, $1, $2)
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.call_expression_p4(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p4(x0)));
             NonterminalId::CallExpression
         }
         272 => {
             // CallExpression ::= CallExpression TemplateLiteral => CallExpression 5($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateLiteral) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.call_expression_p5(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_template_literal(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.call_expression_p5(x0, x1)));
             NonterminalId::CallExpression
         }
         273 => {
             // Initializer ::= "=" AssignmentExpression => Initializer($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.initializer(x1)) as *mut ());
+            stack.push(StackValue::from(handler.initializer(x1)));
             NonterminalId::Initializer
         }
         274 => {
             // BindingPattern ::= ObjectBindingPattern => BindingPattern 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ObjectBindingPattern) };
-            stack.push(Box::into_raw(handler.binding_pattern_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_object_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_pattern_p0(x0)));
             NonterminalId::BindingPattern
         }
         275 => {
             // BindingPattern ::= ArrayBindingPattern => BindingPattern 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArrayBindingPattern) };
-            stack.push(Box::into_raw(handler.binding_pattern_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_array_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_pattern_p1(x0)));
             NonterminalId::BindingPattern
         }
         276 => {
             // CaseClauses ::= CaseClause => CaseClauses 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClause) };
-            stack.push(Box::into_raw(handler.case_clauses_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_case_clause(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.case_clauses_p0(x0)));
             NonterminalId::CaseClauses
         }
         277 => {
             // CaseClauses ::= CaseClauses CaseClause => CaseClauses 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClause) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CaseClauses) };
-            stack.push(Box::into_raw(handler.case_clauses_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_case_clause(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_case_clauses(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.case_clauses_p1(x0, x1)));
             NonterminalId::CaseClauses
         }
         278 => {
             // DefaultClause ::= "default" ":" => DefaultClause($0, $1, None)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.default_clause(None)) as *mut ());
+            stack.push(StackValue::from(handler.default_clause(None)));
             NonterminalId::DefaultClause
         }
         279 => {
             // DefaultClause ::= "default" ":" StatementList => DefaultClause($0, $1, Some($2))
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
+            let x2 = StackValue::unwrap_statement_list(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.default_clause(Some(x2))) as *mut ());
+            stack.push(StackValue::from(handler.default_clause(Some(x2))));
             NonterminalId::DefaultClause
         }
         280 => {
             // FunctionRestParameter ::= BindingRestElement => FunctionRestParameter($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestElement) };
-            stack.push(Box::into_raw(handler.function_rest_parameter(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_rest_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.function_rest_parameter(x0)));
             NonterminalId::FunctionRestParameter
         }
         281 => {
             // FormalParameterList ::= FormalParameter => FormalParameterList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameter) };
-            stack.push(Box::into_raw(handler.formal_parameter_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameter_list_p0(x0)));
             NonterminalId::FormalParameterList
         }
         282 => {
             // FormalParameterList ::= FormalParameterList "," FormalParameter => FormalParameterList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameter) };
+            let x2 = StackValue::unwrap_formal_parameter(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameterList) };
-            stack.push(Box::into_raw(handler.formal_parameter_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameter_list_p1(x0, x2)));
             NonterminalId::FormalParameterList
         }
         283 => {
             // FunctionStatementList ::= [empty] => FunctionStatementList(None)
-            stack.push(Box::into_raw(handler.function_statement_list(None)) as *mut ());
+            stack.push(StackValue::from(handler.function_statement_list(None)));
             NonterminalId::FunctionStatementList
         }
         284 => {
             // FunctionStatementList ::= StatementList => FunctionStatementList(Some($0))
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
-            stack.push(Box::into_raw(handler.function_statement_list(Some(x0))) as *mut ());
+            let x0 = StackValue::unwrap_statement_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.function_statement_list(Some(x0))));
             NonterminalId::FunctionStatementList
         }
         285 => {
             // ClassElementList ::= ClassElement => ClassElementList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassElement) };
-            stack.push(Box::into_raw(handler.class_element_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_class_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_element_list_p0(x0)));
             NonterminalId::ClassElementList
         }
         286 => {
             // ClassElementList ::= ClassElementList ClassElement => ClassElementList 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassElement) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassElementList) };
-            stack.push(Box::into_raw(handler.class_element_list_p1(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_class_element(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_class_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_element_list_p1(x0, x1)));
             NonterminalId::ClassElementList
         }
         287 => {
             // ImportSpecifier ::= ImportedBinding => ImportSpecifier 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedBinding) };
-            stack.push(Box::into_raw(handler.import_specifier_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_imported_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.import_specifier_p0(x0)));
             NonterminalId::ImportSpecifier
         }
         288 => {
             // ImportSpecifier ::= "IdentifierName" "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ImportedBinding) };
+            let x2 = StackValue::unwrap_imported_binding(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.import_specifier_p1(x2)) as *mut ());
+            stack.push(StackValue::from(handler.import_specifier_p1(x2)));
             NonterminalId::ImportSpecifier
         }
         289 => {
             // LogicalANDExpression ::= BitwiseORExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::LogicalAndExpression
         }
         290 => {
             // LogicalANDExpression ::= LogicalANDExpression "&&" BitwiseORExpression => LogicalANDExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.logical_and_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.logical_and_expression_p1(x0, x2)));
             NonterminalId::LogicalAndExpression
         }
         291 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression ")" => CoverParenthesizedExpressionAndArrowParameterList 0($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p0(x1)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p0(x1)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         292 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," ")" => CoverParenthesizedExpressionAndArrowParameterList 1($0, $1, $2, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p1(x1)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         293 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => CoverParenthesizedExpressionAndArrowParameterList 2($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p2()) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p2()));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         294 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 3($0, $1, $2, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p3(x2)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p3(x2)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         295 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 4($0, $1, $2, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
+            let x2 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p4(x2)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p4(x2)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         296 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 5($0, $1, $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x4 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p5(x1, x4)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p5(x1, x4)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         297 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 6($0, $1, $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
+            let x4 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.cover_parenthesized_expression_and_arrow_parameter_list_p6(x1, x4)) as *mut ());
+            stack.push(StackValue::from(handler.cover_parenthesized_expression_and_arrow_parameter_list_p6(x1, x4)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         298 => {
             // MemberExpression ::= PrimaryExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::MemberExpression
         }
         299 => {
             // MemberExpression ::= MemberExpression "[" Expression "]" => MemberExpression 1($0, $1, $2, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.member_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.member_expression_p1(x0, x2)));
             NonterminalId::MemberExpression
         }
         300 => {
             // MemberExpression ::= MemberExpression "." "IdentifierName" => MemberExpression 2($0, $1, $2)
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.member_expression_p2(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.member_expression_p2(x0)));
             NonterminalId::MemberExpression
         }
         301 => {
             // MemberExpression ::= MemberExpression TemplateLiteral => MemberExpression 3($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateLiteral) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.member_expression_p3(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_template_literal(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.member_expression_p3(x0, x1)));
             NonterminalId::MemberExpression
         }
         302 => {
             // MemberExpression ::= SuperProperty => MemberExpression 4($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SuperProperty) };
-            stack.push(Box::into_raw(handler.member_expression_p4(x0)) as *mut ());
+            let x0 = StackValue::unwrap_super_property(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.member_expression_p4(x0)));
             NonterminalId::MemberExpression
         }
         303 => {
             // MemberExpression ::= MetaProperty => MemberExpression 5($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MetaProperty) };
-            stack.push(Box::into_raw(handler.member_expression_p5(x0)) as *mut ());
+            let x0 = StackValue::unwrap_meta_property(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.member_expression_p5(x0)));
             NonterminalId::MemberExpression
         }
         304 => {
             // MemberExpression ::= "new" MemberExpression Arguments => MemberExpression 6($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Arguments) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_arguments(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.member_expression_p6(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.member_expression_p6(x1, x2)));
             NonterminalId::MemberExpression
         }
         305 => {
             // Arguments ::= "(" ")" => Arguments 0($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.arguments_p0()) as *mut ());
+            stack.push(StackValue::from(handler.arguments_p0()));
             NonterminalId::Arguments
         }
         306 => {
             // Arguments ::= "(" ArgumentList ")" => Arguments 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArgumentList) };
+            let x1 = StackValue::unwrap_argument_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.arguments_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.arguments_p1(x1)));
             NonterminalId::Arguments
         }
         307 => {
             // Arguments ::= "(" ArgumentList "," ")" => Arguments 2($0, $1, $2, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArgumentList) };
+            let x1 = StackValue::unwrap_argument_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.arguments_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.arguments_p2(x1)));
             NonterminalId::Arguments
         }
         308 => {
             // SuperCall ::= "super" Arguments => SuperCall($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Arguments) };
+            let x1 = StackValue::unwrap_arguments(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.super_call(x1)) as *mut ());
+            stack.push(StackValue::from(handler.super_call(x1)));
             NonterminalId::SuperCall
         }
         309 => {
             // TemplateLiteral ::= "NoSubstitutionTemplate" => TemplateLiteral 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.template_literal_p0()) as *mut ());
+            stack.push(StackValue::from(handler.template_literal_p0()));
             NonterminalId::TemplateLiteral
         }
         310 => {
             // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SubstitutionTemplate) };
-            stack.push(Box::into_raw(handler.template_literal_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_substitution_template(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.template_literal_p1(x0)));
             NonterminalId::TemplateLiteral
         }
         311 => {
             // ObjectBindingPattern ::= "{" "}" => ObjectBindingPattern 0($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.object_binding_pattern_p0()) as *mut ());
+            stack.push(StackValue::from(handler.object_binding_pattern_p0()));
             NonterminalId::ObjectBindingPattern
         }
         312 => {
             // ObjectBindingPattern ::= "{" BindingRestProperty "}" => ObjectBindingPattern 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestProperty) };
+            let x1 = StackValue::unwrap_binding_rest_property(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_binding_pattern_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.object_binding_pattern_p1(x1)));
             NonterminalId::ObjectBindingPattern
         }
         313 => {
             // ObjectBindingPattern ::= "{" BindingPropertyList "}" => ObjectBindingPattern 2($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPropertyList) };
+            let x1 = StackValue::unwrap_binding_property_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_binding_pattern_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.object_binding_pattern_p2(x1)));
             NonterminalId::ObjectBindingPattern
         }
         314 => {
             // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => ObjectBindingPattern 3($0, $1, $2, None, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPropertyList) };
+            let x1 = StackValue::unwrap_binding_property_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_binding_pattern_p3(x1, None)) as *mut ());
+            stack.push(StackValue::from(handler.object_binding_pattern_p3(x1, None)));
             NonterminalId::ObjectBindingPattern
         }
         315 => {
             // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => ObjectBindingPattern 3($0, $1, $2, Some($3), $4)
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestProperty) };
+            let x3 = StackValue::unwrap_binding_rest_property(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPropertyList) };
+            let x1 = StackValue::unwrap_binding_property_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_binding_pattern_p3(x1, Some(x3))) as *mut ());
+            stack.push(StackValue::from(handler.object_binding_pattern_p3(x1, Some(x3))));
             NonterminalId::ObjectBindingPattern
         }
         316 => {
             // ArrayBindingPattern ::= "[" "]" => ArrayBindingPattern 0($0, None, None, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p0(None, None)) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p0(None, None)));
             NonterminalId::ArrayBindingPattern
         }
         317 => {
             // ArrayBindingPattern ::= "[" Elision "]" => ArrayBindingPattern 0($0, Some($1), None, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x1 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p0(Some(x1), None)) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p0(Some(x1), None)));
             NonterminalId::ArrayBindingPattern
         }
         318 => {
             // ArrayBindingPattern ::= "[" BindingRestElement "]" => ArrayBindingPattern 0($0, None, Some($1), $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestElement) };
+            let x1 = StackValue::unwrap_binding_rest_element(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p0(None, Some(x1))) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p0(None, Some(x1))));
             NonterminalId::ArrayBindingPattern
         }
         319 => {
             // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => ArrayBindingPattern 0($0, Some($1), Some($2), $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestElement) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x2 = StackValue::unwrap_binding_rest_element(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p0(Some(x1), Some(x2))) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p0(Some(x1), Some(x2))));
             NonterminalId::ArrayBindingPattern
         }
         320 => {
             // ArrayBindingPattern ::= "[" BindingElementList "]" => ArrayBindingPattern 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
+            let x1 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p1(x1)));
             NonterminalId::ArrayBindingPattern
         }
         321 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," "]" => ArrayBindingPattern 2($0, $1, $2, None, None, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
+            let x1 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p2(x1, None, None)) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p2(x1, None, None)));
             NonterminalId::ArrayBindingPattern
         }
         322 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => ArrayBindingPattern 2($0, $1, $2, Some($3), None, $4)
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x3 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
+            let x1 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p2(x1, Some(x3), None)) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p2(x1, Some(x3), None)));
             NonterminalId::ArrayBindingPattern
         }
         323 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => ArrayBindingPattern 2($0, $1, $2, None, Some($3), $4)
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestElement) };
+            let x3 = StackValue::unwrap_binding_rest_element(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
+            let x1 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p2(x1, None, Some(x3))) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p2(x1, None, Some(x3))));
             NonterminalId::ArrayBindingPattern
         }
         324 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => ArrayBindingPattern 2($0, $1, $2, Some($3), Some($4), $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingRestElement) };
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x4 = StackValue::unwrap_binding_rest_element(stack.pop().unwrap());
+            let x3 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
+            let x1 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_binding_pattern_p2(x1, Some(x3), Some(x4))) as *mut ());
+            stack.push(StackValue::from(handler.array_binding_pattern_p2(x1, Some(x3), Some(x4))));
             NonterminalId::ArrayBindingPattern
         }
         325 => {
             // CaseClause ::= "case" Expression ":" => CaseClause($0, $1, $2, None)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_clause(x1, None)) as *mut ());
+            stack.push(StackValue::from(handler.case_clause(x1, None)));
             NonterminalId::CaseClause
         }
         326 => {
             // CaseClause ::= "case" Expression ":" StatementList => CaseClause($0, $1, $2, Some($3))
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::StatementList) };
+            let x3 = StackValue::unwrap_statement_list(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.case_clause(x1, Some(x3))) as *mut ());
+            stack.push(StackValue::from(handler.case_clause(x1, Some(x3))));
             NonterminalId::CaseClause
         }
         327 => {
             // BindingRestElement ::= "..." BindingIdentifier => BindingRestElement 0($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_rest_element_p0(x1)) as *mut ());
+            stack.push(StackValue::from(handler.binding_rest_element_p0(x1)));
             NonterminalId::BindingRestElement
         }
         328 => {
             // BindingRestElement ::= "..." BindingPattern => BindingRestElement 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
+            let x1 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_rest_element_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.binding_rest_element_p1(x1)));
             NonterminalId::BindingRestElement
         }
         329 => {
             // FormalParameter ::= BindingElement => FormalParameter($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElement) };
-            stack.push(Box::into_raw(handler.formal_parameter(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.formal_parameter(x0)));
             NonterminalId::FormalParameter
         }
         330 => {
             // ClassElement ::= MethodDefinition => ClassElement 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
-            stack.push(Box::into_raw(handler.class_element_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_method_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.class_element_p0(x0)));
             NonterminalId::ClassElement
         }
         331 => {
             // ClassElement ::= "static" MethodDefinition => ClassElement 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
+            let x1 = StackValue::unwrap_method_definition(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_element_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.class_element_p1(x1)));
             NonterminalId::ClassElement
         }
         332 => {
             // ClassElement ::= ";" => ClassElement 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.class_element_p2()) as *mut ());
+            stack.push(StackValue::from(handler.class_element_p2()));
             NonterminalId::ClassElement
         }
         333 => {
             // BitwiseORExpression ::= BitwiseXORExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::BitwiseOrExpression
         }
         334 => {
             // BitwiseORExpression ::= BitwiseORExpression "|" BitwiseXORExpression => BitwiseORExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.bitwise_or_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.bitwise_or_expression_p1(x0, x2)));
             NonterminalId::BitwiseOrExpression
         }
         335 => {
             // PrimaryExpression ::= "this" => PrimaryExpression 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.primary_expression_p0()) as *mut ());
+            stack.push(StackValue::from(handler.primary_expression_p0()));
             NonterminalId::PrimaryExpression
         }
         336 => {
             // PrimaryExpression ::= IdentifierReference => PrimaryExpression 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::IdentifierReference) };
-            stack.push(Box::into_raw(handler.primary_expression_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_identifier_reference(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.primary_expression_p1(x0)));
             NonterminalId::PrimaryExpression
         }
         337 => {
             // PrimaryExpression ::= Literal => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         338 => {
             // PrimaryExpression ::= ArrayLiteral => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         339 => {
             // PrimaryExpression ::= ObjectLiteral => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         340 => {
             // PrimaryExpression ::= FunctionExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         341 => {
             // PrimaryExpression ::= ClassExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         342 => {
             // PrimaryExpression ::= GeneratorExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         343 => {
             // PrimaryExpression ::= AsyncFunctionExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         344 => {
             // PrimaryExpression ::= AsyncGeneratorExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::PrimaryExpression
         }
         345 => {
             // PrimaryExpression ::= "RegularExpressionLiteral" => PrimaryExpression 10($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.primary_expression_p10()) as *mut ());
+            stack.push(StackValue::from(handler.primary_expression_p10()));
             NonterminalId::PrimaryExpression
         }
         346 => {
             // PrimaryExpression ::= TemplateLiteral => PrimaryExpression 11($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateLiteral) };
-            stack.push(Box::into_raw(handler.primary_expression_p11(x0)) as *mut ());
+            let x0 = StackValue::unwrap_template_literal(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.primary_expression_p11(x0)));
             NonterminalId::PrimaryExpression
         }
         347 => {
             // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => PrimaryExpression 12($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CoverParenthesizedExpressionAndArrowParameterList) };
-            stack.push(Box::into_raw(handler.primary_expression_p12(x0)) as *mut ());
+            let x0 = StackValue::unwrap_cover_parenthesized_expression_and_arrow_parameter_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.primary_expression_p12(x0)));
             NonterminalId::PrimaryExpression
         }
         348 => {
             // SuperProperty ::= "super" "[" Expression "]" => SuperProperty 0($0, $1, $2, $3)
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.super_property_p0(x2)) as *mut ());
+            stack.push(StackValue::from(handler.super_property_p0(x2)));
             NonterminalId::SuperProperty
         }
         349 => {
@@ -11021,118 +12510,118 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.super_property_p1()) as *mut ());
+            stack.push(StackValue::from(handler.super_property_p1()));
             NonterminalId::SuperProperty
         }
         350 => {
             // MetaProperty ::= NewTarget => MetaProperty($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::NewTarget) };
-            stack.push(Box::into_raw(handler.meta_property(x0)) as *mut ());
+            let x0 = StackValue::unwrap_new_target(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.meta_property(x0)));
             NonterminalId::MetaProperty
         }
         351 => {
             // ArgumentList ::= AssignmentExpression => ArgumentList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.argument_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.argument_list_p0(x0)));
             NonterminalId::ArgumentList
         }
         352 => {
             // ArgumentList ::= "..." AssignmentExpression => ArgumentList 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.argument_list_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.argument_list_p1(x1)));
             NonterminalId::ArgumentList
         }
         353 => {
             // ArgumentList ::= ArgumentList "," AssignmentExpression => ArgumentList 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArgumentList) };
-            stack.push(Box::into_raw(handler.argument_list_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_argument_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.argument_list_p2(x0, x2)));
             NonterminalId::ArgumentList
         }
         354 => {
             // ArgumentList ::= ArgumentList "," "..." AssignmentExpression => ArgumentList 3($0, $1, $2, $3)
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ArgumentList) };
-            stack.push(Box::into_raw(handler.argument_list_p3(x0, x3)) as *mut ());
+            let x0 = StackValue::unwrap_argument_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.argument_list_p3(x0, x3)));
             NonterminalId::ArgumentList
         }
         355 => {
             // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateSpans) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_template_spans(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.substitution_template(x1, x2)) as *mut ());
+            stack.push(StackValue::from(handler.substitution_template(x1, x2)));
             NonterminalId::SubstitutionTemplate
         }
         356 => {
             // BindingRestProperty ::= "..." BindingIdentifier => BindingRestProperty($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.binding_rest_property(x1)) as *mut ());
+            stack.push(StackValue::from(handler.binding_rest_property(x1)));
             NonterminalId::BindingRestProperty
         }
         357 => {
             // BindingPropertyList ::= BindingProperty => BindingPropertyList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingProperty) };
-            stack.push(Box::into_raw(handler.binding_property_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_property(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_property_list_p0(x0)));
             NonterminalId::BindingPropertyList
         }
         358 => {
             // BindingPropertyList ::= BindingPropertyList "," BindingProperty => BindingPropertyList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingProperty) };
+            let x2 = StackValue::unwrap_binding_property(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPropertyList) };
-            stack.push(Box::into_raw(handler.binding_property_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_binding_property_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_property_list_p1(x0, x2)));
             NonterminalId::BindingPropertyList
         }
         359 => {
             // Elision ::= "," => Elision 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.elision_p0()) as *mut ());
+            stack.push(StackValue::from(handler.elision_p0()));
             NonterminalId::Elision
         }
         360 => {
             // Elision ::= Elision "," => Elision 1($0, $1)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
-            stack.push(Box::into_raw(handler.elision_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_elision(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.elision_p1(x0)));
             NonterminalId::Elision
         }
         361 => {
             // BindingElementList ::= BindingElisionElement => BindingElementList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElisionElement) };
-            stack.push(Box::into_raw(handler.binding_element_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_elision_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_element_list_p0(x0)));
             NonterminalId::BindingElementList
         }
         362 => {
             // BindingElementList ::= BindingElementList "," BindingElisionElement => BindingElementList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElisionElement) };
+            let x2 = StackValue::unwrap_binding_elision_element(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElementList) };
-            stack.push(Box::into_raw(handler.binding_element_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_binding_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_element_list_p1(x0, x2)));
             NonterminalId::BindingElementList
         }
         363 => {
             // BindingElement ::= SingleNameBinding => BindingElement 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SingleNameBinding) };
-            stack.push(Box::into_raw(handler.binding_element_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_single_name_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_element_p0(x0)));
             NonterminalId::BindingElement
         }
         364 => {
             // BindingElement ::= BindingPattern => BindingElement 1($0, None)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.binding_element_p1(x0, None)) as *mut ());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_element_p1(x0, None)));
             NonterminalId::BindingElement
         }
         365 => {
             // BindingElement ::= BindingPattern Initializer => BindingElement 1($0, Some($1))
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingPattern) };
-            stack.push(Box::into_raw(handler.binding_element_p1(x0, Some(x1))) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_pattern(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_element_p1(x0, Some(x1))));
             NonterminalId::BindingElement
         }
         366 => {
@@ -11141,8 +12630,8 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.method_definition_p0(x0, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.method_definition_p0(x0, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::MethodDefinition
         }
         367 => {
@@ -11150,51 +12639,51 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x2 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.method_definition_p0(x0, x2, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.method_definition_p0(x0, x2, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::MethodDefinition
         }
         368 => {
             // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, UniqueFormalParameters(FormalParameters 0()), $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x4 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.method_definition_p0(x0, handler.unique_formal_parameters(handler.formal_parameters_p0()), x4)) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.method_definition_p0(x0, handler.unique_formal_parameters(handler.formal_parameters_p0()), x4)));
             NonterminalId::MethodDefinition
         }
         369 => {
             // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, $2, $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x2 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.method_definition_p0(x0, x2, x5)) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.method_definition_p0(x0, x2, x5)));
             NonterminalId::MethodDefinition
         }
         370 => {
             // MethodDefinition ::= GeneratorMethod => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_method_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::MethodDefinition
         }
         371 => {
             // MethodDefinition ::= AsyncMethod => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_method_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::MethodDefinition
         }
         372 => {
             // MethodDefinition ::= AsyncGeneratorMethod => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_method_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::MethodDefinition
         }
         373 => {
@@ -11203,21 +12692,21 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.method_definition_p4(x1, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.method_definition_p4(x1, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::MethodDefinition
         }
         374 => {
             // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => MethodDefinition 4($0, $1, $2, $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.method_definition_p4(x1, x5)) as *mut ());
+            stack.push(StackValue::from(handler.method_definition_p4(x1, x5)));
             NonterminalId::MethodDefinition
         }
         375 => {
@@ -11225,134 +12714,134 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertySetParameterList) };
+            let x3 = StackValue::unwrap_property_set_parameter_list(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.method_definition_p5(x1, x3, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.method_definition_p5(x1, x3, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::MethodDefinition
         }
         376 => {
             // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => MethodDefinition 5($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x6 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertySetParameterList) };
+            let x3 = StackValue::unwrap_property_set_parameter_list(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.method_definition_p5(x1, x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.method_definition_p5(x1, x3, x6)));
             NonterminalId::MethodDefinition
         }
         377 => {
             // BitwiseXORExpression ::= BitwiseANDExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::BitwiseXorExpression
         }
         378 => {
             // BitwiseXORExpression ::= BitwiseXORExpression "^" BitwiseANDExpression => BitwiseXORExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.bitwise_xor_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.bitwise_xor_expression_p1(x0, x2)));
             NonterminalId::BitwiseXorExpression
         }
         379 => {
             // IdentifierReference ::= "Identifier" => IdentifierReference($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.identifier_reference()) as *mut ());
+            stack.push(StackValue::from(handler.identifier_reference()));
             NonterminalId::IdentifierReference
         }
         380 => {
             // Literal ::= "NullLiteral" => Literal 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_p0()) as *mut ());
+            stack.push(StackValue::from(handler.literal_p0()));
             NonterminalId::Literal
         }
         381 => {
             // Literal ::= "BooleanLiteral" => Literal 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_p1()) as *mut ());
+            stack.push(StackValue::from(handler.literal_p1()));
             NonterminalId::Literal
         }
         382 => {
             // Literal ::= "NumericLiteral" => Literal 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_p2()) as *mut ());
+            stack.push(StackValue::from(handler.literal_p2()));
             NonterminalId::Literal
         }
         383 => {
             // Literal ::= "StringLiteral" => Literal 3($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_p3()) as *mut ());
+            stack.push(StackValue::from(handler.literal_p3()));
             NonterminalId::Literal
         }
         384 => {
             // ArrayLiteral ::= "[" "]" => ArrayLiteral 0($0, None, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.array_literal_p0(None)) as *mut ());
+            stack.push(StackValue::from(handler.array_literal_p0(None)));
             NonterminalId::ArrayLiteral
         }
         385 => {
             // ArrayLiteral ::= "[" Elision "]" => ArrayLiteral 0($0, Some($1), $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x1 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_literal_p0(Some(x1))) as *mut ());
+            stack.push(StackValue::from(handler.array_literal_p0(Some(x1))));
             NonterminalId::ArrayLiteral
         }
         386 => {
             // ArrayLiteral ::= "[" ElementList "]" => ArrayLiteral 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
+            let x1 = StackValue::unwrap_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_literal_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.array_literal_p1(x1)));
             NonterminalId::ArrayLiteral
         }
         387 => {
             // ArrayLiteral ::= "[" ElementList "," "]" => ArrayLiteral 2($0, $1, $2, None, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
+            let x1 = StackValue::unwrap_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_literal_p2(x1, None)) as *mut ());
+            stack.push(StackValue::from(handler.array_literal_p2(x1, None)));
             NonterminalId::ArrayLiteral
         }
         388 => {
             // ArrayLiteral ::= "[" ElementList "," Elision "]" => ArrayLiteral 2($0, $1, $2, Some($3), $4)
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x3 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
+            let x1 = StackValue::unwrap_element_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.array_literal_p2(x1, Some(x3))) as *mut ());
+            stack.push(StackValue::from(handler.array_literal_p2(x1, Some(x3))));
             NonterminalId::ArrayLiteral
         }
         389 => {
             // ObjectLiteral ::= "{" "}" => ObjectLiteral 0($0, $1)
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.object_literal_p0()) as *mut ());
+            stack.push(StackValue::from(handler.object_literal_p0()));
             NonterminalId::ObjectLiteral
         }
         390 => {
             // ObjectLiteral ::= "{" PropertyDefinitionList "}" => ObjectLiteral 1($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyDefinitionList) };
+            let x1 = StackValue::unwrap_property_definition_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_literal_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.object_literal_p1(x1)));
             NonterminalId::ObjectLiteral
         }
         391 => {
             // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => ObjectLiteral 2($0, $1, $2, $3)
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyDefinitionList) };
+            let x1 = StackValue::unwrap_property_definition_list(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.object_literal_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.object_literal_p2(x1)));
             NonterminalId::ObjectLiteral
         }
         392 => {
@@ -11362,7 +12851,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(None, handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(None, handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionExpression
         }
         393 => {
@@ -11371,9 +12860,9 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(Some(x1), handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(Some(x1), handler.formal_parameters_p0(), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionExpression
         }
         394 => {
@@ -11381,10 +12870,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x2 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(None, x2, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(None, x2, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionExpression
         }
         395 => {
@@ -11392,74 +12881,74 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(Some(x1), x3, handler.function_body(handler.function_statement_list(None)))) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(Some(x1), x3, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::FunctionExpression
         }
         396 => {
             // FunctionExpression ::= "function" "(" ")" "{" FunctionBody "}" => FunctionExpression($0, None, $1, FormalParameters 0(), $2, $3, $4, $5)
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x4 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(None, handler.formal_parameters_p0(), x4)) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(None, handler.formal_parameters_p0(), x4)));
             NonterminalId::FunctionExpression
         }
         397 => {
             // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => FunctionExpression($0, Some($1), $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(Some(x1), handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(Some(x1), handler.formal_parameters_p0(), x5)));
             NonterminalId::FunctionExpression
         }
         398 => {
             // FunctionExpression ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => FunctionExpression($0, None, $1, $2, $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x5 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x2 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(None, x2, x5)) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(None, x2, x5)));
             NonterminalId::FunctionExpression
         }
         399 => {
             // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => FunctionExpression($0, Some($1), $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FunctionBody) };
+            let x6 = StackValue::unwrap_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.function_expression(Some(x1), x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.function_expression(Some(x1), x3, x6)));
             NonterminalId::FunctionExpression
         }
         400 => {
             // ClassExpression ::= "class" ClassTail => ClassExpression($0, None, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassTail) };
+            let x1 = StackValue::unwrap_class_tail(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_expression(None, x1)) as *mut ());
+            stack.push(StackValue::from(handler.class_expression(None, x1)));
             NonterminalId::ClassExpression
         }
         401 => {
             // ClassExpression ::= "class" BindingIdentifier ClassTail => ClassExpression($0, Some($1), $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ClassTail) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_class_tail(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.class_expression(Some(x1), x2)) as *mut ());
+            stack.push(StackValue::from(handler.class_expression(Some(x1), x2)));
             NonterminalId::ClassExpression
         }
         402 => {
@@ -11470,7 +12959,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(None, handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(None, handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorExpression
         }
         403 => {
@@ -11479,10 +12968,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(Some(x2), handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(Some(x2), handler.formal_parameters_p0(), handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorExpression
         }
         404 => {
@@ -11490,11 +12979,11 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(None, x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(None, x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorExpression
         }
         405 => {
@@ -11502,64 +12991,64 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(Some(x2), x4, handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(Some(x2), x4, handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorExpression
         }
         406 => {
             // GeneratorExpression ::= "function" "*" "(" ")" "{" GeneratorBody "}" => GeneratorExpression($0, $1, None, $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x5 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(None, handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(None, handler.formal_parameters_p0(), x5)));
             NonterminalId::GeneratorExpression
         }
         407 => {
             // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => GeneratorExpression($0, $1, Some($2), $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x6 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(Some(x2), handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(Some(x2), handler.formal_parameters_p0(), x6)));
             NonterminalId::GeneratorExpression
         }
         408 => {
             // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorExpression($0, $1, None, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x6 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(None, x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(None, x3, x6)));
             NonterminalId::GeneratorExpression
         }
         409 => {
             // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorExpression($0, $1, Some($2), $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x7 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_expression(Some(x2), x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.generator_expression(Some(x2), x4, x7)));
             NonterminalId::GeneratorExpression
         }
         410 => {
@@ -11570,7 +13059,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p0(handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p0(handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         411 => {
@@ -11578,36 +13067,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p0(x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p0(x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         412 => {
             // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 0($0, $1, $2, FormalParameters 0(), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x5 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p0(handler.formal_parameters_p0(), x5)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p0(handler.formal_parameters_p0(), x5)));
             NonterminalId::AsyncFunctionExpression
         }
         413 => {
             // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 0($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x6 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x3 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p0(x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p0(x3, x6)));
             NonterminalId::AsyncFunctionExpression
         }
         414 => {
@@ -11616,10 +13105,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p1(x2, handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p1(x2, handler.formal_parameters_p0(), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         415 => {
@@ -11627,39 +13116,39 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p1(x2, x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p1(x2, x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         416 => {
             // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 1($0, $1, $2, $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x6 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p1(x2, handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p1(x2, handler.formal_parameters_p0(), x6)));
             NonterminalId::AsyncFunctionExpression
         }
         417 => {
             // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 1($0, $1, $2, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x7 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x2 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_function_expression_p1(x2, x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_function_expression_p1(x2, x4, x7)));
             NonterminalId::AsyncFunctionExpression
         }
         418 => {
@@ -11671,7 +13160,7 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(None, handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(None, handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorExpression
         }
         419 => {
@@ -11680,11 +13169,11 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(Some(x3), handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(Some(x3), handler.formal_parameters_p0(), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorExpression
         }
         420 => {
@@ -11692,12 +13181,12 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(None, x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(None, x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorExpression
         }
         421 => {
@@ -11705,69 +13194,69 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x5 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(Some(x3), x5, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(Some(x3), x5, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorExpression
         }
         422 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorExpression($0, $1, $2, None, $3, FormalParameters 0(), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x6 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(None, handler.formal_parameters_p0(), x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(None, handler.formal_parameters_p0(), x6)));
             NonterminalId::AsyncGeneratorExpression
         }
         423 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorExpression($0, $1, $2, Some($3), $4, FormalParameters 0(), $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x7 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(Some(x3), handler.formal_parameters_p0(), x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(Some(x3), handler.formal_parameters_p0(), x7)));
             NonterminalId::AsyncGeneratorExpression
         }
         424 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorExpression($0, $1, $2, None, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x7 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x4 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(None, x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(None, x4, x7)));
             NonterminalId::AsyncGeneratorExpression
         }
         425 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorExpression($0, $1, $2, Some($3), $4, $5, $6, $7, $8, $9)
             stack.pop();
-            let x8 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x8 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
+            let x5 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
+            let x3 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_expression(Some(x3), x5, x8)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_expression(Some(x3), x5, x8)));
             NonterminalId::AsyncGeneratorExpression
         }
         426 => {
@@ -11775,83 +13264,83 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.new_target()) as *mut ());
+            stack.push(StackValue::from(handler.new_target()));
             NonterminalId::NewTarget
         }
         427 => {
             // TemplateSpans ::= "TemplateTail" => TemplateSpans 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.template_spans_p0()) as *mut ());
+            stack.push(StackValue::from(handler.template_spans_p0()));
             NonterminalId::TemplateSpans
         }
         428 => {
             // TemplateSpans ::= TemplateMiddleList "TemplateTail" => TemplateSpans 1($0, $1)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateMiddleList) };
-            stack.push(Box::into_raw(handler.template_spans_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_template_middle_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.template_spans_p1(x0)));
             NonterminalId::TemplateSpans
         }
         429 => {
             // BindingProperty ::= SingleNameBinding => BindingProperty 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SingleNameBinding) };
-            stack.push(Box::into_raw(handler.binding_property_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_single_name_binding(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_property_p0(x0)));
             NonterminalId::BindingProperty
         }
         430 => {
             // BindingProperty ::= PropertyName ":" BindingElement => BindingProperty 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElement) };
+            let x2 = StackValue::unwrap_binding_element(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.binding_property_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_property_p1(x0, x2)));
             NonterminalId::BindingProperty
         }
         431 => {
             // BindingElisionElement ::= BindingElement => BindingElisionElement(None, $0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElement) };
-            stack.push(Box::into_raw(handler.binding_elision_element(None, x0)) as *mut ());
+            let x0 = StackValue::unwrap_binding_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_elision_element(None, x0)));
             NonterminalId::BindingElisionElement
         }
         432 => {
             // BindingElisionElement ::= Elision BindingElement => BindingElisionElement(Some($0), $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingElement) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
-            stack.push(Box::into_raw(handler.binding_elision_element(Some(x0), x1)) as *mut ());
+            let x1 = StackValue::unwrap_binding_element(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_elision(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.binding_elision_element(Some(x0), x1)));
             NonterminalId::BindingElisionElement
         }
         433 => {
             // SingleNameBinding ::= BindingIdentifier => SingleNameBinding($0, None)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.single_name_binding(x0, None)) as *mut ());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.single_name_binding(x0, None)));
             NonterminalId::SingleNameBinding
         }
         434 => {
             // SingleNameBinding ::= BindingIdentifier Initializer => SingleNameBinding($0, Some($1))
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::BindingIdentifier) };
-            stack.push(Box::into_raw(handler.single_name_binding(x0, Some(x1))) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_binding_identifier(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.single_name_binding(x0, Some(x1))));
             NonterminalId::SingleNameBinding
         }
         435 => {
             // PropertyName ::= LiteralPropertyName => PropertyName 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::LiteralPropertyName) };
-            stack.push(Box::into_raw(handler.property_name_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_literal_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_name_p0(x0)));
             NonterminalId::PropertyName
         }
         436 => {
             // PropertyName ::= ComputedPropertyName => PropertyName 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ComputedPropertyName) };
-            stack.push(Box::into_raw(handler.property_name_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_computed_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_name_p1(x0)));
             NonterminalId::PropertyName
         }
         437 => {
             // UniqueFormalParameters ::= [empty] => UniqueFormalParameters(FormalParameters 0())
-            stack.push(Box::into_raw(handler.unique_formal_parameters(handler.formal_parameters_p0())) as *mut ());
+            stack.push(StackValue::from(handler.unique_formal_parameters(handler.formal_parameters_p0())));
             NonterminalId::UniqueFormalParameters
         }
         438 => {
             // UniqueFormalParameters ::= FormalParameters => UniqueFormalParameters($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameters) };
-            stack.push(Box::into_raw(handler.unique_formal_parameters(x0)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameters(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.unique_formal_parameters(x0)));
             NonterminalId::UniqueFormalParameters
         }
         439 => {
@@ -11860,9 +13349,9 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorMethod
         }
         440 => {
@@ -11870,36 +13359,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x3 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_method(x1, x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.generator_method(x1, x3, handler.generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::GeneratorMethod
         }
         441 => {
             // GeneratorMethod ::= "*" PropertyName "(" ")" "{" GeneratorBody "}" => GeneratorMethod($0, $1, $2, UniqueFormalParameters(FormalParameters 0()), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x5 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), x5)) as *mut ());
+            stack.push(StackValue::from(handler.generator_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), x5)));
             NonterminalId::GeneratorMethod
         }
         442 => {
             // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}" => GeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::GeneratorBody) };
+            let x6 = StackValue::unwrap_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x3 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.generator_method(x1, x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.generator_method(x1, x3, x6)));
             NonterminalId::GeneratorMethod
         }
         443 => {
@@ -11908,9 +13397,9 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncMethod
         }
         444 => {
@@ -11918,36 +13407,36 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x3 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_method(x1, x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_method(x1, x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncMethod
         }
         445 => {
             // AsyncMethod ::= "async" PropertyName "(" ")" "{" AsyncFunctionBody "}" => AsyncMethod($0, $1, $2, UniqueFormalParameters(FormalParameters 0()), $3, $4, $5, $6)
             stack.pop();
-            let x5 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x5 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), x5)) as *mut ());
+            stack.push(StackValue::from(handler.async_method(x1, handler.unique_formal_parameters(handler.formal_parameters_p0()), x5)));
             NonterminalId::AsyncMethod
         }
         446 => {
             // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => AsyncMethod($0, $1, $2, $3, $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncFunctionBody) };
+            let x6 = StackValue::unwrap_async_function_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x3 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x1 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.async_method(x1, x3, x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_method(x1, x3, x6)));
             NonterminalId::AsyncMethod
         }
         447 => {
@@ -11956,10 +13445,10 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x2 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_method(x2, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_method(x2, handler.unique_formal_parameters(handler.formal_parameters_p0()), handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorMethod
         }
         448 => {
@@ -11967,505 +13456,505 @@ pub fn reduce(handler: &DefaultHandler, prod: usize, stack: &mut Vec<*mut ()>) -
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x4 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x2 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_method(x2, x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_method(x2, x4, handler.async_generator_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncGeneratorMethod
         }
         449 => {
             // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, UniqueFormalParameters(FormalParameters 0()), $4, $5, $6, $7)
             stack.pop();
-            let x6 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x6 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x2 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_method(x2, handler.unique_formal_parameters(handler.formal_parameters_p0()), x6)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_method(x2, handler.unique_formal_parameters(handler.formal_parameters_p0()), x6)));
             NonterminalId::AsyncGeneratorMethod
         }
         450 => {
             // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
             stack.pop();
-            let x7 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::AsyncGeneratorBody) };
+            let x7 = StackValue::unwrap_async_generator_body(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            let x4 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::UniqueFormalParameters) };
+            let x4 = StackValue::unwrap_unique_formal_parameters(stack.pop().unwrap());
             stack.pop();
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
+            let x2 = StackValue::unwrap_property_name(stack.pop().unwrap());
             stack.pop();
             stack.pop();
-            stack.push(Box::into_raw(handler.async_generator_method(x2, x4, x7)) as *mut ());
+            stack.push(StackValue::from(handler.async_generator_method(x2, x4, x7)));
             NonterminalId::AsyncGeneratorMethod
         }
         451 => {
             // PropertySetParameterList ::= FormalParameter => PropertySetParameterList($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::FormalParameter) };
-            stack.push(Box::into_raw(handler.property_set_parameter_list(x0)) as *mut ());
+            let x0 = StackValue::unwrap_formal_parameter(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_set_parameter_list(x0)));
             NonterminalId::PropertySetParameterList
         }
         452 => {
             // BitwiseANDExpression ::= EqualityExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::BitwiseAndExpression
         }
         453 => {
             // BitwiseANDExpression ::= BitwiseANDExpression "&" EqualityExpression => BitwiseANDExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.bitwise_and_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.bitwise_and_expression_p1(x0, x2)));
             NonterminalId::BitwiseAndExpression
         }
         454 => {
             // ElementList ::= AssignmentExpression => ElementList 0(None, $0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.element_list_p0(None, x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p0(None, x0)));
             NonterminalId::ElementList
         }
         455 => {
             // ElementList ::= Elision AssignmentExpression => ElementList 0(Some($0), $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
-            stack.push(Box::into_raw(handler.element_list_p0(Some(x0), x1)) as *mut ());
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_elision(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p0(Some(x0), x1)));
             NonterminalId::ElementList
         }
         456 => {
             // ElementList ::= SpreadElement => ElementList 1(None, $0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SpreadElement) };
-            stack.push(Box::into_raw(handler.element_list_p1(None, x0)) as *mut ());
+            let x0 = StackValue::unwrap_spread_element(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p1(None, x0)));
             NonterminalId::ElementList
         }
         457 => {
             // ElementList ::= Elision SpreadElement => ElementList 1(Some($0), $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SpreadElement) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
-            stack.push(Box::into_raw(handler.element_list_p1(Some(x0), x1)) as *mut ());
+            let x1 = StackValue::unwrap_spread_element(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_elision(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p1(Some(x0), x1)));
             NonterminalId::ElementList
         }
         458 => {
             // ElementList ::= ElementList "," AssignmentExpression => ElementList 2($0, $1, None, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
-            stack.push(Box::into_raw(handler.element_list_p2(x0, None, x2)) as *mut ());
+            let x0 = StackValue::unwrap_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p2(x0, None, x2)));
             NonterminalId::ElementList
         }
         459 => {
             // ElementList ::= ElementList "," Elision AssignmentExpression => ElementList 2($0, $1, Some($2), $3)
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x3 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
-            stack.push(Box::into_raw(handler.element_list_p2(x0, Some(x2), x3)) as *mut ());
+            let x0 = StackValue::unwrap_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p2(x0, Some(x2), x3)));
             NonterminalId::ElementList
         }
         460 => {
             // ElementList ::= ElementList "," SpreadElement => ElementList 3($0, $1, None, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SpreadElement) };
+            let x2 = StackValue::unwrap_spread_element(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
-            stack.push(Box::into_raw(handler.element_list_p3(x0, None, x2)) as *mut ());
+            let x0 = StackValue::unwrap_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p3(x0, None, x2)));
             NonterminalId::ElementList
         }
         461 => {
             // ElementList ::= ElementList "," Elision SpreadElement => ElementList 3($0, $1, Some($2), $3)
-            let x3 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::SpreadElement) };
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Elision) };
+            let x3 = StackValue::unwrap_spread_element(stack.pop().unwrap());
+            let x2 = StackValue::unwrap_elision(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::ElementList) };
-            stack.push(Box::into_raw(handler.element_list_p3(x0, Some(x2), x3)) as *mut ());
+            let x0 = StackValue::unwrap_element_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.element_list_p3(x0, Some(x2), x3)));
             NonterminalId::ElementList
         }
         462 => {
             // PropertyDefinitionList ::= PropertyDefinition => PropertyDefinitionList 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyDefinition) };
-            stack.push(Box::into_raw(handler.property_definition_list_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_property_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_list_p0(x0)));
             NonterminalId::PropertyDefinitionList
         }
         463 => {
             // PropertyDefinitionList ::= PropertyDefinitionList "," PropertyDefinition => PropertyDefinitionList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyDefinition) };
+            let x2 = StackValue::unwrap_property_definition(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyDefinitionList) };
-            stack.push(Box::into_raw(handler.property_definition_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_property_definition_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_list_p1(x0, x2)));
             NonterminalId::PropertyDefinitionList
         }
         464 => {
             // TemplateMiddleList ::= "TemplateMiddle" Expression => TemplateMiddleList 0($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.template_middle_list_p0(x1)) as *mut ());
+            stack.push(StackValue::from(handler.template_middle_list_p0(x1)));
             NonterminalId::TemplateMiddleList
         }
         465 => {
             // TemplateMiddleList ::= TemplateMiddleList "TemplateMiddle" Expression => TemplateMiddleList 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::TemplateMiddleList) };
-            stack.push(Box::into_raw(handler.template_middle_list_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_template_middle_list(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.template_middle_list_p1(x0, x2)));
             NonterminalId::TemplateMiddleList
         }
         466 => {
             // LiteralPropertyName ::= "IdentifierName" => LiteralPropertyName 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_property_name_p0()) as *mut ());
+            stack.push(StackValue::from(handler.literal_property_name_p0()));
             NonterminalId::LiteralPropertyName
         }
         467 => {
             // LiteralPropertyName ::= "StringLiteral" => LiteralPropertyName 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_property_name_p1()) as *mut ());
+            stack.push(StackValue::from(handler.literal_property_name_p1()));
             NonterminalId::LiteralPropertyName
         }
         468 => {
             // LiteralPropertyName ::= "NumericLiteral" => LiteralPropertyName 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.literal_property_name_p2()) as *mut ());
+            stack.push(StackValue::from(handler.literal_property_name_p2()));
             NonterminalId::LiteralPropertyName
         }
         469 => {
             // ComputedPropertyName ::= "[" AssignmentExpression "]" => ComputedPropertyName($0, $1, $2)
             stack.pop();
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.computed_property_name(x1)) as *mut ());
+            stack.push(StackValue::from(handler.computed_property_name(x1)));
             NonterminalId::ComputedPropertyName
         }
         470 => {
             // EqualityExpression ::= RelationalExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::EqualityExpression
         }
         471 => {
             // EqualityExpression ::= EqualityExpression "==" RelationalExpression => EqualityExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.equality_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.equality_expression_p1(x0, x2)));
             NonterminalId::EqualityExpression
         }
         472 => {
             // EqualityExpression ::= EqualityExpression "!=" RelationalExpression => EqualityExpression 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.equality_expression_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.equality_expression_p2(x0, x2)));
             NonterminalId::EqualityExpression
         }
         473 => {
             // EqualityExpression ::= EqualityExpression "===" RelationalExpression => EqualityExpression 3($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.equality_expression_p3(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.equality_expression_p3(x0, x2)));
             NonterminalId::EqualityExpression
         }
         474 => {
             // EqualityExpression ::= EqualityExpression "!==" RelationalExpression => EqualityExpression 4($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.equality_expression_p4(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.equality_expression_p4(x0, x2)));
             NonterminalId::EqualityExpression
         }
         475 => {
             // SpreadElement ::= "..." AssignmentExpression => SpreadElement($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.spread_element(x1)) as *mut ());
+            stack.push(StackValue::from(handler.spread_element(x1)));
             NonterminalId::SpreadElement
         }
         476 => {
             // PropertyDefinition ::= IdentifierReference => PropertyDefinition 0($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::IdentifierReference) };
-            stack.push(Box::into_raw(handler.property_definition_p0(x0)) as *mut ());
+            let x0 = StackValue::unwrap_identifier_reference(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_p0(x0)));
             NonterminalId::PropertyDefinition
         }
         477 => {
             // PropertyDefinition ::= CoverInitializedName => PropertyDefinition 1($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::CoverInitializedName) };
-            stack.push(Box::into_raw(handler.property_definition_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_cover_initialized_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_p1(x0)));
             NonterminalId::PropertyDefinition
         }
         478 => {
             // PropertyDefinition ::= PropertyName ":" AssignmentExpression => PropertyDefinition 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::PropertyName) };
-            stack.push(Box::into_raw(handler.property_definition_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_property_name(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_p2(x0, x2)));
             NonterminalId::PropertyDefinition
         }
         479 => {
             // PropertyDefinition ::= MethodDefinition => PropertyDefinition 3($0)
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MethodDefinition) };
-            stack.push(Box::into_raw(handler.property_definition_p3(x0)) as *mut ());
+            let x0 = StackValue::unwrap_method_definition(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.property_definition_p3(x0)));
             NonterminalId::PropertyDefinition
         }
         480 => {
             // PropertyDefinition ::= "..." AssignmentExpression => PropertyDefinition 4($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.property_definition_p4(x1)) as *mut ());
+            stack.push(StackValue::from(handler.property_definition_p4(x1)));
             NonterminalId::PropertyDefinition
         }
         481 => {
             // RelationalExpression ::= ShiftExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::RelationalExpression
         }
         482 => {
             // RelationalExpression ::= RelationalExpression "<" ShiftExpression => RelationalExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.relational_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.relational_expression_p1(x0, x2)));
             NonterminalId::RelationalExpression
         }
         483 => {
             // RelationalExpression ::= RelationalExpression ">" ShiftExpression => RelationalExpression 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.relational_expression_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.relational_expression_p2(x0, x2)));
             NonterminalId::RelationalExpression
         }
         484 => {
             // RelationalExpression ::= RelationalExpression "<=" ShiftExpression => RelationalExpression 3($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.relational_expression_p3(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.relational_expression_p3(x0, x2)));
             NonterminalId::RelationalExpression
         }
         485 => {
             // RelationalExpression ::= RelationalExpression ">=" ShiftExpression => RelationalExpression 4($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.relational_expression_p4(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.relational_expression_p4(x0, x2)));
             NonterminalId::RelationalExpression
         }
         486 => {
             // RelationalExpression ::= RelationalExpression "instanceof" ShiftExpression => RelationalExpression 5($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.relational_expression_p5(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.relational_expression_p5(x0, x2)));
             NonterminalId::RelationalExpression
         }
         487 => {
             // CoverInitializedName ::= IdentifierReference Initializer => CoverInitializedName($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Initializer) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::IdentifierReference) };
-            stack.push(Box::into_raw(handler.cover_initialized_name(x0, x1)) as *mut ());
+            let x1 = StackValue::unwrap_initializer(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_identifier_reference(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.cover_initialized_name(x0, x1)));
             NonterminalId::CoverInitializedName
         }
         488 => {
             // ShiftExpression ::= AdditiveExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ShiftExpression
         }
         489 => {
             // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => ShiftExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.shift_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.shift_expression_p1(x0, x2)));
             NonterminalId::ShiftExpression
         }
         490 => {
             // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => ShiftExpression 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.shift_expression_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.shift_expression_p2(x0, x2)));
             NonterminalId::ShiftExpression
         }
         491 => {
             // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => ShiftExpression 3($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.shift_expression_p3(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.shift_expression_p3(x0, x2)));
             NonterminalId::ShiftExpression
         }
         492 => {
             // AdditiveExpression ::= MultiplicativeExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::AdditiveExpression
         }
         493 => {
             // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => AdditiveExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.additive_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.additive_expression_p1(x0, x2)));
             NonterminalId::AdditiveExpression
         }
         494 => {
             // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => AdditiveExpression 2($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.additive_expression_p2(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.additive_expression_p2(x0, x2)));
             NonterminalId::AdditiveExpression
         }
         495 => {
             // MultiplicativeExpression ::= ExponentiationExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::MultiplicativeExpression
         }
         496 => {
             // MultiplicativeExpression ::= MultiplicativeExpression MultiplicativeOperator ExponentiationExpression => MultiplicativeExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::MultiplicativeOperator) };
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.multiplicative_expression_p1(x0, x1, x2)) as *mut ());
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
+            let x1 = StackValue::unwrap_multiplicative_operator(stack.pop().unwrap());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.multiplicative_expression_p1(x0, x1, x2)));
             NonterminalId::MultiplicativeExpression
         }
         497 => {
             // ExponentiationExpression ::= UnaryExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::ExponentiationExpression
         }
         498 => {
             // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => ExponentiationExpression 1($0, $1, $2)
-            let x2 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x2 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.exponentiation_expression_p1(x0, x2)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.exponentiation_expression_p1(x0, x2)));
             NonterminalId::ExponentiationExpression
         }
         499 => {
             // MultiplicativeOperator ::= "*" => MultiplicativeOperator 0($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.multiplicative_operator_p0()) as *mut ());
+            stack.push(StackValue::from(handler.multiplicative_operator_p0()));
             NonterminalId::MultiplicativeOperator
         }
         500 => {
             // MultiplicativeOperator ::= "/" => MultiplicativeOperator 1($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.multiplicative_operator_p1()) as *mut ());
+            stack.push(StackValue::from(handler.multiplicative_operator_p1()));
             NonterminalId::MultiplicativeOperator
         }
         501 => {
             // MultiplicativeOperator ::= "%" => MultiplicativeOperator 2($0)
             stack.pop();
-            stack.push(Box::into_raw(handler.multiplicative_operator_p2()) as *mut ());
+            stack.push(StackValue::from(handler.multiplicative_operator_p2()));
             NonterminalId::MultiplicativeOperator
         }
         502 => {
             // UnaryExpression ::= UpdateExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::UnaryExpression
         }
         503 => {
             // UnaryExpression ::= "delete" UnaryExpression => UnaryExpression 1($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p1(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p1(x1)));
             NonterminalId::UnaryExpression
         }
         504 => {
             // UnaryExpression ::= "void" UnaryExpression => UnaryExpression 2($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p2(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p2(x1)));
             NonterminalId::UnaryExpression
         }
         505 => {
             // UnaryExpression ::= "typeof" UnaryExpression => UnaryExpression 3($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p3(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p3(x1)));
             NonterminalId::UnaryExpression
         }
         506 => {
             // UnaryExpression ::= "+" UnaryExpression => UnaryExpression 4($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p4(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p4(x1)));
             NonterminalId::UnaryExpression
         }
         507 => {
             // UnaryExpression ::= "-" UnaryExpression => UnaryExpression 5($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p5(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p5(x1)));
             NonterminalId::UnaryExpression
         }
         508 => {
             // UnaryExpression ::= "~" UnaryExpression => UnaryExpression 6($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p6(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p6(x1)));
             NonterminalId::UnaryExpression
         }
         509 => {
             // UnaryExpression ::= "!" UnaryExpression => UnaryExpression 7($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.unary_expression_p7(x1)) as *mut ());
+            stack.push(StackValue::from(handler.unary_expression_p7(x1)));
             NonterminalId::UnaryExpression
         }
         510 => {
             // UnaryExpression ::= AwaitExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::UnaryExpression
         }
         511 => {
             // UpdateExpression ::= LeftHandSideExpression => $0
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(x0) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(x0));
             NonterminalId::UpdateExpression
         }
         512 => {
             // UpdateExpression ::= LeftHandSideExpression "++" => UpdateExpression 1($0, $1)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.update_expression_p1(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.update_expression_p1(x0)));
             NonterminalId::UpdateExpression
         }
         513 => {
             // UpdateExpression ::= LeftHandSideExpression "--" => UpdateExpression 2($0, $1)
             stack.pop();
-            let x0 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
-            stack.push(Box::into_raw(handler.update_expression_p2(x0)) as *mut ());
+            let x0 = StackValue::unwrap_expression(stack.pop().unwrap());
+            stack.push(StackValue::from(handler.update_expression_p2(x0)));
             NonterminalId::UpdateExpression
         }
         514 => {
             // UpdateExpression ::= "++" UnaryExpression => UpdateExpression 3($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.update_expression_p3(x1)) as *mut ());
+            stack.push(StackValue::from(handler.update_expression_p3(x1)));
             NonterminalId::UpdateExpression
         }
         515 => {
             // UpdateExpression ::= "--" UnaryExpression => UpdateExpression 4($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.update_expression_p4(x1)) as *mut ());
+            stack.push(StackValue::from(handler.update_expression_p4(x1)));
             NonterminalId::UpdateExpression
         }
         516 => {
             // AwaitExpression ::= "await" UnaryExpression => AwaitExpression($0, $1)
-            let x1 = unsafe { Box::from_raw(stack.pop().unwrap() as *mut concrete::Expression) };
+            let x1 = StackValue::unwrap_expression(stack.pop().unwrap());
             stack.pop();
-            stack.push(Box::into_raw(handler.await_expression(x1)) as *mut ());
+            stack.push(StackValue::from(handler.await_expression(x1)));
             NonterminalId::AwaitExpression
         }
         _ => panic!("no such production: {}", prod),
@@ -13025,13 +14514,13 @@ pub static TABLES: ParserTables<'static> = ParserTables {
 
 pub static START_STATE_SCRIPT: usize = 0;
 
-pub fn get_result_script(node: *mut ()) -> concrete::Script {
-    unsafe { *Box::from_raw(node as *mut _) }
+pub fn get_result_script(node: StackValue) -> Box<concrete::Script> {
+    node.unwrap_script()
 }
 
 pub static START_STATE_MODULE: usize = 1;
 
-pub fn get_result_module(node: *mut ()) -> concrete::Module {
-    unsafe { *Box::from_raw(node as *mut _) }
+pub fn get_result_module(node: StackValue) -> Box<concrete::Module> {
+    node.unwrap_module()
 }
 
