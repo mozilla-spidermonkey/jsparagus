@@ -220,7 +220,7 @@ impl Parser {
     }
 
     /// Return true if self.close() would succeed.
-    fn can_close(&self) -> bool {
+    pub fn can_close(&self) -> bool {
         // Easy case: no error, parsing just succeeds.
         if self.can_accept_terminal(TerminalId::End) {
             true

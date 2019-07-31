@@ -5,11 +5,11 @@ extern crate generated_parser;
 mod lexer;
 mod parser;
 
-#[cfg(all(feature = "unstable", test))]
+#[cfg(test)]
 mod tests;
 
 use lexer::Lexer;
-use parser::{ParseError, Parser};
+use crate::parser::{ParseError, Parser};
 
 use generated_parser::concrete::{Module, Script};
 use generated_parser::{
