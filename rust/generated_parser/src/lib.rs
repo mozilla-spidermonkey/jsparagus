@@ -13599,11 +13599,13 @@ pub static TABLES: ParserTables<'static> = ParserTables {
 };
 
 pub static START_STATE_SCRIPT: usize = 0;
+
 pub fn get_result_script(node: *mut ()) -> concrete::Script {
     unsafe { *Box::from_raw(node as *mut _) }
 }
 
 pub static START_STATE_MODULE: usize = 1;
+
 pub fn get_result_module(node: *mut ()) -> concrete::Module {
     unsafe { *Box::from_raw(node as *mut _) }
 }

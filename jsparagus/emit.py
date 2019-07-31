@@ -539,7 +539,9 @@ class RustParserWriter:
             result_type_jsparagus = self.grammar.nt_types[init_nt.name]
             result_type = self.type_to_rust(
                 result_type_jsparagus, "concrete")
-            self.write(0, "pub static START_STATE_{}: usize = {};", init_nt.name.upper(), index)
+            self.write(0, "pub static START_STATE_{}: usize = {};",
+                       self.to_snek_case(init_nt.name).upper(), index)
+            self.write(0, "");
             self.write(0, "pub fn get_result_{}(node: *mut ()) -> {} {{",
                        self.to_snek_case(init_nt.name), result_type)
             self.write(1, "unsafe { *Box::from_raw(node as *mut _) }")
