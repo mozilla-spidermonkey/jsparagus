@@ -36,6 +36,7 @@ impl Action {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
     SyntaxError(Token),
     UnexpectedEnd,
