@@ -1,6 +1,6 @@
 use generated_parser::{reduce, DefaultHandler, ErrorCode, StackValue, TerminalId, Token, TABLES};
 
-use crate::Result;
+use crate::errors::{ParseError, Result};
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -33,29 +33,6 @@ impl Action {
 
     fn is_error(self) -> bool {
         self.0 == ERROR
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum ParseError {
-    IllegalCharacter(char),
-    UnterminatedString,
-    UnterminatedRegExp,
-    SyntaxError(Token),
-    UnexpectedEnd,
-    LexerError,
-}
-
-impl ParseError {
-    pub fn message(&self) -> String {
-        match self {
-            ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
-            ParseError::UnterminatedString => format!("unterminated string literal"),
-            ParseError::UnterminatedRegExp => format!("unterminated regexp literal"),
-            ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
-            ParseError::UnexpectedEnd => format!("unexpected end of input"),
-            ParseError::LexerError => format!("lexical error"),
-        }
     }
 }
 

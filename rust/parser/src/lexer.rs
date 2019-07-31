@@ -1,5 +1,5 @@
-use crate::Result;
-use crate::parser::{Parser, ParseError};
+use crate::errors::{ParseError, Result};
+use crate::parser::Parser;
 use generated_parser::{TerminalId, Token};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {

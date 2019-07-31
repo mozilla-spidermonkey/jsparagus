@@ -2,13 +2,15 @@
 
 extern crate generated_parser;
 
+mod errors;
 mod lexer;
 mod parser;
 
 #[cfg(test)]
 mod tests;
 
-use crate::parser::{ParseError, Parser};
+pub use crate::errors::{ParseError, Result};
+use crate::parser::Parser;
 use lexer::Lexer;
 
 use generated_parser::concrete::{Module, Script};
@@ -16,8 +18,6 @@ use generated_parser::{
     get_result_module, get_result_script, DefaultHandler, StackValue, TerminalId,
     START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
 };
-
-pub type Result<T> = std::result::Result<T, ParseError>;
 
 pub fn parse_script(source: &str) -> Result<Box<Script>> {
     Ok(get_result_script(parse(source, START_STATE_SCRIPT)?))

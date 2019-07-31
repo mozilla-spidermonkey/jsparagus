@@ -1,8 +1,9 @@
 use std::iter;
 
+use crate::errors::{ParseError, Result};
 use crate::lexer::Lexer;
-use crate::parser::{ParseError, Parser};
-use crate::{parse_script, Result};
+use crate::parser::Parser;
+use crate::parse_script;
 use generated_parser::concrete::Script;
 use generated_parser::{self, concrete, DefaultHandler, TerminalId};
 
@@ -72,10 +73,10 @@ fn assert_syntax_error<'a, T: IntoChunks<'a>>(code: T) {
     });
 }
 
-fn assert_lexer_error<'a, T: IntoChunks<'a>>(code: T) {
+fn assert_error_eq<'a, T: IntoChunks<'a>>(code: T, expected: ParseError) {
     let result = try_parse(code);
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), ParseError::LexerError);
+    assert_eq!(result.unwrap_err(), expected);
 }
 
 fn assert_incomplete<'a, T: IntoChunks<'a>>(code: T) {
@@ -272,10 +273,10 @@ fn test_regex() {
     assert_parses("x = /x/g");
     assert_parses("x = /x/wow_flags_can_be_$$anything$$");
     // TODO: Should the lexer running out of input throw an incomplete error, or a lexer error?
-    assert_lexer_error("/x");
+    assert_error_eq("/x", ParseError::UnterminatedRegExp);
     assert_incomplete("x = //"); // comment
     assert_incomplete("x = /*/"); /*/ comment */
-    assert_lexer_error("x =/= 2"); // unterminated regex
+    assert_error_eq("x =/= 2", ParseError::UnterminatedRegExp);
     assert_parses("x /= 2");
     assert_parses("x = /[]/");
     assert_parses("x = /[^x]/");
