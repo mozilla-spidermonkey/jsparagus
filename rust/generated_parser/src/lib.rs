@@ -5217,468 +5217,6 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
 ];
 
-pub trait Handler {
-    type IdentifierReference;
-    type BindingIdentifier;
-    type LabelIdentifier;
-    type Expression;
-    type CoverParenthesizedExpressionAndArrowParameterList;
-    type ParenthesizedExpression;
-    type ElementList;
-    type Elision;
-    type SpreadElement;
-    type PropertyDefinitionList;
-    type PropertyDefinition;
-    type PropertyName;
-    type LiteralPropertyName;
-    type ComputedPropertyName;
-    type CoverInitializedName;
-    type Initializer;
-    type TemplateLiteral;
-    type SubstitutionTemplate;
-    type TemplateSpans;
-    type TemplateMiddleList;
-    type SuperProperty;
-    type MetaProperty;
-    type NewTarget;
-    type SuperCall;
-    type Arguments;
-    type ArgumentList;
-    type CallMemberExpression;
-    type MultiplicativeOperator;
-    type AssignmentOperator;
-    type AssignmentPattern;
-    type ObjectAssignmentPattern;
-    type ArrayAssignmentPattern;
-    type AssignmentRestProperty;
-    type AssignmentPropertyList;
-    type AssignmentElementList;
-    type AssignmentElisionElement;
-    type AssignmentProperty;
-    type AssignmentElement;
-    type AssignmentRestElement;
-    type DestructuringAssignmentTarget;
-    type ModuleItem;
-    type Block;
-    type StatementList;
-    type ForLexicalDeclaration;
-    type LetOrConst;
-    type BindingList;
-    type LexicalBinding;
-    type VariableDeclarationList;
-    type VariableDeclaration;
-    type BindingPattern;
-    type ObjectBindingPattern;
-    type ArrayBindingPattern;
-    type BindingRestProperty;
-    type BindingPropertyList;
-    type BindingElementList;
-    type BindingElisionElement;
-    type BindingProperty;
-    type BindingElement;
-    type SingleNameBinding;
-    type BindingRestElement;
-    type ForDeclaration;
-    type ForBinding;
-    type CaseBlock;
-    type CaseClauses;
-    type CaseClause;
-    type DefaultClause;
-    type LabelledItem;
-    type Catch;
-    type Finally;
-    type CatchParameter;
-    type UniqueFormalParameters;
-    type FormalParameters;
-    type FormalParameterList;
-    type FunctionRestParameter;
-    type FormalParameter;
-    type FunctionBody;
-    type FunctionStatementList;
-    type ArrowFunction;
-    type ArrowParameters;
-    type ConciseBody;
-    type ArrowFormalParameters;
-    type MethodDefinition;
-    type PropertySetParameterList;
-    type GeneratorBody;
-    type AsyncGeneratorBody;
-    type ClassTail;
-    type ClassHeritage;
-    type ClassBody;
-    type ClassElementList;
-    type ClassElement;
-    type AsyncFunctionBody;
-    type AsyncArrowFunction;
-    type AsyncConciseBody;
-    type AsyncArrowBindingIdentifier;
-    type CoverCallExpressionAndAsyncArrowHead;
-    type AsyncArrowHead;
-    type Script;
-    type ScriptBody;
-    type Module;
-    type ModuleBody;
-    type ModuleItemList;
-    type ImportClause;
-    type ImportedDefaultBinding;
-    type NameSpaceImport;
-    type NamedImports;
-    type FromClause;
-    type ImportsList;
-    type ImportSpecifier;
-    type ModuleSpecifier;
-    type ImportedBinding;
-    type ExportClause;
-    type ExportsList;
-    type ExportSpecifier;
-    fn identifier_reference(&self, ) -> Self::IdentifierReference;
-    fn binding_identifier_p0(&self, ) -> Self::BindingIdentifier;
-    fn binding_identifier_p1(&self, ) -> Self::BindingIdentifier;
-    fn binding_identifier_p2(&self, ) -> Self::BindingIdentifier;
-    fn label_identifier(&self, ) -> Self::LabelIdentifier;
-    fn primary_expression_p0(&self, ) -> Self::Expression;
-    fn primary_expression_p1(&self, a0: Self::IdentifierReference) -> Self::Expression;
-    fn primary_expression_p10(&self, ) -> Self::Expression;
-    fn primary_expression_p11(&self, a0: Self::TemplateLiteral) -> Self::Expression;
-    fn primary_expression_p12(&self, a0: Self::CoverParenthesizedExpressionAndArrowParameterList) -> Self::Expression;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p0(&self, a0: Self::Expression) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p1(&self, a0: Self::Expression) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p2(&self, ) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p3(&self, a0: Self::BindingIdentifier) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p4(&self, a0: Self::BindingPattern) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p5(&self, a0: Self::Expression, a1: Self::BindingIdentifier) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p6(&self, a0: Self::Expression, a1: Self::BindingPattern) -> Self::CoverParenthesizedExpressionAndArrowParameterList;
-    fn parenthesized_expression(&self, a0: Self::Expression) -> Self::ParenthesizedExpression;
-    fn literal_p0(&self, ) -> Self::Expression;
-    fn literal_p1(&self, ) -> Self::Expression;
-    fn literal_p2(&self, ) -> Self::Expression;
-    fn literal_p3(&self, ) -> Self::Expression;
-    fn array_literal_p0(&self, a0: Option<Self::Elision>) -> Self::Expression;
-    fn array_literal_p1(&self, a0: Self::ElementList) -> Self::Expression;
-    fn array_literal_p2(&self, a0: Self::ElementList, a1: Option<Self::Elision>) -> Self::Expression;
-    fn element_list_p0(&self, a0: Option<Self::Elision>, a1: Self::Expression) -> Self::ElementList;
-    fn element_list_p1(&self, a0: Option<Self::Elision>, a1: Self::SpreadElement) -> Self::ElementList;
-    fn element_list_p2(&self, a0: Self::ElementList, a1: Option<Self::Elision>, a2: Self::Expression) -> Self::ElementList;
-    fn element_list_p3(&self, a0: Self::ElementList, a1: Option<Self::Elision>, a2: Self::SpreadElement) -> Self::ElementList;
-    fn elision_p0(&self, ) -> Self::Elision;
-    fn elision_p1(&self, a0: Self::Elision) -> Self::Elision;
-    fn spread_element(&self, a0: Self::Expression) -> Self::SpreadElement;
-    fn object_literal_p0(&self, ) -> Self::Expression;
-    fn object_literal_p1(&self, a0: Self::PropertyDefinitionList) -> Self::Expression;
-    fn object_literal_p2(&self, a0: Self::PropertyDefinitionList) -> Self::Expression;
-    fn property_definition_list_p0(&self, a0: Self::PropertyDefinition) -> Self::PropertyDefinitionList;
-    fn property_definition_list_p1(&self, a0: Self::PropertyDefinitionList, a1: Self::PropertyDefinition) -> Self::PropertyDefinitionList;
-    fn property_definition_p0(&self, a0: Self::IdentifierReference) -> Self::PropertyDefinition;
-    fn property_definition_p1(&self, a0: Self::CoverInitializedName) -> Self::PropertyDefinition;
-    fn property_definition_p2(&self, a0: Self::PropertyName, a1: Self::Expression) -> Self::PropertyDefinition;
-    fn property_definition_p3(&self, a0: Self::MethodDefinition) -> Self::PropertyDefinition;
-    fn property_definition_p4(&self, a0: Self::Expression) -> Self::PropertyDefinition;
-    fn property_name_p0(&self, a0: Self::LiteralPropertyName) -> Self::PropertyName;
-    fn property_name_p1(&self, a0: Self::ComputedPropertyName) -> Self::PropertyName;
-    fn literal_property_name_p0(&self, ) -> Self::LiteralPropertyName;
-    fn literal_property_name_p1(&self, ) -> Self::LiteralPropertyName;
-    fn literal_property_name_p2(&self, ) -> Self::LiteralPropertyName;
-    fn computed_property_name(&self, a0: Self::Expression) -> Self::ComputedPropertyName;
-    fn cover_initialized_name(&self, a0: Self::IdentifierReference, a1: Self::Initializer) -> Self::CoverInitializedName;
-    fn initializer(&self, a0: Self::Expression) -> Self::Initializer;
-    fn template_literal_p0(&self, ) -> Self::TemplateLiteral;
-    fn template_literal_p1(&self, a0: Self::SubstitutionTemplate) -> Self::TemplateLiteral;
-    fn substitution_template(&self, a0: Self::Expression, a1: Self::TemplateSpans) -> Self::SubstitutionTemplate;
-    fn template_spans_p0(&self, ) -> Self::TemplateSpans;
-    fn template_spans_p1(&self, a0: Self::TemplateMiddleList) -> Self::TemplateSpans;
-    fn template_middle_list_p0(&self, a0: Self::Expression) -> Self::TemplateMiddleList;
-    fn template_middle_list_p1(&self, a0: Self::TemplateMiddleList, a1: Self::Expression) -> Self::TemplateMiddleList;
-    fn member_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn member_expression_p2(&self, a0: Self::Expression) -> Self::Expression;
-    fn member_expression_p3(&self, a0: Self::Expression, a1: Self::TemplateLiteral) -> Self::Expression;
-    fn member_expression_p4(&self, a0: Self::SuperProperty) -> Self::Expression;
-    fn member_expression_p5(&self, a0: Self::MetaProperty) -> Self::Expression;
-    fn member_expression_p6(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::Expression;
-    fn super_property_p0(&self, a0: Self::Expression) -> Self::SuperProperty;
-    fn super_property_p1(&self, ) -> Self::SuperProperty;
-    fn meta_property(&self, a0: Self::NewTarget) -> Self::MetaProperty;
-    fn new_target(&self, ) -> Self::NewTarget;
-    fn new_expression_p1(&self, a0: Self::Expression) -> Self::Expression;
-    fn call_expression_p0(&self, a0: Self::CoverCallExpressionAndAsyncArrowHead) -> Self::Expression;
-    fn call_expression_p1(&self, a0: Self::SuperCall) -> Self::Expression;
-    fn call_expression_p2(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::Expression;
-    fn call_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn call_expression_p4(&self, a0: Self::Expression) -> Self::Expression;
-    fn call_expression_p5(&self, a0: Self::Expression, a1: Self::TemplateLiteral) -> Self::Expression;
-    fn super_call(&self, a0: Self::Arguments) -> Self::SuperCall;
-    fn arguments_p0(&self, ) -> Self::Arguments;
-    fn arguments_p1(&self, a0: Self::ArgumentList) -> Self::Arguments;
-    fn arguments_p2(&self, a0: Self::ArgumentList) -> Self::Arguments;
-    fn argument_list_p0(&self, a0: Self::Expression) -> Self::ArgumentList;
-    fn argument_list_p1(&self, a0: Self::Expression) -> Self::ArgumentList;
-    fn argument_list_p2(&self, a0: Self::ArgumentList, a1: Self::Expression) -> Self::ArgumentList;
-    fn argument_list_p3(&self, a0: Self::ArgumentList, a1: Self::Expression) -> Self::ArgumentList;
-    fn call_member_expression(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::CallMemberExpression;
-    fn update_expression_p1(&self, a0: Self::Expression) -> Self::Expression;
-    fn update_expression_p2(&self, a0: Self::Expression) -> Self::Expression;
-    fn update_expression_p3(&self, a0: Self::Expression) -> Self::Expression;
-    fn update_expression_p4(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p1(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p2(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p3(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p4(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p5(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p6(&self, a0: Self::Expression) -> Self::Expression;
-    fn unary_expression_p7(&self, a0: Self::Expression) -> Self::Expression;
-    fn exponentiation_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn multiplicative_expression_p1(&self, a0: Self::Expression, a1: Self::MultiplicativeOperator, a2: Self::Expression) -> Self::Expression;
-    fn multiplicative_operator_p0(&self, ) -> Self::MultiplicativeOperator;
-    fn multiplicative_operator_p1(&self, ) -> Self::MultiplicativeOperator;
-    fn multiplicative_operator_p2(&self, ) -> Self::MultiplicativeOperator;
-    fn additive_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn additive_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn shift_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn shift_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn shift_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p5(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn relational_expression_p6(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn equality_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn equality_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn equality_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn equality_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn bitwise_and_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn bitwise_xor_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn bitwise_or_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn logical_and_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn logical_or_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn conditional_expression_p1(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::Expression) -> Self::Expression;
-    fn assignment_expression_p2(&self, a0: Self::ArrowFunction) -> Self::Expression;
-    fn assignment_expression_p3(&self, a0: Self::AsyncArrowFunction) -> Self::Expression;
-    fn assignment_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn assignment_expression_p5(&self, a0: Self::Expression, a1: Self::AssignmentOperator, a2: Self::Expression) -> Self::Expression;
-    fn assignment_operator_p0(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p1(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p2(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p3(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p4(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p5(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p6(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p7(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p8(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p9(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p10(&self, ) -> Self::AssignmentOperator;
-    fn assignment_operator_p11(&self, ) -> Self::AssignmentOperator;
-    fn assignment_pattern_p0(&self, a0: Self::ObjectAssignmentPattern) -> Self::AssignmentPattern;
-    fn assignment_pattern_p1(&self, a0: Self::ArrayAssignmentPattern) -> Self::AssignmentPattern;
-    fn object_assignment_pattern_p0(&self, ) -> Self::ObjectAssignmentPattern;
-    fn object_assignment_pattern_p1(&self, a0: Self::AssignmentRestProperty) -> Self::ObjectAssignmentPattern;
-    fn object_assignment_pattern_p2(&self, a0: Self::AssignmentPropertyList) -> Self::ObjectAssignmentPattern;
-    fn object_assignment_pattern_p3(&self, a0: Self::AssignmentPropertyList, a1: Option<Self::AssignmentRestProperty>) -> Self::ObjectAssignmentPattern;
-    fn array_assignment_pattern_p0(&self, a0: Option<Self::Elision>, a1: Option<Self::AssignmentRestElement>) -> Self::ArrayAssignmentPattern;
-    fn array_assignment_pattern_p1(&self, a0: Self::AssignmentElementList) -> Self::ArrayAssignmentPattern;
-    fn array_assignment_pattern_p2(&self, a0: Self::AssignmentElementList, a1: Option<Self::Elision>, a2: Option<Self::AssignmentRestElement>) -> Self::ArrayAssignmentPattern;
-    fn assignment_rest_property(&self, a0: Self::DestructuringAssignmentTarget) -> Self::AssignmentRestProperty;
-    fn assignment_property_list_p0(&self, a0: Self::AssignmentProperty) -> Self::AssignmentPropertyList;
-    fn assignment_property_list_p1(&self, a0: Self::AssignmentPropertyList, a1: Self::AssignmentProperty) -> Self::AssignmentPropertyList;
-    fn assignment_element_list_p0(&self, a0: Self::AssignmentElisionElement) -> Self::AssignmentElementList;
-    fn assignment_element_list_p1(&self, a0: Self::AssignmentElementList, a1: Self::AssignmentElisionElement) -> Self::AssignmentElementList;
-    fn assignment_elision_element(&self, a0: Option<Self::Elision>, a1: Self::AssignmentElement) -> Self::AssignmentElisionElement;
-    fn assignment_property_p0(&self, a0: Self::IdentifierReference, a1: Option<Self::Initializer>) -> Self::AssignmentProperty;
-    fn assignment_property_p1(&self, a0: Self::PropertyName, a1: Self::AssignmentElement) -> Self::AssignmentProperty;
-    fn assignment_element(&self, a0: Self::DestructuringAssignmentTarget, a1: Option<Self::Initializer>) -> Self::AssignmentElement;
-    fn assignment_rest_element(&self, a0: Self::DestructuringAssignmentTarget) -> Self::AssignmentRestElement;
-    fn destructuring_assignment_target(&self, a0: Self::Expression) -> Self::DestructuringAssignmentTarget;
-    fn expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression;
-    fn block_statement(&self, a0: Self::Block) -> Self::ModuleItem;
-    fn block(&self, a0: Option<Self::StatementList>) -> Self::Block;
-    fn statement_list_p0(&self, a0: Self::ModuleItem) -> Self::StatementList;
-    fn statement_list_p1(&self, a0: Self::StatementList, a1: Self::ModuleItem) -> Self::StatementList;
-    fn lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ModuleItem;
-    fn for_lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ForLexicalDeclaration;
-    fn let_or_const_p0(&self, ) -> Self::LetOrConst;
-    fn let_or_const_p1(&self, ) -> Self::LetOrConst;
-    fn binding_list_p0(&self, a0: Self::LexicalBinding) -> Self::BindingList;
-    fn binding_list_p1(&self, a0: Self::BindingList, a1: Self::LexicalBinding) -> Self::BindingList;
-    fn lexical_binding_p0(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::LexicalBinding;
-    fn lexical_binding_p1(&self, a0: Self::BindingPattern, a1: Self::Initializer) -> Self::LexicalBinding;
-    fn variable_statement(&self, a0: Self::VariableDeclarationList) -> Self::ModuleItem;
-    fn variable_declaration_list_p0(&self, a0: Self::VariableDeclaration) -> Self::VariableDeclarationList;
-    fn variable_declaration_list_p1(&self, a0: Self::VariableDeclarationList, a1: Self::VariableDeclaration) -> Self::VariableDeclarationList;
-    fn variable_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::VariableDeclaration;
-    fn variable_declaration_p1(&self, a0: Self::BindingPattern, a1: Self::Initializer) -> Self::VariableDeclaration;
-    fn binding_pattern_p0(&self, a0: Self::ObjectBindingPattern) -> Self::BindingPattern;
-    fn binding_pattern_p1(&self, a0: Self::ArrayBindingPattern) -> Self::BindingPattern;
-    fn object_binding_pattern_p0(&self, ) -> Self::ObjectBindingPattern;
-    fn object_binding_pattern_p1(&self, a0: Self::BindingRestProperty) -> Self::ObjectBindingPattern;
-    fn object_binding_pattern_p2(&self, a0: Self::BindingPropertyList) -> Self::ObjectBindingPattern;
-    fn object_binding_pattern_p3(&self, a0: Self::BindingPropertyList, a1: Option<Self::BindingRestProperty>) -> Self::ObjectBindingPattern;
-    fn array_binding_pattern_p0(&self, a0: Option<Self::Elision>, a1: Option<Self::BindingRestElement>) -> Self::ArrayBindingPattern;
-    fn array_binding_pattern_p1(&self, a0: Self::BindingElementList) -> Self::ArrayBindingPattern;
-    fn array_binding_pattern_p2(&self, a0: Self::BindingElementList, a1: Option<Self::Elision>, a2: Option<Self::BindingRestElement>) -> Self::ArrayBindingPattern;
-    fn binding_rest_property(&self, a0: Self::BindingIdentifier) -> Self::BindingRestProperty;
-    fn binding_property_list_p0(&self, a0: Self::BindingProperty) -> Self::BindingPropertyList;
-    fn binding_property_list_p1(&self, a0: Self::BindingPropertyList, a1: Self::BindingProperty) -> Self::BindingPropertyList;
-    fn binding_element_list_p0(&self, a0: Self::BindingElisionElement) -> Self::BindingElementList;
-    fn binding_element_list_p1(&self, a0: Self::BindingElementList, a1: Self::BindingElisionElement) -> Self::BindingElementList;
-    fn binding_elision_element(&self, a0: Option<Self::Elision>, a1: Self::BindingElement) -> Self::BindingElisionElement;
-    fn binding_property_p0(&self, a0: Self::SingleNameBinding) -> Self::BindingProperty;
-    fn binding_property_p1(&self, a0: Self::PropertyName, a1: Self::BindingElement) -> Self::BindingProperty;
-    fn binding_element_p0(&self, a0: Self::SingleNameBinding) -> Self::BindingElement;
-    fn binding_element_p1(&self, a0: Self::BindingPattern, a1: Option<Self::Initializer>) -> Self::BindingElement;
-    fn single_name_binding(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::SingleNameBinding;
-    fn binding_rest_element_p0(&self, a0: Self::BindingIdentifier) -> Self::BindingRestElement;
-    fn binding_rest_element_p1(&self, a0: Self::BindingPattern) -> Self::BindingRestElement;
-    fn empty_statement(&self, ) -> Self::ModuleItem;
-    fn expression_statement(&self, a0: Self::Expression) -> Self::ModuleItem;
-    fn if_statement_p0(&self, a0: Self::Expression, a1: Self::ModuleItem, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn if_statement_p1(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p0(&self, a0: Self::ModuleItem, a1: Self::Expression) -> Self::ModuleItem;
-    fn iteration_statement_p1(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p2(&self, a0: Option<Self::Expression>, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p3(&self, a0: Self::VariableDeclarationList, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p4(&self, a0: Self::ForLexicalDeclaration, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p5(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p6(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p7(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p8(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p9(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p10(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p11(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p12(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn iteration_statement_p13(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem;
-    fn for_declaration(&self, a0: Self::LetOrConst, a1: Self::ForBinding) -> Self::ForDeclaration;
-    fn for_binding_p0(&self, a0: Self::BindingIdentifier) -> Self::ForBinding;
-    fn for_binding_p1(&self, a0: Self::BindingPattern) -> Self::ForBinding;
-    fn continue_statement_p0(&self, ) -> Self::ModuleItem;
-    fn continue_statement_p1(&self, a0: Self::LabelIdentifier) -> Self::ModuleItem;
-    fn break_statement_p0(&self, ) -> Self::ModuleItem;
-    fn break_statement_p1(&self, a0: Self::LabelIdentifier) -> Self::ModuleItem;
-    fn return_statement_p0(&self, ) -> Self::ModuleItem;
-    fn return_statement_p1(&self, a0: Self::Expression) -> Self::ModuleItem;
-    fn with_statement(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem;
-    fn switch_statement(&self, a0: Self::Expression, a1: Self::CaseBlock) -> Self::ModuleItem;
-    fn case_block_p0(&self, a0: Option<Self::CaseClauses>) -> Self::CaseBlock;
-    fn case_block_p1(&self, a0: Option<Self::CaseClauses>, a1: Self::DefaultClause, a2: Option<Self::CaseClauses>) -> Self::CaseBlock;
-    fn case_clauses_p0(&self, a0: Self::CaseClause) -> Self::CaseClauses;
-    fn case_clauses_p1(&self, a0: Self::CaseClauses, a1: Self::CaseClause) -> Self::CaseClauses;
-    fn case_clause(&self, a0: Self::Expression, a1: Option<Self::StatementList>) -> Self::CaseClause;
-    fn default_clause(&self, a0: Option<Self::StatementList>) -> Self::DefaultClause;
-    fn labelled_statement(&self, a0: Self::LabelIdentifier, a1: Self::LabelledItem) -> Self::ModuleItem;
-    fn labelled_item_p0(&self, a0: Self::ModuleItem) -> Self::LabelledItem;
-    fn labelled_item_p1(&self, a0: Self::ModuleItem) -> Self::LabelledItem;
-    fn throw_statement(&self, a0: Self::Expression) -> Self::ModuleItem;
-    fn try_statement_p0(&self, a0: Self::Block, a1: Self::Catch) -> Self::ModuleItem;
-    fn try_statement_p1(&self, a0: Self::Block, a1: Self::Finally) -> Self::ModuleItem;
-    fn try_statement_p2(&self, a0: Self::Block, a1: Self::Catch, a2: Self::Finally) -> Self::ModuleItem;
-    fn catch(&self, a0: Self::CatchParameter, a1: Self::Block) -> Self::Catch;
-    fn finally(&self, a0: Self::Block) -> Self::Finally;
-    fn catch_parameter_p0(&self, a0: Self::BindingIdentifier) -> Self::CatchParameter;
-    fn catch_parameter_p1(&self, a0: Self::BindingPattern) -> Self::CatchParameter;
-    fn debugger_statement(&self, ) -> Self::ModuleItem;
-    fn function_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::FunctionBody) -> Self::ModuleItem;
-    fn function_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::FunctionBody) -> Self::ModuleItem;
-    fn function_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::FunctionBody) -> Self::Expression;
-    fn unique_formal_parameters(&self, a0: Self::FormalParameters) -> Self::UniqueFormalParameters;
-    fn formal_parameters_p0(&self, ) -> Self::FormalParameters;
-    fn formal_parameters_p1(&self, a0: Self::FunctionRestParameter) -> Self::FormalParameters;
-    fn formal_parameters_p2(&self, a0: Self::FormalParameterList) -> Self::FormalParameters;
-    fn formal_parameters_p3(&self, a0: Self::FormalParameterList) -> Self::FormalParameters;
-    fn formal_parameters_p4(&self, a0: Self::FormalParameterList, a1: Self::FunctionRestParameter) -> Self::FormalParameters;
-    fn formal_parameter_list_p0(&self, a0: Self::FormalParameter) -> Self::FormalParameterList;
-    fn formal_parameter_list_p1(&self, a0: Self::FormalParameterList, a1: Self::FormalParameter) -> Self::FormalParameterList;
-    fn function_rest_parameter(&self, a0: Self::BindingRestElement) -> Self::FunctionRestParameter;
-    fn formal_parameter(&self, a0: Self::BindingElement) -> Self::FormalParameter;
-    fn function_body(&self, a0: Self::FunctionStatementList) -> Self::FunctionBody;
-    fn function_statement_list(&self, a0: Option<Self::StatementList>) -> Self::FunctionStatementList;
-    fn arrow_function(&self, a0: Self::ArrowParameters, a1: Self::ConciseBody) -> Self::ArrowFunction;
-    fn arrow_parameters_p0(&self, a0: Self::BindingIdentifier) -> Self::ArrowParameters;
-    fn arrow_parameters_p1(&self, a0: Self::CoverParenthesizedExpressionAndArrowParameterList) -> Self::ArrowParameters;
-    fn concise_body_p0(&self, a0: Self::Expression) -> Self::ConciseBody;
-    fn concise_body_p1(&self, a0: Self::FunctionBody) -> Self::ConciseBody;
-    fn arrow_formal_parameters(&self, a0: Self::UniqueFormalParameters) -> Self::ArrowFormalParameters;
-    fn method_definition_p0(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::FunctionBody) -> Self::MethodDefinition;
-    fn method_definition_p4(&self, a0: Self::PropertyName, a1: Self::FunctionBody) -> Self::MethodDefinition;
-    fn method_definition_p5(&self, a0: Self::PropertyName, a1: Self::PropertySetParameterList, a2: Self::FunctionBody) -> Self::MethodDefinition;
-    fn property_set_parameter_list(&self, a0: Self::FormalParameter) -> Self::PropertySetParameterList;
-    fn generator_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::GeneratorBody) -> Self::MethodDefinition;
-    fn generator_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::GeneratorBody) -> Self::ModuleItem;
-    fn generator_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::GeneratorBody) -> Self::ModuleItem;
-    fn generator_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::GeneratorBody) -> Self::Expression;
-    fn generator_body(&self, a0: Self::FunctionBody) -> Self::GeneratorBody;
-    fn yield_expression_p0(&self, ) -> Self::Expression;
-    fn yield_expression_p1(&self, a0: Self::Expression) -> Self::Expression;
-    fn yield_expression_p2(&self, a0: Self::Expression) -> Self::Expression;
-    fn async_generator_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::AsyncGeneratorBody) -> Self::MethodDefinition;
-    fn async_generator_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncGeneratorBody) -> Self::ModuleItem;
-    fn async_generator_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::AsyncGeneratorBody) -> Self::ModuleItem;
-    fn async_generator_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::AsyncGeneratorBody) -> Self::Expression;
-    fn async_generator_body(&self, a0: Self::FunctionBody) -> Self::AsyncGeneratorBody;
-    fn class_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::ClassTail) -> Self::ModuleItem;
-    fn class_declaration_p1(&self, a0: Self::ClassTail) -> Self::ModuleItem;
-    fn class_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::ClassTail) -> Self::Expression;
-    fn class_tail(&self, a0: Option<Self::ClassHeritage>, a1: Option<Self::ClassBody>) -> Self::ClassTail;
-    fn class_heritage(&self, a0: Self::Expression) -> Self::ClassHeritage;
-    fn class_body(&self, a0: Self::ClassElementList) -> Self::ClassBody;
-    fn class_element_list_p0(&self, a0: Self::ClassElement) -> Self::ClassElementList;
-    fn class_element_list_p1(&self, a0: Self::ClassElementList, a1: Self::ClassElement) -> Self::ClassElementList;
-    fn class_element_p0(&self, a0: Self::MethodDefinition) -> Self::ClassElement;
-    fn class_element_p1(&self, a0: Self::MethodDefinition) -> Self::ClassElement;
-    fn class_element_p2(&self, ) -> Self::ClassElement;
-    fn async_function_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncFunctionBody) -> Self::ModuleItem;
-    fn async_function_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::AsyncFunctionBody) -> Self::ModuleItem;
-    fn async_function_expression_p0(&self, a0: Self::FormalParameters, a1: Self::AsyncFunctionBody) -> Self::Expression;
-    fn async_function_expression_p1(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncFunctionBody) -> Self::Expression;
-    fn async_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::AsyncFunctionBody) -> Self::MethodDefinition;
-    fn async_function_body(&self, a0: Self::FunctionBody) -> Self::AsyncFunctionBody;
-    fn await_expression(&self, a0: Self::Expression) -> Self::Expression;
-    fn async_arrow_function_p0(&self, a0: Self::AsyncArrowBindingIdentifier, a1: Self::AsyncConciseBody) -> Self::AsyncArrowFunction;
-    fn async_arrow_function_p1(&self, a0: Self::CoverCallExpressionAndAsyncArrowHead, a1: Self::AsyncConciseBody) -> Self::AsyncArrowFunction;
-    fn async_concise_body_p0(&self, a0: Self::Expression) -> Self::AsyncConciseBody;
-    fn async_concise_body_p1(&self, a0: Self::AsyncFunctionBody) -> Self::AsyncConciseBody;
-    fn async_arrow_binding_identifier(&self, a0: Self::BindingIdentifier) -> Self::AsyncArrowBindingIdentifier;
-    fn cover_call_expression_and_async_arrow_head(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::CoverCallExpressionAndAsyncArrowHead;
-    fn async_arrow_head(&self, a0: Self::ArrowFormalParameters) -> Self::AsyncArrowHead;
-    fn script(&self, a0: Option<Self::ScriptBody>) -> Self::Script;
-    fn script_body(&self, a0: Self::StatementList) -> Self::ScriptBody;
-    fn module(&self, a0: Option<Self::ModuleBody>) -> Self::Module;
-    fn module_body(&self, a0: Self::ModuleItemList) -> Self::ModuleBody;
-    fn module_item_list_p0(&self, a0: Self::ModuleItem) -> Self::ModuleItemList;
-    fn module_item_list_p1(&self, a0: Self::ModuleItemList, a1: Self::ModuleItem) -> Self::ModuleItemList;
-    fn import_declaration_p0(&self, a0: Self::ImportClause, a1: Self::FromClause) -> Self::ModuleItem;
-    fn import_declaration_p1(&self, a0: Self::ModuleSpecifier) -> Self::ModuleItem;
-    fn import_clause_p0(&self, a0: Self::ImportedDefaultBinding) -> Self::ImportClause;
-    fn import_clause_p1(&self, a0: Self::NameSpaceImport) -> Self::ImportClause;
-    fn import_clause_p2(&self, a0: Self::NamedImports) -> Self::ImportClause;
-    fn import_clause_p3(&self, a0: Self::ImportedDefaultBinding, a1: Self::NameSpaceImport) -> Self::ImportClause;
-    fn import_clause_p4(&self, a0: Self::ImportedDefaultBinding, a1: Self::NamedImports) -> Self::ImportClause;
-    fn imported_default_binding(&self, a0: Self::ImportedBinding) -> Self::ImportedDefaultBinding;
-    fn name_space_import(&self, a0: Self::ImportedBinding) -> Self::NameSpaceImport;
-    fn named_imports_p0(&self, ) -> Self::NamedImports;
-    fn named_imports_p1(&self, a0: Self::ImportsList) -> Self::NamedImports;
-    fn named_imports_p2(&self, a0: Self::ImportsList) -> Self::NamedImports;
-    fn from_clause(&self, a0: Self::ModuleSpecifier) -> Self::FromClause;
-    fn imports_list_p0(&self, a0: Self::ImportSpecifier) -> Self::ImportsList;
-    fn imports_list_p1(&self, a0: Self::ImportsList, a1: Self::ImportSpecifier) -> Self::ImportsList;
-    fn import_specifier_p0(&self, a0: Self::ImportedBinding) -> Self::ImportSpecifier;
-    fn import_specifier_p1(&self, a0: Self::ImportedBinding) -> Self::ImportSpecifier;
-    fn module_specifier(&self, ) -> Self::ModuleSpecifier;
-    fn imported_binding(&self, a0: Self::BindingIdentifier) -> Self::ImportedBinding;
-    fn export_declaration_p0(&self, a0: Self::FromClause) -> Self::ModuleItem;
-    fn export_declaration_p1(&self, a0: Self::ExportClause, a1: Self::FromClause) -> Self::ModuleItem;
-    fn export_declaration_p2(&self, a0: Self::ExportClause) -> Self::ModuleItem;
-    fn export_declaration_p3(&self, a0: Self::ModuleItem) -> Self::ModuleItem;
-    fn export_declaration_p4(&self, a0: Self::ModuleItem) -> Self::ModuleItem;
-    fn export_declaration_p5(&self, a0: Self::ModuleItem) -> Self::ModuleItem;
-    fn export_declaration_p6(&self, a0: Self::ModuleItem) -> Self::ModuleItem;
-    fn export_declaration_p7(&self, a0: Self::Expression) -> Self::ModuleItem;
-    fn export_clause_p0(&self, ) -> Self::ExportClause;
-    fn export_clause_p1(&self, a0: Self::ExportsList) -> Self::ExportClause;
-    fn export_clause_p2(&self, a0: Self::ExportsList) -> Self::ExportClause;
-    fn exports_list_p0(&self, a0: Self::ExportSpecifier) -> Self::ExportsList;
-    fn exports_list_p1(&self, a0: Self::ExportsList, a1: Self::ExportSpecifier) -> Self::ExportsList;
-    fn export_specifier_p0(&self, ) -> Self::ExportSpecifier;
-    fn export_specifier_p1(&self, ) -> Self::ExportSpecifier;
-}
-
 pub mod concrete {
 #[derive(Debug)]
 pub enum IdentifierReference {
@@ -6482,1156 +6020,1043 @@ pub enum ExportSpecifier {
 
 pub struct DefaultHandler {}
 
-impl Handler for DefaultHandler {
-    type IdentifierReference = Box<concrete::IdentifierReference>;
-    type BindingIdentifier = Box<concrete::BindingIdentifier>;
-    type LabelIdentifier = Box<concrete::LabelIdentifier>;
-    type Expression = Box<concrete::Expression>;
-    type CoverParenthesizedExpressionAndArrowParameterList = Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>;
-    type ParenthesizedExpression = Box<concrete::ParenthesizedExpression>;
-    type ElementList = Box<concrete::ElementList>;
-    type Elision = Box<concrete::Elision>;
-    type SpreadElement = Box<concrete::SpreadElement>;
-    type PropertyDefinitionList = Box<concrete::PropertyDefinitionList>;
-    type PropertyDefinition = Box<concrete::PropertyDefinition>;
-    type PropertyName = Box<concrete::PropertyName>;
-    type LiteralPropertyName = Box<concrete::LiteralPropertyName>;
-    type ComputedPropertyName = Box<concrete::ComputedPropertyName>;
-    type CoverInitializedName = Box<concrete::CoverInitializedName>;
-    type Initializer = Box<concrete::Initializer>;
-    type TemplateLiteral = Box<concrete::TemplateLiteral>;
-    type SubstitutionTemplate = Box<concrete::SubstitutionTemplate>;
-    type TemplateSpans = Box<concrete::TemplateSpans>;
-    type TemplateMiddleList = Box<concrete::TemplateMiddleList>;
-    type SuperProperty = Box<concrete::SuperProperty>;
-    type MetaProperty = Box<concrete::MetaProperty>;
-    type NewTarget = Box<concrete::NewTarget>;
-    type SuperCall = Box<concrete::SuperCall>;
-    type Arguments = Box<concrete::Arguments>;
-    type ArgumentList = Box<concrete::ArgumentList>;
-    type CallMemberExpression = Box<concrete::CallMemberExpression>;
-    type MultiplicativeOperator = Box<concrete::MultiplicativeOperator>;
-    type AssignmentOperator = Box<concrete::AssignmentOperator>;
-    type AssignmentPattern = Box<concrete::AssignmentPattern>;
-    type ObjectAssignmentPattern = Box<concrete::ObjectAssignmentPattern>;
-    type ArrayAssignmentPattern = Box<concrete::ArrayAssignmentPattern>;
-    type AssignmentRestProperty = Box<concrete::AssignmentRestProperty>;
-    type AssignmentPropertyList = Box<concrete::AssignmentPropertyList>;
-    type AssignmentElementList = Box<concrete::AssignmentElementList>;
-    type AssignmentElisionElement = Box<concrete::AssignmentElisionElement>;
-    type AssignmentProperty = Box<concrete::AssignmentProperty>;
-    type AssignmentElement = Box<concrete::AssignmentElement>;
-    type AssignmentRestElement = Box<concrete::AssignmentRestElement>;
-    type DestructuringAssignmentTarget = Box<concrete::DestructuringAssignmentTarget>;
-    type ModuleItem = Box<concrete::ModuleItem>;
-    type Block = Box<concrete::Block>;
-    type StatementList = Box<concrete::StatementList>;
-    type ForLexicalDeclaration = Box<concrete::ForLexicalDeclaration>;
-    type LetOrConst = Box<concrete::LetOrConst>;
-    type BindingList = Box<concrete::BindingList>;
-    type LexicalBinding = Box<concrete::LexicalBinding>;
-    type VariableDeclarationList = Box<concrete::VariableDeclarationList>;
-    type VariableDeclaration = Box<concrete::VariableDeclaration>;
-    type BindingPattern = Box<concrete::BindingPattern>;
-    type ObjectBindingPattern = Box<concrete::ObjectBindingPattern>;
-    type ArrayBindingPattern = Box<concrete::ArrayBindingPattern>;
-    type BindingRestProperty = Box<concrete::BindingRestProperty>;
-    type BindingPropertyList = Box<concrete::BindingPropertyList>;
-    type BindingElementList = Box<concrete::BindingElementList>;
-    type BindingElisionElement = Box<concrete::BindingElisionElement>;
-    type BindingProperty = Box<concrete::BindingProperty>;
-    type BindingElement = Box<concrete::BindingElement>;
-    type SingleNameBinding = Box<concrete::SingleNameBinding>;
-    type BindingRestElement = Box<concrete::BindingRestElement>;
-    type ForDeclaration = Box<concrete::ForDeclaration>;
-    type ForBinding = Box<concrete::ForBinding>;
-    type CaseBlock = Box<concrete::CaseBlock>;
-    type CaseClauses = Box<concrete::CaseClauses>;
-    type CaseClause = Box<concrete::CaseClause>;
-    type DefaultClause = Box<concrete::DefaultClause>;
-    type LabelledItem = Box<concrete::LabelledItem>;
-    type Catch = Box<concrete::Catch>;
-    type Finally = Box<concrete::Finally>;
-    type CatchParameter = Box<concrete::CatchParameter>;
-    type UniqueFormalParameters = Box<concrete::UniqueFormalParameters>;
-    type FormalParameters = Box<concrete::FormalParameters>;
-    type FormalParameterList = Box<concrete::FormalParameterList>;
-    type FunctionRestParameter = Box<concrete::FunctionRestParameter>;
-    type FormalParameter = Box<concrete::FormalParameter>;
-    type FunctionBody = Box<concrete::FunctionBody>;
-    type FunctionStatementList = Box<concrete::FunctionStatementList>;
-    type ArrowFunction = Box<concrete::ArrowFunction>;
-    type ArrowParameters = Box<concrete::ArrowParameters>;
-    type ConciseBody = Box<concrete::ConciseBody>;
-    type ArrowFormalParameters = Box<concrete::ArrowFormalParameters>;
-    type MethodDefinition = Box<concrete::MethodDefinition>;
-    type PropertySetParameterList = Box<concrete::PropertySetParameterList>;
-    type GeneratorBody = Box<concrete::GeneratorBody>;
-    type AsyncGeneratorBody = Box<concrete::AsyncGeneratorBody>;
-    type ClassTail = Box<concrete::ClassTail>;
-    type ClassHeritage = Box<concrete::ClassHeritage>;
-    type ClassBody = Box<concrete::ClassBody>;
-    type ClassElementList = Box<concrete::ClassElementList>;
-    type ClassElement = Box<concrete::ClassElement>;
-    type AsyncFunctionBody = Box<concrete::AsyncFunctionBody>;
-    type AsyncArrowFunction = Box<concrete::AsyncArrowFunction>;
-    type AsyncConciseBody = Box<concrete::AsyncConciseBody>;
-    type AsyncArrowBindingIdentifier = Box<concrete::AsyncArrowBindingIdentifier>;
-    type CoverCallExpressionAndAsyncArrowHead = Box<concrete::CoverCallExpressionAndAsyncArrowHead>;
-    type AsyncArrowHead = Box<concrete::AsyncArrowHead>;
-    type Script = Box<concrete::Script>;
-    type ScriptBody = Box<concrete::ScriptBody>;
-    type Module = Box<concrete::Module>;
-    type ModuleBody = Box<concrete::ModuleBody>;
-    type ModuleItemList = Box<concrete::ModuleItemList>;
-    type ImportClause = Box<concrete::ImportClause>;
-    type ImportedDefaultBinding = Box<concrete::ImportedDefaultBinding>;
-    type NameSpaceImport = Box<concrete::NameSpaceImport>;
-    type NamedImports = Box<concrete::NamedImports>;
-    type FromClause = Box<concrete::FromClause>;
-    type ImportsList = Box<concrete::ImportsList>;
-    type ImportSpecifier = Box<concrete::ImportSpecifier>;
-    type ModuleSpecifier = Box<concrete::ModuleSpecifier>;
-    type ImportedBinding = Box<concrete::ImportedBinding>;
-    type ExportClause = Box<concrete::ExportClause>;
-    type ExportsList = Box<concrete::ExportsList>;
-    type ExportSpecifier = Box<concrete::ExportSpecifier>;
-    fn identifier_reference(&self) -> Self::IdentifierReference {
+impl DefaultHandler {
+    fn identifier_reference(&self) -> Box<concrete::IdentifierReference> {
         Box::new(concrete::IdentifierReference::IdentifierReference())
     }
-    fn binding_identifier_p0(&self) -> Self::BindingIdentifier {
+    fn binding_identifier_p0(&self) -> Box<concrete::BindingIdentifier> {
         Box::new(concrete::BindingIdentifier::BindingIdentifierP0())
     }
-    fn binding_identifier_p1(&self) -> Self::BindingIdentifier {
+    fn binding_identifier_p1(&self) -> Box<concrete::BindingIdentifier> {
         Box::new(concrete::BindingIdentifier::BindingIdentifierP1())
     }
-    fn binding_identifier_p2(&self) -> Self::BindingIdentifier {
+    fn binding_identifier_p2(&self) -> Box<concrete::BindingIdentifier> {
         Box::new(concrete::BindingIdentifier::BindingIdentifierP2())
     }
-    fn label_identifier(&self) -> Self::LabelIdentifier {
+    fn label_identifier(&self) -> Box<concrete::LabelIdentifier> {
         Box::new(concrete::LabelIdentifier::LabelIdentifier())
     }
-    fn primary_expression_p0(&self) -> Self::Expression {
+    fn primary_expression_p0(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::PrimaryExpressionP0())
     }
-    fn primary_expression_p1(&self, a0: Self::IdentifierReference) -> Self::Expression {
+    fn primary_expression_p1(&self, a0: Box<concrete::IdentifierReference>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::PrimaryExpressionP1(a0))
     }
-    fn primary_expression_p10(&self) -> Self::Expression {
+    fn primary_expression_p10(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::PrimaryExpressionP10())
     }
-    fn primary_expression_p11(&self, a0: Self::TemplateLiteral) -> Self::Expression {
+    fn primary_expression_p11(&self, a0: Box<concrete::TemplateLiteral>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::PrimaryExpressionP11(a0))
     }
-    fn primary_expression_p12(&self, a0: Self::CoverParenthesizedExpressionAndArrowParameterList) -> Self::Expression {
+    fn primary_expression_p12(&self, a0: Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::PrimaryExpressionP12(a0))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p0(&self, a0: Self::Expression) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP0(a0))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p1(&self, a0: Self::Expression) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP1(a0))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p2(&self) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p2(&self) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP2())
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p3(&self, a0: Self::BindingIdentifier) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p3(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP3(a0))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p4(&self, a0: Self::BindingPattern) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p4(&self, a0: Box<concrete::BindingPattern>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP4(a0))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p5(&self, a0: Self::Expression, a1: Self::BindingIdentifier) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p5(&self, a0: Box<concrete::Expression>, a1: Box<concrete::BindingIdentifier>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP5(a0, a1))
     }
-    fn cover_parenthesized_expression_and_arrow_parameter_list_p6(&self, a0: Self::Expression, a1: Self::BindingPattern) -> Self::CoverParenthesizedExpressionAndArrowParameterList {
+    fn cover_parenthesized_expression_and_arrow_parameter_list_p6(&self, a0: Box<concrete::Expression>, a1: Box<concrete::BindingPattern>) -> Box<concrete::CoverParenthesizedExpressionAndArrowParameterList> {
         Box::new(concrete::CoverParenthesizedExpressionAndArrowParameterList::CoverParenthesizedExpressionAndArrowParameterListP6(a0, a1))
     }
-    fn parenthesized_expression(&self, a0: Self::Expression) -> Self::ParenthesizedExpression {
+    fn parenthesized_expression(&self, a0: Box<concrete::Expression>) -> Box<concrete::ParenthesizedExpression> {
         Box::new(concrete::ParenthesizedExpression::ParenthesizedExpression(a0))
     }
-    fn literal_p0(&self) -> Self::Expression {
+    fn literal_p0(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LiteralP0())
     }
-    fn literal_p1(&self) -> Self::Expression {
+    fn literal_p1(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LiteralP1())
     }
-    fn literal_p2(&self) -> Self::Expression {
+    fn literal_p2(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LiteralP2())
     }
-    fn literal_p3(&self) -> Self::Expression {
+    fn literal_p3(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LiteralP3())
     }
-    fn array_literal_p0(&self, a0: Option<Self::Elision>) -> Self::Expression {
+    fn array_literal_p0(&self, a0: Option<Box<concrete::Elision>>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ArrayLiteralP0(a0))
     }
-    fn array_literal_p1(&self, a0: Self::ElementList) -> Self::Expression {
+    fn array_literal_p1(&self, a0: Box<concrete::ElementList>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ArrayLiteralP1(a0))
     }
-    fn array_literal_p2(&self, a0: Self::ElementList, a1: Option<Self::Elision>) -> Self::Expression {
+    fn array_literal_p2(&self, a0: Box<concrete::ElementList>, a1: Option<Box<concrete::Elision>>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ArrayLiteralP2(a0, a1))
     }
-    fn element_list_p0(&self, a0: Option<Self::Elision>, a1: Self::Expression) -> Self::ElementList {
+    fn element_list_p0(&self, a0: Option<Box<concrete::Elision>>, a1: Box<concrete::Expression>) -> Box<concrete::ElementList> {
         Box::new(concrete::ElementList::ElementListP0(a0, a1))
     }
-    fn element_list_p1(&self, a0: Option<Self::Elision>, a1: Self::SpreadElement) -> Self::ElementList {
+    fn element_list_p1(&self, a0: Option<Box<concrete::Elision>>, a1: Box<concrete::SpreadElement>) -> Box<concrete::ElementList> {
         Box::new(concrete::ElementList::ElementListP1(a0, a1))
     }
-    fn element_list_p2(&self, a0: Self::ElementList, a1: Option<Self::Elision>, a2: Self::Expression) -> Self::ElementList {
+    fn element_list_p2(&self, a0: Box<concrete::ElementList>, a1: Option<Box<concrete::Elision>>, a2: Box<concrete::Expression>) -> Box<concrete::ElementList> {
         Box::new(concrete::ElementList::ElementListP2(a0, a1, a2))
     }
-    fn element_list_p3(&self, a0: Self::ElementList, a1: Option<Self::Elision>, a2: Self::SpreadElement) -> Self::ElementList {
+    fn element_list_p3(&self, a0: Box<concrete::ElementList>, a1: Option<Box<concrete::Elision>>, a2: Box<concrete::SpreadElement>) -> Box<concrete::ElementList> {
         Box::new(concrete::ElementList::ElementListP3(a0, a1, a2))
     }
-    fn elision_p0(&self) -> Self::Elision {
+    fn elision_p0(&self) -> Box<concrete::Elision> {
         Box::new(concrete::Elision::ElisionP0())
     }
-    fn elision_p1(&self, a0: Self::Elision) -> Self::Elision {
+    fn elision_p1(&self, a0: Box<concrete::Elision>) -> Box<concrete::Elision> {
         Box::new(concrete::Elision::ElisionP1(a0))
     }
-    fn spread_element(&self, a0: Self::Expression) -> Self::SpreadElement {
+    fn spread_element(&self, a0: Box<concrete::Expression>) -> Box<concrete::SpreadElement> {
         Box::new(concrete::SpreadElement::SpreadElement(a0))
     }
-    fn object_literal_p0(&self) -> Self::Expression {
+    fn object_literal_p0(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ObjectLiteralP0())
     }
-    fn object_literal_p1(&self, a0: Self::PropertyDefinitionList) -> Self::Expression {
+    fn object_literal_p1(&self, a0: Box<concrete::PropertyDefinitionList>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ObjectLiteralP1(a0))
     }
-    fn object_literal_p2(&self, a0: Self::PropertyDefinitionList) -> Self::Expression {
+    fn object_literal_p2(&self, a0: Box<concrete::PropertyDefinitionList>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ObjectLiteralP2(a0))
     }
-    fn property_definition_list_p0(&self, a0: Self::PropertyDefinition) -> Self::PropertyDefinitionList {
+    fn property_definition_list_p0(&self, a0: Box<concrete::PropertyDefinition>) -> Box<concrete::PropertyDefinitionList> {
         Box::new(concrete::PropertyDefinitionList::PropertyDefinitionListP0(a0))
     }
-    fn property_definition_list_p1(&self, a0: Self::PropertyDefinitionList, a1: Self::PropertyDefinition) -> Self::PropertyDefinitionList {
+    fn property_definition_list_p1(&self, a0: Box<concrete::PropertyDefinitionList>, a1: Box<concrete::PropertyDefinition>) -> Box<concrete::PropertyDefinitionList> {
         Box::new(concrete::PropertyDefinitionList::PropertyDefinitionListP1(a0, a1))
     }
-    fn property_definition_p0(&self, a0: Self::IdentifierReference) -> Self::PropertyDefinition {
+    fn property_definition_p0(&self, a0: Box<concrete::IdentifierReference>) -> Box<concrete::PropertyDefinition> {
         Box::new(concrete::PropertyDefinition::PropertyDefinitionP0(a0))
     }
-    fn property_definition_p1(&self, a0: Self::CoverInitializedName) -> Self::PropertyDefinition {
+    fn property_definition_p1(&self, a0: Box<concrete::CoverInitializedName>) -> Box<concrete::PropertyDefinition> {
         Box::new(concrete::PropertyDefinition::PropertyDefinitionP1(a0))
     }
-    fn property_definition_p2(&self, a0: Self::PropertyName, a1: Self::Expression) -> Self::PropertyDefinition {
+    fn property_definition_p2(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::Expression>) -> Box<concrete::PropertyDefinition> {
         Box::new(concrete::PropertyDefinition::PropertyDefinitionP2(a0, a1))
     }
-    fn property_definition_p3(&self, a0: Self::MethodDefinition) -> Self::PropertyDefinition {
+    fn property_definition_p3(&self, a0: Box<concrete::MethodDefinition>) -> Box<concrete::PropertyDefinition> {
         Box::new(concrete::PropertyDefinition::PropertyDefinitionP3(a0))
     }
-    fn property_definition_p4(&self, a0: Self::Expression) -> Self::PropertyDefinition {
+    fn property_definition_p4(&self, a0: Box<concrete::Expression>) -> Box<concrete::PropertyDefinition> {
         Box::new(concrete::PropertyDefinition::PropertyDefinitionP4(a0))
     }
-    fn property_name_p0(&self, a0: Self::LiteralPropertyName) -> Self::PropertyName {
+    fn property_name_p0(&self, a0: Box<concrete::LiteralPropertyName>) -> Box<concrete::PropertyName> {
         Box::new(concrete::PropertyName::PropertyNameP0(a0))
     }
-    fn property_name_p1(&self, a0: Self::ComputedPropertyName) -> Self::PropertyName {
+    fn property_name_p1(&self, a0: Box<concrete::ComputedPropertyName>) -> Box<concrete::PropertyName> {
         Box::new(concrete::PropertyName::PropertyNameP1(a0))
     }
-    fn literal_property_name_p0(&self) -> Self::LiteralPropertyName {
+    fn literal_property_name_p0(&self) -> Box<concrete::LiteralPropertyName> {
         Box::new(concrete::LiteralPropertyName::LiteralPropertyNameP0())
     }
-    fn literal_property_name_p1(&self) -> Self::LiteralPropertyName {
+    fn literal_property_name_p1(&self) -> Box<concrete::LiteralPropertyName> {
         Box::new(concrete::LiteralPropertyName::LiteralPropertyNameP1())
     }
-    fn literal_property_name_p2(&self) -> Self::LiteralPropertyName {
+    fn literal_property_name_p2(&self) -> Box<concrete::LiteralPropertyName> {
         Box::new(concrete::LiteralPropertyName::LiteralPropertyNameP2())
     }
-    fn computed_property_name(&self, a0: Self::Expression) -> Self::ComputedPropertyName {
+    fn computed_property_name(&self, a0: Box<concrete::Expression>) -> Box<concrete::ComputedPropertyName> {
         Box::new(concrete::ComputedPropertyName::ComputedPropertyName(a0))
     }
-    fn cover_initialized_name(&self, a0: Self::IdentifierReference, a1: Self::Initializer) -> Self::CoverInitializedName {
+    fn cover_initialized_name(&self, a0: Box<concrete::IdentifierReference>, a1: Box<concrete::Initializer>) -> Box<concrete::CoverInitializedName> {
         Box::new(concrete::CoverInitializedName::CoverInitializedName(a0, a1))
     }
-    fn initializer(&self, a0: Self::Expression) -> Self::Initializer {
+    fn initializer(&self, a0: Box<concrete::Expression>) -> Box<concrete::Initializer> {
         Box::new(concrete::Initializer::Initializer(a0))
     }
-    fn template_literal_p0(&self) -> Self::TemplateLiteral {
+    fn template_literal_p0(&self) -> Box<concrete::TemplateLiteral> {
         Box::new(concrete::TemplateLiteral::TemplateLiteralP0())
     }
-    fn template_literal_p1(&self, a0: Self::SubstitutionTemplate) -> Self::TemplateLiteral {
+    fn template_literal_p1(&self, a0: Box<concrete::SubstitutionTemplate>) -> Box<concrete::TemplateLiteral> {
         Box::new(concrete::TemplateLiteral::TemplateLiteralP1(a0))
     }
-    fn substitution_template(&self, a0: Self::Expression, a1: Self::TemplateSpans) -> Self::SubstitutionTemplate {
+    fn substitution_template(&self, a0: Box<concrete::Expression>, a1: Box<concrete::TemplateSpans>) -> Box<concrete::SubstitutionTemplate> {
         Box::new(concrete::SubstitutionTemplate::SubstitutionTemplate(a0, a1))
     }
-    fn template_spans_p0(&self) -> Self::TemplateSpans {
+    fn template_spans_p0(&self) -> Box<concrete::TemplateSpans> {
         Box::new(concrete::TemplateSpans::TemplateSpansP0())
     }
-    fn template_spans_p1(&self, a0: Self::TemplateMiddleList) -> Self::TemplateSpans {
+    fn template_spans_p1(&self, a0: Box<concrete::TemplateMiddleList>) -> Box<concrete::TemplateSpans> {
         Box::new(concrete::TemplateSpans::TemplateSpansP1(a0))
     }
-    fn template_middle_list_p0(&self, a0: Self::Expression) -> Self::TemplateMiddleList {
+    fn template_middle_list_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::TemplateMiddleList> {
         Box::new(concrete::TemplateMiddleList::TemplateMiddleListP0(a0))
     }
-    fn template_middle_list_p1(&self, a0: Self::TemplateMiddleList, a1: Self::Expression) -> Self::TemplateMiddleList {
+    fn template_middle_list_p1(&self, a0: Box<concrete::TemplateMiddleList>, a1: Box<concrete::Expression>) -> Box<concrete::TemplateMiddleList> {
         Box::new(concrete::TemplateMiddleList::TemplateMiddleListP1(a0, a1))
     }
-    fn member_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn member_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP1(a0, a1))
     }
-    fn member_expression_p2(&self, a0: Self::Expression) -> Self::Expression {
+    fn member_expression_p2(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP2(a0))
     }
-    fn member_expression_p3(&self, a0: Self::Expression, a1: Self::TemplateLiteral) -> Self::Expression {
+    fn member_expression_p3(&self, a0: Box<concrete::Expression>, a1: Box<concrete::TemplateLiteral>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP3(a0, a1))
     }
-    fn member_expression_p4(&self, a0: Self::SuperProperty) -> Self::Expression {
+    fn member_expression_p4(&self, a0: Box<concrete::SuperProperty>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP4(a0))
     }
-    fn member_expression_p5(&self, a0: Self::MetaProperty) -> Self::Expression {
+    fn member_expression_p5(&self, a0: Box<concrete::MetaProperty>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP5(a0))
     }
-    fn member_expression_p6(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::Expression {
+    fn member_expression_p6(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Arguments>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MemberExpressionP6(a0, a1))
     }
-    fn super_property_p0(&self, a0: Self::Expression) -> Self::SuperProperty {
+    fn super_property_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::SuperProperty> {
         Box::new(concrete::SuperProperty::SuperPropertyP0(a0))
     }
-    fn super_property_p1(&self) -> Self::SuperProperty {
+    fn super_property_p1(&self) -> Box<concrete::SuperProperty> {
         Box::new(concrete::SuperProperty::SuperPropertyP1())
     }
-    fn meta_property(&self, a0: Self::NewTarget) -> Self::MetaProperty {
+    fn meta_property(&self, a0: Box<concrete::NewTarget>) -> Box<concrete::MetaProperty> {
         Box::new(concrete::MetaProperty::MetaProperty(a0))
     }
-    fn new_target(&self) -> Self::NewTarget {
+    fn new_target(&self) -> Box<concrete::NewTarget> {
         Box::new(concrete::NewTarget::NewTarget())
     }
-    fn new_expression_p1(&self, a0: Self::Expression) -> Self::Expression {
+    fn new_expression_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::NewExpressionP1(a0))
     }
-    fn call_expression_p0(&self, a0: Self::CoverCallExpressionAndAsyncArrowHead) -> Self::Expression {
+    fn call_expression_p0(&self, a0: Box<concrete::CoverCallExpressionAndAsyncArrowHead>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP0(a0))
     }
-    fn call_expression_p1(&self, a0: Self::SuperCall) -> Self::Expression {
+    fn call_expression_p1(&self, a0: Box<concrete::SuperCall>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP1(a0))
     }
-    fn call_expression_p2(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::Expression {
+    fn call_expression_p2(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Arguments>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP2(a0, a1))
     }
-    fn call_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn call_expression_p3(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP3(a0, a1))
     }
-    fn call_expression_p4(&self, a0: Self::Expression) -> Self::Expression {
+    fn call_expression_p4(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP4(a0))
     }
-    fn call_expression_p5(&self, a0: Self::Expression, a1: Self::TemplateLiteral) -> Self::Expression {
+    fn call_expression_p5(&self, a0: Box<concrete::Expression>, a1: Box<concrete::TemplateLiteral>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::CallExpressionP5(a0, a1))
     }
-    fn super_call(&self, a0: Self::Arguments) -> Self::SuperCall {
+    fn super_call(&self, a0: Box<concrete::Arguments>) -> Box<concrete::SuperCall> {
         Box::new(concrete::SuperCall::SuperCall(a0))
     }
-    fn arguments_p0(&self) -> Self::Arguments {
+    fn arguments_p0(&self) -> Box<concrete::Arguments> {
         Box::new(concrete::Arguments::ArgumentsP0())
     }
-    fn arguments_p1(&self, a0: Self::ArgumentList) -> Self::Arguments {
+    fn arguments_p1(&self, a0: Box<concrete::ArgumentList>) -> Box<concrete::Arguments> {
         Box::new(concrete::Arguments::ArgumentsP1(a0))
     }
-    fn arguments_p2(&self, a0: Self::ArgumentList) -> Self::Arguments {
+    fn arguments_p2(&self, a0: Box<concrete::ArgumentList>) -> Box<concrete::Arguments> {
         Box::new(concrete::Arguments::ArgumentsP2(a0))
     }
-    fn argument_list_p0(&self, a0: Self::Expression) -> Self::ArgumentList {
+    fn argument_list_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::ArgumentList> {
         Box::new(concrete::ArgumentList::ArgumentListP0(a0))
     }
-    fn argument_list_p1(&self, a0: Self::Expression) -> Self::ArgumentList {
+    fn argument_list_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::ArgumentList> {
         Box::new(concrete::ArgumentList::ArgumentListP1(a0))
     }
-    fn argument_list_p2(&self, a0: Self::ArgumentList, a1: Self::Expression) -> Self::ArgumentList {
+    fn argument_list_p2(&self, a0: Box<concrete::ArgumentList>, a1: Box<concrete::Expression>) -> Box<concrete::ArgumentList> {
         Box::new(concrete::ArgumentList::ArgumentListP2(a0, a1))
     }
-    fn argument_list_p3(&self, a0: Self::ArgumentList, a1: Self::Expression) -> Self::ArgumentList {
+    fn argument_list_p3(&self, a0: Box<concrete::ArgumentList>, a1: Box<concrete::Expression>) -> Box<concrete::ArgumentList> {
         Box::new(concrete::ArgumentList::ArgumentListP3(a0, a1))
     }
-    fn call_member_expression(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::CallMemberExpression {
+    fn call_member_expression(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Arguments>) -> Box<concrete::CallMemberExpression> {
         Box::new(concrete::CallMemberExpression::CallMemberExpression(a0, a1))
     }
-    fn update_expression_p1(&self, a0: Self::Expression) -> Self::Expression {
+    fn update_expression_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UpdateExpressionP1(a0))
     }
-    fn update_expression_p2(&self, a0: Self::Expression) -> Self::Expression {
+    fn update_expression_p2(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UpdateExpressionP2(a0))
     }
-    fn update_expression_p3(&self, a0: Self::Expression) -> Self::Expression {
+    fn update_expression_p3(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UpdateExpressionP3(a0))
     }
-    fn update_expression_p4(&self, a0: Self::Expression) -> Self::Expression {
+    fn update_expression_p4(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UpdateExpressionP4(a0))
     }
-    fn unary_expression_p1(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP1(a0))
     }
-    fn unary_expression_p2(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p2(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP2(a0))
     }
-    fn unary_expression_p3(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p3(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP3(a0))
     }
-    fn unary_expression_p4(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p4(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP4(a0))
     }
-    fn unary_expression_p5(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p5(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP5(a0))
     }
-    fn unary_expression_p6(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p6(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP6(a0))
     }
-    fn unary_expression_p7(&self, a0: Self::Expression) -> Self::Expression {
+    fn unary_expression_p7(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::UnaryExpressionP7(a0))
     }
-    fn exponentiation_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn exponentiation_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ExponentiationExpressionP1(a0, a1))
     }
-    fn multiplicative_expression_p1(&self, a0: Self::Expression, a1: Self::MultiplicativeOperator, a2: Self::Expression) -> Self::Expression {
+    fn multiplicative_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::MultiplicativeOperator>, a2: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::MultiplicativeExpressionP1(a0, a1, a2))
     }
-    fn multiplicative_operator_p0(&self) -> Self::MultiplicativeOperator {
+    fn multiplicative_operator_p0(&self) -> Box<concrete::MultiplicativeOperator> {
         Box::new(concrete::MultiplicativeOperator::MultiplicativeOperatorP0())
     }
-    fn multiplicative_operator_p1(&self) -> Self::MultiplicativeOperator {
+    fn multiplicative_operator_p1(&self) -> Box<concrete::MultiplicativeOperator> {
         Box::new(concrete::MultiplicativeOperator::MultiplicativeOperatorP1())
     }
-    fn multiplicative_operator_p2(&self) -> Self::MultiplicativeOperator {
+    fn multiplicative_operator_p2(&self) -> Box<concrete::MultiplicativeOperator> {
         Box::new(concrete::MultiplicativeOperator::MultiplicativeOperatorP2())
     }
-    fn additive_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn additive_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AdditiveExpressionP1(a0, a1))
     }
-    fn additive_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn additive_expression_p2(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AdditiveExpressionP2(a0, a1))
     }
-    fn shift_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn shift_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ShiftExpressionP1(a0, a1))
     }
-    fn shift_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn shift_expression_p2(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ShiftExpressionP2(a0, a1))
     }
-    fn shift_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn shift_expression_p3(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ShiftExpressionP3(a0, a1))
     }
-    fn relational_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP1(a0, a1))
     }
-    fn relational_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p2(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP2(a0, a1))
     }
-    fn relational_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p3(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP3(a0, a1))
     }
-    fn relational_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p4(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP4(a0, a1))
     }
-    fn relational_expression_p5(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p5(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP5(a0, a1))
     }
-    fn relational_expression_p6(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn relational_expression_p6(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::RelationalExpressionP6(a0, a1))
     }
-    fn equality_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn equality_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::EqualityExpressionP1(a0, a1))
     }
-    fn equality_expression_p2(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn equality_expression_p2(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::EqualityExpressionP2(a0, a1))
     }
-    fn equality_expression_p3(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn equality_expression_p3(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::EqualityExpressionP3(a0, a1))
     }
-    fn equality_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn equality_expression_p4(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::EqualityExpressionP4(a0, a1))
     }
-    fn bitwise_and_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn bitwise_and_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::BitwiseAndExpressionP1(a0, a1))
     }
-    fn bitwise_xor_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn bitwise_xor_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::BitwiseXorExpressionP1(a0, a1))
     }
-    fn bitwise_or_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn bitwise_or_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::BitwiseOrExpressionP1(a0, a1))
     }
-    fn logical_and_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn logical_and_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LogicalAndExpressionP1(a0, a1))
     }
-    fn logical_or_expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn logical_or_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::LogicalOrExpressionP1(a0, a1))
     }
-    fn conditional_expression_p1(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::Expression) -> Self::Expression {
+    fn conditional_expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>, a2: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ConditionalExpressionP1(a0, a1, a2))
     }
-    fn assignment_expression_p2(&self, a0: Self::ArrowFunction) -> Self::Expression {
+    fn assignment_expression_p2(&self, a0: Box<concrete::ArrowFunction>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AssignmentExpressionP2(a0))
     }
-    fn assignment_expression_p3(&self, a0: Self::AsyncArrowFunction) -> Self::Expression {
+    fn assignment_expression_p3(&self, a0: Box<concrete::AsyncArrowFunction>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AssignmentExpressionP3(a0))
     }
-    fn assignment_expression_p4(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn assignment_expression_p4(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AssignmentExpressionP4(a0, a1))
     }
-    fn assignment_expression_p5(&self, a0: Self::Expression, a1: Self::AssignmentOperator, a2: Self::Expression) -> Self::Expression {
+    fn assignment_expression_p5(&self, a0: Box<concrete::Expression>, a1: Box<concrete::AssignmentOperator>, a2: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AssignmentExpressionP5(a0, a1, a2))
     }
-    fn assignment_operator_p0(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p0(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP0())
     }
-    fn assignment_operator_p1(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p1(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP1())
     }
-    fn assignment_operator_p2(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p2(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP2())
     }
-    fn assignment_operator_p3(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p3(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP3())
     }
-    fn assignment_operator_p4(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p4(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP4())
     }
-    fn assignment_operator_p5(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p5(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP5())
     }
-    fn assignment_operator_p6(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p6(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP6())
     }
-    fn assignment_operator_p7(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p7(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP7())
     }
-    fn assignment_operator_p8(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p8(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP8())
     }
-    fn assignment_operator_p9(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p9(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP9())
     }
-    fn assignment_operator_p10(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p10(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP10())
     }
-    fn assignment_operator_p11(&self) -> Self::AssignmentOperator {
+    fn assignment_operator_p11(&self) -> Box<concrete::AssignmentOperator> {
         Box::new(concrete::AssignmentOperator::AssignmentOperatorP11())
     }
-    fn assignment_pattern_p0(&self, a0: Self::ObjectAssignmentPattern) -> Self::AssignmentPattern {
+    fn assignment_pattern_p0(&self, a0: Box<concrete::ObjectAssignmentPattern>) -> Box<concrete::AssignmentPattern> {
         Box::new(concrete::AssignmentPattern::AssignmentPatternP0(a0))
     }
-    fn assignment_pattern_p1(&self, a0: Self::ArrayAssignmentPattern) -> Self::AssignmentPattern {
+    fn assignment_pattern_p1(&self, a0: Box<concrete::ArrayAssignmentPattern>) -> Box<concrete::AssignmentPattern> {
         Box::new(concrete::AssignmentPattern::AssignmentPatternP1(a0))
     }
-    fn object_assignment_pattern_p0(&self) -> Self::ObjectAssignmentPattern {
+    fn object_assignment_pattern_p0(&self) -> Box<concrete::ObjectAssignmentPattern> {
         Box::new(concrete::ObjectAssignmentPattern::ObjectAssignmentPatternP0())
     }
-    fn object_assignment_pattern_p1(&self, a0: Self::AssignmentRestProperty) -> Self::ObjectAssignmentPattern {
+    fn object_assignment_pattern_p1(&self, a0: Box<concrete::AssignmentRestProperty>) -> Box<concrete::ObjectAssignmentPattern> {
         Box::new(concrete::ObjectAssignmentPattern::ObjectAssignmentPatternP1(a0))
     }
-    fn object_assignment_pattern_p2(&self, a0: Self::AssignmentPropertyList) -> Self::ObjectAssignmentPattern {
+    fn object_assignment_pattern_p2(&self, a0: Box<concrete::AssignmentPropertyList>) -> Box<concrete::ObjectAssignmentPattern> {
         Box::new(concrete::ObjectAssignmentPattern::ObjectAssignmentPatternP2(a0))
     }
-    fn object_assignment_pattern_p3(&self, a0: Self::AssignmentPropertyList, a1: Option<Self::AssignmentRestProperty>) -> Self::ObjectAssignmentPattern {
+    fn object_assignment_pattern_p3(&self, a0: Box<concrete::AssignmentPropertyList>, a1: Option<Box<concrete::AssignmentRestProperty>>) -> Box<concrete::ObjectAssignmentPattern> {
         Box::new(concrete::ObjectAssignmentPattern::ObjectAssignmentPatternP3(a0, a1))
     }
-    fn array_assignment_pattern_p0(&self, a0: Option<Self::Elision>, a1: Option<Self::AssignmentRestElement>) -> Self::ArrayAssignmentPattern {
+    fn array_assignment_pattern_p0(&self, a0: Option<Box<concrete::Elision>>, a1: Option<Box<concrete::AssignmentRestElement>>) -> Box<concrete::ArrayAssignmentPattern> {
         Box::new(concrete::ArrayAssignmentPattern::ArrayAssignmentPatternP0(a0, a1))
     }
-    fn array_assignment_pattern_p1(&self, a0: Self::AssignmentElementList) -> Self::ArrayAssignmentPattern {
+    fn array_assignment_pattern_p1(&self, a0: Box<concrete::AssignmentElementList>) -> Box<concrete::ArrayAssignmentPattern> {
         Box::new(concrete::ArrayAssignmentPattern::ArrayAssignmentPatternP1(a0))
     }
-    fn array_assignment_pattern_p2(&self, a0: Self::AssignmentElementList, a1: Option<Self::Elision>, a2: Option<Self::AssignmentRestElement>) -> Self::ArrayAssignmentPattern {
+    fn array_assignment_pattern_p2(&self, a0: Box<concrete::AssignmentElementList>, a1: Option<Box<concrete::Elision>>, a2: Option<Box<concrete::AssignmentRestElement>>) -> Box<concrete::ArrayAssignmentPattern> {
         Box::new(concrete::ArrayAssignmentPattern::ArrayAssignmentPatternP2(a0, a1, a2))
     }
-    fn assignment_rest_property(&self, a0: Self::DestructuringAssignmentTarget) -> Self::AssignmentRestProperty {
+    fn assignment_rest_property(&self, a0: Box<concrete::DestructuringAssignmentTarget>) -> Box<concrete::AssignmentRestProperty> {
         Box::new(concrete::AssignmentRestProperty::AssignmentRestProperty(a0))
     }
-    fn assignment_property_list_p0(&self, a0: Self::AssignmentProperty) -> Self::AssignmentPropertyList {
+    fn assignment_property_list_p0(&self, a0: Box<concrete::AssignmentProperty>) -> Box<concrete::AssignmentPropertyList> {
         Box::new(concrete::AssignmentPropertyList::AssignmentPropertyListP0(a0))
     }
-    fn assignment_property_list_p1(&self, a0: Self::AssignmentPropertyList, a1: Self::AssignmentProperty) -> Self::AssignmentPropertyList {
+    fn assignment_property_list_p1(&self, a0: Box<concrete::AssignmentPropertyList>, a1: Box<concrete::AssignmentProperty>) -> Box<concrete::AssignmentPropertyList> {
         Box::new(concrete::AssignmentPropertyList::AssignmentPropertyListP1(a0, a1))
     }
-    fn assignment_element_list_p0(&self, a0: Self::AssignmentElisionElement) -> Self::AssignmentElementList {
+    fn assignment_element_list_p0(&self, a0: Box<concrete::AssignmentElisionElement>) -> Box<concrete::AssignmentElementList> {
         Box::new(concrete::AssignmentElementList::AssignmentElementListP0(a0))
     }
-    fn assignment_element_list_p1(&self, a0: Self::AssignmentElementList, a1: Self::AssignmentElisionElement) -> Self::AssignmentElementList {
+    fn assignment_element_list_p1(&self, a0: Box<concrete::AssignmentElementList>, a1: Box<concrete::AssignmentElisionElement>) -> Box<concrete::AssignmentElementList> {
         Box::new(concrete::AssignmentElementList::AssignmentElementListP1(a0, a1))
     }
-    fn assignment_elision_element(&self, a0: Option<Self::Elision>, a1: Self::AssignmentElement) -> Self::AssignmentElisionElement {
+    fn assignment_elision_element(&self, a0: Option<Box<concrete::Elision>>, a1: Box<concrete::AssignmentElement>) -> Box<concrete::AssignmentElisionElement> {
         Box::new(concrete::AssignmentElisionElement::AssignmentElisionElement(a0, a1))
     }
-    fn assignment_property_p0(&self, a0: Self::IdentifierReference, a1: Option<Self::Initializer>) -> Self::AssignmentProperty {
+    fn assignment_property_p0(&self, a0: Box<concrete::IdentifierReference>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::AssignmentProperty> {
         Box::new(concrete::AssignmentProperty::AssignmentPropertyP0(a0, a1))
     }
-    fn assignment_property_p1(&self, a0: Self::PropertyName, a1: Self::AssignmentElement) -> Self::AssignmentProperty {
+    fn assignment_property_p1(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::AssignmentElement>) -> Box<concrete::AssignmentProperty> {
         Box::new(concrete::AssignmentProperty::AssignmentPropertyP1(a0, a1))
     }
-    fn assignment_element(&self, a0: Self::DestructuringAssignmentTarget, a1: Option<Self::Initializer>) -> Self::AssignmentElement {
+    fn assignment_element(&self, a0: Box<concrete::DestructuringAssignmentTarget>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::AssignmentElement> {
         Box::new(concrete::AssignmentElement::AssignmentElement(a0, a1))
     }
-    fn assignment_rest_element(&self, a0: Self::DestructuringAssignmentTarget) -> Self::AssignmentRestElement {
+    fn assignment_rest_element(&self, a0: Box<concrete::DestructuringAssignmentTarget>) -> Box<concrete::AssignmentRestElement> {
         Box::new(concrete::AssignmentRestElement::AssignmentRestElement(a0))
     }
-    fn destructuring_assignment_target(&self, a0: Self::Expression) -> Self::DestructuringAssignmentTarget {
+    fn destructuring_assignment_target(&self, a0: Box<concrete::Expression>) -> Box<concrete::DestructuringAssignmentTarget> {
         Box::new(concrete::DestructuringAssignmentTarget::DestructuringAssignmentTarget(a0))
     }
-    fn expression_p1(&self, a0: Self::Expression, a1: Self::Expression) -> Self::Expression {
+    fn expression_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ExpressionP1(a0, a1))
     }
-    fn block_statement(&self, a0: Self::Block) -> Self::ModuleItem {
+    fn block_statement(&self, a0: Box<concrete::Block>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::BlockStatement(a0))
     }
-    fn block(&self, a0: Option<Self::StatementList>) -> Self::Block {
+    fn block(&self, a0: Option<Box<concrete::StatementList>>) -> Box<concrete::Block> {
         Box::new(concrete::Block::Block(a0))
     }
-    fn statement_list_p0(&self, a0: Self::ModuleItem) -> Self::StatementList {
+    fn statement_list_p0(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::StatementList> {
         Box::new(concrete::StatementList::StatementListP0(a0))
     }
-    fn statement_list_p1(&self, a0: Self::StatementList, a1: Self::ModuleItem) -> Self::StatementList {
+    fn statement_list_p1(&self, a0: Box<concrete::StatementList>, a1: Box<concrete::ModuleItem>) -> Box<concrete::StatementList> {
         Box::new(concrete::StatementList::StatementListP1(a0, a1))
     }
-    fn lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ModuleItem {
+    fn lexical_declaration(&self, a0: Box<concrete::LetOrConst>, a1: Box<concrete::BindingList>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::LexicalDeclaration(a0, a1))
     }
-    fn for_lexical_declaration(&self, a0: Self::LetOrConst, a1: Self::BindingList) -> Self::ForLexicalDeclaration {
+    fn for_lexical_declaration(&self, a0: Box<concrete::LetOrConst>, a1: Box<concrete::BindingList>) -> Box<concrete::ForLexicalDeclaration> {
         Box::new(concrete::ForLexicalDeclaration::ForLexicalDeclaration(a0, a1))
     }
-    fn let_or_const_p0(&self) -> Self::LetOrConst {
+    fn let_or_const_p0(&self) -> Box<concrete::LetOrConst> {
         Box::new(concrete::LetOrConst::LetOrConstP0())
     }
-    fn let_or_const_p1(&self) -> Self::LetOrConst {
+    fn let_or_const_p1(&self) -> Box<concrete::LetOrConst> {
         Box::new(concrete::LetOrConst::LetOrConstP1())
     }
-    fn binding_list_p0(&self, a0: Self::LexicalBinding) -> Self::BindingList {
+    fn binding_list_p0(&self, a0: Box<concrete::LexicalBinding>) -> Box<concrete::BindingList> {
         Box::new(concrete::BindingList::BindingListP0(a0))
     }
-    fn binding_list_p1(&self, a0: Self::BindingList, a1: Self::LexicalBinding) -> Self::BindingList {
+    fn binding_list_p1(&self, a0: Box<concrete::BindingList>, a1: Box<concrete::LexicalBinding>) -> Box<concrete::BindingList> {
         Box::new(concrete::BindingList::BindingListP1(a0, a1))
     }
-    fn lexical_binding_p0(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::LexicalBinding {
+    fn lexical_binding_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::LexicalBinding> {
         Box::new(concrete::LexicalBinding::LexicalBindingP0(a0, a1))
     }
-    fn lexical_binding_p1(&self, a0: Self::BindingPattern, a1: Self::Initializer) -> Self::LexicalBinding {
+    fn lexical_binding_p1(&self, a0: Box<concrete::BindingPattern>, a1: Box<concrete::Initializer>) -> Box<concrete::LexicalBinding> {
         Box::new(concrete::LexicalBinding::LexicalBindingP1(a0, a1))
     }
-    fn variable_statement(&self, a0: Self::VariableDeclarationList) -> Self::ModuleItem {
+    fn variable_statement(&self, a0: Box<concrete::VariableDeclarationList>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::VariableStatement(a0))
     }
-    fn variable_declaration_list_p0(&self, a0: Self::VariableDeclaration) -> Self::VariableDeclarationList {
+    fn variable_declaration_list_p0(&self, a0: Box<concrete::VariableDeclaration>) -> Box<concrete::VariableDeclarationList> {
         Box::new(concrete::VariableDeclarationList::VariableDeclarationListP0(a0))
     }
-    fn variable_declaration_list_p1(&self, a0: Self::VariableDeclarationList, a1: Self::VariableDeclaration) -> Self::VariableDeclarationList {
+    fn variable_declaration_list_p1(&self, a0: Box<concrete::VariableDeclarationList>, a1: Box<concrete::VariableDeclaration>) -> Box<concrete::VariableDeclarationList> {
         Box::new(concrete::VariableDeclarationList::VariableDeclarationListP1(a0, a1))
     }
-    fn variable_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::VariableDeclaration {
+    fn variable_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::VariableDeclaration> {
         Box::new(concrete::VariableDeclaration::VariableDeclarationP0(a0, a1))
     }
-    fn variable_declaration_p1(&self, a0: Self::BindingPattern, a1: Self::Initializer) -> Self::VariableDeclaration {
+    fn variable_declaration_p1(&self, a0: Box<concrete::BindingPattern>, a1: Box<concrete::Initializer>) -> Box<concrete::VariableDeclaration> {
         Box::new(concrete::VariableDeclaration::VariableDeclarationP1(a0, a1))
     }
-    fn binding_pattern_p0(&self, a0: Self::ObjectBindingPattern) -> Self::BindingPattern {
+    fn binding_pattern_p0(&self, a0: Box<concrete::ObjectBindingPattern>) -> Box<concrete::BindingPattern> {
         Box::new(concrete::BindingPattern::BindingPatternP0(a0))
     }
-    fn binding_pattern_p1(&self, a0: Self::ArrayBindingPattern) -> Self::BindingPattern {
+    fn binding_pattern_p1(&self, a0: Box<concrete::ArrayBindingPattern>) -> Box<concrete::BindingPattern> {
         Box::new(concrete::BindingPattern::BindingPatternP1(a0))
     }
-    fn object_binding_pattern_p0(&self) -> Self::ObjectBindingPattern {
+    fn object_binding_pattern_p0(&self) -> Box<concrete::ObjectBindingPattern> {
         Box::new(concrete::ObjectBindingPattern::ObjectBindingPatternP0())
     }
-    fn object_binding_pattern_p1(&self, a0: Self::BindingRestProperty) -> Self::ObjectBindingPattern {
+    fn object_binding_pattern_p1(&self, a0: Box<concrete::BindingRestProperty>) -> Box<concrete::ObjectBindingPattern> {
         Box::new(concrete::ObjectBindingPattern::ObjectBindingPatternP1(a0))
     }
-    fn object_binding_pattern_p2(&self, a0: Self::BindingPropertyList) -> Self::ObjectBindingPattern {
+    fn object_binding_pattern_p2(&self, a0: Box<concrete::BindingPropertyList>) -> Box<concrete::ObjectBindingPattern> {
         Box::new(concrete::ObjectBindingPattern::ObjectBindingPatternP2(a0))
     }
-    fn object_binding_pattern_p3(&self, a0: Self::BindingPropertyList, a1: Option<Self::BindingRestProperty>) -> Self::ObjectBindingPattern {
+    fn object_binding_pattern_p3(&self, a0: Box<concrete::BindingPropertyList>, a1: Option<Box<concrete::BindingRestProperty>>) -> Box<concrete::ObjectBindingPattern> {
         Box::new(concrete::ObjectBindingPattern::ObjectBindingPatternP3(a0, a1))
     }
-    fn array_binding_pattern_p0(&self, a0: Option<Self::Elision>, a1: Option<Self::BindingRestElement>) -> Self::ArrayBindingPattern {
+    fn array_binding_pattern_p0(&self, a0: Option<Box<concrete::Elision>>, a1: Option<Box<concrete::BindingRestElement>>) -> Box<concrete::ArrayBindingPattern> {
         Box::new(concrete::ArrayBindingPattern::ArrayBindingPatternP0(a0, a1))
     }
-    fn array_binding_pattern_p1(&self, a0: Self::BindingElementList) -> Self::ArrayBindingPattern {
+    fn array_binding_pattern_p1(&self, a0: Box<concrete::BindingElementList>) -> Box<concrete::ArrayBindingPattern> {
         Box::new(concrete::ArrayBindingPattern::ArrayBindingPatternP1(a0))
     }
-    fn array_binding_pattern_p2(&self, a0: Self::BindingElementList, a1: Option<Self::Elision>, a2: Option<Self::BindingRestElement>) -> Self::ArrayBindingPattern {
+    fn array_binding_pattern_p2(&self, a0: Box<concrete::BindingElementList>, a1: Option<Box<concrete::Elision>>, a2: Option<Box<concrete::BindingRestElement>>) -> Box<concrete::ArrayBindingPattern> {
         Box::new(concrete::ArrayBindingPattern::ArrayBindingPatternP2(a0, a1, a2))
     }
-    fn binding_rest_property(&self, a0: Self::BindingIdentifier) -> Self::BindingRestProperty {
+    fn binding_rest_property(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::BindingRestProperty> {
         Box::new(concrete::BindingRestProperty::BindingRestProperty(a0))
     }
-    fn binding_property_list_p0(&self, a0: Self::BindingProperty) -> Self::BindingPropertyList {
+    fn binding_property_list_p0(&self, a0: Box<concrete::BindingProperty>) -> Box<concrete::BindingPropertyList> {
         Box::new(concrete::BindingPropertyList::BindingPropertyListP0(a0))
     }
-    fn binding_property_list_p1(&self, a0: Self::BindingPropertyList, a1: Self::BindingProperty) -> Self::BindingPropertyList {
+    fn binding_property_list_p1(&self, a0: Box<concrete::BindingPropertyList>, a1: Box<concrete::BindingProperty>) -> Box<concrete::BindingPropertyList> {
         Box::new(concrete::BindingPropertyList::BindingPropertyListP1(a0, a1))
     }
-    fn binding_element_list_p0(&self, a0: Self::BindingElisionElement) -> Self::BindingElementList {
+    fn binding_element_list_p0(&self, a0: Box<concrete::BindingElisionElement>) -> Box<concrete::BindingElementList> {
         Box::new(concrete::BindingElementList::BindingElementListP0(a0))
     }
-    fn binding_element_list_p1(&self, a0: Self::BindingElementList, a1: Self::BindingElisionElement) -> Self::BindingElementList {
+    fn binding_element_list_p1(&self, a0: Box<concrete::BindingElementList>, a1: Box<concrete::BindingElisionElement>) -> Box<concrete::BindingElementList> {
         Box::new(concrete::BindingElementList::BindingElementListP1(a0, a1))
     }
-    fn binding_elision_element(&self, a0: Option<Self::Elision>, a1: Self::BindingElement) -> Self::BindingElisionElement {
+    fn binding_elision_element(&self, a0: Option<Box<concrete::Elision>>, a1: Box<concrete::BindingElement>) -> Box<concrete::BindingElisionElement> {
         Box::new(concrete::BindingElisionElement::BindingElisionElement(a0, a1))
     }
-    fn binding_property_p0(&self, a0: Self::SingleNameBinding) -> Self::BindingProperty {
+    fn binding_property_p0(&self, a0: Box<concrete::SingleNameBinding>) -> Box<concrete::BindingProperty> {
         Box::new(concrete::BindingProperty::BindingPropertyP0(a0))
     }
-    fn binding_property_p1(&self, a0: Self::PropertyName, a1: Self::BindingElement) -> Self::BindingProperty {
+    fn binding_property_p1(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::BindingElement>) -> Box<concrete::BindingProperty> {
         Box::new(concrete::BindingProperty::BindingPropertyP1(a0, a1))
     }
-    fn binding_element_p0(&self, a0: Self::SingleNameBinding) -> Self::BindingElement {
+    fn binding_element_p0(&self, a0: Box<concrete::SingleNameBinding>) -> Box<concrete::BindingElement> {
         Box::new(concrete::BindingElement::BindingElementP0(a0))
     }
-    fn binding_element_p1(&self, a0: Self::BindingPattern, a1: Option<Self::Initializer>) -> Self::BindingElement {
+    fn binding_element_p1(&self, a0: Box<concrete::BindingPattern>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::BindingElement> {
         Box::new(concrete::BindingElement::BindingElementP1(a0, a1))
     }
-    fn single_name_binding(&self, a0: Self::BindingIdentifier, a1: Option<Self::Initializer>) -> Self::SingleNameBinding {
+    fn single_name_binding(&self, a0: Box<concrete::BindingIdentifier>, a1: Option<Box<concrete::Initializer>>) -> Box<concrete::SingleNameBinding> {
         Box::new(concrete::SingleNameBinding::SingleNameBinding(a0, a1))
     }
-    fn binding_rest_element_p0(&self, a0: Self::BindingIdentifier) -> Self::BindingRestElement {
+    fn binding_rest_element_p0(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::BindingRestElement> {
         Box::new(concrete::BindingRestElement::BindingRestElementP0(a0))
     }
-    fn binding_rest_element_p1(&self, a0: Self::BindingPattern) -> Self::BindingRestElement {
+    fn binding_rest_element_p1(&self, a0: Box<concrete::BindingPattern>) -> Box<concrete::BindingRestElement> {
         Box::new(concrete::BindingRestElement::BindingRestElementP1(a0))
     }
-    fn empty_statement(&self) -> Self::ModuleItem {
+    fn empty_statement(&self) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::EmptyStatement())
     }
-    fn expression_statement(&self, a0: Self::Expression) -> Self::ModuleItem {
+    fn expression_statement(&self, a0: Box<concrete::Expression>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExpressionStatement(a0))
     }
-    fn if_statement_p0(&self, a0: Self::Expression, a1: Self::ModuleItem, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn if_statement_p0(&self, a0: Box<concrete::Expression>, a1: Box<concrete::ModuleItem>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IfStatementP0(a0, a1, a2))
     }
-    fn if_statement_p1(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem {
+    fn if_statement_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IfStatementP1(a0, a1))
     }
-    fn iteration_statement_p0(&self, a0: Self::ModuleItem, a1: Self::Expression) -> Self::ModuleItem {
+    fn iteration_statement_p0(&self, a0: Box<concrete::ModuleItem>, a1: Box<concrete::Expression>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP0(a0, a1))
     }
-    fn iteration_statement_p1(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p1(&self, a0: Box<concrete::Expression>, a1: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP1(a0, a1))
     }
-    fn iteration_statement_p2(&self, a0: Option<Self::Expression>, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p2(&self, a0: Option<Box<concrete::Expression>>, a1: Option<Box<concrete::Expression>>, a2: Option<Box<concrete::Expression>>, a3: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP2(a0, a1, a2, a3))
     }
-    fn iteration_statement_p3(&self, a0: Self::VariableDeclarationList, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p3(&self, a0: Box<concrete::VariableDeclarationList>, a1: Option<Box<concrete::Expression>>, a2: Option<Box<concrete::Expression>>, a3: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP3(a0, a1, a2, a3))
     }
-    fn iteration_statement_p4(&self, a0: Self::ForLexicalDeclaration, a1: Option<Self::Expression>, a2: Option<Self::Expression>, a3: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p4(&self, a0: Box<concrete::ForLexicalDeclaration>, a1: Option<Box<concrete::Expression>>, a2: Option<Box<concrete::Expression>>, a3: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP4(a0, a1, a2, a3))
     }
-    fn iteration_statement_p5(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p5(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP5(a0, a1, a2))
     }
-    fn iteration_statement_p6(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p6(&self, a0: Box<concrete::ForBinding>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP6(a0, a1, a2))
     }
-    fn iteration_statement_p7(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p7(&self, a0: Box<concrete::ForDeclaration>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP7(a0, a1, a2))
     }
-    fn iteration_statement_p8(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p8(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP8(a0, a1, a2))
     }
-    fn iteration_statement_p9(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p9(&self, a0: Box<concrete::ForBinding>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP9(a0, a1, a2))
     }
-    fn iteration_statement_p10(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p10(&self, a0: Box<concrete::ForDeclaration>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP10(a0, a1, a2))
     }
-    fn iteration_statement_p11(&self, a0: Self::Expression, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p11(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP11(a0, a1, a2))
     }
-    fn iteration_statement_p12(&self, a0: Self::ForBinding, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p12(&self, a0: Box<concrete::ForBinding>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP12(a0, a1, a2))
     }
-    fn iteration_statement_p13(&self, a0: Self::ForDeclaration, a1: Self::Expression, a2: Self::ModuleItem) -> Self::ModuleItem {
+    fn iteration_statement_p13(&self, a0: Box<concrete::ForDeclaration>, a1: Box<concrete::Expression>, a2: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::IterationStatementP13(a0, a1, a2))
     }
-    fn for_declaration(&self, a0: Self::LetOrConst, a1: Self::ForBinding) -> Self::ForDeclaration {
+    fn for_declaration(&self, a0: Box<concrete::LetOrConst>, a1: Box<concrete::ForBinding>) -> Box<concrete::ForDeclaration> {
         Box::new(concrete::ForDeclaration::ForDeclaration(a0, a1))
     }
-    fn for_binding_p0(&self, a0: Self::BindingIdentifier) -> Self::ForBinding {
+    fn for_binding_p0(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::ForBinding> {
         Box::new(concrete::ForBinding::ForBindingP0(a0))
     }
-    fn for_binding_p1(&self, a0: Self::BindingPattern) -> Self::ForBinding {
+    fn for_binding_p1(&self, a0: Box<concrete::BindingPattern>) -> Box<concrete::ForBinding> {
         Box::new(concrete::ForBinding::ForBindingP1(a0))
     }
-    fn continue_statement_p0(&self) -> Self::ModuleItem {
+    fn continue_statement_p0(&self) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ContinueStatementP0())
     }
-    fn continue_statement_p1(&self, a0: Self::LabelIdentifier) -> Self::ModuleItem {
+    fn continue_statement_p1(&self, a0: Box<concrete::LabelIdentifier>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ContinueStatementP1(a0))
     }
-    fn break_statement_p0(&self) -> Self::ModuleItem {
+    fn break_statement_p0(&self) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::BreakStatementP0())
     }
-    fn break_statement_p1(&self, a0: Self::LabelIdentifier) -> Self::ModuleItem {
+    fn break_statement_p1(&self, a0: Box<concrete::LabelIdentifier>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::BreakStatementP1(a0))
     }
-    fn return_statement_p0(&self) -> Self::ModuleItem {
+    fn return_statement_p0(&self) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ReturnStatementP0())
     }
-    fn return_statement_p1(&self, a0: Self::Expression) -> Self::ModuleItem {
+    fn return_statement_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ReturnStatementP1(a0))
     }
-    fn with_statement(&self, a0: Self::Expression, a1: Self::ModuleItem) -> Self::ModuleItem {
+    fn with_statement(&self, a0: Box<concrete::Expression>, a1: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::WithStatement(a0, a1))
     }
-    fn switch_statement(&self, a0: Self::Expression, a1: Self::CaseBlock) -> Self::ModuleItem {
+    fn switch_statement(&self, a0: Box<concrete::Expression>, a1: Box<concrete::CaseBlock>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::SwitchStatement(a0, a1))
     }
-    fn case_block_p0(&self, a0: Option<Self::CaseClauses>) -> Self::CaseBlock {
+    fn case_block_p0(&self, a0: Option<Box<concrete::CaseClauses>>) -> Box<concrete::CaseBlock> {
         Box::new(concrete::CaseBlock::CaseBlockP0(a0))
     }
-    fn case_block_p1(&self, a0: Option<Self::CaseClauses>, a1: Self::DefaultClause, a2: Option<Self::CaseClauses>) -> Self::CaseBlock {
+    fn case_block_p1(&self, a0: Option<Box<concrete::CaseClauses>>, a1: Box<concrete::DefaultClause>, a2: Option<Box<concrete::CaseClauses>>) -> Box<concrete::CaseBlock> {
         Box::new(concrete::CaseBlock::CaseBlockP1(a0, a1, a2))
     }
-    fn case_clauses_p0(&self, a0: Self::CaseClause) -> Self::CaseClauses {
+    fn case_clauses_p0(&self, a0: Box<concrete::CaseClause>) -> Box<concrete::CaseClauses> {
         Box::new(concrete::CaseClauses::CaseClausesP0(a0))
     }
-    fn case_clauses_p1(&self, a0: Self::CaseClauses, a1: Self::CaseClause) -> Self::CaseClauses {
+    fn case_clauses_p1(&self, a0: Box<concrete::CaseClauses>, a1: Box<concrete::CaseClause>) -> Box<concrete::CaseClauses> {
         Box::new(concrete::CaseClauses::CaseClausesP1(a0, a1))
     }
-    fn case_clause(&self, a0: Self::Expression, a1: Option<Self::StatementList>) -> Self::CaseClause {
+    fn case_clause(&self, a0: Box<concrete::Expression>, a1: Option<Box<concrete::StatementList>>) -> Box<concrete::CaseClause> {
         Box::new(concrete::CaseClause::CaseClause(a0, a1))
     }
-    fn default_clause(&self, a0: Option<Self::StatementList>) -> Self::DefaultClause {
+    fn default_clause(&self, a0: Option<Box<concrete::StatementList>>) -> Box<concrete::DefaultClause> {
         Box::new(concrete::DefaultClause::DefaultClause(a0))
     }
-    fn labelled_statement(&self, a0: Self::LabelIdentifier, a1: Self::LabelledItem) -> Self::ModuleItem {
+    fn labelled_statement(&self, a0: Box<concrete::LabelIdentifier>, a1: Box<concrete::LabelledItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::LabelledStatement(a0, a1))
     }
-    fn labelled_item_p0(&self, a0: Self::ModuleItem) -> Self::LabelledItem {
+    fn labelled_item_p0(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::LabelledItem> {
         Box::new(concrete::LabelledItem::LabelledItemP0(a0))
     }
-    fn labelled_item_p1(&self, a0: Self::ModuleItem) -> Self::LabelledItem {
+    fn labelled_item_p1(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::LabelledItem> {
         Box::new(concrete::LabelledItem::LabelledItemP1(a0))
     }
-    fn throw_statement(&self, a0: Self::Expression) -> Self::ModuleItem {
+    fn throw_statement(&self, a0: Box<concrete::Expression>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ThrowStatement(a0))
     }
-    fn try_statement_p0(&self, a0: Self::Block, a1: Self::Catch) -> Self::ModuleItem {
+    fn try_statement_p0(&self, a0: Box<concrete::Block>, a1: Box<concrete::Catch>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::TryStatementP0(a0, a1))
     }
-    fn try_statement_p1(&self, a0: Self::Block, a1: Self::Finally) -> Self::ModuleItem {
+    fn try_statement_p1(&self, a0: Box<concrete::Block>, a1: Box<concrete::Finally>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::TryStatementP1(a0, a1))
     }
-    fn try_statement_p2(&self, a0: Self::Block, a1: Self::Catch, a2: Self::Finally) -> Self::ModuleItem {
+    fn try_statement_p2(&self, a0: Box<concrete::Block>, a1: Box<concrete::Catch>, a2: Box<concrete::Finally>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::TryStatementP2(a0, a1, a2))
     }
-    fn catch(&self, a0: Self::CatchParameter, a1: Self::Block) -> Self::Catch {
+    fn catch(&self, a0: Box<concrete::CatchParameter>, a1: Box<concrete::Block>) -> Box<concrete::Catch> {
         Box::new(concrete::Catch::Catch(a0, a1))
     }
-    fn finally(&self, a0: Self::Block) -> Self::Finally {
+    fn finally(&self, a0: Box<concrete::Block>) -> Box<concrete::Finally> {
         Box::new(concrete::Finally::Finally(a0))
     }
-    fn catch_parameter_p0(&self, a0: Self::BindingIdentifier) -> Self::CatchParameter {
+    fn catch_parameter_p0(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::CatchParameter> {
         Box::new(concrete::CatchParameter::CatchParameterP0(a0))
     }
-    fn catch_parameter_p1(&self, a0: Self::BindingPattern) -> Self::CatchParameter {
+    fn catch_parameter_p1(&self, a0: Box<concrete::BindingPattern>) -> Box<concrete::CatchParameter> {
         Box::new(concrete::CatchParameter::CatchParameterP1(a0))
     }
-    fn debugger_statement(&self) -> Self::ModuleItem {
+    fn debugger_statement(&self) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::DebuggerStatement())
     }
-    fn function_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::FunctionBody) -> Self::ModuleItem {
+    fn function_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::FunctionBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::FunctionDeclarationP0(a0, a1, a2))
     }
-    fn function_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::FunctionBody) -> Self::ModuleItem {
+    fn function_declaration_p1(&self, a0: Box<concrete::FormalParameters>, a1: Box<concrete::FunctionBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::FunctionDeclarationP1(a0, a1))
     }
-    fn function_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::FunctionBody) -> Self::Expression {
+    fn function_expression(&self, a0: Option<Box<concrete::BindingIdentifier>>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::FunctionBody>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::FunctionExpression(a0, a1, a2))
     }
-    fn unique_formal_parameters(&self, a0: Self::FormalParameters) -> Self::UniqueFormalParameters {
+    fn unique_formal_parameters(&self, a0: Box<concrete::FormalParameters>) -> Box<concrete::UniqueFormalParameters> {
         Box::new(concrete::UniqueFormalParameters::UniqueFormalParameters(a0))
     }
-    fn formal_parameters_p0(&self) -> Self::FormalParameters {
+    fn formal_parameters_p0(&self) -> Box<concrete::FormalParameters> {
         Box::new(concrete::FormalParameters::FormalParametersP0())
     }
-    fn formal_parameters_p1(&self, a0: Self::FunctionRestParameter) -> Self::FormalParameters {
+    fn formal_parameters_p1(&self, a0: Box<concrete::FunctionRestParameter>) -> Box<concrete::FormalParameters> {
         Box::new(concrete::FormalParameters::FormalParametersP1(a0))
     }
-    fn formal_parameters_p2(&self, a0: Self::FormalParameterList) -> Self::FormalParameters {
+    fn formal_parameters_p2(&self, a0: Box<concrete::FormalParameterList>) -> Box<concrete::FormalParameters> {
         Box::new(concrete::FormalParameters::FormalParametersP2(a0))
     }
-    fn formal_parameters_p3(&self, a0: Self::FormalParameterList) -> Self::FormalParameters {
+    fn formal_parameters_p3(&self, a0: Box<concrete::FormalParameterList>) -> Box<concrete::FormalParameters> {
         Box::new(concrete::FormalParameters::FormalParametersP3(a0))
     }
-    fn formal_parameters_p4(&self, a0: Self::FormalParameterList, a1: Self::FunctionRestParameter) -> Self::FormalParameters {
+    fn formal_parameters_p4(&self, a0: Box<concrete::FormalParameterList>, a1: Box<concrete::FunctionRestParameter>) -> Box<concrete::FormalParameters> {
         Box::new(concrete::FormalParameters::FormalParametersP4(a0, a1))
     }
-    fn formal_parameter_list_p0(&self, a0: Self::FormalParameter) -> Self::FormalParameterList {
+    fn formal_parameter_list_p0(&self, a0: Box<concrete::FormalParameter>) -> Box<concrete::FormalParameterList> {
         Box::new(concrete::FormalParameterList::FormalParameterListP0(a0))
     }
-    fn formal_parameter_list_p1(&self, a0: Self::FormalParameterList, a1: Self::FormalParameter) -> Self::FormalParameterList {
+    fn formal_parameter_list_p1(&self, a0: Box<concrete::FormalParameterList>, a1: Box<concrete::FormalParameter>) -> Box<concrete::FormalParameterList> {
         Box::new(concrete::FormalParameterList::FormalParameterListP1(a0, a1))
     }
-    fn function_rest_parameter(&self, a0: Self::BindingRestElement) -> Self::FunctionRestParameter {
+    fn function_rest_parameter(&self, a0: Box<concrete::BindingRestElement>) -> Box<concrete::FunctionRestParameter> {
         Box::new(concrete::FunctionRestParameter::FunctionRestParameter(a0))
     }
-    fn formal_parameter(&self, a0: Self::BindingElement) -> Self::FormalParameter {
+    fn formal_parameter(&self, a0: Box<concrete::BindingElement>) -> Box<concrete::FormalParameter> {
         Box::new(concrete::FormalParameter::FormalParameter(a0))
     }
-    fn function_body(&self, a0: Self::FunctionStatementList) -> Self::FunctionBody {
+    fn function_body(&self, a0: Box<concrete::FunctionStatementList>) -> Box<concrete::FunctionBody> {
         Box::new(concrete::FunctionBody::FunctionBody(a0))
     }
-    fn function_statement_list(&self, a0: Option<Self::StatementList>) -> Self::FunctionStatementList {
+    fn function_statement_list(&self, a0: Option<Box<concrete::StatementList>>) -> Box<concrete::FunctionStatementList> {
         Box::new(concrete::FunctionStatementList::FunctionStatementList(a0))
     }
-    fn arrow_function(&self, a0: Self::ArrowParameters, a1: Self::ConciseBody) -> Self::ArrowFunction {
+    fn arrow_function(&self, a0: Box<concrete::ArrowParameters>, a1: Box<concrete::ConciseBody>) -> Box<concrete::ArrowFunction> {
         Box::new(concrete::ArrowFunction::ArrowFunction(a0, a1))
     }
-    fn arrow_parameters_p0(&self, a0: Self::BindingIdentifier) -> Self::ArrowParameters {
+    fn arrow_parameters_p0(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::ArrowParameters> {
         Box::new(concrete::ArrowParameters::ArrowParametersP0(a0))
     }
-    fn arrow_parameters_p1(&self, a0: Self::CoverParenthesizedExpressionAndArrowParameterList) -> Self::ArrowParameters {
+    fn arrow_parameters_p1(&self, a0: Box<concrete::CoverParenthesizedExpressionAndArrowParameterList>) -> Box<concrete::ArrowParameters> {
         Box::new(concrete::ArrowParameters::ArrowParametersP1(a0))
     }
-    fn concise_body_p0(&self, a0: Self::Expression) -> Self::ConciseBody {
+    fn concise_body_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::ConciseBody> {
         Box::new(concrete::ConciseBody::ConciseBodyP0(a0))
     }
-    fn concise_body_p1(&self, a0: Self::FunctionBody) -> Self::ConciseBody {
+    fn concise_body_p1(&self, a0: Box<concrete::FunctionBody>) -> Box<concrete::ConciseBody> {
         Box::new(concrete::ConciseBody::ConciseBodyP1(a0))
     }
-    fn arrow_formal_parameters(&self, a0: Self::UniqueFormalParameters) -> Self::ArrowFormalParameters {
+    fn arrow_formal_parameters(&self, a0: Box<concrete::UniqueFormalParameters>) -> Box<concrete::ArrowFormalParameters> {
         Box::new(concrete::ArrowFormalParameters::ArrowFormalParameters(a0))
     }
-    fn method_definition_p0(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::FunctionBody) -> Self::MethodDefinition {
+    fn method_definition_p0(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::UniqueFormalParameters>, a2: Box<concrete::FunctionBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::MethodDefinitionP0(a0, a1, a2))
     }
-    fn method_definition_p4(&self, a0: Self::PropertyName, a1: Self::FunctionBody) -> Self::MethodDefinition {
+    fn method_definition_p4(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::FunctionBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::MethodDefinitionP4(a0, a1))
     }
-    fn method_definition_p5(&self, a0: Self::PropertyName, a1: Self::PropertySetParameterList, a2: Self::FunctionBody) -> Self::MethodDefinition {
+    fn method_definition_p5(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::PropertySetParameterList>, a2: Box<concrete::FunctionBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::MethodDefinitionP5(a0, a1, a2))
     }
-    fn property_set_parameter_list(&self, a0: Self::FormalParameter) -> Self::PropertySetParameterList {
+    fn property_set_parameter_list(&self, a0: Box<concrete::FormalParameter>) -> Box<concrete::PropertySetParameterList> {
         Box::new(concrete::PropertySetParameterList::PropertySetParameterList(a0))
     }
-    fn generator_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::GeneratorBody) -> Self::MethodDefinition {
+    fn generator_method(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::UniqueFormalParameters>, a2: Box<concrete::GeneratorBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::GeneratorMethod(a0, a1, a2))
     }
-    fn generator_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::GeneratorBody) -> Self::ModuleItem {
+    fn generator_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::GeneratorBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::GeneratorDeclarationP0(a0, a1, a2))
     }
-    fn generator_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::GeneratorBody) -> Self::ModuleItem {
+    fn generator_declaration_p1(&self, a0: Box<concrete::FormalParameters>, a1: Box<concrete::GeneratorBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::GeneratorDeclarationP1(a0, a1))
     }
-    fn generator_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::GeneratorBody) -> Self::Expression {
+    fn generator_expression(&self, a0: Option<Box<concrete::BindingIdentifier>>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::GeneratorBody>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::GeneratorExpression(a0, a1, a2))
     }
-    fn generator_body(&self, a0: Self::FunctionBody) -> Self::GeneratorBody {
+    fn generator_body(&self, a0: Box<concrete::FunctionBody>) -> Box<concrete::GeneratorBody> {
         Box::new(concrete::GeneratorBody::GeneratorBody(a0))
     }
-    fn yield_expression_p0(&self) -> Self::Expression {
+    fn yield_expression_p0(&self) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::YieldExpressionP0())
     }
-    fn yield_expression_p1(&self, a0: Self::Expression) -> Self::Expression {
+    fn yield_expression_p1(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::YieldExpressionP1(a0))
     }
-    fn yield_expression_p2(&self, a0: Self::Expression) -> Self::Expression {
+    fn yield_expression_p2(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::YieldExpressionP2(a0))
     }
-    fn async_generator_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::AsyncGeneratorBody) -> Self::MethodDefinition {
+    fn async_generator_method(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::UniqueFormalParameters>, a2: Box<concrete::AsyncGeneratorBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::AsyncGeneratorMethod(a0, a1, a2))
     }
-    fn async_generator_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncGeneratorBody) -> Self::ModuleItem {
+    fn async_generator_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::AsyncGeneratorBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::AsyncGeneratorDeclarationP0(a0, a1, a2))
     }
-    fn async_generator_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::AsyncGeneratorBody) -> Self::ModuleItem {
+    fn async_generator_declaration_p1(&self, a0: Box<concrete::FormalParameters>, a1: Box<concrete::AsyncGeneratorBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::AsyncGeneratorDeclarationP1(a0, a1))
     }
-    fn async_generator_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::FormalParameters, a2: Self::AsyncGeneratorBody) -> Self::Expression {
+    fn async_generator_expression(&self, a0: Option<Box<concrete::BindingIdentifier>>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::AsyncGeneratorBody>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AsyncGeneratorExpression(a0, a1, a2))
     }
-    fn async_generator_body(&self, a0: Self::FunctionBody) -> Self::AsyncGeneratorBody {
+    fn async_generator_body(&self, a0: Box<concrete::FunctionBody>) -> Box<concrete::AsyncGeneratorBody> {
         Box::new(concrete::AsyncGeneratorBody::AsyncGeneratorBody(a0))
     }
-    fn class_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::ClassTail) -> Self::ModuleItem {
+    fn class_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::ClassTail>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ClassDeclarationP0(a0, a1))
     }
-    fn class_declaration_p1(&self, a0: Self::ClassTail) -> Self::ModuleItem {
+    fn class_declaration_p1(&self, a0: Box<concrete::ClassTail>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ClassDeclarationP1(a0))
     }
-    fn class_expression(&self, a0: Option<Self::BindingIdentifier>, a1: Self::ClassTail) -> Self::Expression {
+    fn class_expression(&self, a0: Option<Box<concrete::BindingIdentifier>>, a1: Box<concrete::ClassTail>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::ClassExpression(a0, a1))
     }
-    fn class_tail(&self, a0: Option<Self::ClassHeritage>, a1: Option<Self::ClassBody>) -> Self::ClassTail {
+    fn class_tail(&self, a0: Option<Box<concrete::ClassHeritage>>, a1: Option<Box<concrete::ClassBody>>) -> Box<concrete::ClassTail> {
         Box::new(concrete::ClassTail::ClassTail(a0, a1))
     }
-    fn class_heritage(&self, a0: Self::Expression) -> Self::ClassHeritage {
+    fn class_heritage(&self, a0: Box<concrete::Expression>) -> Box<concrete::ClassHeritage> {
         Box::new(concrete::ClassHeritage::ClassHeritage(a0))
     }
-    fn class_body(&self, a0: Self::ClassElementList) -> Self::ClassBody {
+    fn class_body(&self, a0: Box<concrete::ClassElementList>) -> Box<concrete::ClassBody> {
         Box::new(concrete::ClassBody::ClassBody(a0))
     }
-    fn class_element_list_p0(&self, a0: Self::ClassElement) -> Self::ClassElementList {
+    fn class_element_list_p0(&self, a0: Box<concrete::ClassElement>) -> Box<concrete::ClassElementList> {
         Box::new(concrete::ClassElementList::ClassElementListP0(a0))
     }
-    fn class_element_list_p1(&self, a0: Self::ClassElementList, a1: Self::ClassElement) -> Self::ClassElementList {
+    fn class_element_list_p1(&self, a0: Box<concrete::ClassElementList>, a1: Box<concrete::ClassElement>) -> Box<concrete::ClassElementList> {
         Box::new(concrete::ClassElementList::ClassElementListP1(a0, a1))
     }
-    fn class_element_p0(&self, a0: Self::MethodDefinition) -> Self::ClassElement {
+    fn class_element_p0(&self, a0: Box<concrete::MethodDefinition>) -> Box<concrete::ClassElement> {
         Box::new(concrete::ClassElement::ClassElementP0(a0))
     }
-    fn class_element_p1(&self, a0: Self::MethodDefinition) -> Self::ClassElement {
+    fn class_element_p1(&self, a0: Box<concrete::MethodDefinition>) -> Box<concrete::ClassElement> {
         Box::new(concrete::ClassElement::ClassElementP1(a0))
     }
-    fn class_element_p2(&self) -> Self::ClassElement {
+    fn class_element_p2(&self) -> Box<concrete::ClassElement> {
         Box::new(concrete::ClassElement::ClassElementP2())
     }
-    fn async_function_declaration_p0(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncFunctionBody) -> Self::ModuleItem {
+    fn async_function_declaration_p0(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::AsyncFunctionBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::AsyncFunctionDeclarationP0(a0, a1, a2))
     }
-    fn async_function_declaration_p1(&self, a0: Self::FormalParameters, a1: Self::AsyncFunctionBody) -> Self::ModuleItem {
+    fn async_function_declaration_p1(&self, a0: Box<concrete::FormalParameters>, a1: Box<concrete::AsyncFunctionBody>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::AsyncFunctionDeclarationP1(a0, a1))
     }
-    fn async_function_expression_p0(&self, a0: Self::FormalParameters, a1: Self::AsyncFunctionBody) -> Self::Expression {
+    fn async_function_expression_p0(&self, a0: Box<concrete::FormalParameters>, a1: Box<concrete::AsyncFunctionBody>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AsyncFunctionExpressionP0(a0, a1))
     }
-    fn async_function_expression_p1(&self, a0: Self::BindingIdentifier, a1: Self::FormalParameters, a2: Self::AsyncFunctionBody) -> Self::Expression {
+    fn async_function_expression_p1(&self, a0: Box<concrete::BindingIdentifier>, a1: Box<concrete::FormalParameters>, a2: Box<concrete::AsyncFunctionBody>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AsyncFunctionExpressionP1(a0, a1, a2))
     }
-    fn async_method(&self, a0: Self::PropertyName, a1: Self::UniqueFormalParameters, a2: Self::AsyncFunctionBody) -> Self::MethodDefinition {
+    fn async_method(&self, a0: Box<concrete::PropertyName>, a1: Box<concrete::UniqueFormalParameters>, a2: Box<concrete::AsyncFunctionBody>) -> Box<concrete::MethodDefinition> {
         Box::new(concrete::MethodDefinition::AsyncMethod(a0, a1, a2))
     }
-    fn async_function_body(&self, a0: Self::FunctionBody) -> Self::AsyncFunctionBody {
+    fn async_function_body(&self, a0: Box<concrete::FunctionBody>) -> Box<concrete::AsyncFunctionBody> {
         Box::new(concrete::AsyncFunctionBody::AsyncFunctionBody(a0))
     }
-    fn await_expression(&self, a0: Self::Expression) -> Self::Expression {
+    fn await_expression(&self, a0: Box<concrete::Expression>) -> Box<concrete::Expression> {
         Box::new(concrete::Expression::AwaitExpression(a0))
     }
-    fn async_arrow_function_p0(&self, a0: Self::AsyncArrowBindingIdentifier, a1: Self::AsyncConciseBody) -> Self::AsyncArrowFunction {
+    fn async_arrow_function_p0(&self, a0: Box<concrete::AsyncArrowBindingIdentifier>, a1: Box<concrete::AsyncConciseBody>) -> Box<concrete::AsyncArrowFunction> {
         Box::new(concrete::AsyncArrowFunction::AsyncArrowFunctionP0(a0, a1))
     }
-    fn async_arrow_function_p1(&self, a0: Self::CoverCallExpressionAndAsyncArrowHead, a1: Self::AsyncConciseBody) -> Self::AsyncArrowFunction {
+    fn async_arrow_function_p1(&self, a0: Box<concrete::CoverCallExpressionAndAsyncArrowHead>, a1: Box<concrete::AsyncConciseBody>) -> Box<concrete::AsyncArrowFunction> {
         Box::new(concrete::AsyncArrowFunction::AsyncArrowFunctionP1(a0, a1))
     }
-    fn async_concise_body_p0(&self, a0: Self::Expression) -> Self::AsyncConciseBody {
+    fn async_concise_body_p0(&self, a0: Box<concrete::Expression>) -> Box<concrete::AsyncConciseBody> {
         Box::new(concrete::AsyncConciseBody::AsyncConciseBodyP0(a0))
     }
-    fn async_concise_body_p1(&self, a0: Self::AsyncFunctionBody) -> Self::AsyncConciseBody {
+    fn async_concise_body_p1(&self, a0: Box<concrete::AsyncFunctionBody>) -> Box<concrete::AsyncConciseBody> {
         Box::new(concrete::AsyncConciseBody::AsyncConciseBodyP1(a0))
     }
-    fn async_arrow_binding_identifier(&self, a0: Self::BindingIdentifier) -> Self::AsyncArrowBindingIdentifier {
+    fn async_arrow_binding_identifier(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::AsyncArrowBindingIdentifier> {
         Box::new(concrete::AsyncArrowBindingIdentifier::AsyncArrowBindingIdentifier(a0))
     }
-    fn cover_call_expression_and_async_arrow_head(&self, a0: Self::Expression, a1: Self::Arguments) -> Self::CoverCallExpressionAndAsyncArrowHead {
+    fn cover_call_expression_and_async_arrow_head(&self, a0: Box<concrete::Expression>, a1: Box<concrete::Arguments>) -> Box<concrete::CoverCallExpressionAndAsyncArrowHead> {
         Box::new(concrete::CoverCallExpressionAndAsyncArrowHead::CoverCallExpressionAndAsyncArrowHead(a0, a1))
     }
-    fn async_arrow_head(&self, a0: Self::ArrowFormalParameters) -> Self::AsyncArrowHead {
+    fn async_arrow_head(&self, a0: Box<concrete::ArrowFormalParameters>) -> Box<concrete::AsyncArrowHead> {
         Box::new(concrete::AsyncArrowHead::AsyncArrowHead(a0))
     }
-    fn script(&self, a0: Option<Self::ScriptBody>) -> Self::Script {
+    fn script(&self, a0: Option<Box<concrete::ScriptBody>>) -> Box<concrete::Script> {
         Box::new(concrete::Script::Script(a0))
     }
-    fn script_body(&self, a0: Self::StatementList) -> Self::ScriptBody {
+    fn script_body(&self, a0: Box<concrete::StatementList>) -> Box<concrete::ScriptBody> {
         Box::new(concrete::ScriptBody::ScriptBody(a0))
     }
-    fn module(&self, a0: Option<Self::ModuleBody>) -> Self::Module {
+    fn module(&self, a0: Option<Box<concrete::ModuleBody>>) -> Box<concrete::Module> {
         Box::new(concrete::Module::Module(a0))
     }
-    fn module_body(&self, a0: Self::ModuleItemList) -> Self::ModuleBody {
+    fn module_body(&self, a0: Box<concrete::ModuleItemList>) -> Box<concrete::ModuleBody> {
         Box::new(concrete::ModuleBody::ModuleBody(a0))
     }
-    fn module_item_list_p0(&self, a0: Self::ModuleItem) -> Self::ModuleItemList {
+    fn module_item_list_p0(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItemList> {
         Box::new(concrete::ModuleItemList::ModuleItemListP0(a0))
     }
-    fn module_item_list_p1(&self, a0: Self::ModuleItemList, a1: Self::ModuleItem) -> Self::ModuleItemList {
+    fn module_item_list_p1(&self, a0: Box<concrete::ModuleItemList>, a1: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItemList> {
         Box::new(concrete::ModuleItemList::ModuleItemListP1(a0, a1))
     }
-    fn import_declaration_p0(&self, a0: Self::ImportClause, a1: Self::FromClause) -> Self::ModuleItem {
+    fn import_declaration_p0(&self, a0: Box<concrete::ImportClause>, a1: Box<concrete::FromClause>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ImportDeclarationP0(a0, a1))
     }
-    fn import_declaration_p1(&self, a0: Self::ModuleSpecifier) -> Self::ModuleItem {
+    fn import_declaration_p1(&self, a0: Box<concrete::ModuleSpecifier>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ImportDeclarationP1(a0))
     }
-    fn import_clause_p0(&self, a0: Self::ImportedDefaultBinding) -> Self::ImportClause {
+    fn import_clause_p0(&self, a0: Box<concrete::ImportedDefaultBinding>) -> Box<concrete::ImportClause> {
         Box::new(concrete::ImportClause::ImportClauseP0(a0))
     }
-    fn import_clause_p1(&self, a0: Self::NameSpaceImport) -> Self::ImportClause {
+    fn import_clause_p1(&self, a0: Box<concrete::NameSpaceImport>) -> Box<concrete::ImportClause> {
         Box::new(concrete::ImportClause::ImportClauseP1(a0))
     }
-    fn import_clause_p2(&self, a0: Self::NamedImports) -> Self::ImportClause {
+    fn import_clause_p2(&self, a0: Box<concrete::NamedImports>) -> Box<concrete::ImportClause> {
         Box::new(concrete::ImportClause::ImportClauseP2(a0))
     }
-    fn import_clause_p3(&self, a0: Self::ImportedDefaultBinding, a1: Self::NameSpaceImport) -> Self::ImportClause {
+    fn import_clause_p3(&self, a0: Box<concrete::ImportedDefaultBinding>, a1: Box<concrete::NameSpaceImport>) -> Box<concrete::ImportClause> {
         Box::new(concrete::ImportClause::ImportClauseP3(a0, a1))
     }
-    fn import_clause_p4(&self, a0: Self::ImportedDefaultBinding, a1: Self::NamedImports) -> Self::ImportClause {
+    fn import_clause_p4(&self, a0: Box<concrete::ImportedDefaultBinding>, a1: Box<concrete::NamedImports>) -> Box<concrete::ImportClause> {
         Box::new(concrete::ImportClause::ImportClauseP4(a0, a1))
     }
-    fn imported_default_binding(&self, a0: Self::ImportedBinding) -> Self::ImportedDefaultBinding {
+    fn imported_default_binding(&self, a0: Box<concrete::ImportedBinding>) -> Box<concrete::ImportedDefaultBinding> {
         Box::new(concrete::ImportedDefaultBinding::ImportedDefaultBinding(a0))
     }
-    fn name_space_import(&self, a0: Self::ImportedBinding) -> Self::NameSpaceImport {
+    fn name_space_import(&self, a0: Box<concrete::ImportedBinding>) -> Box<concrete::NameSpaceImport> {
         Box::new(concrete::NameSpaceImport::NameSpaceImport(a0))
     }
-    fn named_imports_p0(&self) -> Self::NamedImports {
+    fn named_imports_p0(&self) -> Box<concrete::NamedImports> {
         Box::new(concrete::NamedImports::NamedImportsP0())
     }
-    fn named_imports_p1(&self, a0: Self::ImportsList) -> Self::NamedImports {
+    fn named_imports_p1(&self, a0: Box<concrete::ImportsList>) -> Box<concrete::NamedImports> {
         Box::new(concrete::NamedImports::NamedImportsP1(a0))
     }
-    fn named_imports_p2(&self, a0: Self::ImportsList) -> Self::NamedImports {
+    fn named_imports_p2(&self, a0: Box<concrete::ImportsList>) -> Box<concrete::NamedImports> {
         Box::new(concrete::NamedImports::NamedImportsP2(a0))
     }
-    fn from_clause(&self, a0: Self::ModuleSpecifier) -> Self::FromClause {
+    fn from_clause(&self, a0: Box<concrete::ModuleSpecifier>) -> Box<concrete::FromClause> {
         Box::new(concrete::FromClause::FromClause(a0))
     }
-    fn imports_list_p0(&self, a0: Self::ImportSpecifier) -> Self::ImportsList {
+    fn imports_list_p0(&self, a0: Box<concrete::ImportSpecifier>) -> Box<concrete::ImportsList> {
         Box::new(concrete::ImportsList::ImportsListP0(a0))
     }
-    fn imports_list_p1(&self, a0: Self::ImportsList, a1: Self::ImportSpecifier) -> Self::ImportsList {
+    fn imports_list_p1(&self, a0: Box<concrete::ImportsList>, a1: Box<concrete::ImportSpecifier>) -> Box<concrete::ImportsList> {
         Box::new(concrete::ImportsList::ImportsListP1(a0, a1))
     }
-    fn import_specifier_p0(&self, a0: Self::ImportedBinding) -> Self::ImportSpecifier {
+    fn import_specifier_p0(&self, a0: Box<concrete::ImportedBinding>) -> Box<concrete::ImportSpecifier> {
         Box::new(concrete::ImportSpecifier::ImportSpecifierP0(a0))
     }
-    fn import_specifier_p1(&self, a0: Self::ImportedBinding) -> Self::ImportSpecifier {
+    fn import_specifier_p1(&self, a0: Box<concrete::ImportedBinding>) -> Box<concrete::ImportSpecifier> {
         Box::new(concrete::ImportSpecifier::ImportSpecifierP1(a0))
     }
-    fn module_specifier(&self) -> Self::ModuleSpecifier {
+    fn module_specifier(&self) -> Box<concrete::ModuleSpecifier> {
         Box::new(concrete::ModuleSpecifier::ModuleSpecifier())
     }
-    fn imported_binding(&self, a0: Self::BindingIdentifier) -> Self::ImportedBinding {
+    fn imported_binding(&self, a0: Box<concrete::BindingIdentifier>) -> Box<concrete::ImportedBinding> {
         Box::new(concrete::ImportedBinding::ImportedBinding(a0))
     }
-    fn export_declaration_p0(&self, a0: Self::FromClause) -> Self::ModuleItem {
+    fn export_declaration_p0(&self, a0: Box<concrete::FromClause>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP0(a0))
     }
-    fn export_declaration_p1(&self, a0: Self::ExportClause, a1: Self::FromClause) -> Self::ModuleItem {
+    fn export_declaration_p1(&self, a0: Box<concrete::ExportClause>, a1: Box<concrete::FromClause>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP1(a0, a1))
     }
-    fn export_declaration_p2(&self, a0: Self::ExportClause) -> Self::ModuleItem {
+    fn export_declaration_p2(&self, a0: Box<concrete::ExportClause>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP2(a0))
     }
-    fn export_declaration_p3(&self, a0: Self::ModuleItem) -> Self::ModuleItem {
+    fn export_declaration_p3(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP3(a0))
     }
-    fn export_declaration_p4(&self, a0: Self::ModuleItem) -> Self::ModuleItem {
+    fn export_declaration_p4(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP4(a0))
     }
-    fn export_declaration_p5(&self, a0: Self::ModuleItem) -> Self::ModuleItem {
+    fn export_declaration_p5(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP5(a0))
     }
-    fn export_declaration_p6(&self, a0: Self::ModuleItem) -> Self::ModuleItem {
+    fn export_declaration_p6(&self, a0: Box<concrete::ModuleItem>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP6(a0))
     }
-    fn export_declaration_p7(&self, a0: Self::Expression) -> Self::ModuleItem {
+    fn export_declaration_p7(&self, a0: Box<concrete::Expression>) -> Box<concrete::ModuleItem> {
         Box::new(concrete::ModuleItem::ExportDeclarationP7(a0))
     }
-    fn export_clause_p0(&self) -> Self::ExportClause {
+    fn export_clause_p0(&self) -> Box<concrete::ExportClause> {
         Box::new(concrete::ExportClause::ExportClauseP0())
     }
-    fn export_clause_p1(&self, a0: Self::ExportsList) -> Self::ExportClause {
+    fn export_clause_p1(&self, a0: Box<concrete::ExportsList>) -> Box<concrete::ExportClause> {
         Box::new(concrete::ExportClause::ExportClauseP1(a0))
     }
-    fn export_clause_p2(&self, a0: Self::ExportsList) -> Self::ExportClause {
+    fn export_clause_p2(&self, a0: Box<concrete::ExportsList>) -> Box<concrete::ExportClause> {
         Box::new(concrete::ExportClause::ExportClauseP2(a0))
     }
-    fn exports_list_p0(&self, a0: Self::ExportSpecifier) -> Self::ExportsList {
+    fn exports_list_p0(&self, a0: Box<concrete::ExportSpecifier>) -> Box<concrete::ExportsList> {
         Box::new(concrete::ExportsList::ExportsListP0(a0))
     }
-    fn exports_list_p1(&self, a0: Self::ExportsList, a1: Self::ExportSpecifier) -> Self::ExportsList {
+    fn exports_list_p1(&self, a0: Box<concrete::ExportsList>, a1: Box<concrete::ExportSpecifier>) -> Box<concrete::ExportsList> {
         Box::new(concrete::ExportsList::ExportsListP1(a0, a1))
     }
-    fn export_specifier_p0(&self) -> Self::ExportSpecifier {
+    fn export_specifier_p0(&self) -> Box<concrete::ExportSpecifier> {
         Box::new(concrete::ExportSpecifier::ExportSpecifierP0())
     }
-    fn export_specifier_p1(&self) -> Self::ExportSpecifier {
+    fn export_specifier_p1(&self) -> Box<concrete::ExportSpecifier> {
         Box::new(concrete::ExportSpecifier::ExportSpecifierP1())
     }
 }

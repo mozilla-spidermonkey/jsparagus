@@ -116,7 +116,6 @@ class RustParserWriter:
         self.actions()
         self.error_codes()
         self.check_camel_case()
-        self.handler_trait()
         self.nt_node()
         self.nt_node_impl()
         self.nonterminal_id()
@@ -279,7 +278,7 @@ class RustParserWriter:
             visit_type(method.return_type)
         return names
 
-    def type_to_rust(self, ty, handler, boxed=False):
+    def type_to_rust(self, ty, namespace, boxed=False):
         """Convert a jsparagus type (see types.py) to Rust.
 
         Pass boxed=True if you're dealing with concrete types.
@@ -293,20 +292,21 @@ class RustParserWriter:
         elif ty == 'bool':
             return 'bool'
         elif isinstance(ty, types.NtType):
-            if handler == "":
+            if namespace == "":
                 rty = ty.name
             else:
-                rty = handler + '::' + ty.name
+                rty = namespace + '::' + ty.name
             if boxed:
                 return 'Box<{}>'.format(rty)
             else:
                 return rty
         elif isinstance(ty, types.OptionType):
-            return 'Option<{}>'.format(self.type_to_rust(ty.t, handler, boxed))
+            return 'Option<{}>'.format(self.type_to_rust(ty.t, namespace, boxed))
         else:
             raise TypeError("unexpected type: {!r}".format(ty))
 
     def handler_trait(self):
+        # NOTE: unused, code kept if we need it later
         self.write(0, "pub trait Handler {")
 
         for name in self.get_associated_type_names():
@@ -356,15 +356,13 @@ class RustParserWriter:
     def nt_node_impl(self):
         self.write(0, "pub struct DefaultHandler {}")
         self.write(0, "")
-        self.write(0, "impl Handler for DefaultHandler {")
-        for name in self.get_associated_type_names():
-            self.write(1, "type {} = Box<concrete::{}>;", name, name)
+        self.write(0, "impl DefaultHandler {")
 
         for tag, method in self.grammar.methods.items():
             method_name = self.method_name_to_rust(tag)
             method_name_camel = self.to_camel_case(method_name)
             arg_types = [
-                self.type_to_rust(ty, "Self")
+                self.type_to_rust(ty, "concrete", boxed=True)
                 for ty in method.argument_types
                 if ty != types.UnitType
             ]
@@ -372,7 +370,7 @@ class RustParserWriter:
                 return_type_tag = ''
             else:
                 return_type_tag = ' -> ' + \
-                    self.type_to_rust(method.return_type, "Self")
+                    self.type_to_rust(method.return_type, "concrete", boxed=True)
 
             args = "".join(", a{}: {}".format(i, t)
                            for i, t in enumerate(arg_types))
@@ -466,10 +464,7 @@ class RustParserWriter:
 
                 for index, e in reversed(list(enumerate(elements))):
                     ty = self.element_type(e)
-                    if isinstance(ty, types.NtType):
-                        rust_ty = "*mut concrete::" + ty.name
-                    else:
-                        rust_ty = "*mut " + self.type_to_rust(ty, "Self")
+                    rust_ty = "*mut " + self.type_to_rust(ty, "concrete")
                     if variable_used[index]:
                         self.write(
                             3,
@@ -541,7 +536,7 @@ class RustParserWriter:
                 result_type_jsparagus, "concrete")
             self.write(0, "pub static START_STATE_{}: usize = {};",
                        self.to_snek_case(init_nt.name).upper(), index)
-            self.write(0, "");
+            self.write(0, "")
             self.write(0, "pub fn get_result_{}(node: *mut ()) -> {} {{",
                        self.to_snek_case(init_nt.name), result_type)
             self.write(1, "unsafe { *Box::from_raw(node as *mut _) }")
