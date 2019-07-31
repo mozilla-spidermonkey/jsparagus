@@ -133,7 +133,6 @@ where
                 // Strings
                 '"' | '\'' => {
                     // include quotes?
-                    self.chars.next();
                     while let Some(ch) = self.chars.next() {
                         if ch == c {
                             break;
@@ -145,7 +144,6 @@ where
 
                 '`' => {
                     // include quotes?
-                    self.chars.next();
                     while let Some(ch) = self.chars.next() {
                         if ch == '$' && self.chars.peek() == Some(&'{') {
                             self.chars.next();

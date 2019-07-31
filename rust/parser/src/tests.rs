@@ -212,6 +212,16 @@ fn test_incomplete_comments() {
 }
 
 #[test]
+fn test_strings() {
+    assert_parses("f(\"\",\"\")");
+    assert_parses("f(\"\")");
+    assert_parses("(\"\")");
+    assert_parses("f('','')");
+    assert_parses("f('')");
+    assert_parses("('')");
+}
+
+#[test]
 fn test_awkward_chunks() {
     assert_parses(&vec!["let", "ter.head = 1;"]);
     assert_parses(&vec!["let", " x = 1;"]);
