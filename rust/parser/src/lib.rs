@@ -35,14 +35,11 @@ fn parse(source: &str, start_state: usize) -> Result<StackValue> {
     let mut parser = Parser::new(DefaultHandler {}, start_state);
 
     loop {
-        if let Some(t) = tokens.next(&parser) {
-            if t.terminal_id == TerminalId::End {
-                break;
-            }
-            parser.write_token(&t)?;
-        } else {
-            return Err(ParseError::LexerError);
+        let t = tokens.next(&parser)?;
+        if t.terminal_id == TerminalId::End {
+            break;
         }
+        parser.write_token(&t)?;
     }
     parser.close()
 }

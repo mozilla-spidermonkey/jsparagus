@@ -1,4 +1,5 @@
-use crate::parser::Parser;
+use crate::Result;
+use crate::parser::{Parser, ParseError};
 use generated_parser::{TerminalId, Token};
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
@@ -15,18 +16,17 @@ where
         }
     }
 
-    pub fn next(&mut self, parser: &Parser) -> Option<Token> {
+    pub fn next(&mut self, parser: &Parser) -> Result<Token> {
         let mut text = String::new();
         let mut saw_newline = false;
-        if let Some(terminal_id) = self.advance_impl(parser, &mut text, &mut saw_newline) {
-            Some(Token {
-                terminal_id,
-                saw_newline,
-                value: if text.len() == 0 { None } else { Some(text) },
+        self.advance_impl(parser, &mut text, &mut saw_newline)
+            .map(|terminal_id| {
+                Token {
+                    terminal_id,
+                    saw_newline,
+                    value: if text.len() == 0 { None } else { Some(text) },
+                }
             })
-        } else {
-            None
-        }
     }
 
     fn advance_impl(
@@ -34,7 +34,7 @@ where
         parser: &Parser,
         text: &mut String,
         saw_newline: &mut bool,
-    ) -> Option<TerminalId> {
+    ) -> Result<TerminalId> {
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace
@@ -61,58 +61,58 @@ where
                     }
                     if parser.can_accept_terminal(TerminalId::IdentifierName) {
                         *text = var;
-                        return Some(TerminalId::IdentifierName);
+                        return Ok(TerminalId::IdentifierName);
                     }
                     match &var as &str {
-                        "as" => return Some(TerminalId::As),
-                        "async" => return Some(TerminalId::Async),
-                        "await" => return Some(TerminalId::Await),
-                        "break" => return Some(TerminalId::Break),
-                        "case" => return Some(TerminalId::Case),
-                        "catch" => return Some(TerminalId::Catch),
-                        "class" => return Some(TerminalId::Class),
-                        "const" => return Some(TerminalId::Const),
-                        "continue" => return Some(TerminalId::Continue),
-                        "debugger" => return Some(TerminalId::Debugger),
-                        "default" => return Some(TerminalId::Default),
-                        "delete" => return Some(TerminalId::Delete),
-                        "do" => return Some(TerminalId::Do),
-                        "else" => return Some(TerminalId::Else),
-                        "export" => return Some(TerminalId::Export),
-                        "extends" => return Some(TerminalId::Extends),
-                        "finally" => return Some(TerminalId::Finally),
-                        "for" => return Some(TerminalId::For),
-                        "from" => return Some(TerminalId::From),
-                        "function" => return Some(TerminalId::Function),
-                        "get" => return Some(TerminalId::Get),
-                        "if" => return Some(TerminalId::If),
-                        "import" => return Some(TerminalId::Import),
-                        "in" => return Some(TerminalId::In),
-                        "instanceof" => return Some(TerminalId::Instanceof),
-                        "let" => return Some(TerminalId::Let),
-                        "new" => return Some(TerminalId::New),
-                        "of" => return Some(TerminalId::Of),
-                        "return" => return Some(TerminalId::Return),
-                        "set" => return Some(TerminalId::Set),
-                        "static" => return Some(TerminalId::Static),
-                        "super" => return Some(TerminalId::Super),
-                        "switch" => return Some(TerminalId::Switch),
-                        "target" => return Some(TerminalId::Target),
-                        "this" => return Some(TerminalId::This),
-                        "throw" => return Some(TerminalId::Throw),
-                        "try" => return Some(TerminalId::Try),
-                        "typeof" => return Some(TerminalId::Typeof),
-                        "var" => return Some(TerminalId::Var),
-                        "void" => return Some(TerminalId::Void),
-                        "while" => return Some(TerminalId::While),
-                        "with" => return Some(TerminalId::With),
-                        "yield" => return Some(TerminalId::Yield),
-                        "null" => return Some(TerminalId::NullLiteral),
-                        "true" => return Some(TerminalId::BooleanLiteral),
-                        "false" => return Some(TerminalId::BooleanLiteral),
+                        "as" => return Ok(TerminalId::As),
+                        "async" => return Ok(TerminalId::Async),
+                        "await" => return Ok(TerminalId::Await),
+                        "break" => return Ok(TerminalId::Break),
+                        "case" => return Ok(TerminalId::Case),
+                        "catch" => return Ok(TerminalId::Catch),
+                        "class" => return Ok(TerminalId::Class),
+                        "const" => return Ok(TerminalId::Const),
+                        "continue" => return Ok(TerminalId::Continue),
+                        "debugger" => return Ok(TerminalId::Debugger),
+                        "default" => return Ok(TerminalId::Default),
+                        "delete" => return Ok(TerminalId::Delete),
+                        "do" => return Ok(TerminalId::Do),
+                        "else" => return Ok(TerminalId::Else),
+                        "export" => return Ok(TerminalId::Export),
+                        "extends" => return Ok(TerminalId::Extends),
+                        "finally" => return Ok(TerminalId::Finally),
+                        "for" => return Ok(TerminalId::For),
+                        "from" => return Ok(TerminalId::From),
+                        "function" => return Ok(TerminalId::Function),
+                        "get" => return Ok(TerminalId::Get),
+                        "if" => return Ok(TerminalId::If),
+                        "import" => return Ok(TerminalId::Import),
+                        "in" => return Ok(TerminalId::In),
+                        "instanceof" => return Ok(TerminalId::Instanceof),
+                        "let" => return Ok(TerminalId::Let),
+                        "new" => return Ok(TerminalId::New),
+                        "of" => return Ok(TerminalId::Of),
+                        "return" => return Ok(TerminalId::Return),
+                        "set" => return Ok(TerminalId::Set),
+                        "static" => return Ok(TerminalId::Static),
+                        "super" => return Ok(TerminalId::Super),
+                        "switch" => return Ok(TerminalId::Switch),
+                        "target" => return Ok(TerminalId::Target),
+                        "this" => return Ok(TerminalId::This),
+                        "throw" => return Ok(TerminalId::Throw),
+                        "try" => return Ok(TerminalId::Try),
+                        "typeof" => return Ok(TerminalId::Typeof),
+                        "var" => return Ok(TerminalId::Var),
+                        "void" => return Ok(TerminalId::Void),
+                        "while" => return Ok(TerminalId::While),
+                        "with" => return Ok(TerminalId::With),
+                        "yield" => return Ok(TerminalId::Yield),
+                        "null" => return Ok(TerminalId::NullLiteral),
+                        "true" => return Ok(TerminalId::BooleanLiteral),
+                        "false" => return Ok(TerminalId::BooleanLiteral),
                         _ => {
                             *text = var;
-                            return Some(TerminalId::Identifier);
+                            return Ok(TerminalId::Identifier);
                         }
                     }
                 }
@@ -128,7 +128,7 @@ where
                             _ => break,
                         }
                     }
-                    return Some(TerminalId::NumericLiteral);
+                    return Ok(TerminalId::NumericLiteral);
                 }
                 // Strings
                 '"' | '\'' => {
@@ -139,7 +139,7 @@ where
                         }
                         text.push(ch)
                     }
-                    return Some(TerminalId::StringLiteral);
+                    return Ok(TerminalId::StringLiteral);
                 }
 
                 '`' => {
@@ -147,14 +147,14 @@ where
                     while let Some(ch) = self.chars.next() {
                         if ch == '$' && self.chars.peek() == Some(&'{') {
                             self.chars.next();
-                            return Some(TerminalId::TemplateHead);
+                            return Ok(TerminalId::TemplateHead);
                         }
                         if ch == '`' {
-                            return Some(TerminalId::NoSubstitutionTemplate);
+                            return Ok(TerminalId::NoSubstitutionTemplate);
                         }
                         text.push(ch)
                     }
-                    return Some(TerminalId::StringLiteral);
+                    return Ok(TerminalId::StringLiteral);
                 }
 
                 '!' => match self.chars.peek() {
@@ -163,32 +163,32 @@ where
                         match self.chars.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::ExclamationMarkEqualsSignEqualsSign);
+                                return Ok(TerminalId::ExclamationMarkEqualsSignEqualsSign);
                             }
-                            _ => return Some(TerminalId::ExclamationMarkEqualsSign),
+                            _ => return Ok(TerminalId::ExclamationMarkEqualsSign),
                         }
                     }
-                    _ => return Some(TerminalId::ExclamationMark),
+                    _ => return Ok(TerminalId::ExclamationMark),
                 },
 
                 '%' => match self.chars.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::PercentSignEqualsSign);
+                        return Ok(TerminalId::PercentSignEqualsSign);
                     }
-                    _ => return Some(TerminalId::PercentSign),
+                    _ => return Ok(TerminalId::PercentSign),
                 },
 
                 '&' => match self.chars.peek() {
                     Some('&') => {
                         self.chars.next();
-                        return Some(TerminalId::AmpersandAmpersand);
+                        return Ok(TerminalId::AmpersandAmpersand);
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::AmpersandEqualsSign);
+                        return Ok(TerminalId::AmpersandEqualsSign);
                     }
-                    _ => return Some(TerminalId::Ampersand),
+                    _ => return Ok(TerminalId::Ampersand),
                 },
 
                 '*' => match self.chars.peek() {
@@ -197,40 +197,40 @@ where
                         match self.chars.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::AsteriskAsteriskEqualsSign);
+                                return Ok(TerminalId::AsteriskAsteriskEqualsSign);
                             }
-                            _ => return Some(TerminalId::AsteriskAsterisk),
+                            _ => return Ok(TerminalId::AsteriskAsterisk),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::AsteriskEqualsSign);
+                        return Ok(TerminalId::AsteriskEqualsSign);
                     }
-                    _ => return Some(TerminalId::Asterisk),
+                    _ => return Ok(TerminalId::Asterisk),
                 },
 
                 '+' => match self.chars.peek() {
                     Some('+') => {
                         self.chars.next();
-                        return Some(TerminalId::PlusSignPlusSign);
+                        return Ok(TerminalId::PlusSignPlusSign);
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::PlusSignEqualsSign);
+                        return Ok(TerminalId::PlusSignEqualsSign);
                     }
-                    _ => return Some(TerminalId::PlusSign),
+                    _ => return Ok(TerminalId::PlusSign),
                 },
 
                 '-' => match self.chars.peek() {
                     Some('-') => {
                         self.chars.next();
-                        return Some(TerminalId::HyphenMinusHyphenMinus);
+                        return Ok(TerminalId::HyphenMinusHyphenMinus);
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::HyphenMinusEqualsSign);
+                        return Ok(TerminalId::HyphenMinusEqualsSign);
                     }
-                    _ => return Some(TerminalId::HyphenMinus),
+                    _ => return Ok(TerminalId::HyphenMinus),
                 },
 
                 '.' => match self.chars.peek() {
@@ -239,12 +239,12 @@ where
                         match self.chars.peek() {
                             Some('.') => {
                                 self.chars.next();
-                                return Some(TerminalId::FullStopFullStopFullStop);
+                                return Ok(TerminalId::FullStopFullStopFullStop);
                             }
-                            _ => return None,
+                            _ => return Err(ParseError::IllegalCharacter('.')),
                         }
                     }
-                    _ => return Some(TerminalId::FullStop),
+                    _ => return Ok(TerminalId::FullStop),
                 },
 
                 '/' => match self.chars.peek() {
@@ -282,7 +282,7 @@ where
                                         break;
                                     }
                                 } else {
-                                    return None;
+                                    return Err(ParseError::UnterminatedRegExp);
                                 }
                             }
                             while let Some(&ch) = self.chars.peek() {
@@ -294,14 +294,14 @@ where
                                     _ => break,
                                 }
                             }
-                            return Some(TerminalId::RegularExpressionLiteral);
+                            return Ok(TerminalId::RegularExpressionLiteral);
                         }
                         match self.chars.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::SolidusEqualsSign);
+                                return Ok(TerminalId::SolidusEqualsSign);
                             }
-                            _ => return Some(TerminalId::Solidus),
+                            _ => return Ok(TerminalId::Solidus),
                         }
                     }
                 },
@@ -312,16 +312,16 @@ where
                         match self.chars.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::LessThanSignLessThanSignEqualsSign);
+                                return Ok(TerminalId::LessThanSignLessThanSignEqualsSign);
                             }
-                            _ => return Some(TerminalId::LessThanSignLessThanSign),
+                            _ => return Ok(TerminalId::LessThanSignLessThanSign),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::LessThanSignEqualsSign);
+                        return Ok(TerminalId::LessThanSignEqualsSign);
                     }
-                    _ => return Some(TerminalId::LessThanSign),
+                    _ => return Ok(TerminalId::LessThanSign),
                 },
 
                 '=' => match self.chars.peek() {
@@ -330,16 +330,16 @@ where
                         match self.chars.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::EqualsSignEqualsSignEqualsSign);
+                                return Ok(TerminalId::EqualsSignEqualsSignEqualsSign);
                             }
-                            _ => return Some(TerminalId::EqualsSignEqualsSign),
+                            _ => return Ok(TerminalId::EqualsSignEqualsSign),
                         }
                     }
                     Some('>') => {
                         self.chars.next();
-                        return Some(TerminalId::Arrow);
+                        return Ok(TerminalId::Arrow);
                     }
-                    _ => return Some(TerminalId::EqualsSign),
+                    _ => return Ok(TerminalId::EqualsSign),
                 },
 
                 '>' => match self.chars.peek() {
@@ -351,61 +351,61 @@ where
                                 match self.chars.peek() {
                                     Some('=') => {
                                         self.chars.next();
-                                        return Some(TerminalId::GreaterThanSignGreaterThanSignGreaterThanSignEqualsSign);
+                                        return Ok(TerminalId::GreaterThanSignGreaterThanSignGreaterThanSignEqualsSign);
                                     }
-                                    _ => return Some(
+                                    _ => return Ok(
                                         TerminalId::GreaterThanSignGreaterThanSignGreaterThanSign,
                                     ),
                                 }
                             }
                             Some('=') => {
                                 self.chars.next();
-                                return Some(TerminalId::GreaterThanSignGreaterThanSignEqualsSign);
+                                return Ok(TerminalId::GreaterThanSignGreaterThanSignEqualsSign);
                             }
-                            _ => return Some(TerminalId::GreaterThanSignGreaterThanSign),
+                            _ => return Ok(TerminalId::GreaterThanSignGreaterThanSign),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::GreaterThanSignEqualsSign);
+                        return Ok(TerminalId::GreaterThanSignEqualsSign);
                     }
-                    _ => return Some(TerminalId::GreaterThanSign),
+                    _ => return Ok(TerminalId::GreaterThanSign),
                 },
 
                 '^' => match self.chars.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::CircumflexAccentEqualsSign);
+                        return Ok(TerminalId::CircumflexAccentEqualsSign);
                     }
-                    _ => return Some(TerminalId::CircumflexAccent),
+                    _ => return Ok(TerminalId::CircumflexAccent),
                 },
 
                 '|' => match self.chars.peek() {
                     Some('|') => {
                         self.chars.next();
-                        return Some(TerminalId::VerticalLineVerticalLine);
+                        return Ok(TerminalId::VerticalLineVerticalLine);
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Some(TerminalId::VerticalLineEqualsSign);
+                        return Ok(TerminalId::VerticalLineEqualsSign);
                     }
-                    _ => return Some(TerminalId::VerticalLine),
+                    _ => return Ok(TerminalId::VerticalLine),
                 },
 
-                '(' => return Some(TerminalId::LeftParenthesis),
-                ')' => return Some(TerminalId::RightParenthesis),
-                ',' => return Some(TerminalId::Comma),
-                ':' => return Some(TerminalId::Colon),
-                ';' => return Some(TerminalId::Semicolon),
-                '?' => return Some(TerminalId::QuestionMark),
-                '[' => return Some(TerminalId::LeftSquareBracket),
-                ']' => return Some(TerminalId::RightSquareBracket),
-                '{' => return Some(TerminalId::LeftCurlyBracket),
-                '}' => return Some(TerminalId::RightCurlyBracket),
-                '~' => return Some(TerminalId::Tilde),
-                _ => return None,
+                '(' => return Ok(TerminalId::LeftParenthesis),
+                ')' => return Ok(TerminalId::RightParenthesis),
+                ',' => return Ok(TerminalId::Comma),
+                ':' => return Ok(TerminalId::Colon),
+                ';' => return Ok(TerminalId::Semicolon),
+                '?' => return Ok(TerminalId::QuestionMark),
+                '[' => return Ok(TerminalId::LeftSquareBracket),
+                ']' => return Ok(TerminalId::RightSquareBracket),
+                '{' => return Ok(TerminalId::LeftCurlyBracket),
+                '}' => return Ok(TerminalId::RightCurlyBracket),
+                '~' => return Ok(TerminalId::Tilde),
+                x => return Err(ParseError::IllegalCharacter(x)),
             }
         }
-        Some(TerminalId::End)
+        Ok(TerminalId::End)
     }
 }
