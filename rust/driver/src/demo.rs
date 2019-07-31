@@ -27,13 +27,16 @@ fn parse_file(path: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub fn parse_file_or_dir(filename: &str) -> io::Result<()> {
+pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<()> {
     let path = Path::new(filename);
     if path.is_dir() {
         for entry in fs::read_dir(&path)? {
             let file = entry?.path();
             if file.is_file() && file.extension() == Some(OsStr::new("js")) {
                 parse_file(&file)?;
+            }
+            if file.is_dir() {
+                parse_file_or_dir(&file)?;
             }
         }
     } else {
