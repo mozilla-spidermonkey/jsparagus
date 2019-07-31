@@ -2,8 +2,8 @@ use std::iter;
 
 use crate::errors::{ParseError, Result};
 use crate::lexer::Lexer;
-use crate::parser::Parser;
 use crate::parse_script;
+use crate::parser::Parser;
 use generated_parser::concrete::Script;
 use generated_parser::{self, concrete, DefaultHandler, TerminalId};
 
@@ -165,6 +165,72 @@ fn test_if_else() {
 //    assert_parses(".5");
 //    assert_syntax_error(".");
 //}
+
+#[test]
+fn test_numbers() {
+    assert_parses("0");
+    assert_parses("1");
+    assert_parses("10");
+
+    assert_error_eq("0a", ParseError::IllegalCharacter('a'));
+    assert_error_eq("1a", ParseError::IllegalCharacter('a'));
+
+    assert_error_eq("1.0a", ParseError::IllegalCharacter('a'));
+    assert_error_eq(".0a", ParseError::IllegalCharacter('a'));
+    assert_error_eq("1.a", ParseError::IllegalCharacter('a'));
+
+    assert_parses("1.0");
+    assert_parses("1.");
+    assert_parses("0.");
+
+    assert_parses("1.0e0");
+    assert_parses("1.e0");
+    assert_parses(".0e0");
+
+    assert_parses("1.0e+0");
+    assert_parses("1.e+0");
+    assert_parses(".0e+0");
+
+    assert_parses("1.0e-0");
+    assert_parses("1.e-0");
+    assert_parses(".0e-0");
+
+    assert_error_eq("1.0e", ParseError::UnexpectedEnd);
+    assert_error_eq("1.e", ParseError::UnexpectedEnd);
+    assert_error_eq(".0e", ParseError::UnexpectedEnd);
+
+    assert_error_eq("1.0e+", ParseError::UnexpectedEnd);
+    assert_error_eq("1.0e-", ParseError::UnexpectedEnd);
+    assert_error_eq(".0e+", ParseError::UnexpectedEnd);
+    assert_error_eq(".0e-", ParseError::UnexpectedEnd);
+
+    assert_parses(".0");
+    assert_parses("");
+
+    assert_parses("0b0");
+    assert_parses("0b1");
+    assert_parses("0B01");
+    assert_error_eq("0b", ParseError::UnexpectedEnd);
+    assert_error_eq("0b ", ParseError::IllegalCharacter(' '));
+    assert_error_eq("0b2", ParseError::IllegalCharacter('2'));
+
+    assert_parses("0o0");
+    assert_parses("0o7");
+    assert_parses("0O01234567");
+    assert_error_eq("0o", ParseError::UnexpectedEnd);
+    assert_error_eq("0o ", ParseError::IllegalCharacter(' '));
+    assert_error_eq("0o8", ParseError::IllegalCharacter('8'));
+
+    assert_parses("0x0");
+    assert_parses("0xf");
+    assert_parses("0X0123456789abcdef");
+    assert_parses("0X0123456789ABCDEF");
+    assert_error_eq("0x", ParseError::UnexpectedEnd);
+    assert_error_eq("0x ", ParseError::IllegalCharacter(' '));
+    assert_error_eq("0xg", ParseError::IllegalCharacter('g'));
+
+    assert_parses("1..x");
+}
 
 #[test]
 fn test_arrow() {

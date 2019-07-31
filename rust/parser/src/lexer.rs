@@ -12,7 +12,7 @@ where
 {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
-            chars: chars.into_iter().peekable(),
+            chars: chars.peekable(),
         }
     }
 
@@ -20,13 +20,48 @@ where
         let mut text = String::new();
         let mut saw_newline = false;
         self.advance_impl(parser, &mut text, &mut saw_newline)
-            .map(|terminal_id| {
-                Token {
-                    terminal_id,
-                    saw_newline,
-                    value: if text.len() == 0 { None } else { Some(text) },
-                }
+            .map(|terminal_id| Token {
+                terminal_id,
+                saw_newline,
+                value: if text.is_empty() { None } else { Some(text) },
             })
+    }
+
+    fn accept_digits(&mut self, text: &mut String) -> bool {
+        let mut at_least_one = false;
+        while let Some(&next) = self.chars.peek() {
+            match next {
+                '0'..='9' => {
+                    at_least_one = true;
+                    self.chars.next();
+                    text.push(next);
+                }
+                _ => break,
+            }
+        }
+        at_least_one
+    }
+
+    fn optional_exponent(&mut self, text: &mut String) -> Result<()> {
+        if let Some('e') | Some('E') = self.chars.peek() {
+            text.push(self.chars.next().unwrap());
+            if let Some('+') | Some('-') = self.chars.peek() {
+                text.push(self.chars.next().unwrap());
+            }
+            if !self.accept_digits(text) {
+                // require at least one digit
+                return Err(self.unexpected_err());
+            }
+        }
+        Ok(())
+    }
+
+    fn unexpected_err(&mut self) -> ParseError {
+        if let Some(&ch) = self.chars.peek() {
+            ParseError::IllegalCharacter(ch)
+        } else {
+            ParseError::UnexpectedEnd
+        }
     }
 
     fn advance_impl(
@@ -119,13 +154,93 @@ where
                 // Numbers
                 '0'..='9' => {
                     text.push(c);
-                    while let Some(next) = self.chars.peek() {
-                        match next {
-                            '0'..='9' => {
+                    match self.chars.peek() {
+                        // DecimalLiteral
+                        Some('0'..='9') if c != '0' => {
+                            self.accept_digits(text);
+                            if let Some('.') = self.chars.peek() {
                                 self.chars.next();
-                                text.push(c);
+                                text.push('.');
+                                self.accept_digits(text);
                             }
-                            _ => break,
+                            self.optional_exponent(text)?;
+                        }
+                        Some('.') | Some('e') | Some('E') => {
+                            if let Some('.') = self.chars.peek() {
+                                self.chars.next();
+                                text.push('.');
+                                self.accept_digits(text);
+                            }
+                            self.optional_exponent(text)?;
+                        }
+                        // BinaryIntegerLiteral
+                        Some('b') | Some('B') if c == '0' => {
+                            text.push(self.chars.next().unwrap());
+                            let mut at_least_one = false;
+                            while let Some(&next) = self.chars.peek() {
+                                match next {
+                                    '0' | '1' => {
+                                        at_least_one = true;
+                                        self.chars.next();
+                                        text.push(next);
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            if !at_least_one {
+                                return Err(self.unexpected_err());
+                            }
+                        }
+                        // OctalIntegerLiteral
+                        Some('o') | Some('O') if c == '0' => {
+                            text.push(self.chars.next().unwrap());
+                            let mut at_least_one = false;
+                            while let Some(&next) = self.chars.peek() {
+                                match next {
+                                    '0'..='7' => {
+                                        at_least_one = true;
+                                        self.chars.next();
+                                        text.push(next);
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            if !at_least_one {
+                                return Err(self.unexpected_err());
+                            }
+                        }
+                        // HexIntegerLiteral
+                        Some('x') | Some('X') if c == '0' => {
+                            text.push(self.chars.next().unwrap());
+                            let mut at_least_one = false;
+                            while let Some(&next) = self.chars.peek() {
+                                match next {
+                                    '0'..='9' | 'a'..='f' | 'A'..='F' => {
+                                        at_least_one = true;
+                                        self.chars.next();
+                                        text.push(next);
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            if !at_least_one {
+                                return Err(self.unexpected_err());
+                            }
+                        }
+                        // `0`
+                        _ => {
+                            // TODO: implement `strict_mode` check
+                            let strict_mode = true;
+                            if !strict_mode {
+                                // TODO: Distinguish between Octal and NonOctal
+                                self.accept_digits(text);
+                            }
+                        }
+                    }
+                    // The SourceCharacter immediately following a NumericLiteral must not be an IdentifierStart or DecimalDigit.
+                    if let Some(&ch) = self.chars.peek() {
+                        if let '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' = ch {
+                            return Err(ParseError::IllegalCharacter(ch));
                         }
                     }
                     return Ok(TerminalId::NumericLiteral);
@@ -243,6 +358,18 @@ where
                             }
                             _ => return Err(ParseError::IllegalCharacter('.')),
                         }
+                    }
+                    Some('0'..='9') => {
+                        text.push('.');
+                        self.accept_digits(text);
+                        self.optional_exponent(text)?;
+                        // The SourceCharacter immediately following a NumericLiteral must not be an IdentifierStart or DecimalDigit.
+                        if let Some(&ch) = self.chars.peek() {
+                            if let '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' = ch {
+                                return Err(ParseError::IllegalCharacter(ch));
+                            }
+                        }
+                        return Ok(TerminalId::NumericLiteral);
                     }
                     _ => return Ok(TerminalId::FullStop),
                 },
