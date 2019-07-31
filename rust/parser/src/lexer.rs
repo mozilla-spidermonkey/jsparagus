@@ -250,10 +250,7 @@ where
                 },
 
                 '/' => match self.chars.peek() {
-                    Some('=') => {
-                        self.chars.next();
-                        return Some(TerminalId::SolidusEqualsSign);
-                    }
+                    // Comments take priority over regexes
                     // Single-line comment
                     Some('/') => {
                         self.chars.next();
@@ -269,6 +266,7 @@ where
                     Some('*') => {
                         self.chars.next();
                         while let Some(ch) = self.chars.next() {
+                            // TODO: ASI
                             if ch == '*' && self.chars.peek() == Some(&'/') {
                                 self.chars.next();
                                 break;
@@ -276,7 +274,38 @@ where
                         }
                         continue;
                     }
-                    _ => return Some(TerminalId::Solidus),
+                    _ => {
+                        if parser.can_accept_terminal(TerminalId::RegularExpressionLiteral) {
+                            text.push(c);
+                            loop {
+                                if let Some(ch) = self.chars.next() {
+                                    text.push(ch);
+                                    if ch == '/' {
+                                        break;
+                                    }
+                                } else {
+                                    return None;
+                                }
+                            }
+                            while let Some(&ch) = self.chars.peek() {
+                                match ch {
+                                    '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
+                                        self.chars.next();
+                                        text.push(ch);
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            return Some(TerminalId::RegularExpressionLiteral);
+                        }
+                        match self.chars.peek() {
+                            Some('=') => {
+                                self.chars.next();
+                                return Some(TerminalId::SolidusEqualsSign);
+                            }
+                            _ => return Some(TerminalId::Solidus),
+                        }
+                    }
                 },
 
                 '<' => match self.chars.peek() {

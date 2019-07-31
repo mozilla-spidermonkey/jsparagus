@@ -1,10 +1,10 @@
 use std::iter;
 
-use generated_parser::{self, concrete, DefaultHandler, TerminalId};
-use generated_parser::concrete::Script;
 use crate::lexer::Lexer;
-use crate::parser::{Parser, ParseError};
-use crate::{Result, parse_script};
+use crate::parser::{ParseError, Parser};
+use crate::{parse_script, Result};
+use generated_parser::concrete::Script;
+use generated_parser::{self, concrete, DefaultHandler, TerminalId};
 
 #[cfg(all(feature = "unstable", test))]
 mod benchmarks {
@@ -28,18 +28,22 @@ mod benchmarks {
 }
 
 trait IntoChunks<'a> {
-    type Chunks: Iterator<Item=&'a str>;
+    type Chunks: Iterator<Item = &'a str>;
     fn into_chunks(self) -> Self::Chunks;
 }
 
 impl<'a> IntoChunks<'a> for &'a str {
     type Chunks = iter::Once<&'a str>;
-    fn into_chunks(self) -> Self::Chunks { iter::once(self) }
+    fn into_chunks(self) -> Self::Chunks {
+        iter::once(self)
+    }
 }
 
 impl<'a> IntoChunks<'a> for &'a Vec<&'a str> {
     type Chunks = iter::Cloned<std::slice::Iter<'a, &'a str>>;
-    fn into_chunks(self) -> Self::Chunks { self.iter().cloned() }
+    fn into_chunks(self) -> Self::Chunks {
+        self.iter().cloned()
+    }
 }
 
 // Glue all the chunks together.  XXX TODO Once the lexer supports chunks,
@@ -68,6 +72,12 @@ fn assert_syntax_error<'a, T: IntoChunks<'a>>(code: T) {
     });
 }
 
+fn assert_lexer_error<'a, T: IntoChunks<'a>>(code: T) {
+    let result = try_parse(code);
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), ParseError::LexerError);
+}
+
 fn assert_incomplete<'a, T: IntoChunks<'a>>(code: T) {
     let result = try_parse(code);
     assert!(result.is_err());
@@ -77,10 +87,7 @@ fn assert_incomplete<'a, T: IntoChunks<'a>>(code: T) {
 fn assert_can_close_after<'a, T: IntoChunks<'a>>(code: T) {
     let buf = chunks_to_string(code);
     let mut lexer = Lexer::new(buf.chars());
-    let mut parser = Parser::new(
-        DefaultHandler {},
-        generated_parser::START_STATE_SCRIPT,
-    );
+    let mut parser = Parser::new(DefaultHandler {}, generated_parser::START_STATE_SCRIPT);
     loop {
         let t = lexer.next(&parser).expect("lexer error");
         if t.terminal_id == TerminalId::End {
@@ -108,14 +115,13 @@ fn test_asi_at_block_end() {
 
 #[test]
 fn test_asi_after_line_terminator() {
-    assert_parses("
-           switch (value) {
+    assert_parses(
+        "switch (value) {
              case 1: break
              case 2: console.log('2');
-           }
-        ");
-    assert_syntax_error(
-        "switch (value) { case 1: break case 2: console.log('2'); }");
+         }",
+    );
+    assert_syntax_error("switch (value) { case 1: break case 2: console.log('2'); }");
 }
 
 // XXX TODO - uncomment passing assertions, fix bugs in asi support
@@ -198,7 +204,11 @@ fn test_incomplete_comments() {
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie\n ok();"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie", "jiowaeawojefiw"]);
-    assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie", "jiowaeawojefiw\n ok();"]);
+    assert_parses(&vec![
+        "// oawfeoiawj",
+        "ioawefoawjie",
+        "jiowaeawojefiw\n ok();",
+    ]);
 }
 
 #[test]
@@ -220,25 +230,20 @@ fn test_awkward_chunks() {
     //        ('PrimaryExpression 10', '/xyzzy/g'))))));
 
     let actual = try_parse(&vec!["x/", "=2;"]).unwrap();
-    let expected = concrete::Script::Script(
-        Some(Box::new(concrete::ScriptBody::ScriptBody(
-            Box::new(concrete::StatementList::StatementListP0(
-                Box::new(concrete::ModuleItem::ExpressionStatement(
-                    Box::new(concrete::Expression::AssignmentExpressionP5(
-                        Box::new(concrete::Expression::PrimaryExpressionP1(
-                            Box::new(concrete::IdentifierReference::IdentifierReference()),
-                        )),
-                        Box::new(concrete::AssignmentOperator::AssignmentOperatorP1()),
-                        Box::new(concrete::Expression::LiteralP2()),
-                    ))
-                ))
-            ))
-        )))
-    );
-    assert_eq!(
-        format!("{:?}", actual),
-        format!("{:?}", expected)
-    );
+    let expected = concrete::Script::Script(Some(Box::new(concrete::ScriptBody::ScriptBody(
+        Box::new(concrete::StatementList::StatementListP0(Box::new(
+            concrete::ModuleItem::ExpressionStatement(Box::new(
+                concrete::Expression::AssignmentExpressionP5(
+                    Box::new(concrete::Expression::PrimaryExpressionP1(Box::new(
+                        concrete::IdentifierReference::IdentifierReference(),
+                    ))),
+                    Box::new(concrete::AssignmentOperator::AssignmentOperatorP1()),
+                    Box::new(concrete::Expression::LiteralP2()),
+                ),
+            )),
+        ))),
+    ))));
+    assert_eq!(format!("{:?}", actual), format!("{:?}", expected));
 }
 
 #[test]
@@ -248,6 +253,23 @@ fn test_can_close() {
     assert_can_close_after("");
     assert_can_close_after("2 + 2;\n");
     assert_can_close_after("// seems ok\n");
+}
+
+#[test]
+fn test_regex() {
+    assert_parses("/x/");
+    assert_parses("x = /x/");
+    assert_parses("x = /x/g");
+    assert_parses("x = /x/wow_flags_can_be_$$anything$$");
+    // TODO: Should the lexer running out of input throw an incomplete error, or a lexer error?
+    assert_lexer_error("/x");
+    assert_incomplete("x = //"); // comment
+    assert_incomplete("x = /*/"); /*/ comment */
+    assert_lexer_error("x =/= 2"); // unterminated regex
+    assert_parses("x /= 2");
+    assert_parses("x = /[]/");
+    assert_parses("x = /[^x]/");
+    assert_parses("x = /+=351*/");
 }
 
 // XXX TODO
