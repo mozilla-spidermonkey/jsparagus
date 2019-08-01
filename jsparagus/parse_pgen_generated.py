@@ -259,5 +259,14 @@ class DefaultBuilder:
     def action(self, x0, x1): return ('action', x0, x1)
 
 
-parse_grammar = runtime.make_parse_fn(
-actions, ctns, reductions, error_codes, 0, DefaultBuilder)
+goal_nt_to_init_state = {
+    'grammar': 0,
+}
+
+class Parser(runtime.Parser):
+    def __init__(self, goal='grammar', builder=None):
+        if builder is None:
+            builder = DefaultBuilder()
+        super().__init__(actions, ctns, reductions, error_codes,
+                         goal_nt_to_init_state[goal], builder)
+

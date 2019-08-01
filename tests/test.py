@@ -21,7 +21,16 @@ class GenTestCase(unittest.TestCase):
         """Compile a grammar. Use this when you expect compilation to
         succeed."""
         self.tokenize = tokenize
-        self.parse = gen.compile(grammar)
+        self.parser_class = gen.compile(grammar)
+
+    def parse(self, text, goal=None):
+        if goal is None:
+            parser = self.parser_class()
+        else:
+            parser = self.parser_class(goal=goal)
+        lexer = self.tokenize(parser)
+        lexer.write(text)
+        return lexer.close()
 
     def compile_multi(self, tokenize, grammar):
         self.tokenize = tokenize
@@ -31,17 +40,19 @@ class GenTestCase(unittest.TestCase):
                 setattr(self, attr, getattr(obj, attr))
 
     def assertParse(self, s, expected=None, *, goal=None):
-        method = "parse" if goal is None else "parse_" + goal
-        result = getattr(self, method)(self.tokenize, s)
+        result = self.parse(s, goal=goal)
         if expected is not None:
             self.assertEqual(expected, result)
 
     def assertNoParse(self, s, *, goal=None, message="banana"):
-        method = "parse" if goal is None else "parse_" + goal
+        if goal is None:
+            kwargs = {}
+        else:
+            kwargs = {"goal": goal}
         self.assertRaisesRegex(
             SyntaxError,
             re.escape(message),
-            lambda: getattr(self, method)(self.tokenize, s))
+            lambda: self.parse(s, **kwargs))
 
     def testSimple(self):
         grammar = Grammar({
@@ -54,11 +65,10 @@ class GenTestCase(unittest.TestCase):
                 ['expr', 'tail'],
             ],
         })
-        parse = gen.compile(grammar)
+        self.compile(LispTokenizer, grammar)
 
-        parsed = parse(LispTokenizer, "(lambda (x) (* x x))")
-        self.assertEqual(
-            parsed,
+        self.assertParse(
+            "(lambda (x) (* x x))",
             ('expr 1',
                 '(',
                 ('tail 1',
@@ -100,10 +110,9 @@ class GenTestCase(unittest.TestCase):
                 ['SYMBOL']
             ],
         })
-        parse = gen.compile(list_grammar)
-        self.assertEqual(
-            parse(LispTokenizer,
-                  "the quick brown fox jumped over the lazy dog"),
+        self.compile(LispTokenizer, list_grammar)
+        self.assertParse(
+            "the quick brown fox jumped over the lazy dog",
             ('prelist',
                 'the',
                 ('list 1',
@@ -144,10 +153,10 @@ class GenTestCase(unittest.TestCase):
                 ['(', 'expr', ')'],
             ],
         })
-        parse = gen.compile(arith_grammar)
+        self.compile(tokenize, arith_grammar)
 
-        self.assertEqual(
-            parse(tokenize, '2 * 3 + 4 * (5 + 7)'),
+        self.assertParse(
+            '2 * 3 + 4 * (5 + 7)',
             ('expr 1',
                 ('term 1', '2', '*', '3'),
                 '+',
@@ -159,14 +168,12 @@ class GenTestCase(unittest.TestCase):
                         ('expr 1', '5', '+', '7'),
                         ')'))))
 
-        self.assertRaisesRegex(
-            SyntaxError,
-            r"unexpected end of input",
-            lambda: parse(tokenize, "("))
-        self.assertRaisesRegex(
-            SyntaxError,
-            r"expected one of \['\(', 'NUM', 'VAR'], got '\)'",
-            lambda: parse(tokenize, ")"))
+        self.assertNoParse(
+            "(",
+            message="unexpected end of input")
+        self.assertNoParse(
+            ")",
+            message="expected one of ['(', 'NUM', 'VAR'], got ')'")
 
     def testAmbiguous(self):
         # This grammar should fail verification.
@@ -244,12 +251,12 @@ class GenTestCase(unittest.TestCase):
                 ['A', 'B', 'C', 'E'],
             ],
         })
-        parse = gen.compile(grammar)
-        self.assertEqual(
-            parse(tokenize, "A B C D"),
+        self.compile(tokenize, grammar)
+        self.assertParse(
+            "A B C D",
             ('goal 0', 'A', 'B', 'C', 'D'))
-        self.assertEqual(
-            parse(tokenize, "A B C E"),
+        self.assertParse(
+            "A B C E",
             ('goal 1', 'A', 'B', 'C', 'E'))
 
     def testLeftFactorMultiLevel(self):
@@ -273,17 +280,17 @@ class GenTestCase(unittest.TestCase):
                 ['VAR'],
             ],
         })
-        parse = gen.compile(grammar)
-        self.assertEqual(
-            parse(tokenize, "FOR (x IN y) z;"),
+        self.compile(tokenize, grammar)
+        self.assertParse(
+            "FOR (x IN y) z;",
             ('stmt 1', 'FOR', '(', 'x', 'IN', 'y', ')',
              ('stmt 0', 'z', ';')))
-        self.assertEqual(
-            parse(tokenize, "FOR (x = y TO z) x;"),
+        self.assertParse(
+            "FOR (x = y TO z) x;",
             ('stmt 2', 'FOR', '(', 'x', '=', 'y', 'TO', 'z', ')',
              ('stmt 0', 'x', ';')))
-        self.assertEqual(
-            parse(tokenize, "FOR (x = y TO z BY w) x;"),
+        self.assertParse(
+            "FOR (x = y TO z BY w) x;",
             ('stmt 3', 'FOR', '(', 'x', '=', 'y', 'TO', 'z', 'BY', 'w', ')',
              ('stmt 0', 'x', ';')))
 
@@ -354,7 +361,7 @@ class GenTestCase(unittest.TestCase):
                 ['exprs', 'expr'],
             ],
         })
-        parse = gen.compile(grammar)
+        parse = self.compile(LispTokenizer, grammar)
 
         N = 3000
         s = "x"
@@ -363,7 +370,7 @@ class GenTestCase(unittest.TestCase):
             s = "(" + s + ")"
             t = ('expr 2', '(', t, ')')
 
-        result = parse(LispTokenizer, s)
+        result = self.parse(s)
 
         # Python can't check that result == t; it causes a RecursionError.
         # Testing that repr(result) == repr(t), same deal. So:
@@ -417,11 +424,11 @@ class GenTestCase(unittest.TestCase):
                 prod(['Y'], 'c'),
             ]
         })
-        parse = gen.compile(grammar)
-        self.assertEqual(parse(tokenize, ""), ('a', None, None))
-        self.assertEqual(parse(tokenize, "X"), ('a', ('b', 'X'), None))
-        self.assertEqual(parse(tokenize, "Y"), ('a', None, ('c', 'Y')))
-        self.assertEqual(parse(tokenize, "X Y"), ('a', ('b', 'X'), ('c', 'Y')))
+        self.compile(tokenize, grammar)
+        self.assertParse("", ('a', None, None))
+        self.assertParse("X", ('a', ('b', 'X'), None))
+        self.assertParse("Y", ('a', None, ('c', 'Y')))
+        self.assertParse("X Y", ('a', ('b', 'X'), ('c', 'Y')))
 
     def testOptional(self):
         tokenize = lexer.LexicalGrammar('[ ] , X')
@@ -440,13 +447,13 @@ class GenTestCase(unittest.TestCase):
                 ['elision', ',']
             ]
         })
-        parse = gen.compile(grammar)
-        self.assertEqual(parse(tokenize, "[]"),
+        self.compile(tokenize, grammar)
+        self.assertParse("[]",
                          ('array 0', '[', None, ']'))
-        self.assertEqual(parse(tokenize, "[,]"),
+        self.assertParse("[,]",
                          ('array 0', '[', ',', ']'))
-        self.assertEqual(
-            parse(tokenize, "[,,X,,X,]"),
+        self.assertParse(
+            "[,,X,,X,]",
             ('array 2',
                 '[',
                 ('elements 1',
@@ -499,23 +506,17 @@ class GenTestCase(unittest.TestCase):
             ],
         }
 
-        parse = gen.compile(Grammar(rules))
-        self.assertRaisesRegex(SyntaxError,
-                               r"expected 'b', got 'a'",
-                               lambda: parse(tokenize, "a b"))
-        self.assertEqual(
-            parse(tokenize, 'b a'),
-            ('goal', ('abs 2', 'b', 'a'))
-        )
+        self.compile(tokenize, Grammar(rules))
+        self.assertNoParse("a b", message="expected 'b', got 'a'")
+        self.assertParse(
+            'b a',
+            ('goal', ('abs 2', 'b', 'a')))
 
         # In simple cases like this, the lookahead restriction can even
         # disambiguate a grammar that would otherwise be ambiguous.
         rules['goal'].append(prod(['a'], 'goal_a'))
-        parse = gen.compile(Grammar(rules))
-        self.assertEqual(
-            parse(tokenize, 'a'),
-            ('goal_a', 'a')
-        )
+        self.compile(tokenize, Grammar(rules))
+        self.assertParse('a', ('goal_a', 'a'))
 
     def disabledNegativeLookaheadDisambiguation(self):
         tokenize = lexer.LexicalGrammar(
@@ -544,7 +545,7 @@ class GenTestCase(unittest.TestCase):
                 ['term', '(', 'expr', ')'],
             ],
         })
-        parse = gen.compile(grammar)
+        self.compile(tokenize, grammar)
 
         # Test that without the lookahead restriction, we reject this grammar
         # (it's ambiguous):
@@ -553,8 +554,8 @@ class GenTestCase(unittest.TestCase):
                                'banana',
                                lambda: gen.compile(grammar))
 
-        self.assertEqual(
-            parse(tokenize, 'function f() { x = function y() {}; }'),
+        self.assertParse(
+            'function f() { x = function y() {}; }',
             ('stmt', 1,
                 ('fndecl',
                     'function', 'f', '(', ')', '{',
@@ -569,8 +570,8 @@ class GenTestCase(unittest.TestCase):
                                         '{', None, '}')))),
                         ';'))))
 
-        self.assertEqual(
-            parse(tokenize, '(function g(){});'),
+        self.assertParse(
+            '(function g(){});',
             ('stmts', 0,
                 ('stmt', 0,
                     ('term', 1,
@@ -623,7 +624,7 @@ class GenTestCase(unittest.TestCase):
             })
         )
         self.assertEqual(
-            self.parse(self.tokenize, "x = 0"),
+            self.parse("x = 0"),
             ("decl", None, "x", "=", "0"))
         self.assertParse("thread: x = 0")
         self.assertNoParse(
@@ -885,7 +886,7 @@ class GenTestCase(unittest.TestCase):
                 ["(", "expr", ")"],
             ],
         }, goal_nts=["stmts", "expr"])
-        self.compile_multi(tokenize, grammar)
+        self.compile(tokenize, grammar)
         self.assertParse("WHILE ( x ) { decx ( x ) ; }", goal="stmts")
         self.assertNoParse(
             "WHILE ( x ) { decx ( x ) ; }", goal="expr",

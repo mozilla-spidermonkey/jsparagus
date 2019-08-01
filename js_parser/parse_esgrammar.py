@@ -7,7 +7,7 @@ from jsparagus.lexer import LexicalGrammar
 from jsparagus.ordered import OrderedFrozenSet
 
 
-tokenize_esgrammar = LexicalGrammar(
+ESGrammarLexer = LexicalGrammar(
     # the operators and keywords:
     "[ ] { } , ~ + ? <! == != "
     "but empty here lookahead no not of one or through",
@@ -43,7 +43,7 @@ tokenize_esgrammar = LexicalGrammar(
 )
 
 
-parse_esgrammar_generic = gen.compile(
+ESGrammarParser = gen.compile(
     parse_pgen.load_grammar(
         os.path.join(os.path.dirname(__file__), "esgrammar.pgen")))
 
@@ -355,6 +355,8 @@ def finish_grammar(nt_defs, goals):
 
 
 def parse_esgrammar(text, filename=None, goals=None):
-    return finish_grammar(
-        parse_esgrammar_generic(tokenize_esgrammar, text, ESGrammarBuilder()),
-        goals=goals)
+    parser = ESGrammarParser(builder=ESGrammarBuilder())
+    lexer = ESGrammarLexer(parser, filename=filename)
+    lexer.write(text)
+    nt_defs = lexer.close()
+    return finish_grammar(nt_defs, goals=goals)

@@ -85,11 +85,23 @@ def write_python_parser(out, parser_states):
                   .format(method_name, args, tag, args))
     out.write("\n\n")
 
+    out.write("goal_nt_to_init_state = {\n")
     for init_nt, index in init_state_map.items():
-        out.write("parse_{} = runtime.make_parse_fn(\n"
-                  .format(init_nt.name))
-        out.write("actions, ctns, reductions, error_codes, {}, DefaultBuilder)\n"
-                  .format(index))
+        out.write("    {!r}: {!r},\n".format(init_nt.name, index))
+    out.write("}\n\n")
+
+    if len(init_state_map) == 1:
+        init_nt = next(iter(init_state_map.keys()))
+        default_goal = '=' + repr(init_nt.name)
+    else:
+        default_goal = ''
+    out.write("class Parser(runtime.Parser):\n")
+    out.write("    def __init__(self, goal{}, builder=None):\n".format(default_goal))
+    out.write("        if builder is None:\n")
+    out.write("            builder = DefaultBuilder()\n")
+    out.write("        super().__init__(actions, ctns, reductions, error_codes,\n")
+    out.write("                         goal_nt_to_init_state[goal], builder)\n")
+    out.write("\n")
 
 
 TERMINAL_NAMES = {

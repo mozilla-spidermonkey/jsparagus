@@ -213,8 +213,10 @@ def check_grammar(result):
 def load_grammar(filename):
     with open(filename) as f:
         text = f.read()
-    builder = AstBuilder()
-    result = parse_pgen_generated.parse_grammar(pgen_lexer, text, builder)
+    parser = parse_pgen_generated.Parser(builder=AstBuilder())
+    lexer = pgen_lexer(parser, filename=filename)
+    lexer.write(text)
+    result = lexer.close()
     tokens, nonterminals, goals = check_grammar(result)
     variable_terminals = [name for name, image in tokens if image is None]
     return Grammar(nonterminals, goals, variable_terminals)

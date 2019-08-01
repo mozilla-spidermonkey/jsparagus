@@ -1450,30 +1450,14 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
         emit.write_python_parser(out, parser_states)
 
 
-class Parser:
-    pass
-
-
-def compile_multi(grammar):
+def compile(grammar):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
     generate_parser(out, grammar)
     scope = {}
     # print(out.getvalue())
     exec(out.getvalue(), scope)
-    parser = Parser()
-    for goal_nt in grammar.goals():
-        assert goal_nt.args == ()
-        name = "parse_" + goal_nt.name
-        setattr(parser, name, scope[name])
-    return parser
-
-
-def compile(grammar):
-    assert isinstance(grammar, Grammar)
-    [goal] = grammar.goals()
-    assert goal.args == ()
-    return getattr(compile_multi(grammar), "parse_" + goal.name)
+    return scope['Parser']
 
 
 # *** Fun demo ****************************************************************
