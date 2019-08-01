@@ -1,7 +1,7 @@
 // Derived from https://github.com/shapesecurity/shift-spec/blob/es2017/spec.idl
 
 /*
-  INFO: This specification is currently divided into the following sections:
+pub INFO: This specification is currently divided into the following sections:
   * supporting types
   * node classes
   * bindings
@@ -20,17 +20,17 @@
 
 // typedef (SpreadElement or Expression)[] Arguments;
 
-enum Argument {
+pub enum Argument {
     SpreadElement(SpreadElement),
     Expression(Box<Expression>),
 }
 
-struct Arguments {
-    args: Vec<Argument>,
+pub struct Arguments {
+    pub args: Vec<Argument>,
 }
 
 impl Arguments {
-    fn new(args: Vec<Argument>) -> Self {
+    pub fn new(args: Vec<Argument>) -> Self {
         Self { args }
     }
 }
@@ -38,45 +38,45 @@ impl Arguments {
 // typedef DOMString string;
 
 // typedef string Identifier;
-struct Identifier {
-    value: String,
+pub struct Identifier {
+    pub value: String,
 }
 
 impl Identifier {
-    fn new(value: String) -> Self {
+    pub fn new(value: String) -> Self {
         Self { value }
     }
 }
 
 // typedef string IdentifierName;
-struct IdentifierName {
-    value: String,
+pub struct IdentifierName {
+    pub value: String,
 }
 
 impl IdentifierName {
-    fn new(value: String) -> Self {
+    pub fn new(value: String) -> Self {
         Self { value }
     }
 }
 
 // typedef string Label;
-struct Label {
-    value: String,
+pub struct Label {
+    pub value: String,
 }
 
 impl Label {
-    fn new(value: String) -> Self {
+    pub fn new(value: String) -> Self {
         Self { value }
     }
 }
 
-enum VariableDeclarationKind {
+pub enum VariableDeclarationKind {
     Var,
     Let,
     Const,
 }
 
-enum CompoundAssignmentOperator {
+pub enum CompoundAssignmentOperator {
     Add,
     Sub,
     Mul,
@@ -91,7 +91,7 @@ enum CompoundAssignmentOperator {
     And,
 }
 
-enum BinaryOperator {
+pub enum BinaryOperator {
     Equals,
     NotEquals,
     StrictEquals,
@@ -119,7 +119,7 @@ enum BinaryOperator {
     BitwiseAnd,
 }
 
-enum UnaryOperator {
+pub enum UnaryOperator {
     Plus,
     Minus,
     LogicalNot,
@@ -129,26 +129,31 @@ enum UnaryOperator {
     Delete,
 }
 
-enum UpdateOperator {
+pub enum UpdateOperator {
     Increment,
     Decrement,
 }
 
 // `FunctionExpression`, `FunctionDeclaration`, `GeneratorExpression`, `GeneratorDeclaration`, `AsyncFunctionExpression`, `AsyncFunctionDeclaration`
-struct Function {
+pub struct Function {
     // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
-    isAsync: bool,
+    pub is_async: bool,
     // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
-    isGenerator: bool,
-    params: FormalParameters,
-    body: FunctionBody,
+    pub is_generator: bool,
+    pub params: FormalParameters,
+    pub body: FunctionBody,
 }
 
 impl Function {
-    fn new(isAsync: bool, isGenerator: bool, params: FormalParameters, body: FunctionBody) -> Self {
+    pub fn new(
+        is_async: bool,
+        is_generator: bool,
+        params: FormalParameters,
+        body: FunctionBody,
+    ) -> Self {
         Self {
-            isAsync,
-            isGenerator,
+            is_async,
+            is_generator,
             params,
             body,
         }
@@ -161,7 +166,7 @@ impl Function {
 //   [TypeIndicator] readonly attribute Type type;
 // };
 
-enum Node {
+pub enum Node {
     Program(Program),
     Statement(Statement),
     Expression(Expression),
@@ -201,14 +206,14 @@ enum Node {
 
 // interface Program : Node { };
 
-enum Program {
+pub enum Program {
     Module(Module),
     Script(Script),
 }
 
 // interface Statement : Node { };
 
-enum Statement {
+pub enum Statement {
     IterationStatement(IterationStatement),
     ClassDeclaration(ClassDeclaration),
     BlockStatement(BlockStatement),
@@ -234,17 +239,17 @@ enum Statement {
 //   attribute Statement body;
 // };
 
-enum IterationStatement {
-    DoWhileStatement(DoWhileStatement, Box<Statement>),
-    ForInStatement(ForInStatement, Box<Statement>),
-    ForOfStatement(ForOfStatement, Box<Statement>),
-    ForStatement(ForStatement, Box<Statement>),
-    WhileStatement(WhileStatement, Box<Statement>),
+pub enum IterationStatement {
+    DoWhileStatement(DoWhileStatement),
+    ForInStatement(ForInStatement),
+    ForOfStatement(ForOfStatement),
+    ForStatement(ForStatement),
+    WhileStatement(WhileStatement),
 }
 
 // interface Expression : Node { };
 
-enum Expression {
+pub enum Expression {
     MemberExpression(MemberExpression),
     ClassExpression(ClassExpression),
     LiteralBooleanExpression(LiteralBooleanExpression),
@@ -280,15 +285,15 @@ enum Expression {
 //   attribute (Expression or Super) _object;
 // };
 
-enum MemberExpression {
-    ComputedMemberExpression(ComputedMemberExpression, ExpressionOrSuper),
-    StaticMemberExpression(StaticMemberExpression, ExpressionOrSuper),
+pub enum MemberExpression {
+    ComputedMemberExpression(ComputedMemberExpression),
+    StaticMemberExpression(StaticMemberExpression),
 }
 
 // `[ Expression ]`, `. IdentifierName`
 // interface PropertyName : Node { };
 
-enum PropertyName {
+pub enum PropertyName {
     ComputedPropertyName(ComputedPropertyName),
     StaticPropertyName(StaticPropertyName),
 }
@@ -296,7 +301,7 @@ enum PropertyName {
 // `PropertyDefinition`
 // interface ObjectProperty : Node { };
 
-enum ObjectProperty {
+pub enum ObjectProperty {
     NamedObjectProperty(NamedObjectProperty),
     ShorthandProperty(ShorthandProperty),
 }
@@ -306,16 +311,16 @@ enum ObjectProperty {
 //   attribute PropertyName name;
 // };
 
-enum NamedObjectProperty {
-    MethodDefinition(MethodDefinition, PropertyName),
-    DataProperty(DataProperty, PropertyName),
+pub enum NamedObjectProperty {
+    MethodDefinition(MethodDefinition),
+    DataProperty(DataProperty),
 }
 
 // interface MethodDefinition : NamedObjectProperty {
 //   attribute FunctionBody body;
 // };
 
-enum MethodDefinition {
+pub enum MethodDefinition {
     Method(Method),
     Getter(Getter),
     Setter(Setter),
@@ -325,14 +330,14 @@ enum MethodDefinition {
 //   attribute string moduleSpecifier;
 // };
 
-enum ImportDeclaration {
-    Import(Import, String),
-    ImportNamespace(ImportNamespace, String),
+pub enum ImportDeclaration {
+    Import(Import),
+    ImportNamespace(ImportNamespace),
 }
 
 // interface ExportDeclaration : Node { };
 
-enum ExportDeclaration {
+pub enum ExportDeclaration {
     ExportAllFrom(ExportAllFrom),
     ExportFrom(ExportFrom),
     ExportLocals(ExportLocals),
@@ -345,37 +350,37 @@ enum ExportDeclaration {
 //   attribute Identifier name;
 // };
 
-enum VariableReference {
-    BindingIdentifier(BindingIdentifier, Identifier),
-    AssignmentTargetIdentifier(AssignmentTargetIdentifier, Identifier),
+pub enum VariableReference {
+    BindingIdentifier(BindingIdentifier),
+    AssignmentTargetIdentifier(AssignmentTargetIdentifier),
 }
 
 // bindings
 
 //typedef (ObjectBinding or ArrayBinding) BindingPattern;
 
-enum BindingPattern {
+pub enum BindingPattern {
     ObjectBinding(ObjectBinding),
     ArrayBinding(ArrayBinding),
 }
 
 // typedef (BindingPattern or BindingIdentifier) Binding;
 
-enum Binding {
+pub enum Binding {
     BindingPattern(BindingPattern),
     BindingIdentifier(BindingIdentifier),
 }
 
 //typedef (AssignmentTargetIdentifier or MemberAssignmentTarget) SimpleAssignmentTarget;
 
-enum SimpleAssignmentTarget {
+pub enum SimpleAssignmentTarget {
     AssignmentTargetIdentifier(AssignmentTargetIdentifier),
     MemberAssignmentTarget(MemberAssignmentTarget),
 }
 
 // typedef (ObjectAssignmentTarget or ArrayAssignmentTarget) AssignmentTargetPattern;
 
-enum AssignmentTargetPattern {
+pub enum AssignmentTargetPattern {
     ArrayAssignmentTarget(ArrayAssignmentTarget),
     ObjectAssignmentTarget(ObjectAssignmentTarget),
 }
@@ -383,7 +388,7 @@ enum AssignmentTargetPattern {
 // `DestructuringAssignmentTarget`
 // typedef (AssignmentTargetPattern or SimpleAssignmentTarget) AssignmentTarget;
 
-enum AssignmentTarget {
+pub enum AssignmentTarget {
     AssignmentTargetPattern(AssignmentTargetPattern),
     SimpleAssignmentTarget(SimpleAssignmentTarget),
 }
@@ -391,7 +396,7 @@ enum AssignmentTarget {
 // `FormalParameter`
 // typedef (Binding or BindingWithDefault) Parameter;
 
-enum Parameter {
+pub enum Parameter {
     Binding(Binding),
     BindingWithDefault(BindingWithDefault),
 }
@@ -401,38 +406,42 @@ enum Parameter {
 //   attribute Expression init;
 // };
 
-struct BindingWithDefault {
-    binding: Binding,
-    init: Box<Expression>,
+pub struct BindingWithDefault {
+    pub binding: Binding,
+    pub init: Box<Expression>,
 }
 
 impl BindingWithDefault {
-    fn new(binding: Binding, init: Box<Expression>) -> Self {
+    pub fn new(binding: Binding, init: Box<Expression>) -> Self {
         Self { binding, init }
     }
 }
 
 // interface BindingIdentifier : VariableReference { };
 
-struct BindingIdentifier {}
+pub struct BindingIdentifier {
+    pub name: Identifier,
+}
 
 impl BindingIdentifier {
-    fn new() -> Self {
-        Self {}
+    pub fn new(name: Identifier) -> Self {
+        Self { name }
     }
 }
 
 // interface AssignmentTargetIdentifier : VariableReference { };
 
-struct AssignmentTargetIdentifier {}
+pub struct AssignmentTargetIdentifier {
+    pub name: Identifier,
+}
 
 impl AssignmentTargetIdentifier {
-    fn new() -> Self {
-        Self {}
+    pub fn new(name: Identifier) -> Self {
+        Self { name }
     }
 }
 
-enum ExpressionOrSuper {
+pub enum ExpressionOrSuper {
     Expression(Box<Expression>),
     Super(Super),
 }
@@ -442,9 +451,9 @@ enum ExpressionOrSuper {
 //   attribute (Expression or Super) _object;
 // };
 
-enum MemberAssignmentTarget {
-    ComputedMemberAssignmentTarget(ComputedMemberAssignmentTarget, ExpressionOrSuper),
-    StaticMemberAssignmentTarget(StaticMemberAssignmentTarget, ExpressionOrSuper),
+pub enum MemberAssignmentTarget {
+    ComputedMemberAssignmentTarget(ComputedMemberAssignmentTarget),
+    StaticMemberAssignmentTarget(StaticMemberAssignmentTarget),
 }
 
 // interface ComputedMemberAssignmentTarget : MemberAssignmentTarget {
@@ -452,13 +461,14 @@ enum MemberAssignmentTarget {
 //   attribute Expression expression;
 // };
 
-struct ComputedMemberAssignmentTarget {
-    expression: Box<Expression>,
+pub struct ComputedMemberAssignmentTarget {
+    pub object: ExpressionOrSuper,
+    pub expression: Box<Expression>,
 }
 
 impl ComputedMemberAssignmentTarget {
-    fn new(expression: Box<Expression>) -> Self {
-        Self { expression }
+    pub fn new(object: ExpressionOrSuper, expression: Box<Expression>) -> Self {
+        Self { object, expression }
     }
 }
 
@@ -467,13 +477,14 @@ impl ComputedMemberAssignmentTarget {
 //   attribute IdentifierName property;
 // };
 
-struct StaticMemberAssignmentTarget {
-    property: IdentifierName,
+pub struct StaticMemberAssignmentTarget {
+    pub object: ExpressionOrSuper,
+    pub property: IdentifierName,
 }
 
 impl StaticMemberAssignmentTarget {
-    fn new(property: IdentifierName) -> Self {
-        Self { property }
+    pub fn new(object: ExpressionOrSuper, property: IdentifierName) -> Self {
+        Self { object, property }
     }
 }
 
@@ -484,13 +495,13 @@ impl StaticMemberAssignmentTarget {
 //   attribute Binding? rest;
 // };
 
-struct ArrayBinding {
-    elements: Vec<Option<Parameter>>,
-    rest: Option<Box<Binding>>,
+pub struct ArrayBinding {
+    pub elements: Vec<Option<Parameter>>,
+    pub rest: Option<Box<Binding>>,
 }
 
 impl ArrayBinding {
-    fn new(elements: Vec<Option<Parameter>>, rest: Option<Box<Binding>>) -> Self {
+    pub fn new(elements: Vec<Option<Parameter>>, rest: Option<Box<Binding>>) -> Self {
         Self { elements, rest }
     }
 }
@@ -499,19 +510,19 @@ impl ArrayBinding {
 //  attribute BindingProperty[] properties;
 //};
 
-struct ObjectBinding {
-    properties: Vec<BindingProperty>,
+pub struct ObjectBinding {
+    pub properties: Vec<BindingProperty>,
 }
 
 impl ObjectBinding {
-    fn new(properties: Vec<BindingProperty>) -> Self {
+    pub fn new(properties: Vec<BindingProperty>) -> Self {
         Self { properties }
     }
 }
 
 // interface BindingProperty : Node { };
 
-enum BindingProperty {
+pub enum BindingProperty {
     BindingPropertyIdentifier(BindingPropertyIdentifier),
     BindingPropertyProperty(BindingPropertyProperty),
 }
@@ -522,13 +533,13 @@ enum BindingProperty {
 //   attribute Expression? init;
 // };
 
-struct BindingPropertyIdentifier {
-    binding: BindingIdentifier,
-    init: Option<Box<Expression>>,
+pub struct BindingPropertyIdentifier {
+    pub binding: BindingIdentifier,
+    pub init: Option<Box<Expression>>,
 }
 
 impl BindingPropertyIdentifier {
-    fn new(binding: BindingIdentifier, init: Option<Box<Expression>>) -> Self {
+    pub fn new(binding: BindingIdentifier, init: Option<Box<Expression>>) -> Self {
         Self { binding, init }
     }
 }
@@ -539,13 +550,13 @@ impl BindingPropertyIdentifier {
 //   attribute (Binding or BindingWithDefault) binding;
 // };
 
-struct BindingPropertyProperty {
-    name: PropertyName,
-    binding: Parameter,
+pub struct BindingPropertyProperty {
+    pub name: PropertyName,
+    pub binding: Parameter,
 }
 
 impl BindingPropertyProperty {
-    fn new(name: PropertyName, binding: Parameter) -> Self {
+    pub fn new(name: PropertyName, binding: Parameter) -> Self {
         Self { name, binding }
     }
 }
@@ -556,13 +567,13 @@ impl BindingPropertyProperty {
 //   attribute Expression init;
 // };
 
-struct AssignmentTargetWithDefault {
-    binding: AssignmentTarget,
-    init: Box<Expression>,
+pub struct AssignmentTargetWithDefault {
+    pub binding: AssignmentTarget,
+    pub init: Box<Expression>,
 }
 
 impl AssignmentTargetWithDefault {
-    fn new(binding: AssignmentTarget, init: Box<Expression>) -> Self {
+    pub fn new(binding: AssignmentTarget, init: Box<Expression>) -> Self {
         Self { binding, init }
     }
 }
@@ -574,18 +585,18 @@ impl AssignmentTargetWithDefault {
 //   attribute AssignmentTarget? rest;
 // };
 
-enum AssignmentTargetMaybeDefault {
+pub enum AssignmentTargetMaybeDefault {
     AssignmentTarget(AssignmentTarget),
     AssignmentTargetWithDefault(AssignmentTargetWithDefault),
 }
 
-struct ArrayAssignmentTarget {
-    elements: Vec<Option<AssignmentTargetMaybeDefault>>,
-    rest: Option<Box<AssignmentTarget>>,
+pub struct ArrayAssignmentTarget {
+    pub elements: Vec<Option<AssignmentTargetMaybeDefault>>,
+    pub rest: Option<Box<AssignmentTarget>>,
 }
 
 impl ArrayAssignmentTarget {
-    fn new(
+    pub fn new(
         elements: Vec<Option<AssignmentTargetMaybeDefault>>,
         rest: Option<Box<AssignmentTarget>>,
     ) -> Self {
@@ -598,12 +609,12 @@ impl ArrayAssignmentTarget {
 //   attribute AssignmentTargetProperty[] properties;
 // };
 
-struct ObjectAssignmentTarget {
-    properties: Vec<AssignmentTargetProperty>,
+pub struct ObjectAssignmentTarget {
+    pub properties: Vec<AssignmentTargetProperty>,
 }
 
 impl ObjectAssignmentTarget {
-    fn new(properties: Vec<AssignmentTargetProperty>) -> Self {
+    pub fn new(properties: Vec<AssignmentTargetProperty>) -> Self {
         Self { properties }
     }
 }
@@ -611,7 +622,7 @@ impl ObjectAssignmentTarget {
 // `AssignmentProperty`
 // interface AssignmentTargetProperty : Node { };
 
-enum AssignmentTargetProperty {
+pub enum AssignmentTargetProperty {
     AssignmentTargetPropertyIdentifier(AssignmentTargetPropertyIdentifier),
     AssignmentTargetPropertyProperty(AssignmentTargetPropertyProperty),
 }
@@ -622,13 +633,13 @@ enum AssignmentTargetProperty {
 //   attribute Expression? init;
 // };
 
-struct AssignmentTargetPropertyIdentifier {
-    binding: AssignmentTargetIdentifier,
-    init: Option<Box<Expression>>,
+pub struct AssignmentTargetPropertyIdentifier {
+    pub binding: AssignmentTargetIdentifier,
+    pub init: Option<Box<Expression>>,
 }
 
 impl AssignmentTargetPropertyIdentifier {
-    fn new(binding: AssignmentTargetIdentifier, init: Option<Box<Expression>>) -> Self {
+    pub fn new(binding: AssignmentTargetIdentifier, init: Option<Box<Expression>>) -> Self {
         Self { binding, init }
     }
 }
@@ -639,13 +650,13 @@ impl AssignmentTargetPropertyIdentifier {
 //   attribute (AssignmentTarget or AssignmentTargetWithDefault) binding;
 // };
 
-struct AssignmentTargetPropertyProperty {
-    name: PropertyName,
-    binding: AssignmentTargetMaybeDefault,
+pub struct AssignmentTargetPropertyProperty {
+    pub name: PropertyName,
+    pub binding: AssignmentTargetMaybeDefault,
 }
 
 impl AssignmentTargetPropertyProperty {
-    fn new(name: PropertyName, binding: AssignmentTargetMaybeDefault) -> Self {
+    pub fn new(name: PropertyName, binding: AssignmentTargetMaybeDefault) -> Self {
         Self { name, binding }
     }
 }
@@ -667,14 +678,14 @@ impl AssignmentTargetPropertyProperty {
 // };
 // ClassExpression implements Class;
 
-struct ClassExpression {
-    name: Option<BindingIdentifier>,
-    super_: Option<Box<Expression>>,
-    elements: Vec<ClassElement>,
+pub struct ClassExpression {
+    pub name: Option<BindingIdentifier>,
+    pub super_: Option<Box<Expression>>,
+    pub elements: Vec<ClassElement>,
 }
 
 impl ClassExpression {
-    fn new(
+    pub fn new(
         name: Option<BindingIdentifier>,
         super_: Option<Box<Expression>>,
         elements: Vec<ClassElement>,
@@ -692,14 +703,14 @@ impl ClassExpression {
 // };
 // ClassDeclaration implements Class;
 
-struct ClassDeclaration {
-    name: BindingIdentifier,
-    super_: Option<Box<Expression>>,
-    elements: Vec<ClassElement>,
+pub struct ClassDeclaration {
+    pub name: BindingIdentifier,
+    pub super_: Option<Box<Expression>>,
+    pub elements: Vec<ClassElement>,
 }
 
 impl ClassDeclaration {
-    fn new(
+    pub fn new(
         name: BindingIdentifier,
         super_: Option<Box<Expression>>,
         elements: Vec<ClassElement>,
@@ -718,14 +729,19 @@ impl ClassDeclaration {
 //   attribute MethodDefinition method;
 // };
 
-struct ClassElement {
-    isStatic: bool,
-    method: MethodDefinition,
+pub struct ClassElement {
+    pub property_name: PropertyName,
+    pub is_static: bool,
+    pub method: MethodDefinition,
 }
 
 impl ClassElement {
-    fn new(isStatic: bool, method: MethodDefinition) -> Self {
-        Self { isStatic, method }
+    pub fn new(property_name: PropertyName, is_static: bool, method: MethodDefinition) -> Self {
+        Self {
+            property_name,
+            is_static,
+            method,
+        }
     }
 }
 
@@ -736,19 +752,19 @@ impl ClassElement {
 //   attribute (ImportDeclaration or ExportDeclaration or Statement)[] items;
 // };
 
-enum ModuleItems {
+pub enum ModuleItems {
     ImportDeclaration(ImportDeclaration),
     ExportDeclaration(ExportDeclaration),
     Statement(Box<Statement>),
 }
 
-struct Module {
-    directives: Vec<Directive>,
-    items: Vec<ModuleItems>,
+pub struct Module {
+    pub directives: Vec<Directive>,
+    pub items: Vec<ModuleItems>,
 }
 
 impl Module {
-    fn new(directives: Vec<Directive>, items: Vec<ModuleItems>) -> Self {
+    pub fn new(directives: Vec<Directive>, items: Vec<ModuleItems>) -> Self {
         Self { directives, items }
     }
 }
@@ -760,16 +776,22 @@ impl Module {
 //   attribute ImportSpecifier[] namedImports;
 // };
 
-struct Import {
-    defaultBinding: Option<BindingIdentifier>,
-    namedImports: Vec<ImportSpecifier>,
+pub struct Import {
+    pub module_specifier: String,
+    pub default_binding: Option<BindingIdentifier>,
+    pub named_imports: Vec<ImportSpecifier>,
 }
 
 impl Import {
-    fn new(defaultBinding: Option<BindingIdentifier>, namedImports: Vec<ImportSpecifier>) -> Self {
+    pub fn new(
+        module_specifier: String,
+        default_binding: Option<BindingIdentifier>,
+        named_imports: Vec<ImportSpecifier>,
+    ) -> Self {
         Self {
-            defaultBinding,
-            namedImports,
+            module_specifier,
+            default_binding,
+            named_imports,
         }
     }
 }
@@ -781,16 +803,22 @@ impl Import {
 //   attribute BindingIdentifier namespaceBinding;
 // };
 
-struct ImportNamespace {
-    defaultBinding: Option<BindingIdentifier>,
-    namespaceBinding: BindingIdentifier,
+pub struct ImportNamespace {
+    pub module_specifier: String,
+    pub default_binding: Option<BindingIdentifier>,
+    pub namespace_binding: BindingIdentifier,
 }
 
 impl ImportNamespace {
-    fn new(defaultBinding: Option<BindingIdentifier>, namespaceBinding: BindingIdentifier) -> Self {
+    pub fn new(
+        module_specifier: String,
+        default_binding: Option<BindingIdentifier>,
+        namespace_binding: BindingIdentifier,
+    ) -> Self {
         Self {
-            defaultBinding,
-            namespaceBinding,
+            module_specifier,
+            default_binding,
+            namespace_binding,
         }
     }
 }
@@ -801,13 +829,13 @@ impl ImportNamespace {
 //   attribute BindingIdentifier binding;
 // };
 
-struct ImportSpecifier {
-    name: Option<IdentifierName>,
-    binding: BindingIdentifier,
+pub struct ImportSpecifier {
+    pub name: Option<IdentifierName>,
+    pub binding: BindingIdentifier,
 }
 
 impl ImportSpecifier {
-    fn new(name: Option<IdentifierName>, binding: BindingIdentifier) -> Self {
+    pub fn new(name: Option<IdentifierName>, binding: BindingIdentifier) -> Self {
         Self { name, binding }
     }
 }
@@ -817,13 +845,13 @@ impl ImportSpecifier {
 //   attribute string moduleSpecifier;
 // };
 
-struct ExportAllFrom {
-    moduleSpecifier: String,
+pub struct ExportAllFrom {
+    pub module_specifier: String,
 }
 
 impl ExportAllFrom {
-    fn new(moduleSpecifier: String) -> Self {
-        Self { moduleSpecifier }
+    pub fn new(module_specifier: String) -> Self {
+        Self { module_specifier }
     }
 }
 
@@ -833,16 +861,16 @@ impl ExportAllFrom {
 //   attribute string moduleSpecifier;
 // };
 
-struct ExportFrom {
-    namedExports: Vec<ExportFromSpecifier>,
-    moduleSpecifier: String,
+pub struct ExportFrom {
+    pub named_exports: Vec<ExportFromSpecifier>,
+    pub module_specifier: String,
 }
 
 impl ExportFrom {
-    fn new(namedExports: Vec<ExportFromSpecifier>, moduleSpecifier: String) -> Self {
+    pub fn new(named_exports: Vec<ExportFromSpecifier>, module_specifier: String) -> Self {
         Self {
-            namedExports,
-            moduleSpecifier,
+            named_exports,
+            module_specifier,
         }
     }
 }
@@ -852,13 +880,13 @@ impl ExportFrom {
 //   attribute ExportLocalSpecifier[] namedExports;
 // };
 
-struct ExportLocals {
-    namedExports: Vec<ExportLocalSpecifier>,
+pub struct ExportLocals {
+    pub named_exports: Vec<ExportLocalSpecifier>,
 }
 
 impl ExportLocals {
-    fn new(namedExports: Vec<ExportLocalSpecifier>) -> Self {
-        Self { namedExports }
+    pub fn new(named_exports: Vec<ExportLocalSpecifier>) -> Self {
+        Self { named_exports }
     }
 }
 
@@ -867,7 +895,7 @@ impl ExportLocals {
 //   attribute (FunctionDeclaration or ClassDeclaration or VariableDeclaration) declaration;
 // };
 
-enum Export {
+pub enum Export {
     FunctionDeclaration(FunctionDeclaration),
     ClassDeclaration(ClassDeclaration),
     VariableDeclaration(VariableDeclaration),
@@ -878,7 +906,7 @@ enum Export {
 //   attribute (FunctionDeclaration or ClassDeclaration or Expression) body;
 // };
 
-enum ExportDefault {
+pub enum ExportDefault {
     FunctionDeclaration(FunctionDeclaration),
     ClassDeclaration(ClassDeclaration),
     Expression(Box<Expression>),
@@ -892,14 +920,17 @@ enum ExportDefault {
 //   attribute IdentifierName? exportedName;
 // };
 
-struct ExportFromSpecifier {
-    name: IdentifierName,
-    exportedName: Option<IdentifierName>,
+pub struct ExportFromSpecifier {
+    pub name: IdentifierName,
+    pub exported_name: Option<IdentifierName>,
 }
 
 impl ExportFromSpecifier {
-    fn new(name: IdentifierName, exportedName: Option<IdentifierName>) -> Self {
-        Self { name, exportedName }
+    pub fn new(name: IdentifierName, exported_name: Option<IdentifierName>) -> Self {
+        Self {
+            name,
+            exported_name,
+        }
     }
 }
 
@@ -911,14 +942,17 @@ impl ExportFromSpecifier {
 //   attribute IdentifierName? exportedName;
 // };
 
-struct ExportLocalSpecifier {
-    name: IdentifierExpression,
-    exportedName: Option<IdentifierName>,
+pub struct ExportLocalSpecifier {
+    pub name: IdentifierExpression,
+    pub exported_name: Option<IdentifierName>,
 }
 
 impl ExportLocalSpecifier {
-    fn new(name: IdentifierExpression, exportedName: Option<IdentifierName>) -> Self {
-        Self { name, exportedName }
+    pub fn new(name: IdentifierExpression, exported_name: Option<IdentifierName>) -> Self {
+        Self {
+            name,
+            exported_name,
+        }
     }
 }
 
@@ -934,17 +968,17 @@ impl ExportLocalSpecifier {
 //   attribute FormalParameters params;
 // };
 
-struct Method {
-    isAsync: bool,
-    isGenerator: bool,
-    params: FormalParameters,
+pub struct Method {
+    pub is_async: bool,
+    pub is_generator: bool,
+    pub params: FormalParameters,
 }
 
 impl Method {
-    fn new(isAsync: bool, isGenerator: bool, params: FormalParameters) -> Self {
+    pub fn new(is_async: bool, is_generator: bool, params: FormalParameters) -> Self {
         Self {
-            isAsync,
-            isGenerator,
+            is_async,
+            is_generator,
             params,
         }
     }
@@ -953,11 +987,13 @@ impl Method {
 // `get PropertyName ( ) { FunctionBody }`
 // interface Getter : MethodDefinition { };
 
-struct Getter {}
+pub struct Getter {
+    pub property_name: PropertyName,
+}
 
 impl Getter {
-    fn new() -> Self {
-        Self {}
+    pub fn new(property_name: PropertyName) -> Self {
+        Self { property_name }
     }
 }
 
@@ -967,13 +1003,17 @@ impl Getter {
 //   attribute Parameter param;
 // };
 
-struct Setter {
-    param: Parameter,
+pub struct Setter {
+    pub property_name: PropertyName,
+    pub param: Parameter,
 }
 
 impl Setter {
-    fn new(param: Parameter) -> Self {
-        Self { param }
+    pub fn new(property_name: PropertyName, param: Parameter) -> Self {
+        Self {
+            property_name,
+            param,
+        }
     }
 }
 
@@ -983,13 +1023,17 @@ impl Setter {
 //   attribute Expression expression;
 // };
 
-struct DataProperty {
-    expression: Box<Expression>,
+pub struct DataProperty {
+    pub property_name: PropertyName,
+    pub expression: Box<Expression>,
 }
 
 impl DataProperty {
-    fn new(expression: Box<Expression>) -> Self {
-        Self { expression }
+    pub fn new(property_name: PropertyName, expression: Box<Expression>) -> Self {
+        Self {
+            property_name,
+            expression,
+        }
     }
 }
 
@@ -999,12 +1043,12 @@ impl DataProperty {
 //   attribute IdentifierExpression name;
 // };
 
-struct ShorthandProperty {
-    name: IdentifierExpression,
+pub struct ShorthandProperty {
+    pub name: IdentifierExpression,
 }
 
 impl ShorthandProperty {
-    fn new(name: IdentifierExpression) -> Self {
+    pub fn new(name: IdentifierExpression) -> Self {
         Self { name }
     }
 }
@@ -1013,12 +1057,12 @@ impl ShorthandProperty {
 //   attribute Expression expression;
 // };
 
-struct ComputedPropertyName {
-    expression: Box<Expression>,
+pub struct ComputedPropertyName {
+    pub expression: Box<Expression>,
 }
 
 impl ComputedPropertyName {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -1028,12 +1072,12 @@ impl ComputedPropertyName {
 //   attribute string value;
 // };
 
-struct StaticPropertyName {
-    value: String,
+pub struct StaticPropertyName {
+    pub value: String,
 }
 
 impl StaticPropertyName {
-    fn new(value: String) -> Self {
+    pub fn new(value: String) -> Self {
         Self { value }
     }
 }
@@ -1045,12 +1089,12 @@ impl StaticPropertyName {
 //   attribute boolean value;
 // };
 
-struct LiteralBooleanExpression {
-    value: bool,
+pub struct LiteralBooleanExpression {
+    pub value: bool,
 }
 
 impl LiteralBooleanExpression {
-    fn new(value: bool) -> Self {
+    pub fn new(value: bool) -> Self {
         Self { value }
     }
 }
@@ -1058,10 +1102,11 @@ impl LiteralBooleanExpression {
 // A `NumericLiteral` for which the Number value of its MV is positive infinity.
 // interface LiteralInfinityExpression : Expression { };
 
-struct LiteralInfinityExpression {}
+#[derive(Default)]
+pub struct LiteralInfinityExpression {}
 
 impl LiteralInfinityExpression {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1069,10 +1114,11 @@ impl LiteralInfinityExpression {
 // `NullLiteral`
 // interface LiteralNullExpression : Expression { };
 
-struct LiteralNullExpression {}
+#[derive(Default)]
+pub struct LiteralNullExpression {}
 
 impl LiteralNullExpression {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1082,12 +1128,12 @@ impl LiteralNullExpression {
 //   attribute double value;
 // };
 
-struct LiteralNumericExpression {
-    value: f64,
+pub struct LiteralNumericExpression {
+    pub value: f64,
 }
 
 impl LiteralNumericExpression {
-    fn new(value: f64) -> Self {
+    pub fn new(value: f64) -> Self {
         Self { value }
     }
 }
@@ -1107,29 +1153,29 @@ impl LiteralNumericExpression {
 //   attribute boolean unicode;
 // };
 
-struct LiteralRegExpExpression {
-    pattern: String,
-    global: bool,
-    ignoreCase: bool,
-    multiLine: bool,
-    sticky: bool,
-    unicode: bool,
+pub struct LiteralRegExpExpression {
+    pub pattern: String,
+    pub global: bool,
+    pub ignore_case: bool,
+    pub multi_line: bool,
+    pub sticky: bool,
+    pub unicode: bool,
 }
 
 impl LiteralRegExpExpression {
-    fn new(
+    pub fn new(
         pattern: String,
         global: bool,
-        ignoreCase: bool,
-        multiLine: bool,
+        ignore_case: bool,
+        multi_line: bool,
         sticky: bool,
         unicode: bool,
     ) -> Self {
         Self {
             pattern,
             global,
-            ignoreCase,
-            multiLine,
+            ignore_case,
+            multi_line,
             sticky,
             unicode,
         }
@@ -1141,12 +1187,12 @@ impl LiteralRegExpExpression {
 //   attribute string value;
 // };
 
-struct LiteralStringExpression {
-    value: String,
+pub struct LiteralStringExpression {
+    pub value: String,
 }
 
 impl LiteralStringExpression {
-    fn new(value: String) -> Self {
+    pub fn new(value: String) -> Self {
         Self { value }
     }
 }
@@ -1159,18 +1205,18 @@ impl LiteralStringExpression {
 //   attribute (SpreadElement or Expression)?[] elements;
 // };
 
-enum ArrayExpressionElement {
+pub enum ArrayExpressionElement {
     SpreadElement(SpreadElement),
     Expression(Box<Expression>),
     Elision,
 }
 
-struct ArrayExpression {
-    elements: Vec<ArrayExpressionElement>,
+pub struct ArrayExpression {
+    pub elements: Vec<ArrayExpressionElement>,
 }
 
 impl ArrayExpression {
-    fn new(elements: Vec<ArrayExpressionElement>) -> Self {
+    pub fn new(elements: Vec<ArrayExpressionElement>) -> Self {
         Self { elements }
     }
 }
@@ -1183,21 +1229,21 @@ impl ArrayExpression {
 //   attribute (FunctionBody or Expression) body;
 // };
 
-enum ArrowExpressionBody {
+pub enum ArrowExpressionBody {
     FunctionBody(FunctionBody),
     Expression(Box<Expression>),
 }
 
-struct ArrowExpression {
-    isAsync: bool,
-    params: FormalParameters,
-    body: ArrowExpressionBody,
+pub struct ArrowExpression {
+    pub is_async: bool,
+    pub params: FormalParameters,
+    pub body: ArrowExpressionBody,
 }
 
 impl ArrowExpression {
-    fn new(isAsync: bool, params: FormalParameters, body: ArrowExpressionBody) -> Self {
+    pub fn new(is_async: bool, params: FormalParameters, body: ArrowExpressionBody) -> Self {
         Self {
-            isAsync,
+            is_async,
             params,
             body,
         }
@@ -1212,13 +1258,13 @@ impl ArrowExpression {
 //   attribute Expression expression;
 // };
 
-struct AssignmentExpression {
-    binding: AssignmentTarget,
-    expression: Box<Expression>,
+pub struct AssignmentExpression {
+    pub binding: AssignmentTarget,
+    pub expression: Box<Expression>,
 }
 
 impl AssignmentExpression {
-    fn new(binding: AssignmentTarget, expression: Box<Expression>) -> Self {
+    pub fn new(binding: AssignmentTarget, expression: Box<Expression>) -> Self {
         Self {
             binding,
             expression,
@@ -1235,14 +1281,14 @@ impl AssignmentExpression {
 //   attribute Expression right;
 // };
 
-struct BinaryExpression {
-    operator: BinaryOperator,
-    left: Box<Expression>,
-    right: Box<Expression>,
+pub struct BinaryExpression {
+    pub operator: BinaryOperator,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
 }
 
 impl BinaryExpression {
-    fn new(operator: BinaryOperator, left: Box<Expression>, right: Box<Expression>) -> Self {
+    pub fn new(operator: BinaryOperator, left: Box<Expression>, right: Box<Expression>) -> Self {
         Self {
             operator,
             left,
@@ -1256,13 +1302,13 @@ impl BinaryExpression {
 //   attribute Arguments arguments;
 // };
 
-struct CallExpression {
-    callee: ExpressionOrSuper,
-    arguments: Arguments,
+pub struct CallExpression {
+    pub callee: ExpressionOrSuper,
+    pub arguments: Arguments,
 }
 
 impl CallExpression {
-    fn new(callee: ExpressionOrSuper, arguments: Arguments) -> Self {
+    pub fn new(callee: ExpressionOrSuper, arguments: Arguments) -> Self {
         Self { callee, arguments }
     }
 }
@@ -1276,14 +1322,14 @@ impl CallExpression {
 //   attribute Expression expression;
 // };
 
-struct CompoundAssignmentExpression {
-    operator: CompoundAssignmentOperator,
-    binding: SimpleAssignmentTarget,
-    expression: Box<Expression>,
+pub struct CompoundAssignmentExpression {
+    pub operator: CompoundAssignmentOperator,
+    pub binding: SimpleAssignmentTarget,
+    pub expression: Box<Expression>,
 }
 
 impl CompoundAssignmentExpression {
-    fn new(
+    pub fn new(
         operator: CompoundAssignmentOperator,
         binding: SimpleAssignmentTarget,
         expression: Box<Expression>,
@@ -1301,13 +1347,14 @@ impl CompoundAssignmentExpression {
 //   attribute Expression expression;
 // };
 
-struct ComputedMemberExpression {
-    expression: Box<Expression>,
+pub struct ComputedMemberExpression {
+    pub object: ExpressionOrSuper,
+    pub expression: Box<Expression>,
 }
 
 impl ComputedMemberExpression {
-    fn new(expression: Box<Expression>) -> Self {
-        Self { expression }
+    pub fn new(object: ExpressionOrSuper, expression: Box<Expression>) -> Self {
+        Self { object, expression }
     }
 }
 
@@ -1321,14 +1368,18 @@ impl ComputedMemberExpression {
 //   attribute Expression alternate;
 // };
 
-struct ConditionalExpression {
-    test: Box<Expression>,
-    consequent: Box<Expression>,
-    alternate: Box<Expression>,
+pub struct ConditionalExpression {
+    pub test: Box<Expression>,
+    pub consequent: Box<Expression>,
+    pub alternate: Box<Expression>,
 }
 
 impl ConditionalExpression {
-    fn new(test: Box<Expression>, consequent: Box<Expression>, alternate: Box<Expression>) -> Self {
+    pub fn new(
+        test: Box<Expression>,
+        consequent: Box<Expression>,
+        alternate: Box<Expression>,
+    ) -> Self {
         Self {
             test,
             consequent,
@@ -1342,28 +1393,28 @@ impl ConditionalExpression {
 // };
 // FunctionExpression implements Function;
 
-struct FunctionExpression {
-    name: Option<BindingIdentifier>,
+pub struct FunctionExpression {
+    pub name: Option<BindingIdentifier>,
     // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
-    isAsync: bool,
+    pub is_async: bool,
     // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
-    isGenerator: bool,
-    params: FormalParameters,
-    body: FunctionBody,
+    pub is_generator: bool,
+    pub params: FormalParameters,
+    pub body: FunctionBody,
 }
 
 impl FunctionExpression {
-    fn new(
+    pub fn new(
         name: Option<BindingIdentifier>,
-        isAsync: bool,
-        isGenerator: bool,
+        is_async: bool,
+        is_generator: bool,
         params: FormalParameters,
         body: FunctionBody,
     ) -> Self {
         Self {
             name,
-            isAsync,
-            isGenerator,
+            is_async,
+            is_generator,
             params,
             body,
         }
@@ -1374,13 +1425,12 @@ impl FunctionExpression {
 // interface IdentifierExpression : Expression { };
 // IdentifierExpression implements VariableReference;
 
-// TODO
-struct IdentifierExpression {
-    var: VariableReference,
+pub struct IdentifierExpression {
+    pub var: VariableReference,
 }
 
 impl IdentifierExpression {
-    fn new(var: VariableReference) -> Self {
+    pub fn new(var: VariableReference) -> Self {
         Self { var }
     }
 }
@@ -1390,23 +1440,24 @@ impl IdentifierExpression {
 //   attribute Arguments arguments;
 // };
 
-struct NewExpression {
-    callee: Box<Expression>,
-    arguments: Arguments,
+pub struct NewExpression {
+    pub callee: Box<Expression>,
+    pub arguments: Arguments,
 }
 
 impl NewExpression {
-    fn new(callee: Box<Expression>, arguments: Arguments) -> Self {
+    pub fn new(callee: Box<Expression>, arguments: Arguments) -> Self {
         Self { callee, arguments }
     }
 }
 
 // interface NewTargetExpression : Expression { };
 
-struct NewTargetExpression {}
+#[derive(Default)]
+pub struct NewTargetExpression {}
 
 impl NewTargetExpression {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1415,12 +1466,12 @@ impl NewTargetExpression {
 //   attribute ObjectProperty[] properties;
 // };
 
-struct ObjectExpression {
-    properties: Vec<ObjectProperty>,
+pub struct ObjectExpression {
+    pub properties: Vec<ObjectProperty>,
 }
 
 impl ObjectExpression {
-    fn new(properties: Vec<ObjectProperty>) -> Self {
+    pub fn new(properties: Vec<ObjectProperty>) -> Self {
         Self { properties }
     }
 }
@@ -1430,13 +1481,13 @@ impl ObjectExpression {
 //   attribute Expression operand;
 // };
 
-struct UnaryExpression {
-    operator: UnaryOperator,
-    operand: Box<Expression>,
+pub struct UnaryExpression {
+    pub operator: UnaryOperator,
+    pub operand: Box<Expression>,
 }
 
 impl UnaryExpression {
-    fn new(operator: UnaryOperator, operand: Box<Expression>) -> Self {
+    pub fn new(operator: UnaryOperator, operand: Box<Expression>) -> Self {
         Self { operator, operand }
     }
 }
@@ -1446,13 +1497,14 @@ impl UnaryExpression {
 //   attribute IdentifierName property;
 // };
 
-struct StaticMemberExpression {
-    property: IdentifierName,
+pub struct StaticMemberExpression {
+    pub object: ExpressionOrSuper,
+    pub property: IdentifierName,
 }
 
 impl StaticMemberExpression {
-    fn new(property: IdentifierName) -> Self {
-        Self { property }
+    pub fn new(object: ExpressionOrSuper, property: IdentifierName) -> Self {
+        Self { object, property }
     }
 }
 
@@ -1464,18 +1516,18 @@ impl StaticMemberExpression {
 //   attribute (Expression or TemplateElement)[] elements;
 // };
 
-enum TemplateExpressionElement {
+pub enum TemplateExpressionElement {
     Expression(Box<Expression>),
     TemplateElement(TemplateElement),
 }
 
-struct TemplateExpression {
-    tag: Option<Box<Expression>>,
-    elements: Vec<TemplateExpressionElement>,
+pub struct TemplateExpression {
+    pub tag: Option<Box<Expression>>,
+    pub elements: Vec<TemplateExpressionElement>,
 }
 
 impl TemplateExpression {
-    fn new(tag: Option<Box<Expression>>, elements: Vec<TemplateExpressionElement>) -> Self {
+    pub fn new(tag: Option<Box<Expression>>, elements: Vec<TemplateExpressionElement>) -> Self {
         Self { tag, elements }
     }
 }
@@ -1483,10 +1535,11 @@ impl TemplateExpression {
 // `PrimaryExpression :: this`
 // interface ThisExpression : Expression { };
 
-struct ThisExpression {}
+#[derive(Default)]
+pub struct ThisExpression {}
 
 impl ThisExpression {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1499,16 +1552,16 @@ impl ThisExpression {
 //   attribute SimpleAssignmentTarget operand;
 // };
 
-struct UpdateExpression {
-    isPrefix: bool,
-    operator: UpdateOperator,
-    operand: SimpleAssignmentTarget,
+pub struct UpdateExpression {
+    pub is_prefix: bool,
+    pub operator: UpdateOperator,
+    pub operand: SimpleAssignmentTarget,
 }
 
 impl UpdateExpression {
-    fn new(isPrefix: bool, operator: UpdateOperator, operand: SimpleAssignmentTarget) -> Self {
+    pub fn new(is_prefix: bool, operator: UpdateOperator, operand: SimpleAssignmentTarget) -> Self {
         Self {
-            isPrefix,
+            is_prefix,
             operator,
             operand,
         }
@@ -1521,12 +1574,12 @@ impl UpdateExpression {
 //   attribute Expression? expression;
 // };
 
-struct YieldExpression {
-    expression: Option<Box<Expression>>,
+pub struct YieldExpression {
+    pub expression: Option<Box<Expression>>,
 }
 
 impl YieldExpression {
-    fn new(expression: Option<Box<Expression>>) -> Self {
+    pub fn new(expression: Option<Box<Expression>>) -> Self {
         Self { expression }
     }
 }
@@ -1536,12 +1589,12 @@ impl YieldExpression {
 //  attribute Expression expression;
 //};
 
-struct YieldGeneratorExpression {
-    expression: Box<Expression>,
+pub struct YieldGeneratorExpression {
+    pub expression: Box<Expression>,
 }
 
 impl YieldGeneratorExpression {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -1550,12 +1603,12 @@ impl YieldGeneratorExpression {
 //   attribute Expression expression;
 // };
 
-struct AwaitExpression {
-    expression: Box<Expression>,
+pub struct AwaitExpression {
+    pub expression: Box<Expression>,
 }
 
 impl AwaitExpression {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -1566,12 +1619,12 @@ impl AwaitExpression {
 //   attribute Block block;
 // };
 
-struct BlockStatement {
-    block: Block,
+pub struct BlockStatement {
+    pub block: Block,
 }
 
 impl BlockStatement {
-    fn new(block: Block) -> Self {
+    pub fn new(block: Block) -> Self {
         Self { block }
     }
 }
@@ -1580,12 +1633,12 @@ impl BlockStatement {
 //   attribute Label? label;
 // };
 
-struct BreakStatement {
-    label: Option<Label>,
+pub struct BreakStatement {
+    pub label: Option<Label>,
 }
 
 impl BreakStatement {
-    fn new(label: Option<Label>) -> Self {
+    pub fn new(label: Option<Label>) -> Self {
         Self { label }
     }
 }
@@ -1594,22 +1647,23 @@ impl BreakStatement {
 //   attribute Label? label;
 // };
 
-struct ContinueStatement {
-    label: Option<Label>,
+pub struct ContinueStatement {
+    pub label: Option<Label>,
 }
 
 impl ContinueStatement {
-    fn new(label: Option<Label>) -> Self {
+    pub fn new(label: Option<Label>) -> Self {
         Self { label }
     }
 }
 
 // interface DebuggerStatement : Statement { };
 
-struct DebuggerStatement {}
+#[derive(Default)]
+pub struct DebuggerStatement {}
 
 impl DebuggerStatement {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1618,22 +1672,24 @@ impl DebuggerStatement {
 //   attribute Expression test;
 // };
 
-struct DoWhileStatement {
-    test: Box<Expression>,
+pub struct DoWhileStatement {
+    pub block: Box<Statement>,
+    pub test: Box<Expression>,
 }
 
 impl DoWhileStatement {
-    fn new(test: Box<Expression>) -> Self {
-        Self { test }
+    pub fn new(block: Box<Statement>, test: Box<Expression>) -> Self {
+        Self { block, test }
     }
 }
 
 // interface EmptyStatement : Statement { };
 
-struct EmptyStatement {}
+#[derive(Default)]
+pub struct EmptyStatement {}
 
 impl EmptyStatement {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -1642,12 +1698,12 @@ impl EmptyStatement {
 //  attribute Expression expression;
 //};
 
-struct ExpressionStatement {
-    expression: Box<Expression>,
+pub struct ExpressionStatement {
+    pub expression: Box<Expression>,
 }
 
 impl ExpressionStatement {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -1660,19 +1716,24 @@ impl ExpressionStatement {
 //   attribute Expression right;
 // };
 
-enum VariableDeclarationOrAssignmentTarget {
+pub enum VariableDeclarationOrAssignmentTarget {
     VariableDeclaration(VariableDeclaration),
     AssignmentTarget(AssignmentTarget),
 }
 
-struct ForInStatement {
-    left: VariableDeclarationOrAssignmentTarget,
-    right: Box<Expression>,
+pub struct ForInStatement {
+    pub left: VariableDeclarationOrAssignmentTarget,
+    pub right: Box<Expression>,
+    pub block: Box<Statement>,
 }
 
 impl ForInStatement {
-    fn new(left: VariableDeclarationOrAssignmentTarget, right: Box<Expression>) -> Self {
-        Self { left, right }
+    pub fn new(
+        left: VariableDeclarationOrAssignmentTarget,
+        right: Box<Expression>,
+        block: Box<Statement>,
+    ) -> Self {
+        Self { left, right, block }
     }
 }
 
@@ -1684,14 +1745,19 @@ impl ForInStatement {
 //   attribute Expression right;
 // };
 
-struct ForOfStatement {
-    left: VariableDeclarationOrAssignmentTarget,
-    right: Box<Expression>,
+pub struct ForOfStatement {
+    pub left: VariableDeclarationOrAssignmentTarget,
+    pub right: Box<Expression>,
+    pub block: Box<Statement>,
 }
 
 impl ForOfStatement {
-    fn new(left: VariableDeclarationOrAssignmentTarget, right: Box<Expression>) -> Self {
-        Self { left, right }
+    pub fn new(
+        left: VariableDeclarationOrAssignmentTarget,
+        right: Box<Expression>,
+        block: Box<Statement>,
+    ) -> Self {
+        Self { left, right, block }
     }
 }
 
@@ -1705,24 +1771,31 @@ impl ForOfStatement {
 //   attribute Expression? update;
 // };
 
-enum VariableDeclarationOrExpression {
+pub enum VariableDeclarationOrExpression {
     VariableDeclaration(VariableDeclaration),
     Expression(Box<Expression>),
 }
 
-struct ForStatement {
-    init: Option<VariableDeclarationOrExpression>,
-    test: Option<Box<Expression>>,
-    update: Option<Box<Expression>>,
+pub struct ForStatement {
+    pub init: Option<VariableDeclarationOrExpression>,
+    pub test: Option<Box<Expression>>,
+    pub update: Option<Box<Expression>>,
+    pub block: Box<Statement>,
 }
 
 impl ForStatement {
-    fn new(
+    pub fn new(
         init: Option<VariableDeclarationOrExpression>,
         test: Option<Box<Expression>>,
         update: Option<Box<Expression>>,
+        block: Box<Statement>,
     ) -> Self {
-        Self { init, test, update }
+        Self {
+            init,
+            test,
+            update,
+            block,
+        }
     }
 }
 
@@ -1735,14 +1808,14 @@ impl ForStatement {
 //   attribute Statement? alternate;
 // };
 
-struct IfStatement {
-    test: Box<Expression>,
-    consequent: Box<Statement>,
-    alternate: Option<Box<Statement>>,
+pub struct IfStatement {
+    pub test: Box<Expression>,
+    pub consequent: Box<Statement>,
+    pub alternate: Option<Box<Statement>>,
 }
 
 impl IfStatement {
-    fn new(
+    pub fn new(
         test: Box<Expression>,
         consequent: Box<Statement>,
         alternate: Option<Box<Statement>>,
@@ -1760,13 +1833,13 @@ impl IfStatement {
 //   attribute Statement body;
 // };
 
-struct LabeledStatement {
-    label: Label,
-    body: Box<Statement>,
+pub struct LabeledStatement {
+    pub label: Label,
+    pub body: Box<Statement>,
 }
 
 impl LabeledStatement {
-    fn new(label: Label, body: Box<Statement>) -> Self {
+    pub fn new(label: Label, body: Box<Statement>) -> Self {
         Self { label, body }
     }
 }
@@ -1775,12 +1848,12 @@ impl LabeledStatement {
 //   attribute Expression? expression;
 // };
 
-struct ReturnStatement {
-    expression: Option<Box<Expression>>,
+pub struct ReturnStatement {
+    pub expression: Option<Box<Expression>>,
 }
 
 impl ReturnStatement {
-    fn new(expression: Option<Box<Expression>>) -> Self {
+    pub fn new(expression: Option<Box<Expression>>) -> Self {
         Self { expression }
     }
 }
@@ -1791,13 +1864,13 @@ impl ReturnStatement {
 //   attribute SwitchCase[] cases;
 // };
 
-struct SwitchStatement {
-    discriminant: Box<Expression>,
-    cases: Vec<SwitchCase>,
+pub struct SwitchStatement {
+    pub discriminant: Box<Expression>,
+    pub cases: Vec<SwitchCase>,
 }
 
 impl SwitchStatement {
-    fn new(discriminant: Box<Expression>, cases: Vec<SwitchCase>) -> Self {
+    pub fn new(discriminant: Box<Expression>, cases: Vec<SwitchCase>) -> Self {
         Self {
             discriminant,
             cases,
@@ -1816,25 +1889,25 @@ impl SwitchStatement {
 //   attribute SwitchCase[] postDefaultCases;
 // };
 
-struct SwitchStatementWithDefault {
-    discriminant: Box<Expression>,
-    preDefaultCases: Vec<SwitchCase>,
-    defaultCase: SwitchDefault,
-    postDefaultCases: Vec<SwitchCase>,
+pub struct SwitchStatementWithDefault {
+    pub discriminant: Box<Expression>,
+    pub pre_default_cases: Vec<SwitchCase>,
+    pub default_case: SwitchDefault,
+    pub post_default_cases: Vec<SwitchCase>,
 }
 
 impl SwitchStatementWithDefault {
-    fn new(
+    pub fn new(
         discriminant: Box<Expression>,
-        preDefaultCases: Vec<SwitchCase>,
-        defaultCase: SwitchDefault,
-        postDefaultCases: Vec<SwitchCase>,
+        pre_default_cases: Vec<SwitchCase>,
+        default_case: SwitchDefault,
+        post_default_cases: Vec<SwitchCase>,
     ) -> Self {
         Self {
             discriminant,
-            preDefaultCases,
-            defaultCase,
-            postDefaultCases,
+            pre_default_cases,
+            default_case,
+            post_default_cases,
         }
     }
 }
@@ -1843,12 +1916,12 @@ impl SwitchStatementWithDefault {
 //   attribute Expression expression;
 // };
 
-struct ThrowStatement {
-    expression: Box<Expression>,
+pub struct ThrowStatement {
+    pub expression: Box<Expression>,
 }
 
 impl ThrowStatement {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -1859,14 +1932,14 @@ impl ThrowStatement {
 //   attribute CatchClause catchClause;
 // };
 
-struct TryCatchStatement {
-    body: Block,
-    catchClause: CatchClause,
+pub struct TryCatchStatement {
+    pub body: Block,
+    pub catch_clause: CatchClause,
 }
 
 impl TryCatchStatement {
-    fn new(body: Block, catchClause: CatchClause) -> Self {
-        Self { body, catchClause }
+    pub fn new(body: Block, catch_clause: CatchClause) -> Self {
+        Self { body, catch_clause }
     }
 }
 
@@ -1880,17 +1953,17 @@ impl TryCatchStatement {
 //   attribute Block finalizer;
 // };
 
-struct TryFinallyStatement {
-    body: Block,
-    catchClause: Option<CatchClause>,
-    finalizer: Block,
+pub struct TryFinallyStatement {
+    pub body: Block,
+    pub catch_clause: Option<CatchClause>,
+    pub finalizer: Block,
 }
 
 impl TryFinallyStatement {
-    fn new(body: Block, catchClause: Option<CatchClause>, finalizer: Block) -> Self {
+    pub fn new(body: Block, catch_clause: Option<CatchClause>, finalizer: Block) -> Self {
         Self {
             body,
-            catchClause,
+            catch_clause,
             finalizer,
         }
     }
@@ -1900,12 +1973,12 @@ impl TryFinallyStatement {
 //   attribute VariableDeclaration declaration;
 // };
 
-struct VariableDeclarationStatement {
-    declaration: VariableDeclaration,
+pub struct VariableDeclarationStatement {
+    pub declaration: VariableDeclaration,
 }
 
 impl VariableDeclarationStatement {
-    fn new(declaration: VariableDeclaration) -> Self {
+    pub fn new(declaration: VariableDeclaration) -> Self {
         Self { declaration }
     }
 }
@@ -1914,13 +1987,14 @@ impl VariableDeclarationStatement {
 //   attribute Expression test;
 // };
 
-struct WhileStatement {
-    test: Box<Expression>,
+pub struct WhileStatement {
+    pub test: Box<Expression>,
+    pub block: Box<Statement>,
 }
 
 impl WhileStatement {
-    fn new(test: Box<Expression>) -> Self {
-        Self { test }
+    pub fn new(test: Box<Expression>, block: Box<Statement>) -> Self {
+        Self { test, block }
     }
 }
 
@@ -1929,13 +2003,13 @@ impl WhileStatement {
 //   attribute Statement body;
 // };
 
-struct WithStatement {
-    object: Box<Expression>,
-    body: Box<Statement>,
+pub struct WithStatement {
+    pub object: Box<Expression>,
+    pub body: Box<Statement>,
 }
 
 impl WithStatement {
-    fn new(object: Box<Expression>, body: Box<Statement>) -> Self {
+    pub fn new(object: Box<Expression>, body: Box<Statement>) -> Self {
         Self { object, body }
     }
 }
@@ -1946,12 +2020,12 @@ impl WithStatement {
 //   attribute Statement[] statements;
 // };
 
-struct Block {
-    statements: Vec<Statement>,
+pub struct Block {
+    pub statements: Vec<Statement>,
 }
 
 impl Block {
-    fn new(statements: Vec<Statement>) -> Self {
+    pub fn new(statements: Vec<Statement>) -> Self {
         Self { statements }
     }
 }
@@ -1962,13 +2036,13 @@ impl Block {
 //   attribute Block body;
 // };
 
-struct CatchClause {
-    binding: Binding,
-    body: Block,
+pub struct CatchClause {
+    pub binding: Binding,
+    pub body: Block,
 }
 
 impl CatchClause {
-    fn new(binding: Binding, body: Block) -> Self {
+    pub fn new(binding: Binding, body: Block) -> Self {
         Self { binding, body }
     }
 }
@@ -1978,13 +2052,13 @@ impl CatchClause {
 //   attribute string rawValue;
 // };
 
-struct Directive {
-    rawValue: String,
+pub struct Directive {
+    pub raw_value: String,
 }
 
 impl Directive {
-    fn new(rawValue: String) -> Self {
-        Self { rawValue }
+    pub fn new(raw_value: String) -> Self {
+        Self { raw_value }
     }
 }
 
@@ -1993,13 +2067,13 @@ impl Directive {
 //   attribute Binding? rest;
 // };
 
-struct FormalParameters {
-    items: Vec<Parameter>,
-    rest: Option<Binding>,
+pub struct FormalParameters {
+    pub items: Vec<Parameter>,
+    pub rest: Option<Binding>,
 }
 
 impl FormalParameters {
-    fn new(items: Vec<Parameter>, rest: Option<Binding>) -> Self {
+    pub fn new(items: Vec<Parameter>, rest: Option<Binding>) -> Self {
         Self { items, rest }
     }
 }
@@ -2009,13 +2083,13 @@ impl FormalParameters {
 //   attribute Statement[] statements;
 // };
 
-struct FunctionBody {
-    directives: Vec<Directive>,
-    statements: Vec<Statement>,
+pub struct FunctionBody {
+    pub directives: Vec<Directive>,
+    pub statements: Vec<Statement>,
 }
 
 impl FunctionBody {
-    fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
+    pub fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
         Self {
             directives,
             statements,
@@ -2028,28 +2102,28 @@ impl FunctionBody {
 // };
 // FunctionDeclaration implements Function;
 
-struct FunctionDeclaration {
-    name: BindingIdentifier,
+pub struct FunctionDeclaration {
+    pub name: BindingIdentifier,
     // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
-    isAsync: bool,
+    pub is_async: bool,
     // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
-    isGenerator: bool,
-    params: FormalParameters,
-    body: FunctionBody,
+    pub is_generator: bool,
+    pub params: FormalParameters,
+    pub body: FunctionBody,
 }
 
 impl FunctionDeclaration {
-    fn new(
+    pub fn new(
         name: BindingIdentifier,
-        isAsync: bool,
-        isGenerator: bool,
+        is_async: bool,
+        is_generator: bool,
         params: FormalParameters,
         body: FunctionBody,
     ) -> Self {
         Self {
             name,
-            isAsync,
-            isGenerator,
+            is_async,
+            is_generator,
             params,
             body,
         }
@@ -2061,13 +2135,13 @@ impl FunctionDeclaration {
 //   attribute Statement[] statements;
 // };
 
-struct Script {
-    directives: Vec<Directive>,
-    statements: Vec<Statement>,
+pub struct Script {
+    pub directives: Vec<Directive>,
+    pub statements: Vec<Statement>,
 }
 
 impl Script {
-    fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
+    pub fn new(directives: Vec<Directive>, statements: Vec<Statement>) -> Self {
         Self {
             directives,
             statements,
@@ -2079,12 +2153,12 @@ impl Script {
 //   attribute Expression expression;
 // };
 
-struct SpreadElement {
-    expression: Box<Expression>,
+pub struct SpreadElement {
+    pub expression: Box<Expression>,
 }
 
 impl SpreadElement {
-    fn new(expression: Box<Expression>) -> Self {
+    pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
     }
 }
@@ -2092,10 +2166,11 @@ impl SpreadElement {
 // `super`
 // interface Super : Node { };
 
-struct Super {}
+#[derive(Default)]
+pub struct Super {}
 
 impl Super {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
@@ -2106,13 +2181,13 @@ impl Super {
 //   attribute Statement[] consequent;
 // };
 
-struct SwitchCase {
-    test: Box<Expression>,
-    consequent: Vec<Statement>,
+pub struct SwitchCase {
+    pub test: Box<Expression>,
+    pub consequent: Vec<Statement>,
 }
 
 impl SwitchCase {
-    fn new(test: Box<Expression>, consequent: Vec<Statement>) -> Self {
+    pub fn new(test: Box<Expression>, consequent: Vec<Statement>) -> Self {
         Self { test, consequent }
     }
 }
@@ -2122,12 +2197,12 @@ impl SwitchCase {
 //   attribute Statement[] consequent;
 // };
 
-struct SwitchDefault {
-    consequent: Vec<Statement>,
+pub struct SwitchDefault {
+    pub consequent: Vec<Statement>,
 }
 
 impl SwitchDefault {
-    fn new(consequent: Vec<Statement>) -> Self {
+    pub fn new(consequent: Vec<Statement>) -> Self {
         Self { consequent }
     }
 }
@@ -2137,13 +2212,13 @@ impl SwitchDefault {
 //   attribute string rawValue;
 // };
 
-struct TemplateElement {
-    rawValue: String,
+pub struct TemplateElement {
+    pub raw_value: String,
 }
 
 impl TemplateElement {
-    fn new(rawValue: String) -> Self {
-        Self { rawValue }
+    pub fn new(raw_value: String) -> Self {
+        Self { raw_value }
     }
 }
 
@@ -2152,13 +2227,13 @@ impl TemplateElement {
 //   [NonEmpty] attribute VariableDeclarator[] declarators;
 // };
 
-struct VariableDeclaration {
-    kind: VariableDeclarationKind,
-    declarators: Vec<VariableDeclarator>,
+pub struct VariableDeclaration {
+    pub kind: VariableDeclarationKind,
+    pub declarators: Vec<VariableDeclarator>,
 }
 
 impl VariableDeclaration {
-    fn new(kind: VariableDeclarationKind, declarators: Vec<VariableDeclarator>) -> Self {
+    pub fn new(kind: VariableDeclarationKind, declarators: Vec<VariableDeclarator>) -> Self {
         Self { kind, declarators }
     }
 }
@@ -2168,13 +2243,13 @@ impl VariableDeclaration {
 //   attribute Expression? init;
 // };
 
-struct VariableDeclarator {
-    binding: Binding,
-    init: Option<Box<Expression>>,
+pub struct VariableDeclarator {
+    pub binding: Binding,
+    pub init: Option<Box<Expression>>,
 }
 
 impl VariableDeclarator {
-    fn new(binding: Binding, init: Option<Box<Expression>>) -> Self {
+    pub fn new(binding: Binding, init: Option<Box<Expression>>) -> Self {
         Self { binding, init }
     }
 }
