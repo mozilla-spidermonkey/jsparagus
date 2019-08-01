@@ -174,11 +174,8 @@ class ESGrammarBuilder:
                 production_list += self.apply_asi(p)
             else:
                 production_list.append(p)
-        if isinstance(lhs, tuple):
-            name, args = lhs
-            return (name, eq, grammar.NtDef(args, production_list))
-        else:
-            return (lhs, eq, production_list)
+        name, args = lhs
+        return (name, eq, grammar.NtDef(args, production_list))
 
     def nt_def(self, nt_lhs, eq, nl, rhs_lines, nl2):
         # nt_lhs EQ NL rhs_lines NL
@@ -194,7 +191,10 @@ class ESGrammarBuilder:
         assert nl2 == "\n"
         return self.make_nt_def(nt_lhs, eq, [([t], None) for t in terminals])
 
-    def nt_lhs_fn(self, name, ob, params, cb):
+    def nt_lhs_no_params(self, name):
+        return (name, ())
+
+    def nt_lhs_with_params(self, name, ob, params, cb):
         # NTCALL [ params ]
         assert ob == '['
         assert cb == ']'

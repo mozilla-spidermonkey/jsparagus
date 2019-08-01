@@ -50,8 +50,8 @@ nt nt_def {
 }
 
 nt nt_lhs {
-    NT;
-    NTCALL "[" params "]" => nt_lhs_fn;
+    NT => nt_lhs_no_params;
+    NTCALL "[" params "]" => nt_lhs_with_params;
 }
 
 nt params {

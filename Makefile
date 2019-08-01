@@ -7,6 +7,7 @@ all: $(PY_OUT) $(RS_OUT)
 # Incomplete list of files that contribute to the dump file.
 SOURCE_FILES = \
 jsparagus/gen.py \
+js_parser/esgrammar.pgen \
 js_parser/generate_js_parser_tables.py \
 js_parser/parse_esgrammar.py \
 js_parser/es-simplified.esgrammar
