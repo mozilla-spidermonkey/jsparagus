@@ -91,7 +91,7 @@ class Production:
 # Reduce actions say what happens when a production is matched.
 #
 # Reduce expressions are a little language used to specify reduce
-# actions. There are two types of reduce expression:
+# actions. A reduce expression is one of these:
 #
 # *   An integer in the range(0, len(production.body)) returns a previously
 #     parsed value from the parser's stack.
