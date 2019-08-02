@@ -847,6 +847,9 @@ class NtDef:
 
     __hash__ = None
 
+    def __repr__(self):
+        return "NtDef({!r}, {!r})".format(self.params, self.rhs_list)
+
 
 Var = collections.namedtuple("Var", "name")
 Var.__doc__ = """\

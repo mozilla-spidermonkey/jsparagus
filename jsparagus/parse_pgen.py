@@ -14,10 +14,13 @@ from . import gen
 from . import parse_pgen_generated
 
 
-pgen_lexer = LexicalGrammar("goal nt var token { } ; ? = =>",
-                            r'([ \t\r\n]|#.*)*',
-                            IDENT=r'[A-Za-z_](?:\w|[_-])*',
-                            STR=r'"[^\\\n"]*"')
+pgen_lexer = LexicalGrammar(
+    "goal nt var token { } ; ? = => ( ) ,",
+    r'([ \t\r\n]|#.*)*',
+    IDENT=r'[A-Za-z_](?:\w|[_-])*',
+    STR=r'"[^\\\n"]*"',
+    MATCH=r'\$(?:0|[1-9][0-9]*)',
+)
 
 
 def list_of(e):
@@ -29,17 +32,29 @@ def list_of(e):
 
 
 def call_method(name, body):
-    nargs = sum(1 for e in body if is_concrete_element(e))
-    return CallMethod(name, tuple(range(nargs)))
+    arg_indexes = []
+    current = 0
+    for e in body:
+        if is_concrete_element(e):
+            if e not in discards:
+                arg_indexes.append(current)
+            current += 1
+
+    return CallMethod(name, tuple(arg_indexes))
 
 
 def prod(body, action):
-    return Production(body, call_method(action, body))
+    if isinstance(action, str):
+        action = call_method(action, body)
+    return Production(body, action)
 
+discards = set('token var nt goal Some None = => ; ( ) { } , ?'.split())
 
 pgen_grammar = Grammar(
     {
-        'grammar': [[Optional('token_defs'), 'nt_defs']],
+        'grammar': [
+            [Optional('token_defs'), 'nt_defs']
+        ],
         'token_defs': list_of('token_def'),
         'token_def': [
             prod(['token', 'IDENT', '=', 'STR', ';'], 'const_token'),
@@ -50,10 +65,12 @@ pgen_grammar = Grammar(
             prod(['nt_defs', 'nt_def'], 'nt_defs_append'),
         ],
         'nt_def': [
-            [Optional('goal'), 'nt', 'IDENT', '{', gen.Optional('prods'), '}'],
+            prod([Optional('goal'), 'nt', 'IDENT', '{', gen.Optional('prods'), '}'], 'nt_def'),
         ],
         'prods': list_of('prod'),
-        'prod': [['terms', gen.Optional('action'), ';']],
+        'prod': [
+            prod(['terms', gen.Optional('action'), ';'], 'prod'),
+        ],
         'terms': list_of('term'),
         'term': [
             ['symbol'],
@@ -63,10 +80,22 @@ pgen_grammar = Grammar(
             prod(['IDENT'], 'ident'),
             prod(['STR'], 'str'),
         ],
-        'action': [['=>', 'IDENT']],
+        'action': [
+            prod(['=>', 'expr'], 1)
+        ],
+        'expr': [
+            prod(['MATCH'], 'expr_match'),
+            prod(['IDENT', '(', gen.Optional('expr_args'), ')'], 'expr_call'),
+            prod(['Some', '(', 'expr', ')'], 'expr_some'),
+            prod(['None'], 'expr_none'),
+        ],
+        'expr_args': [
+            prod(['expr'], 'args_single'),
+            prod(['expr_args', ',', 'expr'], 'args_append'),
+        ],
     },
     goal_nts=['grammar'],
-    variable_terminals=['IDENT', 'STR']
+    variable_terminals=['IDENT', 'STR', 'MATCH']
 )
 
 
@@ -108,14 +137,12 @@ class AstBuilder:
         values.append(value)
         return values
 
-    def const_token(self, token, name, eq, picture, semi):
-        assert (token, eq, semi) == ('token', '=', ';')
+    def const_token(self, name, picture):
         assert picture[0] == '"'
         assert picture[-1] == '"'
         return (name, picture[1:-1])
 
-    def var_token(self, var, token, name, semi):
-        assert (var, token, semi) == ('var', 'token', ';')
+    def var_token(self, name):
         return (name, None)
 
     def nt_defs_single(self, nt_def):
@@ -131,26 +158,20 @@ class AstBuilder:
             goal_nts.append(nt)
         return grammar, goal_nts
 
-    def nt_def(self, goal_kw, nt_kw, ident, lc, prods, rc):
+    def nt_def(self, goal_kw, ident, prods):
         is_goal = goal_kw == "goal"
-        assert (nt_kw, lc, rc) == ('nt', '{', '}')
         prods = [Production(body, action) for body, action in prods]
         return (is_goal, ident, prods)
 
-    def prod(self, symbols, action, semi):
-        assert semi == ';'
+    def prod(self, symbols, action):
         if action is None:
             if sum(1 for e in symbols if is_concrete_element(e)) == 1:
                 action = 0
             else:
                 raise ValueError("action required for {!r}".format(symbols))
-        else:
-            assert isinstance(action, str)
-            action = call_method(action, symbols)
         return (symbols, action)
 
-    def optional(self, sym, q):
-        assert q == '?'
+    def optional(self, sym):
         return gen.Optional(sym)
 
     def ident(self, sym):
@@ -163,9 +184,22 @@ class AstBuilder:
         chars = sym[1:-1]  # This is a bit sloppy.
         return Literal(chars)
 
-    def action(self, arrow, ident):
-        assert arrow == '=>'
-        return ident
+    def action(self, expr):
+        return expr
+
+    def expr_match(self, match):
+        assert match.startswith('$')
+        return int(match[1:])
+
+    def expr_call(self, ident, args):
+        return CallMethod(ident, tuple(args or ()))
+
+    def args_single(self, expr):
+        return [expr]
+
+    def args_append(self, args, arg):
+        args.append(arg)
+        return args
 
 
 def check_grammar(result):

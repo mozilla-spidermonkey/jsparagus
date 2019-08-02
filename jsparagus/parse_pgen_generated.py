@@ -69,10 +69,10 @@ actions = [
     {None: -9, 'nt': -9, 'goal': -9},
 
     # 22. "nt" IDENT "{" IDENT
-    {';': -22, '?': -22, '=>': -22, 'IDENT': -22, 'STR': -22},
+    {';': -27, '?': -27, '=>': -27, 'IDENT': -27, 'STR': -27},
 
     # 23. "nt" IDENT "{" STR
-    {';': -23, '?': -23, '=>': -23, 'IDENT': -23, 'STR': -23},
+    {';': -28, '?': -28, '=>': -28, 'IDENT': -28, 'STR': -28},
 
     # 24. "nt" IDENT "{" prods
     {'}': 32, 'IDENT': 22, 'STR': 23},
@@ -108,10 +108,10 @@ actions = [
     {'}': -15, 'IDENT': -15, 'STR': -15},
 
     # 35. "nt" IDENT "{" terms "=>"
-    {'IDENT': 42},
+    {'MATCH': 42, 'IDENT': 43, 'Some': 44, 'None': 45},
 
     # 36. "nt" IDENT "{" terms action
-    {';': 43},
+    {';': 47},
 
     # 37. "nt" IDENT "{" terms term
     {';': -18, '=>': -18, 'IDENT': -18, 'STR': -18},
@@ -123,19 +123,61 @@ actions = [
     {None: -10, 'nt': -10, 'goal': -10},
 
     # 40. "goal" "nt" IDENT "{" prods
-    {'}': 44, 'IDENT': 22, 'STR': 23},
+    {'}': 48, 'IDENT': 22, 'STR': 23},
 
     # 41. "token" IDENT "=" STR ";"
     {'nt': -7, 'goal': -7, 'token': -7, 'var': -7},
 
-    # 42. "nt" IDENT "{" terms "=>" IDENT
+    # 42. "nt" IDENT "{" terms "=>" MATCH
+    {';': -22, ')': -22, ',': -22},
+
+    # 43. "nt" IDENT "{" terms "=>" IDENT
+    {'(': 49},
+
+    # 44. "nt" IDENT "{" terms "=>" "Some"
+    {'(': 50},
+
+    # 45. "nt" IDENT "{" terms "=>" "None"
+    {';': -26, ')': -26, ',': -26},
+
+    # 46. "nt" IDENT "{" terms "=>" expr
     {';': -19},
 
-    # 43. "nt" IDENT "{" terms action ";"
+    # 47. "nt" IDENT "{" terms action ";"
     {'}': -16, 'IDENT': -16, 'STR': -16},
 
-    # 44. "goal" "nt" IDENT "{" prods "}"
+    # 48. "goal" "nt" IDENT "{" prods "}"
     {None: -12, 'nt': -12, 'goal': -12},
+
+    # 49. "nt" IDENT "{" terms "=>" IDENT "("
+    {')': 51, 'MATCH': 42, 'IDENT': 43, 'Some': 44, 'None': 45},
+
+    # 50. "nt" IDENT "{" terms "=>" "Some" "("
+    {'MATCH': 42, 'IDENT': 43, 'Some': 44, 'None': 45},
+
+    # 51. "nt" IDENT "{" terms "=>" IDENT "(" ")"
+    {';': -23, ')': -23, ',': -23},
+
+    # 52. "nt" IDENT "{" terms "=>" IDENT "(" expr_args
+    {')': 55, ',': 56},
+
+    # 53. "nt" IDENT "{" terms "=>" IDENT "(" expr
+    {')': -29, ',': -29},
+
+    # 54. "nt" IDENT "{" terms "=>" "Some" "(" expr
+    {')': 57},
+
+    # 55. "nt" IDENT "{" terms "=>" IDENT "(" expr_args ")"
+    {';': -24, ')': -24, ',': -24},
+
+    # 56. "nt" IDENT "{" terms "=>" IDENT "(" expr_args ","
+    {'MATCH': 42, 'IDENT': 43, 'Some': 44, 'None': 45},
+
+    # 57. "nt" IDENT "{" terms "=>" "Some" "(" expr ")"
+    {';': -25, ')': -25, ',': -25},
+
+    # 58. "nt" IDENT "{" terms "=>" IDENT "(" expr_args "," expr
+    {')': -30, ',': -30},
 
 ]
 
@@ -175,7 +217,7 @@ ctns = [
     {},
     {},
     {},
-    {},
+    {'expr': 46},
     {},
     {},
     {},
@@ -185,12 +227,27 @@ ctns = [
     {},
     {},
     {},
+    {},
+    {},
+    {},
+    {},
+    {'expr_args': 52, 'expr': 53},
+    {'expr': 54},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {'expr': 58},
+    {},
+    {},
 ]
 
 error_codes = [
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None,
 ]
 
 reductions = [
@@ -206,40 +263,54 @@ reductions = [
     ('nt_defs', 1, lambda builder, x0: builder.nt_defs_single(x0)),
     # 5. nt_defs ::= nt_defs nt_def => nt_defs_append($0, $1)
     ('nt_defs', 2, lambda builder, x0, x1: builder.nt_defs_append(x0, x1)),
-    # 6. token_def ::= "token" IDENT "=" STR ";" => const_token($0, $1, $2, $3, $4)
-    ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.const_token(x0, x1, x2, x3, x4)),
-    # 7. token_def ::= "var" "token" IDENT ";" => var_token($0, $1, $2, $3)
-    ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.var_token(x0, x1, x2, x3)),
-    # 8. nt_def ::= "nt" IDENT "{" "}" => nt_def(None, $0, $1, $2, None, $3)
-    ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def(None, x0, x1, x2, None, x3)),
-    # 9. nt_def ::= "goal" "nt" IDENT "{" "}" => nt_def(Some($0), $1, $2, $3, None, $4)
-    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(x0, x1, x2, x3, None, x4)),
-    # 10. nt_def ::= "nt" IDENT "{" prods "}" => nt_def(None, $0, $1, $2, Some($3), $4)
-    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(None, x0, x1, x2, x3, x4)),
-    # 11. nt_def ::= "goal" "nt" IDENT "{" prods "}" => nt_def(Some($0), $1, $2, $3, Some($4), $5)
-    ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def(x0, x1, x2, x3, x4, x5)),
+    # 6. token_def ::= "token" IDENT "=" STR ";" => const_token($1, $3)
+    ('token_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.const_token(x1, x3)),
+    # 7. token_def ::= "var" "token" IDENT ";" => var_token($2)
+    ('token_def', 4, lambda builder, x0, x1, x2, x3: builder.var_token(x2)),
+    # 8. nt_def ::= "nt" IDENT "{" "}" => nt_def(None, $1, None)
+    ('nt_def', 4, lambda builder, x0, x1, x2, x3: builder.nt_def(None, x1, None)),
+    # 9. nt_def ::= "goal" "nt" IDENT "{" "}" => nt_def(Some($0), $2, None)
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(x0, x2, None)),
+    # 10. nt_def ::= "nt" IDENT "{" prods "}" => nt_def(None, $1, Some($3))
+    ('nt_def', 5, lambda builder, x0, x1, x2, x3, x4: builder.nt_def(None, x1, x3)),
+    # 11. nt_def ::= "goal" "nt" IDENT "{" prods "}" => nt_def(Some($0), $2, Some($4))
+    ('nt_def', 6, lambda builder, x0, x1, x2, x3, x4, x5: builder.nt_def(x0, x2, x4)),
     # 12. prods ::= prod => single($0)
     ('prods', 1, lambda builder, x0: builder.single(x0)),
     # 13. prods ::= prods prod => append($0, $1)
     ('prods', 2, lambda builder, x0, x1: builder.append(x0, x1)),
-    # 14. prod ::= terms ";" => prod($0, None, $1)
-    ('prod', 2, lambda builder, x0, x1: builder.prod(x0, None, x1)),
-    # 15. prod ::= terms action ";" => prod($0, Some($1), $2)
-    ('prod', 3, lambda builder, x0, x1, x2: builder.prod(x0, x1, x2)),
+    # 14. prod ::= terms ";" => prod($0, None)
+    ('prod', 2, lambda builder, x0, x1: builder.prod(x0, None)),
+    # 15. prod ::= terms action ";" => prod($0, Some($1))
+    ('prod', 3, lambda builder, x0, x1, x2: builder.prod(x0, x1)),
     # 16. terms ::= term => single($0)
     ('terms', 1, lambda builder, x0: builder.single(x0)),
     # 17. terms ::= terms term => append($0, $1)
     ('terms', 2, lambda builder, x0, x1: builder.append(x0, x1)),
-    # 18. action ::= "=>" IDENT => action($0, $1)
-    ('action', 2, lambda builder, x0, x1: builder.action(x0, x1)),
+    # 18. action ::= "=>" expr => $1
+    ('action', 2, lambda builder, x0, x1: x1),
     # 19. term ::= symbol => $0
     ('term', 1, lambda builder, x0: x0),
-    # 20. term ::= symbol "?" => optional($0, $1)
-    ('term', 2, lambda builder, x0, x1: builder.optional(x0, x1)),
-    # 21. symbol ::= IDENT => ident($0)
+    # 20. term ::= symbol "?" => optional($0)
+    ('term', 2, lambda builder, x0, x1: builder.optional(x0)),
+    # 21. expr ::= MATCH => expr_match($0)
+    ('expr', 1, lambda builder, x0: builder.expr_match(x0)),
+    # 22. expr ::= IDENT "(" ")" => expr_call($0, None)
+    ('expr', 3, lambda builder, x0, x1, x2: builder.expr_call(x0, None)),
+    # 23. expr ::= IDENT "(" expr_args ")" => expr_call($0, Some($2))
+    ('expr', 4, lambda builder, x0, x1, x2, x3: builder.expr_call(x0, x2)),
+    # 24. expr ::= "Some" "(" expr ")" => expr_some($2)
+    ('expr', 4, lambda builder, x0, x1, x2, x3: builder.expr_some(x2)),
+    # 25. expr ::= "None" => expr_none()
+    ('expr', 1, lambda builder, x0: builder.expr_none()),
+    # 26. symbol ::= IDENT => ident($0)
     ('symbol', 1, lambda builder, x0: builder.ident(x0)),
-    # 22. symbol ::= STR => str($0)
+    # 27. symbol ::= STR => str($0)
     ('symbol', 1, lambda builder, x0: builder.str(x0)),
+    # 28. expr_args ::= expr => args_single($0)
+    ('expr_args', 1, lambda builder, x0: builder.args_single(x0)),
+    # 29. expr_args ::= expr_args "," expr => args_append($0, $2)
+    ('expr_args', 3, lambda builder, x0, x1, x2: builder.args_append(x0, x2)),
 ]
 
 
@@ -247,16 +318,21 @@ class DefaultBuilder:
     def grammar(self, x0, x1): return ('grammar', x0, x1)
     def single(self, x0): return ('single', x0)
     def append(self, x0, x1): return ('append', x0, x1)
-    def const_token(self, x0, x1, x2, x3, x4): return ('const_token', x0, x1, x2, x3, x4)
-    def var_token(self, x0, x1, x2, x3): return ('var_token', x0, x1, x2, x3)
+    def const_token(self, x0, x1): return ('const_token', x0, x1)
+    def var_token(self, x0): return ('var_token', x0)
     def nt_defs_single(self, x0): return ('nt_defs_single', x0)
     def nt_defs_append(self, x0, x1): return ('nt_defs_append', x0, x1)
-    def nt_def(self, x0, x1, x2, x3, x4, x5): return ('nt_def', x0, x1, x2, x3, x4, x5)
-    def prod(self, x0, x1, x2): return ('prod', x0, x1, x2)
-    def optional(self, x0, x1): return ('optional', x0, x1)
+    def nt_def(self, x0, x1, x2): return ('nt_def', x0, x1, x2)
+    def prod(self, x0, x1): return ('prod', x0, x1)
+    def optional(self, x0): return ('optional', x0)
     def ident(self, x0): return ('ident', x0)
     def str(self, x0): return ('str', x0)
-    def action(self, x0, x1): return ('action', x0, x1)
+    def expr_match(self, x0): return ('expr_match', x0)
+    def expr_call(self, x0, x1): return ('expr_call', x0, x1)
+    def expr_some(self, x0): return ('expr_some', x0)
+    def expr_none(self, ): return ('expr_none', )
+    def args_single(self, x0): return ('args_single', x0)
+    def args_append(self, x0, x1): return ('args_append', x0, x1)
 
 
 goal_nt_to_init_state = {

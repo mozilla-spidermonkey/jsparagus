@@ -6,6 +6,7 @@
 
 var token IDENT;
 var token STR;
+var token MATCH;
 token Eq = "=";
 token Arrow = "=>";
 token Semi = ";";
@@ -13,57 +14,74 @@ token Token = "token";
 token Var = "var";
 token Nt = "nt";
 token Goal = "goal";
+token Some = "Some";
+token None = "None";
 token OpenBrace = "{";
 token CloseBrace = "}";
+token OpenParen = "(";
+token CloseParen = ")";
+token Comma = ",";
 token QuestionMark = "?";
 
 goal nt grammar {
-    token_defs? nt_defs => grammar;
+    token_defs? nt_defs => grammar($0, $1);
 }
 
 nt token_defs {
-    token_def => single;
-    token_defs token_def => append;
+    token_def => single($0);
+    token_defs token_def => append($0, $1);
 }
 
 nt token_def {
-    "token" IDENT "=" STR ";" => const_token;
-    "var" "token" IDENT ";" => var_token;
+    "token" IDENT "=" STR ";" => const_token($1, $3);
+    "var" "token" IDENT ";" => var_token($2);
 }
 
 nt nt_defs {
-    nt_def => nt_defs_single;
-    nt_defs nt_def => nt_defs_append;
+    nt_def => nt_defs_single($0);
+    nt_defs nt_def => nt_defs_append($0, $1);
 }
 
 nt nt_def {
-    "goal"? "nt" IDENT "{" prods? "}" => nt_def;
+    "goal"? "nt" IDENT "{" prods? "}" => nt_def($0, $2, $4);
 }
 
 nt prods {
-    prod => single;
-    prods prod => append;
+    prod => single($0);
+    prods prod => append($0, $1);
 }
 
 nt prod {
-    terms action? ";" => prod;
+    terms action? ";" => prod($0, $1);
 }
 
 nt terms {
-    term => single;
-    terms term => append;
+    term => single($0);
+    terms term => append($0, $1);
 }
 
 nt term {
     symbol;
-    symbol "?" => optional;
+    symbol "?" => optional($0);
 }
 
 nt symbol {
-    IDENT => ident;
-    STR => str;
+    IDENT => ident($0);
+    STR => str($0);
 }
 
 nt action {
-    "=>" IDENT => action;
+    "=>" expr => $1;
+}
+
+nt expr {
+    MATCH => expr_match($0);
+    IDENT "(" expr_args? ")" => expr_call($0, $2);
+    "Some" "(" expr ")" => expr_some($2);
+    "None" => expr_none();
+}
+
+nt expr_args {
+    expr => args_single($0);
+    expr_args "," expr => args_append($0, $2);
 }

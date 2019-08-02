@@ -24,10 +24,10 @@ ESGrammarLexer = LexicalGrammar(
     CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',
 
     # nonterminals that will be followed by boolean parameters
-    NTCALL=r'(?:uri|[A-Z])\w*(?=\[)',
+    NTCALL=r'[A-Za-z]\w*(?=\[)',
 
     # nonterminals (also, boolean parameters)
-    NT=r'(?:uri|[A-Z])\w*',
+    NT=r'[A-Za-z]\w*',
 
     # nonterminals wrapped in vertical bars for no apparent reason
     NTALT=r'\|[A-Z]\w+\|',
@@ -40,6 +40,9 @@ ESGrammarLexer = LexicalGrammar(
 
     # prose wrapped in square brackets
     WPROSE=r'\[>[^]]*\]',
+
+    # expression denoting a matched terminal or nonterminal
+    MATCH_REF=r'\$(?:0|[1-9][0-9]*)',
 )
 
 
@@ -102,24 +105,28 @@ class ESGrammarBuilder:
 
     def to_production(self, lhs, i, rhs, is_sole_production):
         """Wrap a list of grammar symbols `rhs` in a Production object."""
+        body, action, condition = rhs
+        if action is None:
+            action = self.default_action(lhs, i, body, is_sole_production)
+        return grammar.Production(body, action, condition=condition)
+
+    def default_action(self, lhs, i, body, is_sole_production):
         if isinstance(lhs, tuple):
             nt_name = lhs[0]
         else:
             nt_name = lhs
 
-        body, condition = rhs
         nargs = sum(1 for e in body if grammar.is_concrete_element(e))
         if (len(body) == 1
                 and nargs == 1
                 and self.is_matched_pair(nt_name, body[0])):
-            action = 0
+            return 0
         else:
             if is_sole_production:
                 method_name = nt_name
             else:
                 method_name = '{} {}'.format(nt_name, i)
-            action = grammar.CallMethod(method_name, tuple(range(nargs)))
-        return grammar.Production(body, action, condition=condition)
+            return grammar.CallMethod(method_name, tuple(range(nargs)))
 
     def needs_asi(self, lhs, p):
         """True if p is a production in which ASI can happen."""
@@ -189,7 +196,7 @@ class ESGrammarBuilder:
         assert of == "of"
         assert nl == "\n"
         assert nl2 == "\n"
-        return self.make_nt_def(nt_lhs, eq, [([t], None) for t in terminals])
+        return self.make_nt_def(nt_lhs, eq, [([t], None, None) for t in terminals])
 
     def nt_lhs_no_params(self, name):
         return (name, ())
@@ -211,9 +218,9 @@ class ESGrammarBuilder:
     def terminal_chr(self, chr):
         raise ValueError("FAILED: %r" % chr)
 
-    def rhs_line(self, ifdef, rhs, prodid, nl):
+    def rhs_line(self, ifdef, rhs, action, _prodid, nl):
         assert nl == "\n"
-        return (rhs, ifdef)
+        return (rhs, action, ifdef)
 
     def rhs_line_prose(self, prose, nl):
         assert nl == "\n"
@@ -222,6 +229,26 @@ class ESGrammarBuilder:
     def empty_rhs(self, ob, empty, cb):
         assert (ob, empty, cb) == ("[", "empty", "]")
         return []
+
+    def action(self, arrow, action):
+        assert arrow == '=>'
+        return action
+
+    def expr_match_ref(self, token):
+        assert token.startswith('$')
+        return int(token[1:])
+
+    def expr_call(self, method, lp, args, rp):
+        assert (lp, rp) == ('(', ')')
+        return grammar.CallMethod(method, args or ())
+
+    def expr_some(self, some, lp, expr, rp):
+        assert (some, lp, rp) == ('Some', '(', ')')
+        return grammar.Some(expr)
+
+    def expr_none(self, none):
+        assert none == 'None'
+        return None
 
     def ifdef(self, ob, value, nt, cb):
         assert (ob, cb) == ("[", "]")
