@@ -1,6 +1,7 @@
 """ Lexical analysis is the breaking of a string into tokens. """
 
 import re
+import linecache
 
 
 class SyntaxError(__builtins__['SyntaxError']):
@@ -45,6 +46,8 @@ class FlatStringLexer:
         self.src = ''
         self.previous_token_end = 0
         self.current_token_start = 0
+        self.start_lineno = 1
+        self.start_column = 0
         self.point = 0
         self.filename = filename
         self.closed = False
@@ -52,46 +55,90 @@ class FlatStringLexer:
     def write(self, text):
         assert not self.closed
         self.src += text
-        self._drain(closing=False)
+        self._drain()
 
     def close(self):
         assert not self.closed
-        self._drain(closing=True)
-        assert self.src == ''
         self.closed = True
+        self._drain()
+        assert self.src == ''
         return self.parser.close(self)
 
-    def _drain(self, closing):
+    def _drain(self):
         assert self.previous_token_end == 0
         assert self.current_token_start == 0
         assert self.point == 0
-        assert not self.closed
+        closing = self.closed
 
         terminal_id = self._match(closing)
         while terminal_id is not None:
             self.parser.write_terminal(self, terminal_id)
             terminal_id = self._match(closing)
 
+        # Update position info.
+        discarded_text = self.src[:self.point]
+        newline_count = self.src[:self.point].count('\n')
+        self.start_lineno += newline_count
+        if newline_count > 0:
+            self.start_column = self.point - discarded_text.rindex('\n')
+        else:
+            self.start_column += self.point
+
+        # Drop the parsed text and reset counters. Note that setting
+        # self.previous_token_end to 0 really is correct. Setting
+        # self.current_token_start to 0 is as good as anything else, because
+        # there is no current token.
         self.src = self.src[self.point:]
         self.point = 0
         self.previous_token_end = 0
         self.current_token_start = 0
 
     def current_token_position(self):
-        # TODO - count lines and characters as we go
         src_pre = self.src[:self.current_token_start]
-        lineno = 1 + src_pre.count("\n")
-        line_start_index = src_pre.rfind("\n") + 1
-        column = self.current_token_start - line_start_index  # can be zero
+        lineno = self.start_lineno + src_pre.count("\n")
+        if '\n' in src_pre:
+            line_start_index = src_pre.rfind("\n") + 1
+            column = self.current_token_start - line_start_index  # can be zero
+        else:
+            column = self.start_column + self.current_token_start
         return lineno, column
 
+    def current_line(self):
+        # OK, this is gruesome, but we return the current line if we have the
+        # whole thing and otherwise we ... try loading it from disk.
+        if '\n' in self.src[:self.current_token_start]:
+            line_start = self.src.rindex('\n', 0, self.current_token_start) + 1
+        elif self.start_column == 0:
+            line_start = 0
+        else:
+            line_start = -1
+
+        if line_start != -1:
+            line_end = self.src.find('\n', line_start)
+            if line_end == -1:
+                if self.closed:
+                    return self.src[line_start:] + '\n'
+            else:
+                return self.src[line_start:line_end] + '\n'
+
+        # Fallback case. Python's linecache.getline() deliberately silences all
+        # errors.
+        lineno = self.current_token_position()[0]
+        return linecache.getline(self.filename, lineno)
+
     def throw(self, msg_or_exception):
+        lineno, column = self.current_token_position()
         if isinstance(msg_or_exception, Exception):
             e = msg_or_exception
+            e.filename = self.filename
+            e.lineno = lineno
+            e.offset = column + 1
         else:
-            e = SyntaxError(msg_or_exception)
-        e.filename = self.filename
-        e.lineno, e.column = self.current_token_position()
+            # Apparently this is the secret handshake to create a Python
+            # SyntaxError and get a good error message when Python prints it.
+            line = self.current_line()
+            args = (self.filename, lineno, column + 1, line)
+            e = SyntaxError(msg_or_exception, args)
         raise e
 
     def throw_unexpected_end(self):

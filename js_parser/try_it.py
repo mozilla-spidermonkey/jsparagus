@@ -6,6 +6,7 @@ See README.md for instructions.
 """
 
 import argparse
+import traceback
 from .lexer import JSLexer
 from .parser import JSParser
 from jsparagus.lexer import SyntaxError
@@ -23,14 +24,14 @@ def interactive_input(lexer, prompt="js> "):
 def rpl():
     """Read-print loop."""
     while True:
-        parser = JSLexer(JSParser())
+        parser = JSLexer(JSParser(), filename="<stdin>")
         try:
             result = interactive_input(parser)
         except EOFError:
             print()
             break
         except SyntaxError as exc:
-            print(exc.__class__.__name__ + ": " + str(exc))
+            traceback.print_exc(limit=0)
             continue
         print(result)
 
