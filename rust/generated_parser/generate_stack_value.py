@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import re
 import subprocess
 
@@ -16,7 +15,7 @@ def case_name(ident):
 
 
 def main():
-    rg_process = subprocess.run(['rg', '^pub (enum|struct) (\w+).*', '../ast/src/lib.rs',
+    rg_process = subprocess.run(['rg', r'^pub (enum|struct) (\w+).*', '../ast/src/lib.rs',
                                  "--replace=$2"], stdout=subprocess.PIPE)
     names = rg_process.stdout.decode('utf-8').splitlines()
     names.append('Token')

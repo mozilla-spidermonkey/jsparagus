@@ -361,7 +361,7 @@ class GenTestCase(unittest.TestCase):
                 ['exprs', 'expr'],
             ],
         })
-        parse = self.compile(LispTokenizer, grammar)
+        self.compile(LispTokenizer, grammar)
 
         N = 3000
         s = "x"

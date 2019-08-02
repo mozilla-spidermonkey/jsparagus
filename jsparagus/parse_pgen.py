@@ -48,6 +48,7 @@ def prod(body, action):
         action = call_method(action, body)
     return Production(body, action)
 
+
 discards = set('token var nt goal Some None = => ; ( ) { } , ?'.split())
 
 pgen_grammar = Grammar(

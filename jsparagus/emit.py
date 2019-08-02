@@ -553,8 +553,8 @@ class RustParserWriter:
                 compiled_expr = compile_reduce_expr(prod.action)
 
                 for index, e in reversed(list(enumerate(elements))):
-                    ty = self.element_type(e)
-                    rust_ty = self.type_to_rust(ty, "")
+                    # ty = self.element_type(e)
+                    # rust_ty = self.type_to_rust(ty, "")
                     if variable_used[index]:
                         if method_used:
                             self.write(3, "let x{} = stack.pop().unwrap().to_ast();", index)
@@ -621,9 +621,9 @@ class RustParserWriter:
 
         for init_nt, index in self.init_state_map.items():
             assert init_nt.args == ()
-            result_type_jsparagus = self.grammar.nt_types[init_nt.name]
-            result_type_name = self.type_to_rust(result_type_jsparagus, "")
-            result_type_concrete = self.type_to_rust(result_type_jsparagus, "concrete", boxed=True)
+            # result_type_jsparagus = self.grammar.nt_types[init_nt.name]
+            # result_type_name = self.type_to_rust(result_type_jsparagus, "")
+            # result_type_concrete = self.type_to_rust(result_type_jsparagus, "concrete", boxed=True)
             self.write(0, "pub static START_STATE_{}: usize = {};",
                        self.to_snek_case(init_nt.name).upper(), index)
             self.write(0, "")

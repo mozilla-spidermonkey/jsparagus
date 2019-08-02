@@ -30,7 +30,7 @@ def rpl():
         except EOFError:
             print()
             break
-        except SyntaxError as exc:
+        except SyntaxError:
             traceback.print_exc(limit=0)
             continue
         print(result)

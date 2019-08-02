@@ -42,7 +42,6 @@ class ESTestCase(unittest.TestCase):
             lexer.write(s)
         self.assertTrue(lexer.can_close())
 
-
     # === Tests!
 
     def test_asi_at_end(self):
