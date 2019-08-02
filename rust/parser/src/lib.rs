@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "unstable", feature(test))]
 
+extern crate ast;
 extern crate generated_parser;
 
 mod errors;
@@ -11,20 +12,18 @@ mod tests;
 
 pub use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
+use ast::{Module, Script};
+use generated_parser::{
+    AstBuilder, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
+};
 use lexer::Lexer;
 
-use generated_parser::concrete::{Module, Script};
-use generated_parser::{
-    get_result_module, get_result_script, DefaultHandler, StackValue, TerminalId,
-    START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
-};
-
 pub fn parse_script(source: &str) -> Result<Box<Script>> {
-    Ok(get_result_script(parse(source, START_STATE_SCRIPT)?))
+    Ok(parse(source, START_STATE_SCRIPT)?.to_ast())
 }
 
 pub fn parse_module(source: &str) -> Result<Box<Module>> {
-    Ok(get_result_module(parse(source, START_STATE_MODULE)?))
+    Ok(parse(source, START_STATE_MODULE)?.to_ast())
 }
 
 fn parse(source: &str, start_state: usize) -> Result<StackValue> {
@@ -32,7 +31,7 @@ fn parse(source: &str, start_state: usize) -> Result<StackValue> {
 
     TABLES.check();
 
-    let mut parser = Parser::new(DefaultHandler {}, start_state);
+    let mut parser = Parser::new(AstBuilder {}, start_state);
 
     loop {
         let t = tokens.next(&parser)?;

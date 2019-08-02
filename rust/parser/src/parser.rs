@@ -1,4 +1,4 @@
-use generated_parser::{reduce, DefaultHandler, ErrorCode, StackValue, TerminalId, Token, TABLES};
+use generated_parser::{reduce, AstBuilder, ErrorCode, StackValue, TerminalId, Token, TABLES};
 
 use crate::errors::{ParseError, Result};
 
@@ -39,11 +39,11 @@ impl Action {
 pub struct Parser {
     state_stack: Vec<usize>,
     node_stack: Vec<StackValue>,
-    handler: DefaultHandler,
+    handler: AstBuilder,
 }
 
 impl Parser {
-    pub fn new(handler: DefaultHandler, entry_state: usize) -> Self {
+    pub fn new(handler: AstBuilder, entry_state: usize) -> Self {
         TABLES.check();
         assert!(entry_state < TABLES.state_count);
 
@@ -96,7 +96,8 @@ impl Parser {
         loop {
             let action = self.reduce_all(token.terminal_id);
             if action.is_shift() {
-                self.node_stack.push(StackValue::Token(token.clone()));
+                self.node_stack
+                    .push(StackValue::Token(Box::new(token.clone())));
                 self.state_stack.push(action.shift_state());
                 return Ok(());
             } else {
