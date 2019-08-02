@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "ast",
+    "driver",
+    "generated_parser",
+    "parser",
+]
