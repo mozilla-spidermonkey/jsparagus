@@ -1,26 +1,5 @@
-// Derived from https://github.com/shapesecurity/shift-spec/blob/es2017/spec.idl
+// WARNING: This file is auto-generated.
 
-/*
-pub INFO: This specification is currently divided into the following sections:
-  * supporting types
-  * node classes
-  * bindings
-  * classes
-  * modules
-  * functions
-  * object expressions
-  * literals
-  * other expressions
-  * other statements
-  * directives
-  * other nodes
-*/
-
-// supporting types
-
-// typedef (SpreadElement or Expression)[] Arguments;
-
-// Temporary hack to get things to compile
 #[derive(Debug, PartialEq)]
 pub enum Void {}
 
@@ -41,9 +20,6 @@ impl Arguments {
     }
 }
 
-// typedef DOMString string;
-
-// typedef string Identifier;
 #[derive(Debug, PartialEq)]
 pub struct Identifier {
     pub value: String,
@@ -55,7 +31,6 @@ impl Identifier {
     }
 }
 
-// typedef string IdentifierName;
 #[derive(Debug, PartialEq)]
 pub struct IdentifierName {
     pub value: String,
@@ -67,7 +42,6 @@ impl IdentifierName {
     }
 }
 
-// typedef string Label;
 #[derive(Debug, PartialEq)]
 pub struct Label {
     pub value: String,
@@ -148,12 +122,9 @@ pub enum UpdateOperator {
     Decrement,
 }
 
-// `FunctionExpression`, `FunctionDeclaration`, `GeneratorExpression`, `GeneratorDeclaration`, `AsyncFunctionExpression`, `AsyncFunctionDeclaration`
 #[derive(Debug, PartialEq)]
 pub struct Function {
-    // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
     pub is_async: bool,
-    // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
     pub is_generator: bool,
     pub params: FormalParameters,
     pub body: FunctionBody,
@@ -174,12 +145,6 @@ impl Function {
         }
     }
 }
-
-// node classes
-
-// interface Node {
-//   [TypeIndicator] readonly attribute Type type;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum Node {
@@ -218,17 +183,11 @@ pub enum Node {
     VariableDeclarator(VariableDeclarator),
 }
 
-// `Script`, `Module`
-
-// interface Program : Node { };
-
 #[derive(Debug, PartialEq)]
 pub enum Program {
     Module(Module),
     Script(Script),
 }
-
-// interface Statement : Node { };
 
 #[derive(Debug, PartialEq)]
 pub enum Statement {
@@ -253,10 +212,6 @@ pub enum Statement {
     FunctionDeclaration(FunctionDeclaration),
 }
 
-// interface IterationStatement : Statement {
-//   attribute Statement body;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum IterationStatement {
     DoWhileStatement(DoWhileStatement),
@@ -265,8 +220,6 @@ pub enum IterationStatement {
     ForStatement(ForStatement),
     WhileStatement(WhileStatement),
 }
-
-// interface Expression : Node { };
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
@@ -299,20 +252,11 @@ pub enum Expression {
     AwaitExpression(AwaitExpression),
 }
 
-// `MemberExpression`, `SuperProperty`
-// interface MemberExpression : Expression {
-//   // The object whose property is being accessed.
-//   attribute (Expression or Super) _object;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum MemberExpression {
     ComputedMemberExpression(ComputedMemberExpression),
     StaticMemberExpression(StaticMemberExpression),
 }
-
-// `[ Expression ]`, `. IdentifierName`
-// interface PropertyName : Node { };
 
 #[derive(Debug, PartialEq)]
 pub enum PropertyName {
@@ -320,29 +264,17 @@ pub enum PropertyName {
     StaticPropertyName(StaticPropertyName),
 }
 
-// `PropertyDefinition`
-// interface ObjectProperty : Node { };
-
 #[derive(Debug, PartialEq)]
 pub enum ObjectProperty {
     NamedObjectProperty(NamedObjectProperty),
     ShorthandProperty(ShorthandProperty),
 }
 
-// `PropertyName : AssignmentExpression`, `MethodDefinition`
-// interface NamedObjectProperty : ObjectProperty {
-//   attribute PropertyName name;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum NamedObjectProperty {
     MethodDefinition(MethodDefinition),
     DataProperty(DataProperty),
 }
-
-// interface MethodDefinition : NamedObjectProperty {
-//   attribute FunctionBody body;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum MethodDefinition {
@@ -351,17 +283,11 @@ pub enum MethodDefinition {
     Setter(Setter),
 }
 
-// interface ImportDeclaration : Node {
-//   attribute string moduleSpecifier;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum ImportDeclaration {
     Import(Import),
     ImportNamespace(ImportNamespace),
 }
-
-// interface ExportDeclaration : Node { };
 
 #[derive(Debug, PartialEq)]
 pub enum ExportDeclaration {
@@ -372,20 +298,11 @@ pub enum ExportDeclaration {
     ExportDefault(ExportDefault),
 }
 
-// `IdentifierReference`, `BindingIdentifier`
-// interface VariableReference : Node {
-//   attribute Identifier name;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum VariableReference {
     BindingIdentifier(BindingIdentifier),
     AssignmentTargetIdentifier(AssignmentTargetIdentifier),
 }
-
-// bindings
-
-//typedef (ObjectBinding or ArrayBinding) BindingPattern;
 
 #[derive(Debug, PartialEq)]
 pub enum BindingPattern {
@@ -393,15 +310,11 @@ pub enum BindingPattern {
     ArrayBinding(ArrayBinding),
 }
 
-// typedef (BindingPattern or BindingIdentifier) Binding;
-
 #[derive(Debug, PartialEq)]
 pub enum Binding {
     BindingPattern(BindingPattern),
     BindingIdentifier(BindingIdentifier),
 }
-
-//typedef (AssignmentTargetIdentifier or MemberAssignmentTarget) SimpleAssignmentTarget;
 
 #[derive(Debug, PartialEq)]
 pub enum SimpleAssignmentTarget {
@@ -409,16 +322,11 @@ pub enum SimpleAssignmentTarget {
     MemberAssignmentTarget(MemberAssignmentTarget),
 }
 
-// typedef (ObjectAssignmentTarget or ArrayAssignmentTarget) AssignmentTargetPattern;
-
 #[derive(Debug, PartialEq)]
 pub enum AssignmentTargetPattern {
     ArrayAssignmentTarget(ArrayAssignmentTarget),
     ObjectAssignmentTarget(ObjectAssignmentTarget),
 }
-
-// `DestructuringAssignmentTarget`
-// typedef (AssignmentTargetPattern or SimpleAssignmentTarget) AssignmentTarget;
 
 #[derive(Debug, PartialEq)]
 pub enum AssignmentTarget {
@@ -426,19 +334,11 @@ pub enum AssignmentTarget {
     SimpleAssignmentTarget(SimpleAssignmentTarget),
 }
 
-// `FormalParameter`
-// typedef (Binding or BindingWithDefault) Parameter;
-
 #[derive(Debug, PartialEq)]
 pub enum Parameter {
     Binding(Binding),
     BindingWithDefault(BindingWithDefault),
 }
-
-// interface BindingWithDefault : Node {
-//   attribute Binding binding;
-//   attribute Expression init;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct BindingWithDefault {
@@ -452,8 +352,6 @@ impl BindingWithDefault {
     }
 }
 
-// interface BindingIdentifier : VariableReference { };
-
 #[derive(Debug, PartialEq)]
 pub struct BindingIdentifier {
     pub name: Identifier,
@@ -464,8 +362,6 @@ impl BindingIdentifier {
         Self { name }
     }
 }
-
-// interface AssignmentTargetIdentifier : VariableReference { };
 
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetIdentifier {
@@ -484,21 +380,11 @@ pub enum ExpressionOrSuper {
     Super(Super),
 }
 
-// interface MemberAssignmentTarget : Node {
-//   // The object whose property is being assigned.
-//   attribute (Expression or Super) _object;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum MemberAssignmentTarget {
     ComputedMemberAssignmentTarget(ComputedMemberAssignmentTarget),
     StaticMemberAssignmentTarget(StaticMemberAssignmentTarget),
 }
-
-// interface ComputedMemberAssignmentTarget : MemberAssignmentTarget {
-//   // The expression resolving to the name of the property to be accessed.
-//   attribute Expression expression;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ComputedMemberAssignmentTarget {
@@ -512,11 +398,6 @@ impl ComputedMemberAssignmentTarget {
     }
 }
 
-// interface StaticMemberAssignmentTarget : MemberAssignmentTarget {
-//   // The name of the property to be accessed.
-//   attribute IdentifierName property;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberAssignmentTarget {
     pub object: ExpressionOrSuper,
@@ -528,13 +409,6 @@ impl StaticMemberAssignmentTarget {
         Self { object, property }
     }
 }
-
-// `ArrayBindingPattern`
-// interface ArrayBinding : Node {
-//   // The elements of the array pattern; a null value represents an elision.
-//   attribute (Binding or BindingWithDefault)?[] elements;
-//   attribute Binding? rest;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ArrayBinding {
@@ -548,10 +422,6 @@ impl ArrayBinding {
     }
 }
 
-//interface ObjectBinding : Node {
-//  attribute BindingProperty[] properties;
-//};
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectBinding {
     pub properties: Vec<BindingProperty>,
@@ -563,19 +433,11 @@ impl ObjectBinding {
     }
 }
 
-// interface BindingProperty : Node { };
-
 #[derive(Debug, PartialEq)]
 pub enum BindingProperty {
     BindingPropertyIdentifier(BindingPropertyIdentifier),
     BindingPropertyProperty(BindingPropertyProperty),
 }
-
-// `SingleNameBinding`
-// interface BindingPropertyIdentifier : BindingProperty {
-//   attribute BindingIdentifier binding;
-//   attribute Expression? init;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct BindingPropertyIdentifier {
@@ -589,12 +451,6 @@ impl BindingPropertyIdentifier {
     }
 }
 
-// `BindingProperty :: PropertyName : BindingElement`
-// interface BindingPropertyProperty : BindingProperty {
-//   attribute PropertyName name;
-//   attribute (Binding or BindingWithDefault) binding;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct BindingPropertyProperty {
     pub name: PropertyName,
@@ -607,12 +463,6 @@ impl BindingPropertyProperty {
     }
 }
 
-// This interface represents the case where the initializer is present in `AssignmentElement :: DestructuringAssignmentTarget Initializer_opt`.
-// interface AssignmentTargetWithDefault : Node {
-//   attribute AssignmentTarget binding;
-//   attribute Expression init;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetWithDefault {
     pub binding: AssignmentTarget,
@@ -624,13 +474,6 @@ impl AssignmentTargetWithDefault {
         Self { binding, init }
     }
 }
-
-// `ArrayAssignmentPattern`
-// interface ArrayAssignmentTarget : Node {
-//   // The elements of the array pattern; a null value represents an elision.
-//   attribute (AssignmentTarget or AssignmentTargetWithDefault)?[] elements;
-//   attribute AssignmentTarget? rest;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum AssignmentTargetMaybeDefault {
@@ -653,11 +496,6 @@ impl ArrayAssignmentTarget {
     }
 }
 
-// `ObjectAssignmentPattern`
-// interface ObjectAssignmentTarget : Node {
-//   attribute AssignmentTargetProperty[] properties;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectAssignmentTarget {
     pub properties: Vec<AssignmentTargetProperty>,
@@ -669,20 +507,11 @@ impl ObjectAssignmentTarget {
     }
 }
 
-// `AssignmentProperty`
-// interface AssignmentTargetProperty : Node { };
-
 #[derive(Debug, PartialEq)]
 pub enum AssignmentTargetProperty {
     AssignmentTargetPropertyIdentifier(AssignmentTargetPropertyIdentifier),
     AssignmentTargetPropertyProperty(AssignmentTargetPropertyProperty),
 }
-
-// `AssignmentProperty :: IdentifierReference Initializer_opt`
-// interface AssignmentTargetPropertyIdentifier : AssignmentTargetProperty {
-//   attribute AssignmentTargetIdentifier binding;
-//   attribute Expression? init;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetPropertyIdentifier {
@@ -696,12 +525,6 @@ impl AssignmentTargetPropertyIdentifier {
     }
 }
 
-// `AssignmentProperty :: PropertyName : AssignmentElement`
-// interface AssignmentTargetPropertyProperty : AssignmentTargetProperty {
-//   attribute PropertyName name;
-//   attribute (AssignmentTarget or AssignmentTargetWithDefault) binding;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetPropertyProperty {
     pub name: PropertyName,
@@ -713,23 +536,6 @@ impl AssignmentTargetPropertyProperty {
         Self { name, binding }
     }
 }
-
-// classes
-
-// interface Class {
-//   attribute Expression? super;
-//   attribute ClassElement[] elements;
-// };
-
-// struct Class {
-//     super_: Option<Expression>,
-//     elements: Vec<ClassElement>,
-// }
-
-// interface ClassExpression : Expression {
-//   attribute BindingIdentifier? name;
-// };
-// ClassExpression implements Class;
 
 #[derive(Debug, PartialEq)]
 pub struct ClassExpression {
@@ -752,11 +558,6 @@ impl ClassExpression {
     }
 }
 
-// interface ClassDeclaration : Statement {
-//   attribute BindingIdentifier name;
-// };
-// ClassDeclaration implements Class;
-
 #[derive(Debug, PartialEq)]
 pub struct ClassDeclaration {
     pub name: BindingIdentifier,
@@ -778,12 +579,6 @@ impl ClassDeclaration {
     }
 }
 
-// interface ClassElement : Node {
-//   // True iff `IsStatic` of ClassElement is true.
-//   attribute boolean isStatic;
-//   attribute MethodDefinition method;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ClassElement {
     pub property_name: PropertyName,
@@ -800,13 +595,6 @@ impl ClassElement {
         }
     }
 }
-
-// modules
-
-// interface Module : Program {
-//   attribute Directive[] directives;
-//   attribute (ImportDeclaration or ExportDeclaration or Statement)[] items;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum ModuleItems {
@@ -826,13 +614,6 @@ impl Module {
         Self { directives, items }
     }
 }
-
-// An `ImportDeclaration` not including a namespace import.
-// interface Import : ImportDeclaration {
-//   // `ImportedDefaultBinding`, if present.
-//   attribute BindingIdentifier? defaultBinding;
-//   attribute ImportSpecifier[] namedImports;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct Import {
@@ -855,13 +636,6 @@ impl Import {
     }
 }
 
-// An `ImportDeclaration` including a namespace import.
-// interface ImportNamespace : ImportDeclaration {
-//   // `ImportedDefaultBinding`, if present.
-//   attribute BindingIdentifier? defaultBinding;
-//   attribute BindingIdentifier namespaceBinding;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ImportNamespace {
     pub module_specifier: String,
@@ -883,12 +657,6 @@ impl ImportNamespace {
     }
 }
 
-// interface ImportSpecifier : Node {
-//   // The `IdentifierName` in the production `ImportSpecifier :: IdentifierName as ImportedBinding`; absent if this specifier represents the production `ImportSpecifier :: ImportedBinding`.
-//   attribute IdentifierName? name;
-//   attribute BindingIdentifier binding;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ImportSpecifier {
     pub name: Option<IdentifierName>,
@@ -901,11 +669,6 @@ impl ImportSpecifier {
     }
 }
 
-// `export * FromClause;`
-// interface ExportAllFrom : ExportDeclaration {
-//   attribute string moduleSpecifier;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ExportAllFrom {
     pub module_specifier: String,
@@ -916,12 +679,6 @@ impl ExportAllFrom {
         Self { module_specifier }
     }
 }
-
-// `export ExportClause FromClause;`
-// interface ExportFrom : ExportDeclaration {
-//   attribute ExportFromSpecifier[] namedExports;
-//   attribute string moduleSpecifier;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ExportFrom {
@@ -938,11 +695,6 @@ impl ExportFrom {
     }
 }
 
-// `export ExportClause;`
-// interface ExportLocals : ExportDeclaration {
-//   attribute ExportLocalSpecifier[] namedExports;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ExportLocals {
     pub named_exports: Vec<ExportLocalSpecifier>,
@@ -954,11 +706,6 @@ impl ExportLocals {
     }
 }
 
-// `export VariableStatement`, `export Declaration`
-// interface Export : ExportDeclaration {
-//   attribute (FunctionDeclaration or ClassDeclaration or VariableDeclaration) declaration;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum Export {
     FunctionDeclaration(FunctionDeclaration),
@@ -966,25 +713,12 @@ pub enum Export {
     VariableDeclaration(VariableDeclaration),
 }
 
-// `export default HoistableDeclaration`, `export default ClassDeclaration`, `export default AssignmentExpression`
-// interface ExportDefault : ExportDeclaration {
-//   attribute (FunctionDeclaration or ClassDeclaration or Expression) body;
-// };
-
 #[derive(Debug, PartialEq)]
 pub enum ExportDefault {
     FunctionDeclaration(FunctionDeclaration),
     ClassDeclaration(ClassDeclaration),
     Expression(Box<Expression>),
 }
-
-// `ExportSpecifier`, as part of an `ExportFrom`.
-// interface ExportFromSpecifier : Node {
-//   // The only `IdentifierName in `ExportSpecifier :: IdentifierName`, or the first in `ExportSpecifier :: IdentifierName as IdentifierName`.
-//   attribute IdentifierName name;
-//   // The second `IdentifierName` in `ExportSpecifier :: IdentifierName as IdentifierName`, if that is the production represented.
-//   attribute IdentifierName? exportedName;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ExportFromSpecifier {
@@ -1001,14 +735,6 @@ impl ExportFromSpecifier {
     }
 }
 
-// `ExportSpecifier`, as part of an `ExportLocals`.
-// interface ExportLocalSpecifier : Node {
-//   // The only `IdentifierName in `ExportSpecifier :: IdentifierName`, or the first in `ExportSpecifier :: IdentifierName as IdentifierName`.
-//   attribute IdentifierExpression name;
-//   // The second `IdentifierName` in `ExportSpecifier :: IdentifierName as IdentifierName`, if present.
-//   attribute IdentifierName? exportedName;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ExportLocalSpecifier {
     pub name: IdentifierExpression,
@@ -1023,18 +749,6 @@ impl ExportLocalSpecifier {
         }
     }
 }
-
-// property definition
-
-// `MethodDefinition :: PropertyName ( UniqueFormalParameters ) { FunctionBody }`, `GeneratorMethod :: * PropertyName ( UniqueFormalParameters ) { GeneratorBody }`, `AsyncMethod :: async PropertyName ( UniqueFormalParameters ) { AsyncFunctionBody }`
-// interface Method : MethodDefinition {
-//   // True for `AsyncMethod`, false otherwise.
-//   attribute boolean isAsync;
-//   // True for `GeneratorMethod`, false otherwise.
-//   attribute boolean isGenerator;
-//   // The `UniqueFormalParameters`.
-//   attribute FormalParameters params;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct Method {
@@ -1063,9 +777,6 @@ impl Method {
     }
 }
 
-// `get PropertyName ( ) { FunctionBody }`
-// interface Getter : MethodDefinition { };
-
 #[derive(Debug, PartialEq)]
 pub struct Getter {
     pub property_name: PropertyName,
@@ -1080,12 +791,6 @@ impl Getter {
         }
     }
 }
-
-// `set PropertyName ( PropertySetParameterList ) { FunctionBody }`
-// interface Setter : MethodDefinition {
-//   // The `PropertySetParameterList`.
-//   attribute Parameter param;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct Setter {
@@ -1104,12 +809,6 @@ impl Setter {
     }
 }
 
-// `PropertyDefinition :: PropertyName : AssignmentExpression`
-// interface DataProperty : NamedObjectProperty {
-//   // The `AssignmentExpression`.
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct DataProperty {
     pub property_name: PropertyName,
@@ -1125,12 +824,6 @@ impl DataProperty {
     }
 }
 
-// `PropertyDefinition :: IdentifierReference`
-// interface ShorthandProperty : ObjectProperty {
-//   // The `IdentifierReference`.
-//   attribute IdentifierExpression name;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ShorthandProperty {
     pub name: IdentifierExpression,
@@ -1141,10 +834,6 @@ impl ShorthandProperty {
         Self { name }
     }
 }
-
-// interface ComputedPropertyName : PropertyName {
-//   attribute Expression expression;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ComputedPropertyName {
@@ -1157,11 +846,6 @@ impl ComputedPropertyName {
     }
 }
 
-// `LiteralPropertyName`
-// interface StaticPropertyName : PropertyName {
-//   attribute string value;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct StaticPropertyName {
     pub value: String,
@@ -1172,13 +856,6 @@ impl StaticPropertyName {
         Self { value }
     }
 }
-
-// literals
-
-// `BooleanLiteral`
-// interface LiteralBooleanExpression : Expression {
-//   attribute boolean value;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct LiteralBooleanExpression {
@@ -1191,9 +868,6 @@ impl LiteralBooleanExpression {
     }
 }
 
-// A `NumericLiteral` for which the Number value of its MV is positive infinity.
-// interface LiteralInfinityExpression : Expression { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct LiteralInfinityExpression {}
 
@@ -1203,9 +877,6 @@ impl LiteralInfinityExpression {
     }
 }
 
-// `NullLiteral`
-// interface LiteralNullExpression : Expression { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct LiteralNullExpression {}
 
@@ -1214,11 +885,6 @@ impl LiteralNullExpression {
         Self {}
     }
 }
-
-// `NumericLiteral`
-// interface LiteralNumericExpression : Expression {
-//   attribute double value;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct LiteralNumericExpression {
@@ -1230,21 +896,6 @@ impl LiteralNumericExpression {
         Self { value }
     }
 }
-
-// `RegularExpressionLiteral`
-// interface LiteralRegExpExpression : Expression {
-//   attribute string pattern;
-//   // Whether the `g` flag is present.
-//   attribute boolean global;
-//   // Whether the `i` flag is present.
-//   attribute boolean ignoreCase;
-//   // Whether the `m` flag is present.
-//   attribute boolean multiLine;
-//   // Whether the `y` flag is present.
-//   attribute boolean sticky;
-//   // Whether the `u` flag is present.
-//   attribute boolean unicode;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct LiteralRegExpExpression {
@@ -1276,11 +927,6 @@ impl LiteralRegExpExpression {
     }
 }
 
-// `StringLiteral`
-// interface LiteralStringExpression : Expression {
-//   attribute string value;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct LiteralStringExpression {
     pub value: String,
@@ -1291,14 +937,6 @@ impl LiteralStringExpression {
         Self { value }
     }
 }
-
-// other expressions
-
-// `ArrayLiteral`
-// interface ArrayExpression : Expression {
-//   // The elements of the array literal; a null value represents an elision.
-//   attribute (SpreadElement or Expression)?[] elements;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum ArrayExpressionElement {
@@ -1317,14 +955,6 @@ impl ArrayExpression {
         Self { elements }
     }
 }
-
-// `ArrowFunction`, `AsyncArrowFunction`
-// interface ArrowExpression : Expression {
-//   // True for `AsyncArrowFunction`, false otherwise.
-//   attribute boolean isAsync;
-//   attribute FormalParameters params;
-//   attribute (FunctionBody or Expression) body;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum ArrowExpressionBody {
@@ -1349,14 +979,6 @@ impl ArrowExpression {
     }
 }
 
-// `AssignmentExpression :: LeftHandSideExpression = AssignmentExpression`
-// interface AssignmentExpression : Expression {
-//   // The `LeftHandSideExpression`.
-//   attribute AssignmentTarget binding;
-//   // The `AssignmentExpression` following the `=`.
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentExpression {
     pub binding: AssignmentTarget,
@@ -1371,15 +993,6 @@ impl AssignmentExpression {
         }
     }
 }
-
-// `ExponentiationExpression`, `MultiplicativeExpression`, `AdditiveExpression`, `ShiftExpression`, `RelationalExpression`, `EqualityExpression`, `BitwiseANDExpression`, `BitwiseXORExpression`, `BitwiseORExpression`, `LogicalANDExpression`, `LogicalORExpression`
-// interface BinaryExpression : Expression {
-//   attribute BinaryOperator operator;
-//   // The expression before the operator.
-//   attribute Expression left;
-//   // The expression after the operator.
-//   attribute Expression right;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct BinaryExpression {
@@ -1398,11 +1011,6 @@ impl BinaryExpression {
     }
 }
 
-// interface CallExpression : Expression {
-//   attribute (Expression or Super) callee;
-//   attribute Arguments arguments;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct CallExpression {
     pub callee: ExpressionOrSuper,
@@ -1414,15 +1022,6 @@ impl CallExpression {
         Self { callee, arguments }
     }
 }
-
-// `AssignmentExpression :: LeftHandSideExpression AssignmentOperator AssignmentExpression`
-// interface CompoundAssignmentExpression : Expression {
-//   attribute CompoundAssignmentOperator operator;
-//   // The `LeftHandSideExpression`.
-//   attribute SimpleAssignmentTarget binding;
-//   // The `AssignmentExpression`.
-//   attribute Expression expression;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct CompoundAssignmentExpression {
@@ -1445,11 +1044,6 @@ impl CompoundAssignmentExpression {
     }
 }
 
-// interface ComputedMemberExpression : MemberExpression {
-//   // The expression resolving to the name of the property to be accessed.
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ComputedMemberExpression {
     pub object: ExpressionOrSuper,
@@ -1461,16 +1055,6 @@ impl ComputedMemberExpression {
         Self { object, expression }
     }
 }
-
-// `ConditionalExpression :: LogicalORExpression ? AssignmentExpression : AssignmentExpression`
-// interface ConditionalExpression : Expression {
-//   // The `LogicalORExpression`.
-//   attribute Expression test;
-//   // The first `AssignmentExpression`.
-//   attribute Expression consequent;
-//   // The second `AssignmentExpression`.
-//   attribute Expression alternate;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ConditionalExpression {
@@ -1493,17 +1077,10 @@ impl ConditionalExpression {
     }
 }
 
-// interface FunctionExpression : Expression {
-//   attribute BindingIdentifier? name;
-// };
-// FunctionExpression implements Function;
-
 #[derive(Debug, PartialEq)]
 pub struct FunctionExpression {
     pub name: Option<BindingIdentifier>,
-    // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
     pub is_async: bool,
-    // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
     pub is_generator: bool,
     pub params: FormalParameters,
     pub body: FunctionBody,
@@ -1527,10 +1104,6 @@ impl FunctionExpression {
     }
 }
 
-// `IdentifierReference`
-// interface IdentifierExpression : Expression { };
-// IdentifierExpression implements VariableReference;
-
 #[derive(Debug, PartialEq)]
 pub struct IdentifierExpression {
     pub var: VariableReference,
@@ -1541,11 +1114,6 @@ impl IdentifierExpression {
         Self { var }
     }
 }
-
-// interface NewExpression : Expression {
-//   attribute Expression callee;
-//   attribute Arguments arguments;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct NewExpression {
@@ -1559,8 +1127,6 @@ impl NewExpression {
     }
 }
 
-// interface NewTargetExpression : Expression { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct NewTargetExpression {}
 
@@ -1569,10 +1135,6 @@ impl NewTargetExpression {
         Self {}
     }
 }
-
-// interface ObjectExpression : Expression {
-//   attribute ObjectProperty[] properties;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ObjectExpression {
@@ -1584,11 +1146,6 @@ impl ObjectExpression {
         Self { properties }
     }
 }
-
-// interface UnaryExpression : Expression {
-//   attribute UnaryOperator operator;
-//   attribute Expression operand;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct UnaryExpression {
@@ -1602,11 +1159,6 @@ impl UnaryExpression {
     }
 }
 
-// interface StaticMemberExpression : MemberExpression {
-//   // The name of the property to be accessed.
-//   attribute IdentifierName property;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberExpression {
     pub object: ExpressionOrSuper,
@@ -1618,14 +1170,6 @@ impl StaticMemberExpression {
         Self { object, property }
     }
 }
-
-// `TemplateLiteral`, `MemberExpression :: MemberExpression TemplateLiteral`, `CallExpression : CallExpression TemplateLiteral`
-// interface TemplateExpression : Expression {
-//   // The second `MemberExpression` or `CallExpression`, if present.
-//   attribute Expression? tag;
-//   // The contents of the template. This list must be alternating TemplateElements and Expressions, beginning and ending with TemplateElement.
-//   attribute (Expression or TemplateElement)[] elements;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum TemplateExpressionElement {
@@ -1645,9 +1189,6 @@ impl TemplateExpression {
     }
 }
 
-// `PrimaryExpression :: this`
-// interface ThisExpression : Expression { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct ThisExpression {}
 
@@ -1656,14 +1197,6 @@ impl ThisExpression {
         Self {}
     }
 }
-
-// `UpdateExpression :: LeftHandSideExpression ++`, `UpdateExpression :: LeftHandSideExpression --`, `UpdateExpression :: ++ LeftHandSideExpression`, ``UpdateExpression :: -- LeftHandSideExpression`
-// interface UpdateExpression : Expression {
-//   // True for `UpdateExpression :: ++ LeftHandSideExpression` and `UpdateExpression :: -- LeftHandSideExpression`, false otherwise.
-//   attribute boolean isPrefix;
-//   attribute UpdateOperator operator;
-//   attribute SimpleAssignmentTarget operand;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct UpdateExpression {
@@ -1682,12 +1215,6 @@ impl UpdateExpression {
     }
 }
 
-// `YieldExpression :: yield`, `YieldExpression :: yield AssignmentExpression`
-// interface YieldExpression : Expression {
-//   // The `AssignmentExpression`, if present.
-//   attribute Expression? expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct YieldExpression {
     pub expression: Option<Box<Expression>>,
@@ -1698,11 +1225,6 @@ impl YieldExpression {
         Self { expression }
     }
 }
-
-// `YieldExpression :: yield * AssignmentExpression`
-//interface YieldGeneratorExpression : Expression {
-//  attribute Expression expression;
-//};
 
 #[derive(Debug, PartialEq)]
 pub struct YieldGeneratorExpression {
@@ -1715,10 +1237,6 @@ impl YieldGeneratorExpression {
     }
 }
 
-// interface AwaitExpression : Expression {
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct AwaitExpression {
     pub expression: Box<Expression>,
@@ -1729,12 +1247,6 @@ impl AwaitExpression {
         Self { expression }
     }
 }
-
-// other statements
-
-// interface BlockStatement : Statement {
-//   attribute Block block;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement {
@@ -1747,10 +1259,6 @@ impl BlockStatement {
     }
 }
 
-// interface BreakStatement : Statement {
-//   attribute Label? label;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct BreakStatement {
     pub label: Option<Label>,
@@ -1761,10 +1269,6 @@ impl BreakStatement {
         Self { label }
     }
 }
-
-// interface ContinueStatement : Statement {
-//   attribute Label? label;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct ContinueStatement {
@@ -1777,8 +1281,6 @@ impl ContinueStatement {
     }
 }
 
-// interface DebuggerStatement : Statement { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct DebuggerStatement {}
 
@@ -1787,10 +1289,6 @@ impl DebuggerStatement {
         Self {}
     }
 }
-
-// interface DoWhileStatement : IterationStatement {
-//   attribute Expression test;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct DoWhileStatement {
@@ -1803,14 +1301,6 @@ impl DoWhileStatement {
         Self { block, test }
     }
 }
-
-// `for ( LeftHandSideExpression in Expression ) Statement`, `for ( var ForBinding in Expression ) Statement`, `for ( ForDeclaration in Expression ) Statement`, `for ( var BindingIdentifier Initializer in Expression ) Statement`
-// interface ForInStatement : IterationStatement {
-//   // The expression or declaration before `in`.
-//   attribute (VariableDeclaration or AssignmentTarget) left;
-//   // The expression after `in`.
-//   attribute Expression right;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum VariableDeclarationOrAssignmentTarget {
@@ -1835,14 +1325,6 @@ impl ForInStatement {
     }
 }
 
-// `for ( LeftHandSideExpression of Expression ) Statement`, `for ( var ForBinding of Expression ) Statement`, `for ( ForDeclaration of Expression ) Statement`
-// interface ForOfStatement : IterationStatement {
-//   // The expression or declaration before `of`.
-//   attribute (VariableDeclaration or AssignmentTarget) left;
-//   // The expression after `of`.
-//   attribute Expression right;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ForOfStatement {
     pub left: VariableDeclarationOrAssignmentTarget,
@@ -1859,16 +1341,6 @@ impl ForOfStatement {
         Self { left, right, block }
     }
 }
-
-// `for ( Expression ; Expression ; Expression ) Statement`, `for ( var VariableDeclarationlist ; Expression ; Expression ) Statement`
-// interface ForStatement : IterationStatement {
-//   // The expression or declaration before the first `;`, if present.
-//   attribute (VariableDeclaration or Expression)? init;
-//   // The expression before the second `;`, if present
-//   attribute Expression? test;
-//   // The expression after the second `;`, if present
-//   attribute Expression? update;
-// };
 
 #[derive(Debug, PartialEq)]
 pub enum VariableDeclarationOrExpression {
@@ -1900,15 +1372,6 @@ impl ForStatement {
     }
 }
 
-// `if ( Expression ) Statement`, `if ( Expression ) Statement else Statement`,
-// interface IfStatement : Statement {
-//   attribute Expression test;
-//   // The first `Statement`.
-//   attribute Statement consequent;
-//   // The second `Statement`, if present.
-//   attribute Statement? alternate;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct IfStatement {
     pub test: Box<Expression>,
@@ -1930,11 +1393,6 @@ impl IfStatement {
     }
 }
 
-// interface LabeledStatement : Statement {
-//   attribute Label label;
-//   attribute Statement body;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct LabeledStatement {
     pub label: Label,
@@ -1947,10 +1405,6 @@ impl LabeledStatement {
     }
 }
 
-// interface ReturnStatement : Statement {
-//   attribute Expression? expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     pub expression: Option<Box<Expression>>,
@@ -1961,12 +1415,6 @@ impl ReturnStatement {
         Self { expression }
     }
 }
-
-// A `SwitchStatement` whose `CaseBlock` is `CaseBlock :: { CaseClauses }`.
-// interface SwitchStatement : Statement {
-//   attribute Expression discriminant;
-//   attribute SwitchCase[] cases;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchStatement {
@@ -1982,17 +1430,6 @@ impl SwitchStatement {
         }
     }
 }
-
-// A `SwitchStatement` whose `CaseBlock` is `CaseBlock :: { CaseClauses DefaultClause CaseClauses }`.
-// interface SwitchStatementWithDefault : Statement {
-//   attribute Expression discriminant;
-//   // The `CaseClauses` before the `DefaultClause`.
-//   attribute SwitchCase[] preDefaultCases;
-//   // The `DefaultClause`.
-//   attribute SwitchDefault defaultCase;
-//   // The `CaseClauses` after the `DefaultClause`.
-//   attribute SwitchCase[] postDefaultCases;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchStatementWithDefault {
@@ -2018,10 +1455,6 @@ impl SwitchStatementWithDefault {
     }
 }
 
-// interface ThrowStatement : Statement {
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct ThrowStatement {
     pub expression: Box<Expression>,
@@ -2032,12 +1465,6 @@ impl ThrowStatement {
         Self { expression }
     }
 }
-
-// `TryStatement :: try Block Catch`
-// interface TryCatchStatement : Statement {
-//   attribute Block body;
-//   attribute CatchClause catchClause;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct TryCatchStatement {
@@ -2050,16 +1477,6 @@ impl TryCatchStatement {
         Self { body, catch_clause }
     }
 }
-
-// `TryStatement :: try Block Finally`, `TryStatement :: try Block Catch Finally`
-// interface TryFinallyStatement : Statement {
-//   // The `Block`.
-//   attribute Block body;
-//   // The `Catch`, if present.
-//   attribute CatchClause? catchClause;
-//   // The `Finally`.
-//   attribute Block finalizer;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct TryFinallyStatement {
@@ -2078,10 +1495,6 @@ impl TryFinallyStatement {
     }
 }
 
-// interface WhileStatement : IterationStatement {
-//   attribute Expression test;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct WhileStatement {
     pub test: Box<Expression>,
@@ -2093,11 +1506,6 @@ impl WhileStatement {
         Self { test, block }
     }
 }
-
-// interface WithStatement : Statement {
-//   attribute Expression _object;
-//   attribute Statement body;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct WithStatement {
@@ -2111,12 +1519,6 @@ impl WithStatement {
     }
 }
 
-// other nodes
-
-// interface Block : Node {
-//   attribute Statement[] statements;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct Block {
     pub statements: Vec<Statement>,
@@ -2127,12 +1529,6 @@ impl Block {
         Self { statements }
     }
 }
-
-// `Catch`
-// interface CatchClause : Node {
-//   attribute Binding binding;
-//   attribute Block body;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct CatchClause {
@@ -2146,11 +1542,6 @@ impl CatchClause {
     }
 }
 
-// An item in a `DirectivePrologue`
-// interface Directive : Node {
-//   attribute string rawValue;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct Directive {
     pub raw_value: String,
@@ -2161,11 +1552,6 @@ impl Directive {
         Self { raw_value }
     }
 }
-
-// interface FormalParameters : Node {
-//   attribute Parameter[] items;
-//   attribute Binding? rest;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct FormalParameters {
@@ -2178,11 +1564,6 @@ impl FormalParameters {
         Self { items, rest }
     }
 }
-
-// interface FunctionBody : Node {
-//   attribute Directive[] directives;
-//   attribute Statement[] statements;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct FunctionBody {
@@ -2199,17 +1580,10 @@ impl FunctionBody {
     }
 }
 
-// interface FunctionDeclaration : Statement {
-//   attribute BindingIdentifier name;
-// };
-// FunctionDeclaration implements Function;
-
 #[derive(Debug, PartialEq)]
 pub struct FunctionDeclaration {
     pub name: BindingIdentifier,
-    // True for `AsyncFunctionExpression` and `AsyncFunctionDeclaration`, false otherwise.
     pub is_async: bool,
-    // True for `GeneratorExpression` and `GeneratorDeclaration`, false otherwise.
     pub is_generator: bool,
     pub params: FormalParameters,
     pub body: FunctionBody,
@@ -2233,11 +1607,6 @@ impl FunctionDeclaration {
     }
 }
 
-// interface Script : Program {
-//   attribute Directive[] directives;
-//   attribute Statement[] statements;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct Script {
     pub directives: Vec<Directive>,
@@ -2253,10 +1622,6 @@ impl Script {
     }
 }
 
-// interface SpreadElement : Node {
-//   attribute Expression expression;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct SpreadElement {
     pub expression: Box<Expression>,
@@ -2268,9 +1633,6 @@ impl SpreadElement {
     }
 }
 
-// `super`
-// interface Super : Node { };
-
 #[derive(Default, Debug, PartialEq)]
 pub struct Super {}
 
@@ -2279,12 +1641,6 @@ impl Super {
         Self {}
     }
 }
-
-// `CaseClause`
-// interface SwitchCase : Node {
-//   attribute Expression test;
-//   attribute Statement[] consequent;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchCase {
@@ -2298,11 +1654,6 @@ impl SwitchCase {
     }
 }
 
-// `DefaultClause`
-// interface SwitchDefault : Node {
-//   attribute Statement[] consequent;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct SwitchDefault {
     pub consequent: Vec<Statement>,
@@ -2313,11 +1664,6 @@ impl SwitchDefault {
         Self { consequent }
     }
 }
-
-// `TemplateCharacters`
-// interface TemplateElement : Node {
-//   attribute string rawValue;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct TemplateElement {
@@ -2330,11 +1676,6 @@ impl TemplateElement {
     }
 }
 
-// interface VariableDeclaration : Node {
-//   attribute VariableDeclarationKind kind;
-//   [NonEmpty] attribute VariableDeclarator[] declarators;
-// };
-
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclaration {
     pub kind: VariableDeclarationKind,
@@ -2346,11 +1687,6 @@ impl VariableDeclaration {
         Self { kind, declarators }
     }
 }
-
-// interface VariableDeclarator : Node {
-//   attribute Binding binding;
-//   attribute Expression? init;
-// };
 
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclarator {
