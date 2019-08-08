@@ -12,6 +12,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "emitter"
+version = "0.1.0"
+dependencies = [
+ "ast 0.1.0",
+ "parser 0.1.0",
+]
+
+[[package]]
 name = "generated_parser"
 version = "0.1.0"
 dependencies = [

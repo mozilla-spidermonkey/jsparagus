@@ -3,6 +3,7 @@
 members = [
     "ast",
     "driver",
+    "emitter",
     "generated_parser",
     "parser",
 ]
