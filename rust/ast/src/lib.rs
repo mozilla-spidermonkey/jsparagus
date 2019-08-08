@@ -147,43 +147,6 @@ impl Function {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Node {
-    Program(Program),
-    Statement(Statement),
-    Expression(Expression),
-    PropertyName(PropertyName),
-    ObjectProperty(ObjectProperty),
-    ImportDeclaration(ImportDeclaration),
-    ExportDeclaration(ExportDeclaration),
-    VariableReference(VariableReference),
-    BindingWithDefault(BindingWithDefault),
-    MemberAssignmentTarget(MemberAssignmentTarget),
-    ArrayBinding(ArrayBinding),
-    ObjectBinding(ObjectBinding),
-    BindingProperty(BindingProperty),
-    AssignmentTargetWithDefault(AssignmentTargetWithDefault),
-    ArrayAssignmentTarget(ArrayAssignmentTarget),
-    ObjectAssignmentTarget(ObjectAssignmentTarget),
-    AssignmentTargetProperty(AssignmentTargetProperty),
-    ClassElement(ClassElement),
-    ImportSpecifier(ImportSpecifier),
-    ExportFromSpecifier(ExportFromSpecifier),
-    ExportLocalSpecifier(ExportLocalSpecifier),
-    Block(Block),
-    CatchClause(CatchClause),
-    Directive(Directive),
-    FormalParameters(FormalParameters),
-    FunctionBody(FunctionBody),
-    SpreadElement(SpreadElement),
-    Super(Super),
-    SwitchCase(SwitchCase),
-    SwitchDefault(SwitchDefault),
-    TemplateElement(TemplateElement),
-    VariableDeclaration(VariableDeclaration),
-    VariableDeclarator(VariableDeclarator),
-}
-
-#[derive(Debug, PartialEq)]
 pub enum Program {
     Module(Module),
     Script(Script),

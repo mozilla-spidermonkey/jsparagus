@@ -96,7 +96,6 @@ pub enum StackValue {
     NamedObjectProperty(Box<NamedObjectProperty>),
     NewExpression(Box<NewExpression>),
     NewTargetExpression(Box<NewTargetExpression>),
-    Node(Box<Node>),
     ObjectAssignmentTarget(Box<ObjectAssignmentTarget>),
     ObjectBinding(Box<ObjectBinding>),
     ObjectExpression(Box<ObjectExpression>),
@@ -973,15 +972,6 @@ impl StackValueItem for NewTargetExpression {
         match sv {
             StackValue::NewTargetExpression(v) => v,
             _ => panic!("StackValue expected NewTargetExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for Node {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::Node(v) => v,
-            _ => panic!("StackValue expected Node, got {:?}", sv),
         }
     }
 }
@@ -1970,12 +1960,6 @@ impl From<Box<NewExpression>> for StackValue {
 impl From<Box<NewTargetExpression>> for StackValue {
     fn from(val: Box<NewTargetExpression>) -> StackValue {
         StackValue::NewTargetExpression(val)
-    }
-}
-
-impl From<Box<Node>> for StackValue {
-    fn from(val: Box<Node>) -> StackValue {
-        StackValue::Node(val)
     }
 }
 
