@@ -106,7 +106,7 @@
     "BlockStatement": "BlockStatement",
     "BreakStatement": "BreakStatement",
     "ContinueStatement": "ContinueStatement",
-    "DebuggerStatement": "DebuggerStatement",
+    "DebuggerStatement": null,
     "EmptyStatement": null,
     "ExpressionStatement": "Box<Expression>",
     "IfStatement": "IfStatement",
@@ -134,8 +134,8 @@
     "MemberExpression": "MemberExpression",
     "ClassExpression": "ClassExpression",
     "LiteralBooleanExpression": "LiteralBooleanExpression",
-    "LiteralInfinityExpression": "LiteralInfinityExpression",
-    "LiteralNullExpression": "LiteralNullExpression",
+    "LiteralInfinityExpression": null,
+    "LiteralNullExpression": null,
     "LiteralNumericExpression": "LiteralNumericExpression",
     "LiteralRegExpExpression": "LiteralRegExpExpression",
     "LiteralStringExpression": "LiteralStringExpression",
@@ -149,11 +149,11 @@
     "FunctionExpression": "FunctionExpression",
     "IdentifierExpression": "IdentifierExpression",
     "NewExpression": "NewExpression",
-    "NewTargetExpression": "NewTargetExpression",
+    "NewTargetExpression": null,
     "ObjectExpression": "ObjectExpression",
     "UnaryExpression": "UnaryExpression",
     "TemplateExpression": "TemplateExpression",
-    "ThisExpression": "ThisExpression",
+    "ThisExpression": null,
     "UpdateExpression": "UpdateExpression",
     "YieldExpression": "YieldExpression",
     "YieldGeneratorExpression": "YieldGeneratorExpression",
@@ -249,7 +249,7 @@
   "ExpressionOrSuper": {
     "_type": "enum",
     "Expression": "Box<Expression>",
-    "Super": "Super"
+    "Super": null
   },
   "MemberAssignmentTarget": {
     "_type": "enum",
@@ -445,12 +445,6 @@
     "_type": "struct",
     "value": "bool"
   },
-  "LiteralInfinityExpression": {
-    "_type": "struct"
-  },
-  "LiteralNullExpression": {
-    "_type": "struct"
-  },
   "LiteralNumericExpression": {
     "_type": "struct",
     "value": "f64"
@@ -539,9 +533,6 @@
     "callee": "Box<Expression>",
     "arguments": "Arguments"
   },
-  "NewTargetExpression": {
-    "_type": "struct"
-  },
   "ObjectExpression": {
     "_type": "struct",
     "properties": "Vec<ObjectProperty>"
@@ -565,9 +556,6 @@
     "_type": "struct",
     "tag": "Option<Box<Expression>>",
     "elements": "Vec<TemplateExpressionElement>"
-  },
-  "ThisExpression": {
-    "_type": "struct"
   },
   "UpdateExpression": {
     "_type": "struct",
@@ -598,9 +586,6 @@
   "ContinueStatement": {
     "_type": "struct",
     "label": "Option<Label>"
-  },
-  "DebuggerStatement": {
-    "_type": "struct"
   },
   "DoWhileStatement": {
     "_type": "struct",
@@ -727,9 +712,6 @@
   "SpreadElement": {
     "_type": "struct",
     "expression": "Box<Expression>"
-  },
-  "Super": {
-    "_type": "struct"
   },
   "SwitchCase": {
     "_type": "struct",

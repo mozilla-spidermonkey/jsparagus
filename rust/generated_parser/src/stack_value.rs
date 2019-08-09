@@ -48,7 +48,6 @@ pub enum StackValue {
     ConditionalExpression(Box<ConditionalExpression>),
     ContinueStatement(Box<ContinueStatement>),
     DataProperty(Box<DataProperty>),
-    DebuggerStatement(Box<DebuggerStatement>),
     Directive(Box<Directive>),
     DoWhileStatement(Box<DoWhileStatement>),
     Export(Box<Export>),
@@ -82,8 +81,6 @@ pub enum StackValue {
     Label(Box<Label>),
     LabeledStatement(Box<LabeledStatement>),
     LiteralBooleanExpression(Box<LiteralBooleanExpression>),
-    LiteralInfinityExpression(Box<LiteralInfinityExpression>),
-    LiteralNullExpression(Box<LiteralNullExpression>),
     LiteralNumericExpression(Box<LiteralNumericExpression>),
     LiteralRegExpExpression(Box<LiteralRegExpExpression>),
     LiteralStringExpression(Box<LiteralStringExpression>),
@@ -95,7 +92,6 @@ pub enum StackValue {
     ModuleItems(Box<ModuleItems>),
     NamedObjectProperty(Box<NamedObjectProperty>),
     NewExpression(Box<NewExpression>),
-    NewTargetExpression(Box<NewTargetExpression>),
     ObjectAssignmentTarget(Box<ObjectAssignmentTarget>),
     ObjectBinding(Box<ObjectBinding>),
     ObjectExpression(Box<ObjectExpression>),
@@ -113,7 +109,6 @@ pub enum StackValue {
     StaticMemberAssignmentTarget(Box<StaticMemberAssignmentTarget>),
     StaticMemberExpression(Box<StaticMemberExpression>),
     StaticPropertyName(Box<StaticPropertyName>),
-    Super(Box<Super>),
     SwitchCase(Box<SwitchCase>),
     SwitchDefault(Box<SwitchDefault>),
     SwitchStatement(Box<SwitchStatement>),
@@ -121,7 +116,6 @@ pub enum StackValue {
     TemplateElement(Box<TemplateElement>),
     TemplateExpression(Box<TemplateExpression>),
     TemplateExpressionElement(Box<TemplateExpressionElement>),
-    ThisExpression(Box<ThisExpression>),
     ThrowStatement(Box<ThrowStatement>),
     Token(Box<Token>),
     TryCatchStatement(Box<TryCatchStatement>),
@@ -544,15 +538,6 @@ impl StackValueItem for DataProperty {
     }
 }
 
-impl StackValueItem for DebuggerStatement {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::DebuggerStatement(v) => v,
-            _ => panic!("StackValue expected DebuggerStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl StackValueItem for Directive {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -850,24 +835,6 @@ impl StackValueItem for LiteralBooleanExpression {
     }
 }
 
-impl StackValueItem for LiteralInfinityExpression {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::LiteralInfinityExpression(v) => v,
-            _ => panic!("StackValue expected LiteralInfinityExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for LiteralNullExpression {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::LiteralNullExpression(v) => v,
-            _ => panic!("StackValue expected LiteralNullExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl StackValueItem for LiteralNumericExpression {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -963,15 +930,6 @@ impl StackValueItem for NewExpression {
         match sv {
             StackValue::NewExpression(v) => v,
             _ => panic!("StackValue expected NewExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for NewTargetExpression {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::NewTargetExpression(v) => v,
-            _ => panic!("StackValue expected NewTargetExpression, got {:?}", sv),
         }
     }
 }
@@ -1129,15 +1087,6 @@ impl StackValueItem for StaticPropertyName {
     }
 }
 
-impl StackValueItem for Super {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::Super(v) => v,
-            _ => panic!("StackValue expected Super, got {:?}", sv),
-        }
-    }
-}
-
 impl StackValueItem for SwitchCase {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -1197,15 +1146,6 @@ impl StackValueItem for TemplateExpressionElement {
         match sv {
             StackValue::TemplateExpressionElement(v) => v,
             _ => panic!("StackValue expected TemplateExpressionElement, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for ThisExpression {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::ThisExpression(v) => v,
-            _ => panic!("StackValue expected ThisExpression, got {:?}", sv),
         }
     }
 }
@@ -1675,12 +1615,6 @@ impl From<Box<DataProperty>> for StackValue {
     }
 }
 
-impl From<Box<DebuggerStatement>> for StackValue {
-    fn from(val: Box<DebuggerStatement>) -> StackValue {
-        StackValue::DebuggerStatement(val)
-    }
-}
-
 impl From<Box<Directive>> for StackValue {
     fn from(val: Box<Directive>) -> StackValue {
         StackValue::Directive(val)
@@ -1879,18 +1813,6 @@ impl From<Box<LiteralBooleanExpression>> for StackValue {
     }
 }
 
-impl From<Box<LiteralInfinityExpression>> for StackValue {
-    fn from(val: Box<LiteralInfinityExpression>) -> StackValue {
-        StackValue::LiteralInfinityExpression(val)
-    }
-}
-
-impl From<Box<LiteralNullExpression>> for StackValue {
-    fn from(val: Box<LiteralNullExpression>) -> StackValue {
-        StackValue::LiteralNullExpression(val)
-    }
-}
-
 impl From<Box<LiteralNumericExpression>> for StackValue {
     fn from(val: Box<LiteralNumericExpression>) -> StackValue {
         StackValue::LiteralNumericExpression(val)
@@ -1954,12 +1876,6 @@ impl From<Box<NamedObjectProperty>> for StackValue {
 impl From<Box<NewExpression>> for StackValue {
     fn from(val: Box<NewExpression>) -> StackValue {
         StackValue::NewExpression(val)
-    }
-}
-
-impl From<Box<NewTargetExpression>> for StackValue {
-    fn from(val: Box<NewTargetExpression>) -> StackValue {
-        StackValue::NewTargetExpression(val)
     }
 }
 
@@ -2065,12 +1981,6 @@ impl From<Box<StaticPropertyName>> for StackValue {
     }
 }
 
-impl From<Box<Super>> for StackValue {
-    fn from(val: Box<Super>) -> StackValue {
-        StackValue::Super(val)
-    }
-}
-
 impl From<Box<SwitchCase>> for StackValue {
     fn from(val: Box<SwitchCase>) -> StackValue {
         StackValue::SwitchCase(val)
@@ -2110,12 +2020,6 @@ impl From<Box<TemplateExpression>> for StackValue {
 impl From<Box<TemplateExpressionElement>> for StackValue {
     fn from(val: Box<TemplateExpressionElement>) -> StackValue {
         StackValue::TemplateExpressionElement(val)
-    }
-}
-
-impl From<Box<ThisExpression>> for StackValue {
-    fn from(val: Box<ThisExpression>) -> StackValue {
-        StackValue::ThisExpression(val)
     }
 }
 

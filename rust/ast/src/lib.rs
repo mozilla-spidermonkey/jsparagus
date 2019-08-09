@@ -159,7 +159,7 @@ pub enum Statement {
     BlockStatement(BlockStatement),
     BreakStatement(BreakStatement),
     ContinueStatement(ContinueStatement),
-    DebuggerStatement(DebuggerStatement),
+    DebuggerStatement,
     EmptyStatement,
     ExpressionStatement(Box<Expression>),
     IfStatement(IfStatement),
@@ -189,8 +189,8 @@ pub enum Expression {
     MemberExpression(MemberExpression),
     ClassExpression(ClassExpression),
     LiteralBooleanExpression(LiteralBooleanExpression),
-    LiteralInfinityExpression(LiteralInfinityExpression),
-    LiteralNullExpression(LiteralNullExpression),
+    LiteralInfinityExpression,
+    LiteralNullExpression,
     LiteralNumericExpression(LiteralNumericExpression),
     LiteralRegExpExpression(LiteralRegExpExpression),
     LiteralStringExpression(LiteralStringExpression),
@@ -204,11 +204,11 @@ pub enum Expression {
     FunctionExpression(FunctionExpression),
     IdentifierExpression(IdentifierExpression),
     NewExpression(NewExpression),
-    NewTargetExpression(NewTargetExpression),
+    NewTargetExpression,
     ObjectExpression(ObjectExpression),
     UnaryExpression(UnaryExpression),
     TemplateExpression(TemplateExpression),
-    ThisExpression(ThisExpression),
+    ThisExpression,
     UpdateExpression(UpdateExpression),
     YieldExpression(YieldExpression),
     YieldGeneratorExpression(YieldGeneratorExpression),
@@ -340,7 +340,7 @@ impl AssignmentTargetIdentifier {
 #[derive(Debug, PartialEq)]
 pub enum ExpressionOrSuper {
     Expression(Box<Expression>),
-    Super(Super),
+    Super,
 }
 
 #[derive(Debug, PartialEq)]
@@ -831,24 +831,6 @@ impl LiteralBooleanExpression {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
-pub struct LiteralInfinityExpression {}
-
-impl LiteralInfinityExpression {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-#[derive(Default, Debug, PartialEq)]
-pub struct LiteralNullExpression {}
-
-impl LiteralNullExpression {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct LiteralNumericExpression {
     pub value: f64,
@@ -1090,15 +1072,6 @@ impl NewExpression {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
-pub struct NewTargetExpression {}
-
-impl NewTargetExpression {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectExpression {
     pub properties: Vec<ObjectProperty>,
@@ -1149,15 +1122,6 @@ pub struct TemplateExpression {
 impl TemplateExpression {
     pub fn new(tag: Option<Box<Expression>>, elements: Vec<TemplateExpressionElement>) -> Self {
         Self { tag, elements }
-    }
-}
-
-#[derive(Default, Debug, PartialEq)]
-pub struct ThisExpression {}
-
-impl ThisExpression {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 
@@ -1241,15 +1205,6 @@ pub struct ContinueStatement {
 impl ContinueStatement {
     pub fn new(label: Option<Label>) -> Self {
         Self { label }
-    }
-}
-
-#[derive(Default, Debug, PartialEq)]
-pub struct DebuggerStatement {}
-
-impl DebuggerStatement {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 
@@ -1593,15 +1548,6 @@ pub struct SpreadElement {
 impl SpreadElement {
     pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
-    }
-}
-
-#[derive(Default, Debug, PartialEq)]
-pub struct Super {}
-
-impl Super {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 
