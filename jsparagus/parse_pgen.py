@@ -70,7 +70,7 @@ pgen_grammar = Grammar(
         ],
         'prods': list_of('prod'),
         'prod': [
-            prod(['terms', gen.Optional('action'), ';'], 'prod'),
+            prod(['terms', gen.Optional('reducer'), ';'], 'prod'),
         ],
         'terms': list_of('term'),
         'term': [
@@ -81,7 +81,7 @@ pgen_grammar = Grammar(
             prod(['IDENT'], 'ident'),
             prod(['STR'], 'str'),
         ],
-        'action': [
+        'reducer': [
             prod(['=>', 'expr'], 1)
         ],
         'expr': [

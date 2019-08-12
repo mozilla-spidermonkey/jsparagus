@@ -94,7 +94,7 @@ nt rhs_lines {
 }
 
 nt rhs_line {
-    ifdef? rhs action? PRODID? NL => rhs_line($0, $1, $2, $3);
+    ifdef? rhs reducer? PRODID? NL => rhs_line($0, $1, $2, $3);
     PROSE NL => rhs_line_prose($0);
 }
 
@@ -103,7 +103,7 @@ nt rhs {
     "[" "empty" "]" => empty_rhs();
 }
 
-nt action {
+nt reducer {
    "=>" expr => $1;
 }
 

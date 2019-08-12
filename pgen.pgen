@@ -52,7 +52,7 @@ nt prods {
 }
 
 nt prod {
-    terms action? ";" => prod($0, $1);
+    terms reducer? ";" => prod($0, $1);
 }
 
 nt terms {
@@ -70,7 +70,7 @@ nt symbol {
     STR => str($0);
 }
 
-nt action {
+nt reducer {
     "=>" expr => $1;
 }
 

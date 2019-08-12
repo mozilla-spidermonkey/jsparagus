@@ -110,7 +110,7 @@ actions = [
     # 35. "nt" IDENT "{" terms "=>"
     {'MATCH': 42, 'IDENT': 43, 'Some': 44, 'None': 45},
 
-    # 36. "nt" IDENT "{" terms action
+    # 36. "nt" IDENT "{" terms reducer
     {';': 47},
 
     # 37. "nt" IDENT "{" terms term
@@ -143,7 +143,7 @@ actions = [
     # 46. "nt" IDENT "{" terms "=>" expr
     {';': -19},
 
-    # 47. "nt" IDENT "{" terms action ";"
+    # 47. "nt" IDENT "{" terms reducer ";"
     {'}': -16, 'IDENT': -16, 'STR': -16},
 
     # 48. "goal" "nt" IDENT "{" prods "}"
@@ -208,7 +208,7 @@ ctns = [
     {},
     {'prod': 33, 'terms': 26, 'term': 27, 'symbol': 28},
     {},
-    {'action': 36, 'term': 37, 'symbol': 28},
+    {'reducer': 36, 'term': 37, 'symbol': 28},
     {},
     {},
     {'prods': 40, 'prod': 25, 'terms': 26, 'term': 27, 'symbol': 28},
@@ -281,14 +281,14 @@ reductions = [
     ('prods', 2, lambda builder, x0, x1: builder.append(x0, x1)),
     # 14. prod ::= terms ";" => prod($0, None)
     ('prod', 2, lambda builder, x0, x1: builder.prod(x0, None)),
-    # 15. prod ::= terms action ";" => prod($0, Some($1))
+    # 15. prod ::= terms reducer ";" => prod($0, Some($1))
     ('prod', 3, lambda builder, x0, x1, x2: builder.prod(x0, x1)),
     # 16. terms ::= term => single($0)
     ('terms', 1, lambda builder, x0: builder.single(x0)),
     # 17. terms ::= terms term => append($0, $1)
     ('terms', 2, lambda builder, x0, x1: builder.append(x0, x1)),
-    # 18. action ::= "=>" expr => $1
-    ('action', 2, lambda builder, x0, x1: x1),
+    # 18. reducer ::= "=>" expr => $1
+    ('reducer', 2, lambda builder, x0, x1: x1),
     # 19. term ::= symbol => $0
     ('term', 1, lambda builder, x0: x0),
     # 20. term ::= symbol "?" => optional($0)
