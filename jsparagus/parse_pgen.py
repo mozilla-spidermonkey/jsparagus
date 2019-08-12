@@ -185,9 +185,6 @@ class AstBuilder:
         chars = sym[1:-1]  # This is a bit sloppy.
         return Literal(chars)
 
-    def action(self, expr):
-        return expr
-
     def expr_match(self, match):
         assert match.startswith('$')
         return int(match[1:])
