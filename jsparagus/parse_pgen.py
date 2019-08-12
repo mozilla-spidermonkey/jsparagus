@@ -43,10 +43,10 @@ def call_method(name, body):
     return CallMethod(name, tuple(arg_indexes))
 
 
-def prod(body, action):
-    if isinstance(action, str):
-        action = call_method(action, body)
-    return Production(body, action)
+def prod(body, reducer):
+    if isinstance(reducer, str):
+        reducer = call_method(reducer, body)
+    return Production(body, reducer)
 
 
 discards = set('token var nt goal Some None = => ; ( ) { } , ?'.split())
@@ -161,16 +161,16 @@ class AstBuilder:
 
     def nt_def(self, goal_kw, ident, prods):
         is_goal = goal_kw == "goal"
-        prods = [Production(body, action) for body, action in prods]
+        prods = [Production(body, reducer) for body, reducer in prods]
         return (is_goal, ident, prods)
 
-    def prod(self, symbols, action):
-        if action is None:
+    def prod(self, symbols, reducer):
+        if reducer is None:
             if sum(1 for e in symbols if is_concrete_element(e)) == 1:
-                action = 0
+                reducer = 0
             else:
-                raise ValueError("action required for {!r}".format(symbols))
-        return (symbols, action)
+                raise ValueError("reducer required for {!r}".format(symbols))
+        return (symbols, reducer)
 
     def optional(self, sym):
         return gen.Optional(sym)

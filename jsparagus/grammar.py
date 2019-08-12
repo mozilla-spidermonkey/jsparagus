@@ -48,15 +48,15 @@ def example_grammar():
 
 
 # A production consists of a left side, an optional condition, a right side,
-# and a reduce action.  A `Production` object includes everything except the
-# left side.  Incorporating actions lets us transform grammar while preserving
+# and a reducer. A `Production` object includes everything except the left
+# side. Incorporating reducers lets us transform a grammar while preserving
 # behavior.
 #
 # The production `expr ::= term` is represented by
 # `Production(["term"], 0)`.
 #
-# The production `expr ::= expr + term => add` is represented by
-# `Production(["expr", "+", "term"], CallMethod("add", (0, 1, 2))`.
+# The production `expr ::= expr + term => add($0, $2)` is represented by
+# `Production(["expr", "+", "term"], CallMethod("add", (0, 2))`.
 #
 class Production:
     __slots__ = ['body', 'action', 'condition']
@@ -86,12 +86,11 @@ class Production:
                           condition=kwargs.get('condition', self.condition))
 
 
-# *** Reduce actions **********************************************************
+# *** Reduce expressions ******************************************************
 #
-# Reduce actions say what happens when a production is matched.
-#
-# Reduce expressions are a little language used to specify reduce
-# actions. A reduce expression is one of these:
+# Reduce expressions ("reducers" for short) are a little language used to
+# specify what happens when a production is matched. A reduce expression is
+# one of these:
 #
 # *   An integer in the range(0, len(production.body)) returns a previously
 #     parsed value from the parser's stack.
@@ -106,7 +105,7 @@ class Production:
 #     In Python, this just expands to the same thing as `expr`, but in Rust
 #     this expands to a use of `Option::Some()`.
 #
-# In addition, the special reduce action 'accept' means stop parsing. This is
+# In addition, the special reducer 'accept' means stop parsing. This is
 # used only in productions for init nonterminals, created automatically by
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
 #
@@ -322,11 +321,11 @@ class Grammar:
 
         def copy_rhs(nt, i, sole_production, rhs, context_params):
             if isinstance(rhs, list):
-                # Bare list, no action. Desugar to a Production, inferring a
-                # reasonable default action.
+                # Bare list, no reducer. Desugar to a Production, inferring a
+                # reasonable default reducer.
                 nargs = sum(1 for e in rhs if is_concrete_element(e))
                 if len(rhs) == 1 and nargs == 1:
-                    action = 0  # don't call a method, just propagate the value
+                    reducer = 0  # don't call a method, just propagate the value
                 else:
                     # Call a method named after the production. If the
                     # nonterminal has exactly one production, there's no need
@@ -335,8 +334,8 @@ class Grammar:
                         method = nt
                     else:
                         method = '{} {}'.format(nt, i)
-                    action = CallMethod(method, args=tuple(range(nargs)))
-                rhs = Production(rhs, action)
+                    reducer = CallMethod(method, args=tuple(range(nargs)))
+                rhs = Production(rhs, reducer)
 
             if not isinstance(rhs, Production):
                 raise TypeError(
@@ -583,13 +582,13 @@ class Grammar:
         else:
             return self.symbols_to_str(rhs)
 
-    def production_to_str(self, nt, rhs, action=()):
+    def production_to_str(self, nt, rhs, reducer=()):
         # As we have two ways of representing productions at the moment, just
         # take multiple arguments :(
         return "{} ::= {}{}".format(
             self.element_to_str(nt),
             self.rhs_to_str(rhs),
-            "" if action == () else " => " + expr_to_str(action))
+            "" if reducer == () else " => " + expr_to_str(reducer))
 
     def lr_item_to_str(self, prods, item):
         prod = prods[item.prod_index]

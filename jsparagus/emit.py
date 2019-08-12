@@ -47,19 +47,19 @@ def write_python_parser(out, parser_states):
             " ".join(repr(e.error_code) + "," for e in slice)))
     out.write("]\n\n")
 
-    def action(a):
+    def compile_reduce_expr(expr):
         """Compile a reduce expression to Python"""
-        if isinstance(a, CallMethod):
-            method_name = a.method.replace(" ", "_P")
-            return "builder.{}({})".format(method_name, ', '.join(map(action, a.args)))
-        elif isinstance(a, Some):
-            return action(a.inner)
-        elif a is None:
+        if isinstance(expr, CallMethod):
+            method_name = expr.method.replace(" ", "_P")
+            return "builder.{}({})".format(method_name, ', '.join(map(compile_reduce_expr, expr.args)))
+        elif isinstance(expr, Some):
+            return compile_reduce_expr(expr.inner)
+        elif expr is None:
             return "None"
         else:
             # can't be 'accept' because we filter out InitNt productions
-            assert isinstance(a, int)
-            return "x{}".format(a)
+            assert isinstance(expr, int)
+            return "x{}".format(expr)
 
     out.write("reductions = [\n")
     for prod_index, prod in enumerate(prods):
@@ -69,7 +69,7 @@ def write_python_parser(out, parser_states):
         names = ["x" + str(i) for i in range(nparams)]
         fn = ("lambda builder, "
               + ", ".join(names)
-              + ": " + action(prod.action))
+              + ": " + compile_reduce_expr(prod.action))
         out.write("    # {}. {}\n".format(
             prod_index,
             grammar.production_to_str(prod.nt, prod.rhs, prod.action)))

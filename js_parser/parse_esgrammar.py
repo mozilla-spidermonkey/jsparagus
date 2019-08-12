@@ -60,13 +60,13 @@ SIGIL_TRUE = '+'
 #     PrimaryExpression : ArrayLiteral
 #     Statement : IfStatement
 #
-# should not cause an extra method call; the action for each of these
+# should not cause an extra method call; the reducer for each of these
 # productions should be `$0`, i.e. just return the right-hand side unchanged.
 # Then type inference will make sure that the two nonterminals (Statement and
 # IfStatement, for example) are given the same type.
 #
 # ESGrammarBuilder uses the regular expressions below to determine when to do
-# this. A production gets the special `$0` action if any of the regular
+# this. A production gets the special `$0` reducer if any of the regular
 # expressions matches both sides.
 PRODUCTION_GROUPS = [
     r'(Expression|^(Array|Object)?Literal)$',
@@ -102,12 +102,12 @@ class ESGrammarBuilder:
 
     def to_production(self, lhs, i, rhs, is_sole_production):
         """Wrap a list of grammar symbols `rhs` in a Production object."""
-        body, action, condition = rhs
-        if action is None:
-            action = self.default_action(lhs, i, body, is_sole_production)
-        return grammar.Production(body, action, condition=condition)
+        body, reducer, condition = rhs
+        if reducer is None:
+            reducer = self.default_reducer(lhs, i, body, is_sole_production)
+        return grammar.Production(body, reducer, condition=condition)
 
-    def default_action(self, lhs, i, body, is_sole_production):
+    def default_reducer(self, lhs, i, body, is_sole_production):
         if isinstance(lhs, tuple):
             nt_name = lhs[0]
         else:
@@ -201,8 +201,8 @@ class ESGrammarBuilder:
     def terminal_chr(self, chr):
         raise ValueError("FAILED: %r" % chr)
 
-    def rhs_line(self, ifdef, rhs, action, _prodid):
-        return (rhs, action, ifdef)
+    def rhs_line(self, ifdef, rhs, reducer, _prodid):
+        return (rhs, reducer, ifdef)
 
     def rhs_line_prose(self, prose):
         return prose

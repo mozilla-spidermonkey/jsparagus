@@ -67,7 +67,7 @@ def empty_nt_set(grammar):
     We need this expr to fix issue #1, but it isn't used yet.
     """
 
-    empties = {}  # maps nts to actions.
+    empties = {}  # maps nts to reducers.
 
     def production_is_empty(nt, p):
         return all(isinstance(e, LookaheadRule)
@@ -530,8 +530,7 @@ def expand_all_optional_elements(grammar):
     empties = empty_nt_set(grammar)
 
     # Put all the productions in one big list, so each one has an index. We
-    # will use the indices in the action table (as arguments to Reduce
-    # actions).
+    # will use the indices in the action table (as reduce action payloads).
     prods = []
     prods_with_indexes_by_nt = collections.defaultdict(list)
 
