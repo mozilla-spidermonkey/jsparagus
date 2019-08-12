@@ -54,19 +54,6 @@ def throw_syntax_error(actions, state, t, tokens):
                      .format(sorted(expected), t))
 
 
-def parse(actions, ctns, reductions, error_codes, entry_state, lexer_cls, text, builder):
-    """ Table-driven LR parser. """
-    parser = Parser(actions,
-                    ctns,
-                    reductions,
-                    error_codes,
-                    entry_state,
-                    builder)
-    lexer = lexer_cls(parser)
-    lexer.write(text)
-    return lexer.close()
-
-
 class Parser:
     """Parser using jsparagus-generated tables.
 
