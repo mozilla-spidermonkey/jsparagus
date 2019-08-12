@@ -42,27 +42,27 @@ token CloseParen = ")";
 
 goal nt grammar {
     nt_def_or_blank_line;
-    grammar nt_def_or_blank_line => concat;
+    grammar nt_def_or_blank_line => concat($0, $1);
 }
 
 nt nt_def_or_blank_line {
-    NL => blank_line;
-    nt_def => nt_def_to_list;
+    NL => blank_line();
+    nt_def => nt_def_to_list($0);
 }
 
 nt nt_def {
-    nt_lhs EQ NL rhs_lines NL => nt_def;
-    nt_lhs EQ "one" "of" NL t_list_lines NL => nt_def_one_of;
+    nt_lhs EQ NL rhs_lines NL => nt_def($0, $1, $3);
+    nt_lhs EQ "one" "of" NL t_list_lines NL => nt_def_one_of($0, $1, $5);
 }
 
 nt nt_lhs {
-    NT => nt_lhs_no_params;
-    NTCALL "[" params "]" => nt_lhs_with_params;
+    NT => nt_lhs_no_params($0);
+    NTCALL "[" params "]" => nt_lhs_with_params($0, $2);
 }
 
 nt params {
-    param => single;
-    params "," param => append_ignoring_separator;
+    param => single($0);
+    params "," param => append($0, $2);
 }
 
 nt param {
@@ -71,90 +71,90 @@ nt param {
 
 nt t_list_lines {
     t_list_line;
-    t_list_lines t_list_line => concat;
+    t_list_lines t_list_line => concat($0, $1);
 }
 
 nt t_list_line {
-    terminal_seq NL => t_list_line;
+    terminal_seq NL => t_list_line($0);
 }
 
 nt terminal_seq {
-    terminal => single;
-    terminal_seq terminal => append;
+    terminal => single($0);
+    terminal_seq terminal => append($0, $1);
 }
 
 nt terminal {
-    T => terminal;
-    CHR => chr;
+    T => terminal($0);
+    CHR => chr($0);
 }
 
 nt rhs_lines {
-    rhs_line => single;
-    rhs_lines rhs_line => append;
+    rhs_line => single($0);
+    rhs_lines rhs_line => append($0, $1);
 }
 
 nt rhs_line {
-    ifdef? rhs action? PRODID? NL => rhs_line;
-    PROSE NL => rhs_line_prose;
+    ifdef? rhs action? PRODID? NL => rhs_line($0, $1, $2, $3);
+    PROSE NL => rhs_line_prose($0);
 }
 
 nt rhs {
     symbols;
-    "[" "empty" "]" => empty_rhs;
+    "[" "empty" "]" => empty_rhs();
 }
 
 nt action {
-   "=>" expr => action;
+   "=>" expr => $1;
 }
 
 nt expr {
-    MATCH_REF => expr_match_ref;
-    NT "(" expr_args? ")" => expr_call;
-    "Some" "(" expr ")" => expr_some;
-    "None" => expr_none;
+    MATCH_REF => expr_match_ref($0);
+    NT "(" expr_args? ")" => expr_call($0, $2);
+    "Some" "(" expr ")" => expr_some($2);
+    "None" => expr_none();
 }
 
 nt expr_args {
-    expr => single;
-    args "," expr => append_ignoring_separator;
+    expr => single($0);
+    args "," expr => append($0, $2);
 }
 
 nt ifdef {
-   "[" definite_sigil NT "]" => ifdef;
+   "[" definite_sigil NT "]" => ifdef($1, $2);
 }
 
 nt symbols {
-    symbol => single;
-    symbols symbol => append;
+    symbol => single($0);
+    symbols symbol => append($0, $1);
 }
 
 nt symbol {
     terminal;
     nonterminal;
-    nonterminal "?" => optional;
-    nonterminal "but" "not" exclusion => but_not;
-    nonterminal "but" "not" "one" "of" exclusion_list => but_not_one_of;
-    "[" "lookahead" lookahead_assertion "]" => lookahead;
+    nonterminal "?" => optional($0);
+    nonterminal "but" "not" exclusion => but_not($0, $3);
+    nonterminal "but" "not" "one" "of" exclusion_list => but_not_one_of($0, $5);
+    "[" "lookahead" lookahead_assertion "]" => $2;
     no_line_terminator_here;
     WPROSE;
 }
 
 nt no_line_terminator_here {
-    "[" "no" line_terminator "here" "]" => no_line_terminator_here;
+    "[" "no" line_terminator "here" "]" => no_line_terminator_here();
 }
 
 nt nonterminal {
-    NT => nonterminal;
-    NTCALL "[" args "]" => nonterminal_apply;
+    NT => nonterminal($0);
+    NTCALL "[" args "]" => nonterminal_apply($0, $2);
 }
 
 nt args {
-    arg => single;
-    args "," arg => append_ignoring_separator;
+    arg => single($0);
+    args "," arg => append($0, $2);
 }
 
 nt arg {
-    sigil NT => arg_expr;
+    sigil NT => arg_expr($0, $1);
 }
 
 nt sigil {
@@ -163,36 +163,36 @@ nt sigil {
 }
 
 nt definite_sigil {
-    "~" => sigil_false;
-    "+" => sigil_true;
+    "~" => sigil_false();
+    "+" => sigil_true();
 }
 
 nt exclusion_list {
-    exclusion => single;
-    exclusion_list "or" exclusion => append_ignoring_separator;
+    exclusion => single($0);
+    exclusion_list "or" exclusion => append($0, $2);
 }
 
 nt exclusion {
-    terminal => exclusion_terminal;
-    nonterminal => exclusion_nonterminal;
-    CHR "through" CHR => exclusion_chr_range;
+    terminal => exclusion_terminal($0);
+    nonterminal => exclusion_nonterminal($0);
+    CHR "through" CHR => exclusion_chr_range($0, $2);
 }
 
 nt lookahead_assertion {
-    "==" terminal => la_eq;
-    "!=" terminal => la_ne;
-    "<!" NT => la_not_in_nonterminal;
-    "<!" "{" lookahead_exclusions "}" => la_not_in_set;
+    "==" terminal => la_eq($1);
+    "!=" terminal => la_ne($1);
+    "<!" NT => la_not_in_nonterminal($1);
+    "<!" "{" lookahead_exclusions "}" => la_not_in_set($2);
 }
 
 nt lookahead_exclusions {
-    lookahead_exclusion => single;
-    lookahead_exclusions "," lookahead_exclusion => append_ignoring_separator;
+    lookahead_exclusion => single($0);
+    lookahead_exclusions "," lookahead_exclusion => append($0, $2);
 }
 
 nt lookahead_exclusion {
-    lookahead_exclusion_element => single;
-    lookahead_exclusion lookahead_exclusion_element => append;
+    lookahead_exclusion_element => single($0);
+    lookahead_exclusion lookahead_exclusion_element => append($0, $1);
 }
 
 nt lookahead_exclusion_element {

@@ -9,7 +9,7 @@ from jsparagus.ordered import OrderedFrozenSet
 
 ESGrammarLexer = LexicalGrammar(
     # the operators and keywords:
-    "[ ] { } , ~ + ? <! == != "
+    "[ ] { } , ~ + ? <! == != => ( ) "
     "but empty here lookahead no not of one or through",
 
     NL="\n",
@@ -82,13 +82,10 @@ class ESGrammarBuilder:
     def append(self, x, y):
         return x + [y]
 
-    def append_ignoring_separator(self, x, sep, y):
-        return x + [y]
-
     def concat(self, x, y):
         return x + y
 
-    def blank_line(self, nl):
+    def blank_line(self):
         return []
 
     def nt_def_to_list(self, nt_def):
@@ -172,7 +169,7 @@ class ESGrammarBuilder:
                         action=action),
         ]
 
-    def make_nt_def(self, lhs, eq, rhs_list):
+    def nt_def(self, lhs, eq, rhs_list):
         has_sole_production = (len(rhs_list) == 1)
         production_list = []
         for i, rhs in enumerate(rhs_list):
@@ -184,30 +181,16 @@ class ESGrammarBuilder:
         name, args = lhs
         return (name, eq, grammar.NtDef(args, production_list))
 
-    def nt_def(self, nt_lhs, eq, nl, rhs_lines, nl2):
-        # nt_lhs EQ NL rhs_lines NL
-        assert nl == "\n"
-        assert nl2 == "\n"
-        return self.make_nt_def(nt_lhs, eq, rhs_lines)
-
-    def nt_def_one_of(self, nt_lhs, eq, one, of, nl, terminals, nl2):
-        # nt_lhs EQ "one" "of" NL t_list_lines
-        assert one == "one"
-        assert of == "of"
-        assert nl == "\n"
-        assert nl2 == "\n"
-        return self.make_nt_def(nt_lhs, eq, [([t], None, None) for t in terminals])
+    def nt_def_one_of(self, nt_lhs, eq, terminals):
+        return self.nt_def(nt_lhs, eq, [([t], None, None) for t in terminals])
 
     def nt_lhs_no_params(self, name):
         return (name, ())
 
-    def nt_lhs_with_params(self, name, ob, params, cb):
-        # NTCALL [ params ]
-        assert ob == '['
-        assert cb == ']'
+    def nt_lhs_with_params(self, name, params):
         return (name, params)
 
-    def t_list_line(self, terminals, nl):
+    def t_list_line(self, terminals):
         return terminals
 
     def terminal(self, t):
@@ -218,79 +201,50 @@ class ESGrammarBuilder:
     def terminal_chr(self, chr):
         raise ValueError("FAILED: %r" % chr)
 
-    def rhs_line(self, ifdef, rhs, action, _prodid, nl):
-        assert nl == "\n"
+    def rhs_line(self, ifdef, rhs, action, _prodid):
         return (rhs, action, ifdef)
 
-    def rhs_line_prose(self, prose, nl):
-        assert nl == "\n"
+    def rhs_line_prose(self, prose):
         return prose
 
-    def empty_rhs(self, ob, empty, cb):
-        assert (ob, empty, cb) == ("[", "empty", "]")
+    def empty_rhs(self):
         return []
-
-    def action(self, arrow, action):
-        assert arrow == '=>'
-        return action
 
     def expr_match_ref(self, token):
         assert token.startswith('$')
         return int(token[1:])
 
-    def expr_call(self, method, lp, args, rp):
-        assert (lp, rp) == ('(', ')')
+    def expr_call(self, method, args):
         return grammar.CallMethod(method, args or ())
 
-    def expr_some(self, some, lp, expr, rp):
-        assert (some, lp, rp) == ('Some', '(', ')')
+    def expr_some(self, expr):
         return grammar.Some(expr)
 
-    def expr_none(self, none):
-        assert none == 'None'
+    def expr_none(self):
         return None
 
-    def ifdef(self, ob, value, nt, cb):
-        assert (ob, cb) == ("[", "]")
+    def ifdef(self, value, nt):
         return nt, value
 
-    def optional(self, nt, q):
-        # nonterminal `?`
-        assert q == "?"
+    def optional(self, nt):
         return grammar.Optional(nt)
 
-    def but_not(self, nt, but, not_, exclusion):
-        # nonterminal "but not" exclusion
-        assert but == "but"
-        assert not_ == "not"
+    def but_not(self, nt, exclusion):
         return ('-', nt, exclusion)
 
-    def but_not_one_of(self, nt, but, not_, one, of, exclusion_list):
-        # nonterminal "but not one of" exclusion_list
-        assert (but, not_, one, of) == ("but", "not", "one", "of")
+    def but_not_one_of(self, nt, exclusion_list):
         return ('-', nt, exclusion_list)
 
-    def lookahead(self, ob, lookahead, look_assert, cb):
-        # [lookahead ...]
-        assert (ob, lookahead, cb) == ('[', 'lookahead', ']')
-        return look_assert
-
-    def no_line_terminator_here(self, ob, no, line_terminator, here, cb):
-        assert ((ob, no, line_terminator, here, cb)
-                == ('[', 'no', 'LineTerminator', 'here', ']'))
+    def no_line_terminator_here(self):
         return ("no-LineTerminator-here",)
 
     def nonterminal(self, nt):
         return nt
 
-    def nonterminal_apply(self, name, ob, args, cb):
-        assert (ob, cb) == ('[', ']')
+    def nonterminal_apply(self, name, args):
         if len(set(k for k, expr in args)) != len(args):
             raise ValueError("parameter passed multiple times")
         return grammar.Nt(name, tuple(args))
-
-    def args_single(self, arg):
-        return dict([arg])
 
     def arg_expr(self, sigil, argname):
         if sigil == '?':
@@ -298,12 +252,10 @@ class ESGrammarBuilder:
         else:
             return (argname, sigil)
 
-    def sigil_false(self, sigil):
-        assert sigil == SIGIL_FALSE
+    def sigil_false(self):
         return False
 
-    def sigil_true(self, sigil):
-        assert sigil == SIGIL_TRUE
+    def sigil_true(self):
         return True
 
     def exclusion_terminal(self, t):
@@ -312,24 +264,19 @@ class ESGrammarBuilder:
     def exclusion_nonterminal(self, nt):
         return ("nt", nt)
 
-    def exclusion_chr_range(self, c1, through, c2):
-        assert through == "through"
+    def exclusion_chr_range(self, c1, c2):
         return ("range", c1, c2)
 
-    def la_eq(self, eq, t):
-        assert eq == "=="
+    def la_eq(self, t):
         return grammar.LookaheadRule(OrderedFrozenSet([t]), True)
 
-    def la_ne(self, ne, t):
-        assert ne == "!="
+    def la_ne(self, t):
         return grammar.LookaheadRule(OrderedFrozenSet([t]), False)
 
-    def la_not_in_nonterminal(self, notin, nt):
-        assert notin == '<!'
+    def la_not_in_nonterminal(self, nt):
         return ('?!', nt)
 
-    def la_not_in_set(self, notin, ob, lookahead_exclusions, cb):
-        assert (notin, ob, cb) == ("<!", '{', '}')
+    def la_not_in_set(self, lookahead_exclusions):
         if all(len(excl) == 1 for excl in lookahead_exclusions):
             return grammar.LookaheadRule(
                 OrderedFrozenSet(excl[0] for excl in lookahead_exclusions),
