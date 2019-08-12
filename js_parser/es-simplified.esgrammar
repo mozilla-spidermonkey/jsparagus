@@ -10,7 +10,7 @@ LabelIdentifier[Yield, Await] :
   Identifier
 
 PrimaryExpression[Yield, Await] :
-  `this`
+  `this` => this_expr()
   IdentifierReference[?Yield, ?Await]
   Literal
   ArrayLiteral[?Yield, ?Await]

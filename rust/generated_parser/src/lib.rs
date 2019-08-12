@@ -9094,9 +9094,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseOrExpression
         }
         335 => {
-            // PrimaryExpression ::= "this" => PrimaryExpression 0($0)
+            // PrimaryExpression ::= "this" => this_expr()
             stack.pop();
-            stack.push(StackValue::from(handler.primary_expression_p0()));
+            stack.push(StackValue::from(handler.this_expr()));
             NonterminalId::PrimaryExpression
         }
         336 => {

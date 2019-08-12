@@ -64,10 +64,12 @@ impl AstBuilder {
     pub fn label_identifier(&self) -> Box<Label> {
         Box::new(Label::new("".to_string())) // TODO
     }
-    // PrimaryExpression ::= "this" => PrimaryExpression 0($0)
-    pub fn primary_expression_p0(&self) -> Box<Expression> {
-        Box::new(Expression::ThisExpression(ThisExpression::new()))
+
+    // PrimaryExpression ::= "this"
+    pub fn this_expr(&self) -> Box<Expression> {
+        Box::new(Expression::ThisExpression)
     }
+
     // PrimaryExpression ::= IdentifierReference => PrimaryExpression 1($0)
     pub fn primary_expression_p1(&self, a0: Box<Identifier>) -> Box<Expression> {
         Box::new(Expression::IdentifierExpression(IdentifierExpression::new(
