@@ -59,30 +59,30 @@ def example_grammar():
 # `Production(["expr", "+", "term"], CallMethod("add", (0, 2))`.
 #
 class Production:
-    __slots__ = ['body', 'action', 'condition']
+    __slots__ = ['body', 'reducer', 'condition']
 
-    def __init__(self, body, action, *, condition=None):
+    def __init__(self, body, reducer, *, condition=None):
         self.body = body
-        self.action = action
+        self.reducer = reducer
         self.condition = condition
 
     def __eq__(self, other):
         return (self.body == other.body
-                and self.action == other.action
+                and self.reducer == other.reducer
                 and self.condition == other.condition)
 
     __hash__ = None
 
     def __repr__(self):
         if self.condition is None:
-            return "Production({!r}, action={!r})".format(self.body, self.action)
+            return "Production({!r}, reducer={!r})".format(self.body, self.reducer)
         else:
-            return ("Production({!r}, action={!r}, condition={!r})"
-                    .format(self.body, self.action, self.condition))
+            return ("Production({!r}, reducer={!r}, condition={!r})"
+                    .format(self.body, self.reducer, self.condition))
 
     def copy_with(self, **kwargs):
         return Production(body=kwargs.get('body', self.body),
-                          action=kwargs.get('action', self.action),
+                          reducer=kwargs.get('reducer', self.reducer),
                           condition=kwargs.get('condition', self.condition))
 
 
@@ -283,41 +283,41 @@ class Grammar:
                     .format(nt, i, j, e))
             assert False, "unreachable"
 
-        def check_reduce_action(nt, i, rhs, action):
-            if isinstance(action, int):
+        def check_reduce_expr(nt, i, rhs, expr):
+            if isinstance(expr, int):
                 concrete_len = sum(1 for e in rhs.body
                                    if is_concrete_element(e))
-                if not (0 <= action < concrete_len):
+                if not (0 <= expr < concrete_len):
                     raise ValueError(
                         "invalid grammar: element number {} out of range for "
-                        "production {!r} in grammar[{!r}][{}].action ({!r})"
-                        .format(action, nt, rhs.body, i, rhs.action))
-            elif isinstance(action, CallMethod):
-                if not isinstance(action.method, str):
+                        "production {!r} in grammar[{!r}][{}].reducer ({!r})"
+                        .format(expr, nt, rhs.body, i, rhs.reducer))
+            elif isinstance(expr, CallMethod):
+                if not isinstance(expr.method, str):
                     raise TypeError(
                         "invalid grammar: method names must be strings, "
-                        "not {!r}, in grammar[{!r}[{}].action"
-                        .format(action.method, nt, i))
-                if not action.method.isidentifier():
-                    name, space, pn = action.method.partition(' ')
+                        "not {!r}, in grammar[{!r}[{}].reducer"
+                        .format(expr.method, nt, i))
+                if not expr.method.isidentifier():
+                    name, space, pn = expr.method.partition(' ')
                     if space == ' ' and name.isidentifier() and pn.isdigit():
                         pass
                     else:
                         raise ValueError(
                             "invalid grammar: invalid method name {!r} "
-                            "(not an identifier), in grammar[{!r}[{}].action"
-                            .format(action.method, nt, i))
-                for arg_expr in action.args:
-                    check_reduce_action(nt, i, rhs, arg_expr)
-            elif action is None:
+                            "(not an identifier), in grammar[{!r}[{}].reducer"
+                            .format(expr.method, nt, i))
+                for arg_expr in expr.args:
+                    check_reduce_expr(nt, i, rhs, arg_expr)
+            elif expr is None:
                 pass
-            elif isinstance(action, Some):
-                check_reduce_action(nt, i, rhs, action.inner)
+            elif isinstance(expr, Some):
+                check_reduce_expr(nt, i, rhs, expr.inner)
             else:
                 raise TypeError(
                     "invalid grammar: unrecognized reduce expression {!r} "
-                    "in grammar[{!r}][{}].action"
-                    .format(action, nt, i))
+                    "in grammar[{!r}][{}].reducer"
+                    .format(expr, nt, i))
 
         def copy_rhs(nt, i, sole_production, rhs, context_params):
             if isinstance(rhs, list):
@@ -350,8 +350,8 @@ class Grammar:
                         "invalid grammar: undefined parameter {!r} "
                         "in conditional for grammar[{!r}][{}]"
                         .format(param, nt, i))
-            if rhs.action != 'accept':
-                check_reduce_action(nt, i, rhs, rhs.action)
+            if rhs.reducer != 'accept':
+                check_reduce_expr(nt, i, rhs, rhs.reducer)
             assert isinstance(rhs.body, list)
             return rhs.copy_with(body=[
                 validate_element(nt, i, j, e, context_params)

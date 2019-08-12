@@ -75,8 +75,8 @@ def empty_nt_set(grammar):
                    or (isinstance(e, Nt) and e in empties)
                    for e in p.body)
 
-    def evaluate_action_with_empty_matches(p):
-        # partial evaluation of p.action
+    def evaluate_reducer_with_empty_matches(p):
+        # partial evaluation of p.reducer
         stack = [e for e in p.body if is_concrete_element(e)]
 
         def eval(expr):
@@ -105,7 +105,7 @@ def empty_nt_set(grammar):
                     "internal error: unhandled reduce expression type {!r}"
                     .format(expr))
 
-        return eval(p.action)
+        return eval(p.reducer)
 
     done = False
     while not done:
@@ -120,7 +120,7 @@ def empty_nt_set(grammar):
                                 "{!r} match the empty string"
                                 .format(nt))
                         done = False
-                        empties[nt] = evaluate_action_with_empty_matches(p)
+                        empties[nt] = evaluate_reducer_with_empty_matches(p)
     return empties
 
 
@@ -471,7 +471,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 #
 # There may be many productions in a grammar that all have the same `nt` and
 # `index` because they were all produced from the same source production.
-Prod = collections.namedtuple("Prod", "nt index rhs action")
+Prod = collections.namedtuple("Prod", "nt index rhs reducer")
 
 
 def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
@@ -577,12 +577,12 @@ def expand_all_optional_elements(grammar):
                             "internal error: unrecognized element {!r}"
                             .format(expr))
 
-                adjusted_action = adjust_reduce_expr(p.action)
+                adjusted_reducer = adjust_reduce_expr(p.reducer)
                 expanded_grammar[nt].append(
                     Production(body=expanded_rhs,
-                               action=adjusted_action))
+                               reducer=adjusted_reducer))
                 prods.append(Prod(nt, prod_index, expanded_rhs,
-                                  adjusted_action))
+                                  adjusted_reducer))
                 prods_with_indexes_by_nt[nt].append(
                     (len(prods) - 1, expanded_rhs))
 
@@ -1339,7 +1339,7 @@ def analyze_states(context, prods, *, verbose=False, progress=False):
     init_state_map = {}
     for init_nt in context.grammar.init_nts:
         init_prod_index = prods.index(
-            Prod(init_nt, 0, [init_nt.name.goal], action="accept"))
+            Prod(init_nt, 0, [init_nt.name.goal], reducer="accept"))
         start_item = context.make_lr_item(init_prod_index,
                                           0,
                                           lookahead=None,

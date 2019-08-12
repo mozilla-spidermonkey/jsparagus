@@ -246,7 +246,7 @@ def infer_types(g):
                 if grammar.is_concrete_element(e)
             ]
             try:
-                unify(expr_type(p.action), nt_type)
+                unify(expr_type(p.reducer), nt_type)
             except JsparagusTypeError as exc:
                 exc.annotate(
                     "in nonterminal {!r}, production {}:"

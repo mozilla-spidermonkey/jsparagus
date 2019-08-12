@@ -32,7 +32,7 @@ def hack_grammar(g):
     def strip_args_in_production(p):
         """ Discard production conditions and nt arguments. """
         body = [strip_args(e) for e in p.body]
-        return jsparagus.grammar.Production(body, p.action)
+        return jsparagus.grammar.Production(body, p.reducer)
 
     nonterminals = {}
     for nt, nt_def in g.nonterminals.items():

@@ -142,11 +142,11 @@ class ESGrammarBuilder:
 
     def apply_asi(self, p):
         """Return two rules based on p, so that ASI can be applied."""
-        assert isinstance(p.action, grammar.CallMethod)
+        assert isinstance(p.reducer, grammar.CallMethod)
 
         # Don't pass the semicolon to the method.
-        action = grammar.CallMethod(p.action.method,
-                                    p.action.args[:-1])
+        reducer = grammar.CallMethod(p.reducer.method,
+                                     p.reducer.args[:-1])
 
         # Except for do-while loops, check at runtime that ASI occurs only at
         # the end of a line.
@@ -163,10 +163,10 @@ class ESGrammarBuilder:
         return [
             # The preferred production, with the semicolon in.
             p.copy_with(body=p.body[:],
-                        action=action),
+                        reducer=reducer),
             # The fallback production, performing ASI.
             p.copy_with(body=p.body[:-1] + [grammar.ErrorSymbol(code)],
-                        action=action),
+                        reducer=reducer),
         ]
 
     def nt_def(self, lhs, eq, rhs_list):

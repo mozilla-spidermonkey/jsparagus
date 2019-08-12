@@ -787,7 +787,7 @@ class GenTestCase(unittest.TestCase):
                 [name, "(", ")", ";"],
                 [name, "=", name, ";"],
                 Production(["yield", name, ";"],
-                           action=CallMethod("yield_stmt", [1]),
+                           reducer=CallMethod("yield_stmt", [1]),
                            condition=('Yield', True)),
             ]),
             'name': NtDef(['Yield'], [
@@ -1007,13 +1007,13 @@ class GenTestCase(unittest.TestCase):
     def testConvenienceMethodTypeInference(self):
         """A method can be called only in an intermediate reduce expression."""
 
-        # The action `f(g($0))`.
-        action = CallMethod("f", [CallMethod("g", [0])])
+        # The reduce expression `f(g($0))`.
+        reducer = CallMethod("f", [CallMethod("g", [0])])
 
         # The grammar `goal ::= NAME => f(g($1))`.
         grammar = Grammar(
             {
-                'goal': [Production(['NAME'], action)],
+                'goal': [Production(['NAME'], reducer)],
             },
             variable_terminals=['NAME'])
 

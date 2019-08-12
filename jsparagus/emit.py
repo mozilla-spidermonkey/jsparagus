@@ -69,10 +69,10 @@ def write_python_parser(out, parser_states):
         names = ["x" + str(i) for i in range(nparams)]
         fn = ("lambda builder, "
               + ", ".join(names)
-              + ": " + compile_reduce_expr(prod.action))
+              + ": " + compile_reduce_expr(prod.reducer))
         out.write("    # {}. {}\n".format(
             prod_index,
-            grammar.production_to_str(prod.nt, prod.rhs, prod.action)))
+            grammar.production_to_str(prod.nt, prod.rhs, prod.reducer)))
         out.write("    ({!r}, {!r}, {}),\n".format(prod.nt.pretty(), len(names), fn))
     out.write("]\n\n\n")  # two blank lines before class.
 
@@ -389,10 +389,10 @@ class RustParserWriter:
                         assert isinstance(expr, int)
                         return None
 
-                method_name = find_first_method(prod.action)
+                method_name = find_first_method(prod.reducer)
                 if method_name is not None:
                     method_to_prod[method_name] = self.grammar.production_to_str(
-                        prod.nt, prod.rhs, prod.action)
+                        prod.nt, prod.rhs, prod.reducer)
 
         # for method in self.grammar.methods.items():
         # if prod.nt in self.nonterminals:
@@ -518,7 +518,7 @@ class RustParserWriter:
             if prod.nt in self.nonterminals:
                 self.write(2, "{} => {{", i)
                 self.write(3, "// {}",
-                           self.grammar.production_to_str(prod.nt, prod.rhs, prod.action))
+                           self.grammar.production_to_str(prod.nt, prod.rhs, prod.reducer))
 
                 elements = [e for e in prod.rhs if is_concrete_element(e)]
                 variable_used = [False] * len(elements)
@@ -550,7 +550,7 @@ class RustParserWriter:
                         variable_used[expr] = True
                         return "x{}".format(expr)
 
-                compiled_expr = compile_reduce_expr(prod.action)
+                compiled_expr = compile_reduce_expr(prod.reducer)
 
                 for index, e in reversed(list(enumerate(elements))):
                     # ty = self.element_type(e)
