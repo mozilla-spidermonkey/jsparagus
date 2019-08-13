@@ -3,10 +3,18 @@ mod opcode;
 use ast::*;
 use opcode::*;
 
-pub fn emit(ast: &Program) -> Vec<u8> {
+pub struct EmitResult {
+    pub bytecode: Vec<u8>,
+    pub strings: Vec<String>,
+}
+
+pub fn emit(ast: &Program) -> EmitResult {
     let mut emitter = Emitter::new();
     emitter.emit_program(ast);
-    emitter.bytecode
+    EmitResult {
+        bytecode: emitter.bytecode,
+        strings: emitter.strings,
+    }
 }
 
 struct Emitter {
