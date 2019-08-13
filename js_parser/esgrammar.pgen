@@ -116,7 +116,7 @@ nt expr {
 
 nt expr_args {
     expr => single($0);
-    args "," expr => append($0, $2);
+    expr_args "," expr => append($0, $2);
 }
 
 nt ifdef {

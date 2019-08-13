@@ -10,7 +10,7 @@ from jsparagus.ordered import OrderedFrozenSet
 ESGrammarLexer = LexicalGrammar(
     # the operators and keywords:
     "[ ] { } , ~ + ? <! == != => ( ) "
-    "but empty here lookahead no not of one or through",
+    "but empty here lookahead no not of one or through Some None",
 
     NL="\n",
 
