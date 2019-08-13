@@ -104,7 +104,7 @@ nt rhs {
 }
 
 nt reducer {
-   "=>" expr => $1;
+   NL? "=>" expr => $2;
 }
 
 nt expr {
