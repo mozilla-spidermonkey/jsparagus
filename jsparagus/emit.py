@@ -473,16 +473,15 @@ class RustParserWriter:
     def stack_value(self):
         self.write(0, "#[derive(Debug, PartialEq)]")
         self.write(0, "pub enum StackValue {")
-        return_types = set((self.type_to_rust(method.return_type, ""),
-                            self.type_to_rust(method.return_type, "concrete", boxed=True))
-                           for tag, method in self.grammar.methods.items())
+        types = set((self.type_to_rust(ty, ""),
+                     self.type_to_rust(ty, "concrete", boxed=True))
+                    for ty in self.grammar.nt_types.values())
         return_types.add(("Token", "Token"))
-        for return_type_plain, return_type_boxed in return_types:
-            assert return_type_plain != "()"
-            # This might happen, but doesn't happen in practice, so just assert
-            # and deal with it later.
-            assert "Option" not in return_type_plain
-            self.write(0, "{}({}),", return_type_plain, return_type_boxed)
+        for type_plain, type_boxed in types:
+            # Bug: The code we currently emit only works for types that have
+            # simple identifier names (so, not `()` or `Option` types).
+            assert type_plain.isidentifier()
+            self.write(0, "{}({}),", type_plain, type_boxed)
         self.write(0, "}")
         self.write(0, "")
 
