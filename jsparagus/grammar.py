@@ -622,6 +622,15 @@ class Grammar:
                 print("   ", self.rhs_to_str(rhs))
             print()
 
+    def dump_type_info(self):
+        for nt, ty in self.nt_types.items():
+            print(nt, ty)
+        for name, mty in self.methods.items():
+            print("fn {}({}) -> {}"
+                  .format(name,
+                          ", ".join(types.type_to_str(ty) for ty in mty.argument_types),
+                          types.type_to_str(mty.return_type)))
+
 
 InitNt = collections.namedtuple("InitNt", "goal")
 InitNt.__doc__ = """\

@@ -48,6 +48,8 @@ def type_to_str(ty):
             return ty.name
         else:
             return repr(ty)
+    elif isinstance(ty, NtType):
+        return ty.name
     else:
         raise TypeError("not a type: {!r}".format(ty))
 
