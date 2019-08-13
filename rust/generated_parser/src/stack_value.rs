@@ -66,8 +66,6 @@ pub enum StackValue {
     FormalParameters(Box<FormalParameters>),
     Function(Box<Function>),
     FunctionBody(Box<FunctionBody>),
-    FunctionDeclaration(Box<FunctionDeclaration>),
-    FunctionExpression(Box<FunctionExpression>),
     Getter(Box<Getter>),
     Identifier(Box<Identifier>),
     IdentifierExpression(Box<IdentifierExpression>),
@@ -696,24 +694,6 @@ impl StackValueItem for FunctionBody {
         match sv {
             StackValue::FunctionBody(v) => v,
             _ => panic!("StackValue expected FunctionBody, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for FunctionDeclaration {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::FunctionDeclaration(v) => v,
-            _ => panic!("StackValue expected FunctionDeclaration, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for FunctionExpression {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::FunctionExpression(v) => v,
-            _ => panic!("StackValue expected FunctionExpression, got {:?}", sv),
         }
     }
 }
@@ -1720,18 +1700,6 @@ impl From<Box<Function>> for StackValue {
 impl From<Box<FunctionBody>> for StackValue {
     fn from(val: Box<FunctionBody>) -> StackValue {
         StackValue::FunctionBody(val)
-    }
-}
-
-impl From<Box<FunctionDeclaration>> for StackValue {
-    fn from(val: Box<FunctionDeclaration>) -> StackValue {
-        StackValue::FunctionDeclaration(val)
-    }
-}
-
-impl From<Box<FunctionExpression>> for StackValue {
-    fn from(val: Box<FunctionExpression>) -> StackValue {
-        StackValue::FunctionExpression(val)
     }
 }
 

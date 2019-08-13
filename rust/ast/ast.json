@@ -89,6 +89,7 @@
   },
   "Function": {
     "_type": "struct",
+    "name": "Option<BindingIdentifier>",
     "is_async": "bool",
     "is_generator": "bool",
     "params": "FormalParameters",
@@ -119,7 +120,7 @@
     "TryFinallyStatement": "TryFinallyStatement",
     "VariableDeclarationStatement": "VariableDeclaration",
     "WithStatement": "WithStatement",
-    "FunctionDeclaration": "FunctionDeclaration"
+    "FunctionDeclaration": "Function"
   },
   "IterationStatement": {
     "_type": "enum",
@@ -146,7 +147,7 @@
     "CallExpression": "CallExpression",
     "CompoundAssignmentExpression": "CompoundAssignmentExpression",
     "ConditionalExpression": "ConditionalExpression",
-    "FunctionExpression": "FunctionExpression",
+    "FunctionExpression": "Function",
     "IdentifierExpression": "IdentifierExpression",
     "NewExpression": "NewExpression",
     "NewTargetExpression": null,
@@ -385,13 +386,13 @@
   },
   "Export": {
     "_type": "enum",
-    "FunctionDeclaration": "FunctionDeclaration",
+    "FunctionDeclaration": "Function",
     "ClassDeclaration": "ClassDeclaration",
     "VariableDeclaration": "VariableDeclaration"
   },
   "ExportDefault": {
     "_type": "enum",
-    "FunctionDeclaration": "FunctionDeclaration",
+    "FunctionDeclaration": "Function",
     "ClassDeclaration": "ClassDeclaration",
     "Expression": "Box<Expression>"
   },
@@ -515,14 +516,6 @@
     "test": "Box<Expression>",
     "consequent": "Box<Expression>",
     "alternate": "Box<Expression>"
-  },
-  "FunctionExpression": {
-    "_type": "struct",
-    "name": "Option<BindingIdentifier>",
-    "is_async": "bool",
-    "is_generator": "bool",
-    "params": "FormalParameters",
-    "body": "FunctionBody"
   },
   "IdentifierExpression": {
     "_type": "struct",
@@ -695,14 +688,6 @@
     "_type": "struct",
     "directives": "Vec<Directive>",
     "statements": "Vec<Statement>"
-  },
-  "FunctionDeclaration": {
-    "_type": "struct",
-    "name": "BindingIdentifier",
-    "is_async": "bool",
-    "is_generator": "bool",
-    "params": "FormalParameters",
-    "body": "FunctionBody"
   },
   "Script": {
     "_type": "struct",

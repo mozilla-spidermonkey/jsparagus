@@ -124,6 +124,7 @@ pub enum UpdateOperator {
 
 #[derive(Debug, PartialEq)]
 pub struct Function {
+    pub name: Option<BindingIdentifier>,
     pub is_async: bool,
     pub is_generator: bool,
     pub params: FormalParameters,
@@ -132,12 +133,14 @@ pub struct Function {
 
 impl Function {
     pub fn new(
+        name: Option<BindingIdentifier>,
         is_async: bool,
         is_generator: bool,
         params: FormalParameters,
         body: FunctionBody,
     ) -> Self {
         Self {
+            name,
             is_async,
             is_generator,
             params,
@@ -172,7 +175,7 @@ pub enum Statement {
     TryFinallyStatement(TryFinallyStatement),
     VariableDeclarationStatement(VariableDeclaration),
     WithStatement(WithStatement),
-    FunctionDeclaration(FunctionDeclaration),
+    FunctionDeclaration(Function),
 }
 
 #[derive(Debug, PartialEq)]
@@ -201,7 +204,7 @@ pub enum Expression {
     CallExpression(CallExpression),
     CompoundAssignmentExpression(CompoundAssignmentExpression),
     ConditionalExpression(ConditionalExpression),
-    FunctionExpression(FunctionExpression),
+    FunctionExpression(Function),
     IdentifierExpression(IdentifierExpression),
     NewExpression(NewExpression),
     NewTargetExpression,
@@ -671,14 +674,14 @@ impl ExportLocals {
 
 #[derive(Debug, PartialEq)]
 pub enum Export {
-    FunctionDeclaration(FunctionDeclaration),
+    FunctionDeclaration(Function),
     ClassDeclaration(ClassDeclaration),
     VariableDeclaration(VariableDeclaration),
 }
 
 #[derive(Debug, PartialEq)]
 pub enum ExportDefault {
-    FunctionDeclaration(FunctionDeclaration),
+    FunctionDeclaration(Function),
     ClassDeclaration(ClassDeclaration),
     Expression(Box<Expression>),
 }
@@ -1018,33 +1021,6 @@ impl ConditionalExpression {
             test,
             consequent,
             alternate,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct FunctionExpression {
-    pub name: Option<BindingIdentifier>,
-    pub is_async: bool,
-    pub is_generator: bool,
-    pub params: FormalParameters,
-    pub body: FunctionBody,
-}
-
-impl FunctionExpression {
-    pub fn new(
-        name: Option<BindingIdentifier>,
-        is_async: bool,
-        is_generator: bool,
-        params: FormalParameters,
-        body: FunctionBody,
-    ) -> Self {
-        Self {
-            name,
-            is_async,
-            is_generator,
-            params,
-            body,
         }
     }
 }
@@ -1494,33 +1470,6 @@ impl FunctionBody {
         Self {
             directives,
             statements,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct FunctionDeclaration {
-    pub name: BindingIdentifier,
-    pub is_async: bool,
-    pub is_generator: bool,
-    pub params: FormalParameters,
-    pub body: FunctionBody,
-}
-
-impl FunctionDeclaration {
-    pub fn new(
-        name: BindingIdentifier,
-        is_async: bool,
-        is_generator: bool,
-        params: FormalParameters,
-        body: FunctionBody,
-    ) -> Self {
-        Self {
-            name,
-            is_async,
-            is_generator,
-            params,
-            body,
         }
     }
 }

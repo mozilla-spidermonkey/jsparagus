@@ -1149,92 +1149,100 @@ impl AstBuilder {
     pub fn debugger_statement(&self) -> Box<Void> {
         unimplemented!(); // Box::new(ModuleItem::new())
     }
-    // FunctionDeclaration ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => FunctionDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn function_declaration_p0(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            *a0, false, false, *a1, *a2,
-        )))
+
+    pub fn function_decl(&self, f: Function) -> Box<Statement> {
+        Box::new(Statement::FunctionDeclaration(f))
     }
-    // FunctionDeclaration ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => FunctionDeclaration 1($0, $1, $2, $3, $4, $5, $6)
-    pub fn function_declaration_p1(
-        &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        let ident = BindingIdentifier::new(Identifier::new("".to_string())); // TODO
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            ident, false, false, *a0, *a1,
-        )))
+
+    pub fn function_expr(&self, f: Function) -> Box<Expression> {
+        Box::new(Expression::FunctionExpression(f))
     }
-    // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => FunctionExpression($0, Some($1), $2, $3, $4, $5, $6, $7)
-    pub fn function_expression(
+
+    // FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`
+    // FunctionDeclaration : [+Default] `function` `(` FormalParameters `)` `{` FunctionBody `}`
+    // FunctionExpression : `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`
+    pub fn function(
         &self,
-        a0: Option<Box<BindingIdentifier>>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Expression> {
-        match a0 {
-            Some(a0) => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                Some(*a0),
-                false,
-                false,
-                *a1,
-                *a2,
-            ))),
-            None => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                None, false, false, *a1, *a2,
-            ))),
-        }
+        name: Option<Box<BindingIdentifier>>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
+    ) -> Function {
+        Function::new(name.map(|b| *b), false, false, *params, *body)
     }
-    // UniqueFormalParameters ::= FormalParameters => UniqueFormalParameters($0)
+
+    // AsyncFunctionDeclaration : `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+    // AsyncFunctionDeclaration : [+Default] `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+    // AsyncFunctionExpression : `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
+    pub fn async_function(
+        &self,
+        name: Option<Box<BindingIdentifier>>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
+    ) -> Function {
+        Function::new(name.map(|b| *b), true, false, *params, *body)
+    }
+
+    // GeneratorDeclaration : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`
+    // GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`
+    // GeneratorExpression : `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`
+    pub fn generator(
+        &self,
+        name: Option<Box<BindingIdentifier>>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
+    ) -> Function {
+        Function::new(name.map(|b| *b), false, true, *params, *body)
+    }
+
+    // AsyncGeneratorDeclaration : `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+    // AsyncGeneratorDeclaration : [+Default] `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+    // AsyncGeneratorExpression : `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
+    pub fn async_generator(
+        &self,
+        name: Option<Box<BindingIdentifier>>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
+    ) -> Function {
+        Function::new(name.map(|b| *b), true, true, *params, *body)
+    }
+
+    // UniqueFormalParameters : FormalParameters
     pub fn unique_formal_parameters(&self, a0: Box<FormalParameters>) -> Box<FormalParameters> {
         // TODO
         a0
     }
-    // FormalParameters ::= [empty] => FormalParameters 0()
-    pub fn formal_parameters_p0(&self) -> Box<FormalParameters> {
+
+    // FormalParameters : [empty]
+    pub fn empty_formal_parameters(&self) -> Box<FormalParameters> {
         Box::new(FormalParameters::new(Vec::new(), None))
     }
-    // FormalParameters ::= FunctionRestParameter => FormalParameters 1($0)
-    pub fn formal_parameters_p1(&self, a0: Box<Binding>) -> Box<FormalParameters> {
-        Box::new(FormalParameters::new(Vec::new(), Some(*a0)))
-    }
-    // FormalParameters ::= FormalParameterList => FormalParameters 2($0)
-    pub fn formal_parameters_p2(&self, a0: Box<FormalParameters>) -> Box<FormalParameters> {
-        a0
-    }
-    // FormalParameters ::= FormalParameterList "," => FormalParameters 3($0, $1)
-    pub fn formal_parameters_p3(&self, a0: Box<FormalParameters>) -> Box<FormalParameters> {
-        a0
-    }
-    // FormalParameters ::= FormalParameterList "," FunctionRestParameter => FormalParameters 4($0, $1, $2)
-    pub fn formal_parameters_p4(
+
+    // FormalParameters : FunctionRestParameter
+    // FormalParameters : FormalParameterList `,` FunctionRestParameter
+    pub fn with_rest_parameter(
         &self,
-        mut a0: Box<FormalParameters>,
-        a1: Box<Binding>,
+        mut params: Box<FormalParameters>,
+        rest: Box<Binding>
     ) -> Box<FormalParameters> {
-        debug_assert!(a0.rest.is_none());
-        a0.rest = Some(*a1);
-        a0
+        params.rest = Some(*rest);
+        params
     }
-    // FormalParameterList ::= FormalParameter => FormalParameterList 0($0)
-    pub fn formal_parameter_list_p0(&self, a0: Box<Parameter>) -> Box<FormalParameters> {
+
+    // FormalParameterList : FormalParameter
+    pub fn singleton_formal_parameter_list(&self, a0: Box<Parameter>) -> Box<FormalParameters> {
         Box::new(FormalParameters::new(vec![*a0], None))
     }
-    // FormalParameterList ::= FormalParameterList "," FormalParameter => FormalParameterList 1($0, $1, $2)
-    pub fn formal_parameter_list_p1(
+
+    // FormalParameterList : FormalParameterList "," FormalParameter
+    pub fn append_formal_parameter(
         &self,
-        mut a0: Box<FormalParameters>,
-        a1: Box<Parameter>,
+        mut params: Box<FormalParameters>,
+        next_param: Box<Parameter>,
     ) -> Box<FormalParameters> {
-        a0.items.push(*a1);
-        a0
+        params.items.push(*next_param);
+        params
     }
+
     // FunctionRestParameter ::= BindingRestElement => FunctionRestParameter($0)
     pub fn function_rest_parameter(&self, a0: Box<Binding>) -> Box<Binding> {
         a0
@@ -1243,18 +1251,21 @@ impl AstBuilder {
     pub fn formal_parameter(&self, a0: Box<Binding>) -> Box<Parameter> {
         Box::new(Parameter::Binding(*a0))
     }
-    // FunctionBody ::= FunctionStatementList => FunctionBody($0)
+
+    // FunctionBody : FunctionStatementList
     pub fn function_body(&self, a0: Box<Vec<Statement>>) -> Box<FunctionBody> {
         // TODO: Directives
         Box::new(FunctionBody::new(Vec::new(), *a0))
     }
-    // FunctionStatementList ::= StatementList => FunctionStatementList(Some($0))
+
+    // FunctionStatementList : StatementList?
     pub fn function_statement_list(&self, a0: Option<Box<Vec<Statement>>>) -> Box<Vec<Statement>> {
         match a0 {
             Some(a0) => a0,
             None => Box::new(Vec::new()),
         }
     }
+
     // ArrowFunction ::= ArrowParameters "=>" ConciseBody => ArrowFunction($0, $1, $2)
     pub fn arrow_function(
         &self,
@@ -1333,48 +1344,7 @@ impl AstBuilder {
             *a0, false, true, *a1, *a2,
         )))
     }
-    // GeneratorDeclaration ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8)
-    pub fn generator_declaration_p0(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            *a0, false, true, *a1, *a2,
-        )))
-    }
-    // GeneratorDeclaration ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn generator_declaration_p1(
-        &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        let ident = BindingIdentifier::new(Identifier::new("".to_string())); // TODO
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            ident, false, true, *a0, *a1,
-        )))
-    }
-    // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => GeneratorExpression($0, $1, Some($2), $3, $4, $5, $6, $7, $8)
-    pub fn generator_expression(
-        &self,
-        a0: Option<Box<BindingIdentifier>>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Expression> {
-        match a0 {
-            Some(a0) => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                Some(*a0),
-                false,
-                true,
-                *a1,
-                *a2,
-            ))),
-            None => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                None, false, true, *a1, *a2,
-            ))),
-        }
-    }
+
     // GeneratorBody ::= FunctionBody => GeneratorBody($0)
     pub fn generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
         a0
@@ -1402,45 +1372,7 @@ impl AstBuilder {
             *a0, true, false, *a1, *a2,
         )))
     }
-    // AsyncGeneratorDeclaration ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8, $9)
-    pub fn async_generator_declaration_p0(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            *a0, true, true, *a1, *a2,
-        )))
-    }
-    // AsyncGeneratorDeclaration ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7, $8)
-    pub fn async_generator_declaration_p1(
-        &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<Function> {
-        Box::new(Function::new(true, true, *a0, *a1))
-    }
-    // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorExpression($0, $1, $2, Some($3), $4, $5, $6, $7, $8, $9)
-    pub fn async_generator_expression(
-        &self,
-        a0: Option<Box<BindingIdentifier>>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Expression> {
-        match a0 {
-            Some(a0) => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                Some(*a0),
-                true,
-                true,
-                *a1,
-                *a2,
-            ))),
-            None => Box::new(Expression::FunctionExpression(FunctionExpression::new(
-                None, true, true, *a1, *a2,
-            ))),
-        }
-    }
+
     // AsyncGeneratorBody ::= FunctionBody => AsyncGeneratorBody($0)
     pub fn async_generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
         a0
@@ -1489,53 +1421,7 @@ impl AstBuilder {
     pub fn class_element_p2(&self) -> Box<Void> {
         unimplemented!(); // Box::new(ClassElement::new())
     }
-    // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 0($0, $1, $2, $3, $4, $5, $6, $7, $8)
-    pub fn async_function_declaration_p0(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            *a0, true, false, *a1, *a2,
-        )))
-    }
-    // AsyncFunctionDeclaration ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionDeclaration 1($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn async_function_declaration_p1(
-        &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<Statement> {
-        let ident = BindingIdentifier::new(Identifier::new("".to_string())); // TODO
-        Box::new(Statement::FunctionDeclaration(FunctionDeclaration::new(
-            ident, true, false, *a0, *a1,
-        )))
-    }
-    // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 0($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn async_function_expression_p0(
-        &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<Expression> {
-        Box::new(Expression::FunctionExpression(FunctionExpression::new(
-            None, true, false, *a0, *a1,
-        )))
-    }
-    // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => AsyncFunctionExpression 1($0, $1, $2, $3, $4, $5, $6, $7, $8)
-    pub fn async_function_expression_p1(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
-    ) -> Box<Expression> {
-        Box::new(Expression::FunctionExpression(FunctionExpression::new(
-            Some(*a0),
-            true,
-            false,
-            *a1,
-            *a2,
-        )))
-    }
+
     // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => AsyncMethod($0, $1, $2, $3, $4, $5, $6, $7)
     pub fn async_method(
         &self,
