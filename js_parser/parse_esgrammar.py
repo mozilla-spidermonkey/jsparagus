@@ -284,6 +284,9 @@ class ESGrammarBuilder:
         raise ValueError("unsupported: lookahead > 1 token, {!r}"
                          .format(lookahead_exclusions))
 
+    def chr(self, t):
+        return None
+
 
 def finish_grammar(nt_defs, goals):
     terminal_set = set()
@@ -301,8 +304,10 @@ def finish_grammar(nt_defs, goals):
     nonterminals = {}
     variable_terminals = set()
     for nt_name, eq, rhs_list_or_lambda in nt_defs:
-        if eq == "::":
+        if eq == "::" or eq == ":::":
+            # Is a lexical or sub-lexical construct
             variable_terminals.add(nt_name)
+            continue
 
         if isinstance(rhs_list_or_lambda, grammar.NtDef):
             nonterminals[nt_name] = rhs_list_or_lambda
@@ -313,11 +318,10 @@ def finish_grammar(nt_defs, goals):
                     raise ValueError(
                         "invalid grammar: ifdef in non-function-call context")
                 hack_production(p)
-            if eq == ':':
-                if nt_name in nonterminals:
-                    raise ValueError(
-                        "unsupported: multiple definitions for nt " + nt_name)
-                nonterminals[nt_name] = rhs_list
+            if nt_name in nonterminals:
+                raise ValueError(
+                    "unsupported: multiple definitions for nt " + nt_name)
+            nonterminals[nt_name] = rhs_list
 
     for t in terminal_set:
         if t in nonterminals:

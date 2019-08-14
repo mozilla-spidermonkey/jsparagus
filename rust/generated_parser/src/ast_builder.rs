@@ -1,3 +1,4 @@
+use crate::Token;
 use ast::*;
 
 pub struct AstBuilder {}
@@ -76,8 +77,8 @@ impl AstBuilder {
             VariableReference::BindingIdentifier(BindingIdentifier::new(*a0)),
         )))
     }
-    // PrimaryExpression ::= "RegularExpressionLiteral" => PrimaryExpression 10($0)
-    pub fn primary_expression_p10(&self) -> Box<Expression> {
+    // PrimaryExpression ::= RegularExpressionLiteral => PrimaryExpression 10($0)
+    pub fn primary_expression_p10(&self, a0: Box<Token>) -> Box<Expression> {
         // TODO
         let pattern: String = "".to_string();
         let global: bool = false;
@@ -148,22 +149,22 @@ impl AstBuilder {
         unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
     }
     // Literal ::= "NullLiteral" => Literal 0($0)
-    pub fn literal_p0(&self) -> Box<Expression> {
+    pub fn literal_p0(&self, a0: Box<Void>) -> Box<Expression> {
         unimplemented!(); // Box::new(Expression::new())
     }
     // Literal ::= "BooleanLiteral" => Literal 1($0)
-    pub fn literal_p1(&self) -> Box<Expression> {
+    pub fn literal_p1(&self, a0: Box<Void>) -> Box<Expression> {
         unimplemented!(); // Box::new(Expression::new())
     }
     // Literal ::= "NumericLiteral" => Literal 2($0)
-    pub fn literal_p2(&self) -> Box<Expression> {
+    pub fn literal_p2(&self, a0: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::LiteralNumericExpression(
             LiteralNumericExpression::new(0.0),
         ))
     }
     // Literal ::= "StringLiteral" => Literal 3($0)
-    pub fn literal_p3(&self) -> Box<Expression> {
+    pub fn literal_p3(&self, a0: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::LiteralStringExpression(
             LiteralStringExpression::new("".to_string()),
@@ -298,15 +299,15 @@ impl AstBuilder {
         unimplemented!(); // Box::new(PropertyName::new())
     }
     // LiteralPropertyName ::= "IdentifierName" => LiteralPropertyName 0($0)
-    pub fn literal_property_name_p0(&self) -> Box<Void> {
+    pub fn literal_property_name_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(LiteralPropertyName::new())
     }
     // LiteralPropertyName ::= "StringLiteral" => LiteralPropertyName 1($0)
-    pub fn literal_property_name_p1(&self) -> Box<Void> {
+    pub fn literal_property_name_p1(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(LiteralPropertyName::new())
     }
     // LiteralPropertyName ::= "NumericLiteral" => LiteralPropertyName 2($0)
-    pub fn literal_property_name_p2(&self) -> Box<Void> {
+    pub fn literal_property_name_p2(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(LiteralPropertyName::new())
     }
     // ComputedPropertyName ::= "[" AssignmentExpression "]" => ComputedPropertyName($0, $1, $2)
@@ -321,8 +322,8 @@ impl AstBuilder {
     pub fn initializer(&self, a0: Box<Expression>) -> Box<Expression> {
         a0
     }
-    // TemplateLiteral ::= "NoSubstitutionTemplate" => TemplateLiteral 0($0)
-    pub fn template_literal_p0(&self) -> Box<Void> {
+    // TemplateLiteral ::= NoSubstitutionTemplate => TemplateLiteral 0($0)
+    pub fn template_literal_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateLiteral::new())
     }
     // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
@@ -330,31 +331,36 @@ impl AstBuilder {
         unimplemented!(); // Box::new(TemplateLiteral::new())
     }
     // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
-    pub fn substitution_template(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
+    pub fn substitution_template(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(SubstitutionTemplate::new())
     }
     // TemplateSpans ::= "TemplateTail" => TemplateSpans 0($0)
-    pub fn template_spans_p0(&self) -> Box<Void> {
+    pub fn template_spans_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateSpans::new())
     }
     // TemplateSpans ::= TemplateMiddleList "TemplateTail" => TemplateSpans 1($0, $1)
-    pub fn template_spans_p1(&self, a0: Box<Void>) -> Box<Void> {
+    pub fn template_spans_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateSpans::new())
     }
     // TemplateMiddleList ::= "TemplateMiddle" Expression => TemplateMiddleList 0($0, $1)
-    pub fn template_middle_list_p0(&self, a0: Box<Void>) -> Box<Void> {
+    pub fn template_middle_list_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateMiddleList::new())
     }
     // TemplateMiddleList ::= TemplateMiddleList "TemplateMiddle" Expression => TemplateMiddleList 1($0, $1, $2)
-    pub fn template_middle_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
+    pub fn template_middle_list_p1(
+        &self,
+        a0: Box<Void>,
+        a1: Box<Void>,
+        a2: Box<Void>,
+    ) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateMiddleList::new())
     }
     // MemberExpression ::= MemberExpression "[" Expression "]" => MemberExpression 1($0, $1, $2, $3)
     pub fn member_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())
     }
-    // MemberExpression ::= MemberExpression "." "IdentifierName" => MemberExpression 2($0, $1, $2)
-    pub fn member_expression_p2(&self, a0: Box<Expression>) -> Box<Expression> {
+    // MemberExpression ::= MemberExpression "." IdentifierName => MemberExpression 2($0, $1, $2)
+    pub fn member_expression_p2(&self, a0: Box<Expression>, a1: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
@@ -383,8 +389,8 @@ impl AstBuilder {
     pub fn super_property_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(SuperProperty::new())
     }
-    // SuperProperty ::= "super" "." "IdentifierName" => SuperProperty 1($0, $1, $2)
-    pub fn super_property_p1(&self) -> Box<Void> {
+    // SuperProperty ::= "super" "." IdentifierName => SuperProperty 1($0, $1, $2)
+    pub fn super_property_p1(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(SuperProperty::new())
     }
     // MetaProperty ::= NewTarget => MetaProperty($0)
@@ -415,8 +421,8 @@ impl AstBuilder {
     pub fn call_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())
     }
-    // CallExpression ::= CallExpression "." "IdentifierName" => CallExpression 4($0, $1, $2)
-    pub fn call_expression_p4(&self, a0: Box<Void>) -> Box<Void> {
+    // CallExpression ::= CallExpression "." IdentifierName => CallExpression 4($0, $1, $2)
+    pub fn call_expression_p4(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())
     }
     // CallExpression ::= CallExpression TemplateLiteral => CallExpression 5($0, $1)
@@ -1222,7 +1228,7 @@ impl AstBuilder {
     pub fn with_rest_parameter(
         &self,
         mut params: Box<FormalParameters>,
-        rest: Box<Binding>
+        rest: Box<Binding>,
     ) -> Box<FormalParameters> {
         params.rest = Some(*rest);
         params
@@ -1569,12 +1575,12 @@ impl AstBuilder {
     pub fn import_specifier_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ImportSpecifier::new())
     }
-    // ImportSpecifier ::= "IdentifierName" "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
-    pub fn import_specifier_p1(&self, a0: Box<Void>) -> Box<Void> {
+    // ImportSpecifier ::= IdentifierName "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
+    pub fn import_specifier_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ImportSpecifier::new())
     }
-    // ModuleSpecifier ::= "StringLiteral" => ModuleSpecifier($0)
-    pub fn module_specifier(&self) -> Box<Void> {
+    // ModuleSpecifier ::= StringLiteral => ModuleSpecifier($0)
+    pub fn module_specifier(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ModuleSpecifier::new())
     }
     // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
@@ -1633,12 +1639,12 @@ impl AstBuilder {
     pub fn exports_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ExportsList::new())
     }
-    // ExportSpecifier ::= "IdentifierName" => ExportSpecifier 0($0)
-    pub fn export_specifier_p0(&self) -> Box<Void> {
+    // ExportSpecifier ::= IdentifierName => ExportSpecifier 0($0)
+    pub fn export_specifier_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ExportSpecifier::new())
     }
-    // ExportSpecifier ::= "IdentifierName" "as" "IdentifierName" => ExportSpecifier 1($0, $1, $2)
-    pub fn export_specifier_p1(&self) -> Box<Void> {
+    // ExportSpecifier ::= IdentifierName "as" IdentifierName => ExportSpecifier 1($0, $1, $2)
+    pub fn export_specifier_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ExportSpecifier::new())
     }
 }
