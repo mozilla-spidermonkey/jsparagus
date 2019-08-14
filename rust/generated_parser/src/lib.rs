@@ -10598,31 +10598,31 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::UpdateExpression
         }
         512 => {
-            // UpdateExpression ::= LeftHandSideExpression "++" => UpdateExpression 1($0, $1)
+            // UpdateExpression ::= LeftHandSideExpression "++" => post_increment_expr($0)
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.update_expression_p1(x0)));
+            stack.push(StackValue::from(handler.post_increment_expr(x0)));
             NonterminalId::UpdateExpression
         }
         513 => {
-            // UpdateExpression ::= LeftHandSideExpression "--" => UpdateExpression 2($0, $1)
+            // UpdateExpression ::= LeftHandSideExpression "--" => post_decrement_expr($0)
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.update_expression_p2(x0)));
+            stack.push(StackValue::from(handler.post_decrement_expr(x0)));
             NonterminalId::UpdateExpression
         }
         514 => {
-            // UpdateExpression ::= "++" UnaryExpression => UpdateExpression 3($0, $1)
+            // UpdateExpression ::= "++" UnaryExpression => pre_decrement_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.update_expression_p3(x1)));
+            stack.push(StackValue::from(handler.pre_decrement_expr(x1)));
             NonterminalId::UpdateExpression
         }
         515 => {
-            // UpdateExpression ::= "--" UnaryExpression => UpdateExpression 4($0, $1)
+            // UpdateExpression ::= "--" UnaryExpression => pre_decrement_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.update_expression_p4(x1)));
+            stack.push(StackValue::from(handler.pre_decrement_expr(x1)));
             NonterminalId::UpdateExpression
         }
         516 => {

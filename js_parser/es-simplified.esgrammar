@@ -614,10 +614,15 @@ CallMemberExpression[Yield, Await] :
 
 UpdateExpression[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
+    => $0
   LeftHandSideExpression[?Yield, ?Await] `++`
+    => post_increment_expr($0)
   LeftHandSideExpression[?Yield, ?Await] `--`
+    => post_decrement_expr($0)
   `++` UnaryExpression[?Yield, ?Await]
+    => pre_decrement_expr($1)
   `--` UnaryExpression[?Yield, ?Await]
+    => pre_decrement_expr($1)
 
 
 UnaryExpression[Yield, Await] :

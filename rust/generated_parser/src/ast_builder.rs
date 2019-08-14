@@ -488,21 +488,41 @@ impl AstBuilder {
     pub fn argument_list_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ArgumentList::new())
     }
-    // UpdateExpression ::= LeftHandSideExpression "++" => UpdateExpression 1($0, $1)
-    pub fn update_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UpdateExpression ::= LeftHandSideExpression `++`
+    pub fn post_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+            false,
+            UpdateOperator::Increment,
+            expression_to_simple_assignment_target(operand),
+        )))
     }
-    // UpdateExpression ::= LeftHandSideExpression "--" => UpdateExpression 2($0, $1)
-    pub fn update_expression_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UpdateExpression ::= LeftHandSideExpression `--`
+    pub fn post_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+            false,
+            UpdateOperator::Decrement,
+            expression_to_simple_assignment_target(operand),
+        )))
     }
-    // UpdateExpression ::= "++" UnaryExpression => UpdateExpression 3($0, $1)
-    pub fn update_expression_p3(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UpdateExpression ::= `++` UnaryExpression
+    pub fn pre_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+            true,
+            UpdateOperator::Increment,
+            expression_to_simple_assignment_target(operand),
+        )))
     }
-    // UpdateExpression ::= "--" UnaryExpression => UpdateExpression 4($0, $1)
-    pub fn update_expression_p4(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UpdateExpression ::= `--` UnaryExpression
+    pub fn pre_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+            true,
+            UpdateOperator::Decrement,
+            expression_to_simple_assignment_target(operand),
+        )))
     }
     // UnaryExpression ::= "delete" UnaryExpression => UnaryExpression 1($0, $1)
     pub fn unary_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
