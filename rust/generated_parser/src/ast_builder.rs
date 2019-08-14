@@ -280,26 +280,32 @@ impl AstBuilder {
         expr
     }
 
-    // ObjectLiteral ::= "{" "}" => ObjectLiteral 0($0, $1)
-    pub fn object_literal_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+    // ObjectLiteral : `{` `}`
+    pub fn object_literal_empty(&self) -> Box<Expression> {
+        Box::new(Expression::ObjectExpression(ObjectExpression::new(vec![])))
     }
-    // ObjectLiteral ::= "{" PropertyDefinitionList "}" => ObjectLiteral 1($0, $1, $2)
-    pub fn object_literal_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // ObjectLiteral ::= `{` PropertyDefinitionList `}`
+    // ObjectLiteral ::= `{` PropertyDefinitionList `,` `}`
+    pub fn object_literal(&self, object: Box<ObjectExpression>) -> Box<Expression> {
+        Box::new(Expression::ObjectExpression(*object))
     }
-    // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => ObjectLiteral 2($0, $1, $2, $3)
-    pub fn object_literal_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // PropertyDefinitionList : PropertyDefinition
+    pub fn property_definition_list_single(&self, property: Box<ObjectProperty>) -> Box<ObjectExpression> {
+        Box::new(ObjectExpression::new(vec![property]))
     }
-    // PropertyDefinitionList ::= PropertyDefinition => PropertyDefinitionList 0($0)
-    pub fn property_definition_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinitionList::new())
+
+    // PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition
+    pub fn property_definition_list_append(
+        &self,
+        mut object: Box<ObjectExpression>,
+        property: Box<ObjectProperty>
+    ) -> Box<ObjectExpression> {
+        object.properties.push(property);
+        object
     }
-    // PropertyDefinitionList ::= PropertyDefinitionList "," PropertyDefinition => PropertyDefinitionList 1($0, $1, $2)
-    pub fn property_definition_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinitionList::new())
-    }
+
     // PropertyDefinition ::= IdentifierReference => PropertyDefinition 0($0)
     pub fn property_definition_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(PropertyDefinition::new())
@@ -320,6 +326,7 @@ impl AstBuilder {
     pub fn property_definition_p4(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(PropertyDefinition::new())
     }
+
     // PropertyName ::= LiteralPropertyName => PropertyName 0($0)
     pub fn property_name_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(PropertyName::new())

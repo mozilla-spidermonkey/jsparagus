@@ -1,3 +1,4 @@
+
 StringNumericLiteral :::
   StrWhiteSpace?
   StrWhiteSpace? StrNumericLiteral StrWhiteSpace?
@@ -517,12 +518,17 @@ SpreadElement[Yield, Await] :
 
 ObjectLiteral[Yield, Await] :
   `{` `}`
+    => object_literal_empty()
   `{` PropertyDefinitionList[?Yield, ?Await] `}`
+    => object_literal($1)
   `{` PropertyDefinitionList[?Yield, ?Await] `,` `}`
+    => object_literal($1)
 
 PropertyDefinitionList[Yield, Await] :
   PropertyDefinition[?Yield, ?Await]
+    => property_definition_list_single($0)
   PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]
+    => property_definition_list_append($0, $2)
 
 PropertyDefinition[Yield, Await] :
   IdentifierReference[?Yield, ?Await]

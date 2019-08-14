@@ -1050,11 +1050,11 @@ impl NewExpression {
 
 #[derive(Debug, PartialEq)]
 pub struct ObjectExpression {
-    pub properties: Vec<ObjectProperty>,
+    pub properties: Vec<Box<ObjectProperty>>,
 }
 
 impl ObjectExpression {
-    pub fn new(properties: Vec<ObjectProperty>) -> Self {
+    pub fn new(properties: Vec<Box<ObjectProperty>>) -> Self {
         Self { properties }
     }
 }

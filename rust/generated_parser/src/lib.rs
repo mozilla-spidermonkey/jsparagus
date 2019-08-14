@@ -9496,27 +9496,27 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrayLiteral
         }
         389 => {
-            // ObjectLiteral ::= "{" "}" => ObjectLiteral 0($0, $1)
+            // ObjectLiteral ::= "{" "}" => object_literal_empty()
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.object_literal_p0()));
+            stack.push(StackValue::from(handler.object_literal_empty()));
             NonterminalId::ObjectLiteral
         }
         390 => {
-            // ObjectLiteral ::= "{" PropertyDefinitionList "}" => ObjectLiteral 1($0, $1, $2)
+            // ObjectLiteral ::= "{" PropertyDefinitionList "}" => object_literal($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.object_literal_p1(x1)));
+            stack.push(StackValue::from(handler.object_literal(x1)));
             NonterminalId::ObjectLiteral
         }
         391 => {
-            // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => ObjectLiteral 2($0, $1, $2, $3)
+            // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => object_literal($1)
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.object_literal_p2(x1)));
+            stack.push(StackValue::from(handler.object_literal(x1)));
             NonterminalId::ObjectLiteral
         }
         392 => {
@@ -10247,17 +10247,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ElementList
         }
         462 => {
-            // PropertyDefinitionList ::= PropertyDefinition => PropertyDefinitionList 0($0)
+            // PropertyDefinitionList ::= PropertyDefinition => property_definition_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_list_p0(x0)));
+            stack.push(StackValue::from(handler.property_definition_list_single(x0)));
             NonterminalId::PropertyDefinitionList
         }
         463 => {
-            // PropertyDefinitionList ::= PropertyDefinitionList "," PropertyDefinition => PropertyDefinitionList 1($0, $1, $2)
+            // PropertyDefinitionList ::= PropertyDefinitionList "," PropertyDefinition => property_definition_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_list_p1(x0, x2)));
+            stack.push(StackValue::from(handler.property_definition_list_append(x0, x2)));
             NonterminalId::PropertyDefinitionList
         }
         464 => {

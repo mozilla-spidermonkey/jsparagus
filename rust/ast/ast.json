@@ -528,7 +528,7 @@
   },
   "ObjectExpression": {
     "_type": "struct",
-    "properties": "Vec<ObjectProperty>"
+    "properties": "Vec<Box<ObjectProperty>>"
   },
   "UnaryExpression": {
     "_type": "struct",
