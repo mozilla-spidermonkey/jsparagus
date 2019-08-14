@@ -1075,12 +1075,12 @@ impl AstBuilder {
         Box::new(Statement::BreakStatement(BreakStatement::new(Some(*a0))))
     }
     // ReturnStatement ::= "return" ErrorSymbol(asi) => ReturnStatement 0($0)
-    pub fn return_statement_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn return_statement_p0(&self) -> Box<Statement> {
+        Box::new(Statement::ReturnStatement(ReturnStatement::new(None)))
     }
     // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => ReturnStatement 1($0, $1)
-    pub fn return_statement_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn return_statement_p1(&self, a0: Box<Expression>) -> Box<Statement> {
+        Box::new(Statement::ReturnStatement(ReturnStatement::new(Some(a0))))
     }
     // WithStatement ::= "with" "(" Expression ")" Statement => WithStatement($0, $1, $2, $3, $4)
     pub fn with_statement(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {

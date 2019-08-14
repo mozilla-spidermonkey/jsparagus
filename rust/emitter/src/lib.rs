@@ -1,3 +1,4 @@
+mod dis;
 mod opcode;
 
 use ast::*;
@@ -36,23 +37,30 @@ impl Emitter {
 
     fn emit_i8(&mut self, opcode: &Opcode, value: i8) {
         self.bytecode.push(opcode.value);
-        self.bytecode.extend_from_slice(&value.to_ne_bytes());
+        self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
     fn emit_u16(&mut self, opcode: &Opcode, value: u16) {
         self.bytecode.push(opcode.value);
-        self.bytecode.extend_from_slice(&value.to_ne_bytes());
+        self.bytecode.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn emit_u24(&mut self, opcode: &Opcode, value: u32) {
+        self.bytecode.push(opcode.value);
+        let slice = value.to_le_bytes();
+        assert!(slice.len() == 4 && slice[3] == 0);
+        self.bytecode.extend_from_slice(&slice[0..3]);
     }
 
     fn emit_i32(&mut self, opcode: &Opcode, value: i32) {
         self.bytecode.push(opcode.value);
-        self.bytecode.extend_from_slice(&value.to_ne_bytes());
+        self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
     fn emit_f64(&mut self, opcode: &Opcode, value: f64) {
         self.bytecode.push(opcode.value);
         self.bytecode
-            .extend_from_slice(&value.to_bits().to_ne_bytes());
+            .extend_from_slice(&value.to_bits().to_le_bytes());
     }
 
     fn emit_str(&mut self, opcode: &Opcode, value: &str) {
@@ -104,16 +112,50 @@ impl Emitter {
             }
             Statement::IfStatement(_) => unimplemented!(),
             Statement::LabeledStatement(_) => unimplemented!(),
-            Statement::ReturnStatement(_) => unimplemented!(),
+            Statement::ReturnStatement(ast) => self.emit_return_statement(ast),
             Statement::SwitchStatement(_) => unimplemented!(),
             Statement::SwitchStatementWithDefault(_) => unimplemented!(),
             Statement::ThrowStatement(_) => unimplemented!(),
             Statement::TryCatchStatement(_) => unimplemented!(),
             Statement::TryFinallyStatement(_) => unimplemented!(),
-            Statement::VariableDeclarationStatement(_) => unimplemented!(),
+            Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast),
             Statement::WithStatement(_) => unimplemented!(),
             Statement::FunctionDeclaration(_) => unimplemented!(),
         }
+    }
+
+    fn emit_variable_declaration(&mut self, ast: &VariableDeclaration) {
+        match ast.kind {
+            VariableDeclarationKind::Var => (),
+            VariableDeclarationKind::Let => (),
+            VariableDeclarationKind::Const => (),
+        }
+        for declarator in &ast.declarators {
+            let _ = match &declarator.binding {
+                Binding::BindingPattern(_) => unimplemented!(),
+                Binding::BindingIdentifier(ident) => &ident.name.value,
+            };
+            // TODO
+            self.emit1(&UNINITIALIZED);
+            self.emit_u24(&INITLEXICAL, 0);
+            self.emit1(&POP);
+
+            if let Some(init) = &declarator.init {
+                self.emit_expression(&*init);
+            }
+
+            self.emit_u24(&INITLEXICAL, 0);
+            self.emit1(&POP);
+        }
+    }
+
+    fn emit_return_statement(&mut self, ast: &ReturnStatement) {
+        match &ast.expression {
+            Some(ast) => self.emit_expression(ast),
+            None => self.emit1(&UNDEFINED),
+        }
+        self.emit1(&SETRVAL);
+        self.emit1(&RETRVAL);
     }
 
     fn emit_expression(&mut self, ast: &Expression) {
@@ -243,19 +285,22 @@ impl Emitter {
 #[cfg(test)]
 mod tests {
     use super::emit;
+    use crate::dis::*;
     use crate::opcode::*;
     use parser::parse_script;
 
-    fn run(source: &str) -> Vec<u8> {
+    fn bytecode(source: &str) -> Vec<u8> {
         let parse_result = parse_script(source).expect("Failed to parse");
-        println!("{:?}", parse_result);
-        emit(&ast::Program::Script(*parse_result))
+        // println!("{:?}", parse_result);
+        let bc = emit(&ast::Program::Script(*parse_result)).bytecode;
+        println!("{}", dis(&bc));
+        bc
     }
 
     #[test]
     fn it_works() {
         assert_eq!(
-            run("2 + 2"),
+            bytecode("2 + 2"),
             vec![
                 INT8.value,
                 0,
@@ -271,7 +316,7 @@ mod tests {
     #[test]
     fn dis_call() {
         assert_eq!(
-            run("dis()"),
+            bytecode("dis()"),
             vec![
                 GETGNAME.value,
                 0,
@@ -291,4 +336,35 @@ mod tests {
             ]
         )
     }
+
+    // #[test]
+    // fn let_return() {
+    //     assert_eq!(
+    //         bytecode("let x = 2; return x;"),
+    //         vec![
+    //             UNINITIALIZED.value,
+    //             INITLEXICAL.value,
+    //             0,
+    //             0,
+    //             0,
+    //             POP.value,
+    //             INT8.value,
+    //             2,
+    //             INITLEXICAL.value,
+    //             0,
+    //             0,
+    //             0,
+    //             POP.value,
+    //             GETLOCAL.value,
+    //             0,
+    //             0,
+    //             0,
+    //             SETRVAL.value,
+    //             DEBUGLEAVELEXICALENV.value,
+    //             RETRVAL.value,
+    //             DEBUGLEAVELEXICALENV.value,
+    //             RETRVAL.value,
+    //         ]
+    //     )
+    // }
 }
