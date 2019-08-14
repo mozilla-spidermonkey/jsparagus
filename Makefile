@@ -1,8 +1,9 @@
 PY_OUT = js_parser/parser_tables.py
-RS_OUT = rust/generated_parser/src/lib.rs
+RS_TABLES_OUT = rust/generated_parser/src/lib.rs
+RS_AST_OUT = rust/ast/src/lib.rs rust/generated_parser/src/stack_value.rs
 PYTHON = python3
 
-all: $(PY_OUT) $(RS_OUT)
+all: $(PY_OUT) $(RS_AST_OUT) $(RS_TABLES_OUT)
 
 # Incomplete list of files that contribute to the dump file.
 SOURCE_FILES = \
@@ -22,7 +23,10 @@ $(DUMP_FILE): $(SOURCE_FILES)
 $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
 
-$(RS_OUT): $(EMIT_FILES) $(DUMP_FILE)
+$(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
+	(cd rust/ast && $(PYTHON) generate_ast.py)
+
+$(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
 
 check: $(PY_OUT)
