@@ -102,7 +102,6 @@ pub enum StackValue {
     Setter(Box<Setter>),
     ShorthandProperty(Box<ShorthandProperty>),
     SimpleAssignmentTarget(Box<SimpleAssignmentTarget>),
-    SpreadElement(Box<SpreadElement>),
     Statement(Box<Statement>),
     StaticMemberAssignmentTarget(Box<StaticMemberAssignmentTarget>),
     StaticMemberExpression(Box<StaticMemberExpression>),
@@ -1022,15 +1021,6 @@ impl StackValueItem for SimpleAssignmentTarget {
     }
 }
 
-impl StackValueItem for SpreadElement {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::SpreadElement(v) => v,
-            _ => panic!("StackValue expected SpreadElement, got {:?}", sv),
-        }
-    }
-}
-
 impl StackValueItem for Statement {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -1916,12 +1906,6 @@ impl From<Box<ShorthandProperty>> for StackValue {
 impl From<Box<SimpleAssignmentTarget>> for StackValue {
     fn from(val: Box<SimpleAssignmentTarget>) -> StackValue {
         StackValue::SimpleAssignmentTarget(val)
-    }
-}
-
-impl From<Box<SpreadElement>> for StackValue {
-    fn from(val: Box<SpreadElement>) -> StackValue {
-        StackValue::SpreadElement(val)
     }
 }
 

@@ -9254,16 +9254,16 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingPropertyList
         }
         359 => {
-            // Elision ::= "," => Elision 0($0)
+            // Elision ::= "," => elision_single()
             stack.pop();
-            stack.push(StackValue::from(handler.elision_p0()));
+            stack.push(StackValue::from(handler.elision_single()));
             NonterminalId::Elision
         }
         360 => {
-            // Elision ::= Elision "," => Elision 1($0, $1)
+            // Elision ::= Elision "," => elision_append($0)
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.elision_p1(x0)));
+            stack.push(StackValue::from(handler.elision_append(x0)));
             NonterminalId::Elision
         }
         361 => {
@@ -9454,45 +9454,45 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Literal
         }
         384 => {
-            // ArrayLiteral ::= "[" "]" => ArrayLiteral 0($0, None, $1)
+            // ArrayLiteral ::= "[" "]" => array_literal_empty(None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.array_literal_p0(None)));
+            stack.push(StackValue::from(handler.array_literal_empty(None)));
             NonterminalId::ArrayLiteral
         }
         385 => {
-            // ArrayLiteral ::= "[" Elision "]" => ArrayLiteral 0($0, Some($1), $2)
+            // ArrayLiteral ::= "[" Elision "]" => array_literal_empty(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_literal_p0(Some(x1))));
+            stack.push(StackValue::from(handler.array_literal_empty(Some(x1))));
             NonterminalId::ArrayLiteral
         }
         386 => {
-            // ArrayLiteral ::= "[" ElementList "]" => ArrayLiteral 1($0, $1, $2)
+            // ArrayLiteral ::= "[" ElementList "]" => array_literal($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_literal_p1(x1)));
+            stack.push(StackValue::from(handler.array_literal(x1)));
             NonterminalId::ArrayLiteral
         }
         387 => {
-            // ArrayLiteral ::= "[" ElementList "," "]" => ArrayLiteral 2($0, $1, $2, None, $3)
+            // ArrayLiteral ::= "[" ElementList "," "]" => array_literal_with_trailing_elision($1, None)
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_literal_p2(x1, None)));
+            stack.push(StackValue::from(handler.array_literal_with_trailing_elision(x1, None)));
             NonterminalId::ArrayLiteral
         }
         388 => {
-            // ArrayLiteral ::= "[" ElementList "," Elision "]" => ArrayLiteral 2($0, $1, $2, Some($3), $4)
+            // ArrayLiteral ::= "[" ElementList "," Elision "]" => array_literal_with_trailing_elision($1, Some($3))
             stack.pop();
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_literal_p2(x1, Some(x3))));
+            stack.push(StackValue::from(handler.array_literal_with_trailing_elision(x1, Some(x3))));
             NonterminalId::ArrayLiteral
         }
         389 => {
@@ -10187,63 +10187,63 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseAndExpression
         }
         454 => {
-            // ElementList ::= AssignmentExpression => ElementList 0(None, $0)
+            // ElementList ::= AssignmentExpression => element_list_first(None, $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p0(None, x0)));
+            stack.push(StackValue::from(handler.element_list_first(None, x0)));
             NonterminalId::ElementList
         }
         455 => {
-            // ElementList ::= Elision AssignmentExpression => ElementList 0(Some($0), $1)
+            // ElementList ::= Elision AssignmentExpression => element_list_first(Some($0), $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p0(Some(x0), x1)));
+            stack.push(StackValue::from(handler.element_list_first(Some(x0), x1)));
             NonterminalId::ElementList
         }
         456 => {
-            // ElementList ::= SpreadElement => ElementList 1(None, $0)
+            // ElementList ::= SpreadElement => element_list_first_spread(None, $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p1(None, x0)));
+            stack.push(StackValue::from(handler.element_list_first_spread(None, x0)));
             NonterminalId::ElementList
         }
         457 => {
-            // ElementList ::= Elision SpreadElement => ElementList 1(Some($0), $1)
+            // ElementList ::= Elision SpreadElement => element_list_first_spread(Some($0), $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p1(Some(x0), x1)));
+            stack.push(StackValue::from(handler.element_list_first_spread(Some(x0), x1)));
             NonterminalId::ElementList
         }
         458 => {
-            // ElementList ::= ElementList "," AssignmentExpression => ElementList 2($0, $1, None, $2)
+            // ElementList ::= ElementList "," AssignmentExpression => element_list_append($0, None, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p2(x0, None, x2)));
+            stack.push(StackValue::from(handler.element_list_append(x0, None, x2)));
             NonterminalId::ElementList
         }
         459 => {
-            // ElementList ::= ElementList "," Elision AssignmentExpression => ElementList 2($0, $1, Some($2), $3)
+            // ElementList ::= ElementList "," Elision AssignmentExpression => element_list_append($0, Some($2), $3)
             let x3 = stack.pop().unwrap().to_ast();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p2(x0, Some(x2), x3)));
+            stack.push(StackValue::from(handler.element_list_append(x0, Some(x2), x3)));
             NonterminalId::ElementList
         }
         460 => {
-            // ElementList ::= ElementList "," SpreadElement => ElementList 3($0, $1, None, $2)
+            // ElementList ::= ElementList "," SpreadElement => element_list_append_spread($0, None, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p3(x0, None, x2)));
+            stack.push(StackValue::from(handler.element_list_append_spread(x0, None, x2)));
             NonterminalId::ElementList
         }
         461 => {
-            // ElementList ::= ElementList "," Elision SpreadElement => ElementList 3($0, $1, Some($2), $3)
+            // ElementList ::= ElementList "," Elision SpreadElement => element_list_append_spread($0, Some($2), $3)
             let x3 = stack.pop().unwrap().to_ast();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.element_list_p3(x0, Some(x2), x3)));
+            stack.push(StackValue::from(handler.element_list_append_spread(x0, Some(x2), x3)));
             NonterminalId::ElementList
         }
         462 => {
@@ -10340,7 +10340,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::EqualityExpression
         }
         475 => {
-            // SpreadElement ::= "..." AssignmentExpression => SpreadElement($0, $1)
+            // SpreadElement ::= "..." AssignmentExpression => spread_element($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(handler.spread_element(x1)));

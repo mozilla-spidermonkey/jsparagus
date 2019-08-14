@@ -170,86 +170,110 @@ impl AstBuilder {
             LiteralStringExpression::new("".to_string()),
         ))
     }
-    // ArrayLiteral ::= "[" Elision "]" => ArrayLiteral 0($0, Some($1), $2)
-    pub fn array_literal_p0(
-        &self,
-        a0: Option<Box<Vec<ArrayExpressionElement>>>,
-    ) -> Box<Expression> {
-        if let Some(a0) = a0 {
-            Box::new(Expression::ArrayExpression(ArrayExpression::new(*a0)))
-        } else {
-            Box::new(Expression::ArrayExpression(
-                ArrayExpression::new(Vec::new()),
-            ))
-        }
-    }
-    // ArrayLiteral ::= "[" ElementList "]" => ArrayLiteral 1($0, $1, $2)
-    pub fn array_literal_p1(&self, a0: Box<Vec<ArrayExpressionElement>>) -> Box<Expression> {
-        Box::new(Expression::ArrayExpression(ArrayExpression::new(*a0)))
-    }
-    // ArrayLiteral ::= "[" ElementList "," Elision "]" => ArrayLiteral 2($0, $1, $2, Some($3), $4)
-    pub fn array_literal_p2(
-        &self,
-        mut a0: Box<Vec<ArrayExpressionElement>>,
-        a1: Option<Box<Vec<ArrayExpressionElement>>>,
-    ) -> Box<Expression> {
-        if let Some(mut a1) = a1 {
-            a0.append(&mut a1);
-        }
-        Box::new(Expression::ArrayExpression(ArrayExpression::new(*a0)))
-    }
-    // ElementList ::= Elision AssignmentExpression => ElementList 0(Some($0), $1)
-    pub fn element_list_p0(
-        &self,
-        a0: Option<Box<Vec<ArrayExpressionElement>>>,
-        a1: Box<Expression>,
-    ) -> Box<Vec<ArrayExpressionElement>> {
-        match a0 {
-            Some(mut a0) => {
-                a0.push(ArrayExpressionElement::Expression(a1));
-                a0
+
+    // ArrayLiteral : `[` Elision? `]`
+    pub fn array_literal_empty(&self, elision: Option<Box<ArrayExpression>>) -> Box<Expression> {
+        Box::new(Expression::ArrayExpression(
+            match elision {
+                None => ArrayExpression { elements: vec![] },
+                Some(array) => *array
             }
-            None => Box::new(vec![ArrayExpressionElement::Expression(a1)]),
-        }
+        ))
     }
-    // ElementList ::= Elision SpreadElement => ElementList 1(Some($0), $1)
-    pub fn element_list_p1(&self, a0: Option<Box<Parameter>>, a1: Box<SpreadElement>) -> Box<Void> {
-        unimplemented!(); // Box::new(ElementList::new())
+
+    // ArrayLiteral : `[` ElementList `]`
+    pub fn array_literal(&self, array: Box<ArrayExpression>) -> Box<Expression> {
+        Box::new(Expression::ArrayExpression(*array))
     }
-    // ElementList ::= ElementList "," Elision AssignmentExpression => ElementList 2($0, $1, Some($2), $3)
-    pub fn element_list_p2(
+
+    // ArrayLiteral : `[` ElementList `,` Elision? `]`
+    pub fn array_literal_with_trailing_elision(
         &self,
-        mut a0: Box<Vec<ArrayExpressionElement>>,
-        a1: Option<Box<Vec<ArrayExpressionElement>>>,
-        a2: Box<Expression>,
-    ) -> Box<Vec<ArrayExpressionElement>> {
-        if let Some(mut a1) = a1 {
-            a0.append(&mut a1);
+        mut array: Box<ArrayExpression>,
+        elision: Option<Box<ArrayExpression>>,
+    ) -> Box<Expression> {
+        if let Some(mut more) = elision {
+            array.elements.append(&mut more.elements);
         }
-        a0.push(ArrayExpressionElement::Expression(a2));
-        a0
+        Box::new(Expression::ArrayExpression(*array))
     }
-    // ElementList ::= ElementList "," Elision SpreadElement => ElementList 3($0, $1, Some($2), $3)
-    pub fn element_list_p3(
+
+    // ElementList : Elision? AssignmentExpression
+    pub fn element_list_first(
         &self,
-        a0: Box<Void>,
-        a1: Option<Box<Void>>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ElementList::new())
+        elision: Option<Box<ArrayExpression>>,
+        element: Box<Expression>,
+    ) -> Box<ArrayExpression> {
+        let mut array = elision.unwrap_or_else(|| Box::new(ArrayExpression { elements: vec![] }));
+        array
+            .elements
+            .push(ArrayExpressionElement::Expression(element));
+        array
     }
-    // Elision ::= "," => Elision 0($0)
-    pub fn elision_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(Elision::new())
+
+    // ElementList : Elision? SpreadElement
+    pub fn element_list_first_spread(
+        &self,
+        elision: Option<Box<ArrayExpression>>,
+        spread_element: Box<Expression>,
+    ) -> Box<ArrayExpression> {
+        let mut array = elision.unwrap_or_else(|| Box::new(ArrayExpression { elements: vec![] }));
+        array
+            .elements
+            .push(ArrayExpressionElement::SpreadElement(spread_element));
+        array
     }
-    // Elision ::= Elision "," => Elision 1($0, $1)
-    pub fn elision_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Elision::new())
+
+    // ElementList : ElementList `,` Elision? AssignmentExpression
+    pub fn element_list_append(
+        &self,
+        mut array: Box<ArrayExpression>,
+        elision: Option<Box<ArrayExpression>>,
+        element: Box<Expression>,
+    ) -> Box<ArrayExpression> {
+        if let Some(mut elision) = elision {
+            array.elements.append(&mut elision.elements);
+        }
+        array
+            .elements
+            .push(ArrayExpressionElement::Expression(element));
+        array
     }
-    // SpreadElement ::= "..." AssignmentExpression => SpreadElement($0, $1)
-    pub fn spread_element(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(SpreadElement::new())
+
+    // ElementList : ElementList `,` Elision? SpreadElement
+    pub fn element_list_append_spread(
+        &self,
+        mut array: Box<ArrayExpression>,
+        elision: Option<Box<ArrayExpression>>,
+        spread_element: Box<Expression>,
+    ) -> Box<ArrayExpression> {
+        if let Some(mut elision) = elision {
+            array.elements.append(&mut elision.elements);
+        }
+        array
+            .elements
+            .push(ArrayExpressionElement::SpreadElement(spread_element));
+        array
     }
+
+    // Elision : `,`
+    pub fn elision_single(&self) -> Box<ArrayExpression> {
+        Box::new(ArrayExpression {
+            elements: vec![ArrayExpressionElement::Elision],
+        })
+    }
+
+    // Elision : Elision `,`
+    pub fn elision_append(&self, mut array: Box<ArrayExpression>) -> Box<ArrayExpression> {
+        array.elements.push(ArrayExpressionElement::Elision);
+        array
+    }
+
+    // SpreadElement : `...` AssignmentExpression
+    pub fn spread_element(&self, expr: Box<Expression>) -> Box<Expression> {
+        expr
+    }
+
     // ObjectLiteral ::= "{" "}" => ObjectLiteral 0($0, $1)
     pub fn object_literal_p0(&self) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())

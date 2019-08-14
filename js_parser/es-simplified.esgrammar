@@ -479,21 +479,31 @@ Literal :
 
 ArrayLiteral[Yield, Await] :
   `[` Elision? `]`
+    => array_literal_empty($1)
   `[` ElementList[?Yield, ?Await] `]`
+    => array_literal($1)
   `[` ElementList[?Yield, ?Await] `,` Elision? `]`
+    => array_literal_with_trailing_elision($1, $3)
 
 ElementList[Yield, Await] :
   Elision? AssignmentExpression[+In, ?Yield, ?Await]
+    => element_list_first($0, $1)
   Elision? SpreadElement[?Yield, ?Await]
+    => element_list_first_spread($0, $1)
   ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]
+    => element_list_append($0, $2, $3)
   ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]
+    => element_list_append_spread($0, $2, $3)
 
 Elision :
   `,`
+    => elision_single()
   Elision `,`
+    => elision_append($0)
 
 SpreadElement[Yield, Await] :
   `...` AssignmentExpression[+In, ?Yield, ?Await]
+    => spread_element($1)
 
 
 ObjectLiteral[Yield, Await] :

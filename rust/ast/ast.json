@@ -4,7 +4,7 @@
   },
   "Argument": {
     "_type": "enum",
-    "SpreadElement": "SpreadElement",
+    "SpreadElement": "Box<Expression>",
     "Expression": "Box<Expression>"
   },
   "Arguments": {
@@ -465,7 +465,7 @@
   },
   "ArrayExpressionElement": {
     "_type": "enum",
-    "SpreadElement": "SpreadElement",
+    "SpreadElement": "Box<Expression>",
     "Expression": "Box<Expression>",
     "Elision": null
   },
@@ -693,10 +693,6 @@
     "_type": "struct",
     "directives": "Vec<Directive>",
     "statements": "Vec<Statement>"
-  },
-  "SpreadElement": {
-    "_type": "struct",
-    "expression": "Box<Expression>"
   },
   "SwitchCase": {
     "_type": "struct",

@@ -5,7 +5,7 @@ pub enum Void {}
 
 #[derive(Debug, PartialEq)]
 pub enum Argument {
-    SpreadElement(SpreadElement),
+    SpreadElement(Box<Expression>),
     Expression(Box<Expression>),
 }
 
@@ -888,7 +888,7 @@ impl LiteralStringExpression {
 
 #[derive(Debug, PartialEq)]
 pub enum ArrayExpressionElement {
-    SpreadElement(SpreadElement),
+    SpreadElement(Box<Expression>),
     Expression(Box<Expression>),
     Elision,
 }
@@ -1486,17 +1486,6 @@ impl Script {
             directives,
             statements,
         }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SpreadElement {
-    pub expression: Box<Expression>,
-}
-
-impl SpreadElement {
-    pub fn new(expression: Box<Expression>) -> Self {
-        Self { expression }
     }
 }
 
