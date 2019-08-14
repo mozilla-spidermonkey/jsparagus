@@ -448,14 +448,22 @@ PrimaryExpression[Yield, Await] :
     => this_expr()
   IdentifierReference[?Yield, ?Await]
     => identifier_expr($0)
-  Literal => $0
-  ArrayLiteral[?Yield, ?Await] => $0
-  ObjectLiteral[?Yield, ?Await] => $0
-  FunctionExpression => $0
-  ClassExpression[?Yield, ?Await] => $0
-  GeneratorExpression => $0
-  AsyncFunctionExpression => $0
-  AsyncGeneratorExpression => $0
+  Literal
+    => $0
+  ArrayLiteral[?Yield, ?Await]
+    => $0
+  ObjectLiteral[?Yield, ?Await]
+    => $0
+  FunctionExpression
+    => $0
+  ClassExpression[?Yield, ?Await]
+    => $0
+  GeneratorExpression
+    => $0
+  AsyncFunctionExpression
+    => $0
+  AsyncGeneratorExpression
+    => $0
   RegularExpressionLiteral
     => regexp_literal($0)
   TemplateLiteral[?Yield, ?Await, ~Tagged] => $0
