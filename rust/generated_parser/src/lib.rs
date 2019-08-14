@@ -9100,9 +9100,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::PrimaryExpression
         }
         336 => {
-            // PrimaryExpression ::= IdentifierReference => PrimaryExpression 1($0)
+            // PrimaryExpression ::= IdentifierReference => identifier_expr($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.primary_expression_p1(x0)));
+            stack.push(StackValue::from(handler.identifier_expr(x0)));
             NonterminalId::PrimaryExpression
         }
         337 => {
@@ -9154,21 +9154,21 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::PrimaryExpression
         }
         345 => {
-            // PrimaryExpression ::= RegularExpressionLiteral => PrimaryExpression 10($0)
+            // PrimaryExpression ::= RegularExpressionLiteral => regexp_literal($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.primary_expression_p10(x0)));
+            stack.push(StackValue::from(handler.regexp_literal(x0)));
             NonterminalId::PrimaryExpression
         }
         346 => {
-            // PrimaryExpression ::= TemplateLiteral => PrimaryExpression 11($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.primary_expression_p11(x0)));
+            // PrimaryExpression ::= TemplateLiteral => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         347 => {
-            // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => PrimaryExpression 12($0)
+            // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => parenthesized_expr($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.primary_expression_p12(x0)));
+            stack.push(StackValue::from(handler.parenthesized_expr(x0)));
             NonterminalId::PrimaryExpression
         }
         348 => {
@@ -9430,27 +9430,27 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::IdentifierReference
         }
         380 => {
-            // Literal ::= NullLiteral => Literal 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_p0(x0)));
+            // Literal ::= NullLiteral => null_literal()
+            stack.pop();
+            stack.push(StackValue::from(handler.null_literal()));
             NonterminalId::Literal
         }
         381 => {
-            // Literal ::= BooleanLiteral => Literal 1($0)
+            // Literal ::= BooleanLiteral => boolean_literal($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_p1(x0)));
+            stack.push(StackValue::from(handler.boolean_literal(x0)));
             NonterminalId::Literal
         }
         382 => {
-            // Literal ::= NumericLiteral => Literal 2($0)
+            // Literal ::= NumericLiteral => numeric_literal($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_p2(x0)));
+            stack.push(StackValue::from(handler.numeric_literal(x0)));
             NonterminalId::Literal
         }
         383 => {
-            // Literal ::= StringLiteral => Literal 3($0)
+            // Literal ::= StringLiteral => string_literal($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_p3(x0)));
+            stack.push(StackValue::from(handler.string_literal(x0)));
             NonterminalId::Literal
         }
         384 => {

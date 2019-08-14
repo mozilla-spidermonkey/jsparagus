@@ -430,6 +430,7 @@ NotCodePoint ::
 CodePoint ::
   HexDigits [> but only if MV of HexDigits ≤ 0x10FFFF ]
 
+
 IdentifierReference[Yield, Await] :
   Identifier
 
@@ -442,19 +443,23 @@ LabelIdentifier[Yield, Await] :
   Identifier
 
 PrimaryExpression[Yield, Await] :
-  `this` => this_expr()
+  `this`
+    => this_expr()
   IdentifierReference[?Yield, ?Await]
-  Literal
-  ArrayLiteral[?Yield, ?Await]
-  ObjectLiteral[?Yield, ?Await]
+    => identifier_expr($0)
+  Literal => $0
+  ArrayLiteral[?Yield, ?Await] => $0
+  ObjectLiteral[?Yield, ?Await] => $0
   FunctionExpression => $0
-  ClassExpression[?Yield, ?Await]
+  ClassExpression[?Yield, ?Await] => $0
   GeneratorExpression => $0
   AsyncFunctionExpression => $0
   AsyncGeneratorExpression => $0
   RegularExpressionLiteral
-  TemplateLiteral[?Yield, ?Await, ~Tagged]
-  CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await] #parencover
+    => regexp_literal($0)
+  TemplateLiteral[?Yield, ?Await, ~Tagged] => $0
+  CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+    => parenthesized_expr($0)
 
 CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
   `(` Expression[+In, ?Yield, ?Await] `)`
@@ -472,9 +477,13 @@ ParenthesizedExpression[Yield, Await] :
 
 Literal :
   NullLiteral
+    => null_literal()
   BooleanLiteral
+    => boolean_literal($0)
   NumericLiteral
+    => numeric_literal($0)
   StringLiteral
+    => string_literal($0)
 
 
 ArrayLiteral[Yield, Await] :

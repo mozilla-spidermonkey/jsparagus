@@ -66,19 +66,20 @@ impl AstBuilder {
         Box::new(Label::new("".to_string())) // TODO
     }
 
-    // PrimaryExpression ::= "this"
+    // PrimaryExpression : `this`
     pub fn this_expr(&self) -> Box<Expression> {
         Box::new(Expression::ThisExpression)
     }
 
-    // PrimaryExpression ::= IdentifierReference => PrimaryExpression 1($0)
-    pub fn primary_expression_p1(&self, a0: Box<Identifier>) -> Box<Expression> {
+    // PrimaryExpression : IdentifierReference
+    pub fn identifier_expr(&self, a0: Box<Identifier>) -> Box<Expression> {
         Box::new(Expression::IdentifierExpression(IdentifierExpression::new(
             VariableReference::BindingIdentifier(BindingIdentifier::new(*a0)),
         )))
     }
-    // PrimaryExpression ::= RegularExpressionLiteral => PrimaryExpression 10($0)
-    pub fn primary_expression_p10(&self, a0: Box<Token>) -> Box<Expression> {
+
+    // PrimaryExpression : RegularExpressionLiteral
+    pub fn regexp_literal(&self, a0: Box<Token>) -> Box<Expression> {
         // TODO
         let pattern: String = "".to_string();
         let global: bool = false;
@@ -90,15 +91,13 @@ impl AstBuilder {
             LiteralRegExpExpression::new(pattern, global, ignore_case, multi_line, sticky, unicode),
         ))
     }
-    // PrimaryExpression ::= TemplateLiteral => PrimaryExpression 11($0)
-    pub fn primary_expression_p11(&self, a0: Box<TemplateExpression>) -> Box<Expression> {
-        Box::new(Expression::TemplateExpression(*a0))
-    }
-    // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => PrimaryExpression 12($0)
-    pub fn primary_expression_p12(&self, a0: Box<Expression>) -> Box<Expression> {
+
+    // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList
+    pub fn parenthesized_expr(&self, a0: Box<Expression>) -> Box<Expression> {
         // TODO
         a0
     }
+
     // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression ")" => CoverParenthesizedExpressionAndArrowParameterList 0($0, $1, $2)
     pub fn cover_parenthesized_expression_and_arrow_parameter_list_p0(
         &self,
@@ -148,23 +147,29 @@ impl AstBuilder {
     ) -> Box<Expression> {
         unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
     }
-    // Literal ::= "NullLiteral" => Literal 0($0)
-    pub fn literal_p0(&self, a0: Box<Void>) -> Box<Expression> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // Literal : NullLiteral
+    pub fn null_literal(&self) -> Box<Expression> {
+        Box::new(Expression::LiteralNullExpression)
     }
-    // Literal ::= "BooleanLiteral" => Literal 1($0)
-    pub fn literal_p1(&self, a0: Box<Void>) -> Box<Expression> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // Literal : BooleanLiteral
+    pub fn boolean_literal(&self, _token: Box<Token>) -> Box<Expression> {
+        Box::new(Expression::LiteralBooleanExpression(
+            LiteralBooleanExpression::new(unimplemented!()),
+        ))
     }
-    // Literal ::= "NumericLiteral" => Literal 2($0)
-    pub fn literal_p2(&self, a0: Box<Token>) -> Box<Expression> {
+
+    // Literal : NumericLiteral
+    pub fn numeric_literal(&self, _token: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::LiteralNumericExpression(
             LiteralNumericExpression::new(0.0),
         ))
     }
-    // Literal ::= "StringLiteral" => Literal 3($0)
-    pub fn literal_p3(&self, a0: Box<Token>) -> Box<Expression> {
+
+    // Literal : StringLiteral
+    pub fn string_literal(&self, a0: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::LiteralStringExpression(
             LiteralStringExpression::new("".to_string()),
@@ -1467,7 +1472,7 @@ impl AstBuilder {
         unimplemented!(); // Box::new(ModuleItem::new())
     }
     // ClassExpression ::= "class" BindingIdentifier ClassTail => ClassExpression($0, Some($1), $2)
-    pub fn class_expression(&self, a0: Option<Box<Void>>, a1: Box<Void>) -> Box<Void> {
+    pub fn class_expression(&self, a0: Option<Box<Void>>, a1: Box<Void>) -> Box<Expression> {
         unimplemented!(); // Box::new(Expression::new())
     }
     // ClassTail ::= ClassHeritage "{" ClassBody "}" => ClassTail(Some($0), $1, Some($2), $3)
