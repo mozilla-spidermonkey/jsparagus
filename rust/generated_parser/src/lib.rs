@@ -8626,10 +8626,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CallExpression
         }
         273 => {
-            // Initializer ::= "=" AssignmentExpression => Initializer($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // Initializer ::= "=" AssignmentExpression => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.initializer(x1)));
+            stack.push(x1);
             NonterminalId::Initializer
         }
         274 => {
@@ -8815,47 +8815,47 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MemberExpression
         }
         299 => {
-            // MemberExpression ::= MemberExpression "[" Expression "]" => MemberExpression 1($0, $1, $2, $3)
+            // MemberExpression ::= MemberExpression "[" Expression "]" => computed_member_expr($0, $2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.member_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.computed_member_expr(x0, x2)));
             NonterminalId::MemberExpression
         }
         300 => {
-            // MemberExpression ::= MemberExpression "." IdentifierName => MemberExpression 2($0, $1, $2)
+            // MemberExpression ::= MemberExpression "." IdentifierName => static_member_expr($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.member_expression_p2(x0, x2)));
+            stack.push(StackValue::from(handler.static_member_expr(x0, x2)));
             NonterminalId::MemberExpression
         }
         301 => {
-            // MemberExpression ::= MemberExpression TemplateLiteral => MemberExpression 3($0, $1)
+            // MemberExpression ::= MemberExpression TemplateLiteral => tagged_template_expr($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.member_expression_p3(x0, x1)));
+            stack.push(StackValue::from(handler.tagged_template_expr(x0, x1)));
             NonterminalId::MemberExpression
         }
         302 => {
-            // MemberExpression ::= SuperProperty => MemberExpression 4($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.member_expression_p4(x0)));
+            // MemberExpression ::= SuperProperty => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::MemberExpression
         }
         303 => {
-            // MemberExpression ::= MetaProperty => MemberExpression 5($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.member_expression_p5(x0)));
+            // MemberExpression ::= MetaProperty => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::MemberExpression
         }
         304 => {
-            // MemberExpression ::= "new" MemberExpression Arguments => MemberExpression 6($0, $1, $2)
+            // MemberExpression ::= "new" MemberExpression Arguments => new_expr_with_arguments($1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.member_expression_p6(x1, x2)));
+            stack.push(StackValue::from(handler.new_expr_with_arguments(x1, x2)));
             NonterminalId::MemberExpression
         }
         305 => {
@@ -9160,9 +9160,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::PrimaryExpression
         }
         346 => {
-            // PrimaryExpression ::= TemplateLiteral => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
+            // PrimaryExpression ::= TemplateLiteral => untagged_template_expr($0)
+            let x0 = stack.pop().unwrap().to_ast();
+            stack.push(StackValue::from(handler.untagged_template_expr(x0)));
             NonterminalId::PrimaryExpression
         }
         347 => {
@@ -9172,20 +9172,20 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::PrimaryExpression
         }
         348 => {
-            // SuperProperty ::= "super" "[" Expression "]" => SuperProperty 0($0, $1, $2, $3)
+            // SuperProperty ::= "super" "[" Expression "]" => super_property_computed($2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.super_property_p0(x2)));
+            stack.push(StackValue::from(handler.super_property_computed(x2)));
             NonterminalId::SuperProperty
         }
         349 => {
-            // SuperProperty ::= "super" "." IdentifierName => SuperProperty 1($0, $1, $2)
+            // SuperProperty ::= "super" "." IdentifierName => super_property_static($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.super_property_p1(x2)));
+            stack.push(StackValue::from(handler.super_property_static(x2)));
             NonterminalId::SuperProperty
         }
         350 => {

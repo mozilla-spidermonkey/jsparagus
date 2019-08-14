@@ -92,6 +92,11 @@ impl AstBuilder {
         ))
     }
 
+    // PrimaryExpression : TemplateLiteral
+    pub fn untagged_template_expr(&self, template_literal: Box<TemplateExpression>) -> Box<Expression> {
+        Box::new(Expression::TemplateExpression(*template_literal))
+    }
+
     // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList
     pub fn parenthesized_expr(&self, a0: Box<Expression>) -> Box<Expression> {
         // TODO
@@ -355,16 +360,12 @@ impl AstBuilder {
     pub fn cover_initialized_name(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(CoverInitializedName::new())
     }
-    // Initializer ::= "=" AssignmentExpression => Initializer($0, $1)
-    pub fn initializer(&self, a0: Box<Expression>) -> Box<Expression> {
-        a0
-    }
     // TemplateLiteral ::= NoSubstitutionTemplate => TemplateLiteral 0($0)
-    pub fn template_literal_p0(&self, a0: Box<Void>) -> Box<Void> {
+    pub fn template_literal_p0(&self, a0: Box<Void>) -> Box<TemplateExpression> {
         unimplemented!(); // Box::new(TemplateLiteral::new())
     }
     // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
-    pub fn template_literal_p1(&self, a0: Box<Void>) -> Box<Void> {
+    pub fn template_literal_p1(&self, a0: Box<Void>) -> Box<TemplateExpression> {
         unimplemented!(); // Box::new(TemplateLiteral::new())
     }
     // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
@@ -392,12 +393,19 @@ impl AstBuilder {
     ) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateMiddleList::new())
     }
-    // MemberExpression ::= MemberExpression "[" Expression "]" => MemberExpression 1($0, $1, $2, $3)
-    pub fn member_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // MemberExpression : MemberExpression `[` Expression `]`
+    pub fn computed_member_expr(&self, a0: Box<Expression>, a1: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::MemberExpression(
+            MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
+                ExpressionOrSuper::Expression(a0),
+                IdentifierName::new("".to_string()),
+            )),
+        ))
     }
-    // MemberExpression ::= MemberExpression "." IdentifierName => MemberExpression 2($0, $1, $2)
-    pub fn member_expression_p2(&self, a0: Box<Expression>, a1: Box<Token>) -> Box<Expression> {
+
+    // MemberExpression : MemberExpression `.` IdentifierName
+    pub fn static_member_expr(&self, a0: Box<Expression>, a1: Box<Token>) -> Box<Expression> {
         // TODO
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
@@ -406,33 +414,48 @@ impl AstBuilder {
             )),
         ))
     }
-    // MemberExpression ::= MemberExpression TemplateLiteral => MemberExpression 3($0, $1)
-    pub fn member_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // MemberExpression : MemberExpression TemplateLiteral
+    pub fn tagged_template_expr(
+        &self,
+        tag: Box<Expression>,
+        mut template_literal: Box<TemplateExpression>
+    ) -> Box<Expression> {
+        template_literal.tag = Some(tag);
+        Box::new(Expression::TemplateExpression(*template_literal))
     }
-    // MemberExpression ::= SuperProperty => MemberExpression 4($0)
-    pub fn member_expression_p4(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // MemberExpression : `new` MemberExpression Arguments
+    pub fn new_expr_with_arguments(
+        &self,
+        callee: Box<Expression>,
+        arguments: Box<Arguments>
+    ) -> Box<Expression> {
+        Box::new(Expression::NewExpression(NewExpression {
+            callee,
+            arguments: *arguments,
+        }))
     }
-    // MemberExpression ::= MetaProperty => MemberExpression 5($0)
-    pub fn member_expression_p5(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // SuperProperty : `super` `[` Expression `]`
+    pub fn super_property_computed(&self, expression: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::MemberExpression(
+            MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
+                object: ExpressionOrSuper::Super,
+                expression: expression,
+            })
+        ))
     }
-    // MemberExpression ::= "new" MemberExpression Arguments => MemberExpression 6($0, $1, $2)
-    pub fn member_expression_p6(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // SuperProperty ::= "super" "[" Expression "]" => SuperProperty 0($0, $1, $2, $3)
-    pub fn super_property_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(SuperProperty::new())
-    }
-    // SuperProperty ::= "super" "." IdentifierName => SuperProperty 1($0, $1, $2)
-    pub fn super_property_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(SuperProperty::new())
-    }
-    // MetaProperty ::= NewTarget => MetaProperty($0)
-    pub fn meta_property(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(MetaProperty::new())
+
+    // SuperProperty : `super` `.` IdentifierName
+    pub fn super_property_static(&self, a0: Box<Void>) -> Box<Expression> {
+        #![allow(unreachable_code)]
+        Box::new(Expression::MemberExpression(
+            MemberExpression::StaticMemberExpression(StaticMemberExpression {
+                object: ExpressionOrSuper::Super,
+                property: unimplemented!(),
+            })
+        ))
     }
 
     // NewTarget : `new` `.` `target`

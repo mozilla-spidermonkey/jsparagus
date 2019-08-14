@@ -466,7 +466,8 @@ PrimaryExpression[Yield, Await] :
     => $0
   RegularExpressionLiteral
     => regexp_literal($0)
-  TemplateLiteral[?Yield, ?Await, ~Tagged] => $0
+  TemplateLiteral[?Yield, ?Await, ~Tagged]
+    => untagged_template_expr($0)
   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
     => parenthesized_expr($0)
 
@@ -561,7 +562,7 @@ CoverInitializedName[Yield, Await] :
   IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
 
 Initializer[In, Yield, Await] :
-  `=` AssignmentExpression[?In, ?Yield, ?Await]
+  `=` AssignmentExpression[?In, ?Yield, ?Await] => $1
 
 
 TemplateLiteral[Yield, Await, Tagged] :
@@ -582,16 +583,25 @@ TemplateMiddleList[Yield, Await, Tagged] :
 
 MemberExpression[Yield, Await] :
   PrimaryExpression[?Yield, ?Await]
+    => $0
   MemberExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
+    => computed_member_expr($0, $2)
   MemberExpression[?Yield, ?Await] `.` IdentifierName
+    => static_member_expr($0, $2)
   MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+    => tagged_template_expr($0, $1)
   SuperProperty[?Yield, ?Await]
+    => $0
   MetaProperty
+    => $0
   `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    => new_expr_with_arguments($1, $2)
 
 SuperProperty[Yield, Await] :
   `super` `[` Expression[+In, ?Yield, ?Await] `]`
+    => super_property_computed($2)
   `super` `.` IdentifierName
+    => super_property_static($2)
 
 MetaProperty :
   NewTarget => $0
