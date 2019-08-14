@@ -676,15 +676,20 @@ impl AstBuilder {
         }))
     }
 
-    // ConditionalExpression ::= LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression => ConditionalExpression 1($0, $1, $2, $3, $4)
-    pub fn conditional_expression_p1(
+    // ConditionalExpression : LogicalORExpression `?` AssignmentExpression `:` AssignmentExpression
+    pub fn conditional_expr(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+        test: Box<Expression>,
+        consequent: Box<Expression>,
+        alternate: Box<Expression>,
+    ) -> Box<Expression> {
+        Box::new(Expression::ConditionalExpression(ConditionalExpression {
+            test,
+            consequent,
+            alternate
+        }))
     }
+
     // AssignmentExpression ::= ArrowFunction => AssignmentExpression 2($0)
     pub fn assignment_expression_p2(&self, a0: Box<ArrowExpression>) -> Box<Expression> {
         Box::new(Expression::ArrowExpression(*a0))

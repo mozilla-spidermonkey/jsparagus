@@ -792,6 +792,7 @@ LogicalORExpression[In, Yield, Await] :
 ConditionalExpression[In, Yield, Await] :
   LogicalORExpression[?In, ?Yield, ?Await]
   LogicalORExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]
+    => conditional_expr($0, $2, $4)
 
 
 AssignmentExpression[In, Yield, Await] :

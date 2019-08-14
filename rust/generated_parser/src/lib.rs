@@ -8096,13 +8096,13 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ConditionalExpression
         }
         194 => {
-            // ConditionalExpression ::= LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression => ConditionalExpression 1($0, $1, $2, $3, $4)
+            // ConditionalExpression ::= LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression => conditional_expr($0, $2, $4)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.conditional_expression_p1(x0, x2, x4)));
+            stack.push(StackValue::from(handler.conditional_expr(x0, x2, x4)));
             NonterminalId::ConditionalExpression
         }
         195 => {
