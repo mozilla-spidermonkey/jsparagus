@@ -709,11 +709,11 @@ MultiplicativeExpression[Yield, Await] :
 
 MultiplicativeOperator :
   `*`
-    => mul_op()
+    => box_op(mul_op())
   `/`
-    => div_op()
+    => box_op(div_op())
   `%`
-    => mod_op()
+    => box_op(mod_op())
 
 
 AdditiveExpression[Yield, Await] :
@@ -797,14 +797,43 @@ ConditionalExpression[In, Yield, Await] :
 
 AssignmentExpression[In, Yield, Await] :
   ConditionalExpression[?In, ?Yield, ?Await]
+    => $0
   [+Yield] YieldExpression[?In, ?Await]
+    => $0
   ArrowFunction[?In, ?Yield, ?Await]
+    => $0
   AsyncArrowFunction[?In, ?Yield, ?Await]
-  LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await] #assignment
+    => $0
+  LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]
+    => assignment_expr($0, $2)
   LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]
+    => compound_assignment_expr($0, $1, $2)
 
-AssignmentOperator : one of
-  `*=` `/=` `%=` `+=` `-=` `<<=` `>>=` `>>>=` `&=` `^=` `|=` `**=`
+AssignmentOperator :
+  `*=`
+    => box_assign_op(mul_assign_op())
+  `/=`
+    => box_assign_op(div_assign_op())
+  `%=`
+    => box_assign_op(mod_assign_op())
+  `+=`
+    => box_assign_op(add_assign_op())
+  `-=`
+    => box_assign_op(sub_assign_op())
+  `<<=`
+    => box_assign_op(left_shift_assign_op())
+  `>>=`
+    => box_assign_op(right_shift_assign_op())
+  `>>>=`
+    => box_assign_op(right_shift_ext_assign_op())
+  `&=`
+    => box_assign_op(bitwise_and_assign_op())
+  `^=`
+    => box_assign_op(bitwise_xor_assign_op())
+  `|=`
+    => box_assign_op(bitwise_or_assign_op())
+  `**=`
+    => box_assign_op(pow_assign_op())
 
 
 AssignmentPattern[Yield, Await] :
@@ -1174,8 +1203,11 @@ GeneratorBody :
 
 YieldExpression[In, Await] :
   `yield`
+    => yield_expr(None)
   `yield` AssignmentExpression[?In, +Yield, ?Await]
+    => yield_expr(Some($1))
   `yield` `*` AssignmentExpression[?In, +Yield, ?Await]
+    => yield_star_expr($2)
 
 
 AsyncGeneratorMethod[Yield, Await] :

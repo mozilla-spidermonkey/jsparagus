@@ -617,6 +617,9 @@ impl AstBuilder {
     pub fn right_shift_ext_op(&self) -> BinaryOperator { BinaryOperator::RightShiftExt }
     pub fn add_op(&self) -> BinaryOperator { BinaryOperator::Add }
     pub fn sub_op(&self) -> BinaryOperator { BinaryOperator::Sub }
+    pub fn mul_op(&self) -> BinaryOperator { BinaryOperator::Mul }
+    pub fn div_op(&self) -> BinaryOperator { BinaryOperator::Div }
+    pub fn mod_op(&self) -> BinaryOperator { BinaryOperator::Mod }
     pub fn pow_op(&self) -> BinaryOperator { BinaryOperator::Pow }
     pub fn comma_op(&self) -> BinaryOperator { BinaryOperator::Comma }
     pub fn logical_or_op(&self) -> BinaryOperator { BinaryOperator::LogicalOr }
@@ -625,8 +628,12 @@ impl AstBuilder {
     pub fn bitwise_xor_op(&self) -> BinaryOperator { BinaryOperator::BitwiseXor }
     pub fn bitwise_and_op(&self) -> BinaryOperator { BinaryOperator::BitwiseAnd }
 
-    // Due to limitations of the current parser generator, the operator for
-    // MutliplicativeExpressions currently gets boxed.
+    // Due to limitations of the current parser generator,
+    // MultiplicativeOperators and CompoundAssignmentOperators currently get
+    // boxed.
+    pub fn box_op(&self, op: BinaryOperator) -> Box<BinaryOperator> {
+        Box::new(op)
+    }
 
     // MultiplicativeExpression : MultiplicativeExpression MultiplicativeOperator ExponentiationExpression
     pub fn multiplicative_expr(
@@ -637,10 +644,6 @@ impl AstBuilder {
     ) -> Box<Expression> {
         self.binary_expr(*operator, left, right)
     }
-
-    pub fn mul_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Mul) }
-    pub fn div_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Div) }
-    pub fn mod_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Mod) }
 
     // ExponentiationExpression : UpdateExpression `**` ExponentiationExpression
     // AdditiveExpression : AdditiveExpression `+` MultiplicativeExpression
@@ -690,85 +693,48 @@ impl AstBuilder {
         }))
     }
 
-    // AssignmentExpression ::= ArrowFunction => AssignmentExpression 2($0)
-    pub fn assignment_expression_p2(&self, a0: Box<ArrowExpression>) -> Box<Expression> {
-        Box::new(Expression::ArrowExpression(*a0))
-    }
-    // AssignmentExpression ::= AsyncArrowFunction => AssignmentExpression 3($0)
-    pub fn assignment_expression_p3(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // AssignmentExpression ::= LeftHandSideExpression "=" AssignmentExpression => AssignmentExpression 4($0, $1, $2)
-    pub fn assignment_expression_p4(
+    // AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression
+    pub fn assignment_expr(
         &self,
-        a0: Box<Expression>,
-        a1: Box<Expression>,
+        left_hand_side: Box<Expression>,
+        value: Box<Expression>,
     ) -> Box<Expression> {
-        let binding = expression_to_assignment_target(a0);
+        let target = expression_to_assignment_target(left_hand_side);
         Box::new(Expression::AssignmentExpression(AssignmentExpression::new(
-            binding, a1,
+            target, value
         )))
     }
-    // AssignmentExpression ::= LeftHandSideExpression AssignmentOperator AssignmentExpression => AssignmentExpression 5($0, $1, $2)
-    pub fn assignment_expression_p5(
+
+    pub fn add_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Add }
+    pub fn sub_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Sub }
+    pub fn mul_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Mul }
+    pub fn div_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Div }
+    pub fn mod_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Mod }
+    pub fn pow_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Pow }
+    pub fn left_shift_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::LeftShift }
+    pub fn right_shift_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::RightShift }
+    pub fn right_shift_ext_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::RightShiftExt }
+    pub fn bitwise_or_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Or }
+    pub fn bitwise_xor_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Xor }
+    pub fn bitwise_and_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::And }
+
+    pub fn box_assign_op(&self, op: CompoundAssignmentOperator) -> Box<CompoundAssignmentOperator> {
+        Box::new(op)
+    }
+
+    // AssignmentExpression : LeftHandSideExpression AssignmentOperator AssignmentExpression
+    pub fn compound_assignment_expr(
         &self,
-        a0: Box<Expression>,
-        a1: Box<CompoundAssignmentOperator>,
-        a2: Box<Expression>,
+        left_hand_side: Box<Expression>,
+        operator: Box<CompoundAssignmentOperator>,
+        value: Box<Expression>,
     ) -> Box<Expression> {
-        let binding = expression_to_simple_assignment_target(a0);
+        let target = expression_to_simple_assignment_target(left_hand_side);
         Box::new(Expression::CompoundAssignmentExpression(
-            CompoundAssignmentExpression::new(*a1, binding, a2),
+            CompoundAssignmentExpression::new(*operator, target, value),
         ))
     }
-    // AssignmentOperator ::= "*=" => AssignmentOperator 0($0)
-    pub fn assignment_operator_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "/=" => AssignmentOperator 1($0)
-    pub fn assignment_operator_p1(&self) -> Box<CompoundAssignmentOperator> {
-        Box::new(CompoundAssignmentOperator::Div)
-    }
-    // AssignmentOperator ::= "%=" => AssignmentOperator 2($0)
-    pub fn assignment_operator_p2(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "+=" => AssignmentOperator 3($0)
-    pub fn assignment_operator_p3(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "-=" => AssignmentOperator 4($0)
-    pub fn assignment_operator_p4(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "<<=" => AssignmentOperator 5($0)
-    pub fn assignment_operator_p5(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= ">>=" => AssignmentOperator 6($0)
-    pub fn assignment_operator_p6(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= ">>>=" => AssignmentOperator 7($0)
-    pub fn assignment_operator_p7(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "&=" => AssignmentOperator 8($0)
-    pub fn assignment_operator_p8(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "^=" => AssignmentOperator 9($0)
-    pub fn assignment_operator_p9(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "|=" => AssignmentOperator 10($0)
-    pub fn assignment_operator_p10(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
-    // AssignmentOperator ::= "**=" => AssignmentOperator 11($0)
-    pub fn assignment_operator_p11(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(AssignmentOperator::new())
-    }
+
     // Expression ::= Expression "," AssignmentExpression => Expression 1($0, $1, $2)
     pub fn expression_p1(&self, a0: Box<Expression>, a1: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::BinaryExpression(BinaryExpression::new(
@@ -1421,18 +1387,18 @@ impl AstBuilder {
     pub fn generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
         a0
     }
-    // YieldExpression ::= "yield" => YieldExpression 0($0)
-    pub fn yield_expression_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // YieldExpression : `yield`
+    // YieldExpression : `yield` AssignmentExpression
+    pub fn yield_expr(&self, operand: Option<Box<Expression>>) -> Box<Expression> {
+        Box::new(Expression::YieldExpression(YieldExpression::new(operand)))
     }
-    // YieldExpression ::= "yield" AssignmentExpression => YieldExpression 1($0, $1)
-    pub fn yield_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // YieldExpression : `yield` `*` AssignmentExpression
+    pub fn yield_star_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::YieldGeneratorExpression(YieldGeneratorExpression::new(operand)))
     }
-    // YieldExpression ::= "yield" "*" AssignmentExpression => YieldExpression 2($0, $1, $2)
-    pub fn yield_expression_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
+
     // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
     pub fn async_generator_method(
         &self,

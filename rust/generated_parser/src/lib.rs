@@ -7095,31 +7095,31 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AssignmentExpression
         }
         99 => {
-            // AssignmentExpression ::= ArrowFunction => AssignmentExpression 2($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.assignment_expression_p2(x0)));
+            // AssignmentExpression ::= ArrowFunction => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         100 => {
-            // AssignmentExpression ::= AsyncArrowFunction => AssignmentExpression 3($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.assignment_expression_p3(x0)));
+            // AssignmentExpression ::= AsyncArrowFunction => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         101 => {
-            // AssignmentExpression ::= LeftHandSideExpression "=" AssignmentExpression => AssignmentExpression 4($0, $1, $2)
+            // AssignmentExpression ::= LeftHandSideExpression "=" AssignmentExpression => assignment_expr($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.assignment_expression_p4(x0, x2)));
+            stack.push(StackValue::from(handler.assignment_expr(x0, x2)));
             NonterminalId::AssignmentExpression
         }
         102 => {
-            // AssignmentExpression ::= LeftHandSideExpression AssignmentOperator AssignmentExpression => AssignmentExpression 5($0, $1, $2)
+            // AssignmentExpression ::= LeftHandSideExpression AssignmentOperator AssignmentExpression => compound_assignment_expr($0, $1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.assignment_expression_p5(x0, x1, x2)));
+            stack.push(StackValue::from(handler.compound_assignment_expr(x0, x1, x2)));
             NonterminalId::AssignmentExpression
         }
         103 => {
@@ -8106,24 +8106,24 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ConditionalExpression
         }
         195 => {
-            // YieldExpression ::= "yield" => YieldExpression 0($0)
+            // YieldExpression ::= "yield" => yield_expr(None)
             stack.pop();
-            stack.push(StackValue::from(handler.yield_expression_p0()));
+            stack.push(StackValue::from(handler.yield_expr(None)));
             NonterminalId::YieldExpression
         }
         196 => {
-            // YieldExpression ::= "yield" AssignmentExpression => YieldExpression 1($0, $1)
+            // YieldExpression ::= "yield" AssignmentExpression => yield_expr(Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.yield_expression_p1(x1)));
+            stack.push(StackValue::from(handler.yield_expr(Some(x1))));
             NonterminalId::YieldExpression
         }
         197 => {
-            // YieldExpression ::= "yield" "*" AssignmentExpression => YieldExpression 2($0, $1, $2)
+            // YieldExpression ::= "yield" "*" AssignmentExpression => yield_star_expr($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.yield_expression_p2(x2)));
+            stack.push(StackValue::from(handler.yield_star_expr(x2)));
             NonterminalId::YieldExpression
         }
         198 => {
@@ -8164,75 +8164,75 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LeftHandSideExpression
         }
         203 => {
-            // AssignmentOperator ::= "*=" => AssignmentOperator 0($0)
+            // AssignmentOperator ::= "*=" => box_assign_op(mul_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p0()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.mul_assign_op())));
             NonterminalId::AssignmentOperator
         }
         204 => {
-            // AssignmentOperator ::= "/=" => AssignmentOperator 1($0)
+            // AssignmentOperator ::= "/=" => box_assign_op(div_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p1()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.div_assign_op())));
             NonterminalId::AssignmentOperator
         }
         205 => {
-            // AssignmentOperator ::= "%=" => AssignmentOperator 2($0)
+            // AssignmentOperator ::= "%=" => box_assign_op(mod_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p2()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.mod_assign_op())));
             NonterminalId::AssignmentOperator
         }
         206 => {
-            // AssignmentOperator ::= "+=" => AssignmentOperator 3($0)
+            // AssignmentOperator ::= "+=" => box_assign_op(add_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p3()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.add_assign_op())));
             NonterminalId::AssignmentOperator
         }
         207 => {
-            // AssignmentOperator ::= "-=" => AssignmentOperator 4($0)
+            // AssignmentOperator ::= "-=" => box_assign_op(sub_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p4()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.sub_assign_op())));
             NonterminalId::AssignmentOperator
         }
         208 => {
-            // AssignmentOperator ::= "<<=" => AssignmentOperator 5($0)
+            // AssignmentOperator ::= "<<=" => box_assign_op(left_shift_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p5()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.left_shift_assign_op())));
             NonterminalId::AssignmentOperator
         }
         209 => {
-            // AssignmentOperator ::= ">>=" => AssignmentOperator 6($0)
+            // AssignmentOperator ::= ">>=" => box_assign_op(right_shift_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p6()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.right_shift_assign_op())));
             NonterminalId::AssignmentOperator
         }
         210 => {
-            // AssignmentOperator ::= ">>>=" => AssignmentOperator 7($0)
+            // AssignmentOperator ::= ">>>=" => box_assign_op(right_shift_ext_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p7()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.right_shift_ext_assign_op())));
             NonterminalId::AssignmentOperator
         }
         211 => {
-            // AssignmentOperator ::= "&=" => AssignmentOperator 8($0)
+            // AssignmentOperator ::= "&=" => box_assign_op(bitwise_and_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p8()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.bitwise_and_assign_op())));
             NonterminalId::AssignmentOperator
         }
         212 => {
-            // AssignmentOperator ::= "^=" => AssignmentOperator 9($0)
+            // AssignmentOperator ::= "^=" => box_assign_op(bitwise_xor_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p9()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.bitwise_xor_assign_op())));
             NonterminalId::AssignmentOperator
         }
         213 => {
-            // AssignmentOperator ::= "|=" => AssignmentOperator 10($0)
+            // AssignmentOperator ::= "|=" => box_assign_op(bitwise_or_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p10()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.bitwise_or_assign_op())));
             NonterminalId::AssignmentOperator
         }
         214 => {
-            // AssignmentOperator ::= "**=" => AssignmentOperator 11($0)
+            // AssignmentOperator ::= "**=" => box_assign_op(pow_assign_op())
             stack.pop();
-            stack.push(StackValue::from(handler.assignment_operator_p11()));
+            stack.push(StackValue::from(handler.box_assign_op(handler.pow_assign_op())));
             NonterminalId::AssignmentOperator
         }
         215 => {
@@ -10513,21 +10513,21 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ExponentiationExpression
         }
         499 => {
-            // MultiplicativeOperator ::= "*" => mul_op()
+            // MultiplicativeOperator ::= "*" => box_op(mul_op())
             stack.pop();
-            stack.push(StackValue::from(handler.mul_op()));
+            stack.push(StackValue::from(handler.box_op(handler.mul_op())));
             NonterminalId::MultiplicativeOperator
         }
         500 => {
-            // MultiplicativeOperator ::= "/" => div_op()
+            // MultiplicativeOperator ::= "/" => box_op(div_op())
             stack.pop();
-            stack.push(StackValue::from(handler.div_op()));
+            stack.push(StackValue::from(handler.box_op(handler.div_op())));
             NonterminalId::MultiplicativeOperator
         }
         501 => {
-            // MultiplicativeOperator ::= "%" => mod_op()
+            // MultiplicativeOperator ::= "%" => box_op(mod_op())
             stack.pop();
-            stack.push(StackValue::from(handler.mod_op()));
+            stack.push(StackValue::from(handler.box_op(handler.mod_op())));
             NonterminalId::MultiplicativeOperator
         }
         502 => {
