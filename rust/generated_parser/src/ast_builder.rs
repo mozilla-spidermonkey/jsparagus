@@ -524,34 +524,63 @@ impl AstBuilder {
             expression_to_simple_assignment_target(operand),
         )))
     }
-    // UnaryExpression ::= "delete" UnaryExpression => UnaryExpression 1($0, $1)
-    pub fn unary_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `delete` UnaryExpression
+    pub fn delete_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::Delete,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "void" UnaryExpression => UnaryExpression 2($0, $1)
-    pub fn unary_expression_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `void` UnaryExpression
+    pub fn void_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::Void,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "typeof" UnaryExpression => UnaryExpression 3($0, $1)
-    pub fn unary_expression_p3(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `typeof` UnaryExpression
+    pub fn typeof_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::Typeof,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "+" UnaryExpression => UnaryExpression 4($0, $1)
-    pub fn unary_expression_p4(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `+` UnaryExpression
+    pub fn unary_plus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::Plus,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "-" UnaryExpression => UnaryExpression 5($0, $1)
-    pub fn unary_expression_p5(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `-` UnaryExpression
+    pub fn unary_minus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::Minus,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "~" UnaryExpression => UnaryExpression 6($0, $1)
-    pub fn unary_expression_p6(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `~` UnaryExpression
+    pub fn bitwise_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::BitwiseNot,
+            operand,
+        )))
     }
-    // UnaryExpression ::= "!" UnaryExpression => UnaryExpression 7($0, $1)
-    pub fn unary_expression_p7(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // UnaryExpression ::= `!` UnaryExpression
+    pub fn logical_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+            UnaryOperator::LogicalNot,
+            operand,
+        )))
     }
+
     // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => ExponentiationExpression 1($0, $1, $2)
     pub fn exponentiation_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())
@@ -1489,10 +1518,12 @@ impl AstBuilder {
     pub fn async_function_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
         a0
     }
-    // AwaitExpression ::= "await" UnaryExpression => AwaitExpression($0, $1)
-    pub fn await_expression(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // AwaitExpression : `await` UnaryExpression
+    pub fn await_expr(&self, operand: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::AwaitExpression(AwaitExpression::new(operand)))
     }
+
     // AsyncArrowFunction ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody => AsyncArrowFunction 0($0, $1, $2, $3)
     pub fn async_arrow_function_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(AsyncArrowFunction::new())

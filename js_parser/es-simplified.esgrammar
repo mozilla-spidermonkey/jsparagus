@@ -627,14 +627,23 @@ UpdateExpression[Yield, Await] :
 
 UnaryExpression[Yield, Await] :
   UpdateExpression[?Yield, ?Await]
+    => $0
   `delete` UnaryExpression[?Yield, ?Await]
+    => delete_expr($1)
   `void` UnaryExpression[?Yield, ?Await]
+    => void_expr($1)
   `typeof` UnaryExpression[?Yield, ?Await]
+    => typeof_expr($1)
   `+` UnaryExpression[?Yield, ?Await]
+    => unary_plus_expr($1)
   `-` UnaryExpression[?Yield, ?Await]
+    => unary_minus_expr($1)
   `~` UnaryExpression[?Yield, ?Await]
+    => bitwise_not_expr($1)
   `!` UnaryExpression[?Yield, ?Await]
+    => logical_not_expr($1)
   [+Await] AwaitExpression[?Yield]
+    => $0
 
 
 ExponentiationExpression[Yield, Await] :
@@ -1154,6 +1163,7 @@ AsyncFunctionBody :
 
 AwaitExpression[Yield] :
   `await` UnaryExpression[?Yield, +Await]
+    => await_expr($1)
 
 
 AsyncArrowFunction[In, Yield, Await] :

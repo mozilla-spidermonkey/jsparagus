@@ -10537,52 +10537,52 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::UnaryExpression
         }
         503 => {
-            // UnaryExpression ::= "delete" UnaryExpression => UnaryExpression 1($0, $1)
+            // UnaryExpression ::= "delete" UnaryExpression => delete_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p1(x1)));
+            stack.push(StackValue::from(handler.delete_expr(x1)));
             NonterminalId::UnaryExpression
         }
         504 => {
-            // UnaryExpression ::= "void" UnaryExpression => UnaryExpression 2($0, $1)
+            // UnaryExpression ::= "void" UnaryExpression => void_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p2(x1)));
+            stack.push(StackValue::from(handler.void_expr(x1)));
             NonterminalId::UnaryExpression
         }
         505 => {
-            // UnaryExpression ::= "typeof" UnaryExpression => UnaryExpression 3($0, $1)
+            // UnaryExpression ::= "typeof" UnaryExpression => typeof_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p3(x1)));
+            stack.push(StackValue::from(handler.typeof_expr(x1)));
             NonterminalId::UnaryExpression
         }
         506 => {
-            // UnaryExpression ::= "+" UnaryExpression => UnaryExpression 4($0, $1)
+            // UnaryExpression ::= "+" UnaryExpression => unary_plus_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p4(x1)));
+            stack.push(StackValue::from(handler.unary_plus_expr(x1)));
             NonterminalId::UnaryExpression
         }
         507 => {
-            // UnaryExpression ::= "-" UnaryExpression => UnaryExpression 5($0, $1)
+            // UnaryExpression ::= "-" UnaryExpression => unary_minus_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p5(x1)));
+            stack.push(StackValue::from(handler.unary_minus_expr(x1)));
             NonterminalId::UnaryExpression
         }
         508 => {
-            // UnaryExpression ::= "~" UnaryExpression => UnaryExpression 6($0, $1)
+            // UnaryExpression ::= "~" UnaryExpression => bitwise_not_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p6(x1)));
+            stack.push(StackValue::from(handler.bitwise_not_expr(x1)));
             NonterminalId::UnaryExpression
         }
         509 => {
-            // UnaryExpression ::= "!" UnaryExpression => UnaryExpression 7($0, $1)
+            // UnaryExpression ::= "!" UnaryExpression => logical_not_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.unary_expression_p7(x1)));
+            stack.push(StackValue::from(handler.logical_not_expr(x1)));
             NonterminalId::UnaryExpression
         }
         510 => {
@@ -10626,10 +10626,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::UpdateExpression
         }
         516 => {
-            // AwaitExpression ::= "await" UnaryExpression => AwaitExpression($0, $1)
+            // AwaitExpression ::= "await" UnaryExpression => await_expr($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.await_expression(x1)));
+            stack.push(StackValue::from(handler.await_expr(x1)));
             NonterminalId::AwaitExpression
         }
         _ => panic!("no such production: {}", prod),
