@@ -571,10 +571,11 @@ SuperProperty[Yield, Await] :
   `super` `.` IdentifierName
 
 MetaProperty :
-  NewTarget
+  NewTarget => $0
 
 NewTarget :
   `new` `.` `target`
+    => new_target_expr()
 
 NewExpression[Yield, Await] :
   MemberExpression[?Yield, ?Await]

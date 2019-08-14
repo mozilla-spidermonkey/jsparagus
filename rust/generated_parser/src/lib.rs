@@ -9189,9 +9189,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SuperProperty
         }
         350 => {
-            // MetaProperty ::= NewTarget => MetaProperty($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.meta_property(x0)));
+            // MetaProperty ::= NewTarget => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::MetaProperty
         }
         351 => {
@@ -9935,11 +9935,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncGeneratorExpression
         }
         426 => {
-            // NewTarget ::= "new" "." "target" => NewTarget($0, $1, $2)
+            // NewTarget ::= "new" "." "target" => new_target_expr()
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.new_target()));
+            stack.push(StackValue::from(handler.new_target_expr()));
             NonterminalId::NewTarget
         }
         427 => {

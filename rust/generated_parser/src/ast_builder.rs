@@ -421,10 +421,12 @@ impl AstBuilder {
     pub fn meta_property(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(MetaProperty::new())
     }
-    // NewTarget ::= "new" "." "target" => NewTarget($0, $1, $2)
-    pub fn new_target(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(NewTarget::new())
+
+    // NewTarget : `new` `.` `target`
+    pub fn new_target_expr(&self) -> Box<Expression> {
+        return Box::new(Expression::NewTargetExpression);
     }
+
     // NewExpression ::= "new" NewExpression => NewExpression 1($0, $1)
     pub fn new_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(Expression::new())
