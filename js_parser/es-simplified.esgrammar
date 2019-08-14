@@ -612,29 +612,45 @@ NewTarget :
 
 NewExpression[Yield, Await] :
   MemberExpression[?Yield, ?Await]
+    => $0
   `new` NewExpression[?Yield, ?Await]
+    => new_expr_without_arguments($1)
 
 CallExpression[Yield, Await] :
-  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] #callcover
+  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]
+    => $0
   SuperCall[?Yield, ?Await]
+    => $0
   CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    => call_expr($0, $1)
   CallExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
+    => computed_member_expr($0, $2)
   CallExpression[?Yield, ?Await] `.` IdentifierName
+    => static_member_expr($0, $2)
   CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+    => tagged_template_expr($0, $1)
 
 SuperCall[Yield, Await] :
   `super` Arguments[?Yield, ?Await]
+    => super_call($1)
 
 Arguments[Yield, Await] :
   `(` `)`
+    => arguments_empty()
   `(` ArgumentList[?Yield, ?Await] `)`
+    => $1
   `(` ArgumentList[?Yield, ?Await] `,` `)`
+    => $1
 
 ArgumentList[Yield, Await] :
   AssignmentExpression[+In, ?Yield, ?Await]
+    => arguments_append(arguments_empty(), $0)
   `...` AssignmentExpression[+In, ?Yield, ?Await]
+    => arguments_append_spread(arguments_empty(), $1)
   ArgumentList[?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await]
+    => arguments_append($0, $2)
   ArgumentList[?Yield, ?Await] `,` `...` AssignmentExpression[+In, ?Yield, ?Await]
+    => arguments_append_spread($0, $3)
 
 LeftHandSideExpression[Yield, Await] :
   NewExpression[?Yield, ?Await]
@@ -1212,6 +1228,7 @@ AsyncArrowBindingIdentifier[Yield] :
 
 CoverCallExpressionAndAsyncArrowHead[Yield, Await] :
   MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    => call_expr($0, $1)
 
 
 AsyncArrowHead :

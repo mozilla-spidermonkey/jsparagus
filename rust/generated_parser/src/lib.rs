@@ -8563,10 +8563,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncConciseBody
         }
         264 => {
-            // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => CoverCallExpressionAndAsyncArrowHead($0, $1)
+            // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => call_expr($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.cover_call_expression_and_async_arrow_head(x0, x1)));
+            stack.push(StackValue::from(handler.call_expr(x0, x1)));
             NonterminalId::CoverCallExpressionAndAsyncArrowHead
         }
         265 => {
@@ -8576,53 +8576,53 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::NewExpression
         }
         266 => {
-            // NewExpression ::= "new" NewExpression => NewExpression 1($0, $1)
+            // NewExpression ::= "new" NewExpression => new_expr_without_arguments($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.new_expression_p1(x1)));
+            stack.push(StackValue::from(handler.new_expr_without_arguments(x1)));
             NonterminalId::NewExpression
         }
         267 => {
-            // CallExpression ::= CoverCallExpressionAndAsyncArrowHead => CallExpression 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p0(x0)));
+            // CallExpression ::= CoverCallExpressionAndAsyncArrowHead => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::CallExpression
         }
         268 => {
-            // CallExpression ::= SuperCall => CallExpression 1($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p1(x0)));
+            // CallExpression ::= SuperCall => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::CallExpression
         }
         269 => {
-            // CallExpression ::= CallExpression Arguments => CallExpression 2($0, $1)
+            // CallExpression ::= CallExpression Arguments => call_expr($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p2(x0, x1)));
+            stack.push(StackValue::from(handler.call_expr(x0, x1)));
             NonterminalId::CallExpression
         }
         270 => {
-            // CallExpression ::= CallExpression "[" Expression "]" => CallExpression 3($0, $1, $2, $3)
+            // CallExpression ::= CallExpression "[" Expression "]" => computed_member_expr($0, $2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p3(x0, x2)));
+            stack.push(StackValue::from(handler.computed_member_expr(x0, x2)));
             NonterminalId::CallExpression
         }
         271 => {
-            // CallExpression ::= CallExpression "." IdentifierName => CallExpression 4($0, $1, $2)
+            // CallExpression ::= CallExpression "." IdentifierName => static_member_expr($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p4(x0, x2)));
+            stack.push(StackValue::from(handler.static_member_expr(x0, x2)));
             NonterminalId::CallExpression
         }
         272 => {
-            // CallExpression ::= CallExpression TemplateLiteral => CallExpression 5($0, $1)
+            // CallExpression ::= CallExpression TemplateLiteral => tagged_template_expr($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.call_expression_p5(x0, x1)));
+            stack.push(StackValue::from(handler.tagged_template_expr(x0, x1)));
             NonterminalId::CallExpression
         }
         273 => {
@@ -8859,31 +8859,31 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MemberExpression
         }
         305 => {
-            // Arguments ::= "(" ")" => Arguments 0($0, $1)
+            // Arguments ::= "(" ")" => arguments_empty()
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.arguments_p0()));
+            stack.push(StackValue::from(handler.arguments_empty()));
             NonterminalId::Arguments
         }
         306 => {
-            // Arguments ::= "(" ArgumentList ")" => Arguments 1($0, $1, $2)
+            // Arguments ::= "(" ArgumentList ")" => $1
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.arguments_p1(x1)));
+            stack.push(x1);
             NonterminalId::Arguments
         }
         307 => {
-            // Arguments ::= "(" ArgumentList "," ")" => Arguments 2($0, $1, $2, $3)
+            // Arguments ::= "(" ArgumentList "," ")" => $1
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.arguments_p2(x1)));
+            stack.push(x1);
             NonterminalId::Arguments
         }
         308 => {
-            // SuperCall ::= "super" Arguments => SuperCall($0, $1)
+            // SuperCall ::= "super" Arguments => super_call($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(handler.super_call(x1)));
@@ -9195,33 +9195,33 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MetaProperty
         }
         351 => {
-            // ArgumentList ::= AssignmentExpression => ArgumentList 0($0)
+            // ArgumentList ::= AssignmentExpression => arguments_append(arguments_empty(), $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.argument_list_p0(x0)));
+            stack.push(StackValue::from(handler.arguments_append(handler.arguments_empty(), x0)));
             NonterminalId::ArgumentList
         }
         352 => {
-            // ArgumentList ::= "..." AssignmentExpression => ArgumentList 1($0, $1)
+            // ArgumentList ::= "..." AssignmentExpression => arguments_append_spread(arguments_empty(), $1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.argument_list_p1(x1)));
+            stack.push(StackValue::from(handler.arguments_append_spread(handler.arguments_empty(), x1)));
             NonterminalId::ArgumentList
         }
         353 => {
-            // ArgumentList ::= ArgumentList "," AssignmentExpression => ArgumentList 2($0, $1, $2)
+            // ArgumentList ::= ArgumentList "," AssignmentExpression => arguments_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.argument_list_p2(x0, x2)));
+            stack.push(StackValue::from(handler.arguments_append(x0, x2)));
             NonterminalId::ArgumentList
         }
         354 => {
-            // ArgumentList ::= ArgumentList "," "..." AssignmentExpression => ArgumentList 3($0, $1, $2, $3)
+            // ArgumentList ::= ArgumentList "," "..." AssignmentExpression => arguments_append_spread($0, $3)
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.argument_list_p3(x0, x3)));
+            stack.push(StackValue::from(handler.arguments_append_spread(x0, x3)));
             NonterminalId::ArgumentList
         }
         355 => {

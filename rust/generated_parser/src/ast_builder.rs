@@ -290,8 +290,8 @@ impl AstBuilder {
         Box::new(Expression::ObjectExpression(ObjectExpression::new(vec![])))
     }
 
-    // ObjectLiteral ::= `{` PropertyDefinitionList `}`
-    // ObjectLiteral ::= `{` PropertyDefinitionList `,` `}`
+    // ObjectLiteral : `{` PropertyDefinitionList `}`
+    // ObjectLiteral : `{` PropertyDefinitionList `,` `}`
     pub fn object_literal(&self, object: Box<ObjectExpression>) -> Box<Expression> {
         Box::new(Expression::ObjectExpression(*object))
     }
@@ -395,27 +395,29 @@ impl AstBuilder {
     }
 
     // MemberExpression : MemberExpression `[` Expression `]`
-    pub fn computed_member_expr(&self, a0: Box<Expression>, a1: Box<Expression>) -> Box<Expression> {
+    // CallExpression : CallExpression `[` Expression `]`
+    pub fn computed_member_expr(&self, object: Box<Expression>, expression: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
-            MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
-                ExpressionOrSuper::Expression(a0),
-                IdentifierName::new("".to_string()),
+            MemberExpression::ComputedMemberExpression(ComputedMemberExpression::new(
+                ExpressionOrSuper::Expression(object),
+                expression,
             )),
         ))
     }
 
     // MemberExpression : MemberExpression `.` IdentifierName
-    pub fn static_member_expr(&self, a0: Box<Expression>, a1: Box<Token>) -> Box<Expression> {
-        // TODO
+    // CallExpression : CallExpression `.` IdentifierName
+    pub fn static_member_expr(&self, object: Box<Expression>, _identifier: Box<Token>) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
-                ExpressionOrSuper::Expression(a0),
-                IdentifierName::new("".to_string()),
+                ExpressionOrSuper::Expression(object),
+                IdentifierName::new("".to_string()), // TODO
             )),
         ))
     }
 
     // MemberExpression : MemberExpression TemplateLiteral
+    // CallExpression : CallExpression TemplateLiteral
     pub fn tagged_template_expr(
         &self,
         tag: Box<Expression>,
@@ -463,69 +465,51 @@ impl AstBuilder {
         return Box::new(Expression::NewTargetExpression);
     }
 
-    // NewExpression ::= "new" NewExpression => NewExpression 1($0, $1)
-    pub fn new_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // CallExpression ::= CoverCallExpressionAndAsyncArrowHead => CallExpression 0($0)
-    pub fn call_expression_p0(&self, a0: Box<Expression>) -> Box<Expression> {
-        a0
-    }
-    // CallExpression ::= SuperCall => CallExpression 1($0)
-    pub fn call_expression_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // CallExpression ::= CallExpression Arguments => CallExpression 2($0, $1)
-    pub fn call_expression_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // CallExpression ::= CallExpression "[" Expression "]" => CallExpression 3($0, $1, $2, $3)
-    pub fn call_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // CallExpression ::= CallExpression "." IdentifierName => CallExpression 4($0, $1, $2)
-    pub fn call_expression_p4(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // CallExpression ::= CallExpression TemplateLiteral => CallExpression 5($0, $1)
-    pub fn call_expression_p5(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // SuperCall ::= "super" Arguments => SuperCall($0, $1)
-    pub fn super_call(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(SuperCall::new())
-    }
-    // Arguments ::= "(" ")" => Arguments 0($0, $1)
-    pub fn arguments_p0(&self) -> Box<Arguments> {
-        Box::new(Arguments::new(Vec::new()))
-    }
-    // Arguments ::= "(" ArgumentList ")" => Arguments 1($0, $1, $2)
-    pub fn arguments_p1(&self, a0: Box<Arguments>) -> Box<Arguments> {
-        a0
-    }
-    // Arguments ::= "(" ArgumentList "," ")" => Arguments 2($0, $1, $2, $3)
-    pub fn arguments_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Arguments::new())
-    }
-    // ArgumentList ::= AssignmentExpression => ArgumentList 0($0)
-    pub fn argument_list_p0(&self, a0: Box<Expression>) -> Box<Arguments> {
-        Box::new(Arguments::new(vec![Argument::Expression(a0)]))
-    }
-    // ArgumentList ::= "..." AssignmentExpression => ArgumentList 1($0, $1)
-    pub fn argument_list_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ArgumentList::new())
-    }
-    // ArgumentList ::= ArgumentList "," AssignmentExpression => ArgumentList 2($0, $1, $2)
-    pub fn argument_list_p2(&self, mut a0: Box<Arguments>, a1: Box<Expression>) -> Box<Arguments> {
-        a0.args.push(Argument::Expression(a1));
-        a0
-    }
-    // ArgumentList ::= ArgumentList "," "..." AssignmentExpression => ArgumentList 3($0, $1, $2, $3)
-    pub fn argument_list_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ArgumentList::new())
+    // NewExpression : `new` NewExpression
+    pub fn new_expr_without_arguments(&self, callee: Box<Expression>) -> Box<Expression> {
+        Box::new(Expression::NewExpression(NewExpression {
+            callee,
+            arguments: Arguments::new(vec![]),
+        }))
     }
 
-    // UpdateExpression ::= LeftHandSideExpression `++`
+    // CallExpression : CallExpression Arguments
+    // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments
+    pub fn call_expr(&self, callee: Box<Expression>, arguments: Box<Arguments>) -> Box<Expression> {
+        Box::new(Expression::CallExpression(CallExpression {
+            callee: ExpressionOrSuper::Expression(callee),
+            arguments: *arguments,
+        }))
+    }
+
+    // SuperCall : `super` Arguments
+    pub fn super_call(&self, arguments: Box<Arguments>) -> Box<Expression> {
+        Box::new(Expression::CallExpression(CallExpression {
+            callee: ExpressionOrSuper::Super,
+            arguments: *arguments,
+        }))
+    }
+
+    // Arguments : `(` `)`
+    pub fn arguments_empty(&self) -> Box<Arguments> {
+        Box::new(Arguments::new(Vec::new()))
+    }
+
+    // ArgumentList : AssignmentExpression
+    // ArgumentList : ArgumentList `,` AssignmentExpression
+    pub fn arguments_append(&self, mut arguments: Box<Arguments>, expression: Box<Expression>) -> Box<Arguments> {
+        arguments.args.push(Argument::Expression(expression));
+        arguments
+    }
+
+    // ArgumentList : `...` AssignmentExpression
+    // ArgumentList : ArgumentList `,` `...` AssignmentExpression
+    pub fn arguments_append_spread(&self, mut arguments: Box<Arguments>, expression: Box<Expression>) -> Box<Arguments> {
+        arguments.args.push(Argument::SpreadElement(expression));
+        arguments
+    }
+
+    // UpdateExpression : LeftHandSideExpression `++`
     pub fn post_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             false,
@@ -534,7 +518,7 @@ impl AstBuilder {
         )))
     }
 
-    // UpdateExpression ::= LeftHandSideExpression `--`
+    // UpdateExpression : LeftHandSideExpression `--`
     pub fn post_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             false,
@@ -543,7 +527,7 @@ impl AstBuilder {
         )))
     }
 
-    // UpdateExpression ::= `++` UnaryExpression
+    // UpdateExpression : `++` UnaryExpression
     pub fn pre_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             true,
@@ -552,7 +536,7 @@ impl AstBuilder {
         )))
     }
 
-    // UpdateExpression ::= `--` UnaryExpression
+    // UpdateExpression : `--` UnaryExpression
     pub fn pre_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             true,
@@ -561,7 +545,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `delete` UnaryExpression
+    // UnaryExpression : `delete` UnaryExpression
     pub fn delete_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Delete,
@@ -569,7 +553,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `void` UnaryExpression
+    // UnaryExpression : `void` UnaryExpression
     pub fn void_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Void,
@@ -577,7 +561,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `typeof` UnaryExpression
+    // UnaryExpression : `typeof` UnaryExpression
     pub fn typeof_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Typeof,
@@ -585,7 +569,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `+` UnaryExpression
+    // UnaryExpression : `+` UnaryExpression
     pub fn unary_plus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Plus,
@@ -593,7 +577,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `-` UnaryExpression
+    // UnaryExpression : `-` UnaryExpression
     pub fn unary_minus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Minus,
@@ -601,7 +585,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `~` UnaryExpression
+    // UnaryExpression : `~` UnaryExpression
     pub fn bitwise_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::BitwiseNot,
@@ -609,7 +593,7 @@ impl AstBuilder {
         )))
     }
 
-    // UnaryExpression ::= `!` UnaryExpression
+    // UnaryExpression : `!` UnaryExpression
     pub fn logical_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
         Box::new(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::LogicalNot,
