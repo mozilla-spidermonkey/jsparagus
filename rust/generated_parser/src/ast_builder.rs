@@ -155,6 +155,7 @@ impl AstBuilder {
 
     // Literal : BooleanLiteral
     pub fn boolean_literal(&self, _token: Box<Token>) -> Box<Expression> {
+        #![allow(unreachable_code)]
         Box::new(Expression::LiteralBooleanExpression(
             LiteralBooleanExpression::new(unimplemented!()),
         ))
