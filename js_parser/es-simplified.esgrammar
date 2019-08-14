@@ -699,67 +699,94 @@ UnaryExpression[Yield, Await] :
 ExponentiationExpression[Yield, Await] :
   UnaryExpression[?Yield, ?Await]
   UpdateExpression[?Yield, ?Await] `**` ExponentiationExpression[?Yield, ?Await]
+    => binary_expr(pow_op(), $0, $2)
 
 
 MultiplicativeExpression[Yield, Await] :
   ExponentiationExpression[?Yield, ?Await]
   MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]
+    => multiplicative_expr($0, $1, $2)
 
-MultiplicativeOperator : one of
-  `*` `/` `%`
+MultiplicativeOperator :
+  `*`
+    => mul_op()
+  `/`
+    => div_op()
+  `%`
+    => mod_op()
 
 
 AdditiveExpression[Yield, Await] :
   MultiplicativeExpression[?Yield, ?Await]
   AdditiveExpression[?Yield, ?Await] `+` MultiplicativeExpression[?Yield, ?Await]
+    => binary_expr(add_op(), $0, $2)
   AdditiveExpression[?Yield, ?Await] `-` MultiplicativeExpression[?Yield, ?Await]
+    => binary_expr(sub_op(), $0, $2)
 
 
 ShiftExpression[Yield, Await] :
   AdditiveExpression[?Yield, ?Await]
   ShiftExpression[?Yield, ?Await] `<<` AdditiveExpression[?Yield, ?Await]
+    => binary_expr(left_shift_op(), $0, $2)
   ShiftExpression[?Yield, ?Await] `>>` AdditiveExpression[?Yield, ?Await]
+    => binary_expr(right_shift_op(), $0, $2)
   ShiftExpression[?Yield, ?Await] `>>>` AdditiveExpression[?Yield, ?Await]
+    => binary_expr(right_shift_ext_op(), $0, $2)
 
 
 RelationalExpression[In, Yield, Await] :
   ShiftExpression[?Yield, ?Await]
   RelationalExpression[?In, ?Yield, ?Await] `<` ShiftExpression[?Yield, ?Await]
+    => binary_expr(less_than_op(), $0, $2)
   RelationalExpression[?In, ?Yield, ?Await] `>` ShiftExpression[?Yield, ?Await]
+    => binary_expr(greater_than_op(), $0, $2)
   RelationalExpression[?In, ?Yield, ?Await] `<=` ShiftExpression[?Yield, ?Await]
+    => binary_expr(less_than_or_equal_op(), $0, $2)
   RelationalExpression[?In, ?Yield, ?Await] `>=` ShiftExpression[?Yield, ?Await]
+    => binary_expr(greater_than_or_equal_op(), $0, $2)
   RelationalExpression[?In, ?Yield, ?Await] `instanceof` ShiftExpression[?Yield, ?Await]
+    => binary_expr(instanceof_op(), $0, $2)
   [+In] RelationalExpression[+In, ?Yield, ?Await] `in` ShiftExpression[?Yield, ?Await]
+    => binary_expr(in_op(), $0, $2)
 
 
 EqualityExpression[In, Yield, Await] :
   RelationalExpression[?In, ?Yield, ?Await]
   EqualityExpression[?In, ?Yield, ?Await] `==` RelationalExpression[?In, ?Yield, ?Await]
+    => binary_expr(equals_op(), $0, $2)
   EqualityExpression[?In, ?Yield, ?Await] `!=` RelationalExpression[?In, ?Yield, ?Await]
+    => binary_expr(not_equals_op(), $0, $2)
   EqualityExpression[?In, ?Yield, ?Await] `===` RelationalExpression[?In, ?Yield, ?Await]
+    => binary_expr(strict_equals_op(), $0, $2)
   EqualityExpression[?In, ?Yield, ?Await] `!==` RelationalExpression[?In, ?Yield, ?Await]
+    => binary_expr(strict_not_equals_op(), $0, $2)
 
 
 BitwiseANDExpression[In, Yield, Await] :
   EqualityExpression[?In, ?Yield, ?Await]
   BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]
+    => binary_expr(bitwise_and_op(), $0, $2)
 
 BitwiseXORExpression[In, Yield, Await] :
   BitwiseANDExpression[?In, ?Yield, ?Await]
   BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]
+    => binary_expr(bitwise_xor_op(), $0, $2)
 
 BitwiseORExpression[In, Yield, Await] :
   BitwiseXORExpression[?In, ?Yield, ?Await]
   BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]
+    => binary_expr(bitwise_or_op(), $0, $2)
 
 
 LogicalANDExpression[In, Yield, Await] :
   BitwiseORExpression[?In, ?Yield, ?Await]
   LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]
+    => binary_expr(logical_and_op(), $0, $2)
 
 LogicalORExpression[In, Yield, Await] :
   LogicalANDExpression[?In, ?Yield, ?Await]
   LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]
+    => binary_expr(logical_or_op(), $0, $2)
 
 
 ConditionalExpression[In, Yield, Await] :

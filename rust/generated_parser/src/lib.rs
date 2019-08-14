@@ -8495,11 +8495,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LogicalOrExpression
         }
         254 => {
-            // LogicalORExpression ::= LogicalORExpression "||" LogicalANDExpression => LogicalORExpression 1($0, $1, $2)
+            // LogicalORExpression ::= LogicalORExpression "||" LogicalANDExpression => binary_expr(logical_or_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.logical_or_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.logical_or_op(), x0, x2)));
             NonterminalId::LogicalOrExpression
         }
         255 => {
@@ -8737,11 +8737,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LogicalAndExpression
         }
         290 => {
-            // LogicalANDExpression ::= LogicalANDExpression "&&" BitwiseORExpression => LogicalANDExpression 1($0, $1, $2)
+            // LogicalANDExpression ::= LogicalANDExpression "&&" BitwiseORExpression => binary_expr(logical_and_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.logical_and_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.logical_and_op(), x0, x2)));
             NonterminalId::LogicalAndExpression
         }
         291 => {
@@ -9086,11 +9086,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseOrExpression
         }
         334 => {
-            // BitwiseORExpression ::= BitwiseORExpression "|" BitwiseXORExpression => BitwiseORExpression 1($0, $1, $2)
+            // BitwiseORExpression ::= BitwiseORExpression "|" BitwiseXORExpression => binary_expr(bitwise_or_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.bitwise_or_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.bitwise_or_op(), x0, x2)));
             NonterminalId::BitwiseOrExpression
         }
         335 => {
@@ -9416,11 +9416,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseXorExpression
         }
         378 => {
-            // BitwiseXORExpression ::= BitwiseXORExpression "^" BitwiseANDExpression => BitwiseXORExpression 1($0, $1, $2)
+            // BitwiseXORExpression ::= BitwiseXORExpression "^" BitwiseANDExpression => binary_expr(bitwise_xor_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.bitwise_xor_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.bitwise_xor_op(), x0, x2)));
             NonterminalId::BitwiseXorExpression
         }
         379 => {
@@ -10179,11 +10179,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseAndExpression
         }
         453 => {
-            // BitwiseANDExpression ::= BitwiseANDExpression "&" EqualityExpression => BitwiseANDExpression 1($0, $1, $2)
+            // BitwiseANDExpression ::= BitwiseANDExpression "&" EqualityExpression => binary_expr(bitwise_and_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.bitwise_and_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.bitwise_and_op(), x0, x2)));
             NonterminalId::BitwiseAndExpression
         }
         454 => {
@@ -10308,35 +10308,35 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::EqualityExpression
         }
         471 => {
-            // EqualityExpression ::= EqualityExpression "==" RelationalExpression => EqualityExpression 1($0, $1, $2)
+            // EqualityExpression ::= EqualityExpression "==" RelationalExpression => binary_expr(equals_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.equality_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.equals_op(), x0, x2)));
             NonterminalId::EqualityExpression
         }
         472 => {
-            // EqualityExpression ::= EqualityExpression "!=" RelationalExpression => EqualityExpression 2($0, $1, $2)
+            // EqualityExpression ::= EqualityExpression "!=" RelationalExpression => binary_expr(not_equals_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.equality_expression_p2(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.not_equals_op(), x0, x2)));
             NonterminalId::EqualityExpression
         }
         473 => {
-            // EqualityExpression ::= EqualityExpression "===" RelationalExpression => EqualityExpression 3($0, $1, $2)
+            // EqualityExpression ::= EqualityExpression "===" RelationalExpression => binary_expr(strict_equals_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.equality_expression_p3(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.strict_equals_op(), x0, x2)));
             NonterminalId::EqualityExpression
         }
         474 => {
-            // EqualityExpression ::= EqualityExpression "!==" RelationalExpression => EqualityExpression 4($0, $1, $2)
+            // EqualityExpression ::= EqualityExpression "!==" RelationalExpression => binary_expr(strict_not_equals_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.equality_expression_p4(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.strict_not_equals_op(), x0, x2)));
             NonterminalId::EqualityExpression
         }
         475 => {
@@ -10386,43 +10386,43 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::RelationalExpression
         }
         482 => {
-            // RelationalExpression ::= RelationalExpression "<" ShiftExpression => RelationalExpression 1($0, $1, $2)
+            // RelationalExpression ::= RelationalExpression "<" ShiftExpression => binary_expr(less_than_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.relational_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.less_than_op(), x0, x2)));
             NonterminalId::RelationalExpression
         }
         483 => {
-            // RelationalExpression ::= RelationalExpression ">" ShiftExpression => RelationalExpression 2($0, $1, $2)
+            // RelationalExpression ::= RelationalExpression ">" ShiftExpression => binary_expr(greater_than_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.relational_expression_p2(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.greater_than_op(), x0, x2)));
             NonterminalId::RelationalExpression
         }
         484 => {
-            // RelationalExpression ::= RelationalExpression "<=" ShiftExpression => RelationalExpression 3($0, $1, $2)
+            // RelationalExpression ::= RelationalExpression "<=" ShiftExpression => binary_expr(less_than_or_equal_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.relational_expression_p3(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.less_than_or_equal_op(), x0, x2)));
             NonterminalId::RelationalExpression
         }
         485 => {
-            // RelationalExpression ::= RelationalExpression ">=" ShiftExpression => RelationalExpression 4($0, $1, $2)
+            // RelationalExpression ::= RelationalExpression ">=" ShiftExpression => binary_expr(greater_than_or_equal_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.relational_expression_p4(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.greater_than_or_equal_op(), x0, x2)));
             NonterminalId::RelationalExpression
         }
         486 => {
-            // RelationalExpression ::= RelationalExpression "instanceof" ShiftExpression => RelationalExpression 5($0, $1, $2)
+            // RelationalExpression ::= RelationalExpression "instanceof" ShiftExpression => binary_expr(instanceof_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.relational_expression_p5(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.instanceof_op(), x0, x2)));
             NonterminalId::RelationalExpression
         }
         487 => {
@@ -10439,27 +10439,27 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ShiftExpression
         }
         489 => {
-            // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => ShiftExpression 1($0, $1, $2)
+            // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => binary_expr(left_shift_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.shift_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.left_shift_op(), x0, x2)));
             NonterminalId::ShiftExpression
         }
         490 => {
-            // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => ShiftExpression 2($0, $1, $2)
+            // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => binary_expr(right_shift_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.shift_expression_p2(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.right_shift_op(), x0, x2)));
             NonterminalId::ShiftExpression
         }
         491 => {
-            // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => ShiftExpression 3($0, $1, $2)
+            // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => binary_expr(right_shift_ext_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.shift_expression_p3(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.right_shift_ext_op(), x0, x2)));
             NonterminalId::ShiftExpression
         }
         492 => {
@@ -10469,19 +10469,19 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AdditiveExpression
         }
         493 => {
-            // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => AdditiveExpression 1($0, $1, $2)
+            // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => binary_expr(add_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.additive_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.add_op(), x0, x2)));
             NonterminalId::AdditiveExpression
         }
         494 => {
-            // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => AdditiveExpression 2($0, $1, $2)
+            // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => binary_expr(sub_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.additive_expression_p2(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.sub_op(), x0, x2)));
             NonterminalId::AdditiveExpression
         }
         495 => {
@@ -10491,11 +10491,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MultiplicativeExpression
         }
         496 => {
-            // MultiplicativeExpression ::= MultiplicativeExpression MultiplicativeOperator ExponentiationExpression => MultiplicativeExpression 1($0, $1, $2)
+            // MultiplicativeExpression ::= MultiplicativeExpression MultiplicativeOperator ExponentiationExpression => multiplicative_expr($0, $1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.multiplicative_expression_p1(x0, x1, x2)));
+            stack.push(StackValue::from(handler.multiplicative_expr(x0, x1, x2)));
             NonterminalId::MultiplicativeExpression
         }
         497 => {
@@ -10505,29 +10505,29 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ExponentiationExpression
         }
         498 => {
-            // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => ExponentiationExpression 1($0, $1, $2)
+            // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => binary_expr(pow_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.exponentiation_expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.pow_op(), x0, x2)));
             NonterminalId::ExponentiationExpression
         }
         499 => {
-            // MultiplicativeOperator ::= "*" => MultiplicativeOperator 0($0)
+            // MultiplicativeOperator ::= "*" => mul_op()
             stack.pop();
-            stack.push(StackValue::from(handler.multiplicative_operator_p0()));
+            stack.push(StackValue::from(handler.mul_op()));
             NonterminalId::MultiplicativeOperator
         }
         500 => {
-            // MultiplicativeOperator ::= "/" => MultiplicativeOperator 1($0)
+            // MultiplicativeOperator ::= "/" => div_op()
             stack.pop();
-            stack.push(StackValue::from(handler.multiplicative_operator_p1()));
+            stack.push(StackValue::from(handler.div_op()));
             NonterminalId::MultiplicativeOperator
         }
         501 => {
-            // MultiplicativeOperator ::= "%" => MultiplicativeOperator 2($0)
+            // MultiplicativeOperator ::= "%" => mod_op()
             stack.pop();
-            stack.push(StackValue::from(handler.multiplicative_operator_p2()));
+            stack.push(StackValue::from(handler.mod_op()));
             NonterminalId::MultiplicativeOperator
         }
         502 => {

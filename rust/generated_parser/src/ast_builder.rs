@@ -602,115 +602,80 @@ impl AstBuilder {
         )))
     }
 
-    // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => ExponentiationExpression 1($0, $1, $2)
-    pub fn exponentiation_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // MultiplicativeExpression ::= MultiplicativeExpression MultiplicativeOperator ExponentiationExpression => MultiplicativeExpression 1($0, $1, $2)
-    pub fn multiplicative_expression_p1(
+    pub fn equals_op(&self) -> BinaryOperator { BinaryOperator::Equals }
+    pub fn not_equals_op(&self) -> BinaryOperator { BinaryOperator::NotEquals }
+    pub fn strict_equals_op(&self) -> BinaryOperator { BinaryOperator::StrictEquals }
+    pub fn strict_not_equals_op(&self) -> BinaryOperator { BinaryOperator::StrictNotEquals }
+    pub fn less_than_op(&self) -> BinaryOperator { BinaryOperator::LessThan }
+    pub fn less_than_or_equal_op(&self) -> BinaryOperator { BinaryOperator::LessThanOrEqual }
+    pub fn greater_than_op(&self) -> BinaryOperator { BinaryOperator::GreaterThan }
+    pub fn greater_than_or_equal_op(&self) -> BinaryOperator { BinaryOperator::GreaterThanOrEqual }
+    pub fn in_op(&self) -> BinaryOperator { BinaryOperator::In }
+    pub fn instanceof_op(&self) -> BinaryOperator { BinaryOperator::Instanceof }
+    pub fn left_shift_op(&self) -> BinaryOperator { BinaryOperator::LeftShift }
+    pub fn right_shift_op(&self) -> BinaryOperator { BinaryOperator::RightShift }
+    pub fn right_shift_ext_op(&self) -> BinaryOperator { BinaryOperator::RightShiftExt }
+    pub fn add_op(&self) -> BinaryOperator { BinaryOperator::Add }
+    pub fn sub_op(&self) -> BinaryOperator { BinaryOperator::Sub }
+    pub fn pow_op(&self) -> BinaryOperator { BinaryOperator::Pow }
+    pub fn comma_op(&self) -> BinaryOperator { BinaryOperator::Comma }
+    pub fn logical_or_op(&self) -> BinaryOperator { BinaryOperator::LogicalOr }
+    pub fn logical_and_op(&self) -> BinaryOperator { BinaryOperator::LogicalAnd }
+    pub fn bitwise_or_op(&self) -> BinaryOperator { BinaryOperator::BitwiseOr }
+    pub fn bitwise_xor_op(&self) -> BinaryOperator { BinaryOperator::BitwiseXor }
+    pub fn bitwise_and_op(&self) -> BinaryOperator { BinaryOperator::BitwiseAnd }
+
+    // Due to limitations of the current parser generator, the operator for
+    // MutliplicativeExpressions currently gets boxed.
+
+    // MultiplicativeExpression : MultiplicativeExpression MultiplicativeOperator ExponentiationExpression
+    pub fn multiplicative_expr(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // MultiplicativeOperator ::= "*" => MultiplicativeOperator 0($0)
-    pub fn multiplicative_operator_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(MultiplicativeOperator::new())
-    }
-    // MultiplicativeOperator ::= "/" => MultiplicativeOperator 1($0)
-    pub fn multiplicative_operator_p1(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(MultiplicativeOperator::new())
-    }
-    // MultiplicativeOperator ::= "%" => MultiplicativeOperator 2($0)
-    pub fn multiplicative_operator_p2(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(MultiplicativeOperator::new())
-    }
-    // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => AdditiveExpression 1($0, $1, $2)
-    pub fn additive_expression_p1(
-        &self,
-        a0: Box<Expression>,
-        a1: Box<Expression>,
+        left: Box<Expression>,
+        operator: Box<BinaryOperator>,
+        right: Box<Expression>,
     ) -> Box<Expression> {
-        Box::new(Expression::BinaryExpression(BinaryExpression::new(
-            BinaryOperator::Add,
-            a0,
-            a1,
-        )))
+        self.binary_expr(*operator, left, right)
     }
-    // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => AdditiveExpression 2($0, $1, $2)
-    pub fn additive_expression_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    pub fn mul_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Mul) }
+    pub fn div_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Div) }
+    pub fn mod_op(&self) -> Box<BinaryOperator> { Box::new(BinaryOperator::Mod) }
+
+    // ExponentiationExpression : UpdateExpression `**` ExponentiationExpression
+    // AdditiveExpression : AdditiveExpression `+` MultiplicativeExpression
+    // AdditiveExpression : AdditiveExpression `-` MultiplicativeExpression
+    // ShiftExpression : ShiftExpression `<<` AdditiveExpression
+    // ShiftExpression : ShiftExpression `>>` AdditiveExpression
+    // ShiftExpression : ShiftExpression `>>>` AdditiveExpression
+    // RelationalExpression : RelationalExpression `<` ShiftExpression
+    // RelationalExpression : RelationalExpression `>` ShiftExpression
+    // RelationalExpression : RelationalExpression `<=` ShiftExpression
+    // RelationalExpression : RelationalExpression `>=` ShiftExpression
+    // RelationalExpression : RelationalExpression `instanceof` ShiftExpression
+    // RelationalExpression : [+In] RelationalExpression `in` ShiftExpression
+    // EqualityExpression : EqualityExpression `==` RelationalExpression
+    // EqualityExpression : EqualityExpression `!=` RelationalExpression
+    // EqualityExpression : EqualityExpression `===` RelationalExpression
+    // EqualityExpression : EqualityExpression `!==` RelationalExpression
+    // BitwiseANDExpression : BitwiseANDExpression `&` EqualityExpression
+    // BitwiseXORExpression : BitwiseXORExpression `^` BitwiseANDExpression
+    // BitwiseORExpression : BitwiseORExpression `|` BitwiseXORExpression
+    // LogicalANDExpression : LogicalANDExpression `&&` BitwiseORExpression
+    // LogicalORExpression : LogicalORExpression `||` LogicalANDExpression
+    pub fn binary_expr(
+        &self,
+        operator: BinaryOperator,
+        left: Box<Expression>,
+        right: Box<Expression>
+    ) -> Box<Expression> {
+        Box::new(Expression::BinaryExpression(BinaryExpression {
+            operator,
+            left,
+            right
+        }))
     }
-    // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => ShiftExpression 1($0, $1, $2)
-    pub fn shift_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => ShiftExpression 2($0, $1, $2)
-    pub fn shift_expression_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => ShiftExpression 3($0, $1, $2)
-    pub fn shift_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // RelationalExpression ::= RelationalExpression "<" ShiftExpression => RelationalExpression 1($0, $1, $2)
-    pub fn relational_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // RelationalExpression ::= RelationalExpression ">" ShiftExpression => RelationalExpression 2($0, $1, $2)
-    pub fn relational_expression_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // RelationalExpression ::= RelationalExpression "<=" ShiftExpression => RelationalExpression 3($0, $1, $2)
-    pub fn relational_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // RelationalExpression ::= RelationalExpression ">=" ShiftExpression => RelationalExpression 4($0, $1, $2)
-    pub fn relational_expression_p4(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // RelationalExpression ::= RelationalExpression "instanceof" ShiftExpression => RelationalExpression 5($0, $1, $2)
-    pub fn relational_expression_p5(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // EqualityExpression ::= EqualityExpression "==" RelationalExpression => EqualityExpression 1($0, $1, $2)
-    pub fn equality_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // EqualityExpression ::= EqualityExpression "!=" RelationalExpression => EqualityExpression 2($0, $1, $2)
-    pub fn equality_expression_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // EqualityExpression ::= EqualityExpression "===" RelationalExpression => EqualityExpression 3($0, $1, $2)
-    pub fn equality_expression_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // EqualityExpression ::= EqualityExpression "!==" RelationalExpression => EqualityExpression 4($0, $1, $2)
-    pub fn equality_expression_p4(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // BitwiseANDExpression ::= BitwiseANDExpression "&" EqualityExpression => BitwiseANDExpression 1($0, $1, $2)
-    pub fn bitwise_and_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // BitwiseXORExpression ::= BitwiseXORExpression "^" BitwiseANDExpression => BitwiseXORExpression 1($0, $1, $2)
-    pub fn bitwise_xor_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // BitwiseORExpression ::= BitwiseORExpression "|" BitwiseXORExpression => BitwiseORExpression 1($0, $1, $2)
-    pub fn bitwise_or_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // LogicalANDExpression ::= LogicalANDExpression "&&" BitwiseORExpression => LogicalANDExpression 1($0, $1, $2)
-    pub fn logical_and_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
-    // LogicalORExpression ::= LogicalORExpression "||" LogicalANDExpression => LogicalORExpression 1($0, $1, $2)
-    pub fn logical_or_expression_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Expression::new())
-    }
+
     // ConditionalExpression ::= LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression => ConditionalExpression 1($0, $1, $2, $3, $4)
     pub fn conditional_expression_p1(
         &self,
