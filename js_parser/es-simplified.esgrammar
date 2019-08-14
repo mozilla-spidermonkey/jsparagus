@@ -653,12 +653,13 @@ ArgumentList[Yield, Await] :
     => arguments_append_spread($0, $3)
 
 LeftHandSideExpression[Yield, Await] :
-  NewExpression[?Yield, ?Await]
-  CallExpression[?Yield, ?Await]
+  NewExpression[?Yield, ?Await] => $0
+  CallExpression[?Yield, ?Await] => $0
 
 
 CallMemberExpression[Yield, Await] :
   MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    => call_expr($0, $1)
 
 
 UpdateExpression[Yield, Await] :

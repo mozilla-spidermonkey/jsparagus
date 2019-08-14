@@ -475,6 +475,7 @@ impl AstBuilder {
 
     // CallExpression : CallExpression Arguments
     // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments
+    // CallMemberExpression : MemberExpression Arguments
     pub fn call_expr(&self, callee: Box<Expression>, arguments: Box<Arguments>) -> Box<Expression> {
         Box::new(Expression::CallExpression(CallExpression {
             callee: ExpressionOrSuper::Expression(callee),
