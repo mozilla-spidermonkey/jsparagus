@@ -1,4 +1,6 @@
 use generated_parser::Token;
+use std::error::Error;
+use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
@@ -23,5 +25,12 @@ impl ParseError {
     }
 }
 
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message())
+    }
+}
+
+impl Error for ParseError {}
 
 pub type Result<T> = std::result::Result<T, ParseError>;

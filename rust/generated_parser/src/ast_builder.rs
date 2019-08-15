@@ -750,8 +750,8 @@ impl AstBuilder {
     // Block ::= "{" StatementList "}" => Block($0, Some($1), $2)
     pub fn block(&self, a0: Option<Box<Vec<Statement>>>) -> Box<Block> {
         match a0 {
-            Some(a0) => Box::new(Block::new(*a0)),
-            None => Box::new(Block::new(Vec::new())),
+            Some(a0) => Box::new(Block::new(*a0, None)),
+            None => Box::new(Block::new(Vec::new(), None)),
         }
     }
     // StatementList ::= StatementListItem => StatementList 0($0)

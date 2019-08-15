@@ -668,7 +668,8 @@
   },
   "Block": {
     "_type": "struct",
-    "statements": "Vec<Statement>"
+    "statements": "Vec<Statement>",
+    "declarations": "Option<Vec<String>>"
   },
   "CatchClause": {
     "_type": "struct",

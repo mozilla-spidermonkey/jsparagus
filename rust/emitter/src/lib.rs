@@ -1,4 +1,5 @@
 mod dis;
+mod lower;
 mod opcode;
 
 use ast::*;
@@ -9,7 +10,8 @@ pub struct EmitResult {
     pub strings: Vec<String>,
 }
 
-pub fn emit(ast: &Program) -> EmitResult {
+pub fn emit(ast: &mut Program) -> EmitResult {
+    lower::run(ast);
     let mut emitter = Emitter::new();
     emitter.emit_program(ast);
     EmitResult {
@@ -292,7 +294,7 @@ mod tests {
     fn bytecode(source: &str) -> Vec<u8> {
         let parse_result = parse_script(source).expect("Failed to parse");
         // println!("{:?}", parse_result);
-        let bc = emit(&ast::Program::Script(*parse_result)).bytecode;
+        let bc = emit(&mut ast::Program::Script(*parse_result)).bytecode;
         println!("{}", dis(&bc));
         bc
     }

@@ -70,6 +70,59 @@ def stack_value(ast):
             f.write("\n")
 
 
+def pass_(ast):
+    def to_method_name(name):
+        return "visit_{}".format(to_snek_case(case_name(name)))
+
+    def emit_call(f, indent, ty, var):
+        if ty.startswith("Vec<") and ty.endswith(">"):
+            f.write("    " * indent + "for item in {} {{\n".format(var))
+            emit_call(f, indent + 1, ty[4:-1], "item")
+            f.write("    " * indent + "}\n")
+        elif ty.startswith("Option<") and ty.endswith(">"):
+            f.write("    " * indent + "if let Some(item) = {} {{\n".format(var))
+            emit_call(f, indent + 1, ty[7:-1], "item")
+            f.write("    " * indent + "}\n")
+        elif ty == "bool" or ty == "String" or ty == "f64":
+            pass
+        else:
+            f.write("    " * indent + "self.{}({});\n".format(to_method_name(ty), var))
+
+    with open("../emitter/src/lower/pass.rs", "w+") as f:
+        f.write("// WARNING: This file is auto-generated.\n")
+        f.write("\n")
+        f.write("use ast::*;\n")
+        f.write("\n")
+        f.write("pub trait Pass {\n")
+        for name, contents in ast.items():
+            if name == "Void":
+                # Hack in a quick fix
+                continue
+            _type = contents["_type"]
+            f.write("    fn {}(&mut self, ast: &mut {}) {{\n".format(to_method_name(name), name))
+            if _type == "struct":
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        emit_call(f, 2, field_type, "&mut ast.{}".format(field))
+            elif _type == "enum":
+                f.write("        match ast {\n")
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        if field_type is None:
+                            f.write("            {}::{} => (),\n".format(name, field))
+                        else:
+                            f.write("            {}::{}(ast) => {{\n".format(name, field))
+                            emit_call(f, 4, field_type, "ast")
+                            f.write("            }\n")
+                f.write("        }\n")
+            else:
+                raise Exception("Invalid type: " + _type)
+            f.write("    }\n")
+            f.write("\n")
+        f.write("}\n")
+        f.write("\n")
+
+
 def main():
     with open("ast.json", "r") as json_file:
         ast = json.load(json_file)
@@ -117,6 +170,7 @@ def main():
             else:
                 raise Exception("Invalid type: " + _type)
     stack_value(ast)
+    pass_(ast)
     subprocess.run(['cargo', 'fmt'])
 
 

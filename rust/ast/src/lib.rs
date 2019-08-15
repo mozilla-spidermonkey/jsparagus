@@ -1416,11 +1416,15 @@ impl WithStatement {
 #[derive(Debug, PartialEq)]
 pub struct Block {
     pub statements: Vec<Statement>,
+    pub declarations: Option<Vec<String>>,
 }
 
 impl Block {
-    pub fn new(statements: Vec<Statement>) -> Self {
-        Self { statements }
+    pub fn new(statements: Vec<Statement>, declarations: Option<Vec<String>>) -> Self {
+        Self {
+            statements,
+            declarations,
+        }
     }
 }
 

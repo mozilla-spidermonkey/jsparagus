@@ -3469,3 +3469,15 @@ pub const INSTRUMENTATION_SCRIPT_ID: Opcode = Opcode {
     value: 240,
     name: "instrumentationScriptId",
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn table_matches() {
+        for (i, t) in TABLE.iter().enumerate() {
+            assert!(i == t.value as usize);
+        }
+    }
+}
