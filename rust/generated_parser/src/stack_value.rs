@@ -75,7 +75,6 @@ pub enum StackValue {
     ImportDeclaration(Box<ImportDeclaration>),
     ImportNamespace(Box<ImportNamespace>),
     ImportSpecifier(Box<ImportSpecifier>),
-    IterationStatement(Box<IterationStatement>),
     Label(Box<Label>),
     LabeledStatement(Box<LabeledStatement>),
     LiteralBooleanExpression(Box<LiteralBooleanExpression>),
@@ -774,15 +773,6 @@ impl StackValueItem for ImportSpecifier {
         match sv {
             StackValue::ImportSpecifier(v) => v,
             _ => panic!("StackValue expected ImportSpecifier, got {:?}", sv),
-        }
-    }
-}
-
-impl StackValueItem for IterationStatement {
-    fn to_ast(sv: StackValue) -> Box<Self> {
-        match sv {
-            StackValue::IterationStatement(v) => v,
-            _ => panic!("StackValue expected IterationStatement, got {:?}", sv),
         }
     }
 }
@@ -1744,12 +1734,6 @@ impl From<Box<ImportNamespace>> for StackValue {
 impl From<Box<ImportSpecifier>> for StackValue {
     fn from(val: Box<ImportSpecifier>) -> StackValue {
         StackValue::ImportSpecifier(val)
-    }
-}
-
-impl From<Box<IterationStatement>> for StackValue {
-    fn from(val: Box<IterationStatement>) -> StackValue {
-        StackValue::IterationStatement(val)
     }
 }
 

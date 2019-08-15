@@ -124,12 +124,6 @@ pub trait Pass {
 
     fn visit_statement(&mut self, ast: &mut Statement) {
         match ast {
-            Statement::IterationStatement(ast) => {
-                self.visit_iteration_statement(ast);
-            }
-            Statement::ClassDeclaration(ast) => {
-                self.visit_class_declaration(ast);
-            }
             Statement::BlockStatement(ast) => {
                 self.visit_block_statement(ast);
             }
@@ -140,9 +134,21 @@ pub trait Pass {
                 self.visit_continue_statement(ast);
             }
             Statement::DebuggerStatement => (),
+            Statement::DoWhileStatement(ast) => {
+                self.visit_do_while_statement(ast);
+            }
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
                 self.visit_expression(ast);
+            }
+            Statement::ForInStatement(ast) => {
+                self.visit_for_in_statement(ast);
+            }
+            Statement::ForOfStatement(ast) => {
+                self.visit_for_of_statement(ast);
+            }
+            Statement::ForStatement(ast) => {
+                self.visit_for_statement(ast);
             }
             Statement::IfStatement(ast) => {
                 self.visit_if_statement(ast);
@@ -171,31 +177,17 @@ pub trait Pass {
             Statement::VariableDeclarationStatement(ast) => {
                 self.visit_variable_declaration(ast);
             }
+            Statement::WhileStatement(ast) => {
+                self.visit_while_statement(ast);
+            }
             Statement::WithStatement(ast) => {
                 self.visit_with_statement(ast);
             }
             Statement::FunctionDeclaration(ast) => {
                 self.visit_function(ast);
             }
-        }
-    }
-
-    fn visit_iteration_statement(&mut self, ast: &mut IterationStatement) {
-        match ast {
-            IterationStatement::DoWhileStatement(ast) => {
-                self.visit_do_while_statement(ast);
-            }
-            IterationStatement::ForInStatement(ast) => {
-                self.visit_for_in_statement(ast);
-            }
-            IterationStatement::ForOfStatement(ast) => {
-                self.visit_for_of_statement(ast);
-            }
-            IterationStatement::ForStatement(ast) => {
-                self.visit_for_statement(ast);
-            }
-            IterationStatement::WhileStatement(ast) => {
-                self.visit_while_statement(ast);
+            Statement::ClassDeclaration(ast) => {
+                self.visit_class_declaration(ast);
             }
         }
     }

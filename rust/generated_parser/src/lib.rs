@@ -6735,7 +6735,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BlockStatement
         }
         49 => {
-            // VariableStatement ::= "var" VariableDeclarationList ";" => VariableStatement($0, $1)
+            // VariableStatement ::= "var" VariableDeclarationList ";" => variable_statement($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -6743,7 +6743,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::VariableStatement
         }
         50 => {
-            // VariableStatement ::= "var" VariableDeclarationList ErrorSymbol(asi) => VariableStatement($0, $1)
+            // VariableStatement ::= "var" VariableDeclarationList ErrorSymbol(asi) => variable_statement($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(handler.variable_statement(x1)));
@@ -7138,17 +7138,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Block
         }
         105 => {
-            // VariableDeclarationList ::= VariableDeclaration => VariableDeclarationList 0($0)
+            // VariableDeclarationList ::= VariableDeclaration => variable_declaration_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.variable_declaration_list_p0(x0)));
+            stack.push(StackValue::from(handler.variable_declaration_list_single(x0)));
             NonterminalId::VariableDeclarationList
         }
         106 => {
-            // VariableDeclarationList ::= VariableDeclarationList "," VariableDeclaration => VariableDeclarationList 1($0, $1, $2)
+            // VariableDeclarationList ::= VariableDeclarationList "," VariableDeclaration => variable_declaration_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.variable_declaration_list_p1(x0, x2)));
+            stack.push(StackValue::from(handler.variable_declaration_list_append(x0, x2)));
             NonterminalId::VariableDeclarationList
         }
         107 => {
@@ -7166,7 +7166,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Expression
         }
         109 => {
-            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ";" => IterationStatement 0($0, $1, $2, $3, $4, $5)
+            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ";" => do_while_statement($1, $4)
             stack.pop();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7174,43 +7174,43 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p0(x1, x4)));
+            stack.push(StackValue::from(handler.do_while_statement(x1, x4)));
             NonterminalId::IterationStatement
         }
         110 => {
-            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi) => IterationStatement 0($0, $1, $2, $3, $4, $5)
+            // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi) => do_while_statement($1, $4)
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p0(x1, x4)));
+            stack.push(StackValue::from(handler.do_while_statement(x1, x4)));
             NonterminalId::IterationStatement
         }
         111 => {
-            // IterationStatement ::= "while" "(" Expression ")" Statement => IterationStatement 1($0, $1, $2, $3, $4)
+            // IterationStatement ::= "while" "(" Expression ")" Statement => while_statement($2, $4)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p1(x2, x4)));
+            stack.push(StackValue::from(handler.while_statement(x2, x4)));
             NonterminalId::IterationStatement
         }
         112 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => IterationStatement 2($0, $1, None, $2, None, $3, None, $4, $5)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => for_statement(for_expression(None), None, None, $5)
             let x5 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(None, None, None, x5)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(None), None, None, x5)));
             NonterminalId::IterationStatement
         }
         113 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" ")" Statement => IterationStatement 2($0, $1, Some($2), $3, None, $4, None, $5, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" ")" Statement => for_statement(for_expression(Some($2)), None, None, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7218,11 +7218,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), None, None, x6)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(Some(x2)), None, None, x6)));
             NonterminalId::IterationStatement
         }
         114 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" ")" Statement => IterationStatement 2($0, $1, None, $2, Some($3), $4, None, $5, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" ")" Statement => for_statement(for_expression(None), Some($3), None, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7230,11 +7230,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(None, Some(x3), None, x6)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(None), Some(x3), None, x6)));
             NonterminalId::IterationStatement
         }
         115 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" ")" Statement => IterationStatement 2($0, $1, Some($2), $3, Some($4), $5, None, $6, $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" ")" Statement => for_statement(for_expression(Some($2)), Some($4), None, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7243,11 +7243,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), Some(x4), None, x7)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(Some(x2)), Some(x4), None, x7)));
             NonterminalId::IterationStatement
         }
         116 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression ")" Statement => IterationStatement 2($0, $1, None, $2, None, $3, Some($4), $5, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression ")" Statement => for_statement(for_expression(None), None, Some($4), $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7255,11 +7255,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(None, None, Some(x4), x6)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(None), None, Some(x4), x6)));
             NonterminalId::IterationStatement
         }
         117 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" Expression ")" Statement => IterationStatement 2($0, $1, Some($2), $3, None, $4, Some($5), $6, $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" ";" Expression ")" Statement => for_statement(for_expression(Some($2)), None, Some($5), $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7268,11 +7268,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), None, Some(x5), x7)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(Some(x2)), None, Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         118 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" Expression ")" Statement => IterationStatement 2($0, $1, None, $2, Some($3), $4, Some($5), $6, $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression ";" Expression ")" Statement => for_statement(for_expression(None), Some($3), Some($5), $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7281,11 +7281,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(None, Some(x3), Some(x5), x7)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(None), Some(x3), Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         119 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" Expression ")" Statement => IterationStatement 2($0, $1, Some($2), $3, Some($4), $5, Some($6), $7, $8)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" Expression ")" Statement => for_statement(for_expression(Some($2)), Some($4), Some($6), $8)
             let x8 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x6 = stack.pop().unwrap().to_ast();
@@ -7295,11 +7295,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p2(Some(x2), Some(x4), Some(x6), x8)));
+            stack.push(StackValue::from(handler.for_statement(handler.for_expression(Some(x2)), Some(x4), Some(x6), x8)));
             NonterminalId::IterationStatement
         }
         120 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, None, $5, None, $6, $7)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" ")" Statement => for_statement(Some(for_var_declaration($3)), None, None, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7308,11 +7308,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p3(x3, None, None, x7)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.for_var_declaration(x3)), None, None, x7)));
             NonterminalId::IterationStatement
         }
         121 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, Some($5), $6, None, $7, $8)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), None, $8)
             let x8 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7322,11 +7322,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p3(x3, Some(x5), None, x8)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.for_var_declaration(x3)), Some(x5), None, x8)));
             NonterminalId::IterationStatement
         }
         122 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" Expression ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, None, $5, Some($6), $7, $8)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" ";" Expression ")" Statement => for_statement(Some(for_var_declaration($3)), None, Some($6), $8)
             let x8 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x6 = stack.pop().unwrap().to_ast();
@@ -7336,11 +7336,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p3(x3, None, Some(x6), x8)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.for_var_declaration(x3)), None, Some(x6), x8)));
             NonterminalId::IterationStatement
         }
         123 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, Some($5), $6, Some($7), $8, $9)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), Some($7), $9)
             let x9 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x7 = stack.pop().unwrap().to_ast();
@@ -7351,22 +7351,22 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p3(x3, Some(x5), Some(x7), x9)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.for_var_declaration(x3)), Some(x5), Some(x7), x9)));
             NonterminalId::IterationStatement
         }
         124 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" ")" Statement => IterationStatement 4($0, $1, $2, None, $3, None, $4, $5)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, None, $5)
             let x5 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p4(x2, None, None, x5)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.unbox_for_lexical_declaration(x2)), None, None, x5)));
             NonterminalId::IterationStatement
         }
         125 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" ")" Statement => IterationStatement 4($0, $1, $2, Some($3), $4, None, $5, $6)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), None, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -7374,11 +7374,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p4(x2, Some(x3), None, x6)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.unbox_for_lexical_declaration(x2)), Some(x3), None, x6)));
             NonterminalId::IterationStatement
         }
         126 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" Expression ")" Statement => IterationStatement 4($0, $1, $2, None, $3, Some($4), $5, $6)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration ";" Expression ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, Some($4), $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7386,11 +7386,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p4(x2, None, Some(x4), x6)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.unbox_for_lexical_declaration(x2)), None, Some(x4), x6)));
             NonterminalId::IterationStatement
         }
         127 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" Expression ")" Statement => IterationStatement 4($0, $1, $2, Some($3), $4, Some($5), $6, $7)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" Expression ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), Some($5), $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7399,11 +7399,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p4(x2, Some(x3), Some(x5), x7)));
+            stack.push(StackValue::from(handler.for_statement(Some(handler.unbox_for_lexical_declaration(x2)), Some(x3), Some(x5), x7)));
             NonterminalId::IterationStatement
         }
         128 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression ")" Statement => IterationStatement 5($0, $1, $2, $3, $4, $5, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression ")" Statement => for_in_statement(for_assignment_target($2), $4, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7411,11 +7411,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p5(x2, x4, x6)));
+            stack.push(StackValue::from(handler.for_in_statement(handler.for_assignment_target(x2), x4, x6)));
             NonterminalId::IterationStatement
         }
         129 => {
-            // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression ")" Statement => IterationStatement 6($0, $1, $2, $3, $4, $5, $6, $7)
+            // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression ")" Statement => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7424,11 +7424,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p6(x3, x5, x7)));
+            stack.push(StackValue::from(handler.for_in_statement(handler.for_in_or_of_var_declaration(x3), x5, x7)));
             NonterminalId::IterationStatement
         }
         130 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression ")" Statement => IterationStatement 7($0, $1, $2, $3, $4, $5, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression ")" Statement => for_in_statement(unbox_for_declaration($2), $4, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7436,11 +7436,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p7(x2, x4, x6)));
+            stack.push(StackValue::from(handler.for_in_statement(handler.unbox_for_declaration(x2), x4, x6)));
             NonterminalId::IterationStatement
         }
         131 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 8($0, $1, $2, $3, $4, $5, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => for_of_statement(for_assignment_target($2), $4, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7448,11 +7448,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p8(x2, x4, x6)));
+            stack.push(StackValue::from(handler.for_of_statement(handler.for_assignment_target(x2), x4, x6)));
             NonterminalId::IterationStatement
         }
         132 => {
-            // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 9($0, $1, $2, $3, $4, $5, $6, $7)
+            // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => for_of_statement(for_in_or_of_var_declaration($3), $5, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7461,11 +7461,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p9(x3, x5, x7)));
+            stack.push(StackValue::from(handler.for_of_statement(handler.for_in_or_of_var_declaration(x3), x5, x7)));
             NonterminalId::IterationStatement
         }
         133 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 10($0, $1, $2, $3, $4, $5, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression ")" Statement => for_of_statement(unbox_for_declaration($2), $4, $6)
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -7473,11 +7473,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p10(x2, x4, x6)));
+            stack.push(StackValue::from(handler.for_of_statement(handler.unbox_for_declaration(x2), x4, x6)));
             NonterminalId::IterationStatement
         }
         134 => {
-            // IterationStatement ::= "for" "await" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 11($0, $1, $2, $3, $4, $5, $6, $7)
+            // IterationStatement ::= "for" "await" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => for_await_of_statement(for_assignment_target($3), $5, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7486,11 +7486,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p11(x3, x5, x7)));
+            stack.push(StackValue::from(handler.for_await_of_statement(handler.for_assignment_target(x3), x5, x7)));
             NonterminalId::IterationStatement
         }
         135 => {
-            // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 12($0, $1, $2, $3, $4, $5, $6, $7, $8)
+            // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => for_await_of_statement(for_in_or_of_var_declaration($4), $6, $8)
             let x8 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x6 = stack.pop().unwrap().to_ast();
@@ -7500,11 +7500,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p12(x4, x6, x8)));
+            stack.push(StackValue::from(handler.for_await_of_statement(handler.for_in_or_of_var_declaration(x4), x6, x8)));
             NonterminalId::IterationStatement
         }
         136 => {
-            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 13($0, $1, $2, $3, $4, $5, $6, $7)
+            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement => for_await_of_statement(unbox_for_declaration($3), $5, $7)
             let x7 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
@@ -7513,7 +7513,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.iteration_statement_p13(x3, x5, x7)));
+            stack.push(StackValue::from(handler.for_await_of_statement(handler.unbox_for_declaration(x3), x5, x7)));
             NonterminalId::IterationStatement
         }
         137 => {
@@ -8012,15 +8012,15 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ClassTail
         }
         182 => {
-            // LetOrConst ::= "let" => LetOrConst 0($0)
+            // LetOrConst ::= "let" => let_kind()
             stack.pop();
-            stack.push(StackValue::from(handler.let_or_const_p0()));
+            stack.push(StackValue::from(handler.let_kind()));
             NonterminalId::LetOrConst
         }
         183 => {
-            // LetOrConst ::= "const" => LetOrConst 1($0)
+            // LetOrConst ::= "const" => const_kind()
             stack.pop();
-            stack.push(StackValue::from(handler.let_or_const_p1()));
+            stack.push(StackValue::from(handler.const_kind()));
             NonterminalId::LetOrConst
         }
         184 => {
@@ -8256,7 +8256,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::VariableDeclaration
         }
         218 => {
-            // ForLexicalDeclaration ::= LetOrConst BindingList ";" => ForLexicalDeclaration($0, $1, $2)
+            // ForLexicalDeclaration ::= LetOrConst BindingList ";" => for_lexical_declaration($0, $1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
@@ -8264,19 +8264,19 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ForLexicalDeclaration
         }
         219 => {
-            // ForBinding ::= BindingIdentifier => ForBinding 0($0)
+            // ForBinding ::= BindingIdentifier => binding_identifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.for_binding_p0(x0)));
+            stack.push(StackValue::from(handler.binding_identifier(x0)));
             NonterminalId::ForBinding
         }
         220 => {
-            // ForBinding ::= BindingPattern => ForBinding 1($0)
+            // ForBinding ::= BindingPattern => binding_pattern($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.for_binding_p1(x0)));
+            stack.push(StackValue::from(handler.binding_pattern(x0)));
             NonterminalId::ForBinding
         }
         221 => {
-            // ForDeclaration ::= LetOrConst ForBinding => ForDeclaration($0, $1)
+            // ForDeclaration ::= LetOrConst ForBinding => for_declaration($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.for_declaration(x0, x1)));
@@ -8334,15 +8334,15 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CaseBlock
         }
         228 => {
-            // CatchParameter ::= BindingIdentifier => catch_parameter_identifier($0)
+            // CatchParameter ::= BindingIdentifier => binding_identifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.catch_parameter_identifier(x0)));
+            stack.push(StackValue::from(handler.binding_identifier(x0)));
             NonterminalId::CatchParameter
         }
         229 => {
-            // CatchParameter ::= BindingPattern => catch_parameter_pattern($0)
+            // CatchParameter ::= BindingPattern => binding_pattern($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.catch_parameter_pattern(x0)));
+            stack.push(StackValue::from(handler.binding_pattern(x0)));
             NonterminalId::CatchParameter
         }
         230 => {

@@ -937,10 +937,13 @@ LexicalDeclaration[In, Yield, Await] :
 
 ForLexicalDeclaration[In, Yield, Await] :
   LetOrConst BindingList[?In, ?Yield, ?Await] `;`
+    => for_lexical_declaration($0, $1)
 
 LetOrConst :
   `let`
+    => let_kind()
   `const`
+    => const_kind()
 
 BindingList[In, Yield, Await] :
   LexicalBinding[?In, ?Yield, ?Await]
@@ -953,10 +956,13 @@ LexicalBinding[In, Yield, Await] :
 
 VariableStatement[Yield, Await] :
   `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`
+    => variable_statement($1)
 
 VariableDeclarationList[In, Yield, Await] :
   VariableDeclaration[?In, ?Yield, ?Await]
+    => variable_declaration_list_single($0)
   VariableDeclarationList[?In, ?Yield, ?Await] `,` VariableDeclaration[?In, ?Yield, ?Await]
+    => variable_declaration_list_append($0, $2)
 
 VariableDeclaration[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
@@ -1023,26 +1029,43 @@ IfStatement[Yield, Await, Return] :
 
 IterationStatement[Yield, Await, Return] :
   `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`
+    => do_while_statement($1, $4)
   `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => while_statement($2, $4)
   `for` `(` [lookahead <! {`let`}] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+    => for_statement(for_expression($2), $4, $6, $8)
   `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+    => for_statement(Some(for_var_declaration($3)), $5, $7, $9)
   `for` `(` ForLexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+    => for_statement(Some(unbox_for_lexical_declaration($2)), $3, $5, $7)
   `for` `(` [lookahead <! {`let`}] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_in_statement(for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_in_statement(unbox_for_declaration($2), $4, $6)
   `for` `(` [lookahead != `let` ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_of_statement(for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_of_statement(for_in_or_of_var_declaration($3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_of_statement(unbox_for_declaration($2), $4, $6)
   [+Await] `for` `await` `(` [lookahead != `let` ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_await_of_statement(for_assignment_target($3), $5, $7)
   [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_await_of_statement(for_in_or_of_var_declaration($4), $6, $8)
   [+Await] `for` `await` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => for_await_of_statement(unbox_for_declaration($3), $5, $7)
 
 ForDeclaration[Yield, Await] :
   LetOrConst ForBinding[?Yield, ?Await]
+    => for_declaration($0, $1)
 
 ForBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
+    => binding_identifier($0)
   BindingPattern[?Yield, ?Await]
+    => binding_pattern($0)
 
 
 ContinueStatement[Yield, Await] :
@@ -1127,9 +1150,9 @@ Finally[Yield, Await, Return] :
 
 CatchParameter[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
-    => catch_parameter_identifier($0)
+    => binding_identifier($0)
   BindingPattern[?Yield, ?Await]
-    => catch_parameter_pattern($0)
+    => binding_pattern($0)
 
 
 DebuggerStatement :

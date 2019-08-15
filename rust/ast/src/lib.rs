@@ -157,14 +157,16 @@ pub enum Program {
 
 #[derive(Debug, PartialEq)]
 pub enum Statement {
-    IterationStatement(IterationStatement),
-    ClassDeclaration(ClassDeclaration),
     BlockStatement(BlockStatement),
     BreakStatement(BreakStatement),
     ContinueStatement(ContinueStatement),
     DebuggerStatement,
+    DoWhileStatement(DoWhileStatement),
     EmptyStatement,
     ExpressionStatement(Box<Expression>),
+    ForInStatement(ForInStatement),
+    ForOfStatement(ForOfStatement),
+    ForStatement(ForStatement),
     IfStatement(IfStatement),
     LabeledStatement(LabeledStatement),
     ReturnStatement(ReturnStatement),
@@ -174,17 +176,10 @@ pub enum Statement {
     TryCatchStatement(TryCatchStatement),
     TryFinallyStatement(TryFinallyStatement),
     VariableDeclarationStatement(VariableDeclaration),
+    WhileStatement(WhileStatement),
     WithStatement(WithStatement),
     FunctionDeclaration(Function),
-}
-
-#[derive(Debug, PartialEq)]
-pub enum IterationStatement {
-    DoWhileStatement(DoWhileStatement),
-    ForInStatement(ForInStatement),
-    ForOfStatement(ForOfStatement),
-    ForStatement(ForStatement),
-    WhileStatement(WhileStatement),
+    ClassDeclaration(ClassDeclaration),
 }
 
 #[derive(Debug, PartialEq)]

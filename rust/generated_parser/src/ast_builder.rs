@@ -771,18 +771,29 @@ impl AstBuilder {
             VariableDeclaration::new(*a0, *a1),
         ))
     }
-    // ForLexicalDeclaration ::= LetOrConst BindingList ";" => ForLexicalDeclaration($0, $1, $2)
-    pub fn for_lexical_declaration(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ForLexicalDeclaration::new())
+
+    // ForLexicalDeclaration : LetOrConst BindingList `;`
+    pub fn for_lexical_declaration(
+        &self,
+        kind: Box<VariableDeclarationKind>,
+        declarators: Box<Vec<VariableDeclarator>>,
+    ) -> Box<VariableDeclarationOrExpression> {
+        Box::new(VariableDeclarationOrExpression::VariableDeclaration(VariableDeclaration {
+            kind: *kind,
+            declarators: *declarators,
+        }))
     }
-    // LetOrConst ::= "let" => LetOrConst 0($0)
-    pub fn let_or_const_p0(&self) -> Box<VariableDeclarationKind> {
+
+    // LetOrConst : `let`
+    pub fn let_kind(&self) -> Box<VariableDeclarationKind> {
         Box::new(VariableDeclarationKind::Let)
     }
-    // LetOrConst ::= "const" => LetOrConst 1($0)
-    pub fn let_or_const_p1(&self) -> Box<VariableDeclarationKind> {
+
+    // LetOrConst : `const`
+    pub fn const_kind(&self) -> Box<VariableDeclarationKind> {
         Box::new(VariableDeclarationKind::Const)
     }
+
     // BindingList ::= LexicalBinding => BindingList 0($0)
     pub fn binding_list_p0(&self, a0: Box<VariableDeclarator>) -> Box<Vec<VariableDeclarator>> {
         Box::new(vec![*a0])
@@ -813,11 +824,11 @@ impl AstBuilder {
         unimplemented!(); // Box::new(ModuleItem::new())
     }
     // VariableDeclarationList ::= VariableDeclaration => VariableDeclarationList 0($0)
-    pub fn variable_declaration_list_p0(&self, a0: Box<Void>) -> Box<Void> {
+    pub fn variable_declaration_list_single(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(VariableDeclarationList::new())
     }
     // VariableDeclarationList ::= VariableDeclarationList "," VariableDeclaration => VariableDeclarationList 1($0, $1, $2)
-    pub fn variable_declaration_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
+    pub fn variable_declaration_list_append(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(VariableDeclarationList::new())
     }
     // VariableDeclaration ::= BindingIdentifier Initializer => VariableDeclaration 0($0, Some($1))
@@ -925,14 +936,17 @@ impl AstBuilder {
     pub fn binding_rest_element_p1(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(BindingRestElement::new())
     }
-    // EmptyStatement ::= ";" => EmptyStatement($0)
+
+    // EmptyStatement : `;`
     pub fn empty_statement(&self) -> Box<Statement> {
         Box::new(Statement::EmptyStatement)
     }
-    // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorSymbol(asi) => ExpressionStatement($0)
+
+    // ExpressionStatement : [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression `;`
     pub fn expression_statement(&self, a0: Box<Expression>) -> Box<Statement> {
         Box::new(Statement::ExpressionStatement(a0))
     }
+
     // IfStatement ::= "if" "(" Expression ")" Statement "else" Statement => IfStatement 0($0, $1, $2, $3, $4, $5, $6)
     pub fn if_statement_p0(
         &self,
@@ -946,112 +960,161 @@ impl AstBuilder {
     pub fn if_statement_p1(&self, a0: Box<Expression>, a1: Box<Statement>) -> Box<Statement> {
         Box::new(Statement::IfStatement(IfStatement::new(a0, a1, None)))
     }
-    // IterationStatement ::= "do" Statement "while" "(" Expression ")" ErrorSymbol(do_while_asi) => IterationStatement 0($0, $1, $2, $3, $4, $5)
-    pub fn iteration_statement_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
+    pub fn do_while_statement(&self, block: Box<Statement>, test: Box<Expression>) -> Box<Statement> {
+        Box::new(Statement::DoWhileStatement(DoWhileStatement {
+            block,
+            test,
+        }))
     }
-    // IterationStatement ::= "while" "(" Expression ")" Statement => IterationStatement 1($0, $1, $2, $3, $4)
-    pub fn iteration_statement_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // IterationStatement : `while` `(` Expression `)` Statement
+    pub fn while_statement(&self, test: Box<Expression>, block: Box<Statement>) -> Box<Statement> {
+        Box::new(Statement::WhileStatement(WhileStatement {
+            test,
+            block,
+        }))
     }
-    // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression ";" Expression ";" Expression ")" Statement => IterationStatement 2($0, $1, Some($2), $3, Some($4), $5, Some($6), $7, $8)
-    pub fn iteration_statement_p2(
+
+    // IterationStatement ::= `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
+    // IterationStatement ::= `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement
+    // IterationStatement ::= `for` `(` ForLexicalDeclaration Expression? `;` Expression? `)` Statement
+    pub fn for_statement(
         &self,
-        a0: Option<Box<Void>>,
-        a1: Option<Box<Void>>,
-        a2: Option<Box<Void>>,
-        a3: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        init: Option<VariableDeclarationOrExpression>,
+        test: Option<Box<Expression>>,
+        update: Option<Box<Expression>>,
+        block: Box<Statement>,
+    ) -> Box<Statement> {
+        Box::new(Statement::ForStatement(ForStatement {
+            init,
+            test,
+            update,
+            block,
+        }))
     }
-    // IterationStatement ::= "for" "(" "var" VariableDeclarationList ";" Expression ";" Expression ")" Statement => IterationStatement 3($0, $1, $2, $3, $4, Some($5), $6, Some($7), $8, $9)
-    pub fn iteration_statement_p3(
+
+    pub fn for_expression(&self, expr: Option<Box<Expression>>) -> Option<VariableDeclarationOrExpression> {
+        expr.map(|expr| VariableDeclarationOrExpression::Expression(expr))
+    }
+
+    pub fn for_var_declaration(
         &self,
-        a0: Box<Void>,
-        a1: Option<Box<Void>>,
-        a2: Option<Box<Void>>,
-        a3: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        declarators: Box<Vec<VariableDeclarator>>,
+    ) -> VariableDeclarationOrExpression {
+        VariableDeclarationOrExpression::VariableDeclaration(VariableDeclaration {
+            kind: VariableDeclarationKind::Var,
+            declarators: *declarators,
+        })
     }
-    // IterationStatement ::= "for" "(" ForLexicalDeclaration Expression ";" Expression ")" Statement => IterationStatement 4($0, $1, $2, Some($3), $4, Some($5), $6, $7)
-    pub fn iteration_statement_p4(
+
+    pub fn unbox_for_lexical_declaration(
         &self,
-        a0: Box<Void>,
-        a1: Option<Box<Void>>,
-        a2: Option<Box<Void>>,
-        a3: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        declaration: Box<VariableDeclarationOrExpression>,
+    ) -> VariableDeclarationOrExpression {
+        *declaration
     }
-    // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression ")" Statement => IterationStatement 5($0, $1, $2, $3, $4, $5, $6)
-    pub fn iteration_statement_p5(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression ")" Statement => IterationStatement 6($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn iteration_statement_p6(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // IterationStatement ::= "for" "(" ForDeclaration "in" Expression ")" Statement => IterationStatement 7($0, $1, $2, $3, $4, $5, $6)
-    pub fn iteration_statement_p7(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 8($0, $1, $2, $3, $4, $5, $6)
-    pub fn iteration_statement_p8(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 9($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn iteration_statement_p9(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 10($0, $1, $2, $3, $4, $5, $6)
-    pub fn iteration_statement_p10(
+
+    // IterationStatement ::= `for` `(` [lookahead != 'let'] LeftHandSideExpression `in` Expression `)` Statement
+    // IterationStatement ::= `for` `(` `var` ForBinding `in` Expression `)` Statement
+    // IterationStatement ::= `for` `(` ForDeclaration `in` Expression `)` Statement
+    pub fn for_in_statement(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        left: VariableDeclarationOrAssignmentTarget,
+        right: Box<Expression>,
+        block: Box<Statement>,
+    ) -> Box<Statement> {
+        Box::new(Statement::ForInStatement(ForInStatement {
+            left,
+            right,
+            block,
+        }))
     }
-    // IterationStatement ::= "for" "await" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression ")" Statement => IterationStatement 11($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn iteration_statement_p11(
+
+    pub fn for_in_or_of_var_declaration(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        declarators: Box<Vec<VariableDeclarator>>,
+    ) -> VariableDeclarationOrAssignmentTarget {
+        VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
+            kind: VariableDeclarationKind::Var,
+            declarators: *declarators,
+        })
     }
-    // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression ")" Statement => IterationStatement 12($0, $1, $2, $3, $4, $5, $6, $7, $8)
-    pub fn iteration_statement_p12(
+
+    pub fn for_assignment_target(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        expression: Box<Expression>,
+    ) -> VariableDeclarationOrAssignmentTarget {
+        VariableDeclarationOrAssignmentTarget::AssignmentTarget(
+            expression_to_assignment_target(expression),
+        )
     }
-    // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression ")" Statement => IterationStatement 13($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn iteration_statement_p13(
+
+    pub fn unbox_for_declaration(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+        declaration: Box<VariableDeclarationOrAssignmentTarget>,
+    ) -> VariableDeclarationOrAssignmentTarget {
+        *declaration
     }
+
+    // IterationStatement ::= `for` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
+    // IterationStatement ::= `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
+    // IterationStatement ::= `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement
+    pub fn for_of_statement(
+        &self,
+        left: VariableDeclarationOrAssignmentTarget,
+        right: Box<Expression>,
+        block: Box<Statement>,
+    ) -> Box<Statement> {
+        Box::new(Statement::ForOfStatement(ForOfStatement {
+            left,
+            right,
+            block,
+        }))
+    }
+
+    // IterationStatement ::= `for` `await` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
+    // IterationStatement ::= `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
+    // IterationStatement ::= `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement
+    pub fn for_await_of_statement(
+        &self,
+        left: VariableDeclarationOrAssignmentTarget,
+        right: Box<Expression>,
+        block: Box<Statement>,
+    ) -> Box<Statement> {
+        panic!("not present in current AST");
+    }
+
     // ForDeclaration ::= LetOrConst ForBinding => ForDeclaration($0, $1)
-    pub fn for_declaration(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ForDeclaration::new())
+    pub fn for_declaration(
+        &self,
+        kind: Box<VariableDeclarationKind>,
+        binding: Box<Binding>,
+    ) -> Box<VariableDeclarationOrAssignmentTarget> {
+        Box::new(VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
+            kind: *kind,
+            declarators: vec![VariableDeclarator {
+                binding: *binding,
+                init: None,
+            }],
+        }))
     }
-    // ForBinding ::= BindingIdentifier => ForBinding 0($0)
-    pub fn for_binding_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ForBinding::new())
+
+    // CatchParameter : BindingIdentifier
+    // ForBinding : BindingIdentifier
+    pub fn binding_identifier(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
+        Box::new(Binding::BindingIdentifier(*a0))
     }
-    // ForBinding ::= BindingPattern => ForBinding 1($0)
-    pub fn for_binding_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ForBinding::new())
+
+    // CatchParameter : BindingPattern
+    // ForBinding : BindingPattern
+    pub fn binding_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
+        Box::new(Binding::BindingPattern(*a0))
     }
+
+
+
 
     // ContinueStatement ::= `continue` `;`
     // ContinueStatement ::= `continue` LabelIdentifier `;`
@@ -1218,16 +1281,6 @@ impl AstBuilder {
             binding: *binding,
             body: *body,
         })
-    }
-
-    // CatchParameter : BindingIdentifier
-    pub fn catch_parameter_identifier(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
-        Box::new(Binding::BindingIdentifier(*a0))
-    }
-
-    // CatchParameter : BindingPattern
-    pub fn catch_parameter_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
-        Box::new(Binding::BindingPattern(*a0))
     }
 
     // DebuggerStatement : `debugger` `;`

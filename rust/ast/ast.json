@@ -102,14 +102,16 @@
   },
   "Statement": {
     "_type": "enum",
-    "IterationStatement": "IterationStatement",
-    "ClassDeclaration": "ClassDeclaration",
     "BlockStatement": "BlockStatement",
     "BreakStatement": "BreakStatement",
     "ContinueStatement": "ContinueStatement",
     "DebuggerStatement": null,
+    "DoWhileStatement": "DoWhileStatement",
     "EmptyStatement": null,
     "ExpressionStatement": "Box<Expression>",
+    "ForInStatement": "ForInStatement",
+    "ForOfStatement": "ForOfStatement",
+    "ForStatement": "ForStatement",
     "IfStatement": "IfStatement",
     "LabeledStatement": "LabeledStatement",
     "ReturnStatement": "ReturnStatement",
@@ -119,16 +121,10 @@
     "TryCatchStatement": "TryCatchStatement",
     "TryFinallyStatement": "TryFinallyStatement",
     "VariableDeclarationStatement": "VariableDeclaration",
+    "WhileStatement": "WhileStatement",
     "WithStatement": "WithStatement",
-    "FunctionDeclaration": "Function"
-  },
-  "IterationStatement": {
-    "_type": "enum",
-    "DoWhileStatement": "DoWhileStatement",
-    "ForInStatement": "ForInStatement",
-    "ForOfStatement": "ForOfStatement",
-    "ForStatement": "ForStatement",
-    "WhileStatement": "WhileStatement"
+    "FunctionDeclaration": "Function",
+    "ClassDeclaration": "ClassDeclaration"
   },
   "Expression": {
     "_type": "enum",
