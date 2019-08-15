@@ -1016,15 +1016,18 @@ BindingRestElement[Yield, Await] :
 
 EmptyStatement :
   `;`
-
+    => empty_statement()
 
 ExpressionStatement[Yield, Await] :
   [lookahead <! {`{`, `function`, `async`, `class`, `let`}] Expression[+In, ?Yield, ?Await] `;`
+    => expression_statement($0)
 
 
 IfStatement[Yield, Await, Return] :
   `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]
+    => if_statement($2, $4, Some($6))
   `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => if_statement($2, $4, None)
 
 
 IterationStatement[Yield, Await, Return] :

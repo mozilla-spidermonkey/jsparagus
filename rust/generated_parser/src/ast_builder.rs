@@ -947,18 +947,15 @@ impl AstBuilder {
         Box::new(Statement::ExpressionStatement(a0))
     }
 
-    // IfStatement ::= "if" "(" Expression ")" Statement "else" Statement => IfStatement 0($0, $1, $2, $3, $4, $5, $6)
-    pub fn if_statement_p0(
+    // IfStatement : `if` `(` Expression `)` Statement `else` Statement
+    // IfStatement : `if` `(` Expression `)` Statement
+    pub fn if_statement(
         &self,
-        a0: Box<Expression>,
-        a1: Box<Statement>,
-        a2: Box<Statement>,
+        test: Box<Expression>,
+        consequent: Box<Statement>,
+        alternate: Option<Box<Statement>>,
     ) -> Box<Statement> {
-        Box::new(Statement::IfStatement(IfStatement::new(a0, a1, Some(a2))))
-    }
-    // IfStatement ::= "if" "(" Expression ")" Statement => IfStatement 1($0, $1, $2, $3, $4)
-    pub fn if_statement_p1(&self, a0: Box<Expression>, a1: Box<Statement>) -> Box<Statement> {
-        Box::new(Statement::IfStatement(IfStatement::new(a0, a1, None)))
+        Box::new(Statement::IfStatement(IfStatement { test, consequent, alternate }))
     }
 
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
@@ -977,9 +974,9 @@ impl AstBuilder {
         }))
     }
 
-    // IterationStatement ::= `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
-    // IterationStatement ::= `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement
-    // IterationStatement ::= `for` `(` ForLexicalDeclaration Expression? `;` Expression? `)` Statement
+    // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
+    // IterationStatement : `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement
+    // IterationStatement : `for` `(` ForLexicalDeclaration Expression? `;` Expression? `)` Statement
     pub fn for_statement(
         &self,
         init: Option<VariableDeclarationOrExpression>,
@@ -1016,9 +1013,9 @@ impl AstBuilder {
         *declaration
     }
 
-    // IterationStatement ::= `for` `(` [lookahead != 'let'] LeftHandSideExpression `in` Expression `)` Statement
-    // IterationStatement ::= `for` `(` `var` ForBinding `in` Expression `)` Statement
-    // IterationStatement ::= `for` `(` ForDeclaration `in` Expression `)` Statement
+    // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `in` Expression `)` Statement
+    // IterationStatement : `for` `(` `var` ForBinding `in` Expression `)` Statement
+    // IterationStatement : `for` `(` ForDeclaration `in` Expression `)` Statement
     pub fn for_in_statement(
         &self,
         left: VariableDeclarationOrAssignmentTarget,
@@ -1058,9 +1055,9 @@ impl AstBuilder {
         *declaration
     }
 
-    // IterationStatement ::= `for` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
-    // IterationStatement ::= `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
-    // IterationStatement ::= `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement
     pub fn for_of_statement(
         &self,
         left: VariableDeclarationOrAssignmentTarget,
@@ -1074,9 +1071,9 @@ impl AstBuilder {
         }))
     }
 
-    // IterationStatement ::= `for` `await` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
-    // IterationStatement ::= `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
-    // IterationStatement ::= `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `await` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
+    // IterationStatement : `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement
     pub fn for_await_of_statement(
         &self,
         left: VariableDeclarationOrAssignmentTarget,
@@ -1086,7 +1083,7 @@ impl AstBuilder {
         panic!("not present in current AST");
     }
 
-    // ForDeclaration ::= LetOrConst ForBinding => ForDeclaration($0, $1)
+    // ForDeclaration : LetOrConst ForBinding => ForDeclaration($0, $1)
     pub fn for_declaration(
         &self,
         kind: Box<VariableDeclarationKind>,
@@ -1116,29 +1113,29 @@ impl AstBuilder {
 
 
 
-    // ContinueStatement ::= `continue` `;`
-    // ContinueStatement ::= `continue` LabelIdentifier `;`
+    // ContinueStatement : `continue` `;`
+    // ContinueStatement : `continue` LabelIdentifier `;`
     pub fn continue_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
         Box::new(Statement::ContinueStatement(ContinueStatement {
             label: label.map(|boxed| *boxed),
         }))
     }
 
-    // BreakStatement ::= `break` `;`
-    // BreakStatement ::= `break` LabelIdentifier `;`
+    // BreakStatement : `break` `;`
+    // BreakStatement : `break` LabelIdentifier `;`
     pub fn break_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
         Box::new(Statement::BreakStatement(BreakStatement {
             label: label.map(|boxed| *boxed),
         }))
     }
 
-    // ReturnStatement ::= `return` `;`
-    // ReturnStatement ::= `return` Expression `;`
+    // ReturnStatement : `return` `;`
+    // ReturnStatement : `return` Expression `;`
     pub fn return_statement(&self, expression: Option<Box<Expression>>) -> Box<Statement> {
         Box::new(Statement::ReturnStatement(ReturnStatement { expression }))
     }
 
-    // WithStatement ::= `with` `(` Expression `)` Statement
+    // WithStatement : `with` `(` Expression `)` Statement
     pub fn with_statement(&self, object: Box<Expression>, body: Box<Statement>) -> Box<Statement> {
         Box::new(Statement::WithStatement(WithStatement { object, body }))
     }

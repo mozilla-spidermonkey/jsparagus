@@ -6750,26 +6750,26 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::VariableStatement
         }
         51 => {
-            // EmptyStatement ::= ";" => EmptyStatement($0)
+            // EmptyStatement ::= ";" => empty_statement()
             stack.pop();
             stack.push(StackValue::from(handler.empty_statement()));
             NonterminalId::EmptyStatement
         }
         52 => {
-            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ";" => ExpressionStatement($0)
+            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ";" => expression_statement($0)
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.expression_statement(x0)));
             NonterminalId::ExpressionStatement
         }
         53 => {
-            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorSymbol(asi) => ExpressionStatement($0)
+            // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression ErrorSymbol(asi) => expression_statement($0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.expression_statement(x0)));
             NonterminalId::ExpressionStatement
         }
         54 => {
-            // IfStatement ::= "if" "(" Expression ")" Statement "else" Statement => IfStatement 0($0, $1, $2, $3, $4, $5, $6)
+            // IfStatement ::= "if" "(" Expression ")" Statement "else" Statement => if_statement($2, $4, Some($6))
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
@@ -6777,17 +6777,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.if_statement_p0(x2, x4, x6)));
+            stack.push(StackValue::from(handler.if_statement(x2, x4, Some(x6))));
             NonterminalId::IfStatement
         }
         55 => {
-            // IfStatement ::= "if" "(" Expression ")" Statement => IfStatement 1($0, $1, $2, $3, $4)
+            // IfStatement ::= "if" "(" Expression ")" Statement => if_statement($2, $4, None)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.if_statement_p1(x2, x4)));
+            stack.push(StackValue::from(handler.if_statement(x2, x4, None)));
             NonterminalId::IfStatement
         }
         56 => {
