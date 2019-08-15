@@ -6803,91 +6803,91 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BreakableStatement
         }
         58 => {
-            // ContinueStatement ::= "continue" ";" => ContinueStatement 0($0)
+            // ContinueStatement ::= "continue" ";" => continue_statement(None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.continue_statement_p0()));
+            stack.push(StackValue::from(handler.continue_statement(None)));
             NonterminalId::ContinueStatement
         }
         59 => {
-            // ContinueStatement ::= "continue" ErrorSymbol(asi) => ContinueStatement 0($0)
+            // ContinueStatement ::= "continue" ErrorSymbol(asi) => continue_statement(None)
             stack.pop();
-            stack.push(StackValue::from(handler.continue_statement_p0()));
+            stack.push(StackValue::from(handler.continue_statement(None)));
             NonterminalId::ContinueStatement
         }
         60 => {
-            // ContinueStatement ::= "continue" LabelIdentifier ";" => ContinueStatement 1($0, $1)
+            // ContinueStatement ::= "continue" LabelIdentifier ";" => continue_statement(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.continue_statement_p1(x1)));
+            stack.push(StackValue::from(handler.continue_statement(Some(x1))));
             NonterminalId::ContinueStatement
         }
         61 => {
-            // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => ContinueStatement 1($0, $1)
+            // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => continue_statement(Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.continue_statement_p1(x1)));
+            stack.push(StackValue::from(handler.continue_statement(Some(x1))));
             NonterminalId::ContinueStatement
         }
         62 => {
-            // BreakStatement ::= "break" ";" => BreakStatement 0($0)
+            // BreakStatement ::= "break" ";" => break_statement(None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.break_statement_p0()));
+            stack.push(StackValue::from(handler.break_statement(None)));
             NonterminalId::BreakStatement
         }
         63 => {
-            // BreakStatement ::= "break" ErrorSymbol(asi) => BreakStatement 0($0)
+            // BreakStatement ::= "break" ErrorSymbol(asi) => break_statement(None)
             stack.pop();
-            stack.push(StackValue::from(handler.break_statement_p0()));
+            stack.push(StackValue::from(handler.break_statement(None)));
             NonterminalId::BreakStatement
         }
         64 => {
-            // BreakStatement ::= "break" LabelIdentifier ";" => BreakStatement 1($0, $1)
+            // BreakStatement ::= "break" LabelIdentifier ";" => break_statement(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.break_statement_p1(x1)));
+            stack.push(StackValue::from(handler.break_statement(Some(x1))));
             NonterminalId::BreakStatement
         }
         65 => {
-            // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => BreakStatement 1($0, $1)
+            // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => break_statement(Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.break_statement_p1(x1)));
+            stack.push(StackValue::from(handler.break_statement(Some(x1))));
             NonterminalId::BreakStatement
         }
         66 => {
-            // ReturnStatement ::= "return" ";" => ReturnStatement 0($0)
+            // ReturnStatement ::= "return" ";" => return_statement(None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.return_statement_p0()));
+            stack.push(StackValue::from(handler.return_statement(None)));
             NonterminalId::ReturnStatement
         }
         67 => {
-            // ReturnStatement ::= "return" ErrorSymbol(asi) => ReturnStatement 0($0)
+            // ReturnStatement ::= "return" ErrorSymbol(asi) => return_statement(None)
             stack.pop();
-            stack.push(StackValue::from(handler.return_statement_p0()));
+            stack.push(StackValue::from(handler.return_statement(None)));
             NonterminalId::ReturnStatement
         }
         68 => {
-            // ReturnStatement ::= "return" Expression ";" => ReturnStatement 1($0, $1)
+            // ReturnStatement ::= "return" Expression ";" => return_statement(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.return_statement_p1(x1)));
+            stack.push(StackValue::from(handler.return_statement(Some(x1))));
             NonterminalId::ReturnStatement
         }
         69 => {
-            // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => ReturnStatement 1($0, $1)
+            // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => return_statement(Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.return_statement_p1(x1)));
+            stack.push(StackValue::from(handler.return_statement(Some(x1))));
             NonterminalId::ReturnStatement
         }
         70 => {
-            // WithStatement ::= "with" "(" Expression ")" Statement => WithStatement($0, $1, $2, $3, $4)
+            // WithStatement ::= "with" "(" Expression ")" Statement => with_statement($2, $4)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();

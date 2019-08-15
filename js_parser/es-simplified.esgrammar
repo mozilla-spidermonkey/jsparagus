@@ -1047,21 +1047,28 @@ ForBinding[Yield, Await] :
 
 ContinueStatement[Yield, Await] :
   `continue` `;`
+    => continue_statement(None)
   `continue` LabelIdentifier[?Yield, ?Await] `;`
+    => continue_statement(Some($1))
 
 
 BreakStatement[Yield, Await] :
   `break` `;`
+    => break_statement(None)
   `break` LabelIdentifier[?Yield, ?Await] `;`
+    => break_statement(Some($1))
 
 
 ReturnStatement[Yield, Await] :
   `return` `;`
+    => return_statement(None)
   `return` Expression[+In, ?Yield, ?Await] `;`
+    => return_statement(Some($1))
 
 
 WithStatement[Yield, Await, Return] :
   `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+    => with_statement($2, $4)
 
 
 SwitchStatement[Yield, Await, Return] :

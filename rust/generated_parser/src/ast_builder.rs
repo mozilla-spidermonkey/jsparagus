@@ -1052,33 +1052,32 @@ impl AstBuilder {
     pub fn for_binding_p1(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ForBinding::new())
     }
-    // ContinueStatement ::= "continue" ErrorSymbol(asi) => ContinueStatement 0($0)
-    pub fn continue_statement_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // ContinueStatement ::= `continue` `;`
+    // ContinueStatement ::= `continue` LabelIdentifier `;`
+    pub fn continue_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
+        Box::new(Statement::ContinueStatement(ContinueStatement {
+            label: label.map(|boxed| *boxed),
+        }))
     }
-    // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => ContinueStatement 1($0, $1)
-    pub fn continue_statement_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // BreakStatement ::= `break` `;`
+    // BreakStatement ::= `break` LabelIdentifier `;`
+    pub fn break_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
+        Box::new(Statement::BreakStatement(BreakStatement {
+            label: label.map(|boxed| *boxed),
+        }))
     }
-    // BreakStatement ::= "break" ErrorSymbol(asi) => BreakStatement 0($0)
-    pub fn break_statement_p0(&self) -> Box<Statement> {
-        Box::new(Statement::BreakStatement(BreakStatement::new(None)))
+
+    // ReturnStatement ::= `return` `;`
+    // ReturnStatement ::= `return` Expression `;`
+    pub fn return_statement(&self, expression: Option<Box<Expression>>) -> Box<Statement> {
+        Box::new(Statement::ReturnStatement(ReturnStatement { expression }))
     }
-    // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => BreakStatement 1($0, $1)
-    pub fn break_statement_p1(&self, a0: Box<Label>) -> Box<Statement> {
-        Box::new(Statement::BreakStatement(BreakStatement::new(Some(*a0))))
-    }
-    // ReturnStatement ::= "return" ErrorSymbol(asi) => ReturnStatement 0($0)
-    pub fn return_statement_p0(&self) -> Box<Statement> {
-        Box::new(Statement::ReturnStatement(ReturnStatement::new(None)))
-    }
-    // ReturnStatement ::= "return" Expression ErrorSymbol(asi) => ReturnStatement 1($0, $1)
-    pub fn return_statement_p1(&self, a0: Box<Expression>) -> Box<Statement> {
-        Box::new(Statement::ReturnStatement(ReturnStatement::new(Some(a0))))
-    }
-    // WithStatement ::= "with" "(" Expression ")" Statement => WithStatement($0, $1, $2, $3, $4)
-    pub fn with_statement(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // WithStatement ::= `with` `(` Expression `)` Statement
+    pub fn with_statement(&self, object: Box<Expression>, body: Box<Statement>) -> Box<Statement> {
+        Box::new(Statement::WithStatement(WithStatement { object, body }))
     }
 
     // SwitchStatement : `switch` `(` Expression `)` CaseBlock
