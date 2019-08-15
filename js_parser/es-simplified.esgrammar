@@ -1082,9 +1082,11 @@ CaseClauses[Yield, Await, Return] :
 
 CaseClause[Yield, Await, Return] :
   `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?
+    => case_clause($1, $3)
 
 DefaultClause[Yield, Await, Return] :
   `default` `:` StatementList[?Yield, ?Await, ?Return]?
+    => default_clause($2)
 
 
 LabelledStatement[Yield, Await, Return] :

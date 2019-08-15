@@ -1085,32 +1085,53 @@ impl AstBuilder {
     pub fn switch_statement(
         &self,
         discriminant: Box<Expression>,
-        cases: Box<Vec<SwitchCase>>,
+        mut cases: Box<Statement>,
     ) -> Box<Statement> {
-        Box::new(Statement::SwitchStatement(SwitchStatement {
-            discriminant,
-            cases: *cases,
-        }))
+        match &mut *cases {
+            Statement::SwitchStatement(stmt) => {
+                stmt.discriminant = discriminant;
+            }
+            Statement::SwitchStatementWithDefault(stmt) => {
+                stmt.discriminant = discriminant;
+            }
+            _ => {
+                // Can't happen, grammatically.
+                panic!("unrecognized switch statement");
+            }
+        }
+        cases
     }
 
     // CaseBlock : `{` CaseClauses? `}`
-    pub fn case_block(&self, cases: Option<Box<Vec<SwitchCase>>>) -> Box<Vec<SwitchCase>> {
-        cases.unwrap_or_else(|| Box::new(Vec::new()))
+    pub fn case_block(&self, cases: Option<Box<Vec<SwitchCase>>>) -> Box<Statement> {
+        Box::new(Statement::SwitchStatement(SwitchStatement {
+            discriminant: Box::new(Expression::LiteralNullExpression),
+            cases: match cases {
+                None => vec![],
+                Some(boxed) => *boxed,
+            },
+        }))
     }
 
     // CaseBlock : `{` CaseClauses DefaultClause CaseClauses `}`
     pub fn case_block_with_default(
         &self,
-        cases_before: Option<Box<Vec<SwitchCase>>>,
-        default_case: Box<SwitchCase>,
-        cases_after: Option<Box<Vec<SwitchCase>>>,
-    ) -> Box<Vec<SwitchCase>> {
-        let mut cases = cases_before.unwrap_or_else(|| Box::new(vec![]));
-        cases.push(*default_case);
-        if let Some(mut more_cases) = cases_after {
-            cases.append(&mut more_cases);
-        }
-        cases
+        pre_default_cases: Option<Box<Vec<SwitchCase>>>,
+        default_case: Box<SwitchDefault>,
+        post_default_cases: Option<Box<Vec<SwitchCase>>>,
+    ) -> Box<Statement> {
+        Box::new(Statement::SwitchStatementWithDefault(SwitchStatementWithDefault {
+            discriminant: Box::new(Expression::LiteralNullExpression),
+            pre_default_cases: match pre_default_cases {
+                None => vec![],
+                Some(boxed) => *boxed,
+            },
+            default_case: *default_case,
+            post_default_cases: match post_default_cases {
+                None => vec![],
+                Some(boxed) => *boxed,
+            },
+        }))
     }
 
     // CaseClauses : CaseClause
@@ -1142,8 +1163,13 @@ impl AstBuilder {
     }
 
     // DefaultClause : `default` `:` StatementList
-    pub fn default_clause(&self, a0: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(DefaultClause::new())
+    pub fn default_clause(&self, statements: Option<Box<Vec<Statement>>>) -> Box<SwitchDefault> {
+        Box::new(SwitchDefault {
+            consequent: match statements {
+                None => vec![],
+                Some(boxed) => *boxed,
+            },
+        })
     }
 
     // LabelledStatement : LabelIdentifier `:` LabelledItem

@@ -8658,14 +8658,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CaseClauses
         }
         278 => {
-            // DefaultClause ::= "default" ":" => DefaultClause($0, $1, None)
+            // DefaultClause ::= "default" ":" => default_clause(None)
             stack.pop();
             stack.pop();
             stack.push(StackValue::from(handler.default_clause(None)));
             NonterminalId::DefaultClause
         }
         279 => {
-            // DefaultClause ::= "default" ":" StatementList => DefaultClause($0, $1, Some($2))
+            // DefaultClause ::= "default" ":" StatementList => default_clause(Some($2))
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -9024,7 +9024,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrayBindingPattern
         }
         325 => {
-            // CaseClause ::= "case" Expression ":" => CaseClause($0, $1, $2, None)
+            // CaseClause ::= "case" Expression ":" => case_clause($1, None)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9032,7 +9032,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CaseClause
         }
         326 => {
-            // CaseClause ::= "case" Expression ":" StatementList => CaseClause($0, $1, $2, Some($3))
+            // CaseClause ::= "case" Expression ":" StatementList => case_clause($1, Some($3))
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
