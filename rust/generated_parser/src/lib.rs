@@ -6409,12 +6409,12 @@ static GOTO: [u16; 161385] = [
 pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) -> NonterminalId {
     match prod {
         0 => {
-            // Script ::= [empty] => Script(None)
+            // Script ::= [empty] => script(None)
             stack.push(StackValue::from(handler.script(None)));
             NonterminalId::Script
         }
         1 => {
-            // Script ::= ScriptBody => Script(Some($0))
+            // Script ::= ScriptBody => script(Some($0))
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.script(Some(x0))));
             NonterminalId::Script
@@ -6431,7 +6431,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Module
         }
         4 => {
-            // ScriptBody ::= StatementList => ScriptBody($0)
+            // ScriptBody ::= StatementList => script_body($0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.script_body(x0)));
             NonterminalId::ScriptBody
@@ -6897,7 +6897,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::WithStatement
         }
         71 => {
-            // LabelledStatement ::= LabelIdentifier ":" LabelledItem => LabelledStatement($0, $1, $2)
+            // LabelledStatement ::= LabelIdentifier ":" LabelledItem => labelled_statement($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
@@ -6905,7 +6905,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LabelledStatement
         }
         72 => {
-            // ThrowStatement ::= "throw" Expression ";" => ThrowStatement($0, $1)
+            // ThrowStatement ::= "throw" Expression ";" => throw_statement($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -6913,46 +6913,46 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ThrowStatement
         }
         73 => {
-            // ThrowStatement ::= "throw" Expression ErrorSymbol(asi) => ThrowStatement($0, $1)
+            // ThrowStatement ::= "throw" Expression ErrorSymbol(asi) => throw_statement($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(handler.throw_statement(x1)));
             NonterminalId::ThrowStatement
         }
         74 => {
-            // TryStatement ::= "try" Block Catch => TryStatement 0($0, $1, $2)
+            // TryStatement ::= "try" Block Catch => try_statement($1, Some($2), None)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.try_statement_p0(x1, x2)));
+            stack.push(StackValue::from(handler.try_statement(x1, Some(x2), None)));
             NonterminalId::TryStatement
         }
         75 => {
-            // TryStatement ::= "try" Block Finally => TryStatement 1($0, $1, $2)
+            // TryStatement ::= "try" Block Finally => try_statement($1, None, Some($2))
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.try_statement_p1(x1, x2)));
+            stack.push(StackValue::from(handler.try_statement(x1, None, Some(x2))));
             NonterminalId::TryStatement
         }
         76 => {
-            // TryStatement ::= "try" Block Catch Finally => TryStatement 2($0, $1, $2, $3)
+            // TryStatement ::= "try" Block Catch Finally => try_statement($1, Some($2), Some($3))
             let x3 = stack.pop().unwrap().to_ast();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.try_statement_p2(x1, x2, x3)));
+            stack.push(StackValue::from(handler.try_statement(x1, Some(x2), Some(x3))));
             NonterminalId::TryStatement
         }
         77 => {
-            // DebuggerStatement ::= "debugger" ";" => DebuggerStatement($0)
+            // DebuggerStatement ::= "debugger" ";" => debugger_statement()
             stack.pop();
             stack.pop();
             stack.push(StackValue::from(handler.debugger_statement()));
             NonterminalId::DebuggerStatement
         }
         78 => {
-            // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => DebuggerStatement($0)
+            // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => debugger_statement()
             stack.pop();
             stack.push(StackValue::from(handler.debugger_statement()));
             NonterminalId::DebuggerStatement
@@ -7158,11 +7158,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Expression
         }
         108 => {
-            // Expression ::= Expression "," AssignmentExpression => Expression 1($0, $1, $2)
+            // Expression ::= Expression "," AssignmentExpression => binary_expr(comma_op(), $0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.expression_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binary_expr(handler.comma_op(), x0, x2)));
             NonterminalId::Expression
         }
         109 => {
@@ -7517,7 +7517,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::IterationStatement
         }
         137 => {
-            // SwitchStatement ::= "switch" "(" Expression ")" CaseBlock => SwitchStatement($0, $1, $2, $3, $4)
+            // SwitchStatement ::= "switch" "(" Expression ")" CaseBlock => switch_statement($2, $4)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
@@ -7533,19 +7533,19 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LabelIdentifier
         }
         139 => {
-            // LabelledItem ::= Statement => LabelledItem 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.labelled_item_p0(x0)));
+            // LabelledItem ::= Statement => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::LabelledItem
         }
         140 => {
-            // LabelledItem ::= FunctionDeclaration => LabelledItem 1($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.labelled_item_p1(x0)));
+            // LabelledItem ::= FunctionDeclaration => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::LabelledItem
         }
         141 => {
-            // Catch ::= "catch" "(" CatchParameter ")" Block => Catch($0, $1, $2, $3, $4)
+            // Catch ::= "catch" "(" CatchParameter ")" Block => catch($2, $4)
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
@@ -7555,10 +7555,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Catch
         }
         142 => {
-            // Finally ::= "finally" Block => Finally($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // Finally ::= "finally" Block => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.finally(x1)));
+            stack.push(x1);
             NonterminalId::Finally
         }
         143 => {
@@ -8283,66 +8283,66 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ForDeclaration
         }
         222 => {
-            // CaseBlock ::= "{" "}" => CaseBlock 0($0, None, $1)
+            // CaseBlock ::= "{" "}" => case_block(None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p0(None)));
+            stack.push(StackValue::from(handler.case_block(None)));
             NonterminalId::CaseBlock
         }
         223 => {
-            // CaseBlock ::= "{" CaseClauses "}" => CaseBlock 0($0, Some($1), $2)
+            // CaseBlock ::= "{" CaseClauses "}" => case_block(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p0(Some(x1))));
+            stack.push(StackValue::from(handler.case_block(Some(x1))));
             NonterminalId::CaseBlock
         }
         224 => {
-            // CaseBlock ::= "{" DefaultClause "}" => CaseBlock 1($0, None, $1, None, $2)
+            // CaseBlock ::= "{" DefaultClause "}" => case_block_with_default(None, $1, None)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p1(None, x1, None)));
+            stack.push(StackValue::from(handler.case_block_with_default(None, x1, None)));
             NonterminalId::CaseBlock
         }
         225 => {
-            // CaseBlock ::= "{" CaseClauses DefaultClause "}" => CaseBlock 1($0, Some($1), $2, None, $3)
+            // CaseBlock ::= "{" CaseClauses DefaultClause "}" => case_block_with_default(Some($1), $2, None)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p1(Some(x1), x2, None)));
+            stack.push(StackValue::from(handler.case_block_with_default(Some(x1), x2, None)));
             NonterminalId::CaseBlock
         }
         226 => {
-            // CaseBlock ::= "{" DefaultClause CaseClauses "}" => CaseBlock 1($0, None, $1, Some($2), $3)
+            // CaseBlock ::= "{" DefaultClause CaseClauses "}" => case_block_with_default(None, $1, Some($2))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p1(None, x1, Some(x2))));
+            stack.push(StackValue::from(handler.case_block_with_default(None, x1, Some(x2))));
             NonterminalId::CaseBlock
         }
         227 => {
-            // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => CaseBlock 1($0, Some($1), $2, Some($3), $4)
+            // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => case_block_with_default(Some($1), $2, Some($3))
             stack.pop();
             let x3 = stack.pop().unwrap().to_ast();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.case_block_p1(Some(x1), x2, Some(x3))));
+            stack.push(StackValue::from(handler.case_block_with_default(Some(x1), x2, Some(x3))));
             NonterminalId::CaseBlock
         }
         228 => {
-            // CatchParameter ::= BindingIdentifier => CatchParameter 0($0)
+            // CatchParameter ::= BindingIdentifier => catch_parameter_identifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.catch_parameter_p0(x0)));
+            stack.push(StackValue::from(handler.catch_parameter_identifier(x0)));
             NonterminalId::CatchParameter
         }
         229 => {
-            // CatchParameter ::= BindingPattern => CatchParameter 1($0)
+            // CatchParameter ::= BindingPattern => catch_parameter_pattern($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.catch_parameter_p1(x0)));
+            stack.push(StackValue::from(handler.catch_parameter_pattern(x0)));
             NonterminalId::CatchParameter
         }
         230 => {
@@ -8645,16 +8645,16 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingPattern
         }
         276 => {
-            // CaseClauses ::= CaseClause => CaseClauses 0($0)
+            // CaseClauses ::= CaseClause => case_clauses_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.case_clauses_p0(x0)));
+            stack.push(StackValue::from(handler.case_clauses_single(x0)));
             NonterminalId::CaseClauses
         }
         277 => {
-            // CaseClauses ::= CaseClauses CaseClause => CaseClauses 1($0, $1)
+            // CaseClauses ::= CaseClauses CaseClause => case_clauses_append($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.case_clauses_p1(x0, x1)));
+            stack.push(StackValue::from(handler.case_clauses_append(x0, x1)));
             NonterminalId::CaseClauses
         }
         278 => {

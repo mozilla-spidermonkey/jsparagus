@@ -735,25 +735,19 @@ impl AstBuilder {
         ))
     }
 
-    // Expression ::= Expression "," AssignmentExpression => Expression 1($0, $1, $2)
-    pub fn expression_p1(&self, a0: Box<Expression>, a1: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::BinaryExpression(BinaryExpression::new(
-            BinaryOperator::Comma,
-            a0,
-            a1,
-        )))
-    }
-    // BlockStatement ::= Block => BlockStatement($0)
+    // BlockStatement : Block
     pub fn block_statement(&self, a0: Box<Block>) -> Box<Statement> {
         Box::new(Statement::BlockStatement(BlockStatement::new(*a0)))
     }
-    // Block ::= "{" StatementList "}" => Block($0, Some($1), $2)
+
+    // Block ::= `{` StatementList? `}`
     pub fn block(&self, a0: Option<Box<Vec<Statement>>>) -> Box<Block> {
         match a0 {
             Some(a0) => Box::new(Block::new(*a0, None)),
             None => Box::new(Block::new(Vec::new(), None)),
         }
     }
+
     // StatementList ::= StatementListItem => StatementList 0($0)
     pub fn statement_list_p0(&self, a0: Box<Statement>) -> Box<Vec<Statement>> {
         Box::new(vec![*a0])
@@ -1086,36 +1080,46 @@ impl AstBuilder {
     pub fn with_statement(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ModuleItem::new())
     }
-    // SwitchStatement ::= "switch" "(" Expression ")" CaseBlock => SwitchStatement($0, $1, $2, $3, $4)
+
+    // SwitchStatement : `switch` `(` Expression `)` CaseBlock
     pub fn switch_statement(
         &self,
-        a0: Box<Expression>,
-        a1: Box<Vec<SwitchCase>>,
+        discriminant: Box<Expression>,
+        cases: Box<Vec<SwitchCase>>,
     ) -> Box<Statement> {
-        Box::new(Statement::SwitchStatement(SwitchStatement::new(a0, *a1)))
+        Box::new(Statement::SwitchStatement(SwitchStatement {
+            discriminant,
+            cases: *cases,
+        }))
     }
-    // CaseBlock ::= "{" CaseClauses "}" => CaseBlock 0($0, Some($1), $2)
-    pub fn case_block_p0(&self, a0: Option<Box<Vec<SwitchCase>>>) -> Box<Vec<SwitchCase>> {
-        match a0 {
-            Some(a0) => a0,
-            None => Box::new(Vec::new()),
-        }
+
+    // CaseBlock : `{` CaseClauses? `}`
+    pub fn case_block(&self, cases: Option<Box<Vec<SwitchCase>>>) -> Box<Vec<SwitchCase>> {
+        cases.unwrap_or_else(|| Box::new(Vec::new()))
     }
-    // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => CaseBlock 1($0, Some($1), $2, Some($3), $4)
-    pub fn case_block_p1(
+
+    // CaseBlock : `{` CaseClauses DefaultClause CaseClauses `}`
+    pub fn case_block_with_default(
         &self,
-        a0: Option<Box<Void>>,
-        a1: Box<Void>,
-        a2: Option<Box<Void>>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(CaseBlock::new())
+        cases_before: Option<Box<Vec<SwitchCase>>>,
+        default_case: Box<SwitchCase>,
+        cases_after: Option<Box<Vec<SwitchCase>>>,
+    ) -> Box<Vec<SwitchCase>> {
+        let mut cases = cases_before.unwrap_or_else(|| Box::new(vec![]));
+        cases.push(*default_case);
+        if let Some(mut more_cases) = cases_after {
+            cases.append(&mut more_cases);
+        }
+        cases
     }
-    // CaseClauses ::= CaseClause => CaseClauses 0($0)
-    pub fn case_clauses_p0(&self, a0: Box<SwitchCase>) -> Box<Vec<SwitchCase>> {
+
+    // CaseClauses : CaseClause
+    pub fn case_clauses_single(&self, a0: Box<SwitchCase>) -> Box<Vec<SwitchCase>> {
         Box::new(vec![*a0])
     }
-    // CaseClauses ::= CaseClauses CaseClause => CaseClauses 1($0, $1)
-    pub fn case_clauses_p1(
+
+    // CaseClauses : CaseClauses CaseClause
+    pub fn case_clauses_append(
         &self,
         mut a0: Box<Vec<SwitchCase>>,
         a1: Box<SwitchCase>,
@@ -1123,7 +1127,8 @@ impl AstBuilder {
         a0.push(*a1);
         a0
     }
-    // CaseClause ::= "case" Expression ":" StatementList => CaseClause($0, $1, $2, Some($3))
+
+    // CaseClause : `case` Expression `:` StatementList
     pub fn case_clause(
         &self,
         a0: Box<Expression>,
@@ -1135,57 +1140,74 @@ impl AstBuilder {
             Box::new(SwitchCase::new(a0, Vec::new()))
         }
     }
-    // DefaultClause ::= "default" ":" StatementList => DefaultClause($0, $1, Some($2))
+
+    // DefaultClause : `default` `:` StatementList
     pub fn default_clause(&self, a0: Option<Box<Void>>) -> Box<Void> {
         unimplemented!(); // Box::new(DefaultClause::new())
     }
-    // LabelledStatement ::= LabelIdentifier ":" LabelledItem => LabelledStatement($0, $1, $2)
-    pub fn labelled_statement(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // LabelledStatement : LabelIdentifier `:` LabelledItem
+    pub fn labelled_statement(&self, label: Box<Label>, body: Box<Statement>) -> Box<Statement> {
+        Box::new(Statement::LabeledStatement(LabeledStatement {
+            label: *label,
+            body
+        }))
     }
-    // LabelledItem ::= Statement => LabelledItem 0($0)
-    pub fn labelled_item_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LabelledItem::new())
+
+    // ThrowStatement : `throw` Expression `;`
+    pub fn throw_statement(&self, expression: Box<Expression>) -> Box<Statement> {
+        Box::new(Statement::ThrowStatement(ThrowStatement { expression }))
     }
-    // LabelledItem ::= FunctionDeclaration => LabelledItem 1($0)
-    pub fn labelled_item_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LabelledItem::new())
+
+    // TryStatement : `try` Block Catch
+    // TryStatement : `try` Block Finally
+    // TryStatement : `try` Block Catch Finally
+    pub fn try_statement(
+        &self,
+        body: Box<Block>,
+        catch_clause: Option<Box<CatchClause>>,
+        finally_block: Option<Box<Block>>
+    ) -> Box<Statement> {
+        match (catch_clause, finally_block) {
+            (Some(catch_clause), None) =>
+                Box::new(Statement::TryCatchStatement(TryCatchStatement {
+                    body: *body,
+                    catch_clause: *catch_clause,
+                })),
+            (catch_clause, Some(finally_block)) =>
+                Box::new(Statement::TryFinallyStatement(TryFinallyStatement {
+                    body: *body,
+                    catch_clause: catch_clause.map(|boxed| *boxed),
+                    finalizer: *finally_block,
+                })),
+            _ => {
+                // can't happen, as the grammar won't accept a bare try-block
+                panic!("try statement requires either a catch or finally block");
+            }
+        }
     }
-    // ThrowStatement ::= "throw" Expression ErrorSymbol(asi) => ThrowStatement($0, $1)
-    pub fn throw_statement(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // Catch : `catch` `(` CatchParameter `)` Block
+    pub fn catch(&self, binding: Box<Binding>, body: Box<Block>) -> Box<CatchClause> {
+        Box::new(CatchClause {
+            binding: *binding,
+            body: *body,
+        })
     }
-    // TryStatement ::= "try" Block Catch => TryStatement 0($0, $1, $2)
-    pub fn try_statement_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // CatchParameter : BindingIdentifier
+    pub fn catch_parameter_identifier(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
+        Box::new(Binding::BindingIdentifier(*a0))
     }
-    // TryStatement ::= "try" Block Finally => TryStatement 1($0, $1, $2)
-    pub fn try_statement_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // CatchParameter : BindingPattern
+    pub fn catch_parameter_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
+        Box::new(Binding::BindingPattern(*a0))
     }
-    // TryStatement ::= "try" Block Catch Finally => TryStatement 2($0, $1, $2, $3)
-    pub fn try_statement_p2(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
-    }
-    // Catch ::= "catch" "(" CatchParameter ")" Block => Catch($0, $1, $2, $3, $4)
-    pub fn catch(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Catch::new())
-    }
-    // Finally ::= "finally" Block => Finally($0, $1)
-    pub fn finally(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(Finally::new())
-    }
-    // CatchParameter ::= BindingIdentifier => CatchParameter 0($0)
-    pub fn catch_parameter_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(CatchParameter::new())
-    }
-    // CatchParameter ::= BindingPattern => CatchParameter 1($0)
-    pub fn catch_parameter_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(CatchParameter::new())
-    }
-    // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => DebuggerStatement($0)
-    pub fn debugger_statement(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // DebuggerStatement : `debugger` `;`
+    pub fn debugger_statement(&self) -> Box<Statement> {
+        Box::new(Statement::DebuggerStatement)
     }
 
     pub fn function_decl(&self, f: Function) -> Box<Statement> {
@@ -1517,18 +1539,21 @@ impl AstBuilder {
             *a1,
         )))
     }
-    // Script ::= ScriptBody => Script(Some($0))
-    pub fn script(&self, a0: Option<Box<Script>>) -> Box<Script> {
-        match a0 {
-            Some(a0) => a0,
+
+    // Script : ScriptBody?
+    pub fn script(&self, script: Option<Box<Script>>) -> Box<Script> {
+        match script {
+            Some(script) => script,
             None => Box::new(Script::new(Vec::new(), Vec::new())),
         }
     }
-    // ScriptBody ::= StatementList => ScriptBody($0)
+
+    // ScriptBody : StatementList
     pub fn script_body(&self, a0: Box<Vec<Statement>>) -> Box<Script> {
         // TODO: directives
         Box::new(Script::new(Vec::new(), *a0))
     }
+
     // Module ::= ModuleBody => Module(Some($0))
     pub fn module(&self, a0: Option<Box<Void>>) -> Box<Void> {
         unimplemented!(); // Box::new(Module::new())

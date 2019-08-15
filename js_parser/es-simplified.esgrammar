@@ -882,6 +882,7 @@ DestructuringAssignmentTarget[Yield, Await] :
 Expression[In, Yield, Await] :
   AssignmentExpression[?In, ?Yield, ?Await]
   Expression[?In, ?Yield, ?Await] `,` AssignmentExpression[?In, ?Yield, ?Await]
+    => binary_expr(comma_op(), $0, $2)
 
 
 Statement[Yield, Await, Return] :
@@ -1065,14 +1066,19 @@ WithStatement[Yield, Await, Return] :
 
 SwitchStatement[Yield, Await, Return] :
   `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]
+    => switch_statement($2, $4)
 
 CaseBlock[Yield, Await, Return] :
   `{` CaseClauses[?Yield, ?Await, ?Return]? `}`
+    => case_block($1)
   `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
+    => case_block_with_default($1, $2, $3)
 
 CaseClauses[Yield, Await, Return] :
   CaseClause[?Yield, ?Await, ?Return]
+    => case_clauses_single($0)
   CaseClauses[?Yield, ?Await, ?Return] CaseClause[?Yield, ?Await, ?Return]
+    => case_clauses_append($0, $1)
 
 CaseClause[Yield, Await, Return] :
   `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?
@@ -1083,34 +1089,43 @@ DefaultClause[Yield, Await, Return] :
 
 LabelledStatement[Yield, Await, Return] :
   LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]
+    => labelled_statement($0, $2)
 
 LabelledItem[Yield, Await, Return] :
-  Statement[?Yield, ?Await, ?Return]
-  FunctionDeclaration[?Yield, ?Await, ~Default]
+  Statement[?Yield, ?Await, ?Return] => $0
+  FunctionDeclaration[?Yield, ?Await, ~Default] => $0
 
 
 ThrowStatement[Yield, Await] :
   `throw` Expression[+In, ?Yield, ?Await] `;`
-
+    => throw_statement($1)
 
 TryStatement[Yield, Await, Return] :
   `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return]
+    => try_statement($1, Some($2), None)
   `try` Block[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]
+    =>  try_statement($1, None, Some($2))
   `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]
+    => try_statement($1, Some($2), Some($3))
 
 Catch[Yield, Await, Return] :
   `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]
+    => catch($2, $4)
 
 Finally[Yield, Await, Return] :
   `finally` Block[?Yield, ?Await, ?Return]
+    => $1
 
 CatchParameter[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
+    => catch_parameter_identifier($0)
   BindingPattern[?Yield, ?Await]
+    => catch_parameter_pattern($0)
 
 
 DebuggerStatement :
   `debugger` `;`
+    => debugger_statement()
 
 
 FunctionDeclaration[Yield, Await, Default] :
@@ -1151,10 +1166,12 @@ FormalParameter[Yield, Await] :
   BindingElement[?Yield, ?Await]
 
 FunctionBody[Yield, Await] :
-  FunctionStatementList[?Yield, ?Await] => function_body($0)
+  FunctionStatementList[?Yield, ?Await]
+    => function_body($0)
 
 FunctionStatementList[Yield, Await] :
-  StatementList[?Yield, ?Await, +Return]? => function_statement_list($0)
+  StatementList[?Yield, ?Await, +Return]?
+    => function_statement_list($0)
 
 
 ArrowFunction[In, Yield, Await] :
@@ -1298,10 +1315,11 @@ AsyncArrowHead :
 
 Script :
   ScriptBody?
+    => script($0)
 
 ScriptBody :
   StatementList[~Yield, ~Await, ~Return]
-
+    => script_body($0)
 
 Module :
   ModuleBody?
