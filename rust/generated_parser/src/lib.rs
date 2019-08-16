@@ -6731,7 +6731,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ExportDeclaration
         }
         48 => {
-            // BlockStatement ::= Block => BlockStatement($0)
+            // BlockStatement ::= Block => block_statement($0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.block_statement(x0)));
             NonterminalId::BlockStatement
@@ -6999,7 +6999,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ClassDeclaration
         }
         85 => {
-            // LexicalDeclaration ::= LetOrConst BindingList ";" => LexicalDeclaration($0, $1)
+            // LexicalDeclaration ::= LetOrConst BindingList ";" => lexical_declaration($0, $1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
@@ -7007,7 +7007,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LexicalDeclaration
         }
         86 => {
-            // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => LexicalDeclaration($0, $1)
+            // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => lexical_declaration($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.lexical_declaration(x0, x1)));
@@ -7756,7 +7756,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::GeneratorDeclaration
         }
         159 => {
-            // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function(Some($2), empty_formal_parameters(), AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -7764,11 +7764,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_decl(handler.async_function(Some(x2), handler.empty_formal_parameters(), handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_decl(handler.async_function(Some(x2), handler.empty_formal_parameters(), handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         160 => {
-            // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function(Some($2), $4, AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionDeclaration ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function(Some($2), $4, function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -7777,7 +7777,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_decl(handler.async_function(Some(x2), x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_decl(handler.async_function(Some(x2), x4, handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         161 => {
@@ -7808,18 +7808,18 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncFunctionDeclaration
         }
         163 => {
-            // AsyncFunctionDeclaration ::= "async" "function" "(" ")" "{" "}" => function_decl(async_function(None, empty_formal_parameters(), AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionDeclaration ::= "async" "function" "(" ")" "{" "}" => function_decl(async_function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_decl(handler.async_function(None, handler.empty_formal_parameters(), handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_decl(handler.async_function(None, handler.empty_formal_parameters(), handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         164 => {
-            // AsyncFunctionDeclaration ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_decl(async_function(None, $3, AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionDeclaration ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_decl(async_function(None, $3, function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -7827,7 +7827,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_decl(handler.async_function(None, x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_decl(handler.async_function(None, x3, handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionDeclaration
         }
         165 => {
@@ -8402,14 +8402,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::GeneratorBody
         }
         239 => {
-            // AsyncFunctionBody ::= [empty] => AsyncFunctionBody(function_body(function_statement_list(None)))
-            stack.push(StackValue::from(handler.async_function_body(handler.function_body(handler.function_statement_list(None)))));
+            // AsyncFunctionBody ::= [empty] => function_body(function_statement_list(None))
+            stack.push(StackValue::from(handler.function_body(handler.function_statement_list(None))));
             NonterminalId::AsyncFunctionBody
         }
         240 => {
-            // AsyncFunctionBody ::= FunctionBody => AsyncFunctionBody($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.async_function_body(x0)));
+            // AsyncFunctionBody ::= FunctionBody => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::AsyncFunctionBody
         }
         241 => {
@@ -8550,10 +8550,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncConciseBody
         }
         262 => {
-            // AsyncConciseBody ::= "{" "}" => concise_body_block(AsyncFunctionBody(function_body(function_statement_list(None))))
+            // AsyncConciseBody ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.concise_body_block(handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
+            stack.push(StackValue::from(handler.concise_body_block(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::AsyncConciseBody
         }
         263 => {
@@ -9729,18 +9729,18 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::GeneratorExpression
         }
         410 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" "}" => function_expr(async_function(None, empty_formal_parameters(), AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" "}" => function_expr(async_function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_expr(handler.async_function(None, handler.empty_formal_parameters(), handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_expr(handler.async_function(None, handler.empty_formal_parameters(), handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         411 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_expr(async_function(None, $3, AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_expr(async_function(None, $3, function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9748,7 +9748,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_expr(handler.async_function(None, x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_expr(handler.async_function(None, x3, handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         412 => {
@@ -9777,7 +9777,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncFunctionExpression
         }
         414 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function(Some($2), empty_formal_parameters(), AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9785,11 +9785,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_expr(handler.async_function(Some(x2), handler.empty_formal_parameters(), handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_expr(handler.async_function(Some(x2), handler.empty_formal_parameters(), handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         415 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function(Some($2), $4, AsyncFunctionBody(function_body(function_statement_list(None)))))
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function(Some($2), $4, function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9798,7 +9798,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.function_expr(handler.async_function(Some(x2), x4, handler.async_function_body(handler.function_body(handler.function_statement_list(None)))))));
+            stack.push(StackValue::from(handler.function_expr(handler.async_function(Some(x2), x4, handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncFunctionExpression
         }
         416 => {
@@ -10069,18 +10069,18 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::GeneratorMethod
         }
         443 => {
-            // AsyncMethod ::= "async" PropertyName "(" ")" "{" "}" => AsyncMethod($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, AsyncFunctionBody(function_body(function_statement_list(None))), $5)
+            // AsyncMethod ::= "async" PropertyName "(" ")" "{" "}" => AsyncMethod($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, function_body(function_statement_list(None)), $5)
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.async_method(x1, handler.unique_formal_parameters(handler.empty_formal_parameters()), handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
+            stack.push(StackValue::from(handler.async_method(x1, handler.unique_formal_parameters(handler.empty_formal_parameters()), handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::AsyncMethod
         }
         444 => {
-            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" "}" => AsyncMethod($0, $1, $2, $3, $4, $5, AsyncFunctionBody(function_body(function_statement_list(None))), $6)
+            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" "}" => AsyncMethod($0, $1, $2, $3, $4, $5, function_body(function_statement_list(None)), $6)
             stack.pop();
             stack.pop();
             stack.pop();
@@ -10088,7 +10088,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.async_method(x1, x3, handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
+            stack.push(StackValue::from(handler.async_method(x1, x3, handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::AsyncMethod
         }
         445 => {

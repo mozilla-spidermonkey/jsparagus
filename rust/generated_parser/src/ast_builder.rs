@@ -766,7 +766,7 @@ impl AstBuilder {
         list
     }
 
-    // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => LexicalDeclaration($0, $1)
+    // LexicalDeclaration : LetOrConst BindingList `;`
     pub fn lexical_declaration(
         &self,
         a0: Box<VariableDeclarationKind>,

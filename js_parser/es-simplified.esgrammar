@@ -562,7 +562,8 @@ CoverInitializedName[Yield, Await] :
   IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
 
 Initializer[In, Yield, Await] :
-  `=` AssignmentExpression[?In, ?Yield, ?Await] => $1
+  `=` AssignmentExpression[?In, ?Yield, ?Await]
+    => $1
 
 
 TemplateLiteral[Yield, Await, Tagged] :
@@ -604,7 +605,8 @@ SuperProperty[Yield, Await] :
     => super_property_static($2)
 
 MetaProperty :
-  NewTarget => $0
+  NewTarget
+    => $0
 
 NewTarget :
   `new` `.` `target`
@@ -653,8 +655,10 @@ ArgumentList[Yield, Await] :
     => arguments_append_spread($0, $3)
 
 LeftHandSideExpression[Yield, Await] :
-  NewExpression[?Yield, ?Await] => $0
-  CallExpression[?Yield, ?Await] => $0
+  NewExpression[?Yield, ?Await]
+    => $0
+  CallExpression[?Yield, ?Await]
+    => $0
 
 
 CallMemberExpression[Yield, Await] :
@@ -698,12 +702,14 @@ UnaryExpression[Yield, Await] :
 
 ExponentiationExpression[Yield, Await] :
   UnaryExpression[?Yield, ?Await]
+    => $0
   UpdateExpression[?Yield, ?Await] `**` ExponentiationExpression[?Yield, ?Await]
     => binary_expr(pow_op(), $0, $2)
 
 
 MultiplicativeExpression[Yield, Await] :
   ExponentiationExpression[?Yield, ?Await]
+    => $0
   MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]
     => multiplicative_expr($0, $1, $2)
 
@@ -718,6 +724,7 @@ MultiplicativeOperator :
 
 AdditiveExpression[Yield, Await] :
   MultiplicativeExpression[?Yield, ?Await]
+    => $0
   AdditiveExpression[?Yield, ?Await] `+` MultiplicativeExpression[?Yield, ?Await]
     => binary_expr(add_op(), $0, $2)
   AdditiveExpression[?Yield, ?Await] `-` MultiplicativeExpression[?Yield, ?Await]
@@ -726,6 +733,7 @@ AdditiveExpression[Yield, Await] :
 
 ShiftExpression[Yield, Await] :
   AdditiveExpression[?Yield, ?Await]
+    => $0
   ShiftExpression[?Yield, ?Await] `<<` AdditiveExpression[?Yield, ?Await]
     => binary_expr(left_shift_op(), $0, $2)
   ShiftExpression[?Yield, ?Await] `>>` AdditiveExpression[?Yield, ?Await]
@@ -736,6 +744,7 @@ ShiftExpression[Yield, Await] :
 
 RelationalExpression[In, Yield, Await] :
   ShiftExpression[?Yield, ?Await]
+    => $0
   RelationalExpression[?In, ?Yield, ?Await] `<` ShiftExpression[?Yield, ?Await]
     => binary_expr(less_than_op(), $0, $2)
   RelationalExpression[?In, ?Yield, ?Await] `>` ShiftExpression[?Yield, ?Await]
@@ -752,6 +761,7 @@ RelationalExpression[In, Yield, Await] :
 
 EqualityExpression[In, Yield, Await] :
   RelationalExpression[?In, ?Yield, ?Await]
+    => $0
   EqualityExpression[?In, ?Yield, ?Await] `==` RelationalExpression[?In, ?Yield, ?Await]
     => binary_expr(equals_op(), $0, $2)
   EqualityExpression[?In, ?Yield, ?Await] `!=` RelationalExpression[?In, ?Yield, ?Await]
@@ -764,33 +774,39 @@ EqualityExpression[In, Yield, Await] :
 
 BitwiseANDExpression[In, Yield, Await] :
   EqualityExpression[?In, ?Yield, ?Await]
+    => $0
   BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_and_op(), $0, $2)
 
 BitwiseXORExpression[In, Yield, Await] :
   BitwiseANDExpression[?In, ?Yield, ?Await]
+    => $0
   BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_xor_op(), $0, $2)
 
 BitwiseORExpression[In, Yield, Await] :
   BitwiseXORExpression[?In, ?Yield, ?Await]
+    => $0
   BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_or_op(), $0, $2)
 
 
 LogicalANDExpression[In, Yield, Await] :
   BitwiseORExpression[?In, ?Yield, ?Await]
+    => $0
   LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]
     => binary_expr(logical_and_op(), $0, $2)
 
 LogicalORExpression[In, Yield, Await] :
   LogicalANDExpression[?In, ?Yield, ?Await]
+    => $0
   LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]
     => binary_expr(logical_or_op(), $0, $2)
 
 
 ConditionalExpression[In, Yield, Await] :
   LogicalORExpression[?In, ?Yield, ?Await]
+    => $0
   LogicalORExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]
     => conditional_expr($0, $2, $4)
 
@@ -838,7 +854,9 @@ AssignmentOperator :
 
 AssignmentPattern[Yield, Await] :
   ObjectAssignmentPattern[?Yield, ?Await]
+    => $0
   ArrayAssignmentPattern[?Yield, ?Await]
+    => $0
 
 ObjectAssignmentPattern[Yield, Await] :
   `{` `}`
@@ -877,48 +895,74 @@ AssignmentRestElement[Yield, Await] :
 
 DestructuringAssignmentTarget[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
+    => $0
 
 
 Expression[In, Yield, Await] :
   AssignmentExpression[?In, ?Yield, ?Await]
+    => $0
   Expression[?In, ?Yield, ?Await] `,` AssignmentExpression[?In, ?Yield, ?Await]
     => binary_expr(comma_op(), $0, $2)
 
 
 Statement[Yield, Await, Return] :
   BlockStatement[?Yield, ?Await, ?Return]
+    => $0
   VariableStatement[?Yield, ?Await]
+    => $0
   EmptyStatement
+    => $0
   ExpressionStatement[?Yield, ?Await]
+    => $0
   IfStatement[?Yield, ?Await, ?Return]
+    => $0
   BreakableStatement[?Yield, ?Await, ?Return]
+    => $0
   ContinueStatement[?Yield, ?Await]
+    => $0
   BreakStatement[?Yield, ?Await]
+    => $0
   [+Return] ReturnStatement[?Yield, ?Await]
+    => $0
   WithStatement[?Yield, ?Await, ?Return]
+    => $0
   LabelledStatement[?Yield, ?Await, ?Return]
+    => $0
   ThrowStatement[?Yield, ?Await]
+    => $0
   TryStatement[?Yield, ?Await, ?Return]
+    => $0
   DebuggerStatement
+    => $0
 
 Declaration[Yield, Await] :
   HoistableDeclaration[?Yield, ?Await, ~Default]
+    => $0
   ClassDeclaration[?Yield, ?Await, ~Default]
+    => $0
   LexicalDeclaration[+In, ?Yield, ?Await]
+    => $0
 
 HoistableDeclaration[Yield, Await, Default] :
   FunctionDeclaration[?Yield, ?Await, ?Default]
+    => $0
   GeneratorDeclaration[?Yield, ?Await, ?Default]
+    => $0
   AsyncFunctionDeclaration[?Yield, ?Await, ?Default]
+    => $0
   AsyncGeneratorDeclaration[?Yield, ?Await, ?Default]
+    => $0
 
 BreakableStatement[Yield, Await, Return] :
   IterationStatement[?Yield, ?Await, ?Return]
+    => $0
   SwitchStatement[?Yield, ?Await, ?Return]
+    => $0
 
 
 BlockStatement[Yield, Await, Return] :
   Block[?Yield, ?Await, ?Return]
+    => block_statement($0)
 
 Block[Yield, Await, Return] :
   `{` StatementList[?Yield, ?Await, ?Return]? `}`
@@ -932,11 +976,14 @@ StatementList[Yield, Await, Return] :
 
 StatementListItem[Yield, Await, Return] :
   Statement[?Yield, ?Await, ?Return]
+    => $0
   Declaration[?Yield, ?Await]
+    => $0
 
 
 LexicalDeclaration[In, Yield, Await] :
   LetOrConst BindingList[?In, ?Yield, ?Await] `;`
+    => lexical_declaration($0, $1)
 
 ForLexicalDeclaration[In, Yield, Await] :
   LetOrConst BindingList[?In, ?Yield, ?Await] `;`
@@ -979,8 +1026,10 @@ VariableDeclaration[In, Yield, Await] :
 
 
 BindingPattern[Yield, Await] :
-  ObjectBindingPattern[?Yield, ?Await] => $0
-  ArrayBindingPattern[?Yield, ?Await] => $0
+  ObjectBindingPattern[?Yield, ?Await]
+    => $0
+  ArrayBindingPattern[?Yield, ?Await]
+    => $0
 
 ObjectBindingPattern[Yield, Await] :
   `{` `}`
@@ -1136,8 +1185,10 @@ LabelledStatement[Yield, Await, Return] :
     => labelled_statement($0, $2)
 
 LabelledItem[Yield, Await, Return] :
-  Statement[?Yield, ?Await, ?Return] => $0
-  FunctionDeclaration[?Yield, ?Await, ~Default] => $0
+  Statement[?Yield, ?Await, ?Return]
+    => $0
+  FunctionDeclaration[?Yield, ?Await, ~Default]
+    => $0
 
 
 ThrowStatement[Yield, Await] :
@@ -1183,7 +1234,8 @@ FunctionExpression :
     => function_expr(function($1, $3, $6))
 
 UniqueFormalParameters[Yield, Await] :
-  FormalParameters[?Yield, ?Await] => unique_formal_parameters($0)
+  FormalParameters[?Yield, ?Await]
+    => unique_formal_parameters($0)
 
 FormalParameters[Yield, Await] :
   [empty]
@@ -1335,6 +1387,7 @@ AsyncMethod[Yield, Await] :
 
 AsyncFunctionBody :
   FunctionBody[~Yield, +Await]
+    => $0
 
 AwaitExpression[Yield] :
   `await` UnaryExpression[?Yield, +Await]
