@@ -101,17 +101,20 @@ impl Emitter {
 
     fn emit_statement(&mut self, ast: &Statement) {
         match ast {
-            Statement::IterationStatement(_) => unimplemented!(),
             Statement::ClassDeclaration(_) => unimplemented!(),
             Statement::BlockStatement(_) => unimplemented!(),
             Statement::BreakStatement(_) => unimplemented!(),
             Statement::ContinueStatement(_) => unimplemented!(),
             Statement::DebuggerStatement => unimplemented!(),
+            Statement::DoWhileStatement(_) => unimplemented!(),
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast);
                 self.emit1(&SETRVAL)
             }
+            Statement::ForInStatement(_) => unimplemented!(),
+            Statement::ForOfStatement(_) => unimplemented!(),
+            Statement::ForStatement(_) => unimplemented!(),
             Statement::IfStatement(_) => unimplemented!(),
             Statement::LabeledStatement(_) => unimplemented!(),
             Statement::ReturnStatement(ast) => self.emit_return_statement(ast),
@@ -121,6 +124,7 @@ impl Emitter {
             Statement::TryCatchStatement(_) => unimplemented!(),
             Statement::TryFinallyStatement(_) => unimplemented!(),
             Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast),
+            Statement::WhileStatement(_) => unimplemented!(),
             Statement::WithStatement(_) => unimplemented!(),
             Statement::FunctionDeclaration(_) => unimplemented!(),
         }
