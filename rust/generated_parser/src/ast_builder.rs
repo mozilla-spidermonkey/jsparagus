@@ -740,27 +740,32 @@ impl AstBuilder {
         Box::new(Statement::BlockStatement(BlockStatement::new(*a0)))
     }
 
-    // Block ::= `{` StatementList? `}`
-    pub fn block(&self, a0: Option<Box<Vec<Statement>>>) -> Box<Block> {
-        match a0 {
-            Some(a0) => Box::new(Block::new(*a0, None)),
-            None => Box::new(Block::new(Vec::new(), None)),
-        }
+    // Block : `{` StatementList? `}`
+    pub fn block(&self, statements: Option<Box<Vec<Statement>>>) -> Box<Block> {
+        Box::new(Block {
+            statements: match statements {
+                Some(statements) => *statements,
+                None => vec![],
+            },
+            declarations: None
+        })
     }
 
-    // StatementList ::= StatementListItem => StatementList 0($0)
-    pub fn statement_list_p0(&self, a0: Box<Statement>) -> Box<Vec<Statement>> {
-        Box::new(vec![*a0])
+    // StatementList : StatementListItem
+    pub fn statement_list_single(&self, statement: Box<Statement>) -> Box<Vec<Statement>> {
+        Box::new(vec![*statement])
     }
-    // StatementList ::= StatementList StatementListItem => StatementList 1($0, $1)
-    pub fn statement_list_p1(
+
+    // StatementList : StatementList StatementListItem
+    pub fn statement_list_append(
         &self,
-        mut a0: Box<Vec<Statement>>,
-        a1: Box<Statement>,
+        mut list: Box<Vec<Statement>>,
+        statement: Box<Statement>,
     ) -> Box<Vec<Statement>> {
-        a0.push(*a1);
-        a0
+        list.push(*statement);
+        list
     }
+
     // LexicalDeclaration ::= LetOrConst BindingList ErrorSymbol(asi) => LexicalDeclaration($0, $1)
     pub fn lexical_declaration(
         &self,

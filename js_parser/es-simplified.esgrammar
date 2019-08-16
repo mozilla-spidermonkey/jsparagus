@@ -922,10 +922,13 @@ BlockStatement[Yield, Await, Return] :
 
 Block[Yield, Await, Return] :
   `{` StatementList[?Yield, ?Await, ?Return]? `}`
+    => block($1)
 
 StatementList[Yield, Await, Return] :
   StatementListItem[?Yield, ?Await, ?Return]
+    => statement_list_single($0)
   StatementList[?Yield, ?Await, ?Return] StatementListItem[?Yield, ?Await, ?Return]
+    => statement_list_append($0, $1)
 
 StatementListItem[Yield, Await, Return] :
   Statement[?Yield, ?Await, ?Return]

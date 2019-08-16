@@ -6443,16 +6443,16 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ModuleBody
         }
         6 => {
-            // StatementList ::= StatementListItem => StatementList 0($0)
+            // StatementList ::= StatementListItem => statement_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.statement_list_p0(x0)));
+            stack.push(StackValue::from(handler.statement_list_single(x0)));
             NonterminalId::StatementList
         }
         7 => {
-            // StatementList ::= StatementList StatementListItem => StatementList 1($0, $1)
+            // StatementList ::= StatementList StatementListItem => statement_list_append($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.statement_list_p1(x0, x1)));
+            stack.push(StackValue::from(handler.statement_list_append(x0, x1)));
             NonterminalId::StatementList
         }
         8 => {
@@ -7123,14 +7123,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AssignmentExpression
         }
         103 => {
-            // Block ::= "{" "}" => Block($0, None, $1)
+            // Block ::= "{" "}" => block(None)
             stack.pop();
             stack.pop();
             stack.push(StackValue::from(handler.block(None)));
             NonterminalId::Block
         }
         104 => {
-            // Block ::= "{" StatementList "}" => Block($0, Some($1), $2)
+            // Block ::= "{" StatementList "}" => block(Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
