@@ -191,8 +191,7 @@ def main():
     ast_(ast)
     stack_value(ast)
     pass_(ast)
-    subprocess.run(['cargo', 'fmt'])
-    subprocess.run(['cargo', 'fmt'], cwd="../emitter")
+    subprocess.run(['cargo', 'fmt'], cwd="..")
 
 
 if __name__ == "__main__":
