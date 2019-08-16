@@ -20,14 +20,11 @@ pub trait Pass {
         }
     }
 
-    fn visit_identifier(&mut self, ast: &mut Identifier) {
-    }
+    fn visit_identifier(&mut self, ast: &mut Identifier) {}
 
-    fn visit_identifier_name(&mut self, ast: &mut IdentifierName) {
-    }
+    fn visit_identifier_name(&mut self, ast: &mut IdentifierName) {}
 
-    fn visit_label(&mut self, ast: &mut Label) {
-    }
+    fn visit_label(&mut self, ast: &mut Label) {}
 
     fn visit_variable_declaration_kind(&mut self, ast: &mut VariableDeclarationKind) {
         match ast {
@@ -469,7 +466,10 @@ pub trait Pass {
         }
     }
 
-    fn visit_computed_member_assignment_target(&mut self, ast: &mut ComputedMemberAssignmentTarget) {
+    fn visit_computed_member_assignment_target(
+        &mut self,
+        ast: &mut ComputedMemberAssignmentTarget,
+    ) {
         self.visit_expression_or_super(&mut ast.object);
         self.visit_expression(&mut ast.expression);
     }
@@ -563,14 +563,20 @@ pub trait Pass {
         }
     }
 
-    fn visit_assignment_target_property_identifier(&mut self, ast: &mut AssignmentTargetPropertyIdentifier) {
+    fn visit_assignment_target_property_identifier(
+        &mut self,
+        ast: &mut AssignmentTargetPropertyIdentifier,
+    ) {
         self.visit_assignment_target_identifier(&mut ast.binding);
         if let Some(item) = &mut ast.init {
             self.visit_expression(item);
         }
     }
 
-    fn visit_assignment_target_property_property(&mut self, ast: &mut AssignmentTargetPropertyProperty) {
+    fn visit_assignment_target_property_property(
+        &mut self,
+        ast: &mut AssignmentTargetPropertyProperty,
+    ) {
         self.visit_property_name(&mut ast.name);
         self.visit_assignment_target_maybe_default(&mut ast.binding);
     }
@@ -648,8 +654,7 @@ pub trait Pass {
         self.visit_binding_identifier(&mut ast.binding);
     }
 
-    fn visit_export_all_from(&mut self, ast: &mut ExportAllFrom) {
-    }
+    fn visit_export_all_from(&mut self, ast: &mut ExportAllFrom) {}
 
     fn visit_export_from(&mut self, ast: &mut ExportFrom) {
         for item in &mut ast.named_exports {
@@ -735,20 +740,15 @@ pub trait Pass {
         self.visit_expression(&mut ast.expression);
     }
 
-    fn visit_static_property_name(&mut self, ast: &mut StaticPropertyName) {
-    }
+    fn visit_static_property_name(&mut self, ast: &mut StaticPropertyName) {}
 
-    fn visit_literal_boolean_expression(&mut self, ast: &mut LiteralBooleanExpression) {
-    }
+    fn visit_literal_boolean_expression(&mut self, ast: &mut LiteralBooleanExpression) {}
 
-    fn visit_literal_numeric_expression(&mut self, ast: &mut LiteralNumericExpression) {
-    }
+    fn visit_literal_numeric_expression(&mut self, ast: &mut LiteralNumericExpression) {}
 
-    fn visit_literal_reg_exp_expression(&mut self, ast: &mut LiteralRegExpExpression) {
-    }
+    fn visit_literal_reg_exp_expression(&mut self, ast: &mut LiteralRegExpExpression) {}
 
-    fn visit_literal_string_expression(&mut self, ast: &mut LiteralStringExpression) {
-    }
+    fn visit_literal_string_expression(&mut self, ast: &mut LiteralStringExpression) {}
 
     fn visit_array_expression_element(&mut self, ast: &mut ArrayExpressionElement) {
         match ast {
@@ -902,7 +902,10 @@ pub trait Pass {
         self.visit_expression(&mut ast.test);
     }
 
-    fn visit_variable_declaration_or_assignment_target(&mut self, ast: &mut VariableDeclarationOrAssignmentTarget) {
+    fn visit_variable_declaration_or_assignment_target(
+        &mut self,
+        ast: &mut VariableDeclarationOrAssignmentTarget,
+    ) {
         match ast {
             VariableDeclarationOrAssignmentTarget::VariableDeclaration(ast) => {
                 self.visit_variable_declaration(ast);
@@ -925,7 +928,10 @@ pub trait Pass {
         self.visit_statement(&mut ast.block);
     }
 
-    fn visit_variable_declaration_or_expression(&mut self, ast: &mut VariableDeclarationOrExpression) {
+    fn visit_variable_declaration_or_expression(
+        &mut self,
+        ast: &mut VariableDeclarationOrExpression,
+    ) {
         match ast {
             VariableDeclarationOrExpression::VariableDeclaration(ast) => {
                 self.visit_variable_declaration(ast);
@@ -1018,8 +1024,7 @@ pub trait Pass {
             self.visit_statement(item);
         }
         if let Some(item) = &mut ast.declarations {
-            for item in item {
-            }
+            for item in item {}
         }
     }
 
@@ -1028,8 +1033,7 @@ pub trait Pass {
         self.visit_block(&mut ast.body);
     }
 
-    fn visit_directive(&mut self, ast: &mut Directive) {
-    }
+    fn visit_directive(&mut self, ast: &mut Directive) {}
 
     fn visit_formal_parameters(&mut self, ast: &mut FormalParameters) {
         for item in &mut ast.items {
@@ -1071,8 +1075,7 @@ pub trait Pass {
         }
     }
 
-    fn visit_template_element(&mut self, ast: &mut TemplateElement) {
-    }
+    fn visit_template_element(&mut self, ast: &mut TemplateElement) {}
 
     fn visit_variable_declaration(&mut self, ast: &mut VariableDeclaration) {
         self.visit_variable_declaration_kind(&mut ast.kind);
@@ -1087,6 +1090,4 @@ pub trait Pass {
             self.visit_expression(item);
         }
     }
-
 }
-

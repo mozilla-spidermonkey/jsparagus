@@ -5,6 +5,14 @@ import subprocess
 import json
 
 
+def write_impl(f, indentation, string, *format_args):
+    if len(format_args) == 0:
+        formatted = string
+    else:
+        formatted = string.format(*format_args)
+    f.write("    " * indentation + formatted + "\n")
+
+
 def to_snek_case(ident):
     # https://stackoverflow.com/questions/1175208
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', ident)
@@ -30,44 +38,46 @@ def collect_types(ast):
 def stack_value(ast):
     types = collect_types(ast)
     with open("../generated_parser/src/stack_value.rs", "w+") as f:
-        f.write("// WARNING: This file is auto-generated.\n")
-        f.write("\n")
-        f.write("use crate::Token;\n")
-        f.write("use ast::*;\n")
-        f.write("\n")
-        f.write("#[derive(Debug, PartialEq)]\n")
-        f.write("pub enum StackValue {\n")
+        def write(*args):
+            write_impl(f, *args)
+        write(0, "// WARNING: This file is auto-generated.")
+        write(0, "")
+        write(0, "use crate::Token;")
+        write(0, "use ast::*;")
+        write(0, "")
+        write(0, "#[derive(Debug, PartialEq)]")
+        write(0, "pub enum StackValue {")
         for name in types:
-            f.write("    {}(Box<{}>),\n".format(case_name(name), name))
-        f.write("}\n")
-        f.write("\n")
-        f.write("impl StackValue {\n")
-        f.write("    pub fn to_ast<T: StackValueItem>(self) -> Box<T> {\n")
-        f.write("        T::to_ast(self)\n")
-        f.write("    }\n")
-        f.write("}\n")
-        f.write("\n")
-        f.write("pub trait StackValueItem {\n")
-        f.write("    fn to_ast(sv: StackValue) -> Box<Self>;\n")
-        f.write("}\n")
-        f.write("\n")
+            write(1, "{}(Box<{}>),", case_name(name), name)
+        write(0, "}")
+        write(0, "")
+        write(0, "impl StackValue {")
+        write(1, "pub fn to_ast<T: StackValueItem>(self) -> Box<T> {")
+        write(2, "T::to_ast(self)")
+        write(1, "}")
+        write(0, "}")
+        write(0, "")
+        write(0, "pub trait StackValueItem {")
+        write(0, "    fn to_ast(sv: StackValue) -> Box<Self>;")
+        write(0, "}")
+        write(0, "")
         for name in types:
-            f.write("impl StackValueItem for {} {{\n".format(name))
-            f.write("    fn to_ast(sv: StackValue) -> Box<Self> {\n")
-            f.write("        match sv {\n")
-            f.write("            StackValue::{}(v) => v,\n".format(case_name(name)))
-            f.write("            _ => panic!(\"StackValue expected {}, got {{:?}}\", sv),\n".format(name))
-            f.write("        }\n")
-            f.write("    }\n")
-            f.write("}\n")
-            f.write("\n")
+            write(0, "impl StackValueItem for {} {{", name)
+            write(1, "fn to_ast(sv: StackValue) -> Box<Self> {")
+            write(2, "match sv {")
+            write(3, "StackValue::{}(v) => v,", case_name(name))
+            write(3, "_ => panic!(\"StackValue expected {}, got {{:?}}\", sv),", name)
+            write(2, "}")
+            write(1, "}")
+            write(0, "}")
+            write(0, "")
         for name in types:
-            f.write("impl From<Box<{}>> for StackValue {{\n".format(name))
-            f.write("    fn from(val: Box<{}>) -> StackValue {{\n".format(name))
-            f.write("        StackValue::{}(val)\n".format(case_name(name)))
-            f.write("    }\n")
-            f.write("}\n")
-            f.write("\n")
+            write(0, "impl From<Box<{}>> for StackValue {{".format(name))
+            write(1, "fn from(val: Box<{}>) -> StackValue {{".format(name))
+            write(2, "StackValue::{}(val)".format(case_name(name)))
+            write(1, "}")
+            write(0, "}")
+            write(0, "")
 
 
 def pass_(ast):
@@ -75,103 +85,114 @@ def pass_(ast):
         return "visit_{}".format(to_snek_case(case_name(name)))
 
     def emit_call(f, indent, ty, var):
+        def write(*args):
+            write_impl(f, *args)
         if ty.startswith("Vec<") and ty.endswith(">"):
-            f.write("    " * indent + "for item in {} {{\n".format(var))
+            write(indent, "for item in {} {{", var)
             emit_call(f, indent + 1, ty[4:-1], "item")
-            f.write("    " * indent + "}\n")
+            write(indent, "}")
         elif ty.startswith("Option<") and ty.endswith(">"):
-            f.write("    " * indent + "if let Some(item) = {} {{\n".format(var))
+            write(indent, "if let Some(item) = {} {{", var)
             emit_call(f, indent + 1, ty[7:-1], "item")
-            f.write("    " * indent + "}\n")
+            write(indent, "}")
         elif ty == "bool" or ty == "String" or ty == "f64":
             pass
         else:
-            f.write("    " * indent + "self.{}({});\n".format(to_method_name(ty), var))
+            write(indent, "self.{}({});", to_method_name(ty), var)
 
     with open("../emitter/src/lower/pass.rs", "w+") as f:
-        f.write("// WARNING: This file is auto-generated.\n")
-        f.write("\n")
-        f.write("use ast::*;\n")
-        f.write("\n")
-        f.write("pub trait Pass {\n")
+        def write(*args):
+            write_impl(f, *args)
+        write(0, "// WARNING: This file is auto-generated.")
+        write(0, "")
+        write(0, "use ast::*;")
+        write(0, "")
+        write(0, "pub trait Pass {")
         for name, contents in ast.items():
             if name == "Void":
                 # Hack in a quick fix
                 continue
             _type = contents["_type"]
-            f.write("    fn {}(&mut self, ast: &mut {}) {{\n".format(to_method_name(name), name))
+            write(1, "fn {}(&mut self, ast: &mut {}) {{", to_method_name(name), name)
             if _type == "struct":
                 for field, field_type in contents.items():
                     if field != "_type":
                         emit_call(f, 2, field_type, "&mut ast.{}".format(field))
             elif _type == "enum":
-                f.write("        match ast {\n")
+                write(2, "match ast {")
                 for field, field_type in contents.items():
                     if field != "_type":
                         if field_type is None:
-                            f.write("            {}::{} => (),\n".format(name, field))
+                            write(3, "{}::{} => (),", name, field)
                         else:
-                            f.write("            {}::{}(ast) => {{\n".format(name, field))
+                            write(3, "{}::{}(ast) => {{", name, field)
                             emit_call(f, 4, field_type, "ast")
-                            f.write("            }\n")
-                f.write("        }\n")
+                            write(3, "}")
+                write(2, "}")
             else:
                 raise Exception("Invalid type: " + _type)
-            f.write("    }\n")
-            f.write("\n")
-        f.write("}\n")
-        f.write("\n")
+            write(1, "}")
+            write(0, "")
+        write(0, "}")
+        write(0, "")
+
+
+def ast_(ast):
+    with open("src/lib.rs", "w+") as f:
+        def write(*args):
+            write_impl(f, *args)
+        write(0, "// WARNING: This file is auto-generated.")
+        write(0, "")
+        for name, contents in ast.items():
+            _type = contents["_type"]
+            if _type == "struct":
+                if len(contents) <= 1:
+                    write(0, "#[derive(Default, Debug, PartialEq)]")
+                else:
+                    write(0, "#[derive(Debug, PartialEq)]")
+                write(0, "pub struct {} {{", name)
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        write(1, "pub {}: {},", field, field_type)
+                write(0, "}")
+                write(0, "")
+                write(0, "impl {} {{", name)
+                write(1, "pub fn new(")
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        write(1, "{}: {},", field, field_type)
+                write(1, ") -> Self {")
+                write(2, "Self {")
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        write(3, "{},", field)
+                write(2, "}")
+                write(1, "}")
+                write(0, "}")
+                write(0, "")
+            elif _type == "enum":
+                write(0, "#[derive(Debug, PartialEq)]")
+                write(0, "pub enum {} {{", name)
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        if field_type is None:
+                            write(1, "{},", field)
+                        else:
+                            write(1, "{}({}),", field, field_type)
+                write(0, "}")
+                write(0, "")
+            else:
+                raise Exception("Invalid type: " + _type)
 
 
 def main():
     with open("ast.json", "r") as json_file:
         ast = json.load(json_file)
-    with open("src/lib.rs", "w+") as f:
-        f.write("// WARNING: This file is auto-generated.\n")
-        f.write("\n")
-        for name, contents in ast.items():
-            _type = contents["_type"]
-            if _type == "struct":
-                if len(contents) <= 1:
-                    f.write("#[derive(Default, Debug, PartialEq)]\n")
-                else:
-                    f.write("#[derive(Debug, PartialEq)]\n")
-                f.write("pub struct {} {{\n".format(name))
-                for field, field_type in contents.items():
-                    if field != "_type":
-                        f.write("    pub {}: {},\n".format(field, field_type))
-                f.write("}\n")
-                f.write("\n")
-                f.write("impl {} {{\n".format(name))
-                f.write("    pub fn new(\n")
-                for field, field_type in contents.items():
-                    if field != "_type":
-                        f.write("    {}: {},\n".format(field, field_type))
-                f.write("    ) -> Self {\n")
-                f.write("        Self {\n")
-                for field, field_type in contents.items():
-                    if field != "_type":
-                        f.write("            {},\n".format(field))
-                f.write("        }\n")
-                f.write("    }\n")
-                f.write("}\n")
-                f.write("\n")
-            elif _type == "enum":
-                f.write("#[derive(Debug, PartialEq)]\n")
-                f.write("pub enum {} {{\n".format(name))
-                for field, field_type in contents.items():
-                    if field != "_type":
-                        if field_type is None:
-                            f.write("    {},\n".format(field))
-                        else:
-                            f.write("    {}({}),\n".format(field, field_type))
-                f.write("}\n")
-                f.write("\n")
-            else:
-                raise Exception("Invalid type: " + _type)
+    ast_(ast)
     stack_value(ast)
     pass_(ast)
     subprocess.run(['cargo', 'fmt'])
+    subprocess.run(['cargo', 'fmt'], cwd="../emitter")
 
 
 if __name__ == "__main__":

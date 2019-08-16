@@ -6,10 +6,7 @@ pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
 }
 
-impl<Iter> Lexer<Iter>
-where
-    Iter: Iterator<Item = char>,
-{
+impl<Iter: Iterator<Item = char>> Lexer<Iter> {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
             chars: chars.peekable(),
