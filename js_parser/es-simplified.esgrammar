@@ -1220,11 +1220,15 @@ ArrowFunction[In, Yield, Await] :
 
 ArrowParameters[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
-  CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await] #parencover
+    => arrow_parameters_bare($0)
+  CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+    => arrow_parameters_parenthesized($0)
 
 ConciseBody[In] :
   [lookahead != `{` ] AssignmentExpression[?In, ~Yield, ~Await]
+    => concise_body_expression($0)
   `{` FunctionBody[~Yield, ~Await] `}`
+    => concise_body_block($1)
 
 
 ArrowFormalParameters[Yield, Await] :
@@ -1336,14 +1340,19 @@ AwaitExpression[Yield] :
 
 AsyncArrowFunction[In, Yield, Await] :
   `async` AsyncArrowBindingIdentifier[?Yield] `=>` AsyncConciseBody[?In]
-  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] `=>` AsyncConciseBody[?In] #callcover
+    => async_arrow_function(arrow_parameters_bare($1), $3)
+  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] `=>` AsyncConciseBody[?In]
+    => async_arrow_function(async_arrow_parameters($0), $2)
 
 AsyncConciseBody[In] :
   [lookahead != `{`] AssignmentExpression[?In, ~Yield, +Await]
+    => concise_body_expression($0)
   `{` AsyncFunctionBody `}`
+    => concise_body_block($1)
 
 AsyncArrowBindingIdentifier[Yield] :
   BindingIdentifier[?Yield, +Await]
+    => $0
 
 CoverCallExpressionAndAsyncArrowHead[Yield, Await] :
   MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]

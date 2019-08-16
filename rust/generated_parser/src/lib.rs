@@ -8135,20 +8135,20 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrowFunction
         }
         199 => {
-            // AsyncArrowFunction ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody => AsyncArrowFunction 0($0, $1, $2, $3)
+            // AsyncArrowFunction ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody => async_arrow_function(arrow_parameters_bare($1), $3)
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.async_arrow_function_p0(x1, x3)));
+            stack.push(StackValue::from(handler.async_arrow_function(handler.arrow_parameters_bare(x1), x3)));
             NonterminalId::AsyncArrowFunction
         }
         200 => {
-            // AsyncArrowFunction ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody => AsyncArrowFunction 1($0, $1, $2)
+            // AsyncArrowFunction ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody => async_arrow_function(async_arrow_parameters($0), $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.async_arrow_function_p1(x0, x2)));
+            stack.push(StackValue::from(handler.async_arrow_function(handler.async_arrow_parameters(x0), x2)));
             NonterminalId::AsyncArrowFunction
         }
         201 => {
@@ -8503,63 +8503,63 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LogicalOrExpression
         }
         255 => {
-            // ArrowParameters ::= BindingIdentifier => ArrowParameters 0($0)
+            // ArrowParameters ::= BindingIdentifier => arrow_parameters_bare($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.arrow_parameters_p0(x0)));
+            stack.push(StackValue::from(handler.arrow_parameters_bare(x0)));
             NonterminalId::ArrowParameters
         }
         256 => {
-            // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => ArrowParameters 1($0)
+            // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => arrow_parameters_parenthesized($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.arrow_parameters_p1(x0)));
+            stack.push(StackValue::from(handler.arrow_parameters_parenthesized(x0)));
             NonterminalId::ArrowParameters
         }
         257 => {
-            // ConciseBody ::= [lookahead != '{'] AssignmentExpression => ConciseBody 0($0)
+            // ConciseBody ::= [lookahead != '{'] AssignmentExpression => concise_body_expression($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.concise_body_p0(x0)));
+            stack.push(StackValue::from(handler.concise_body_expression(x0)));
             NonterminalId::ConciseBody
         }
         258 => {
-            // ConciseBody ::= "{" "}" => ConciseBody 1($0, function_body(function_statement_list(None)), $1)
+            // ConciseBody ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.concise_body_p1(handler.function_body(handler.function_statement_list(None)))));
+            stack.push(StackValue::from(handler.concise_body_block(handler.function_body(handler.function_statement_list(None)))));
             NonterminalId::ConciseBody
         }
         259 => {
-            // ConciseBody ::= "{" FunctionBody "}" => ConciseBody 1($0, $1, $2)
+            // ConciseBody ::= "{" FunctionBody "}" => concise_body_block($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.concise_body_p1(x1)));
+            stack.push(StackValue::from(handler.concise_body_block(x1)));
             NonterminalId::ConciseBody
         }
         260 => {
-            // AsyncArrowBindingIdentifier ::= BindingIdentifier => AsyncArrowBindingIdentifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.async_arrow_binding_identifier(x0)));
+            // AsyncArrowBindingIdentifier ::= BindingIdentifier => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::AsyncArrowBindingIdentifier
         }
         261 => {
-            // AsyncConciseBody ::= [lookahead != '{'] AssignmentExpression => AsyncConciseBody 0($0)
+            // AsyncConciseBody ::= [lookahead != '{'] AssignmentExpression => concise_body_expression($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.async_concise_body_p0(x0)));
+            stack.push(StackValue::from(handler.concise_body_expression(x0)));
             NonterminalId::AsyncConciseBody
         }
         262 => {
-            // AsyncConciseBody ::= "{" "}" => AsyncConciseBody 1($0, AsyncFunctionBody(function_body(function_statement_list(None))), $1)
+            // AsyncConciseBody ::= "{" "}" => concise_body_block(AsyncFunctionBody(function_body(function_statement_list(None))))
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.async_concise_body_p1(handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
+            stack.push(StackValue::from(handler.concise_body_block(handler.async_function_body(handler.function_body(handler.function_statement_list(None))))));
             NonterminalId::AsyncConciseBody
         }
         263 => {
-            // AsyncConciseBody ::= "{" AsyncFunctionBody "}" => AsyncConciseBody 1($0, $1, $2)
+            // AsyncConciseBody ::= "{" AsyncFunctionBody "}" => concise_body_block($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.async_concise_body_p1(x1)));
+            stack.push(StackValue::from(handler.concise_body_block(x1)));
             NonterminalId::AsyncConciseBody
         }
         264 => {

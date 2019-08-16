@@ -1407,41 +1407,42 @@ impl AstBuilder {
         }
     }
 
-    // ArrowFunction ::= ArrowParameters "=>" ConciseBody => ArrowFunction($0, $1, $2)
+    // ArrowFunction : ArrowParameters `=>` ConciseBody
     pub fn arrow_function(
         &self,
-        a0: Box<FormalParameters>,
-        a1: Box<FunctionBody>,
-    ) -> Box<ArrowExpression> {
-        // TODO: ArrowExpressionBody::Expression
-        Box::new(ArrowExpression::new(
-            false,
-            *a0,
-            ArrowExpressionBody::FunctionBody(*a1),
-        ))
+        params: Box<FormalParameters>,
+        body: Box<ArrowExpressionBody>,
+    ) -> Box<Expression> {
+        Box::new(Expression::ArrowExpression(ArrowExpression {
+            is_async: false,
+            params: *params,
+            body: *body,
+        }))
     }
-    // ArrowParameters ::= BindingIdentifier => ArrowParameters 0($0)
-    pub fn arrow_parameters_p0(&self, a0: Box<BindingIdentifier>) -> Box<FormalParameters> {
-        Box::new(FormalParameters::new(
-            vec![Parameter::Binding(Binding::BindingIdentifier(*a0))],
-            None,
-        ))
+
+    // ArrowParameters : BindingIdentifier
+    pub fn arrow_parameters_bare(&self, identifier: Box<BindingIdentifier>) -> Box<FormalParameters> {
+        Box::new(FormalParameters {
+            items: vec![Parameter::Binding(Binding::BindingIdentifier(*identifier))],
+            rest: None,
+        })
     }
-    // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => ArrowParameters 1($0)
-    pub fn arrow_parameters_p1(&self, a0: Box<Expression>) -> Box<Expression> {
+
+    // ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+    pub fn arrow_parameters_parenthesized(&self, a0: Box<Expression>) -> Box<Expression> {
         unimplemented!()
     }
-    // ConciseBody ::= [lookahead != '{'] AssignmentExpression => ConciseBody 0($0)
-    pub fn concise_body_p0(&self, a0: Box<Expression>) -> Box<FunctionBody> {
-        Box::new(FunctionBody::new(
-            Vec::new(),
-            vec![Statement::ExpressionStatement(a0)],
-        ))
+
+    // ConciseBody : [lookahead != `{`] AssignmentExpression
+    pub fn concise_body_expression(&self, expression: Box<Expression>) -> Box<ArrowExpressionBody> {
+        Box::new(ArrowExpressionBody::Expression(expression))
     }
-    // ConciseBody ::= "{" FunctionBody "}" => ConciseBody 1($0, $1, $2)
-    pub fn concise_body_p1(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
-        a0
+
+    // ConciseBody : `{` FunctionBody `}`
+    pub fn concise_body_block(&self, body: Box<FunctionBody>) -> Box<ArrowExpressionBody> {
+        Box::new(ArrowExpressionBody::FunctionBody(*body))
     }
+
     // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, $2, $3, $4, $5, $6)
     pub fn method_definition_p0(
         &self,
@@ -1584,30 +1585,24 @@ impl AstBuilder {
         Box::new(Expression::AwaitExpression(AwaitExpression::new(operand)))
     }
 
-    // AsyncArrowFunction ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody => AsyncArrowFunction 0($0, $1, $2, $3)
-    pub fn async_arrow_function_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(AsyncArrowFunction::new())
+    // AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody
+    // AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody
+    pub fn async_arrow_function(
+        &self,
+        params: Box<FormalParameters>,
+        body: Box<ArrowExpressionBody>,
+    ) -> Box<Expression> {
+        Box::new(Expression::ArrowExpression(ArrowExpression {
+            is_async: true,
+            params: *params,
+            body: *body,
+        }))
     }
-    // AsyncArrowFunction ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody => AsyncArrowFunction 1($0, $1, $2)
-    pub fn async_arrow_function_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(AsyncArrowFunction::new())
+
+    pub fn async_arrow_parameters(&self, call_expression: Box<Expression>) -> Box<FormalParameters> {
+        unimplemented!()
     }
-    // AsyncConciseBody ::= [lookahead != '{'] AssignmentExpression => AsyncConciseBody 0($0)
-    pub fn async_concise_body_p0(&self, a0: Box<Expression>) -> Box<FunctionBody> {
-        // TODO
-        Box::new(FunctionBody::new(
-            Vec::new(),
-            vec![Statement::ExpressionStatement(a0)],
-        ))
-    }
-    // AsyncConciseBody ::= "{" AsyncFunctionBody "}" => AsyncConciseBody 1($0, $1, $2)
-    pub fn async_concise_body_p1(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
-        a0
-    }
-    // AsyncArrowBindingIdentifier ::= BindingIdentifier => AsyncArrowBindingIdentifier($0)
-    pub fn async_arrow_binding_identifier(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(AsyncArrowBindingIdentifier::new())
-    }
+
     // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => CoverCallExpressionAndAsyncArrowHead($0, $1)
     pub fn cover_call_expression_and_async_arrow_head(
         &self,
