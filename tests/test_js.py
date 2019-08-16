@@ -138,22 +138,22 @@ class ESTestCase(unittest.TestCase):
 
         self.assertEqual(
             self.parse(["/xyzzy/", "g;"]),
-            ('Script',
-             ('ScriptBody',
+            ('script',
+             ('script_body',
               ('StatementList 0',
-               ('ExpressionStatement',
-                ('PrimaryExpression 10', '/xyzzy/g'))))))
+               ('expression_statement',
+                ('regexp_literal', '/xyzzy/g'))))))
 
         self.assertEqual(
             self.parse(['x/', '=2;']),
-            ('Script',
-             ('ScriptBody',
+            ('script',
+             ('script_body',
               ('StatementList 0',
-               ('ExpressionStatement',
-                ('AssignmentExpression 5',
-                 ('PrimaryExpression 1', ('IdentifierReference', 'x')),
-                 ('AssignmentOperator 1', '/='),
-                 ('Literal 2', '2')))))))
+               ('expression_statement',
+                ('compound_assignment_expr',
+                 ('identifier_expr', ('IdentifierReference', 'x')),
+                 ('box_assign_op', ('div_assign_op',)),
+                 ('numeric_literal', '2')))))))
 
     def test_can_close(self):
         self.assert_can_close_after([])
