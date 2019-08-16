@@ -794,19 +794,6 @@ impl AstBuilder {
         Box::new(VariableDeclarationKind::Const)
     }
 
-    // BindingList ::= LexicalBinding => BindingList 0($0)
-    pub fn binding_list_p0(&self, a0: Box<VariableDeclarator>) -> Box<Vec<VariableDeclarator>> {
-        Box::new(vec![*a0])
-    }
-    // BindingList ::= BindingList "," LexicalBinding => BindingList 1($0, $1, $2)
-    pub fn binding_list_p1(
-        &self,
-        mut a0: Box<Vec<VariableDeclarator>>,
-        a1: Box<VariableDeclarator>,
-    ) -> Box<Vec<VariableDeclarator>> {
-        a0.push(*a1);
-        a0
-    }
     // LexicalBinding ::= BindingIdentifier Initializer => LexicalBinding 0($0, Some($1))
     pub fn lexical_binding_p0(
         &self,
@@ -819,26 +806,45 @@ impl AstBuilder {
     pub fn lexical_binding_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(LexicalBinding::new())
     }
-    // VariableStatement ::= "var" VariableDeclarationList ErrorSymbol(asi) => VariableStatement($0, $1)
+
+    // VariableStatement : `var` VariableDeclarationList `;`
     pub fn variable_statement(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ModuleItem::new())
     }
-    // VariableDeclarationList ::= VariableDeclaration => VariableDeclarationList 0($0)
-    pub fn variable_declaration_list_single(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(VariableDeclarationList::new())
+
+    // VariableDeclarationList : VariableDeclaration
+    // BindingList : LexicalBinding
+    pub fn variable_declaration_list_single(
+        &self,
+        decl: Box<VariableDeclarator>,
+    ) -> Box<Vec<VariableDeclarator>> {
+        Box::new(vec![*decl])
     }
-    // VariableDeclarationList ::= VariableDeclarationList "," VariableDeclaration => VariableDeclarationList 1($0, $1, $2)
-    pub fn variable_declaration_list_append(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(VariableDeclarationList::new())
+
+    // VariableDeclarationList : VariableDeclarationList `,` VariableDeclaration
+    // BindingList : BindingList `,` LexicalBinding
+    pub fn variable_declaration_list_append(
+        &self,
+        mut list: Box<Vec<VariableDeclarator>>,
+        decl: Box<VariableDeclarator>,
+    ) -> Box<Vec<VariableDeclarator>> {
+        list.push(*decl);
+        list
     }
-    // VariableDeclaration ::= BindingIdentifier Initializer => VariableDeclaration 0($0, Some($1))
-    pub fn variable_declaration_p0(&self, a0: Box<Void>, a1: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(VariableDeclaration::new())
+
+    // VariableDeclaration : BindingIdentifier Initializer?
+    // VariableDeclaration : BindingPattern Initializer
+    pub fn variable_declaration(
+        &self,
+        binding: Box<Binding>,
+        init: Option<Box<Expression>>,
+    ) -> Box<VariableDeclarator> {
+        Box::new(VariableDeclarator {
+            binding: *binding,
+            init,
+        })
     }
-    // VariableDeclaration ::= BindingPattern Initializer => VariableDeclaration 1($0, $1)
-    pub fn variable_declaration_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(VariableDeclaration::new())
-    }
+
     // BindingPattern ::= ObjectBindingPattern => BindingPattern 0($0)
     pub fn binding_pattern_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(BindingPattern::new())

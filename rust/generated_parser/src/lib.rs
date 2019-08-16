@@ -8024,17 +8024,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LetOrConst
         }
         184 => {
-            // BindingList ::= LexicalBinding => BindingList 0($0)
+            // BindingList ::= LexicalBinding => variable_declaration_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_list_p0(x0)));
+            stack.push(StackValue::from(handler.variable_declaration_list_single(x0)));
             NonterminalId::BindingList
         }
         185 => {
-            // BindingList ::= BindingList "," LexicalBinding => BindingList 1($0, $1, $2)
+            // BindingList ::= BindingList "," LexicalBinding => variable_declaration_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_list_p1(x0, x2)));
+            stack.push(StackValue::from(handler.variable_declaration_list_append(x0, x2)));
             NonterminalId::BindingList
         }
         186 => {
@@ -8236,23 +8236,23 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AssignmentOperator
         }
         215 => {
-            // VariableDeclaration ::= BindingIdentifier => VariableDeclaration 0($0, None)
+            // VariableDeclaration ::= BindingIdentifier => variable_declaration(binding_identifier($0), None)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.variable_declaration_p0(x0, None)));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_identifier(x0), None)));
             NonterminalId::VariableDeclaration
         }
         216 => {
-            // VariableDeclaration ::= BindingIdentifier Initializer => VariableDeclaration 0($0, Some($1))
+            // VariableDeclaration ::= BindingIdentifier Initializer => variable_declaration(binding_identifier($0), Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.variable_declaration_p0(x0, Some(x1))));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_identifier(x0), Some(x1))));
             NonterminalId::VariableDeclaration
         }
         217 => {
-            // VariableDeclaration ::= BindingPattern Initializer => VariableDeclaration 1($0, $1)
+            // VariableDeclaration ::= BindingPattern Initializer => variable_declaration(binding_pattern($0), Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.variable_declaration_p1(x0, x1)));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_pattern(x0), Some(x1))));
             NonterminalId::VariableDeclaration
         }
         218 => {
@@ -8435,23 +8435,23 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ClassBody
         }
         245 => {
-            // LexicalBinding ::= BindingIdentifier => LexicalBinding 0($0, None)
+            // LexicalBinding ::= BindingIdentifier => variable_declaration(binding_identifier($0), None)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.lexical_binding_p0(x0, None)));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_identifier(x0), None)));
             NonterminalId::LexicalBinding
         }
         246 => {
-            // LexicalBinding ::= BindingIdentifier Initializer => LexicalBinding 0($0, Some($1))
+            // LexicalBinding ::= BindingIdentifier Initializer => variable_declaration(binding_identifier($0), Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.lexical_binding_p0(x0, Some(x1))));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_identifier(x0), Some(x1))));
             NonterminalId::LexicalBinding
         }
         247 => {
-            // LexicalBinding ::= BindingPattern Initializer => LexicalBinding 1($0, $1)
+            // LexicalBinding ::= BindingPattern Initializer => variable_declaration(binding_pattern($0), Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.lexical_binding_p1(x0, x1)));
+            stack.push(StackValue::from(handler.variable_declaration(handler.binding_pattern(x0), Some(x1))));
             NonterminalId::LexicalBinding
         }
         248 => {
@@ -8633,15 +8633,15 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Initializer
         }
         274 => {
-            // BindingPattern ::= ObjectBindingPattern => BindingPattern 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_pattern_p0(x0)));
+            // BindingPattern ::= ObjectBindingPattern => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::BindingPattern
         }
         275 => {
-            // BindingPattern ::= ArrayBindingPattern => BindingPattern 1($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_pattern_p1(x0)));
+            // BindingPattern ::= ArrayBindingPattern => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::BindingPattern
         }
         276 => {

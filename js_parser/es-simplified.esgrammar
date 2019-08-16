@@ -947,11 +947,15 @@ LetOrConst :
 
 BindingList[In, Yield, Await] :
   LexicalBinding[?In, ?Yield, ?Await]
+    => variable_declaration_list_single($0)
   BindingList[?In, ?Yield, ?Await] `,` LexicalBinding[?In, ?Yield, ?Await]
+    => variable_declaration_list_append($0, $2)
 
 LexicalBinding[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+    => variable_declaration(binding_identifier($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
+    => variable_declaration(binding_pattern($0), Some($1))
 
 
 VariableStatement[Yield, Await] :
@@ -966,12 +970,14 @@ VariableDeclarationList[In, Yield, Await] :
 
 VariableDeclaration[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+    => variable_declaration(binding_identifier($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
+    => variable_declaration(binding_pattern($0), Some($1))
 
 
 BindingPattern[Yield, Await] :
-  ObjectBindingPattern[?Yield, ?Await]
-  ArrayBindingPattern[?Yield, ?Await]
+  ObjectBindingPattern[?Yield, ?Await] => $0
+  ArrayBindingPattern[?Yield, ?Await] => $0
 
 ObjectBindingPattern[Yield, Await] :
   `{` `}`
