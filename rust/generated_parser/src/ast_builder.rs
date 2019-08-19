@@ -79,9 +79,8 @@ impl AstBuilder {
     }
 
     // PrimaryExpression : RegularExpressionLiteral
-    pub fn regexp_literal(&self, a0: Box<Token>) -> Box<Expression> {
-        // TODO
-        let pattern: String = "".to_string();
+    pub fn regexp_literal(&self, token: Box<Token>) -> Box<Expression> {
+        let pattern: String = token.value.unwrap();
         let global: bool = false;
         let ignore_case: bool = false;
         let multi_line: bool = false;
@@ -162,26 +161,35 @@ impl AstBuilder {
     }
 
     // Literal : BooleanLiteral
-    pub fn boolean_literal(&self, _token: Box<Token>) -> Box<Expression> {
-        #![allow(unreachable_code)]
+    pub fn boolean_literal(&self, token: Box<Token>) -> Box<Expression> {
+        let s = token.value.unwrap();
+        assert!(&s == "true" || &s == "false");
+
         Box::new(Expression::LiteralBooleanExpression(
-            LiteralBooleanExpression::new(unimplemented!()),
+            LiteralBooleanExpression {
+                value: &s == "true",
+            },
         ))
     }
 
     // Literal : NumericLiteral
-    pub fn numeric_literal(&self, _token: Box<Token>) -> Box<Expression> {
-        // TODO
+    pub fn numeric_literal(&self, token: Box<Token>) -> Box<Expression> {
+        let s = token.value.unwrap();
+
+        // BUG: Not all syntax is supported yet.
+        let nv = s.parse::<f64>().unwrap_or(0.0);
+
         Box::new(Expression::LiteralNumericExpression(
-            LiteralNumericExpression::new(0.0),
+            LiteralNumericExpression::new(nv),
         ))
     }
 
     // Literal : StringLiteral
-    pub fn string_literal(&self, a0: Box<Token>) -> Box<Expression> {
-        // TODO
+    pub fn string_literal(&self, token: Box<Token>) -> Box<Expression> {
         Box::new(Expression::LiteralStringExpression(
-            LiteralStringExpression::new("".to_string()),
+            LiteralStringExpression {
+                value: token.value.unwrap(),
+            },
         ))
     }
 
@@ -413,17 +421,21 @@ impl AstBuilder {
         ))
     }
 
+    fn identifier_name(&self, token: Box<Token>) -> IdentifierName {
+        IdentifierName::new(token.value.unwrap())
+    }
+
     // MemberExpression : MemberExpression `.` IdentifierName
     // CallExpression : CallExpression `.` IdentifierName
     pub fn static_member_expr(
         &self,
         object: Box<Expression>,
-        _identifier: Box<Token>,
+        identifier_token: Box<Token>,
     ) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
                 ExpressionOrSuper::Expression(object),
-                IdentifierName::new("".to_string()), // TODO
+                self.identifier_name(identifier_token),
             )),
         ))
     }
@@ -462,12 +474,11 @@ impl AstBuilder {
     }
 
     // SuperProperty : `super` `.` IdentifierName
-    pub fn super_property_static(&self, a0: Box<Void>) -> Box<Expression> {
-        #![allow(unreachable_code)]
+    pub fn super_property_static(&self, identifier_token: Box<Token>) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression {
                 object: ExpressionOrSuper::Super,
-                property: unimplemented!(),
+                property: self.identifier_name(identifier_token),
             }),
         ))
     }
