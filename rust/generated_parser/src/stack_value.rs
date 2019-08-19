@@ -1,5 +1,8 @@
 // WARNING: This file is auto-generated.
 
+#![feature(custom_inner_attributes)]
+#![rustfmt::skip]
+
 use crate::Token;
 use ast::*;
 
