@@ -93,7 +93,10 @@ impl AstBuilder {
     }
 
     // PrimaryExpression : TemplateLiteral
-    pub fn untagged_template_expr(&self, template_literal: Box<TemplateExpression>) -> Box<Expression> {
+    pub fn untagged_template_expr(
+        &self,
+        template_literal: Box<TemplateExpression>,
+    ) -> Box<Expression> {
         Box::new(Expression::TemplateExpression(*template_literal))
     }
 
@@ -184,12 +187,10 @@ impl AstBuilder {
 
     // ArrayLiteral : `[` Elision? `]`
     pub fn array_literal_empty(&self, elision: Option<Box<ArrayExpression>>) -> Box<Expression> {
-        Box::new(Expression::ArrayExpression(
-            match elision {
-                None => ArrayExpression { elements: vec![] },
-                Some(array) => *array
-            }
-        ))
+        Box::new(Expression::ArrayExpression(match elision {
+            None => ArrayExpression { elements: vec![] },
+            Some(array) => *array,
+        }))
     }
 
     // ArrayLiteral : `[` ElementList `]`
@@ -297,7 +298,10 @@ impl AstBuilder {
     }
 
     // PropertyDefinitionList : PropertyDefinition
-    pub fn property_definition_list_single(&self, property: Box<ObjectProperty>) -> Box<ObjectExpression> {
+    pub fn property_definition_list_single(
+        &self,
+        property: Box<ObjectProperty>,
+    ) -> Box<ObjectExpression> {
         Box::new(ObjectExpression::new(vec![property]))
     }
 
@@ -305,7 +309,7 @@ impl AstBuilder {
     pub fn property_definition_list_append(
         &self,
         mut object: Box<ObjectExpression>,
-        property: Box<ObjectProperty>
+        property: Box<ObjectProperty>,
     ) -> Box<ObjectExpression> {
         object.properties.push(property);
         object
@@ -396,7 +400,11 @@ impl AstBuilder {
 
     // MemberExpression : MemberExpression `[` Expression `]`
     // CallExpression : CallExpression `[` Expression `]`
-    pub fn computed_member_expr(&self, object: Box<Expression>, expression: Box<Expression>) -> Box<Expression> {
+    pub fn computed_member_expr(
+        &self,
+        object: Box<Expression>,
+        expression: Box<Expression>,
+    ) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
             MemberExpression::ComputedMemberExpression(ComputedMemberExpression::new(
                 ExpressionOrSuper::Expression(object),
@@ -407,7 +415,11 @@ impl AstBuilder {
 
     // MemberExpression : MemberExpression `.` IdentifierName
     // CallExpression : CallExpression `.` IdentifierName
-    pub fn static_member_expr(&self, object: Box<Expression>, _identifier: Box<Token>) -> Box<Expression> {
+    pub fn static_member_expr(
+        &self,
+        object: Box<Expression>,
+        _identifier: Box<Token>,
+    ) -> Box<Expression> {
         Box::new(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
                 ExpressionOrSuper::Expression(object),
@@ -421,7 +433,7 @@ impl AstBuilder {
     pub fn tagged_template_expr(
         &self,
         tag: Box<Expression>,
-        mut template_literal: Box<TemplateExpression>
+        mut template_literal: Box<TemplateExpression>,
     ) -> Box<Expression> {
         template_literal.tag = Some(tag);
         Box::new(Expression::TemplateExpression(*template_literal))
@@ -431,7 +443,7 @@ impl AstBuilder {
     pub fn new_expr_with_arguments(
         &self,
         callee: Box<Expression>,
-        arguments: Box<Arguments>
+        arguments: Box<Arguments>,
     ) -> Box<Expression> {
         Box::new(Expression::NewExpression(NewExpression {
             callee,
@@ -445,7 +457,7 @@ impl AstBuilder {
             MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
                 object: ExpressionOrSuper::Super,
                 expression: expression,
-            })
+            }),
         ))
     }
 
@@ -456,7 +468,7 @@ impl AstBuilder {
             MemberExpression::StaticMemberExpression(StaticMemberExpression {
                 object: ExpressionOrSuper::Super,
                 property: unimplemented!(),
-            })
+            }),
         ))
     }
 
@@ -498,14 +510,22 @@ impl AstBuilder {
 
     // ArgumentList : AssignmentExpression
     // ArgumentList : ArgumentList `,` AssignmentExpression
-    pub fn arguments_append(&self, mut arguments: Box<Arguments>, expression: Box<Expression>) -> Box<Arguments> {
+    pub fn arguments_append(
+        &self,
+        mut arguments: Box<Arguments>,
+        expression: Box<Expression>,
+    ) -> Box<Arguments> {
         arguments.args.push(Argument::Expression(expression));
         arguments
     }
 
     // ArgumentList : `...` AssignmentExpression
     // ArgumentList : ArgumentList `,` `...` AssignmentExpression
-    pub fn arguments_append_spread(&self, mut arguments: Box<Arguments>, expression: Box<Expression>) -> Box<Arguments> {
+    pub fn arguments_append_spread(
+        &self,
+        mut arguments: Box<Arguments>,
+        expression: Box<Expression>,
+    ) -> Box<Arguments> {
         arguments.args.push(Argument::SpreadElement(expression));
         arguments
     }
@@ -602,31 +622,81 @@ impl AstBuilder {
         )))
     }
 
-    pub fn equals_op(&self) -> BinaryOperator { BinaryOperator::Equals }
-    pub fn not_equals_op(&self) -> BinaryOperator { BinaryOperator::NotEquals }
-    pub fn strict_equals_op(&self) -> BinaryOperator { BinaryOperator::StrictEquals }
-    pub fn strict_not_equals_op(&self) -> BinaryOperator { BinaryOperator::StrictNotEquals }
-    pub fn less_than_op(&self) -> BinaryOperator { BinaryOperator::LessThan }
-    pub fn less_than_or_equal_op(&self) -> BinaryOperator { BinaryOperator::LessThanOrEqual }
-    pub fn greater_than_op(&self) -> BinaryOperator { BinaryOperator::GreaterThan }
-    pub fn greater_than_or_equal_op(&self) -> BinaryOperator { BinaryOperator::GreaterThanOrEqual }
-    pub fn in_op(&self) -> BinaryOperator { BinaryOperator::In }
-    pub fn instanceof_op(&self) -> BinaryOperator { BinaryOperator::Instanceof }
-    pub fn left_shift_op(&self) -> BinaryOperator { BinaryOperator::LeftShift }
-    pub fn right_shift_op(&self) -> BinaryOperator { BinaryOperator::RightShift }
-    pub fn right_shift_ext_op(&self) -> BinaryOperator { BinaryOperator::RightShiftExt }
-    pub fn add_op(&self) -> BinaryOperator { BinaryOperator::Add }
-    pub fn sub_op(&self) -> BinaryOperator { BinaryOperator::Sub }
-    pub fn mul_op(&self) -> BinaryOperator { BinaryOperator::Mul }
-    pub fn div_op(&self) -> BinaryOperator { BinaryOperator::Div }
-    pub fn mod_op(&self) -> BinaryOperator { BinaryOperator::Mod }
-    pub fn pow_op(&self) -> BinaryOperator { BinaryOperator::Pow }
-    pub fn comma_op(&self) -> BinaryOperator { BinaryOperator::Comma }
-    pub fn logical_or_op(&self) -> BinaryOperator { BinaryOperator::LogicalOr }
-    pub fn logical_and_op(&self) -> BinaryOperator { BinaryOperator::LogicalAnd }
-    pub fn bitwise_or_op(&self) -> BinaryOperator { BinaryOperator::BitwiseOr }
-    pub fn bitwise_xor_op(&self) -> BinaryOperator { BinaryOperator::BitwiseXor }
-    pub fn bitwise_and_op(&self) -> BinaryOperator { BinaryOperator::BitwiseAnd }
+    pub fn equals_op(&self) -> BinaryOperator {
+        BinaryOperator::Equals
+    }
+    pub fn not_equals_op(&self) -> BinaryOperator {
+        BinaryOperator::NotEquals
+    }
+    pub fn strict_equals_op(&self) -> BinaryOperator {
+        BinaryOperator::StrictEquals
+    }
+    pub fn strict_not_equals_op(&self) -> BinaryOperator {
+        BinaryOperator::StrictNotEquals
+    }
+    pub fn less_than_op(&self) -> BinaryOperator {
+        BinaryOperator::LessThan
+    }
+    pub fn less_than_or_equal_op(&self) -> BinaryOperator {
+        BinaryOperator::LessThanOrEqual
+    }
+    pub fn greater_than_op(&self) -> BinaryOperator {
+        BinaryOperator::GreaterThan
+    }
+    pub fn greater_than_or_equal_op(&self) -> BinaryOperator {
+        BinaryOperator::GreaterThanOrEqual
+    }
+    pub fn in_op(&self) -> BinaryOperator {
+        BinaryOperator::In
+    }
+    pub fn instanceof_op(&self) -> BinaryOperator {
+        BinaryOperator::Instanceof
+    }
+    pub fn left_shift_op(&self) -> BinaryOperator {
+        BinaryOperator::LeftShift
+    }
+    pub fn right_shift_op(&self) -> BinaryOperator {
+        BinaryOperator::RightShift
+    }
+    pub fn right_shift_ext_op(&self) -> BinaryOperator {
+        BinaryOperator::RightShiftExt
+    }
+    pub fn add_op(&self) -> BinaryOperator {
+        BinaryOperator::Add
+    }
+    pub fn sub_op(&self) -> BinaryOperator {
+        BinaryOperator::Sub
+    }
+    pub fn mul_op(&self) -> BinaryOperator {
+        BinaryOperator::Mul
+    }
+    pub fn div_op(&self) -> BinaryOperator {
+        BinaryOperator::Div
+    }
+    pub fn mod_op(&self) -> BinaryOperator {
+        BinaryOperator::Mod
+    }
+    pub fn pow_op(&self) -> BinaryOperator {
+        BinaryOperator::Pow
+    }
+    pub fn comma_op(&self) -> BinaryOperator {
+        BinaryOperator::Comma
+    }
+    pub fn logical_or_op(&self) -> BinaryOperator {
+        BinaryOperator::LogicalOr
+    }
+    pub fn logical_and_op(&self) -> BinaryOperator {
+        BinaryOperator::LogicalAnd
+    }
+    pub fn bitwise_or_op(&self) -> BinaryOperator {
+        BinaryOperator::BitwiseOr
+    }
+    pub fn bitwise_xor_op(&self) -> BinaryOperator {
+        BinaryOperator::BitwiseXor
+    }
+    pub fn bitwise_and_op(&self) -> BinaryOperator {
+        BinaryOperator::BitwiseAnd
+    }
 
     // Due to limitations of the current parser generator,
     // MultiplicativeOperators and CompoundAssignmentOperators currently get
@@ -670,12 +740,12 @@ impl AstBuilder {
         &self,
         operator: BinaryOperator,
         left: Box<Expression>,
-        right: Box<Expression>
+        right: Box<Expression>,
     ) -> Box<Expression> {
         Box::new(Expression::BinaryExpression(BinaryExpression {
             operator,
             left,
-            right
+            right,
         }))
     }
 
@@ -689,7 +759,7 @@ impl AstBuilder {
         Box::new(Expression::ConditionalExpression(ConditionalExpression {
             test,
             consequent,
-            alternate
+            alternate,
         }))
     }
 
@@ -701,22 +771,46 @@ impl AstBuilder {
     ) -> Box<Expression> {
         let target = expression_to_assignment_target(left_hand_side);
         Box::new(Expression::AssignmentExpression(AssignmentExpression::new(
-            target, value
+            target, value,
         )))
     }
 
-    pub fn add_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Add }
-    pub fn sub_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Sub }
-    pub fn mul_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Mul }
-    pub fn div_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Div }
-    pub fn mod_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Mod }
-    pub fn pow_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Pow }
-    pub fn left_shift_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::LeftShift }
-    pub fn right_shift_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::RightShift }
-    pub fn right_shift_ext_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::RightShiftExt }
-    pub fn bitwise_or_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Or }
-    pub fn bitwise_xor_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::Xor }
-    pub fn bitwise_and_assign_op(&self) -> CompoundAssignmentOperator { CompoundAssignmentOperator::And }
+    pub fn add_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Add
+    }
+    pub fn sub_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Sub
+    }
+    pub fn mul_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Mul
+    }
+    pub fn div_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Div
+    }
+    pub fn mod_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Mod
+    }
+    pub fn pow_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Pow
+    }
+    pub fn left_shift_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::LeftShift
+    }
+    pub fn right_shift_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::RightShift
+    }
+    pub fn right_shift_ext_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::RightShiftExt
+    }
+    pub fn bitwise_or_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Or
+    }
+    pub fn bitwise_xor_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::Xor
+    }
+    pub fn bitwise_and_assign_op(&self) -> CompoundAssignmentOperator {
+        CompoundAssignmentOperator::And
+    }
 
     pub fn box_assign_op(&self, op: CompoundAssignmentOperator) -> Box<CompoundAssignmentOperator> {
         Box::new(op)
@@ -747,7 +841,7 @@ impl AstBuilder {
                 Some(statements) => *statements,
                 None => vec![],
             },
-            declarations: None
+            declarations: None,
         })
     }
 
@@ -783,10 +877,12 @@ impl AstBuilder {
         kind: Box<VariableDeclarationKind>,
         declarators: Box<Vec<VariableDeclarator>>,
     ) -> Box<VariableDeclarationOrExpression> {
-        Box::new(VariableDeclarationOrExpression::VariableDeclaration(VariableDeclaration {
-            kind: *kind,
-            declarators: *declarators,
-        }))
+        Box::new(VariableDeclarationOrExpression::VariableDeclaration(
+            VariableDeclaration {
+                kind: *kind,
+                declarators: *declarators,
+            },
+        ))
     }
 
     // LetOrConst : `let`
@@ -966,11 +1062,19 @@ impl AstBuilder {
         consequent: Box<Statement>,
         alternate: Option<Box<Statement>>,
     ) -> Box<Statement> {
-        Box::new(Statement::IfStatement(IfStatement { test, consequent, alternate }))
+        Box::new(Statement::IfStatement(IfStatement {
+            test,
+            consequent,
+            alternate,
+        }))
     }
 
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
-    pub fn do_while_statement(&self, block: Box<Statement>, test: Box<Expression>) -> Box<Statement> {
+    pub fn do_while_statement(
+        &self,
+        block: Box<Statement>,
+        test: Box<Expression>,
+    ) -> Box<Statement> {
         Box::new(Statement::DoWhileStatement(DoWhileStatement {
             block,
             test,
@@ -979,10 +1083,7 @@ impl AstBuilder {
 
     // IterationStatement : `while` `(` Expression `)` Statement
     pub fn while_statement(&self, test: Box<Expression>, block: Box<Statement>) -> Box<Statement> {
-        Box::new(Statement::WhileStatement(WhileStatement {
-            test,
-            block,
-        }))
+        Box::new(Statement::WhileStatement(WhileStatement { test, block }))
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
@@ -1003,7 +1104,10 @@ impl AstBuilder {
         }))
     }
 
-    pub fn for_expression(&self, expr: Option<Box<Expression>>) -> Option<VariableDeclarationOrExpression> {
+    pub fn for_expression(
+        &self,
+        expr: Option<Box<Expression>>,
+    ) -> Option<VariableDeclarationOrExpression> {
         expr.map(|expr| VariableDeclarationOrExpression::Expression(expr))
     }
 
@@ -1054,9 +1158,9 @@ impl AstBuilder {
         &self,
         expression: Box<Expression>,
     ) -> VariableDeclarationOrAssignmentTarget {
-        VariableDeclarationOrAssignmentTarget::AssignmentTarget(
-            expression_to_assignment_target(expression),
-        )
+        VariableDeclarationOrAssignmentTarget::AssignmentTarget(expression_to_assignment_target(
+            expression,
+        ))
     }
 
     pub fn unbox_for_declaration(
@@ -1100,13 +1204,15 @@ impl AstBuilder {
         kind: Box<VariableDeclarationKind>,
         binding: Box<Binding>,
     ) -> Box<VariableDeclarationOrAssignmentTarget> {
-        Box::new(VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
-            kind: *kind,
-            declarators: vec![VariableDeclarator {
-                binding: *binding,
-                init: None,
-            }],
-        }))
+        Box::new(VariableDeclarationOrAssignmentTarget::VariableDeclaration(
+            VariableDeclaration {
+                kind: *kind,
+                declarators: vec![VariableDeclarator {
+                    binding: *binding,
+                    init: None,
+                }],
+            },
+        ))
     }
 
     // CatchParameter : BindingIdentifier
@@ -1120,9 +1226,6 @@ impl AstBuilder {
     pub fn binding_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
         Box::new(Binding::BindingPattern(*a0))
     }
-
-
-
 
     // ContinueStatement : `continue` `;`
     // ContinueStatement : `continue` LabelIdentifier `;`
@@ -1190,18 +1293,20 @@ impl AstBuilder {
         default_case: Box<SwitchDefault>,
         post_default_cases: Option<Box<Vec<SwitchCase>>>,
     ) -> Box<Statement> {
-        Box::new(Statement::SwitchStatementWithDefault(SwitchStatementWithDefault {
-            discriminant: Box::new(Expression::LiteralNullExpression),
-            pre_default_cases: match pre_default_cases {
-                None => vec![],
-                Some(boxed) => *boxed,
+        Box::new(Statement::SwitchStatementWithDefault(
+            SwitchStatementWithDefault {
+                discriminant: Box::new(Expression::LiteralNullExpression),
+                pre_default_cases: match pre_default_cases {
+                    None => vec![],
+                    Some(boxed) => *boxed,
+                },
+                default_case: *default_case,
+                post_default_cases: match post_default_cases {
+                    None => vec![],
+                    Some(boxed) => *boxed,
+                },
             },
-            default_case: *default_case,
-            post_default_cases: match post_default_cases {
-                None => vec![],
-                Some(boxed) => *boxed,
-            },
-        }))
+        ))
     }
 
     // CaseClauses : CaseClause
@@ -1246,7 +1351,7 @@ impl AstBuilder {
     pub fn labelled_statement(&self, label: Box<Label>, body: Box<Statement>) -> Box<Statement> {
         Box::new(Statement::LabeledStatement(LabeledStatement {
             label: *label,
-            body
+            body,
         }))
     }
 
@@ -1262,20 +1367,22 @@ impl AstBuilder {
         &self,
         body: Box<Block>,
         catch_clause: Option<Box<CatchClause>>,
-        finally_block: Option<Box<Block>>
+        finally_block: Option<Box<Block>>,
     ) -> Box<Statement> {
         match (catch_clause, finally_block) {
-            (Some(catch_clause), None) =>
+            (Some(catch_clause), None) => {
                 Box::new(Statement::TryCatchStatement(TryCatchStatement {
                     body: *body,
                     catch_clause: *catch_clause,
-                })),
-            (catch_clause, Some(finally_block)) =>
+                }))
+            }
+            (catch_clause, Some(finally_block)) => {
                 Box::new(Statement::TryFinallyStatement(TryFinallyStatement {
                     body: *body,
                     catch_clause: catch_clause.map(|boxed| *boxed),
                     finalizer: *finally_block,
-                })),
+                }))
+            }
             _ => {
                 // can't happen, as the grammar won't accept a bare try-block
                 panic!("try statement requires either a catch or finally block");
@@ -1426,7 +1533,10 @@ impl AstBuilder {
     }
 
     // ArrowParameters : BindingIdentifier
-    pub fn arrow_parameters_bare(&self, identifier: Box<BindingIdentifier>) -> Box<FormalParameters> {
+    pub fn arrow_parameters_bare(
+        &self,
+        identifier: Box<BindingIdentifier>,
+    ) -> Box<FormalParameters> {
         Box::new(FormalParameters {
             items: vec![Parameter::Binding(Binding::BindingIdentifier(*identifier))],
             rest: None,
@@ -1505,7 +1615,9 @@ impl AstBuilder {
 
     // YieldExpression : `yield` `*` AssignmentExpression
     pub fn yield_star_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::YieldGeneratorExpression(YieldGeneratorExpression::new(operand)))
+        Box::new(Expression::YieldGeneratorExpression(
+            YieldGeneratorExpression::new(operand),
+        ))
     }
 
     // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
@@ -1604,7 +1716,10 @@ impl AstBuilder {
         }))
     }
 
-    pub fn async_arrow_parameters(&self, call_expression: Box<Expression>) -> Box<FormalParameters> {
+    pub fn async_arrow_parameters(
+        &self,
+        call_expression: Box<Expression>,
+    ) -> Box<FormalParameters> {
         unimplemented!()
     }
 
