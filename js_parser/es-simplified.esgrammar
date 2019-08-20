@@ -127,6 +127,8 @@ CommonToken ::
   StringLiteral
   Template
 
+Identifier ::
+  TODO
 
 IdentifierName ::
   IdentifierStart
@@ -433,15 +435,15 @@ CodePoint ::
 
 
 IdentifierReference[Yield, Await] :
-  Identifier
+  Identifier => identifier_reference($0)
 
 BindingIdentifier[Yield, Await] :
-  Identifier
+  Identifier => binding_identifier_p0($0)
   `yield`
   `await`
 
 LabelIdentifier[Yield, Await] :
-  Identifier
+  Identifier => label_identifier($0)
 
 PrimaryExpression[Yield, Await] :
   `this`

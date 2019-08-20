@@ -46,12 +46,12 @@ fn expression_to_simple_assignment_target(a0: Box<Expression>) -> SimpleAssignme
 
 impl AstBuilder {
     // IdentifierReference ::= "Identifier" => IdentifierReference($0)
-    pub fn identifier_reference(&self) -> Box<Identifier> {
-        Box::new(Identifier::new("".to_string())) // TODO
+    pub fn identifier_reference(&self, a0: Box<Token>) -> Box<Identifier> {
+        Box::new(self.identifier(a0))
     }
     // BindingIdentifier ::= "Identifier" => BindingIdentifier 0($0)
-    pub fn binding_identifier_p0(&self) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(Identifier::new("".to_string()))) // TODO
+    pub fn binding_identifier_p0(&self, a0: Box<Token>) -> Box<BindingIdentifier> {
+        Box::new(BindingIdentifier::new(self.identifier(a0)))
     }
     // BindingIdentifier ::= "yield" => BindingIdentifier 1($0)
     pub fn binding_identifier_p1(&self) -> Box<BindingIdentifier> {
@@ -59,11 +59,11 @@ impl AstBuilder {
     }
     // BindingIdentifier ::= "await" => BindingIdentifier 2($0)
     pub fn binding_identifier_p2(&self) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(Identifier::new("yield".to_string())))
+        Box::new(BindingIdentifier::new(Identifier::new("await".to_string())))
     }
     // LabelIdentifier ::= "Identifier" => LabelIdentifier($0)
-    pub fn label_identifier(&self) -> Box<Label> {
-        Box::new(Label::new("".to_string())) // TODO
+    pub fn label_identifier(&self, a0: Box<Token>) -> Box<Label> {
+        Box::new(Label::new(a0.value.unwrap()))
     }
 
     // PrimaryExpression : `this`
@@ -419,6 +419,10 @@ impl AstBuilder {
                 expression,
             )),
         ))
+    }
+
+    fn identifier(&self, token: Box<Token>) -> Identifier {
+        Identifier::new(token.value.unwrap())
     }
 
     fn identifier_name(&self, token: Box<Token>) -> IdentifierName {

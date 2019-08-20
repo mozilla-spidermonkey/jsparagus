@@ -197,7 +197,7 @@ static ACTIONS: [i64; 109620] = [
     // 17. "switch"
     ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 174, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 18. "Identifier"
+    // 18. Identifier
     ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, -380, -380, ERROR, ERROR, ERROR, -380, -380, ERROR, ERROR, -380, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, ERROR, -139, -176, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 19. "function"
@@ -536,7 +536,7 @@ static ACTIONS: [i64; 109620] = [
     // 130. StatementListItem
     -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, -15, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 131. "var" "Identifier"
+    // 131. "var" Identifier
     ERROR, -176, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -176, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -176, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -176, ERROR, ERROR, ERROR, -176, -176, ERROR, -176, -176, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -176, -176, -176, ERROR, ERROR, ERROR, -176, -176, -176, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 132. "var" "yield"
@@ -578,7 +578,7 @@ static ACTIONS: [i64; 109620] = [
     // 144. "continue" ErrorSymbol(asi)
     -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, -60, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 145. "continue" "Identifier"
+    // 145. "continue" Identifier
     ERROR, -139, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -139, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 146. "continue" LabelIdentifier
@@ -602,7 +602,7 @@ static ACTIONS: [i64; 109620] = [
     // 152. "return" "async"
     ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 131, 328, ERROR, ERROR, ERROR, 132, ERROR, 133, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 153. "return" "Identifier"
+    // 153. "return" Identifier
     ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, -380, -380, ERROR, ERROR, ERROR, -380, -380, ERROR, ERROR, -380, -380, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, -380, ERROR, -380, -176, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, ERROR, -380, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 154. "return" "{"
@@ -692,7 +692,7 @@ static ACTIONS: [i64; 109620] = [
     // 182. "new" "super"
     ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 196, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, 197, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
-    // 183. "new" "Identifier"
+    // 183. "new" Identifier
     ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, -380, -380, -380, ERROR, ERROR, ERROR, -380, -380, ERROR, ERROR, -380, -380, ERROR, ERROR, ERROR, -380, ERROR, ERROR, ERROR, -380, ERROR, -380, ERROR, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, -380, ERROR, -380, -380, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR, ERROR,
 
     // 184. "new" "async"
@@ -3232,7 +3232,7 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
     // 17. "switch"
     None,
-    // 18. "Identifier"
+    // 18. Identifier
     None,
     // 19. "function"
     None,
@@ -3458,7 +3458,7 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
     // 130. StatementListItem
     None,
-    // 131. "var" "Identifier"
+    // 131. "var" Identifier
     None,
     // 132. "var" "yield"
     None,
@@ -3486,7 +3486,7 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
     // 144. "continue" ErrorSymbol(asi)
     None,
-    // 145. "continue" "Identifier"
+    // 145. "continue" Identifier
     None,
     // 146. "continue" LabelIdentifier
     Some(ErrorCode::Asi),
@@ -3502,7 +3502,7 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
     // 152. "return" "async"
     None,
-    // 153. "return" "Identifier"
+    // 153. "return" Identifier
     None,
     // 154. "return" "{"
     None,
@@ -3562,7 +3562,7 @@ static STATE_TO_ERROR_CODE: [Option<ErrorCode>; 1015] = [
     None,
     // 182. "new" "super"
     None,
-    // 183. "new" "Identifier"
+    // 183. "new" Identifier
     None,
     // 184. "new" "async"
     None,
@@ -7530,9 +7530,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SwitchStatement
         }
         138 => {
-            // LabelIdentifier ::= "Identifier" => LabelIdentifier($0)
-            stack.pop();
-            stack.push(StackValue::from(handler.label_identifier()));
+            // LabelIdentifier ::= Identifier => label_identifier($0)
+            let x0 = stack.pop().unwrap().to_ast();
+            stack.push(StackValue::from(handler.label_identifier(x0)));
             NonterminalId::LabelIdentifier
         }
         139 => {
@@ -7965,9 +7965,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncGeneratorDeclaration
         }
         175 => {
-            // BindingIdentifier ::= "Identifier" => BindingIdentifier 0($0)
-            stack.pop();
-            stack.push(StackValue::from(handler.binding_identifier_p0()));
+            // BindingIdentifier ::= Identifier => binding_identifier_p0($0)
+            let x0 = stack.pop().unwrap().to_ast();
+            stack.push(StackValue::from(handler.binding_identifier_p0(x0)));
             NonterminalId::BindingIdentifier
         }
         176 => {
@@ -9427,9 +9427,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BitwiseXorExpression
         }
         379 => {
-            // IdentifierReference ::= "Identifier" => IdentifierReference($0)
-            stack.pop();
-            stack.push(StackValue::from(handler.identifier_reference()));
+            // IdentifierReference ::= Identifier => identifier_reference($0)
+            let x0 = stack.pop().unwrap().to_ast();
+            stack.push(StackValue::from(handler.identifier_reference(x0)));
             NonterminalId::IdentifierReference
         }
         380 => {
@@ -11193,3 +11193,4 @@ pub static TABLES: ParserTables<'static> = ParserTables {
 pub static START_STATE_SCRIPT: usize = 0;
 
 pub static START_STATE_MODULE: usize = 1;
+

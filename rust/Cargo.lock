@@ -35,4 +35,3 @@ dependencies = [
  "ast 0.1.0",
  "generated_parser 0.1.0",
 ]
-
