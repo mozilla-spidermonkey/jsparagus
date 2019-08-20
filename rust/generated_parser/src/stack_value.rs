@@ -1,7 +1,5 @@
 // WARNING: This file is auto-generated.
 
-#![rustfmt::skip]
-
 use crate::Token;
 use ast::*;
 
@@ -243,7 +241,10 @@ impl StackValueItem for AssignmentTargetIdentifier {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::AssignmentTargetIdentifier(v) => v,
-            _ => panic!("StackValue expected AssignmentTargetIdentifier, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected AssignmentTargetIdentifier, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -252,7 +253,10 @@ impl StackValueItem for AssignmentTargetMaybeDefault {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::AssignmentTargetMaybeDefault(v) => v,
-            _ => panic!("StackValue expected AssignmentTargetMaybeDefault, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected AssignmentTargetMaybeDefault, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -279,7 +283,10 @@ impl StackValueItem for AssignmentTargetPropertyIdentifier {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::AssignmentTargetPropertyIdentifier(v) => v,
-            _ => panic!("StackValue expected AssignmentTargetPropertyIdentifier, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected AssignmentTargetPropertyIdentifier, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -288,7 +295,10 @@ impl StackValueItem for AssignmentTargetPropertyProperty {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::AssignmentTargetPropertyProperty(v) => v,
-            _ => panic!("StackValue expected AssignmentTargetPropertyProperty, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected AssignmentTargetPropertyProperty, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -297,7 +307,10 @@ impl StackValueItem for AssignmentTargetWithDefault {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::AssignmentTargetWithDefault(v) => v,
-            _ => panic!("StackValue expected AssignmentTargetWithDefault, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected AssignmentTargetWithDefault, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -369,7 +382,10 @@ impl StackValueItem for BindingPropertyIdentifier {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::BindingPropertyIdentifier(v) => v,
-            _ => panic!("StackValue expected BindingPropertyIdentifier, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected BindingPropertyIdentifier, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -468,7 +484,10 @@ impl StackValueItem for CompoundAssignmentExpression {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::CompoundAssignmentExpression(v) => v,
-            _ => panic!("StackValue expected CompoundAssignmentExpression, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected CompoundAssignmentExpression, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -477,7 +496,10 @@ impl StackValueItem for CompoundAssignmentOperator {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::CompoundAssignmentOperator(v) => v,
-            _ => panic!("StackValue expected CompoundAssignmentOperator, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected CompoundAssignmentOperator, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -486,7 +508,10 @@ impl StackValueItem for ComputedMemberAssignmentTarget {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::ComputedMemberAssignmentTarget(v) => v,
-            _ => panic!("StackValue expected ComputedMemberAssignmentTarget, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected ComputedMemberAssignmentTarget, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1026,7 +1051,10 @@ impl StackValueItem for StaticMemberAssignmentTarget {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::StaticMemberAssignmentTarget(v) => v,
-            _ => panic!("StackValue expected StaticMemberAssignmentTarget, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected StaticMemberAssignmentTarget, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1080,7 +1108,10 @@ impl StackValueItem for SwitchStatementWithDefault {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::SwitchStatementWithDefault(v) => v,
-            _ => panic!("StackValue expected SwitchStatementWithDefault, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected SwitchStatementWithDefault, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1107,7 +1138,10 @@ impl StackValueItem for TemplateExpressionElement {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::TemplateExpressionElement(v) => v,
-            _ => panic!("StackValue expected TemplateExpressionElement, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected TemplateExpressionElement, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1206,7 +1240,10 @@ impl StackValueItem for VariableDeclarationOrAssignmentTarget {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::VariableDeclarationOrAssignmentTarget(v) => v,
-            _ => panic!("StackValue expected VariableDeclarationOrAssignmentTarget, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected VariableDeclarationOrAssignmentTarget, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1215,7 +1252,10 @@ impl StackValueItem for VariableDeclarationOrExpression {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::VariableDeclarationOrExpression(v) => v,
-            _ => panic!("StackValue expected VariableDeclarationOrExpression, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected VariableDeclarationOrExpression, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -1242,7 +1282,10 @@ impl StackValueItem for Vec<ArrayExpressionElement> {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
             StackValue::VecArrayExpressionElement(v) => v,
-            _ => panic!("StackValue expected Vec<ArrayExpressionElement>, got {:?}", sv),
+            _ => panic!(
+                "StackValue expected Vec<ArrayExpressionElement>, got {:?}",
+                sv
+            ),
         }
     }
 }
@@ -2098,4 +2141,3 @@ impl From<Box<YieldGeneratorExpression>> for StackValue {
         StackValue::YieldGeneratorExpression(val)
     }
 }
-

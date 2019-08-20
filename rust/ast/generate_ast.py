@@ -42,8 +42,6 @@ def stack_value(ast):
             write_impl(f, *args)
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
-        write(0, "#![rustfmt::skip]")
-        write(0, "")
         write(0, "use crate::Token;")
         write(0, "use ast::*;")
         write(0, "")
