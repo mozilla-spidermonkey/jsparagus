@@ -4,7 +4,7 @@ mod scope;
 use ast::*;
 
 pub fn run(ast: &mut Program) {
-    scope::pass(ast);
+    scope::postfix::pass(ast);
 }
 
 #[cfg(test)]

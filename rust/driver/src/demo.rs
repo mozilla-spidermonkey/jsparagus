@@ -7,6 +7,8 @@ use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
+use ast;
+use emitter::emit;
 use parser::parse_script;
 
 fn parse_file(path: &Path) -> io::Result<()> {
@@ -48,7 +50,12 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<()> {
 fn run(buffer: &str) {
     let parse_result = parse_script(buffer);
     match parse_result {
-        Ok(ast) => println!("{:#?}", ast),
+        Ok(ast) => {
+            let mut script = ast::Program::Script(*ast);
+            let emit_result = emit(&mut script);
+            println!("{:#?}", script);
+            println!("{:#?}", emit_result);
+        }
         Err(err) => println!("{}", err.message()),
     }
 }

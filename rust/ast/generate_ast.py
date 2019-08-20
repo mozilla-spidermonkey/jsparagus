@@ -60,7 +60,7 @@ def stack_value(ast):
         write(0, "}")
         write(0, "")
         write(0, "pub trait StackValueItem {")
-        write(0, "    fn to_ast(sv: StackValue) -> Box<Self>;")
+        write(1, "fn to_ast(sv: StackValue) -> Box<Self>;")
         write(0, "}")
         write(0, "")
         for name in types:
@@ -83,28 +83,29 @@ def stack_value(ast):
 
 
 def pass_(ast):
-    def to_method_name(name):
-        return "visit_{}".format(to_snek_case(case_name(name)))
-
-    def emit_call(f, indent, ty, var):
-        def write(*args):
-            write_impl(f, *args)
-        if ty.startswith("Vec<") and ty.endswith(">"):
-            write(indent, "for item in {} {{", var)
-            emit_call(f, indent + 1, ty[4:-1], "item")
-            write(indent, "}")
-        elif ty.startswith("Option<") and ty.endswith(">"):
-            write(indent, "if let Some(item) = {} {{", var)
-            emit_call(f, indent + 1, ty[7:-1], "item")
-            write(indent, "}")
-        elif ty == "bool" or ty == "String" or ty == "f64":
-            pass
-        else:
-            write(indent, "self.{}({});", to_method_name(ty), var)
-
     with open("../emitter/src/lower/pass.rs", "w+") as f:
         def write(*args):
             write_impl(f, *args)
+
+        def to_method_name(name):
+            return "visit_{}".format(to_snek_case(case_name(name)))
+
+        # --- Pass ---
+
+        def emit_call(indent, ty, var):
+            if ty.startswith("Vec<") and ty.endswith(">"):
+                write(indent, "for item in {} {{", var)
+                emit_call(indent + 1, ty[4:-1], "item")
+                write(indent, "}")
+            elif ty.startswith("Option<") and ty.endswith(">"):
+                write(indent, "if let Some(item) = {} {{", var)
+                emit_call(indent + 1, ty[7:-1], "item")
+                write(indent, "}")
+            elif ty == "bool" or ty == "String" or ty == "f64":
+                pass
+            else:
+                write(indent, "self.{}({});", to_method_name(ty), var)
+
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
         write(0, "use ast::*;")
@@ -119,7 +120,7 @@ def pass_(ast):
             if _type == "struct":
                 for field, field_type in contents.items():
                     if field != "_type":
-                        emit_call(f, 2, field_type, "&mut ast.{}".format(field))
+                        emit_call(2, field_type, "&mut ast.{}".format(field))
             elif _type == "enum":
                 write(2, "match ast {")
                 for field, field_type in contents.items():
@@ -128,8 +129,120 @@ def pass_(ast):
                             write(3, "{}::{} => (),", name, field)
                         else:
                             write(3, "{}::{}(ast) => {{", name, field)
-                            emit_call(f, 4, field_type, "ast")
+                            emit_call(4, field_type, "ast")
                             write(3, "}")
+                write(2, "}")
+            else:
+                raise Exception("Invalid type: " + _type)
+            write(1, "}")
+            write(0, "")
+        write(0, "}")
+        write(0, "")
+
+        # --- PostfixPass ---
+
+        def to_postfix_type(ty):
+            if ty.startswith("Vec<") and ty.endswith(">"):
+                res = to_postfix_type(ty[4:-1])
+                return None if res is None else "Vec<{}>".format(res)
+            elif ty.startswith("Option<") and ty.endswith(">"):
+                res = to_postfix_type(ty[7:-1])
+                return None if res is None else "Option<{}>".format(res)
+            elif ty == "bool" or ty == "String" or ty == "f64":
+                return None
+            else:
+                return "Self::Value"
+
+        def append_postfix_pass(indent, ty, var):
+            if ty.startswith("Vec<") and ty.endswith(">"):
+                write(indent, "for item in {} {{", var)
+                append_postfix_pass(indent + 1, ty[4:-1], "item")
+                write(indent, "}")
+            elif ty.startswith("Option<") and ty.endswith(">"):
+                write(indent, "if let Some(item) = {} {{", var)
+                append_postfix_pass(indent + 1, ty[7:-1], "item")
+                write(indent, "}")
+            elif ty == "bool" or ty == "String" or ty == "f64":
+                pass
+            else:
+                write(indent, "result.append({});", var)
+
+        write(0, "pub trait PostfixPassMonoid: Default {")
+        write(1, "fn append(&mut self, other: Self);")
+        write(0, "}")
+        write(0, "")
+        write(0, "pub trait PostfixPass {")
+        write(1, "type Value: PostfixPassMonoid;")
+        for name, contents in ast.items():
+            if name == "Void":
+                continue
+            _type = contents["_type"]
+            if _type == "struct":
+                write(1, "fn {}(&self,", to_method_name(name))
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        postfix_type = to_postfix_type(field_type)
+                        if postfix_type is None:
+                            postfix_type = "&mut {}".format(field_type)
+                        write(2, "{}: {},", field, postfix_type)
+                write(1, ") -> Self::Value {")
+                write(2, "let mut result = Self::Value::default();")
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        append_postfix_pass(2, field_type, field)
+                write(2, "result")
+                write(1, "}")
+                write(0, "")
+        write(0, "}")
+        write(0, "")
+
+        # --- PostfixPassVisitor ---
+        def call_postfix_visitor(ty, var):
+            if ty.startswith("Vec<") and ty.endswith(">"):
+                res = call_postfix_visitor(ty[4:-1], "item")
+                return None if res is None else "{}.iter_mut().map(|item| {}).collect::<Vec<_>>()".format(var, res)
+            elif ty.startswith("Option<") and ty.endswith(">"):
+                res = call_postfix_visitor(ty[7:-1], "item")
+                return None if res is None else "{}.as_mut().map(|item| {})".format(var, res)
+            elif ty == "bool" or ty == "String" or ty == "f64":
+                return None
+            else:
+                return "self.{}({})".format(to_method_name(ty), var)
+
+        write(0, "pub struct PostfixPassVisitor<T: PostfixPass> {")
+        write(1, "pass: T,")
+        write(0, "}")
+        write(0, "")
+        write(0, "impl<T: PostfixPass> PostfixPassVisitor<T> {")
+        write(1, "pub fn new(pass: T) -> Self {")
+        write(2, "Self { pass }")
+        write(1, "}")
+        for name, contents in ast.items():
+            if name == "Void":
+                # Hack in a quick fix
+                continue
+            _type = contents["_type"]
+            write(1, "pub fn {}(&mut self, ast: &mut {}) -> T::Value {{", to_method_name(name), name)
+            if _type == "struct":
+                index = 0
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        res = call_postfix_visitor(field_type, "(&mut ast.{})".format(field))
+                        if res is None:
+                            res = "&mut ast.{}".format(field)
+                        write(2, "let a{} = {};", index, res)
+                        index += 1
+                write(2, "self.pass.{}({})", to_method_name(name),
+                      ", ".join("a{}".format(i) for i in range(index)))
+            elif _type == "enum":
+                write(2, "match ast {")
+                for field, field_type in contents.items():
+                    if field != "_type":
+                        if field_type is None:
+                            write(3, "{}::{} => T::Value::default(),", name, field)
+                        else:
+                            write(3, "{}::{}(ast) => self.{}(ast),",
+                                  name, field, to_method_name(field_type))
                 write(2, "}")
             else:
                 raise Exception("Invalid type: " + _type)

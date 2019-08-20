@@ -8,6 +8,8 @@ version = "0.1.0"
 name = "driver"
 version = "0.1.0"
 dependencies = [
+ "ast 0.1.0",
+ "emitter 0.1.0",
  "parser 0.1.0",
 ]
 

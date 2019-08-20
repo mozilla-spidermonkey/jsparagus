@@ -1,5 +1,3 @@
-extern crate parser;
-
 mod demo;
 
 use std::env;
