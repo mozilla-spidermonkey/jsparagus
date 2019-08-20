@@ -3,7 +3,7 @@ mod lower;
 mod opcode;
 
 use ast::*;
-use opcode::*;
+use opcode::Opcode;
 
 #[derive(Debug)]
 pub struct EmitResult {
@@ -34,40 +34,40 @@ impl Emitter {
         }
     }
 
-    fn emit1(&mut self, opcode: &Opcode) {
-        self.bytecode.push(opcode.value);
+    fn emit1(&mut self, opcode: Opcode) {
+        self.bytecode.push(opcode.to_byte());
     }
 
-    fn emit_i8(&mut self, opcode: &Opcode, value: i8) {
-        self.bytecode.push(opcode.value);
+    fn emit_i8(&mut self, opcode: Opcode, value: i8) {
+        self.bytecode.push(opcode.to_byte());
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
-    fn emit_u16(&mut self, opcode: &Opcode, value: u16) {
-        self.bytecode.push(opcode.value);
+    fn emit_u16(&mut self, opcode: Opcode, value: u16) {
+        self.bytecode.push(opcode.to_byte());
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
-    fn emit_u24(&mut self, opcode: &Opcode, value: u32) {
-        self.bytecode.push(opcode.value);
+    fn emit_u24(&mut self, opcode: Opcode, value: u32) {
+        self.bytecode.push(opcode.to_byte());
         let slice = value.to_le_bytes();
         assert!(slice.len() == 4 && slice[3] == 0);
         self.bytecode.extend_from_slice(&slice[0..3]);
     }
 
-    fn emit_i32(&mut self, opcode: &Opcode, value: i32) {
-        self.bytecode.push(opcode.value);
+    fn emit_i32(&mut self, opcode: Opcode, value: i32) {
+        self.bytecode.push(opcode.to_byte());
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
-    fn emit_f64(&mut self, opcode: &Opcode, value: f64) {
-        self.bytecode.push(opcode.value);
+    fn emit_f64(&mut self, opcode: Opcode, value: f64) {
+        self.bytecode.push(opcode.to_byte());
         self.bytecode
             .extend_from_slice(&value.to_bits().to_le_bytes());
     }
 
-    fn emit_str(&mut self, opcode: &Opcode, value: &str) {
-        self.bytecode.push(opcode.value);
+    fn emit_str(&mut self, opcode: Opcode, value: &str) {
+        self.bytecode.push(opcode.to_byte());
         let mut index = None;
         // Eventually we should be fancy and make this O(1)
         for (i, string) in self.strings.iter().enumerate() {
@@ -97,7 +97,7 @@ impl Emitter {
         for statement in &ast.statements {
             self.emit_statement(statement);
         }
-        self.emit1(&RETRVAL);
+        self.emit1(Opcode::RetRval);
     }
 
     fn emit_statement(&mut self, ast: &Statement) {
@@ -111,7 +111,7 @@ impl Emitter {
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast);
-                self.emit1(&SETRVAL)
+                self.emit1(Opcode::SetRval)
             }
             Statement::ForInStatement(_) => unimplemented!(),
             Statement::ForOfStatement(_) => unimplemented!(),
@@ -147,26 +147,26 @@ impl Emitter {
                 Binding::BindingIdentifier(ident) => &ident.name.value,
             };
             // TODO
-            self.emit1(&UNINITIALIZED);
-            self.emit_u24(&INITLEXICAL, 0);
-            self.emit1(&POP);
+            self.emit1(Opcode::Uninitialized);
+            self.emit_u24(Opcode::InitLexical, 0);
+            self.emit1(Opcode::Pop);
 
             if let Some(init) = &declarator.init {
                 self.emit_expression(&*init);
             }
 
-            self.emit_u24(&INITLEXICAL, 0);
-            self.emit1(&POP);
+            self.emit_u24(Opcode::InitLexical, 0);
+            self.emit1(Opcode::Pop);
         }
     }
 
     fn emit_return_statement(&mut self, ast: &ReturnStatement) {
         match &ast.expression {
             Some(ast) => self.emit_expression(ast),
-            None => self.emit1(&UNDEFINED),
+            None => self.emit1(Opcode::Undefined),
         }
-        self.emit1(&SETRVAL);
-        self.emit1(&RETRVAL);
+        self.emit1(Opcode::SetRval);
+        self.emit1(Opcode::RetRval);
     }
 
     fn emit_expression(&mut self, ast: &Expression) {
@@ -218,7 +218,7 @@ impl Emitter {
             BinaryOperator::LeftShift => unimplemented!(),
             BinaryOperator::RightShift => unimplemented!(),
             BinaryOperator::RightShiftExt => unimplemented!(),
-            BinaryOperator::Add => self.emit1(&ADD),
+            BinaryOperator::Add => self.emit1(Opcode::Add),
             BinaryOperator::Sub => unimplemented!(),
             BinaryOperator::Mul => unimplemented!(),
             BinaryOperator::Div => unimplemented!(),
@@ -241,11 +241,11 @@ impl Emitter {
         let value_i8 = value as i8;
         let value_i32 = value as i32;
         if f64::from(value_i8) == value {
-            self.emit_i8(&INT8, value_i8);
+            self.emit_i8(Opcode::Int8, value_i8);
         } else if f64::from(value_i32) == value {
-            self.emit_i32(&INT32, value_i32);
+            self.emit_i32(Opcode::Int32, value_i32);
         } else {
-            self.emit_f64(&DOUBLE, value);
+            self.emit_f64(Opcode::Double, value);
         }
     }
 
@@ -262,7 +262,7 @@ impl Emitter {
 
     fn emit_binding_identifier(&mut self, ast: &BindingIdentifier) {
         let name = &ast.name.value;
-        self.emit_str(&GETGNAME, name);
+        self.emit_str(Opcode::GetGname, name);
     }
 
     fn emit_call_expression(&mut self, ast: &CallExpression) {
@@ -273,10 +273,10 @@ impl Emitter {
             ExpressionOrSuper::Super => unimplemented!(),
         }
 
-        self.emit_str(&GIMPLICITTHIS, "asdf");
+        self.emit_str(Opcode::GImplicitThis, "asdf");
 
         self.emit_arguments(&ast.arguments);
-        self.emit_u16(&CALL, ast.arguments.args.len() as u16);
+        self.emit_u16(Opcode::Call, ast.arguments.args.len() as u16);
     }
 
     fn emit_arguments(&mut self, ast: &Arguments) {
@@ -313,13 +313,13 @@ mod tests {
         assert_eq!(
             bytecode("2 + 2"),
             vec![
-                INT8.value,
-                0,
-                INT8.value,
-                0,
-                ADD.value,
-                SETRVAL.value,
-                RETRVAL.value
+                Opcode::Int8 as u8,
+                2,
+                Opcode::Int8 as u8,
+                2,
+                Opcode::Add as u8,
+                Opcode::SetRval as u8,
+                Opcode::RetRval as u8,
             ]
         )
     }
@@ -329,21 +329,21 @@ mod tests {
         assert_eq!(
             bytecode("dis()"),
             vec![
-                GETGNAME.value,
+                Opcode::GetGname as u8,
                 0,
                 0,
                 0,
                 0,
-                GIMPLICITTHIS.value,
+                Opcode::GImplicitThis as u8,
                 1,
                 0,
                 0,
                 0,
-                CALL.value,
+                Opcode::Call as u8,
                 0,
                 0,
-                SETRVAL.value,
-                RETRVAL.value
+                Opcode::SetRval as u8,
+                Opcode::RetRval as u8,
             ]
         )
     }
