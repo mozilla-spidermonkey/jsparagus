@@ -757,7 +757,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: fun, homeObject => fun
-    Inithomeobject = 92,  // JSOP_INITHOMEOBJECT
+    InitHomeObject = 92,  // JSOP_INITHOMEOBJECT
 
     /// Initialize a named property in an object literal, like '{a: x}'.
     ///
@@ -2379,7 +2379,7 @@ pub static TABLE: [Opcode; LIMIT] = [
     Opcode::NewInit,
     Opcode::NewArray,
     Opcode::NewObject,
-    Opcode::Inithomeobject,
+    Opcode::InitHomeObject,
     Opcode::InitProp,
     Opcode::InitElem,
     Opcode::InitElemInc,
