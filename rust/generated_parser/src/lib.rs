@@ -11935,4 +11935,3 @@ pub static TABLES: ParserTables<'static> = ParserTables {
 pub static START_STATE_SCRIPT: usize = 0;
 
 pub static START_STATE_MODULE: usize = 1;
-
