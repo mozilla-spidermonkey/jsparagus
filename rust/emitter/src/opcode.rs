@@ -1,4 +1,3 @@
-
 use std::convert::TryFrom;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -9,7 +8,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: =>
-    Nop = 0,  // JSOP_NOP
+    Nop = 0, // JSOP_NOP
 
     /// Pushes 'undefined' onto the stack.
     ///
@@ -17,7 +16,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => undefined
-    Undefined = 1,  // JSOP_UNDEFINED
+    Undefined = 1, // JSOP_UNDEFINED
 
     /// Pushes stack frame's 'rval' onto the stack.
     ///
@@ -25,7 +24,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: => rval
-    GetRval = 2,  // JSOP_GETRVAL
+    GetRval = 2, // JSOP_GETRVAL
 
     /// Pops the top of stack value, converts it to an object, and adds a
     /// 'WithEnvironmentObject' wrapping that object to the environment chain.
@@ -38,7 +37,7 @@ pub enum Opcode {
     ///   Type: With Statement
     ///   Operands: uint32_t staticWithIndex
     ///   Stack: val =>
-    EnterWith = 3,  // JSOP_ENTERWITH
+    EnterWith = 3, // JSOP_ENTERWITH
 
     /// Pops the environment chain object pushed by JSOP_ENTERWITH.
     ///
@@ -46,7 +45,7 @@ pub enum Opcode {
     ///   Type: With Statement
     ///   Operands:
     ///   Stack: =>
-    LeaveWith = 4,  // JSOP_LEAVEWITH
+    LeaveWith = 4, // JSOP_LEAVEWITH
 
     /// Pops the top of stack value as 'rval', stops interpretation of current
     /// script and returns 'rval'.
@@ -55,7 +54,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: rval =>
-    Return = 5,  // JSOP_RETURN
+    Return = 5, // JSOP_RETURN
 
     /// Jumps to a 32-bit offset from the current bytecode.
     ///
@@ -63,7 +62,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: =>
-    Goto = 6,  // JSOP_GOTO
+    Goto = 6, // JSOP_GOTO
 
     /// Pops the top of stack value, converts it into a boolean, if the result
     /// is 'false', jumps to a 32-bit offset from the current bytecode.
@@ -76,7 +75,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: cond =>
-    IfEq = 7,  // JSOP_IFEQ
+    IfEq = 7, // JSOP_IFEQ
 
     /// Pops the top of stack value, converts it into a boolean, if the result
     /// is 'true', jumps to a 32-bit offset from the current bytecode.
@@ -85,7 +84,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: cond =>
-    IfNe = 8,  // JSOP_IFNE
+    IfNe = 8, // JSOP_IFNE
 
     /// Pushes the 'arguments' object for the current function activation.
     ///
@@ -99,7 +98,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands:
     ///   Stack: => arguments
-    Arguments = 9,  // JSOP_ARGUMENTS
+    Arguments = 9, // JSOP_ARGUMENTS
 
     /// Swaps the top two values on the stack. This is useful for things like
     /// post-increment/decrement.
@@ -108,7 +107,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands:
     ///   Stack: v1, v2 => v2, v1
-    Swap = 10,  // JSOP_SWAP
+    Swap = 10, // JSOP_SWAP
 
     /// Pops the top 'n' values from the stack.
     ///
@@ -117,7 +116,7 @@ pub enum Opcode {
     ///   Operands: uint16_t n
     ///   Stack: v[n-1], ..., v[1], v[0] =>
     ///   nuses: n
-    PopN = 11,  // JSOP_POPN
+    PopN = 11, // JSOP_POPN
 
     /// Pushes a copy of the top value on the stack.
     ///
@@ -125,7 +124,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands:
     ///   Stack: v => v, v
-    Dup = 12,  // JSOP_DUP
+    Dup = 12, // JSOP_DUP
 
     /// Duplicates the top two values on the stack.
     ///
@@ -133,7 +132,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands:
     ///   Stack: v1, v2 => v1, v2, v1, v2
-    Dup2 = 13,  // JSOP_DUP2
+    Dup2 = 13, // JSOP_DUP2
 
     /// Checks that the top value on the stack is an object, and throws a
     /// TypeError if not. The operand 'kind' is used only to generate an
@@ -143,7 +142,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint8_t kind
     ///   Stack: result => result
-    CheckIsObj = 14,  // JSOP_CHECKISOBJ
+    CheckIsObj = 14, // JSOP_CHECKISOBJ
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// the result of the operation applied to the two operands, converting both
@@ -153,9 +152,9 @@ pub enum Opcode {
     ///   Type: Bitwise Logical Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval OP rval)
-    BitOr = 15,  // JSOP_BITOR
-    BitXor = 16,  // JSOP_BITXOR
-    BitAnd = 17,  // JSOP_BITAND
+    BitOr = 15, // JSOP_BITOR
+    BitXor = 16, // JSOP_BITXOR
+    BitAnd = 17, // JSOP_BITAND
 
     /// Pops the top two values from the stack and pushes the result of
     /// comparing them.
@@ -164,12 +163,12 @@ pub enum Opcode {
     ///   Type: Comparison Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval OP rval)
-    Eq = 18,  // JSOP_EQ
-    Ne = 19,  // JSOP_NE
-    Lt = 20,  // JSOP_LT
-    Le = 21,  // JSOP_LE
-    Gt = 22,  // JSOP_GT
-    Ge = 23,  // JSOP_GE
+    Eq = 18, // JSOP_EQ
+    Ne = 19, // JSOP_NE
+    Lt = 20, // JSOP_LT
+    Le = 21, // JSOP_LE
+    Gt = 22, // JSOP_GT
+    Ge = 23, // JSOP_GE
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// the result of the operation applied to the operands.
@@ -178,8 +177,8 @@ pub enum Opcode {
     ///   Type: Bitwise Shift Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval OP rval)
-    Lsh = 24,  // JSOP_LSH
-    Rsh = 25,  // JSOP_RSH
+    Lsh = 24, // JSOP_LSH
+    Rsh = 25, // JSOP_RSH
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// 'lval >>> rval'.
@@ -188,7 +187,7 @@ pub enum Opcode {
     ///   Type: Bitwise Shift Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval >>> rval)
-    Ursh = 26,  // JSOP_URSH
+    Ursh = 26, // JSOP_URSH
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// the result of 'lval + rval'.
@@ -197,7 +196,7 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval + rval)
-    Add = 27,  // JSOP_ADD
+    Add = 27, // JSOP_ADD
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// the result of applying the arithmetic operation to them.
@@ -206,10 +205,10 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval OP rval)
-    Sub = 28,  // JSOP_SUB
-    Mul = 29,  // JSOP_MUL
-    Div = 30,  // JSOP_DIV
-    Mod = 31,  // JSOP_MOD
+    Sub = 28, // JSOP_SUB
+    Mul = 29, // JSOP_MUL
+    Div = 30, // JSOP_DIV
+    Mod = 31, // JSOP_MOD
 
     /// Pops the value 'val' from the stack, then pushes '!val'.
     ///
@@ -217,7 +216,7 @@ pub enum Opcode {
     ///   Type: Logical Operators
     ///   Operands:
     ///   Stack: val => (!val)
-    Not = 32,  // JSOP_NOT
+    Not = 32, // JSOP_NOT
 
     /// Pops the value 'val' from the stack, then pushes '~val'.
     ///
@@ -225,7 +224,7 @@ pub enum Opcode {
     ///   Type: Bitwise Logical Operators
     ///   Operands:
     ///   Stack: val => (~val)
-    BitNot = 33,  // JSOP_BITNOT
+    BitNot = 33, // JSOP_BITNOT
 
     /// Pops the value 'val' from the stack, then pushes '-val'.
     ///
@@ -233,7 +232,7 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: val => (-val)
-    Neg = 34,  // JSOP_NEG
+    Neg = 34, // JSOP_NEG
 
     /// Pops the value 'val' from the stack, then pushes '+val'.
     /// ('+val' is the value converted to a number.)
@@ -242,7 +241,7 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: val => (+val)
-    Pos = 35,  // JSOP_POS
+    Pos = 35, // JSOP_POS
 
     /// Looks up name on the environment chain and deletes it, pushes 'true'
     /// onto the stack if succeeded (if the property was present and deleted or
@@ -254,7 +253,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => succeeded
-    DelName = 36,  // JSOP_DELNAME
+    DelName = 36, // JSOP_DELNAME
 
     /// Pops the top of stack value, deletes property from it, pushes 'true'
     /// onto the stack if succeeded, 'false' if not.
@@ -263,7 +262,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj => succeeded
-    DelProp = 37,  // JSOP_DELPROP
+    DelProp = 37, // JSOP_DELPROP
 
     /// Pops the top two values on the stack as 'propval' and 'obj', deletes
     /// 'propval' property from 'obj', pushes 'true'  onto the stack if
@@ -273,7 +272,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: obj, propval => succeeded
-    DelElem = 38,  // JSOP_DELELEM
+    DelElem = 38, // JSOP_DELELEM
 
     /// Pops the value 'val' from the stack, then pushes 'typeof val'.
     ///
@@ -281,7 +280,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: val => (typeof val)
-    Typeof = 39,  // JSOP_TYPEOF
+    Typeof = 39, // JSOP_TYPEOF
 
     /// Pops the top value on the stack and pushes 'undefined'.
     ///
@@ -289,7 +288,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: val => undefined
-    Void = 40,  // JSOP_VOID
+    Void = 40, // JSOP_VOID
 
     /// spreadcall variant of JSOP_CALL.
     ///
@@ -302,7 +301,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: callee, this, args => rval
-    SpreadCall = 41,  // JSOP_SPREADCALL
+    SpreadCall = 41, // JSOP_SPREADCALL
 
     /// spreadcall variant of JSOP_NEW
     ///
@@ -313,7 +312,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: callee, this, args, newTarget => rval
-    SpreadNew = 42,  // JSOP_SPREADNEW
+    SpreadNew = 42, // JSOP_SPREADNEW
 
     /// spreadcall variant of JSOP_EVAL
     ///
@@ -326,7 +325,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: callee, this, args => rval
-    SpreadEval = 43,  // JSOP_SPREADEVAL
+    SpreadEval = 43, // JSOP_SPREADEVAL
 
     /// Duplicates the Nth value from the top onto the stack.
     ///
@@ -335,7 +334,7 @@ pub enum Opcode {
     ///   Operands: uint24_t n
     ///   Stack: v[n], v[n-1], ..., v[1], v[0] =>
     ///          v[n], v[n-1], ..., v[1], v[0], v[n]
-    DupAt = 44,  // JSOP_DUPAT
+    DupAt = 44, // JSOP_DUPAT
 
     /// Push a well-known symbol onto the operand stack.
     ///
@@ -343,7 +342,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: uint8_t symbol (the JS::SymbolCode of the symbol to use)
     ///   Stack: => symbol
-    Symbol = 45,  // JSOP_SYMBOL
+    Symbol = 45, // JSOP_SYMBOL
 
     /// Pops the top of stack value and attempts to delete the given property
     /// from it. Pushes 'true' onto success, else throws a TypeError per strict
@@ -353,7 +352,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj => succeeded
-    StrictDelProp = 46,  // JSOP_STRICTDELPROP
+    StrictDelProp = 46, // JSOP_STRICTDELPROP
 
     /// Pops the top two values on the stack as 'propval' and 'obj', and
     /// attempts to delete 'propval' property from 'obj'. Pushes 'true' onto the
@@ -364,7 +363,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, propval => succeeded
-    StrictDelElem = 47,  // JSOP_STRICTDELELEM
+    StrictDelElem = 47, // JSOP_STRICTDELELEM
 
     /// Pops the top two values on the stack as 'val' and 'obj', and performs
     /// 'obj.prop = val', pushing 'val' back onto the stack. Throws a TypeError
@@ -374,7 +373,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => val
-    StrictSetProp = 48,  // JSOP_STRICTSETPROP
+    StrictSetProp = 48, // JSOP_STRICTSETPROP
 
     /// Pops a environment and value from the stack, assigns value to the given
     /// name, and pushes the value back on the stack. If the set failed, then
@@ -384,7 +383,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: env, val => val
-    StrictSetName = 49,  // JSOP_STRICTSETNAME
+    StrictSetName = 49, // JSOP_STRICTSETNAME
 
     /// spreadcall variant of JSOP_EVAL
     ///
@@ -397,7 +396,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: callee, this, args => rval
-    StrictSpreadEval = 50,  // JSOP_STRICTSPREADEVAL
+    StrictSpreadEval = 50, // JSOP_STRICTSPREADEVAL
 
     /// Ensures the result of a class's heritage expression is either null or a
     /// constructor.
@@ -406,7 +405,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: heritage => heritage
-    CheckClassHeritage = 51,  // JSOP_CHECKCLASSHERITAGE
+    CheckClassHeritage = 51, // JSOP_CHECKCLASSHERITAGE
 
     /// Pushes a clone of a function with a given [[Prototype]] onto the stack.
     ///
@@ -414,7 +413,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands: uint32_t funcIndex
     ///   Stack: proto => obj
-    FunWithProto = 52,  // JSOP_FUNWITHPROTO
+    FunWithProto = 52, // JSOP_FUNWITHPROTO
 
     /// Pops the top of stack value, pushes property of it onto the stack.
     ///
@@ -422,7 +421,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj => obj[name]
-    GetProp = 53,  // JSOP_GETPROP
+    GetProp = 53, // JSOP_GETPROP
 
     /// Pops the top two values on the stack as 'val' and 'obj' and performs
     /// 'obj.prop = val', pushing 'val' back onto the stack.
@@ -431,7 +430,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => val
-    SetProp = 54,  // JSOP_SETPROP
+    SetProp = 54, // JSOP_SETPROP
 
     /// Pops the top two values on the stack as 'propval' and 'obj', pushes
     /// 'propval' property of 'obj' onto the stack.
@@ -440,7 +439,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, propval => obj[propval]
-    GetElem = 55,  // JSOP_GETELEM
+    GetElem = 55, // JSOP_GETELEM
 
     /// Pops the top three values on the stack as 'val', 'propval' and 'obj',
     /// sets 'propval' property of 'obj' as 'val', pushes 'val' onto the stack.
@@ -449,7 +448,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, propval, val => val
-    SetElem = 56,  // JSOP_SETELEM
+    SetElem = 56, // JSOP_SETELEM
 
     /// Pops the top three values on the stack as 'val', 'propval' and 'obj',
     /// sets 'propval' property of 'obj' as 'val', pushes 'val' onto the stack.
@@ -459,7 +458,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, propval, val => val
-    StrictSetElem = 57,  // JSOP_STRICTSETELEM
+    StrictSetElem = 57, // JSOP_STRICTSETELEM
 
     /// Invokes 'callee' with 'this' and 'args', pushes return value onto the
     /// stack.
@@ -469,7 +468,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    Call = 58,  // JSOP_CALL
+    Call = 58, // JSOP_CALL
 
     /// Looks up name on the environment chain and pushes its value onto the
     /// stack.
@@ -478,7 +477,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => val
-    GetName = 59,  // JSOP_GETNAME
+    GetName = 59, // JSOP_GETNAME
 
     /// Pushes numeric constant onto the stack.
     ///
@@ -486,7 +485,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: DoubleValue literal
     ///   Stack: => val
-    Double = 60,  // JSOP_DOUBLE
+    Double = 60, // JSOP_DOUBLE
 
     /// Pushes string constant onto the stack.
     ///
@@ -494,7 +493,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: uint32_t atomIndex
     ///   Stack: => atom
-    String = 61,  // JSOP_STRING
+    String = 61, // JSOP_STRING
 
     /// Pushes '0' onto the stack.
     ///
@@ -502,7 +501,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => 0
-    Zero = 62,  // JSOP_ZERO
+    Zero = 62, // JSOP_ZERO
 
     /// Pushes '1' onto the stack.
     ///
@@ -510,7 +509,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => 1
-    One = 63,  // JSOP_ONE
+    One = 63, // JSOP_ONE
 
     /// Pushes 'null' onto the stack.
     ///
@@ -518,7 +517,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => null
-    Null = 64,  // JSOP_NULL
+    Null = 64, // JSOP_NULL
 
     /// Pushes 'JS_IS_CONSTRUCTING'
     ///
@@ -526,7 +525,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => JS_IS_CONSTRUCTING
-    IsConstructing = 65,  // JSOP_IS_CONSTRUCTING
+    IsConstructing = 65, // JSOP_IS_CONSTRUCTING
 
     /// Pushes boolean value onto the stack.
     ///
@@ -534,8 +533,8 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => true/false
-    False = 66,  // JSOP_FALSE
-    True = 67,  // JSOP_TRUE
+    False = 66, // JSOP_FALSE
+    True = 67, // JSOP_TRUE
 
     /// Converts the top of stack value into a boolean, if the result is 'true',
     /// jumps to a 32-bit offset from the current bytecode.
@@ -544,7 +543,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: cond => cond
-    Or = 68,  // JSOP_OR
+    Or = 68, // JSOP_OR
 
     /// Converts the top of stack value into a boolean, if the result is
     /// 'false', jumps to a 32-bit offset from the current bytecode.
@@ -553,7 +552,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: cond => cond
-    And = 69,  // JSOP_AND
+    And = 69, // JSOP_AND
 
     /// Pops the top of stack value as 'i', if 'low <= i <= high',
     /// jumps to a 32-bit offset: offset is stored in the script's resumeOffsets
@@ -566,9 +565,9 @@ pub enum Opcode {
     ///             uint24_t firstResumeIndex
     ///   Stack: i =>
     ///   len: len
-    TableSwitch = 70,  // JSOP_TABLESWITCH
+    TableSwitch = 70, // JSOP_TABLESWITCH
 
-    Unused71 = 71,  // JSOP_UNUSED71
+    Unused71 = 71, // JSOP_UNUSED71
 
     /// Pops the top two values from the stack, then pushes the result of
     /// applying the operator to the two values.
@@ -577,8 +576,8 @@ pub enum Opcode {
     ///   Type: Comparison Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval OP rval)
-    StrictEq = 72,  // JSOP_STRICTEQ
-    StrictNe = 73,  // JSOP_STRICTNE
+    StrictEq = 72, // JSOP_STRICTEQ
+    StrictNe = 73, // JSOP_STRICTNE
 
     /// Sometimes we know when emitting that an operation will always throw.
     ///
@@ -588,7 +587,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands: uint16_t msgNumber
     ///   Stack: =>
-    ThrowMsg = 74,  // JSOP_THROWMSG
+    ThrowMsg = 74, // JSOP_THROWMSG
 
     /// Sets up a for-in loop. It pops the top of stack value as 'val' and
     /// pushes 'iter' which is an iterator for 'val'.
@@ -597,7 +596,7 @@ pub enum Opcode {
     ///   Type: For-In Statement
     ///   Operands:
     ///   Stack: val => iter
-    Iter = 75,  // JSOP_ITER
+    Iter = 75, // JSOP_ITER
 
     /// Pushes the next iterated value onto the stack. If no value is available,
     /// MagicValue(JS_NO_ITER_VALUE) is pushed.
@@ -606,7 +605,7 @@ pub enum Opcode {
     ///   Type: For-In Statement
     ///   Operands:
     ///   Stack: iter => iter, val
-    MoreIter = 76,  // JSOP_MOREITER
+    MoreIter = 76, // JSOP_MOREITER
 
     /// Pushes a boolean indicating whether the value on top of the stack is
     /// MagicValue(JS_NO_ITER_VALUE).
@@ -615,7 +614,7 @@ pub enum Opcode {
     ///   Type: For-In Statement
     ///   Operands:
     ///   Stack: val => val, res
-    IsNoIter = 77,  // JSOP_ISNOITER
+    IsNoIter = 77, // JSOP_ISNOITER
 
     /// Exits a for-in loop by popping the iterator object from the stack and
     /// closing it.
@@ -624,7 +623,7 @@ pub enum Opcode {
     ///   Type: For-In Statement
     ///   Operands:
     ///   Stack: iter =>
-    EndIter = 78,  // JSOP_ENDITER
+    EndIter = 78, // JSOP_ENDITER
 
     /// Invokes 'callee' with 'this' and 'args', pushes return value onto the
     /// stack.
@@ -636,7 +635,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    FunApply = 79,  // JSOP_FUNAPPLY
+    FunApply = 79, // JSOP_FUNAPPLY
 
     /// Pushes deep-cloned object literal or singleton onto the stack.
     ///
@@ -644,7 +643,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t objectIndex
     ///   Stack: => obj
-    Object = 80,  // JSOP_OBJECT
+    Object = 80, // JSOP_OBJECT
 
     /// Pops the top value off the stack.
     ///
@@ -652,7 +651,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands:
     ///   Stack: v =>
-    Pop = 81,  // JSOP_POP
+    Pop = 81, // JSOP_POP
 
     /// Invokes 'callee' as a constructor with 'this' and 'args', pushes return
     /// value onto the stack.
@@ -662,7 +661,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1], newTarget => rval
     ///   nuses: (argc+3)
-    New = 82,  // JSOP_NEW
+    New = 82, // JSOP_NEW
 
     /// Pushes newly created object onto the stack with provided [[Prototype]].
     ///
@@ -670,7 +669,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: proto => obj
-    ObjWithProto = 83,  // JSOP_OBJWITHPROTO
+    ObjWithProto = 83, // JSOP_OBJWITHPROTO
 
     /// Fast get op for function arguments and local variables.
     ///
@@ -680,7 +679,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands: uint16_t argno
     ///   Stack: => arguments[argno]
-    GetArg = 84,  // JSOP_GETARG
+    GetArg = 84, // JSOP_GETARG
 
     /// Fast set op for function arguments and local variables.
     ///
@@ -690,7 +689,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands: uint16_t argno
     ///   Stack: v => v
-    SetArg = 85,  // JSOP_SETARG
+    SetArg = 85, // JSOP_SETARG
 
     /// Pushes the value of local variable onto the stack.
     ///
@@ -698,7 +697,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands: uint24_t localno
     ///   Stack: => val
-    GetLocal = 86,  // JSOP_GETLOCAL
+    GetLocal = 86, // JSOP_GETLOCAL
 
     /// Stores the top stack value to the given local.
     ///
@@ -706,7 +705,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands: uint24_t localno
     ///   Stack: v => v
-    SetLocal = 87,  // JSOP_SETLOCAL
+    SetLocal = 87, // JSOP_SETLOCAL
 
     /// Pushes unsigned 16-bit int immediate integer operand onto the stack.
     ///
@@ -714,7 +713,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: uint16_t val
     ///   Stack: => val
-    Uint16 = 88,  // JSOP_UINT16
+    Uint16 = 88, // JSOP_UINT16
 
     /// Pushes newly created object onto the stack.
     ///
@@ -725,7 +724,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: (uint32_t extra)
     ///   Stack: => obj
-    NewInit = 89,  // JSOP_NEWINIT
+    NewInit = 89, // JSOP_NEWINIT
 
     /// Pushes newly created array onto the stack.
     ///
@@ -735,7 +734,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands: uint32_t length
     ///   Stack: => obj
-    NewArray = 90,  // JSOP_NEWARRAY
+    NewArray = 90, // JSOP_NEWARRAY
 
     /// Pushes newly created object onto the stack.
     ///
@@ -746,7 +745,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t baseobjIndex
     ///   Stack: => obj
-    NewObject = 91,  // JSOP_NEWOBJECT
+    NewObject = 91, // JSOP_NEWOBJECT
 
     /// Initialize the home object for functions with super bindings.
     ///
@@ -757,7 +756,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: fun, homeObject => fun
-    InitHomeObject = 92,  // JSOP_INITHOMEOBJECT
+    InitHomeObject = 92, // JSOP_INITHOMEOBJECT
 
     /// Initialize a named property in an object literal, like '{a: x}'.
     ///
@@ -768,7 +767,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitProp = 93,  // JSOP_INITPROP
+    InitProp = 93, // JSOP_INITPROP
 
     /// Initialize a numeric property in an object literal, like '{1: x}'.
     ///
@@ -779,7 +778,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitElem = 94,  // JSOP_INITELEM
+    InitElem = 94, // JSOP_INITELEM
 
     /// Pops the top three values on the stack as 'val', 'index' and 'obj', sets
     /// 'index' property of 'obj' as 'val', pushes 'obj' and 'index + 1' onto
@@ -792,7 +791,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands:
     ///   Stack: obj, index, val => obj, (index + 1)
-    InitElemInc = 95,  // JSOP_INITELEM_INC
+    InitElemInc = 95, // JSOP_INITELEM_INC
 
     /// Initialize an array element.
     ///
@@ -803,7 +802,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands: uint32_t index
     ///   Stack: obj, val => obj
-    InitElemArray = 96,  // JSOP_INITELEM_ARRAY
+    InitElemArray = 96, // JSOP_INITELEM_ARRAY
 
     /// Initialize a getter in an object literal.
     ///
@@ -814,7 +813,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitPropGetter = 97,  // JSOP_INITPROP_GETTER
+    InitPropGetter = 97, // JSOP_INITPROP_GETTER
 
     /// Initialize a setter in an object literal.
     ///
@@ -825,7 +824,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitPropSetter = 98,  // JSOP_INITPROP_SETTER
+    InitPropSetter = 98, // JSOP_INITPROP_SETTER
 
     /// Initialize a numeric getter in an object literal like
     /// '{get 2() {}}'.
@@ -837,7 +836,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitElemGetter = 99,  // JSOP_INITELEM_GETTER
+    InitElemGetter = 99, // JSOP_INITELEM_GETTER
 
     /// Initialize a numeric setter in an object literal like
     /// '{set 2(v) {}}'.
@@ -849,7 +848,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitElemSetter = 100,  // JSOP_INITELEM_SETTER
+    InitElemSetter = 100, // JSOP_INITELEM_SETTER
 
     /// Pushes the call site object specified by objectIndex onto the stack.
     /// Defines the raw property specified by objectIndex + 1 on the call site
@@ -860,7 +859,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t objectIndex
     ///   Stack: => obj
-    CallSiteObj = 101,  // JSOP_CALLSITEOBJ
+    CallSiteObj = 101, // JSOP_CALLSITEOBJ
 
     /// Pushes a newly created array onto the stack, whose elements are the same
     /// as that of a template object's copy on write elements.
@@ -869,7 +868,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands: uint32_t objectIndex
     ///   Stack: => obj
-    NewArrayCopyOnWrite = 102,  // JSOP_NEWARRAY_COPYONWRITE
+    NewArrayCopyOnWrite = 102, // JSOP_NEWARRAY_COPYONWRITE
 
     /// Pushes the prototype of the home object for |callee| onto the
     /// stack.
@@ -878,7 +877,7 @@ pub enum Opcode {
     ///   Type: Super
     ///   Operands:
     ///   Stack: callee => homeObjectProto
-    SuperBase = 103,  // JSOP_SUPERBASE
+    SuperBase = 103, // JSOP_SUPERBASE
 
     /// Pops the top two values, and pushes the property of one, using the other
     /// as the receiver.
@@ -887,7 +886,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: receiver, obj => obj[name]
-    GetPropSuper = 104,  // JSOP_GETPROP_SUPER
+    GetPropSuper = 104, // JSOP_GETPROP_SUPER
 
     /// Pops the top three values on the stack as 'val' and 'obj', and
     /// 'receiver', and performs 'obj.prop = val', pushing 'val' back onto the
@@ -898,7 +897,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: receiver, obj, val => val
-    StrictSetPropSuper = 105,  // JSOP_STRICTSETPROP_SUPER
+    StrictSetPropSuper = 105, // JSOP_STRICTSETPROP_SUPER
 
     /// This opcode precedes every labeled statement. It's a no-op.
     ///
@@ -909,7 +908,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: int32_t offset
     ///   Stack: =>
-    Label = 106,  // JSOP_LABEL
+    Label = 106, // JSOP_LABEL
 
     /// Pops the top three values on the stack as 'val', 'obj' and 'receiver',
     /// and performs 'obj.prop = val', pushing 'val' back onto the stack.
@@ -918,7 +917,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: receiver, obj, val => val
-    SetPropSuper = 107,  // JSOP_SETPROP_SUPER
+    SetPropSuper = 107, // JSOP_SETPROP_SUPER
 
     /// Invokes 'callee' with 'this' and 'args', pushes return value onto the
     /// stack.
@@ -935,7 +934,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    FunCall = 108,  // JSOP_FUNCALL
+    FunCall = 108, // JSOP_FUNCALL
 
     /// Another no-op.
     ///
@@ -946,7 +945,7 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: uint32_t icIndex
     ///   Stack: =>
-    LoopHead = 109,  // JSOP_LOOPHEAD
+    LoopHead = 109, // JSOP_LOOPHEAD
 
     /// Looks up name on the environment chain and pushes the environment which
     /// contains the name onto the stack. If not found, pushes global lexical
@@ -956,7 +955,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => env
-    BindName = 110,  // JSOP_BINDNAME
+    BindName = 110, // JSOP_BINDNAME
 
     /// Pops an environment and value from the stack, assigns value to the given
     /// name, and pushes the value back on the stack
@@ -965,7 +964,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: env, val => val
-    SetName = 111,  // JSOP_SETNAME
+    SetName = 111, // JSOP_SETNAME
 
     /// Pops the top of stack value as 'v', sets pending exception as 'v', then
     /// raises error.
@@ -974,7 +973,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands:
     ///   Stack: v =>
-    Throw = 112,  // JSOP_THROW
+    Throw = 112, // JSOP_THROW
 
     /// Pops the top two values 'id' and 'obj' from the stack, then pushes
     /// 'id in obj'. This will throw a 'TypeError' if 'obj' is not an object.
@@ -985,7 +984,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: id, obj => (id in obj)
-    In = 113,  // JSOP_IN
+    In = 113, // JSOP_IN
 
     /// Pops the top two values 'obj' and 'ctor' from the stack, then pushes
     /// 'obj instanceof ctor'. This will throw a 'TypeError' if 'obj' is not an
@@ -995,7 +994,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: obj, ctor => (obj instanceof ctor)
-    Instanceof = 114,  // JSOP_INSTANCEOF
+    Instanceof = 114, // JSOP_INSTANCEOF
 
     /// Invokes debugger.
     ///
@@ -1003,7 +1002,7 @@ pub enum Opcode {
     ///   Type: Debugger
     ///   Operands:
     ///   Stack: =>
-    Debugger = 115,  // JSOP_DEBUGGER
+    Debugger = 115, // JSOP_DEBUGGER
 
     /// This opcode is used for entering a 'finally' block. Jumps to a 32-bit
     /// offset from the current pc.
@@ -1020,7 +1019,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands: int32_t offset
     ///   Stack: false, resumeIndex =>
-    Gosub = 116,  // JSOP_GOSUB
+    Gosub = 116, // JSOP_GOSUB
 
     /// This opcode is used for returning from a 'finally' block.
     ///
@@ -1032,7 +1031,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands:
     ///   Stack: lval, rval =>
-    Retsub = 117,  // JSOP_RETSUB
+    Retsub = 117, // JSOP_RETSUB
 
     /// Pushes the current pending exception onto the stack and clears the
     /// pending exception. This is only emitted at the beginning of code for a
@@ -1043,14 +1042,14 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands:
     ///   Stack: => exception
-    Exception = 118,  // JSOP_EXCEPTION
+    Exception = 118, // JSOP_EXCEPTION
 
     /// Embedded lineno to speedup 'pc->line' mapping.
     ///
     ///   Category: Other
     ///   Operands: uint32_t lineno
     ///   Stack: =>
-    Lineno = 119,  // JSOP_LINENO
+    Lineno = 119, // JSOP_LINENO
 
     /// This no-op appears after the bytecode for EXPR in 'switch (EXPR) {...}'
     /// if the switch cannot be optimized using JSOP_TABLESWITCH.
@@ -1088,7 +1087,7 @@ pub enum Opcode {
     ///   Type: Switch Statement
     ///   Operands:
     ///   Stack: =>
-    CondSwitch = 120,  // JSOP_CONDSWITCH
+    CondSwitch = 120, // JSOP_CONDSWITCH
 
     /// Pops the top two values on the stack as 'val' and 'cond'. If 'cond' is
     /// 'true', jumps to a 32-bit offset from the current bytecode, re-pushes
@@ -1098,7 +1097,7 @@ pub enum Opcode {
     ///   Type: Switch Statement
     ///   Operands: int32_t offset
     ///   Stack: val, cond => val(if !cond)
-    Case = 121,  // JSOP_CASE
+    Case = 121, // JSOP_CASE
 
     /// This appears after all cases in a JSOP_CONDSWITCH, whether there is a
     /// 'default:' label in the switch statement or not. Pop the switch operand
@@ -1109,7 +1108,7 @@ pub enum Opcode {
     ///   Type: Switch Statement
     ///   Operands: int32_t offset
     ///   Stack: lval =>
-    Default = 122,  // JSOP_DEFAULT
+    Default = 122, // JSOP_DEFAULT
 
     /// Invokes 'eval' with 'args' and pushes return value onto the stack.
     ///
@@ -1121,7 +1120,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    Eval = 123,  // JSOP_EVAL
+    Eval = 123, // JSOP_EVAL
 
     /// Invokes 'eval' with 'args' and pushes return value onto the stack.
     ///
@@ -1133,7 +1132,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    StrictEval = 124,  // JSOP_STRICTEVAL
+    StrictEval = 124, // JSOP_STRICTEVAL
 
     /// LIKE JSOP_GETELEM but takes receiver on stack, and the propval is
     /// evaluated before the obj.
@@ -1142,7 +1141,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: receiver, propval, obj => obj[propval]
-    GetElemSuper = 125,  // JSOP_GETELEM_SUPER
+    GetElemSuper = 125, // JSOP_GETELEM_SUPER
 
     /// Pushes a resumeIndex (stored as 24-bit operand) on the stack.
     ///
@@ -1153,7 +1152,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands: uint24_t resumeIndex
     ///   Stack: => resumeIndex
-    ResumeIndex = 126,  // JSOP_RESUMEINDEX
+    ResumeIndex = 126, // JSOP_RESUMEINDEX
 
     /// Defines the given function on the current scope.
     ///
@@ -1164,7 +1163,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands:
     ///   Stack: fun =>
-    DefFun = 127,  // JSOP_DEFFUN
+    DefFun = 127, // JSOP_DEFFUN
 
     /// Defines the new constant binding on global lexical environment.
     ///
@@ -1176,7 +1175,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: =>
-    DefConst = 128,  // JSOP_DEFCONST
+    DefConst = 128, // JSOP_DEFCONST
 
     /// Defines the new binding on the frame's current variables-object (the
     /// environment on the environment chain designated to receive new
@@ -1192,7 +1191,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: =>
-    DefVar = 129,  // JSOP_DEFVAR
+    DefVar = 129, // JSOP_DEFVAR
 
     /// Pushes a closure for a named or anonymous function expression onto the
     /// stack.
@@ -1201,7 +1200,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands: uint32_t funcIndex
     ///   Stack: => obj
-    Lambda = 130,  // JSOP_LAMBDA
+    Lambda = 130, // JSOP_LAMBDA
 
     /// Pops the top of stack value as 'new.target', pushes an arrow function
     /// with lexical 'new.target' onto the stack.
@@ -1210,7 +1209,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands: uint32_t funcIndex
     ///   Stack: new.target => obj
-    LambdaArrow = 131,  // JSOP_LAMBDA_ARROW
+    LambdaArrow = 131, // JSOP_LAMBDA_ARROW
 
     /// Pushes current callee onto the stack.
     ///
@@ -1220,7 +1219,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands:
     ///   Stack: => callee
-    Callee = 132,  // JSOP_CALLEE
+    Callee = 132, // JSOP_CALLEE
 
     /// Picks the nth element from the stack and moves it to the top of the
     /// stack.
@@ -1229,7 +1228,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands: uint8_t n
     ///   Stack: v[n], v[n-1], ..., v[1], v[0] => v[n-1], ..., v[1], v[0], v[n]
-    Pick = 133,  // JSOP_PICK
+    Pick = 133, // JSOP_PICK
 
     /// This no-op appears at the top of the bytecode for a 'TryStatement'.
     ///
@@ -1240,7 +1239,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands:
     ///   Stack: =>
-    Try = 134,  // JSOP_TRY
+    Try = 134, // JSOP_TRY
 
     /// This opcode has a def count of 2, but these values are already on the
     /// stack (they're pushed by JSOP_GOSUB).
@@ -1249,7 +1248,7 @@ pub enum Opcode {
     ///   Type: Exception Handling
     ///   Operands:
     ///   Stack: => false, resumeIndex
-    Finally = 135,  // JSOP_FINALLY
+    Finally = 135, // JSOP_FINALLY
 
     /// Pushes aliased variable onto the stack.
     ///
@@ -1269,7 +1268,7 @@ pub enum Opcode {
     ///   Type: Aliased Variables
     ///   Operands: uint8_t hops, uint24_t slot
     ///   Stack: => aliasedVar
-    GetAliasedVar = 136,  // JSOP_GETALIASEDVAR
+    GetAliasedVar = 136, // JSOP_GETALIASEDVAR
 
     /// Sets aliased variable as the top of stack value.
     ///
@@ -1277,7 +1276,7 @@ pub enum Opcode {
     ///   Type: Aliased Variables
     ///   Operands: uint8_t hops, uint24_t slot
     ///   Stack: v => v
-    SetAliasedVar = 137,  // JSOP_SETALIASEDVAR
+    SetAliasedVar = 137, // JSOP_SETALIASEDVAR
 
     /// Checks if the value of the local variable is the
     /// JS_UNINITIALIZED_LEXICAL magic, throwing an error if so.
@@ -1286,7 +1285,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands: uint24_t localno
     ///   Stack: =>
-    CheckLexical = 138,  // JSOP_CHECKLEXICAL
+    CheckLexical = 138, // JSOP_CHECKLEXICAL
 
     /// Initializes an uninitialized local lexical binding with the top of stack
     /// value.
@@ -1295,7 +1294,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands: uint24_t localno
     ///   Stack: v => v
-    InitLexical = 139,  // JSOP_INITLEXICAL
+    InitLexical = 139, // JSOP_INITLEXICAL
 
     /// Checks if the value of the aliased variable is the
     /// JS_UNINITIALIZED_LEXICAL magic, throwing an error if so.
@@ -1304,7 +1303,7 @@ pub enum Opcode {
     ///   Type: Aliased Variables
     ///   Operands: uint8_t hops, uint24_t slot
     ///   Stack: =>
-    CheckAliasedLexical = 140,  // JSOP_CHECKALIASEDLEXICAL
+    CheckAliasedLexical = 140, // JSOP_CHECKALIASEDLEXICAL
 
     /// Initializes an uninitialized aliased lexical binding with the top of
     /// stack value.
@@ -1313,7 +1312,7 @@ pub enum Opcode {
     ///   Type: Aliased Variables
     ///   Operands: uint8_t hops, uint24_t slot
     ///   Stack: v => v
-    InitAliasedLexical = 141,  // JSOP_INITALIASEDLEXICAL
+    InitAliasedLexical = 141, // JSOP_INITALIASEDLEXICAL
 
     /// Pushes a JS_UNINITIALIZED_LEXICAL value onto the stack, representing an
     /// uninitialized lexical binding.
@@ -1324,7 +1323,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands:
     ///   Stack: => uninitialized
-    Uninitialized = 142,  // JSOP_UNINITIALIZED
+    Uninitialized = 142, // JSOP_UNINITIALIZED
 
     /// Pushes the value of the intrinsic onto the stack.
     ///
@@ -1338,7 +1337,7 @@ pub enum Opcode {
     ///   Type: Intrinsics
     ///   Operands: uint32_t nameIndex
     ///   Stack: => intrinsic[name]
-    GetIntrinsic = 143,  // JSOP_GETINTRINSIC
+    GetIntrinsic = 143, // JSOP_GETINTRINSIC
 
     /// Stores the top stack value in the specified intrinsic.
     ///
@@ -1346,7 +1345,7 @@ pub enum Opcode {
     ///   Type: Intrinsics
     ///   Operands: uint32_t nameIndex
     ///   Stack: val => val
-    SetIntrinsic = 144,  // JSOP_SETINTRINSIC
+    SetIntrinsic = 144, // JSOP_SETINTRINSIC
 
     /// Like JSOP_CALL, but used as part of for-of and destructuring bytecode to
     /// provide better error messages.
@@ -1356,7 +1355,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc (must be 0)
     ///   Stack: callee, this => rval
     ///   nuses: 2
-    CallIter = 145,  // JSOP_CALLITER
+    CallIter = 145, // JSOP_CALLITER
 
     /// Initialize a non-configurable, non-writable, non-enumerable
     /// data-property on an object.
@@ -1368,7 +1367,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitLockedProp = 146,  // JSOP_INITLOCKEDPROP
+    InitLockedProp = 146, // JSOP_INITLOCKEDPROP
 
     /// Initialize a non-enumerable data-property on an object.
     ///
@@ -1379,7 +1378,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitHiddenProp = 147,  // JSOP_INITHIDDENPROP
+    InitHiddenProp = 147, // JSOP_INITHIDDENPROP
 
     /// Push "new.target"
     ///
@@ -1387,9 +1386,9 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands:
     ///   Stack: => new.target
-    NewTarget = 148,  // JSOP_NEWTARGET
+    NewTarget = 148, // JSOP_NEWTARGET
 
-    Unused149 = 149,  // JSOP_UNUSED149
+    Unused149 = 149, // JSOP_UNUSED149
 
     /// Pops the top two values 'lval' and 'rval' from the stack, then pushes
     /// the result of 'Math.pow(lval, rval)'.
@@ -1398,7 +1397,7 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: lval, rval => (lval ** rval)
-    Pow = 150,  // JSOP_POW
+    Pow = 150, // JSOP_POW
 
     /// Pops the top two values 'value' and 'gen' from the stack, then starts
     /// "awaiting" for 'value' to be resolved, which will then resume the
@@ -1409,7 +1408,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands:
     ///   Stack: value, gen => promise
-    AsyncAwait = 151,  // JSOP_ASYNCAWAIT
+    AsyncAwait = 151, // JSOP_ASYNCAWAIT
 
     /// Pops the top of stack value as 'rval', sets the return value in stack
     /// frame as 'rval'.
@@ -1418,7 +1417,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: rval =>
-    SetRval = 152,  // JSOP_SETRVAL
+    SetRval = 152, // JSOP_SETRVAL
 
     /// Stops interpretation and returns value set by JSOP_SETRVAL. When not
     /// set, returns 'undefined'.
@@ -1430,7 +1429,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: =>
-    RetRval = 153,  // JSOP_RETRVAL
+    RetRval = 153, // JSOP_RETRVAL
 
     /// Looks up name on global environment and pushes its value onto the stack,
     /// unless the script has a non-syntactic global scope, in which case it
@@ -1443,7 +1442,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => val
-    GetGname = 154,  // JSOP_GETGNAME
+    GetGname = 154, // JSOP_GETGNAME
 
     /// Pops the top two values on the stack as 'val' and 'env', sets property
     /// of 'env' as 'val' and pushes 'val' back on the stack.
@@ -1455,7 +1454,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: env, val => val
-    SetGname = 155,  // JSOP_SETGNAME
+    SetGname = 155, // JSOP_SETGNAME
 
     /// Pops the top two values on the stack as 'val' and 'env', sets property
     /// of 'env' as 'val' and pushes 'val' back on the stack. Throws a TypeError
@@ -1468,7 +1467,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: env, val => val
-    StrictSetGname = 156,  // JSOP_STRICTSETGNAME
+    StrictSetGname = 156, // JSOP_STRICTSETGNAME
 
     /// Pushes the implicit 'this' value for calls to the associated name onto
     /// the stack; only used when the implicit this might be derived from a
@@ -1484,7 +1483,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands: uint32_t nameIndex
     ///   Stack: => this
-    GImplicitThis = 157,  // JSOP_GIMPLICITTHIS
+    GImplicitThis = 157, // JSOP_GIMPLICITTHIS
 
     /// LIKE JSOP_SETELEM, but takes receiver on the stack, and the propval is
     /// evaluated before the base.
@@ -1493,7 +1492,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: receiver, propval, obj, val => val
-    SetElemSuper = 158,  // JSOP_SETELEM_SUPER
+    SetElemSuper = 158, // JSOP_SETELEM_SUPER
 
     /// LIKE JSOP_STRICTSETELEM, but takes receiver on the stack, and the
     /// propval is evaluated before the base.
@@ -1502,7 +1501,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: receiver, propval, obj, val => val
-    StrictSetElemSuper = 159,  // JSOP_STRICTSETELEM_SUPER
+    StrictSetElemSuper = 159, // JSOP_STRICTSETELEM_SUPER
 
     /// Pushes a regular expression literal onto the stack. It requires special
     /// "clone on exec" handling.
@@ -1511,7 +1510,7 @@ pub enum Opcode {
     ///   Type: RegExp
     ///   Operands: uint32_t regexpIndex
     ///   Stack: => regexp
-    RegExp = 160,  // JSOP_REGEXP
+    RegExp = 160, // JSOP_REGEXP
 
     /// Initializes an uninitialized global lexical binding with the top of
     /// stack value.
@@ -1520,7 +1519,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: val => val
-    InitGLexical = 161,  // JSOP_INITGLEXICAL
+    InitGLexical = 161, // JSOP_INITGLEXICAL
 
     /// Defines the new mutable binding on global lexical environment.
     ///
@@ -1532,7 +1531,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: =>
-    DefLet = 162,  // JSOP_DEFLET
+    DefLet = 162, // JSOP_DEFLET
 
     /// Throw if the value on the stack is not coerscible to an object (is
     /// |null| or |undefined|).
@@ -1541,7 +1540,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: val => val
-    CheckObjCoercible = 163,  // JSOP_CHECKOBJCOERCIBLE
+    CheckObjCoercible = 163, // JSOP_CHECKOBJCOERCIBLE
 
     /// Push the function to invoke with |super()|. This is the prototype of the
     /// function passed in as |callee|.
@@ -1550,7 +1549,7 @@ pub enum Opcode {
     ///   Type: Super
     ///   Operands:
     ///   Stack: callee => superFun
-    SuperFun = 164,  // JSOP_SUPERFUN
+    SuperFun = 164, // JSOP_SUPERFUN
 
     /// Behaves exactly like JSOP_NEW, but allows JITs to distinguish the two
     /// cases.
@@ -1560,7 +1559,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1], newTarget => rval
     ///   nuses: (argc+3)
-    SuperCall = 165,  // JSOP_SUPERCALL
+    SuperCall = 165, // JSOP_SUPERCALL
 
     /// spreadcall variant of JSOP_SUPERCALL.
     ///
@@ -1570,7 +1569,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: callee, this, args, newTarget => rval
-    SpreadSuperCall = 166,  // JSOP_SPREADSUPERCALL
+    SpreadSuperCall = 166, // JSOP_SPREADSUPERCALL
 
     /// Push a default constructor for a base class literal.
     ///
@@ -1578,7 +1577,7 @@ pub enum Opcode {
     ///   Type: Class
     ///   Operands: atom className
     ///   Stack: => constructor
-    ClassConstructor = 167,  // JSOP_CLASSCONSTRUCTOR
+    ClassConstructor = 167, // JSOP_CLASSCONSTRUCTOR
 
     /// Push a default constructor for a derived class literal.
     ///
@@ -1586,7 +1585,7 @@ pub enum Opcode {
     ///   Type: Class
     ///   Operands: atom className
     ///   Stack: proto => constructor
-    DerivedConstructor = 168,  // JSOP_DERIVEDCONSTRUCTOR
+    DerivedConstructor = 168, // JSOP_DERIVEDCONSTRUCTOR
 
     /// Throws a runtime TypeError for invalid assignment to 'const'. The
     /// localno is used for better error messages.
@@ -1595,7 +1594,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands: uint24_t localno
     ///   Stack: v => v
-    ThrowSetConst = 169,  // JSOP_THROWSETCONST
+    ThrowSetConst = 169, // JSOP_THROWSETCONST
 
     /// Throws a runtime TypeError for invalid assignment to 'const'. The
     /// environment coordinate is used for better error messages.
@@ -1604,7 +1603,7 @@ pub enum Opcode {
     ///   Type: Aliased Variables
     ///   Operands: uint8_t hops, uint24_t slot
     ///   Stack: v => v
-    ThrowSetAliasedConst = 170,  // JSOP_THROWSETALIASEDCONST
+    ThrowSetAliasedConst = 170, // JSOP_THROWSETALIASEDCONST
 
     /// Initialize a non-enumerable getter in an object literal.
     ///
@@ -1615,7 +1614,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitHiddenPropGetter = 171,  // JSOP_INITHIDDENPROP_GETTER
+    InitHiddenPropGetter = 171, // JSOP_INITHIDDENPROP_GETTER
 
     /// Initialize a non-enumerable setter in an object literal.
     ///
@@ -1626,7 +1625,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj, val => obj
-    InitHiddenPropSetter = 172,  // JSOP_INITHIDDENPROP_SETTER
+    InitHiddenPropSetter = 172, // JSOP_INITHIDDENPROP_SETTER
 
     /// Initialize a non-enumerable numeric getter in an object literal like
     /// '{get 2() {}}'.
@@ -1638,7 +1637,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitHiddenElemGetter = 173,  // JSOP_INITHIDDENELEM_GETTER
+    InitHiddenElemGetter = 173, // JSOP_INITHIDDENELEM_GETTER
 
     /// Initialize a non-enumerable numeric setter in an object literal like
     /// '{set 2(v) {}}'.
@@ -1650,7 +1649,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitHiddenElemSetter = 174,  // JSOP_INITHIDDENELEM_SETTER
+    InitHiddenElemSetter = 174, // JSOP_INITHIDDENELEM_SETTER
 
     /// Initialize a non-enumerable numeric property in an object literal, like
     /// '{1: x}'.
@@ -1662,7 +1661,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, id, val => obj
-    InitHiddenElem = 175,  // JSOP_INITHIDDENELEM
+    InitHiddenElem = 175, // JSOP_INITHIDDENELEM
 
     /// Gets the value of a module import by name and pushes it onto the stack.
     ///
@@ -1670,7 +1669,7 @@ pub enum Opcode {
     ///   Type: Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => val
-    GetImport = 176,  // JSOP_GETIMPORT
+    GetImport = 176, // JSOP_GETIMPORT
 
     /// Examines the top stack value, asserting that it's either a self-hosted
     /// function or a self-hosted intrinsic. This opcode does nothing in a
@@ -1679,7 +1678,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: checkVal => checkVal
-    DebugCheckSelfHosted = 177,  // JSOP_DEBUGCHECKSELFHOSTED
+    DebugCheckSelfHosted = 177, // JSOP_DEBUGCHECKSELFHOSTED
 
     /// Pops the top stack value, pushes the value and a boolean value that
     /// indicates whether the spread operation for the value can be optimized in
@@ -1689,7 +1688,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: arr => arr, optimized
-    OptimizeSpreadCall = 178,  // JSOP_OPTIMIZE_SPREADCALL
+    OptimizeSpreadCall = 178, // JSOP_OPTIMIZE_SPREADCALL
 
     /// Throws a runtime TypeError for invalid assignment to the callee in a
     /// named lambda, which is always a 'const' binding. This is a different
@@ -1701,7 +1700,7 @@ pub enum Opcode {
     ///   Type: Local Variables
     ///   Operands:
     ///   Stack: v => v
-    ThrowSetCallee = 179,  // JSOP_THROWSETCALLEE
+    ThrowSetCallee = 179, // JSOP_THROWSETCALLEE
 
     /// Pushes a var environment onto the env chain.
     ///
@@ -1709,7 +1708,7 @@ pub enum Opcode {
     ///   Type: Var Scope
     ///   Operands: uint32_t scopeIndex
     ///   Stack: =>
-    PushVarEnv = 180,  // JSOP_PUSHVARENV
+    PushVarEnv = 180, // JSOP_PUSHVARENV
 
     /// Pops a var environment from the env chain.
     ///
@@ -1717,7 +1716,7 @@ pub enum Opcode {
     ///   Type: Var Scope
     ///   Operands:
     ///   Stack: =>
-    PopVarEnv = 181,  // JSOP_POPVARENV
+    PopVarEnv = 181, // JSOP_POPVARENV
 
     /// Pops the top two values on the stack as 'name' and 'fun', defines the
     /// name of 'fun' to 'name' with prefix if any, and pushes 'fun' back onto
@@ -1727,7 +1726,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands: uint8_t prefixKind
     ///   Stack: fun, name => fun
-    SetFunName = 182,  // JSOP_SETFUNNAME
+    SetFunName = 182, // JSOP_SETFUNNAME
 
     /// Moves the top of the stack value under the nth element of the stack.
     /// Note: n must NOT be 0.
@@ -1736,7 +1735,7 @@ pub enum Opcode {
     ///   Type: Stack Operations
     ///   Operands: uint8_t n
     ///   Stack: v[n], v[n-1], ..., v[1], v[0] => v[0], v[n], v[n-1], ..., v[1]
-    Unpick = 183,  // JSOP_UNPICK
+    Unpick = 183, // JSOP_UNPICK
 
     /// Pops the top of stack value, pushes property of it onto the stack.
     /// Requires the value under 'obj' to be the receiver of the following call.
@@ -1747,7 +1746,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj => obj[name]
-    CallProp = 184,  // JSOP_CALLPROP
+    CallProp = 184, // JSOP_CALLPROP
 
     /// Determines the 'this' value for current function frame and pushes it
     /// onto the stack. Emitted in the prologue of functions with a
@@ -1757,7 +1756,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands:
     ///   Stack: => this
-    FunctionThis = 185,  // JSOP_FUNCTIONTHIS
+    FunctionThis = 185, // JSOP_FUNCTIONTHIS
 
     /// Pushes 'this' value for current stack frame onto the stack. Emitted when
     /// 'this' refers to the global 'this'.
@@ -1766,7 +1765,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands:
     ///   Stack: => this
-    GlobalThis = 186,  // JSOP_GLOBALTHIS
+    GlobalThis = 186, // JSOP_GLOBALTHIS
 
     /// Pushes a boolean indicating whether the top of the stack is
     /// MagicValue(JS_GENERATOR_CLOSING).
@@ -1775,7 +1774,7 @@ pub enum Opcode {
     ///   Type: For-In Statement
     ///   Operands:
     ///   Stack: val => val, res
-    IsGenClosing = 187,  // JSOP_ISGENCLOSING
+    IsGenClosing = 187, // JSOP_ISGENCLOSING
 
     /// Pushes unsigned 24-bit int immediate integer operand onto the stack.
     ///
@@ -1783,7 +1782,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: uint24_t val
     ///   Stack: => val
-    Uint24 = 188,  // JSOP_UINT24
+    Uint24 = 188, // JSOP_UINT24
 
     /// Throw if the value on top of the stack is the TDZ MagicValue. Used in
     /// derived class constructors.
@@ -1792,7 +1791,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands:
     ///   Stack: this => this
-    CheckThis = 189,  // JSOP_CHECKTHIS
+    CheckThis = 189, // JSOP_CHECKTHIS
 
     /// Check if a derived class constructor has a valid return value and 'this'
     /// value before it returns. If the return value is not an object, stores
@@ -1802,7 +1801,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands:
     ///   Stack: this =>
-    CheckReturn = 190,  // JSOP_CHECKRETURN
+    CheckReturn = 190, // JSOP_CHECKRETURN
 
     /// Throw an exception if the value on top of the stack is not the TDZ
     /// MagicValue. Used in derived class constructors.
@@ -1811,7 +1810,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands:
     ///   Stack: this => this
-    CheckThisReinit = 191,  // JSOP_CHECKTHISREINIT
+    CheckThisReinit = 191, // JSOP_CHECKTHISREINIT
 
     /// Pops the top two values 'valueOrReason' and 'gen' from the stack, then
     /// pushes the promise resolved with 'valueOrReason'. `gen` must be the
@@ -1822,7 +1821,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint8_t fulfillOrReject
     ///   Stack: valueOrReason, gen => promise
-    AsyncResolve = 192,  // JSOP_ASYNCRESOLVE
+    AsyncResolve = 192, // JSOP_ASYNCRESOLVE
 
     /// Pops the top two values on the stack as 'propval' and 'obj', pushes
     /// 'propval' property of 'obj' onto the stack. Requires the value under
@@ -1834,7 +1833,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, propval => obj[propval]
-    CallElem = 193,  // JSOP_CALLELEM
+    CallElem = 193, // JSOP_CALLELEM
 
     /// '__proto__: v' inside an object initializer.
     ///
@@ -1846,7 +1845,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: obj, newProto => succeeded
-    MutateProto = 194,  // JSOP_MUTATEPROTO
+    MutateProto = 194, // JSOP_MUTATEPROTO
 
     /// Pops an environment, gets the value of a bound name on it. If the name
     /// is not bound to the environment, throw a ReferenceError. Used in
@@ -1856,7 +1855,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands: uint32_t nameIndex
     ///   Stack: env => v
-    GetBoundName = 195,  // JSOP_GETBOUNDNAME
+    GetBoundName = 195, // JSOP_GETBOUNDNAME
 
     /// Pops the top stack value as 'val' and pushes 'typeof val'. Note that
     /// this opcode isn't used when, in the original source code, 'val' is a
@@ -1867,7 +1866,7 @@ pub enum Opcode {
     ///   Type: Special Operators
     ///   Operands:
     ///   Stack: val => (typeof val)
-    TypeofExpr = 196,  // JSOP_TYPEOFEXPR
+    TypeofExpr = 196, // JSOP_TYPEOFEXPR
 
     /// Replaces the current block on the env chain with a fresh block that
     /// copies all the bindings in the block. This operation implements the
@@ -1879,7 +1878,7 @@ pub enum Opcode {
     ///   Type: Block-local Scope
     ///   Operands:
     ///   Stack: =>
-    FreshenLexicalEnv = 197,  // JSOP_FRESHENLEXICALENV
+    FreshenLexicalEnv = 197, // JSOP_FRESHENLEXICALENV
 
     /// Recreates the current block on the env chain with a fresh block with
     /// uninitialized bindings. This operation implements the behavior of
@@ -1890,7 +1889,7 @@ pub enum Opcode {
     ///   Type: Block-local Scope
     ///   Operands:
     ///   Stack: =>
-    RecreateLexicalEnv = 198,  // JSOP_RECREATELEXICALENV
+    RecreateLexicalEnv = 198, // JSOP_RECREATELEXICALENV
 
     /// Pushes lexical environment onto the env chain.
     ///
@@ -1898,7 +1897,7 @@ pub enum Opcode {
     ///   Type: Block-local Scope
     ///   Operands: uint32_t scopeIndex
     ///   Stack: =>
-    PushLexicalEnv = 199,  // JSOP_PUSHLEXICALENV
+    PushLexicalEnv = 199, // JSOP_PUSHLEXICALENV
 
     /// Pops lexical environment from the env chain.
     ///
@@ -1906,7 +1905,7 @@ pub enum Opcode {
     ///   Type: Block-local Scope
     ///   Operands:
     ///   Stack: =>
-    PopLexicalEnv = 200,  // JSOP_POPLEXICALENV
+    PopLexicalEnv = 200, // JSOP_POPLEXICALENV
 
     /// The opcode to assist the debugger.
     ///
@@ -1914,7 +1913,7 @@ pub enum Opcode {
     ///   Type: Debugger
     ///   Operands:
     ///   Stack: =>
-    DebugLeaveLexicalEnv = 201,  // JSOP_DEBUGLEAVELEXICALENV
+    DebugLeaveLexicalEnv = 201, // JSOP_DEBUGLEAVELEXICALENV
 
     /// Pops the generator from the top of the stack, suspends it and stops
     /// interpretation.
@@ -1923,7 +1922,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint24_t resumeIndex
     ///   Stack: generator => generator
-    InitialYield = 202,  // JSOP_INITIALYIELD
+    InitialYield = 202, // JSOP_INITIALYIELD
 
     /// Pops the generator and the return value 'rval1', stops interpretation
     /// and returns 'rval1'. Pushes sent value from 'send()' onto the stack.
@@ -1932,7 +1931,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint24_t resumeIndex
     ///   Stack: rval1, gen => rval2
-    Yield = 203,  // JSOP_YIELD
+    Yield = 203, // JSOP_YIELD
 
     /// Pops the generator and suspends and closes it. Yields the value in the
     /// frame's return value slot.
@@ -1941,7 +1940,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands:
     ///   Stack: gen =>
-    FinalYieldRval = 204,  // JSOP_FINALYIELDRVAL
+    FinalYieldRval = 204, // JSOP_FINALYIELDRVAL
 
     /// Pops the generator and argument from the stack, pushes a new generator
     /// frame and resumes execution of it. Pushes the return value after the
@@ -1951,7 +1950,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: resume kind (AbstractGeneratorObject::ResumeKind)
     ///   Stack: gen, val => rval
-    Resume = 205,  // JSOP_RESUME
+    Resume = 205, // JSOP_RESUME
 
     /// Load the callee stored in a CallObject on the environment chain. The
     /// numHops operand is the number of environment objects to skip on the
@@ -1961,7 +1960,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands: uint8_t numHops
     ///   Stack: => callee
-    EnvCallee = 206,  // JSOP_ENVCALLEE
+    EnvCallee = 206, // JSOP_ENVCALLEE
 
     /// No-op bytecode only emitted in some self-hosted functions. Not handled
     /// by the JITs or Baseline Interpreter so the script always runs in the C++
@@ -1970,7 +1969,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: =>
-    ForceInterpreter = 207,  // JSOP_FORCEINTERPRETER
+    ForceInterpreter = 207, // JSOP_FORCEINTERPRETER
 
     /// Bytecode emitted after 'yield' expressions. This is useful for the
     /// Debugger and AbstractGeneratorObject::isAfterYieldOrAwait. It's treated
@@ -1981,7 +1980,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint32_t icIndex
     ///   Stack: =>
-    AfterYield = 208,  // JSOP_AFTERYIELD
+    AfterYield = 208, // JSOP_AFTERYIELD
 
     /// Pops the generator and the return value 'promise', stops interpretation
     /// and returns 'promise'. Pushes resolved value onto the stack.
@@ -1990,7 +1989,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands: uint24_t resumeIndex
     ///   Stack: promise, gen => resolved
-    Await = 209,  // JSOP_AWAIT
+    Await = 209, // JSOP_AWAIT
 
     /// Pops the iterator and its next method from the top of the stack, and
     /// create async iterator from it and push the async iterator back onto the
@@ -2000,7 +1999,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands:
     ///   Stack: iter, next => asynciter
-    ToAsyncIter = 210,  // JSOP_TOASYNCITER
+    ToAsyncIter = 210, // JSOP_TOASYNCITER
 
     /// Pops the top two values 'id' and 'obj' from the stack, then pushes
     /// obj.hasOwnProperty(id)
@@ -2011,7 +2010,7 @@ pub enum Opcode {
     ///   Type:
     ///   Operands:
     ///   Stack: id, obj => (obj.hasOwnProperty(id))
-    HasOwn = 211,  // JSOP_HASOWN
+    HasOwn = 211, // JSOP_HASOWN
 
     /// Initializes generator frame, creates a generator and pushes it on the
     /// stack.
@@ -2020,7 +2019,7 @@ pub enum Opcode {
     ///   Type: Generator
     ///   Operands:
     ///   Stack: => generator
-    Generator = 212,  // JSOP_GENERATOR
+    Generator = 212, // JSOP_GENERATOR
 
     /// Pushes the nearest 'var' environment.
     ///
@@ -2028,7 +2027,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands:
     ///   Stack: => env
-    BindVar = 213,  // JSOP_BINDVAR
+    BindVar = 213, // JSOP_BINDVAR
 
     /// Pushes the global environment onto the stack if the script doesn't have
     /// a non-syntactic global scope. Otherwise will act like JSOP_BINDNAME.
@@ -2039,7 +2038,7 @@ pub enum Opcode {
     ///   Type: Free Variables
     ///   Operands: uint32_t nameIndex
     ///   Stack: => global
-    BindGname = 214,  // JSOP_BINDGNAME
+    BindGname = 214, // JSOP_BINDGNAME
 
     /// Pushes 8-bit int immediate integer operand onto the stack.
     ///
@@ -2047,7 +2046,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: int8_t val
     ///   Stack: => val
-    Int8 = 215,  // JSOP_INT8
+    Int8 = 215, // JSOP_INT8
 
     /// Pushes 32-bit int immediate integer operand onto the stack.
     ///
@@ -2055,7 +2054,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: int32_t val
     ///   Stack: => val
-    Int32 = 216,  // JSOP_INT32
+    Int32 = 216, // JSOP_INT32
 
     /// Pops the top of stack value, pushes the 'length' property of it onto the
     /// stack.
@@ -2064,7 +2063,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands: uint32_t nameIndex
     ///   Stack: obj => obj['length']
-    Length = 217,  // JSOP_LENGTH
+    Length = 217, // JSOP_LENGTH
 
     /// Pushes a JS_ELEMENTS_HOLE value onto the stack, representing an omitted
     /// property in an array literal (e.g. property 0 in the array '[, 1]').
@@ -2075,7 +2074,7 @@ pub enum Opcode {
     ///   Type: Array
     ///   Operands:
     ///   Stack: => hole
-    Hole = 218,  // JSOP_HOLE
+    Hole = 218, // JSOP_HOLE
 
     /// Checks that the top value on the stack is callable, and throws a
     /// TypeError if not. The operand 'kind' is used only to generate an
@@ -2085,7 +2084,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands: uint8_t kind
     ///   Stack: obj => obj
-    CheckIsCallable = 219,  // JSOP_CHECKISCALLABLE
+    CheckIsCallable = 219, // JSOP_CHECKISCALLABLE
 
     /// No-op used by the exception unwinder to determine the correct
     /// environment to unwind to when performing IteratorClose due to
@@ -2094,7 +2093,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: =>
-    TryDestructuring = 220,  // JSOP_TRY_DESTRUCTURING
+    TryDestructuring = 220, // JSOP_TRY_DESTRUCTURING
 
     /// Pushes the current global's builtin prototype for a given proto key.
     ///
@@ -2102,7 +2101,7 @@ pub enum Opcode {
     ///   Type: Constants
     ///   Operands: uint8_t kind
     ///   Stack: => %BuiltinPrototype%
-    BuiltinProto = 221,  // JSOP_BUILTINPROTO
+    BuiltinProto = 221, // JSOP_BUILTINPROTO
 
     /// NOP opcode to hint to IonBuilder that the value on top of the stack is
     /// the (likely string) key in a for-in loop.
@@ -2110,7 +2109,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: val => val
-    IterNext = 222,  // JSOP_ITERNEXT
+    IterNext = 222, // JSOP_ITERNEXT
 
     /// Pops the top of stack value as 'value', checks if the await for 'value'
     /// can be skipped. If the await operation can be skipped and the resolution
@@ -2122,7 +2121,7 @@ pub enum Opcode {
     ///   Type: Function
     ///   Operands:
     ///   Stack: value => value_or_resolved, canskip
-    TrySkipAwait = 223,  // JSOP_TRYSKIPAWAIT
+    TrySkipAwait = 223, // JSOP_TRYSKIPAWAIT
 
     /// Creates rest parameter array for current function call, and pushes it
     /// onto the stack.
@@ -2131,7 +2130,7 @@ pub enum Opcode {
     ///   Type: Arguments
     ///   Operands:
     ///   Stack: => rest
-    Rest = 224,  // JSOP_REST
+    Rest = 224, // JSOP_REST
 
     /// Replace the top-of-stack value propertyNameValue with
     /// ToPropertyKey(propertyNameValue).
@@ -2140,7 +2139,7 @@ pub enum Opcode {
     ///   Type: Object
     ///   Operands:
     ///   Stack: propertyNameValue => propertyKey
-    Toid = 225,  // JSOP_TOID
+    Toid = 225, // JSOP_TOID
 
     /// Pushes the implicit 'this' value for calls to the associated name onto
     /// the stack.
@@ -2149,7 +2148,7 @@ pub enum Opcode {
     ///   Type: This
     ///   Operands: uint32_t nameIndex
     ///   Stack: => this
-    ImplicitThis = 226,  // JSOP_IMPLICITTHIS
+    ImplicitThis = 226, // JSOP_IMPLICITTHIS
 
     /// This opcode is the target of the entry jump for some loop. The uint8
     /// argument is a bitfield. The lower 7 bits of the argument indicate the
@@ -2162,14 +2161,14 @@ pub enum Opcode {
     ///   Type: Jumps
     ///   Operands: uint32_t icIndex, uint8_t BITFIELD
     ///   Stack: =>
-    LoopEntry = 227,  // JSOP_LOOPENTRY
+    LoopEntry = 227, // JSOP_LOOPENTRY
 
     /// Converts the value on the top of the stack to a String.
     ///
     ///   Category: Other
     ///   Operands:
     ///   Stack: val => ToString(val)
-    ToString = 228,  // JSOP_TOSTRING
+    ToString = 228, // JSOP_TOSTRING
 
     /// No-op used by the decompiler to produce nicer error messages about
     /// destructuring code.
@@ -2177,7 +2176,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands:
     ///   Stack: =>
-    NopDestructuring = 229,  // JSOP_NOP_DESTRUCTURING
+    NopDestructuring = 229, // JSOP_NOP_DESTRUCTURING
 
     /// This opcode is a no-op and it indicates the location of a jump
     /// instruction target. Some other opcodes act as jump targets as well, see
@@ -2186,7 +2185,7 @@ pub enum Opcode {
     ///   Category: Other
     ///   Operands: uint32_t icIndex
     ///   Stack: =>
-    JumpTarget = 230,  // JSOP_JUMPTARGET
+    JumpTarget = 230, // JSOP_JUMPTARGET
 
     /// Like JSOP_CALL, but tells the function that the return value is ignored.
     /// stack.
@@ -2196,7 +2195,7 @@ pub enum Opcode {
     ///   Operands: uint16_t argc
     ///   Stack: callee, this, args[0], ..., args[argc-1] => rval
     ///   nuses: (argc+2)
-    CallIgnoresRv = 231,  // JSOP_CALL_IGNORES_RV
+    CallIgnoresRv = 231, // JSOP_CALL_IGNORES_RV
 
     /// Push "import.meta"
     ///
@@ -2204,7 +2203,7 @@ pub enum Opcode {
     ///   Type: Modules
     ///   Operands:
     ///   Stack: => import.meta
-    ImportMeta = 232,  // JSOP_IMPORTMETA
+    ImportMeta = 232, // JSOP_IMPORTMETA
 
     /// Dynamic import of the module specified by the string value on the top of
     /// the stack.
@@ -2213,7 +2212,7 @@ pub enum Opcode {
     ///   Type: Modules
     ///   Operands:
     ///   Stack: arg => rval
-    DynamicImport = 233,  // JSOP_DYNAMIC_IMPORT
+    DynamicImport = 233, // JSOP_DYNAMIC_IMPORT
 
     /// Pops the numeric value 'val' from the stack, then pushes 'val + 1'.
     ///
@@ -2221,7 +2220,7 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: val => (val + 1)
-    Inc = 234,  // JSOP_INC
+    Inc = 234, // JSOP_INC
 
     /// Pops the numeric value 'val' from the stack, then pushes 'val - 1'.
     ///
@@ -2229,39 +2228,39 @@ pub enum Opcode {
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: val => (val - 1)
-    Dec = 235,  // JSOP_DEC
+    Dec = 235, // JSOP_DEC
 
     /// Pop 'val' from the stack, then push the result of 'ToNumeric(val)'.
     ///   Category: Operators
     ///   Type: Arithmetic Operators
     ///   Operands:
     ///   Stack: val => ToNumeric(val)
-    ToNumeric = 236,  // JSOP_TONUMERIC
+    ToNumeric = 236, // JSOP_TONUMERIC
 
     /// Pushes a BigInt constant onto the stack.
     ///   Category: Literals
     ///   Type: Constants
     ///   Operands: uint32_t constIndex
     ///   Stack: => val
-    BigInt = 237,  // JSOP_BIGINT
+    BigInt = 237, // JSOP_BIGINT
 
     /// Pushes a boolean indicating if instrumentation is active.
     ///   Category: Other
     ///   Operands:
     ///   Stack: => val
-    InstrumentationActive = 238,  // JSOP_INSTRUMENTATION_ACTIVE
+    InstrumentationActive = 238, // JSOP_INSTRUMENTATION_ACTIVE
 
     /// Pushes the instrumentation callback for the current realm.
     ///   Category: Other
     ///   Operands:
     ///   Stack: => val
-    InstrumentationCallback = 239,  // JSOP_INSTRUMENTATION_CALLBACK
+    InstrumentationCallback = 239, // JSOP_INSTRUMENTATION_CALLBACK
 
     /// Pushes the current script's instrumentation ID.
     ///   Category: Other
     ///   Operands:
     ///   Stack: => val
-    InstrumentationScriptId = 240,  // JSOP_INSTRUMENTATION_SCRIPT_ID
+    InstrumentationScriptId = 240, // JSOP_INSTRUMENTATION_SCRIPT_ID
 }
 
 const LIMIT: usize = 241;
@@ -2279,35 +2278,35 @@ impl Opcode {
     /// The operators `||`, `&&`, and `,` have different bytecode patterns
     /// and thus are not considered "simple".
     pub fn is_simple_binary_operator(self) -> bool {
-        self == Opcode::Pow ||
-            self == Opcode::Mul ||
-            self == Opcode::Div ||
-            self == Opcode::Mod ||
-            self == Opcode::Add ||
-            self == Opcode::Sub ||
-            self == Opcode::Lsh ||
-            self == Opcode::Rsh ||
-            self == Opcode::Ursh ||
-            self == Opcode::Lt ||
-            self == Opcode::Gt ||
-            self == Opcode::Le ||
-            self == Opcode::Ge ||
-            self == Opcode::Instanceof ||
-            self == Opcode::In ||
-            self == Opcode::Eq ||
-            self == Opcode::Ne ||
-            self == Opcode::StrictEq ||
-            self == Opcode::StrictNe ||
-            self == Opcode::BitAnd ||
-            self == Opcode::BitXor ||
-            self == Opcode::BitOr
+        self == Opcode::Pow
+            || self == Opcode::Mul
+            || self == Opcode::Div
+            || self == Opcode::Mod
+            || self == Opcode::Add
+            || self == Opcode::Sub
+            || self == Opcode::Lsh
+            || self == Opcode::Rsh
+            || self == Opcode::Ursh
+            || self == Opcode::Lt
+            || self == Opcode::Gt
+            || self == Opcode::Le
+            || self == Opcode::Ge
+            || self == Opcode::Instanceof
+            || self == Opcode::In
+            || self == Opcode::Eq
+            || self == Opcode::Ne
+            || self == Opcode::StrictEq
+            || self == Opcode::StrictNe
+            || self == Opcode::BitAnd
+            || self == Opcode::BitXor
+            || self == Opcode::BitOr
     }
 }
 
 impl TryFrom<u8> for Opcode {
     type Error = ();
 
-    fn try_from(value: u8) ->  Result<Opcode, ()> {
+    fn try_from(value: u8) -> Result<Opcode, ()> {
         if (value as usize) < LIMIT {
             Ok(TABLE[value as usize])
         } else {

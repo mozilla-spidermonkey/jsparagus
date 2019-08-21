@@ -2,7 +2,7 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{Emitter, EmitResult};
+use super::emitter::{EmitResult, Emitter};
 use super::opcode::Opcode;
 use ast::*;
 
@@ -105,7 +105,9 @@ impl AstEmitter {
         match ast {
             Expression::MemberExpression(_) => unimplemented!(),
             Expression::ClassExpression(_) => unimplemented!(),
-            Expression::LiteralBooleanExpression(literal) => self.emit_boolean_literal(literal.value),
+            Expression::LiteralBooleanExpression(literal) => {
+                self.emit_boolean_literal(literal.value)
+            }
             Expression::LiteralInfinityExpression => unimplemented!(),
             Expression::LiteralNullExpression => unimplemented!(),
             Expression::LiteralNumericExpression(ast) => self.emit_numeric_expression(ast),

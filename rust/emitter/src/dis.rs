@@ -1,6 +1,6 @@
-use std::fmt::Write;
-use std::convert::TryFrom;
 use crate::opcode::Opcode;
+use std::convert::TryFrom;
+use std::fmt::Write;
 
 #[allow(dead_code)]
 pub fn dis(bc: &[u8]) -> String {

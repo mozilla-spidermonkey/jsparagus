@@ -1,8 +1,8 @@
+mod ast_emitter;
 mod dis;
+mod emitter;
 mod lower;
 mod opcode;
-mod emitter;
-mod ast_emitter;
 
 pub use emitter::EmitResult;
 
@@ -10,7 +10,6 @@ pub fn emit(ast: &mut ast::Program) -> EmitResult {
     lower::run(ast);
     ast_emitter::emit_program(ast)
 }
-
 
 #[cfg(test)]
 mod tests {
