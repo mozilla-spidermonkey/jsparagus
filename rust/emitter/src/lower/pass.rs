@@ -1,5 +1,9 @@
 // WARNING: This file is auto-generated.
 
+#![allow(unused_mut)]
+#![allow(unused_parens)]
+#![allow(unused_variables)]
+
 use ast::*;
 
 pub trait Pass {

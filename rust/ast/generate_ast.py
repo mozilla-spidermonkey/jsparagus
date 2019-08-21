@@ -106,6 +106,10 @@ def pass_(ast):
 
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
+        write(0, "#![allow(unused_mut)]")
+        write(0, "#![allow(unused_parens)]")
+        write(0, "#![allow(unused_variables)]")
+        write(0, "")
         write(0, "use ast::*;")
         write(0, "")
         write(0, "pub trait Pass {")

@@ -3,6 +3,7 @@ pub mod full {
     use ast::*;
     use std::mem::replace;
 
+    #[allow(dead_code)]
     pub fn pass(ast: &mut Program) {
         ScopePass {
             top_scope: Scope {
@@ -45,6 +46,7 @@ pub mod postfix {
     use super::super::pass::{PostfixPass, PostfixPassMonoid, PostfixPassVisitor};
     use ast::*;
 
+    #[allow(dead_code)]
     pub fn pass(ast: &mut Program) {
         PostfixPassVisitor::new(ScopePass {}).visit_program(ast);
     }

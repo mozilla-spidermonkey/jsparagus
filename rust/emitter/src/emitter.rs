@@ -412,8 +412,8 @@ impl Emitter {
         self.emit_with_offset(Opcode::And, offset);
     }
 
-    pub fn table_switch(&mut self, len: i32, low: i32, high: i32, first_resume_index: u24) {
-        self.emit_u24(Opcode::TableSwitch, first_resume_index);
+    pub fn table_switch(&mut self, _len: i32, _low: i32, _high: i32, _first_resume_index: u24) {
+        unimplemented!();
     }
 
     pub fn strict_eq(&mut self) {
@@ -794,11 +794,11 @@ impl Emitter {
         self.emit1(Opcode::SpreadSuperCall);
     }
 
-    pub fn class_constructor(&mut self, atom_index: u32,) {
+    pub fn class_constructor(&mut self, atom_index: u32) {
         self.emit_u32(Opcode::ClassConstructor, atom_index);
     }
 
-    pub fn derived_constructor(&mut self, atom_index: u32,) {
+    pub fn derived_constructor(&mut self, atom_index: u32) {
         self.emit_u32(Opcode::DerivedConstructor, atom_index);
     }
 
