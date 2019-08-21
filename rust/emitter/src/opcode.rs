@@ -2272,6 +2272,36 @@ impl Opcode {
     pub fn to_byte(&self) -> u8 {
         *self as u8
     }
+
+    /// True if this opcode takes no operands (is a one-byte opcode) and
+    /// implements a binary operator that operates on two stack values.
+    ///
+    /// The operators `||`, `&&`, and `,` have different bytecode patterns
+    /// and thus are not considered "simple".
+    pub fn is_simple_binary_operator(self) -> bool {
+        self == Opcode::Pow ||
+            self == Opcode::Mul ||
+            self == Opcode::Div ||
+            self == Opcode::Mod ||
+            self == Opcode::Add ||
+            self == Opcode::Sub ||
+            self == Opcode::Lsh ||
+            self == Opcode::Rsh ||
+            self == Opcode::Ursh ||
+            self == Opcode::Lt ||
+            self == Opcode::Gt ||
+            self == Opcode::Le ||
+            self == Opcode::Ge ||
+            self == Opcode::Instanceof ||
+            self == Opcode::In ||
+            self == Opcode::Eq ||
+            self == Opcode::Ne ||
+            self == Opcode::StrictEq ||
+            self == Opcode::StrictNe ||
+            self == Opcode::BitAnd ||
+            self == Opcode::BitXor ||
+            self == Opcode::BitOr
+    }
 }
 
 impl TryFrom<u8> for Opcode {
