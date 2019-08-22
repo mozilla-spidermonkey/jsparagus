@@ -4,8 +4,8 @@ mod emitter;
 mod lower;
 mod opcode;
 
-pub use dis::dis;
 pub use crate::emitter::EmitResult;
+pub use dis::dis;
 
 pub fn emit(ast: &mut ast::Program) -> EmitResult {
     lower::run(ast);
