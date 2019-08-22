@@ -14,7 +14,7 @@ mod tests {
     use std::error::Error;
 
     #[test]
-    fn it_works() -> Result<(), Box<Error>> {
+    fn it_works() -> Result<(), Box<dyn Error>> {
         let parse_result = parse_script("wau")?;
         run(&mut ast::Program::Script(*parse_result));
         Ok(())

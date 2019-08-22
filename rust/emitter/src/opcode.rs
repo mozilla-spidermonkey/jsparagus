@@ -2273,6 +2273,20 @@ impl Opcode {
     }
 
     /// True if this opcode takes no operands (is a one-byte opcode) and
+    /// implements a unary operator that operates on one stack value.
+    ///
+    /// The operators `typeof` and `delete` have different bytecode patterns
+    /// and thus are not considered "simple"; `new` is considered a special
+    /// kind of function call, not a unary operator.
+    pub fn is_simple_unary_operator(self) -> bool {
+        self == Opcode::Pos
+            || self == Opcode::Neg
+            || self == Opcode::Not
+            || self == Opcode::BitNot
+            || self == Opcode::Void
+    }
+
+    /// True if this opcode takes no operands (is a one-byte opcode) and
     /// implements a binary operator that operates on two stack values.
     ///
     /// The operators `||`, `&&`, and `,` have different bytecode patterns

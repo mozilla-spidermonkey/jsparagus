@@ -101,33 +101,124 @@ impl AstEmitter {
         self.emit.ret_rval();
     }
 
+    fn emit_this(&mut self) {
+        unimplemented!();
+    }
+
     fn emit_expression(&mut self, ast: &Expression) {
         match ast {
-            Expression::MemberExpression(_) => unimplemented!(),
-            Expression::ClassExpression(_) => unimplemented!(),
-            Expression::LiteralBooleanExpression(literal) => {
-                self.emit_boolean_literal(literal.value)
+            Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+                ComputedMemberExpression {
+                    object: ExpressionOrSuper::Expression(object),
+                    expression,
+                },
+            )) => {
+                self.emit_expression(object);
+                self.emit_expression(expression);
+                self.emit.get_elem();
             }
-            Expression::LiteralInfinityExpression => unimplemented!(),
-            Expression::LiteralNullExpression => unimplemented!(),
-            Expression::LiteralNumericExpression(ast) => self.emit_numeric_expression(ast),
+
+            Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+                ComputedMemberExpression {
+                    object: ExpressionOrSuper::Super,
+                    expression,
+                },
+            )) => {
+                self.emit_this();
+                self.emit_expression(expression);
+                self.emit.callee();
+                self.emit.super_base();
+                self.emit.get_elem_super();
+            }
+
+            Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                StaticMemberExpression {
+                    object: ExpressionOrSuper::Expression(object),
+                    property,
+                },
+            )) => {
+                self.emit_expression(object);
+                self.emit.get_prop(&property.value);
+            }
+
+            Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                StaticMemberExpression {
+                    object: ExpressionOrSuper::Super,
+                    property,
+                },
+            )) => {
+                self.emit_this();
+                self.emit.callee();
+                self.emit.super_base();
+                self.emit.get_prop_super(&property.value);
+            }
+
+            Expression::ClassExpression(_) => unimplemented!(),
+
+            Expression::LiteralBooleanExpression(literal) => {
+                self.emit.emit_boolean(literal.value);
+            }
+
+            Expression::LiteralInfinityExpression => {
+                self.emit.double(std::f64::INFINITY);
+            }
+
+            Expression::LiteralNullExpression => {
+                self.emit.null();
+            }
+
+            Expression::LiteralNumericExpression(ast) => {
+                self.emit_numeric_expression(ast);
+            }
+
             Expression::LiteralRegExpExpression(_) => unimplemented!(),
-            Expression::LiteralStringExpression(_) => unimplemented!(),
+
+            Expression::LiteralStringExpression(ast) => {
+                self.emit.string(&ast.value);
+            }
+
             Expression::ArrayExpression(_) => unimplemented!(),
             Expression::ArrowExpression(_) => unimplemented!(),
             Expression::AssignmentExpression(_) => unimplemented!(),
-            Expression::BinaryExpression(ast) => self.emit_binary_expression(ast),
-            Expression::CallExpression(ast) => self.emit_call_expression(ast),
+            Expression::BinaryExpression(ast) => {
+                self.emit_binary_expression(ast);
+            }
+
+            Expression::CallExpression(ast) => {
+                self.emit_call_expression(ast);
+            }
+
             Expression::CompoundAssignmentExpression(_) => unimplemented!(),
             Expression::ConditionalExpression(_) => unimplemented!(),
             Expression::FunctionExpression(_) => unimplemented!(),
-            Expression::IdentifierExpression(ast) => self.emit_identifier_expression(ast),
+            Expression::IdentifierExpression(ast) => {
+                self.emit_identifier_expression(ast);
+            }
+
             Expression::NewExpression(_) => unimplemented!(),
             Expression::NewTargetExpression => unimplemented!(),
             Expression::ObjectExpression(_) => unimplemented!(),
-            Expression::UnaryExpression(_) => unimplemented!(),
+
+            Expression::UnaryExpression(UnaryExpression { operator, operand }) => {
+                let opcode = match operator {
+                    UnaryOperator::Plus => Opcode::Pos,
+                    UnaryOperator::Minus => Opcode::Neg,
+                    UnaryOperator::LogicalNot => Opcode::Not,
+                    UnaryOperator::BitwiseNot => Opcode::BitNot,
+                    UnaryOperator::Void => Opcode::Void,
+                    UnaryOperator::Typeof => unimplemented!(),
+                    UnaryOperator::Delete => unimplemented!(),
+                };
+                self.emit_expression(operand);
+                self.emit.emit_unary_op(opcode);
+            }
+
             Expression::TemplateExpression(_) => unimplemented!(),
-            Expression::ThisExpression => unimplemented!(),
+
+            Expression::ThisExpression => {
+                self.emit_this();
+            }
+
             Expression::UpdateExpression(_) => unimplemented!(),
             Expression::YieldExpression(_) => unimplemented!(),
             Expression::YieldGeneratorExpression(_) => unimplemented!(),
@@ -185,14 +276,6 @@ impl AstEmitter {
             self.emit.int32(value_i32);
         } else {
             self.emit.double(value);
-        }
-    }
-
-    fn emit_boolean_literal(&mut self, value: bool) {
-        if value {
-            self.emit.true_();
-        } else {
-            self.emit.false_();
         }
     }
 

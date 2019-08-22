@@ -1,3 +1,5 @@
+//! JavaScript lexer.
+
 use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
 use generated_parser::{TerminalId, Token};
@@ -140,8 +142,14 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                         "with" => return Ok(TerminalId::With),
                         "yield" => return Ok(TerminalId::Yield),
                         "null" => return Ok(TerminalId::NullLiteral),
-                        "true" => return Ok(TerminalId::BooleanLiteral),
-                        "false" => return Ok(TerminalId::BooleanLiteral),
+                        "true" => {
+                            *text = var;
+                            return Ok(TerminalId::BooleanLiteral);
+                        }
+                        "false" => {
+                            *text = var;
+                            return Ok(TerminalId::BooleanLiteral);
+                        }
                         _ => {
                             *text = var;
                             return Ok(TerminalId::Identifier);

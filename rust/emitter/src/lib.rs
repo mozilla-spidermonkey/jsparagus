@@ -5,7 +5,7 @@ mod lower;
 mod opcode;
 
 pub use dis::dis;
-pub use emitter::EmitResult;
+pub use crate::emitter::EmitResult;
 
 pub fn emit(ast: &mut ast::Program) -> EmitResult {
     lower::run(ast);
@@ -67,34 +67,31 @@ mod tests {
         )
     }
 
-    // #[test]
-    // fn let_return() {
-    //     assert_eq!(
-    //         bytecode("let x = 2; return x;"),
-    //         vec![
-    //             UNINITIALIZED.value,
-    //             INITLEXICAL.value,
-    //             0,
-    //             0,
-    //             0,
-    //             POP.value,
-    //             INT8.value,
-    //             2,
-    //             INITLEXICAL.value,
-    //             0,
-    //             0,
-    //             0,
-    //             POP.value,
-    //             GETLOCAL.value,
-    //             0,
-    //             0,
-    //             0,
-    //             SETRVAL.value,
-    //             DEBUGLEAVELEXICALENV.value,
-    //             RETRVAL.value,
-    //             DEBUGLEAVELEXICALENV.value,
-    //             RETRVAL.value,
-    //         ]
-    //     )
-    // }
+    #[test]
+    fn literals() {
+        assert_eq!(
+            bytecode("true"),
+            vec![
+                Opcode::True as u8,
+                Opcode::SetRval as u8,
+                Opcode::RetRval as u8,
+            ]
+        );
+        assert_eq!(
+            bytecode("false"),
+            vec![
+                Opcode::False as u8,
+                Opcode::SetRval as u8,
+                Opcode::RetRval as u8,
+            ]
+        );
+        //assert_eq!(
+        //    bytecode("'hello world'"),
+        //    vec![
+        //        Opcode::String as u8, 0, 0, 0, 0,
+        //        Opcode::SetRval as u8,
+        //        Opcode::RetRval as u8,
+        //    ]
+        //);
+    }
 }

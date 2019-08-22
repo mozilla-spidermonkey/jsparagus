@@ -54,8 +54,17 @@ impl Emitter {
         self.bytecode.push(opcode.to_byte());
     }
 
+    pub fn emit_boolean(&mut self, value: bool) {
+        self.emit1(if value { Opcode::True } else { Opcode::False });
+    }
+
     pub fn emit_binary_op(&mut self, opcode: Opcode) {
         assert!(opcode.is_simple_binary_operator());
+        self.emit1(opcode);
+    }
+
+    pub fn emit_unary_op(&mut self, opcode: Opcode) {
+        assert!(opcode.is_simple_unary_operator());
         self.emit1(opcode);
     }
 
@@ -209,34 +218,6 @@ impl Emitter {
         self.emit1(Opcode::Ne);
     }
 
-    pub fn lt(&mut self) {
-        self.emit1(Opcode::Lt);
-    }
-
-    pub fn le(&mut self) {
-        self.emit1(Opcode::Le);
-    }
-
-    pub fn gt(&mut self) {
-        self.emit1(Opcode::Gt);
-    }
-
-    pub fn ge(&mut self) {
-        self.emit1(Opcode::Ge);
-    }
-
-    pub fn lsh(&mut self) {
-        self.emit1(Opcode::Lsh);
-    }
-
-    pub fn rsh(&mut self) {
-        self.emit1(Opcode::Rsh);
-    }
-
-    pub fn ursh(&mut self) {
-        self.emit1(Opcode::Ursh);
-    }
-
     pub fn add(&mut self) {
         self.emit1(Opcode::Add);
     }
@@ -257,22 +238,6 @@ impl Emitter {
         self.emit1(Opcode::Mod);
     }
 
-    pub fn not(&mut self) {
-        self.emit1(Opcode::Not);
-    }
-
-    pub fn bit_not(&mut self) {
-        self.emit1(Opcode::BitNot);
-    }
-
-    pub fn neg(&mut self) {
-        self.emit1(Opcode::Neg);
-    }
-
-    pub fn pos(&mut self) {
-        self.emit1(Opcode::Pos);
-    }
-
     pub fn del_name(&mut self, name: &str) {
         self.emit_with_name_index(Opcode::DelName, name);
     }
@@ -287,10 +252,6 @@ impl Emitter {
 
     pub fn typeof_(&mut self) {
         self.emit1(Opcode::Typeof);
-    }
-
-    pub fn void(&mut self) {
-        self.emit1(Opcode::Void);
     }
 
     pub fn spread_call(&mut self) {
@@ -394,14 +355,6 @@ impl Emitter {
 
     pub fn is_constructing(&mut self) {
         self.emit1(Opcode::IsConstructing);
-    }
-
-    pub fn false_(&mut self) {
-        self.emit1(Opcode::False);
-    }
-
-    pub fn true_(&mut self) {
-        self.emit1(Opcode::True);
     }
 
     pub fn or(&mut self, offset: i32) {
