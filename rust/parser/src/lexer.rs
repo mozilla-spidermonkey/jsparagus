@@ -22,7 +22,11 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
             .map(|terminal_id| Token {
                 terminal_id,
                 saw_newline,
-                value: if text.is_empty() { None } else { Some(text) },
+                value: if !text.is_empty() || terminal_id == TerminalId::StringLiteral {
+                    Some(text)
+                } else {
+                    None
+                },
             })
     }
 
