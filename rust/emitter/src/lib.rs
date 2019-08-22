@@ -4,6 +4,7 @@ mod emitter;
 mod lower;
 mod opcode;
 
+pub use dis::dis;
 pub use emitter::EmitResult;
 
 pub fn emit(ast: &mut ast::Program) -> EmitResult {
