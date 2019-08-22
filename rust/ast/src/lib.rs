@@ -1022,12 +1022,12 @@ impl ConditionalExpression {
 
 #[derive(Debug, PartialEq)]
 pub struct IdentifierExpression {
-    pub var: VariableReference,
+    pub name: Identifier,
 }
 
 impl IdentifierExpression {
-    pub fn new(var: VariableReference) -> Self {
-        Self { var }
+    pub fn new(name: Identifier) -> Self {
+        Self { name }
     }
 }
 

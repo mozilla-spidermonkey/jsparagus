@@ -280,17 +280,6 @@ impl AstEmitter {
     }
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
-        self.emit_variable_reference(&ast.var);
-    }
-
-    fn emit_variable_reference(&mut self, ast: &VariableReference) {
-        match ast {
-            VariableReference::BindingIdentifier(ast) => self.emit_binding_identifier(ast),
-            VariableReference::AssignmentTargetIdentifier(_) => unimplemented!(),
-        }
-    }
-
-    fn emit_binding_identifier(&mut self, ast: &BindingIdentifier) {
         let name = &ast.name.value;
         self.emit.get_gname(name);
     }

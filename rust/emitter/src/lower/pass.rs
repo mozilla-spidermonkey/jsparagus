@@ -822,7 +822,7 @@ pub trait Pass {
     }
 
     fn visit_identifier_expression(&mut self, ast: &mut IdentifierExpression) {
-        self.visit_variable_reference(&mut ast.var);
+        self.visit_identifier(&mut ast.name);
     }
 
     fn visit_new_expression(&mut self, ast: &mut NewExpression) {
@@ -1624,9 +1624,9 @@ pub trait PostfixPass {
         result
     }
 
-    fn visit_identifier_expression(&self, var: Self::Value) -> Self::Value {
+    fn visit_identifier_expression(&self, name: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
-        result.append(var);
+        result.append(name);
         result
     }
 
@@ -2816,7 +2816,7 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
     }
 
     pub fn visit_identifier_expression(&mut self, ast: &mut IdentifierExpression) -> T::Value {
-        let a0 = self.visit_variable_reference((&mut ast.var));
+        let a0 = self.visit_identifier((&mut ast.name));
         self.pass.visit_identifier_expression(a0)
     }
 

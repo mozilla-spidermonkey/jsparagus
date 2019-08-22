@@ -515,7 +515,7 @@
   },
   "IdentifierExpression": {
     "_type": "struct",
-    "var": "VariableReference"
+    "name": "Identifier"
   },
   "NewExpression": {
     "_type": "struct",

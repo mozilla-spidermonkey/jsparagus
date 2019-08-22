@@ -5,11 +5,13 @@ pub struct AstBuilder {}
 
 fn expression_to_assignment_target(a0: Box<Expression>) -> AssignmentTarget {
     match *a0 {
-        Expression::IdentifierExpression(IdentifierExpression {
-            var: VariableReference::BindingIdentifier(BindingIdentifier { name: a0 }),
-        }) => AssignmentTarget::SimpleAssignmentTarget(
-            SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier::new(a0)),
-        ),
+        Expression::IdentifierExpression(IdentifierExpression { name }) => {
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                }),
+            )
+        }
         Expression::MemberExpression(MemberExpression::StaticMemberExpression(
             StaticMemberExpression { object, property },
         )) => AssignmentTarget::SimpleAssignmentTarget(
@@ -25,10 +27,8 @@ fn expression_to_assignment_target(a0: Box<Expression>) -> AssignmentTarget {
 
 fn expression_to_simple_assignment_target(a0: Box<Expression>) -> SimpleAssignmentTarget {
     match *a0 {
-        Expression::IdentifierExpression(IdentifierExpression {
-            var: VariableReference::BindingIdentifier(BindingIdentifier { name: a0 }),
-        }) => {
-            SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier::new(a0))
+        Expression::IdentifierExpression(IdentifierExpression { name }) => {
+            SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier { name })
         }
         Expression::MemberExpression(MemberExpression::StaticMemberExpression(
             StaticMemberExpression { object, property },
@@ -72,10 +72,10 @@ impl AstBuilder {
     }
 
     // PrimaryExpression : IdentifierReference
-    pub fn identifier_expr(&self, a0: Box<Identifier>) -> Box<Expression> {
-        Box::new(Expression::IdentifierExpression(IdentifierExpression::new(
-            VariableReference::BindingIdentifier(BindingIdentifier::new(*a0)),
-        )))
+    pub fn identifier_expr(&self, name: Box<Identifier>) -> Box<Expression> {
+        Box::new(Expression::IdentifierExpression(IdentifierExpression {
+            name: *name,
+        }))
     }
 
     // PrimaryExpression : RegularExpressionLiteral
