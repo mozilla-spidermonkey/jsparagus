@@ -316,12 +316,12 @@ fn test_awkward_chunks() {
                 binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                     AssignmentTargetIdentifier {
                         name: Identifier {
-                            value: "".to_string(),
+                            value: "x".to_string(),
                         },
                     },
                 ),
                 expression: Box::new(Expression::LiteralNumericExpression(
-                    LiteralNumericExpression { value: 0.0 },
+                    LiteralNumericExpression { value: 2.0 },
                 )),
             }),
         ))],
