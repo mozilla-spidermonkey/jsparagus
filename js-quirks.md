@@ -214,9 +214,8 @@ doing as little bookkeeping as possible.
 Even setting that aside, every early error is a special case, and it’s
 just a ton of rules that all have to be implemented by hand.
 
-<!--
-Setting aside some restrictions in the lexical grammar, we have these
-Early Error rules:
+Here are some examples of Early Error rules—setting aside restrictions
+that are covered adequately elsewhere:
 
 *   Rules about names:
 
@@ -253,9 +252,6 @@ Early Error rules:
 
     *   A lexical variable can’t be named `let`.
 
-    *   In strict mode code, bindings can’t be named `arguments` or `eval`,
-        and it’s not legal to assign to `arguments` or `eval`.
-
     *   Common-sense rules dealing with unicode escape sequences in
         identifiers.
 
@@ -280,10 +276,14 @@ Early Error rules:
 *   Early errors are used to hook up cover grammars.
 
     *   Early errors are also used in one case to avoid having to
-        specify a rather large refinement grammar when *ObjectLiteral*
+        specify a very large refinement grammar when *ObjectLiteral*
         almost covers *ObjectAssignmentPattern*:
         [sorry, too complicated to explain](https://tc39.es/ecma262/#sec-object-initializer-static-semantics-early-errors).
 
+Many strict mode rules are enforced using Early Errors, but others
+affect runtime semantics.
+
+<!--
 *   I think the rules about assignment targets are related to cover
     grammars. Not sure.
 
@@ -294,11 +294,6 @@ Early Error rules:
 
     *   In destructuring assignment, `[...EXPR] = x` is an error if `EXPR`
         is an array or object destructuring target.
-
-*   Strict mode (see also "Names" above).
-
-    *   In strict mode code, `delete` *Identifier* is banned (including if
-        the *Identifier* is wrapped in parentheses).
 
 -->
 
