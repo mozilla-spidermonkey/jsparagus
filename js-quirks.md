@@ -100,6 +100,7 @@ somehow. It’s just unbelievably confusing.
     async();  // SyntaxError, beginning of a statement
     
     0 + async();  // fine
+    ```
 
 *   `of` is a keyword only in one specific place in `for-of` loop syntax.
 
@@ -107,6 +108,19 @@ somehow. It’s just unbelievably confusing.
     var of = [1, 2, 3];
     for (of of of) console.log(of);  // logs 1, 2, 3
     ```
+
+*   `get` and `set` are special only in a class or an object literal,
+    and then only if followed by a PropertyName:
+
+    ```js
+    var obj1 = {get: f};      // `get` is an identifier
+    var obj2 = {get x() {}};  // `get` means getter
+
+    class C1 { get = 3; }     // `get` is an identifier
+    class C2 { get x() {} }   // `get` means getter
+    ```
+
+*   `target` is special only in `new.target`.
 
 *   `enum` is unconditionally a reserved word. `implements`,
     `interface`, `package`, `private`, `protected`, and `public` are
