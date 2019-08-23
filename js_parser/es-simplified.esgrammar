@@ -1084,7 +1084,9 @@ SingleNameBinding[Yield, Await] :
 
 BindingRestElement[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
+    => binding_rest_element($1)
   `...` BindingPattern[?Yield, ?Await]
+    => binding_rest_element_pattern($1)
 
 
 EmptyStatement :
@@ -1272,6 +1274,7 @@ FormalParameterList[Yield, Await] :
 
 FunctionRestParameter[Yield, Await] :
   BindingRestElement[?Yield, ?Await]
+    => $0
 
 FormalParameter[Yield, Await] :
   BindingElement[?Yield, ?Await]

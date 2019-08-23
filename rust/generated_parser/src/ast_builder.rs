@@ -1092,13 +1092,14 @@ impl AstBuilder {
         })
     }
 
-    // BindingRestElement ::= "..." BindingIdentifier => BindingRestElement 0($0, $1)
-    pub fn binding_rest_element_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingRestElement::new())
+    // BindingRestElement : `...` BindingIdentifier
+    pub fn binding_rest_element(&self, name: Box<BindingIdentifier>) -> Box<Binding> {
+        Box::new(Binding::BindingIdentifier(*name))
     }
-    // BindingRestElement ::= "..." BindingPattern => BindingRestElement 1($0, $1)
-    pub fn binding_rest_element_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingRestElement::new())
+
+    // BindingRestElement : `...` BindingPattern
+    pub fn binding_rest_element_pattern(&self, pattern: Box<BindingPattern>) -> Box<Binding> {
+        Box::new(Binding::BindingPattern(*pattern))
     }
 
     // EmptyStatement : `;`
@@ -1551,11 +1552,6 @@ impl AstBuilder {
     ) -> Box<FormalParameters> {
         params.items.push(*next_param);
         params
-    }
-
-    // FunctionRestParameter : BindingRestElement
-    pub fn function_rest_parameter(&self, a0: Box<Binding>) -> Box<Binding> {
-        a0
     }
 
     // FunctionBody : FunctionStatementList

@@ -9029,9 +9029,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::DefaultClause
         }
         280 => {
-            // FunctionRestParameter ::= BindingRestElement => FunctionRestParameter($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.function_rest_parameter(x0)));
+            // FunctionRestParameter ::= BindingRestElement => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::FunctionRestParameter
         }
         281 => {
@@ -9443,17 +9443,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CaseClause
         }
         327 => {
-            // BindingRestElement ::= "..." BindingIdentifier => BindingRestElement 0($0, $1)
+            // BindingRestElement ::= "..." BindingIdentifier => binding_rest_element($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.binding_rest_element_p0(x1)));
+            stack.push(StackValue::from(handler.binding_rest_element(x1)));
             NonterminalId::BindingRestElement
         }
         328 => {
-            // BindingRestElement ::= "..." BindingPattern => BindingRestElement 1($0, $1)
+            // BindingRestElement ::= "..." BindingPattern => binding_rest_element_pattern($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.binding_rest_element_p1(x1)));
+            stack.push(StackValue::from(handler.binding_rest_element_pattern(x1)));
             NonterminalId::BindingRestElement
         }
         329 => {
