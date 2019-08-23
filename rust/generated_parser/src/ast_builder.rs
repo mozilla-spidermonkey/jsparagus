@@ -172,23 +172,29 @@ impl AstBuilder {
         ))
     }
 
-    // Literal : NumericLiteral
-    pub fn numeric_literal(&self, token: Box<Token>) -> Box<Expression> {
+    fn numeric_literal_value(token: Box<Token>) -> f64 {
         let s = token.value.unwrap();
 
         // BUG: Not all syntax is supported yet.
-        let nv = s.parse::<f64>().unwrap_or(0.0);
+        s.parse::<f64>().unwrap_or(std::f64::NAN)
+    }
 
+    // Literal : NumericLiteral
+    pub fn numeric_literal(&self, token: Box<Token>) -> Box<Expression> {
         Box::new(Expression::LiteralNumericExpression(
-            LiteralNumericExpression::new(nv),
+            LiteralNumericExpression::new(Self::numeric_literal_value(token)),
         ))
+    }
+
+    fn string_literal_value(token: Box<Token>) -> String {
+        token.value.unwrap()
     }
 
     // Literal : StringLiteral
     pub fn string_literal(&self, token: Box<Token>) -> Box<Expression> {
         Box::new(Expression::LiteralStringExpression(
             LiteralStringExpression {
-                value: token.value.unwrap(),
+                value: Self::string_literal_value(token),
             },
         ))
     }
@@ -323,47 +329,66 @@ impl AstBuilder {
         object
     }
 
-    // PropertyDefinition ::= IdentifierReference => PropertyDefinition 0($0)
-    pub fn property_definition_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinition::new())
-    }
-    // PropertyDefinition ::= CoverInitializedName => PropertyDefinition 1($0)
-    pub fn property_definition_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinition::new())
-    }
-    // PropertyDefinition ::= PropertyName ":" AssignmentExpression => PropertyDefinition 2($0, $1, $2)
-    pub fn property_definition_p2(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinition::new())
-    }
-    // PropertyDefinition ::= MethodDefinition => PropertyDefinition 3($0)
-    pub fn property_definition_p3(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinition::new())
-    }
-    // PropertyDefinition ::= "..." AssignmentExpression => PropertyDefinition 4($0, $1)
-    pub fn property_definition_p4(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyDefinition::new())
+    // PropertyDefinition : IdentifierReference
+    pub fn shorthand_property(&self, name: Box<Identifier>) -> Box<ObjectProperty> {
+        Box::new(ObjectProperty::ShorthandProperty(ShorthandProperty {
+            name: IdentifierExpression { name: *name },
+        }))
     }
 
-    // PropertyName ::= LiteralPropertyName => PropertyName 0($0)
-    pub fn property_name_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyName::new())
+    // PropertyDefinition : CoverInitializedName
+    pub fn property_definition_cover(&self, a0: Box<Void>) -> Box<ObjectProperty> {
+        // Awkward. This needs to be stored somehow until we reach an enclosing thing.
+        unimplemented!();
     }
-    // PropertyName ::= ComputedPropertyName => PropertyName 1($0)
-    pub fn property_name_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertyName::new())
+
+    // PropertyDefinition : PropertyName `:` AssignmentExpression
+    pub fn property_definition(
+        &self,
+        name: Box<PropertyName>,
+        expression: Box<Expression>,
+    ) -> Box<ObjectProperty> {
+        Box::new(ObjectProperty::NamedObjectProperty(
+            NamedObjectProperty::DataProperty(DataProperty {
+                property_name: *name,
+                expression,
+            }),
+        ))
     }
-    // LiteralPropertyName ::= "IdentifierName" => LiteralPropertyName 0($0)
-    pub fn literal_property_name_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LiteralPropertyName::new())
+
+    // PropertyDefinition : MethodDefinition
+    pub fn property_definition_method(&self, method: Box<MethodDefinition>) -> Box<ObjectProperty> {
+        Box::new(ObjectProperty::NamedObjectProperty(
+            NamedObjectProperty::MethodDefinition(*method),
+        ))
     }
-    // LiteralPropertyName ::= "StringLiteral" => LiteralPropertyName 1($0)
-    pub fn literal_property_name_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LiteralPropertyName::new())
+
+    // PropertyDefinition : `...` AssignmentExpression
+    pub fn property_definition_spread(&self, spread: Box<Expression>) -> Box<ObjectProperty> {
+        unimplemented!();
     }
-    // LiteralPropertyName ::= "NumericLiteral" => LiteralPropertyName 2($0)
-    pub fn literal_property_name_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LiteralPropertyName::new())
+
+    // LiteralPropertyName : IdentifierName
+    pub fn property_name_identifier(&self, token: Box<Token>) -> Box<PropertyName> {
+        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: token.value.unwrap(),
+        }))
     }
+
+    // LiteralPropertyName : StringLiteral
+    pub fn property_name_string(&self, token: Box<Token>) -> Box<PropertyName> {
+        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: Self::string_literal_value(token),
+        }))
+    }
+
+    // LiteralPropertyName : NumericLiteral
+    pub fn property_name_numeric(&self, token: Box<Token>) -> Box<PropertyName> {
+        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: format!("{:?}", Self::numeric_literal_value(token)),
+        }))
+    }
+
     // ComputedPropertyName ::= "[" AssignmentExpression "]" => ComputedPropertyName($0, $1, $2)
     pub fn computed_property_name(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(ComputedPropertyName::new())

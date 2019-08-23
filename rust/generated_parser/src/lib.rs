@@ -10583,15 +10583,15 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SingleNameBinding
         }
         435 => {
-            // PropertyName ::= LiteralPropertyName => PropertyName 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_name_p0(x0)));
+            // PropertyName ::= LiteralPropertyName => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::PropertyName
         }
         436 => {
-            // PropertyName ::= ComputedPropertyName => PropertyName 1($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_name_p1(x0)));
+            // PropertyName ::= ComputedPropertyName => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::PropertyName
         }
         437 => {
@@ -10937,21 +10937,21 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::TemplateMiddleList
         }
         466 => {
-            // LiteralPropertyName ::= IdentifierName => LiteralPropertyName 0($0)
+            // LiteralPropertyName ::= IdentifierName => property_name_identifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_property_name_p0(x0)));
+            stack.push(StackValue::from(handler.property_name_identifier(x0)));
             NonterminalId::LiteralPropertyName
         }
         467 => {
-            // LiteralPropertyName ::= StringLiteral => LiteralPropertyName 1($0)
+            // LiteralPropertyName ::= StringLiteral => property_name_string($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_property_name_p1(x0)));
+            stack.push(StackValue::from(handler.property_name_string(x0)));
             NonterminalId::LiteralPropertyName
         }
         468 => {
-            // LiteralPropertyName ::= NumericLiteral => LiteralPropertyName 2($0)
+            // LiteralPropertyName ::= NumericLiteral => property_name_numeric($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.literal_property_name_p2(x0)));
+            stack.push(StackValue::from(handler.property_name_numeric(x0)));
             NonterminalId::LiteralPropertyName
         }
         469 => {
@@ -11024,36 +11024,36 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SpreadElement
         }
         476 => {
-            // PropertyDefinition ::= IdentifierReference => PropertyDefinition 0($0)
+            // PropertyDefinition ::= IdentifierReference => shorthand_property($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_p0(x0)));
+            stack.push(StackValue::from(handler.shorthand_property(x0)));
             NonterminalId::PropertyDefinition
         }
         477 => {
-            // PropertyDefinition ::= CoverInitializedName => PropertyDefinition 1($0)
+            // PropertyDefinition ::= CoverInitializedName => property_definition_cover($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_p1(x0)));
+            stack.push(StackValue::from(handler.property_definition_cover(x0)));
             NonterminalId::PropertyDefinition
         }
         478 => {
-            // PropertyDefinition ::= PropertyName ":" AssignmentExpression => PropertyDefinition 2($0, $1, $2)
+            // PropertyDefinition ::= PropertyName ":" AssignmentExpression => property_definition($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_p2(x0, x2)));
+            stack.push(StackValue::from(handler.property_definition(x0, x2)));
             NonterminalId::PropertyDefinition
         }
         479 => {
-            // PropertyDefinition ::= MethodDefinition => PropertyDefinition 3($0)
+            // PropertyDefinition ::= MethodDefinition => property_definition_method($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_definition_p3(x0)));
+            stack.push(StackValue::from(handler.property_definition_method(x0)));
             NonterminalId::PropertyDefinition
         }
         480 => {
-            // PropertyDefinition ::= "..." AssignmentExpression => PropertyDefinition 4($0, $1)
+            // PropertyDefinition ::= "..." AssignmentExpression => property_definition_spread($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.property_definition_p4(x1)));
+            stack.push(StackValue::from(handler.property_definition_spread(x1)));
             NonterminalId::PropertyDefinition
         }
         481 => {

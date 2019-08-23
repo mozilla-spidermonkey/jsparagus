@@ -543,19 +543,29 @@ PropertyDefinitionList[Yield, Await] :
 
 PropertyDefinition[Yield, Await] :
   IdentifierReference[?Yield, ?Await]
+    => shorthand_property($0)
   CoverInitializedName[?Yield, ?Await]
+    => property_definition_cover($0)
   PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]
+    => property_definition($0, $2)
   MethodDefinition[?Yield, ?Await]
+    => property_definition_method($0)
   `...` AssignmentExpression[+In, ?Yield, ?Await]
+    => property_definition_spread($1)
 
 PropertyName[Yield, Await] :
   LiteralPropertyName
+    => $0
   ComputedPropertyName[?Yield, ?Await]
+    => $0
 
 LiteralPropertyName :
   IdentifierName
+    => property_name_identifier($0)
   StringLiteral
+    => property_name_string($0)
   NumericLiteral
+    => property_name_numeric($0)
 
 ComputedPropertyName[Yield, Await] :
   `[` AssignmentExpression[+In, ?Yield, ?Await] `]`
