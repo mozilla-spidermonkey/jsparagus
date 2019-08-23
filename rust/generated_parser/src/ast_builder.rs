@@ -959,10 +959,12 @@ impl AstBuilder {
 
     // VariableStatement : `var` VariableDeclarationList `;`
     pub fn variable_statement(&self, declarators: Box<Vec<VariableDeclarator>>) -> Box<Statement> {
-        Box::new(Statement::VariableDeclarationStatement(VariableDeclaration {
-            kind: VariableDeclarationKind::Var,
-            declarators: *declarators
-        }))
+        Box::new(Statement::VariableDeclarationStatement(
+            VariableDeclaration {
+                kind: VariableDeclarationKind::Var,
+                declarators: *declarators,
+            },
+        ))
     }
 
     // VariableDeclarationList : VariableDeclaration
@@ -1220,12 +1222,10 @@ impl AstBuilder {
     ) -> VariableDeclarationOrAssignmentTarget {
         VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
             kind: VariableDeclarationKind::Var,
-            declarators: vec![
-                VariableDeclarator {
-                    binding: *binding,
-                    init: None
-                }
-            ],
+            declarators: vec![VariableDeclarator {
+                binding: *binding,
+                init: None,
+            }],
         })
     }
 
