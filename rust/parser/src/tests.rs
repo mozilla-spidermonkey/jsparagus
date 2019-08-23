@@ -353,6 +353,8 @@ fn test_regex() {
     assert_parses("x = /[]/");
     assert_parses("x = /[^x]/");
     assert_parses("x = /+=351*/");
+    assert_parses("x = /^\s*function (\w+)/;");
+    assert_parses("let regexp = /this is fine: [/] dont @ me/;");
 }
 
 // XXX TODO

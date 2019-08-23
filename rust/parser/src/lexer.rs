@@ -67,6 +67,73 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
         }
     }
 
+    fn regular_expression_backslash_sequence(&mut self, text: &mut String) -> Result<()> {
+        text.push('\\');
+        match self.chars.next() {
+            None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
+                Err(ParseError::UnterminatedRegExp)
+            }
+            Some(c) => {
+                text.push(c);
+                Ok(())
+            }
+        }
+    }
+
+    fn regular_expression_literal(&mut self, text: &mut String) -> Result<TerminalId> {
+        text.push('/');
+        loop {
+            match self.chars.next() {
+                None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
+                    return Err(ParseError::UnterminatedRegExp);
+                }
+                Some('/') => {
+                    break;
+                }
+                Some('[') => {
+                    // RegularExpressionClass.
+                    text.push('[');
+                    loop {
+                        match self.chars.next() {
+                            None | Some('\r') | Some('\n') | Some('\u{2028}')
+                            | Some('\u{2029}') => {
+                                return Err(ParseError::UnterminatedRegExp);
+                            }
+                            Some(']') => {
+                                break;
+                            }
+                            Some('\\') => {
+                                self.regular_expression_backslash_sequence(text)?;
+                            }
+                            Some(ch) => {
+                                text.push(ch);
+                            }
+                        }
+                    }
+                    text.push(']');
+                }
+                Some('\\') => {
+                    self.regular_expression_backslash_sequence(text)?;
+                }
+                Some(ch) => {
+                    text.push(ch);
+                }
+            }
+        }
+        text.push('/');
+        while let Some(&ch) = self.chars.peek() {
+            match ch {
+                '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
+                    self.chars.next();
+                    text.push(ch);
+                }
+                _ => break,
+            }
+        }
+
+        Ok(TerminalId::RegularExpressionLiteral)
+    }
+
     fn advance_impl(
         &mut self,
         parser: &Parser,
@@ -384,7 +451,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 },
 
                 '/' => match self.chars.peek() {
-                    // Comments take priority over regexes
+                    // Comments take priority over regexps
                     // Single-line comment
                     Some('/') => {
                         self.chars.next();
@@ -410,27 +477,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                     }
                     _ => {
                         if parser.can_accept_terminal(TerminalId::RegularExpressionLiteral) {
-                            text.push(c);
-                            loop {
-                                if let Some(ch) = self.chars.next() {
-                                    text.push(ch);
-                                    if ch == '/' {
-                                        break;
-                                    }
-                                } else {
-                                    return Err(ParseError::UnterminatedRegExp);
-                                }
-                            }
-                            while let Some(&ch) = self.chars.peek() {
-                                match ch {
-                                    '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
-                                        self.chars.next();
-                                        text.push(ch);
-                                    }
-                                    _ => break,
-                                }
-                            }
-                            return Ok(TerminalId::RegularExpressionLiteral);
+                            return self.regular_expression_literal(text);
                         }
                         match self.chars.peek() {
                             Some('=') => {
