@@ -1522,12 +1522,12 @@ impl AstBuilder {
     }
 
     // FormalParameterList : FormalParameter
-    pub fn singleton_formal_parameter_list(&self, a0: Box<Parameter>) -> Box<FormalParameters> {
+    pub fn formal_parameter_list_single(&self, a0: Box<Parameter>) -> Box<FormalParameters> {
         Box::new(FormalParameters::new(vec![*a0], None))
     }
 
     // FormalParameterList : FormalParameterList "," FormalParameter
-    pub fn append_formal_parameter(
+    pub fn formal_parameter_list_append(
         &self,
         mut params: Box<FormalParameters>,
         next_param: Box<Parameter>,

@@ -9035,19 +9035,19 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::FunctionRestParameter
         }
         281 => {
-            // FormalParameterList ::= FormalParameter => singleton_formal_parameter_list($0)
+            // FormalParameterList ::= FormalParameter => formal_parameter_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(
-                handler.singleton_formal_parameter_list(x0),
-            ));
+            stack.push(StackValue::from(handler.formal_parameter_list_single(x0)));
             NonterminalId::FormalParameterList
         }
         282 => {
-            // FormalParameterList ::= FormalParameterList "," FormalParameter => append_formal_parameter($0, $2)
+            // FormalParameterList ::= FormalParameterList "," FormalParameter => formal_parameter_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.append_formal_parameter(x0, x2)));
+            stack.push(StackValue::from(
+                handler.formal_parameter_list_append(x0, x2),
+            ));
             NonterminalId::FormalParameterList
         }
         283 => {

@@ -1263,9 +1263,9 @@ FormalParameters[Yield, Await] :
 
 FormalParameterList[Yield, Await] :
   FormalParameter[?Yield, ?Await]
-    => singleton_formal_parameter_list($0)
+    => formal_parameter_list_single($0)
   FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]
-    => append_formal_parameter($0, $2)
+    => formal_parameter_list_append($0, $2)
 
 FunctionRestParameter[Yield, Await] :
   BindingRestElement[?Yield, ?Await]
