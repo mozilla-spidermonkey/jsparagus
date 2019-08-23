@@ -1216,11 +1216,16 @@ impl AstBuilder {
 
     pub fn for_in_or_of_var_declaration(
         &self,
-        declarators: Box<Vec<VariableDeclarator>>,
+        binding: Box<Binding>,
     ) -> VariableDeclarationOrAssignmentTarget {
         VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
             kind: VariableDeclarationKind::Var,
-            declarators: *declarators,
+            declarators: vec![
+                VariableDeclarator {
+                    binding: *binding,
+                    init: None
+                }
+            ],
         })
     }
 
