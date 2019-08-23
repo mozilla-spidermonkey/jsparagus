@@ -17,7 +17,16 @@ fn expression_to_assignment_target(a0: Box<Expression>) -> AssignmentTarget {
         )) => AssignmentTarget::SimpleAssignmentTarget(
             SimpleAssignmentTarget::MemberAssignmentTarget(
                 MemberAssignmentTarget::StaticMemberAssignmentTarget(
-                    StaticMemberAssignmentTarget::new(object, property),
+                    StaticMemberAssignmentTarget { object, property },
+                ),
+            ),
+        ),
+        Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+            ComputedMemberExpression { object, expression },
+        )) => AssignmentTarget::SimpleAssignmentTarget(
+            SimpleAssignmentTarget::MemberAssignmentTarget(
+                MemberAssignmentTarget::ComputedMemberAssignmentTarget(
+                    ComputedMemberAssignmentTarget { object, expression },
                 ),
             ),
         ),
