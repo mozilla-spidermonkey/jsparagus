@@ -949,8 +949,11 @@ impl AstBuilder {
     }
 
     // VariableStatement : `var` VariableDeclarationList `;`
-    pub fn variable_statement(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn variable_statement(&self, declarators: Box<Vec<VariableDeclarator>>) -> Box<Statement> {
+        Box::new(Statement::VariableDeclarationStatement(VariableDeclaration {
+            kind: VariableDeclarationKind::Var,
+            declarators: *declarators
+        }))
     }
 
     // VariableDeclarationList : VariableDeclaration
