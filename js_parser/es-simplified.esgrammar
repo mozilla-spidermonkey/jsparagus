@@ -1074,10 +1074,13 @@ BindingProperty[Yield, Await] :
 
 BindingElement[Yield, Await] :
   SingleNameBinding[?Yield, ?Await]
+    => $0
   BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+    => binding_element_pattern($0, $1)
 
 SingleNameBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+    => single_name_binding($0, $1)
 
 BindingRestElement[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
@@ -1272,6 +1275,7 @@ FunctionRestParameter[Yield, Await] :
 
 FormalParameter[Yield, Await] :
   BindingElement[?Yield, ?Await]
+    => $0
 
 FunctionBody[Yield, Await] :
   FunctionStatementList[?Yield, ?Await]

@@ -1063,18 +1063,35 @@ impl AstBuilder {
     pub fn binding_property_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(BindingProperty::new())
     }
-    // BindingElement ::= SingleNameBinding => BindingElement 0($0)
-    pub fn binding_element_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingElement::new())
+
+    // BindingElement : BindingPattern Initializer?
+    pub fn binding_element_pattern(
+        &self,
+        binding: Box<Binding>,
+        init: Option<Box<Expression>>,
+    ) -> Box<Parameter> {
+        Box::new(match init {
+            None => Parameter::Binding(*binding),
+            Some(init) => Parameter::BindingWithDefault(BindingWithDefault {
+                binding: *binding,
+                init,
+            }),
+        })
     }
-    // BindingElement ::= BindingPattern Initializer => BindingElement 1($0, Some($1))
-    pub fn binding_element_p1(&self, a0: Box<Void>, a1: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingElement::new())
+
+    // SingleNameBinding : BindingIdentifier Initializer?
+    pub fn single_name_binding(
+        &self,
+        name: Box<BindingIdentifier>,
+        init: Option<Box<Expression>>,
+    ) -> Box<Parameter> {
+        let binding = Binding::BindingIdentifier(*name);
+        Box::new(match init {
+            None => Parameter::Binding(binding),
+            Some(init) => Parameter::BindingWithDefault(BindingWithDefault { binding, init }),
+        })
     }
-    // SingleNameBinding ::= BindingIdentifier Initializer => SingleNameBinding($0, Some($1))
-    pub fn single_name_binding(&self, a0: Box<Void>, a1: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(SingleNameBinding::new())
-    }
+
     // BindingRestElement ::= "..." BindingIdentifier => BindingRestElement 0($0, $1)
     pub fn binding_rest_element_p0(&self, a0: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(BindingRestElement::new())
@@ -1536,13 +1553,9 @@ impl AstBuilder {
         params
     }
 
-    // FunctionRestParameter ::= BindingRestElement => FunctionRestParameter($0)
+    // FunctionRestParameter : BindingRestElement
     pub fn function_rest_parameter(&self, a0: Box<Binding>) -> Box<Binding> {
         a0
-    }
-    // FormalParameter ::= BindingElement => FormalParameter($0)
-    pub fn formal_parameter(&self, a0: Box<Binding>) -> Box<Parameter> {
-        Box::new(Parameter::Binding(*a0))
     }
 
     // FunctionBody : FunctionStatementList

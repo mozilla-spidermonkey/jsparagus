@@ -9457,9 +9457,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingRestElement
         }
         329 => {
-            // FormalParameter ::= BindingElement => FormalParameter($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.formal_parameter(x0)));
+            // FormalParameter ::= BindingElement => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::FormalParameter
         }
         330 => {
@@ -9691,22 +9691,24 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingElementList
         }
         363 => {
-            // BindingElement ::= SingleNameBinding => BindingElement 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_element_p0(x0)));
+            // BindingElement ::= SingleNameBinding => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::BindingElement
         }
         364 => {
-            // BindingElement ::= BindingPattern => BindingElement 1($0, None)
+            // BindingElement ::= BindingPattern => binding_element_pattern($0, None)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_element_p1(x0, None)));
+            stack.push(StackValue::from(handler.binding_element_pattern(x0, None)));
             NonterminalId::BindingElement
         }
         365 => {
-            // BindingElement ::= BindingPattern Initializer => BindingElement 1($0, Some($1))
+            // BindingElement ::= BindingPattern Initializer => binding_element_pattern($0, Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_element_p1(x0, Some(x1))));
+            stack.push(StackValue::from(
+                handler.binding_element_pattern(x0, Some(x1)),
+            ));
             NonterminalId::BindingElement
         }
         366 => {
@@ -10570,13 +10572,13 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingElisionElement
         }
         433 => {
-            // SingleNameBinding ::= BindingIdentifier => SingleNameBinding($0, None)
+            // SingleNameBinding ::= BindingIdentifier => single_name_binding($0, None)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.single_name_binding(x0, None)));
             NonterminalId::SingleNameBinding
         }
         434 => {
-            // SingleNameBinding ::= BindingIdentifier Initializer => SingleNameBinding($0, Some($1))
+            // SingleNameBinding ::= BindingIdentifier Initializer => single_name_binding($0, Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.single_name_binding(x0, Some(x1))));
