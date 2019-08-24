@@ -438,9 +438,9 @@ IdentifierReference[Yield, Await] :
   Identifier => identifier_reference($0)
 
 BindingIdentifier[Yield, Await] :
-  Identifier => binding_identifier_p0($0)
-  `yield`
-  `await`
+  Identifier => binding_identifier($0)
+  `yield` => binding_identifier_yield()
+  `await` => binding_identifier_await()
 
 LabelIdentifier[Yield, Await] :
   Identifier => label_identifier($0)
@@ -1015,7 +1015,7 @@ BindingList[In, Yield, Await] :
 
 LexicalBinding[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
-    => variable_declaration(binding_identifier($0), $1)
+    => variable_declaration(binding_identifier_to_binding($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
     => variable_declaration(binding_pattern($0), Some($1))
 
@@ -1032,7 +1032,7 @@ VariableDeclarationList[In, Yield, Await] :
 
 VariableDeclaration[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
-    => variable_declaration(binding_identifier($0), $1)
+    => variable_declaration(binding_identifier_to_binding($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
     => variable_declaration(binding_pattern($0), Some($1))
 
@@ -1141,7 +1141,7 @@ ForDeclaration[Yield, Await] :
 
 ForBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
-    => binding_identifier($0)
+    => binding_identifier_to_binding($0)
   BindingPattern[?Yield, ?Await]
     => binding_pattern($0)
 
@@ -1230,7 +1230,7 @@ Finally[Yield, Await, Return] :
 
 CatchParameter[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
-    => binding_identifier($0)
+    => binding_identifier_to_binding($0)
   BindingPattern[?Yield, ?Await]
     => binding_pattern($0)
 

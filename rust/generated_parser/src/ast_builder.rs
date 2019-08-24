@@ -54,25 +54,29 @@ fn expression_to_simple_assignment_target(a0: Box<Expression>) -> SimpleAssignme
 }
 
 impl AstBuilder {
-    // IdentifierReference ::= "Identifier" => IdentifierReference($0)
-    pub fn identifier_reference(&self, a0: Box<Token>) -> Box<Identifier> {
-        Box::new(self.identifier(a0))
+    // IdentifierReference : Identifier
+    pub fn identifier_reference(&self, token: Box<Token>) -> Box<Identifier> {
+        Box::new(self.identifier(token))
     }
-    // BindingIdentifier ::= "Identifier" => BindingIdentifier 0($0)
-    pub fn binding_identifier_p0(&self, a0: Box<Token>) -> Box<BindingIdentifier> {
+
+    // BindingIdentifier : Identifier
+    pub fn binding_identifier(&self, a0: Box<Token>) -> Box<BindingIdentifier> {
         Box::new(BindingIdentifier::new(self.identifier(a0)))
     }
-    // BindingIdentifier ::= "yield" => BindingIdentifier 1($0)
-    pub fn binding_identifier_p1(&self) -> Box<BindingIdentifier> {
+
+    // BindingIdentifier : `yield`
+    pub fn binding_identifier_yield(&self) -> Box<BindingIdentifier> {
         Box::new(BindingIdentifier::new(Identifier::new("yield".to_string())))
     }
-    // BindingIdentifier ::= "await" => BindingIdentifier 2($0)
-    pub fn binding_identifier_p2(&self) -> Box<BindingIdentifier> {
+
+    // BindingIdentifier : `await`
+    pub fn binding_identifier_await(&self) -> Box<BindingIdentifier> {
         Box::new(BindingIdentifier::new(Identifier::new("await".to_string())))
     }
-    // LabelIdentifier ::= "Identifier" => LabelIdentifier($0)
-    pub fn label_identifier(&self, a0: Box<Token>) -> Box<Label> {
-        Box::new(Label::new(a0.value.unwrap()))
+
+    // LabelIdentifier : Identifier
+    pub fn label_identifier(&self, token: Box<Token>) -> Box<Label> {
+        Box::new(Label::new(token.value.unwrap()))
     }
 
     // PrimaryExpression : `this`
@@ -1292,12 +1296,16 @@ impl AstBuilder {
 
     // CatchParameter : BindingIdentifier
     // ForBinding : BindingIdentifier
-    pub fn binding_identifier(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
+    // LexicalBinding : BindingIdentifier Initializer?
+    // VariableDeclaration : BindingIdentifier Initializer?
+    pub fn binding_identifier_to_binding(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
         Box::new(Binding::BindingIdentifier(*a0))
     }
 
     // CatchParameter : BindingPattern
     // ForBinding : BindingPattern
+    // LexicalBinding : BindingPattern Initializer
+    // VariableDeclaration : BindingPattern Initializer
     pub fn binding_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
         Box::new(Binding::BindingPattern(*a0))
     }
