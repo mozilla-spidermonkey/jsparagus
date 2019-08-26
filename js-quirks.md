@@ -47,32 +47,104 @@ Alternatively, I believe it’s equivalent to add "[lookahead ≠ `else`]"
 at the end of the IfStatement production that doesn’t have an `else`.
 
 
-### Conditional keywords (*)
+### Conditional keywords (**)
 
-Some words like `async`, `yield`, and `let` are treated like keywords in
-some contexts, but not others.
+In some programming languages, you could write a lexer that has rules
+like
 
-The rules are inconsistent to a tragicomic extent. Two conditional
-keywords are in the *Keyword* list; the rest are not. New syntax that
-happened to be introduced around the same time as strict mode was
-awarded keyword status in strict mode. The rules are scattered through
-the spec. All this interacts with `\u0065` Unicode escape sequences
-somehow. It’s just unbelievably confusing.
+*   When you see `if`, return `Token::If`.
 
-*   `yield` is both a *Keyword* and a *ReservedWord*. However, it can be
-    used as an identifier except in generators.
+*   When you see something like `apple` or `arrow` or `target`,
+    return `Token::Identifier`.
 
-    This means that `yield - 1` is valid both inside and outside
-    generators, with different meanings. Outside a generator, it’s
-    subtraction. Inside, it yields the value **-1**.
+Not so in JavaScript. The input `if` matches both the terminal `if` and
+the nonterminal *IdentifierName*, both of which appear in the high-level
+grammar. The same goes for `target`. This poses a problem for
+table-driven parsers: they run on token ids, but the question of which
+token id to use for words like `if` and `target` is context-sensitive.
 
-    That reminds me of the Groucho Marx line: Outside of a dog, a book
-    is a man’s best friend. Inside of a dog it’s too dark to read.
+All keywords are conditional, but some are more conditional than others.
+The rules are inconsistent to a tragicomic extent. Keywords like `if`
+that date back to JavaScript 1.0 are always keywords except when used as
+property names or method names. They can't be variable names. Two
+conditional keywords (`await` and `yield`) are in the *Keyword* list;
+the rest are not. New syntax that happened to be introduced around the
+same time as strict mode was awarded keyword status in strict mode. The
+rules are scattered through the spec. All this interacts with `\u0065`
+Unicode escape sequences somehow. It’s just unbelievably confusing.
 
-*   `await` is like that, but in async functions. Also it’s not a valid
-    identifier in modules.
+*   Thirty-two words are full *Keywords*:
 
-*   `let` is not a *Keyword* or a *ReservedWord*. Usually it can be an
+    > `break` `case` `catch` `class` `const` `continue` `debugger`
+    > `default` `delete` `do` `else` `export` `extends` `finally` `for`
+    > `function` `if` `import` `in` `instanceof` `new` `return` `super`
+    > `switch` `this` `throw` `try` `typeof` `var` `void` `while` `with`
+
+    These words can't be used as names of variables or arguments.
+    They're always considered special *except* when used as property
+    names, method names, or import/export names in modules.
+
+    ```js
+    // property names
+    let obj = {if: 3, function: 4};
+    assert(obj.if == 3);
+
+    // method names
+    class C {
+      if() {}
+      function() {}
+    }
+
+    // imports and exports
+    import {if as my_if} from "modulename";
+    export {if, if as while};
+    ```
+
+*   Two more words, `yield` and `await`, are in the *Keyword* list but
+    do not always act like keywords in practice.
+
+    *   `yield` is a *Keyword*; but it can be used as an identifier,
+        except in generators.
+
+        This means that `yield - 1` is valid both inside and outside
+        generators, with different meanings. Outside a generator, it’s
+        subtraction. Inside, it yields the value **-1**.
+
+        That reminds me of the Groucho Marx line: Outside of a dog, a
+        book is a man’s best friend. Inside of a dog it’s too dark to
+        read.
+
+    *   `await` is like that, but in async functions. Also it’s not a
+        valid identifier in modules.
+
+*   `null`, `true`, and `false` are considered literals, not *Keywords*.
+
+    I don't know what difference it makes. These three words are still
+    *ReservedWords*, and so the rules seem the same as for the canonical
+    keywords listed above.
+
+*   `enum` is unconditionally a *ReservedWord*. `implements`,
+    `interface`, `package`, `private`, `protected`, and `public` are
+    *ReservedWords* only in strict mode code.
+
+    This is reflected in the message and location information for
+    certain syntax errors:
+
+    ```
+    SyntaxError: implements is a reserved identifier:
+    class implements {}
+    ......^
+
+    SyntaxError: implements is a reserved identifier:
+    function implements() { "use strict"; }
+    ....................................^
+
+    SyntaxError: function statement requires a name:
+    function enum() {}
+    .........^
+    ```
+
+*   `let` is not a *Keyword* or *ReservedWord*. Usually it can be an
     identifier. It is special at the beginning of a statement or after
     `for (` or `for await (`.
 
@@ -96,13 +168,12 @@ somehow. It’s just unbelievably confusing.
 
     ```js
     function async() {}   // normal function named "async"
-    
-    async();  // SyntaxError, beginning of a statement
-    
-    0 + async();  // fine
+
+    async();        // ok, `async` is an Identifier; function call
+    async() => {};  // ok, `async` is not an Identifier; async arrow function
     ```
 
-*   `of` is a keyword only in one specific place in `for-of` loop syntax.
+*   `of` is special only in one specific place in `for-of` loop syntax.
 
     ```js
     var of = [1, 2, 3];
@@ -121,27 +192,6 @@ somehow. It’s just unbelievably confusing.
     ```
 
 *   `target` is special only in `new.target`.
-
-*   `enum` is unconditionally a reserved word. `implements`,
-    `interface`, `package`, `private`, `protected`, and `public` are
-    reserved words only in strict mode code.
-
-    This is reflected in the message and location information for
-    certain syntax errors:
-
-    ```
-    SyntaxError: implements is a reserved identifier:
-    class implements {}
-    ......^
-
-    SyntaxError: implements is a reserved identifier:
-    function implements() { "use strict"; }
-    ....................................^
-
-    SyntaxError: function statement requires a name:
-    function enum() {}
-    .........^
-    ```
 
 *   `arguments` and `eval` can't be binding names, and can't be assigned
     to, in strict mode code.
@@ -170,7 +220,7 @@ include:
     SyntaxErrors, octal character escapes are SyntaxErrors, and a
     handful of words like `private` and `interface` are reserved (and
     thus usually SyntaxErrors) in strict mode.
-    
+
     Like the situation with slashes, this means it is not possible to
     implement a complete lexer for JS without also parsing—at least
     enough to detect class boundaries, "use strict" directives in
@@ -181,10 +231,10 @@ include:
 
 *   It’s a SyntaxError to have two argument bindings with the same name
     in a strict function.
-    
+
     Interestingly, you don’t always know if you’re in strict mode or not
     when parsing arguments.
-    
+
     ```js
     function foo(a, a) {
         "use strict";
@@ -682,7 +732,7 @@ though syntactic rules are applied after the fact:
 *   *CoverCallExpressionAndAsyncArrowHead* covers the syntax `async(x)`
     which looks like a function call and also looks like the beginning
     of an async arrow function.
- 
+
 *   *ObjectLiteral* is a cover grammar; it covers both actual object
     literals and the syntax `propertyName = expr`, which is not valid in
     object literals but allowed in destructuring assignment:
@@ -696,7 +746,7 @@ though syntactic rules are applied after the fact:
 *   *LeftHandSideExpression* is used to the left of `=` in assignment,
     and as the operand of postfix `++` and `--`. But this is way too lax;
     most expressions shouldn’t be assigned to:
-    
+
     ```js
     1 = 0;  // matches the formal grammar, SyntaxError by an early error rule
 
