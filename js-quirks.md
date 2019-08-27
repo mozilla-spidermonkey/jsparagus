@@ -196,8 +196,19 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
 *   `arguments` and `eval` can't be binding names, and can't be assigned
     to, in strict mode code.
 
-All keywords are consistently allowed as names of class methods and fields, and
-object literal properties and methods, even in strict mode.
+To complicate matters, there are a few grammatical contexts where both
+*IdentifierName* and *Identifier* match. For example, after `var {`
+there are two possibilities:
+
+```js
+// Longhand properties: BindingProperty -> PropertyName -> IdentifierName
+var { xy: v } = obj;    // ok
+var { if: v } = obj;    // ok, `if` is an IdentifierName
+
+// Shorthand properties: BindingProperty -> SingleNameBinding -> BindingIdentifier -> Identifier
+var { xy } = obj;       // ok
+var { if } = obj;       // SyntaxError: `if` is not an Identifier
+```
 
 
 ### Strict mode (*)
