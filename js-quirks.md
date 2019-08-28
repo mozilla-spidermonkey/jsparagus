@@ -59,9 +59,15 @@ like
 
 Not so in JavaScript. The input `if` matches both the terminal `if` and
 the nonterminal *IdentifierName*, both of which appear in the high-level
-grammar. The same goes for `target`. This poses a problem for
-table-driven parsers: they run on token ids, but the question of which
-token id to use for words like `if` and `target` is context-sensitive.
+grammar. The same goes for `target`.
+
+This poses a deceptively difficult problem for table-driven parsers.
+Such parsers run on a stream of token-ids, but the question of which
+token-id to use for a word like `if` and `target` is ambiguous. The
+ambiguity can only mostly be resolved using the current parser state:
+there are cases like `class C { get` where the token `get` might match
+either literally (in the case of a getter) or as an *IdentifierName* (a
+method or property named `get`) in different grammatical productions.
 
 All keywords are conditional, but some are more conditional than others.
 The rules are inconsistent to a tragicomic extent. Keywords like `if`
@@ -80,7 +86,12 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
     > `function` `if` `import` `in` `instanceof` `new` `return` `super`
     > `switch` `this` `throw` `try` `typeof` `var` `void` `while` `with`
 
-    These words can't be used as names of variables or arguments.
+    Four additional words are not in the *Keyword* list, even though
+    they follow exactly the same rules:
+
+    > `true` `false` `null` `enum`
+
+    These 36 words can't be used as names of variables or arguments.
     They're always considered special *except* when used as property
     names, method names, or import/export names in modules.
 
@@ -104,7 +115,7 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
     do not always act like keywords in practice.
 
     *   `yield` is a *Keyword*; but it can be used as an identifier,
-        except in generators.
+        except in generators and strict mode code.
 
         This means that `yield - 1` is valid both inside and outside
         generators, with different meanings. Outside a generator, it’s
@@ -117,15 +128,11 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
     *   `await` is like that, but in async functions. Also it’s not a
         valid identifier in modules.
 
-*   `null`, `true`, and `false` are considered literals, not *Keywords*.
+    I don't understand why these are specified in this way.
 
-    I don't know what difference it makes. These three words are still
-    *ReservedWords*, and so the rules seem the same as for the canonical
-    keywords listed above.
-
-*   `enum` is unconditionally a *ReservedWord*. `implements`,
-    `interface`, `package`, `private`, `protected`, and `public` are
-    *ReservedWords* only in strict mode code.
+*   In strict mode code, `implements`, `interface`, `package`,
+    `private`, `protected`, and `public` are reserved (via Early Errors
+    rules).
 
     This is reflected in the message and location information for
     certain syntax errors:
@@ -138,10 +145,6 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
     SyntaxError: implements is a reserved identifier:
     function implements() { "use strict"; }
     ....................................^
-
-    SyntaxError: function statement requires a name:
-    function enum() {}
-    .........^
     ```
 
 *   `let` is not a *Keyword* or *ReservedWord*. Usually it can be an
@@ -156,10 +159,12 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
     let[0].getYear();  // SyntaxError: `let [` -> LexicalDeclaration
     ```
 
-    In strict mode, `let` is not a valid *Identifier*.
+    In strict mode code, `let` is reserved.
 
 *   `static` is similar. It’s a valid identifier, except in strict
     mode. It’s only special at the beginning of a *ClassElement*.
+
+    In strict mode code, `static` is reserved.
 
 *   `async` is similar, but trickier. It’s an identifier. It is special
     only if it’s marking an `async` function, method, or arrow function
@@ -654,6 +659,23 @@ be parsed in a faraway part of the Parser.
 A table-driven parser has it easy here! The lexer can consult the state
 table and see which kind of token can be accepted in the current
 state. This is closer to what the spec actually says.
+
+Two minor things to watch out for:
+
+*   The nonterminal *ClassTail* is used both at the end of
+    *ClassExpression*, which may be followed by `/`; and at the end of
+    *ClassDeclaration*, which may be followed by a
+    *RegularExpressionLiteral* at the start of the next
+    statement. Canonical LR creates separate states for these two uses
+    of *ClassTail*, but the LALR algorithm will unify them, creating
+    some states that have both `/` and *RegularExpressionLiteral* in the
+    follow set.  In these states, determining which terminal is actually
+    allowed requires looking not only at the current state, but at the
+    current stack of states (to see one level of grammatical context).
+
+*   Since this decision depends on the parser state, and automatic
+    semicolon insertion adjusts the parser state, a parser may need to
+    re-scan a token after ASI.
 
 In other kinds of generated parsers, at least the lexical goal symbol
 can be determined automatically.
