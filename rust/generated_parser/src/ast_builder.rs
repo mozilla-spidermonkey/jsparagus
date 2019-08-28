@@ -3,39 +3,19 @@ use ast::*;
 
 pub struct AstBuilder {}
 
-fn expression_to_assignment_target(a0: Box<Expression>) -> AssignmentTarget {
-    match *a0 {
-        Expression::IdentifierExpression(IdentifierExpression { name }) => {
-            AssignmentTarget::SimpleAssignmentTarget(
-                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
-                    name,
-                }),
-            )
+fn expression_to_assignment_target(expression: Box<Expression>) -> AssignmentTarget {
+    match &*expression {
+        Expression::IdentifierExpression(_) | Expression::MemberExpression(_) => {
+            AssignmentTarget::SimpleAssignmentTarget(expression_to_simple_assignment_target(
+                expression,
+            ))
         }
-        Expression::MemberExpression(MemberExpression::StaticMemberExpression(
-            StaticMemberExpression { object, property },
-        )) => AssignmentTarget::SimpleAssignmentTarget(
-            SimpleAssignmentTarget::MemberAssignmentTarget(
-                MemberAssignmentTarget::StaticMemberAssignmentTarget(
-                    StaticMemberAssignmentTarget { object, property },
-                ),
-            ),
-        ),
-        Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
-            ComputedMemberExpression { object, expression },
-        )) => AssignmentTarget::SimpleAssignmentTarget(
-            SimpleAssignmentTarget::MemberAssignmentTarget(
-                MemberAssignmentTarget::ComputedMemberAssignmentTarget(
-                    ComputedMemberAssignmentTarget { object, expression },
-                ),
-            ),
-        ),
-        a0 => panic!("Unimplemented expression_to_assignment_target: {:?}", a0),
+        other => panic!("Unimplemented expression_to_assignment_target: {:?}", other),
     }
 }
 
-fn expression_to_simple_assignment_target(a0: Box<Expression>) -> SimpleAssignmentTarget {
-    match *a0 {
+fn expression_to_simple_assignment_target(expression: Box<Expression>) -> SimpleAssignmentTarget {
+    match *expression {
         Expression::IdentifierExpression(IdentifierExpression { name }) => {
             SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier { name })
         }
@@ -46,9 +26,16 @@ fn expression_to_simple_assignment_target(a0: Box<Expression>) -> SimpleAssignme
                 StaticMemberAssignmentTarget::new(object, property),
             ),
         ),
-        a0 => panic!(
+        Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+            ComputedMemberExpression { object, expression },
+        )) => SimpleAssignmentTarget::MemberAssignmentTarget(
+            MemberAssignmentTarget::ComputedMemberAssignmentTarget(
+                ComputedMemberAssignmentTarget { object, expression },
+            ),
+        ),
+        other => panic!(
             "Unimplemented expression_to_simple_assignment_target: {:?}",
-            a0
+            other
         ),
     }
 }
