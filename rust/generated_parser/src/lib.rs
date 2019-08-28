@@ -10966,7 +10966,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LiteralPropertyName
         }
         469 => {
-            // ComputedPropertyName ::= "[" AssignmentExpression "]" => ComputedPropertyName($0, $1, $2)
+            // ComputedPropertyName ::= "[" AssignmentExpression "]" => computed_property_name($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();

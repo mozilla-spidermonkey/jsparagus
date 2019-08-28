@@ -408,10 +408,13 @@ impl AstBuilder {
         }))
     }
 
-    // ComputedPropertyName ::= "[" AssignmentExpression "]" => ComputedPropertyName($0, $1, $2)
-    pub fn computed_property_name(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ComputedPropertyName::new())
+    // ComputedPropertyName : `[` AssignmentExpression `]`
+    pub fn computed_property_name(&self, expression: Box<Expression>) -> Box<PropertyName> {
+        Box::new(PropertyName::ComputedPropertyName(ComputedPropertyName {
+            expression,
+        }))
     }
+
     // CoverInitializedName ::= IdentifierReference Initializer => CoverInitializedName($0, $1)
     pub fn cover_initialized_name(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(CoverInitializedName::new())

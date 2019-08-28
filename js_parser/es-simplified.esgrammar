@@ -576,6 +576,7 @@ LiteralPropertyName :
 
 ComputedPropertyName[Yield, Await] :
   `[` AssignmentExpression[+In, ?Yield, ?Await] `]`
+    => computed_property_name($1)
 
 CoverInitializedName[Yield, Await] :
   IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
