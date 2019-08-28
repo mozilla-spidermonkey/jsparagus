@@ -8865,9 +8865,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrowParameters
         }
         256 => {
-            // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => arrow_parameters_parenthesized($0)
+            // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_arrow_parameters($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.arrow_parameters_parenthesized(x0)));
+            stack.push(StackValue::from(handler.uncover_arrow_parameters(x0)));
             NonterminalId::ArrowParameters
         }
         257 => {
@@ -9111,81 +9111,84 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LogicalAndExpression
         }
         291 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression ")" => CoverParenthesizedExpressionAndArrowParameterList 0($0, $1, $2)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression ")" => cover_parenthesized_expression($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p0(x1),
-            ));
+            stack.push(StackValue::from(handler.cover_parenthesized_expression(x1)));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         292 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," ")" => CoverParenthesizedExpressionAndArrowParameterList 1($0, $1, $2, $3)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), None)
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p1(x1),
-            ));
+            stack.push(StackValue::from(handler.cover_arrow_parameter_list(
+                handler.expression_to_parameter_list(x1),
+                None,
+            )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         293 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => CoverParenthesizedExpressionAndArrowParameterList 2($0, $1)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => cover_arrow_parameter_list(empty_parameter_list(), None)
             stack.pop();
             stack.pop();
             stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p2(),
+                handler.cover_arrow_parameter_list(handler.empty_parameter_list(), None),
             ));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         294 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 3($0, $1, $2, $3)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_identifier_to_binding($2)))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p3(x2),
-            ));
+            stack.push(StackValue::from(handler.cover_arrow_parameter_list(
+                handler.empty_parameter_list(),
+                Some(handler.binding_identifier_to_binding(x2)),
+            )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         295 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 4($0, $1, $2, $3)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_pattern($2)))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p4(x2),
-            ));
+            stack.push(StackValue::from(handler.cover_arrow_parameter_list(
+                handler.empty_parameter_list(),
+                Some(handler.binding_pattern(x2)),
+            )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         296 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 5($0, $1, $2, $3, $4, $5)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingIdentifier ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p5(x1, x4),
-            ));
+            stack.push(StackValue::from(handler.cover_arrow_parameter_list(
+                handler.expression_to_parameter_list(x1),
+                Some(handler.binding_identifier_to_binding(x4)),
+            )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         297 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 6($0, $1, $2, $3, $4, $5)
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_pattern($4)))
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.cover_parenthesized_expression_and_arrow_parameter_list_p6(x1, x4),
-            ));
+            stack.push(StackValue::from(handler.cover_arrow_parameter_list(
+                handler.expression_to_parameter_list(x1),
+                Some(handler.binding_pattern(x4)),
+            )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         298 => {
@@ -9576,9 +9579,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::PrimaryExpression
         }
         347 => {
-            // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => parenthesized_expr($0)
+            // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_parenthesized_expression($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.parenthesized_expr(x0)));
+            stack.push(StackValue::from(
+                handler.uncover_parenthesized_expression(x0),
+            ));
             NonterminalId::PrimaryExpression
         }
         348 => {

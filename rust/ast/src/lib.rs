@@ -1545,3 +1545,9 @@ impl VariableDeclarator {
         Self { binding, init }
     }
 }
+
+#[derive(Debug, PartialEq)]
+pub enum CoverParenthesized {
+    Expression(Box<Expression>),
+    Parameters(Box<FormalParameters>),
+}

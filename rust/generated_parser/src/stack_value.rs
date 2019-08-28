@@ -47,6 +47,7 @@ pub enum StackValue {
     ComputedPropertyName(Box<ComputedPropertyName>),
     ConditionalExpression(Box<ConditionalExpression>),
     ContinueStatement(Box<ContinueStatement>),
+    CoverParenthesized(Box<CoverParenthesized>),
     DataProperty(Box<DataProperty>),
     Directive(Box<Directive>),
     DoWhileStatement(Box<DoWhileStatement>),
@@ -548,6 +549,15 @@ impl StackValueItem for ContinueStatement {
         match sv {
             StackValue::ContinueStatement(v) => v,
             _ => panic!("StackValue expected ContinueStatement, got {:?}", sv),
+        }
+    }
+}
+
+impl StackValueItem for CoverParenthesized {
+    fn to_ast(sv: StackValue) -> Box<Self> {
+        match sv {
+            StackValue::CoverParenthesized(v) => v,
+            _ => panic!("StackValue expected CoverParenthesized, got {:?}", sv),
         }
     }
 }
@@ -1611,6 +1621,12 @@ impl From<Box<ConditionalExpression>> for StackValue {
 impl From<Box<ContinueStatement>> for StackValue {
     fn from(val: Box<ContinueStatement>) -> StackValue {
         StackValue::ContinueStatement(val)
+    }
+}
+
+impl From<Box<CoverParenthesized>> for StackValue {
+    fn from(val: Box<CoverParenthesized>) -> StackValue {
+        StackValue::CoverParenthesized(val)
     }
 }
 

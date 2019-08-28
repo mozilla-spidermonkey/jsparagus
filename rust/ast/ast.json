@@ -713,5 +713,10 @@
     "_type": "struct",
     "binding": "Binding",
     "init": "Option<Box<Expression>>"
+  },
+  "CoverParenthesized": {
+    "_type": "enum",
+    "Expression": "Box<Expression>",
+    "Parameters": "Box<FormalParameters>"
   }
 }

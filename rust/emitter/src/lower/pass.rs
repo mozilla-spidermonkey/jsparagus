@@ -1094,6 +1094,17 @@ pub trait Pass {
             self.visit_expression(item);
         }
     }
+
+    fn visit_cover_parenthesized(&mut self, ast: &mut CoverParenthesized) {
+        match ast {
+            CoverParenthesized::Expression(ast) => {
+                self.visit_expression(ast);
+            }
+            CoverParenthesized::Parameters(ast) => {
+                self.visit_formal_parameters(ast);
+            }
+        }
+    }
 }
 
 pub trait PostfixPassMonoid: Default {
@@ -3142,5 +3153,12 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
             .as_mut()
             .map(|item| self.visit_expression(item));
         self.pass.visit_variable_declarator(a0, a1)
+    }
+
+    pub fn visit_cover_parenthesized(&mut self, ast: &mut CoverParenthesized) -> T::Value {
+        match ast {
+            CoverParenthesized::Expression(ast) => self.visit_expression(ast),
+            CoverParenthesized::Parameters(ast) => self.visit_formal_parameters(ast),
+        }
     }
 }

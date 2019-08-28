@@ -112,60 +112,84 @@ impl AstBuilder {
         Box::new(Expression::TemplateExpression(*template_literal))
     }
 
-    // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList
-    pub fn parenthesized_expr(&self, a0: Box<Expression>) -> Box<Expression> {
-        // TODO
-        a0
+    // PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
+    pub fn uncover_parenthesized_expression(
+        &self,
+        parenthesized: Box<CoverParenthesized>
+    ) -> Box<Expression> {
+        match *parenthesized {
+            CoverParenthesized::Expression(expression) => expression,
+            CoverParenthesized::Parameters(_parameters) => unimplemented!(), // TODO
+        }
     }
 
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression ")" => CoverParenthesizedExpressionAndArrowParameterList 0($0, $1, $2)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p0(
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `)`
+    pub fn cover_parenthesized_expression(
         &self,
-        a0: Box<Expression>,
-    ) -> Box<Expression> {
-        // TODO
-        a0
+        expression: Box<Expression>,
+    ) -> Box<CoverParenthesized> {
+        Box::new(CoverParenthesized::Expression(expression))
     }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," ")" => CoverParenthesizedExpressionAndArrowParameterList 1($0, $1, $2, $3)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p1(
+
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` `)`
+    pub fn empty_parameter_list(&self) -> Vec<Parameter> {
+        vec![]
+    }
+
+    pub fn expression_to_parameter(&self, expression: Expression) -> Parameter {
+        match expression {
+            Expression::IdentifierExpression(IdentifierExpression { name }) => {
+                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier {
+                    name,
+                }))
+            }
+            other => panic!(
+                "Unimplemented expression_to_parameter: {:?}",
+                other
+            ),
+        }
+    }
+
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingIdentifier `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingPattern `)`
+    pub fn expression_to_parameter_list(&self, expression: Box<Expression>) -> Vec<Parameter> {
+        // When the production
+        // *ArrowParameters* `:` *CoverParenthesizedExpressionAndArrowParameterList*
+        // is recognized the following grammar is used to refine the
+        // interpretation of
+        // *CoverParenthesizedExpressionAndArrowParameterList*:
+        //
+        //     ArrowFormalParameters[Yield, Await]:
+        //         `(` UniqueFormalParameters[?Yield, ?Await] `)`
+        match *expression {
+            Expression::BinaryExpression(BinaryExpression {
+                operator: BinaryOperator::Comma,
+                left,
+                right,
+            }) => {
+                let mut parameters = self.expression_to_parameter_list(left);
+                parameters.push(self.expression_to_parameter(*right));
+                parameters
+            }
+            other => vec![self.expression_to_parameter(other)],
+        }
+    }
+
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` `...` BindingIdentifier `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` `...` BindingPattern `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingIdentifier `)`
+    // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingPattern `)`
+    pub fn cover_arrow_parameter_list(
         &self,
-        a0: Box<Expression>,
-    ) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
-    }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => CoverParenthesizedExpressionAndArrowParameterList 2($0, $1)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p2(&self) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
-    }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 3($0, $1, $2, $3)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p3(
-        &self,
-        a0: Box<BindingIdentifier>,
-    ) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
-    }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 4($0, $1, $2, $3)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p4(
-        &self,
-        a0: Box<BindingPattern>,
-    ) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
-    }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingIdentifier ")" => CoverParenthesizedExpressionAndArrowParameterList 5($0, $1, $2, $3, $4, $5)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p5(
-        &self,
-        a0: Box<Expression>,
-        a1: Box<BindingIdentifier>,
-    ) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
-    }
-    // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => CoverParenthesizedExpressionAndArrowParameterList 6($0, $1, $2, $3, $4, $5)
-    pub fn cover_parenthesized_expression_and_arrow_parameter_list_p6(
-        &self,
-        a0: Box<Expression>,
-        a1: Box<BindingPattern>,
-    ) -> Box<Expression> {
-        unimplemented!(); // Box::new(CoverParenthesizedExpressionAndArrowParameterList::new())
+        parameters: Vec<Parameter>,
+        rest: Option<Box<Binding>>,
+    ) -> Box<CoverParenthesized> {
+        Box::new(CoverParenthesized::Parameters(Box::new(FormalParameters {
+            items: parameters,
+            rest: rest.map(|boxed| *boxed),
+        })))
     }
 
     // Literal : NullLiteral
@@ -1618,8 +1642,16 @@ impl AstBuilder {
     }
 
     // ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
-    pub fn arrow_parameters_parenthesized(&self, a0: Box<Expression>) -> Box<Expression> {
-        unimplemented!()
+    pub fn uncover_arrow_parameters(&self, covered: Box<CoverParenthesized>) -> Box<FormalParameters> {
+        match *covered {
+            CoverParenthesized::Expression(expression) =>
+                Box::new(FormalParameters {
+                    items: self.expression_to_parameter_list(expression),
+                    rest: None
+                }),
+            CoverParenthesized::Parameters(parameters) =>
+                parameters,
+        }
     }
 
     // ConciseBody : [lookahead != `{`] AssignmentExpression

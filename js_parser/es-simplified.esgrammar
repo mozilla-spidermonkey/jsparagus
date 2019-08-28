@@ -471,16 +471,23 @@ PrimaryExpression[Yield, Await] :
   TemplateLiteral[?Yield, ?Await, ~Tagged]
     => untagged_template_expr($0)
   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
-    => parenthesized_expr($0)
+    => uncover_parenthesized_expression($0)
 
 CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
   `(` Expression[+In, ?Yield, ?Await] `)`
+    => cover_parenthesized_expression($1)
   `(` Expression[+In, ?Yield, ?Await] `,` `)`
+    => cover_arrow_parameter_list(expression_to_parameter_list($1), None)
   `(` `)`
+    => cover_arrow_parameter_list(empty_parameter_list(), None)
   `(` `...` BindingIdentifier[?Yield, ?Await] `)`
+    => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_identifier_to_binding($2)))
   `(` `...` BindingPattern[?Yield, ?Await] `)`
+    => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_pattern($2)))
   `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingIdentifier[?Yield, ?Await] `)`
+    => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
   `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingPattern[?Yield, ?Await] `)`
+    => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_pattern($4)))
 
 
 ParenthesizedExpression[Yield, Await] :
@@ -1296,7 +1303,7 @@ ArrowParameters[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => arrow_parameters_bare($0)
   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
-    => arrow_parameters_parenthesized($0)
+    => uncover_arrow_parameters($0)
 
 ConciseBody[In] :
   [lookahead != `{` ] AssignmentExpression[?In, ~Yield, ~Await]
