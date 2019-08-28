@@ -102,7 +102,7 @@ impl AstBuilder {
     // PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
     pub fn uncover_parenthesized_expression(
         &self,
-        parenthesized: Box<CoverParenthesized>
+        parenthesized: Box<CoverParenthesized>,
     ) -> Box<Expression> {
         match *parenthesized {
             CoverParenthesized::Expression(expression) => expression,
@@ -126,14 +126,9 @@ impl AstBuilder {
     pub fn expression_to_parameter(&self, expression: Expression) -> Parameter {
         match expression {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
-                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier {
-                    name,
-                }))
+                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name }))
             }
-            other => panic!(
-                "Unimplemented expression_to_parameter: {:?}",
-                other
-            ),
+            other => panic!("Unimplemented expression_to_parameter: {:?}", other),
         }
     }
 
@@ -1629,15 +1624,16 @@ impl AstBuilder {
     }
 
     // ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
-    pub fn uncover_arrow_parameters(&self, covered: Box<CoverParenthesized>) -> Box<FormalParameters> {
+    pub fn uncover_arrow_parameters(
+        &self,
+        covered: Box<CoverParenthesized>,
+    ) -> Box<FormalParameters> {
         match *covered {
-            CoverParenthesized::Expression(expression) =>
-                Box::new(FormalParameters {
-                    items: self.expression_to_parameter_list(expression),
-                    rest: None
-                }),
-            CoverParenthesized::Parameters(parameters) =>
-                parameters,
+            CoverParenthesized::Expression(expression) => Box::new(FormalParameters {
+                items: self.expression_to_parameter_list(expression),
+                rest: None,
+            }),
+            CoverParenthesized::Parameters(parameters) => parameters,
         }
     }
 
