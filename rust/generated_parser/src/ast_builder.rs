@@ -123,11 +123,100 @@ impl AstBuilder {
         vec![]
     }
 
+    /// Used when parsing `([a, b=2]=arr) =>` to reinterpret as parameter bindings
+    /// the snippets `a` and `b=2`, which were previously parsed as assignment targets.
+    pub fn assignment_target_maybe_default_to_binding(
+        &self,
+        target: AssignmentTargetMaybeDefault,
+    ) -> Parameter {
+        unimplemented!();
+    }
+
+    pub fn assignment_target_property_to_binding_property(
+        &self,
+        target: AssignmentTargetProperty,
+    ) -> BindingProperty {
+        unimplemented!();
+    }
+
+    /// Refine the left-hand side of `=` to a parameter binding. The spec says:
+    ///
+    /// > When the production *ArrowParameters* :
+    /// > *CoverParenthesizedExpressionAndArrowParameterList* is recognized,
+    /// > the following grammar is used to refine the interpretation of
+    /// > *CoverParenthesizedExpressionAndArrowParameterList*:
+    /// >
+    /// > *ArrowFormalParameters*\[Yield, Await\] :
+    /// > `(` *UniqueFormalParameters*\[?Yield, ?Await\] `)`
+    ///
+    /// Of course, rather than actually reparsing the arrow function parameters,
+    /// we work by refining the AST we already built.
+    ///
+    /// When parsing `(a = 1, [b, c] = obj) => {}`, the assignment targets `a`
+    /// and `[b, c]` are passed to this method.
+    pub fn assignment_target_to_binding(&self, target: AssignmentTarget) -> Binding {
+        match target {
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                }),
+            ) => Binding::BindingIdentifier(BindingIdentifier { name }),
+
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::MemberAssignmentTarget(_),
+            ) => {
+                // This happens with `(a.x = 1) => 2`.
+                // TODO - Handle this case by returning an error Result.
+                panic!("illegal binding");
+            }
+
+            AssignmentTarget::AssignmentTargetPattern(
+                AssignmentTargetPattern::ArrayAssignmentTarget(ArrayAssignmentTarget {
+                    elements,
+                    rest,
+                }),
+            ) => {
+                let elements: Vec<Option<Parameter>> = elements
+                    .into_iter()
+                    .map(|maybe_target| {
+                        maybe_target
+                            .map(|target| self.assignment_target_maybe_default_to_binding(target))
+                    })
+                    .collect();
+                let rest: Option<Box<Binding>> = rest
+                    .map(|rest_target| Box::new(self.assignment_target_to_binding(*rest_target)));
+                Binding::BindingPattern(BindingPattern::ArrayBinding(ArrayBinding {
+                    elements,
+                    rest,
+                }))
+            }
+
+            AssignmentTarget::AssignmentTargetPattern(
+                AssignmentTargetPattern::ObjectAssignmentTarget(ObjectAssignmentTarget {
+                    properties,
+                }),
+            ) => {
+                let properties = properties
+                    .into_iter()
+                    .map(|target| self.assignment_target_property_to_binding_property(target))
+                    .collect();
+                Binding::BindingPattern(BindingPattern::ObjectBinding(ObjectBinding { properties }))
+            }
+        }
+    }
+
     pub fn expression_to_parameter(&self, expression: Expression) -> Parameter {
         match expression {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name }))
             }
+            Expression::AssignmentExpression(AssignmentExpression {
+                binding,
+                expression,
+            }) => Parameter::BindingWithDefault(BindingWithDefault {
+                binding: self.assignment_target_to_binding(binding),
+                init: expression,
+            }),
             other => panic!("Unimplemented expression_to_parameter: {:?}", other),
         }
     }
