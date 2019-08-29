@@ -229,6 +229,7 @@ pub enum PropertyName {
 pub enum ObjectProperty {
     NamedObjectProperty(NamedObjectProperty),
     ShorthandProperty(ShorthandProperty),
+    SpreadProperty(Box<Expression>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -386,11 +387,12 @@ impl ArrayBinding {
 #[derive(Debug, PartialEq)]
 pub struct ObjectBinding {
     pub properties: Vec<BindingProperty>,
+    pub rest: Option<Box<BindingIdentifier>>,
 }
 
 impl ObjectBinding {
-    pub fn new(properties: Vec<BindingProperty>) -> Self {
-        Self { properties }
+    pub fn new(properties: Vec<BindingProperty>, rest: Option<Box<BindingIdentifier>>) -> Self {
+        Self { properties, rest }
     }
 }
 
@@ -460,11 +462,15 @@ impl ArrayAssignmentTarget {
 #[derive(Debug, PartialEq)]
 pub struct ObjectAssignmentTarget {
     pub properties: Vec<AssignmentTargetProperty>,
+    pub rest: Option<Box<AssignmentTarget>>,
 }
 
 impl ObjectAssignmentTarget {
-    pub fn new(properties: Vec<AssignmentTargetProperty>) -> Self {
-        Self { properties }
+    pub fn new(
+        properties: Vec<AssignmentTargetProperty>,
+        rest: Option<Box<AssignmentTarget>>,
+    ) -> Self {
+        Self { properties, rest }
     }
 }
 

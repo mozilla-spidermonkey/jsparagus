@@ -169,7 +169,8 @@
   "ObjectProperty": {
     "_type": "enum",
     "NamedObjectProperty": "NamedObjectProperty",
-    "ShorthandProperty": "ShorthandProperty"
+    "ShorthandProperty": "ShorthandProperty",
+    "SpreadProperty": "Box<Expression>"
   },
   "NamedObjectProperty": {
     "_type": "enum",
@@ -270,7 +271,8 @@
   },
   "ObjectBinding": {
     "_type": "struct",
-    "properties": "Vec<BindingProperty>"
+    "properties": "Vec<BindingProperty>",
+    "rest": "Option<Box<BindingIdentifier>>"
   },
   "BindingProperty": {
     "_type": "enum",
@@ -304,7 +306,8 @@
   },
   "ObjectAssignmentTarget": {
     "_type": "struct",
-    "properties": "Vec<AssignmentTargetProperty>"
+    "properties": "Vec<AssignmentTargetProperty>",
+    "rest": "Option<Box<AssignmentTarget>>"
   },
   "AssignmentTargetProperty": {
     "_type": "enum",

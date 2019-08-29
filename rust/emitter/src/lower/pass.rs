@@ -301,6 +301,9 @@ pub trait Pass {
             ObjectProperty::ShorthandProperty(ast) => {
                 self.visit_shorthand_property(ast);
             }
+            ObjectProperty::SpreadProperty(ast) => {
+                self.visit_expression(ast);
+            }
         }
     }
 
@@ -498,6 +501,9 @@ pub trait Pass {
         for item in &mut ast.properties {
             self.visit_binding_property(item);
         }
+        if let Some(item) = &mut ast.rest {
+            self.visit_binding_identifier(item);
+        }
     }
 
     fn visit_binding_property(&mut self, ast: &mut BindingProperty) {
@@ -553,6 +559,9 @@ pub trait Pass {
     fn visit_object_assignment_target(&mut self, ast: &mut ObjectAssignmentTarget) {
         for item in &mut ast.properties {
             self.visit_assignment_target_property(item);
+        }
+        if let Some(item) = &mut ast.rest {
+            self.visit_assignment_target(item);
         }
     }
 
@@ -1210,9 +1219,16 @@ pub trait PostfixPass {
         result
     }
 
-    fn visit_object_binding(&self, properties: Vec<Self::Value>) -> Self::Value {
+    fn visit_object_binding(
+        &self,
+        properties: Vec<Self::Value>,
+        rest: Option<Self::Value>,
+    ) -> Self::Value {
         let mut result = Self::Value::default();
         for item in properties {
+            result.append(item);
+        }
+        if let Some(item) = rest {
             result.append(item);
         }
         result
@@ -1270,9 +1286,16 @@ pub trait PostfixPass {
         result
     }
 
-    fn visit_object_assignment_target(&self, properties: Vec<Self::Value>) -> Self::Value {
+    fn visit_object_assignment_target(
+        &self,
+        properties: Vec<Self::Value>,
+        rest: Option<Self::Value>,
+    ) -> Self::Value {
         let mut result = Self::Value::default();
         for item in properties {
+            result.append(item);
+        }
+        if let Some(item) = rest {
             result.append(item);
         }
         result
@@ -2241,6 +2264,7 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
         match ast {
             ObjectProperty::NamedObjectProperty(ast) => self.visit_named_object_property(ast),
             ObjectProperty::ShorthandProperty(ast) => self.visit_shorthand_property(ast),
+            ObjectProperty::SpreadProperty(ast) => self.visit_expression(ast),
         }
     }
 
@@ -2413,7 +2437,10 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
             .iter_mut()
             .map(|item| self.visit_binding_property(item))
             .collect::<Vec<_>>();
-        self.pass.visit_object_binding(a0)
+        let a1 = (&mut ast.rest)
+            .as_mut()
+            .map(|item| self.visit_binding_identifier(item));
+        self.pass.visit_object_binding(a0, a1)
     }
 
     pub fn visit_binding_property(&mut self, ast: &mut BindingProperty) -> T::Value {
@@ -2489,7 +2516,10 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
             .iter_mut()
             .map(|item| self.visit_assignment_target_property(item))
             .collect::<Vec<_>>();
-        self.pass.visit_object_assignment_target(a0)
+        let a1 = (&mut ast.rest)
+            .as_mut()
+            .map(|item| self.visit_assignment_target(item));
+        self.pass.visit_object_assignment_target(a0, a1)
     }
 
     pub fn visit_assignment_target_property(

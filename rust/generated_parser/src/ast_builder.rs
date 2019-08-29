@@ -139,6 +139,27 @@ impl AstBuilder {
         unimplemented!();
     }
 
+    /// Refine an AssignmentRestProperty into a BindingRestProperty.
+    fn assignment_rest_property_to_binding_identifier(
+        &self,
+        target: AssignmentTarget,
+    ) -> Box<BindingIdentifier> {
+        match target {
+            // ({...x} = dv) => {}
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                }),
+            ) => Box::new(BindingIdentifier { name }),
+
+            // ({...x.y} = dv) => {}
+            _ => {
+                // TODO - Handle this case by returning an error Result.
+                panic!("invalid rest binding");
+            }
+        }
+    }
+
     /// Refine the left-hand side of `=` to a parameter binding. The spec says:
     ///
     /// > When the production *ArrowParameters* :
@@ -199,13 +220,20 @@ impl AstBuilder {
             AssignmentTarget::AssignmentTargetPattern(
                 AssignmentTargetPattern::ObjectAssignmentTarget(ObjectAssignmentTarget {
                     properties,
+                    rest,
                 }),
             ) => {
                 let properties = properties
                     .into_iter()
                     .map(|target| self.assignment_target_property_to_binding_property(target))
                     .collect();
-                Binding::BindingPattern(BindingPattern::ObjectBinding(ObjectBinding { properties }))
+                let rest = rest.map(|rest_target| {
+                    self.assignment_rest_property_to_binding_identifier(*rest_target)
+                });
+                Binding::BindingPattern(BindingPattern::ObjectBinding(ObjectBinding {
+                    properties,
+                    rest,
+                }))
             }
         }
     }
@@ -223,6 +251,7 @@ impl AstBuilder {
             }),
 
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
+                // TODO - change this to an error Result
                 panic!("destructuring patterns can't have methods");
             }
 
@@ -236,17 +265,58 @@ impl AstBuilder {
                     init: None,
                 })
             }
+
+            ObjectProperty::SpreadProperty(expression) => {
+                // TODO - change this to an error Result
+                panic!("destructuring patterns can have `...` only at the end");
+            }
         }
     }
 
-    /// Refine ObjectLiteral to ObjectBindingPattern.
+    /// Refine an instance of "*PropertyDefinition* : `...`
+    /// *AssignmentExpression*" into a *BindingRestProperty*.
+    fn spread_expression_to_rest_binding(
+        &self,
+        expression: Box<Expression>,
+    ) -> Box<BindingIdentifier> {
+        match *expression {
+            Expression::IdentifierExpression(IdentifierExpression { name }) => {
+                Box::new(BindingIdentifier { name })
+            }
+            _ => {
+                // TODO - change this to an error Result
+                panic!("invalid rest binding");
+            }
+        }
+    }
+
+    fn pop_trailing_spread_property(
+        &self,
+        properties: &mut Vec<Box<ObjectProperty>>,
+    ) -> Option<Box<Expression>> {
+        // Check whether we want to pop a PropertyDefinition
+        match properties.last().map(|boxed| &**boxed) {
+            Some(ObjectProperty::SpreadProperty(_)) => {}
+            _ => return None,
+        }
+
+        // We do.
+        match properties.pop().map(|boxed| *boxed) {
+            Some(ObjectProperty::SpreadProperty(expression)) => Some(expression),
+            _ => panic!("last property changed since preceding check"), // can't happen
+        }
+    }
+
+    /// Refine an *ObjectLiteral* into an *ObjectBindingPattern*.
     fn object_expression_to_object_binding(&self, object: ObjectExpression) -> ObjectBinding {
+        let mut properties = object.properties;
+        let rest = self.pop_trailing_spread_property(&mut properties);
         ObjectBinding {
-            properties: object
-                .properties
+            properties: properties
                 .into_iter()
                 .map(|op| self.object_property_to_binding_property(*op))
                 .collect(),
+            rest: rest.map(|expression| self.spread_expression_to_rest_binding(expression)),
         }
     }
 
@@ -310,7 +380,7 @@ impl AstBuilder {
                             Parameter::Binding(b) => Box::new(b),
                             Parameter::BindingWithDefault(BindingWithDefault {
                                 binding, ..
-                            }) => Box::new(binding),
+                            }) => panic!("default value not allowed for rest binding in array destructuring"),
                         }),
                     },
                 )))
@@ -576,7 +646,7 @@ impl AstBuilder {
 
     // PropertyDefinition : `...` AssignmentExpression
     pub fn property_definition_spread(&self, spread: Box<Expression>) -> Box<ObjectProperty> {
-        unimplemented!();
+        Box::new(ObjectProperty::SpreadProperty(spread))
     }
 
     // LiteralPropertyName : IdentifierName
@@ -1212,12 +1282,13 @@ impl AstBuilder {
     pub fn object_binding_pattern(
         &self,
         properties: Box<Vec<BindingProperty>>,
-        rest: Option<Box<BindingProperty>>,
+        rest: Option<Box<BindingIdentifier>>,
     ) -> Box<Binding> {
         assert!(rest.is_none());
         Box::new(Binding::BindingPattern(BindingPattern::ObjectBinding(
             ObjectBinding {
                 properties: *properties,
+                rest,
             },
         )))
     }
