@@ -1650,39 +1650,40 @@ impl AstBuilder {
         Box::new(ArrowExpressionBody::FunctionBody(*body))
     }
 
-    // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, $2, $3, $4, $5, $6)
-    pub fn method_definition_p0(
+    // MethodDefinition : PropertyName `(` UniqueFormalParameters `)` `{` FunctionBody `}`
+    pub fn method_definition(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
         Box::new(MethodDefinition::Method(Method::new(
-            *a0, false, false, *a1, *a2,
+            *name, false, false, *params, *body,
         )))
     }
-    // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => MethodDefinition 4($0, $1, $2, $3, $4, $5, $6)
-    pub fn method_definition_p4(
+
+    // MethodDefinition : `get` PropertyName `(` `)` `{` FunctionBody `}`
+    pub fn getter(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Getter(Getter::new(*a0, *a1)))
+        Box::new(MethodDefinition::Getter(Getter::new(*name, *body)))
     }
-    // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => MethodDefinition 5($0, $1, $2, $3, $4, $5, $6, $7)
-    pub fn method_definition_p5(
+
+    // MethodDefinition : `set` PropertyName `(` PropertySetParameterList `)` `{` FunctionBody `}`
+    pub fn setter(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<Parameter>,
-        a2: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        parameter: Box<Parameter>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Setter(Setter::new(*a0, *a1, *a2)))
+        Box::new(MethodDefinition::Setter(Setter::new(
+            *name, *parameter, *body,
+        )))
     }
-    // PropertySetParameterList ::= FormalParameter => PropertySetParameterList($0)
-    pub fn property_set_parameter_list(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(PropertySetParameterList::new())
-    }
-    // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}" => GeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7)
+
+    // GeneratorMethod : `*` PropertyName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`
     pub fn generator_method(
         &self,
         a0: Box<PropertyName>,

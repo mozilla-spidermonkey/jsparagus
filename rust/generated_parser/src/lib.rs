@@ -9721,13 +9721,13 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingElement
         }
         366 => {
-            // MethodDefinition ::= PropertyName "(" ")" "{" "}" => MethodDefinition 0($0, $1, unique_formal_parameters(empty_formal_parameters()), $2, $3, function_body(function_statement_list(None)), $4)
+            // MethodDefinition ::= PropertyName "(" ")" "{" "}" => method_definition($0, unique_formal_parameters(empty_formal_parameters()), function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.method_definition_p0(
+            stack.push(StackValue::from(handler.method_definition(
                 x0,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
                 handler.function_body(handler.function_statement_list(None)),
@@ -9735,14 +9735,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MethodDefinition
         }
         367 => {
-            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" "}" => MethodDefinition 0($0, $1, $2, $3, $4, function_body(function_statement_list(None)), $5)
+            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" "}" => method_definition($0, $2, function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.method_definition_p0(
+            stack.push(StackValue::from(handler.method_definition(
                 x0,
                 x2,
                 handler.function_body(handler.function_statement_list(None)),
@@ -9750,14 +9750,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MethodDefinition
         }
         368 => {
-            // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, unique_formal_parameters(empty_formal_parameters()), $2, $3, $4, $5)
+            // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => method_definition($0, unique_formal_parameters(empty_formal_parameters()), $4)
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.method_definition_p0(
+            stack.push(StackValue::from(handler.method_definition(
                 x0,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
                 x4,
@@ -9765,7 +9765,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MethodDefinition
         }
         369 => {
-            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => MethodDefinition 0($0, $1, $2, $3, $4, $5, $6)
+            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => method_definition($0, $2, $5)
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9773,7 +9773,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.method_definition_p0(x0, x2, x5)));
+            stack.push(StackValue::from(handler.method_definition(x0, x2, x5)));
             NonterminalId::MethodDefinition
         }
         370 => {
@@ -9795,21 +9795,21 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MethodDefinition
         }
         373 => {
-            // MethodDefinition ::= "get" PropertyName "(" ")" "{" "}" => MethodDefinition 4($0, $1, $2, $3, $4, function_body(function_statement_list(None)), $5)
+            // MethodDefinition ::= "get" PropertyName "(" ")" "{" "}" => getter($1, function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.method_definition_p4(
+            stack.push(StackValue::from(handler.getter(
                 x1,
                 handler.function_body(handler.function_statement_list(None)),
             )));
             NonterminalId::MethodDefinition
         }
         374 => {
-            // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => MethodDefinition 4($0, $1, $2, $3, $4, $5, $6)
+            // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => getter($1, $5)
             stack.pop();
             let x5 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9817,11 +9817,11 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.method_definition_p4(x1, x5)));
+            stack.push(StackValue::from(handler.getter(x1, x5)));
             NonterminalId::MethodDefinition
         }
         375 => {
-            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" "}" => MethodDefinition 5($0, $1, $2, $3, $4, $5, function_body(function_statement_list(None)), $6)
+            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" "}" => setter($1, $3, function_body(function_statement_list(None)))
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9829,7 +9829,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.method_definition_p5(
+            stack.push(StackValue::from(handler.setter(
                 x1,
                 x3,
                 handler.function_body(handler.function_statement_list(None)),
@@ -9837,7 +9837,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::MethodDefinition
         }
         376 => {
-            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => MethodDefinition 5($0, $1, $2, $3, $4, $5, $6, $7)
+            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => setter($1, $3, $6)
             stack.pop();
             let x6 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9846,7 +9846,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.method_definition_p5(x1, x3, x6)));
+            stack.push(StackValue::from(handler.setter(x1, x3, x6)));
             NonterminalId::MethodDefinition
         }
         377 => {
@@ -10815,9 +10815,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncGeneratorMethod
         }
         451 => {
-            // PropertySetParameterList ::= FormalParameter => PropertySetParameterList($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.property_set_parameter_list(x0)));
+            // PropertySetParameterList ::= FormalParameter => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::PropertySetParameterList
         }
         452 => {

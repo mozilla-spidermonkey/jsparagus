@@ -1319,14 +1319,21 @@ ArrowFormalParameters[Yield, Await] :
 
 MethodDefinition[Yield, Await] :
   PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+    => method_definition($0, $2, $5)
   GeneratorMethod[?Yield, ?Await]
+    => $0
   AsyncMethod[?Yield, ?Await]
+    => $0
   AsyncGeneratorMethod[?Yield, ?Await]
+    => $0
   `get` PropertyName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`
+    => getter($1, $5)
   `set` PropertyName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`
+    => setter($1, $3, $6)
 
 PropertySetParameterList :
   FormalParameter[~Yield, ~Await]
+    => $0
 
 
 GeneratorMethod[Yield, Await] :
