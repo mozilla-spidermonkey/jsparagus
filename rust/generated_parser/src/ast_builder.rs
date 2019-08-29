@@ -1284,7 +1284,6 @@ impl AstBuilder {
         properties: Box<Vec<BindingProperty>>,
         rest: Option<Box<BindingIdentifier>>,
     ) -> Box<Binding> {
-        assert!(rest.is_none());
         Box::new(Binding::BindingPattern(BindingPattern::ObjectBinding(
             ObjectBinding {
                 properties: *properties,
