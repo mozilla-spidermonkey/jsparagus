@@ -435,15 +435,20 @@ CodePoint ::
 
 
 IdentifierReference[Yield, Await] :
-  Identifier => identifier_reference($0)
+  Identifier
+    => identifier_reference($0)
 
 BindingIdentifier[Yield, Await] :
-  Identifier => binding_identifier($0)
-  `yield` => binding_identifier_yield()
-  `await` => binding_identifier_await()
+  Identifier
+    => binding_identifier($0)
+  `yield`
+    => binding_identifier_yield()
+  `await`
+    => binding_identifier_await()
 
 LabelIdentifier[Yield, Await] :
-  Identifier => label_identifier($0)
+  Identifier
+    => label_identifier($0)
 
 PrimaryExpression[Yield, Await] :
   `this`
@@ -488,10 +493,6 @@ CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
     => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
   `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingPattern[?Yield, ?Await] `)`
     => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_pattern($4)))
-
-
-ParenthesizedExpression[Yield, Await] :
-  `(` Expression[+In, ?Yield, ?Await] `)`
 
 
 Literal :
