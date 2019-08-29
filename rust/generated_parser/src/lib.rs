@@ -9261,48 +9261,52 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::TemplateLiteral
         }
         311 => {
-            // ObjectBindingPattern ::= "{" "}" => ObjectBindingPattern 0($0, $1)
+            // ObjectBindingPattern ::= "{" "}" => object_binding_pattern(binding_property_list_empty(), None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(handler.object_binding_pattern_p0()));
+            stack.push(StackValue::from(handler.object_binding_pattern(
+                handler.binding_property_list_empty(),
+                None,
+            )));
             NonterminalId::ObjectBindingPattern
         }
         312 => {
-            // ObjectBindingPattern ::= "{" BindingRestProperty "}" => ObjectBindingPattern 1($0, $1, $2)
+            // ObjectBindingPattern ::= "{" BindingRestProperty "}" => object_binding_pattern(binding_property_list_empty(), Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.object_binding_pattern_p1(x1)));
+            stack.push(StackValue::from(handler.object_binding_pattern(
+                handler.binding_property_list_empty(),
+                Some(x1),
+            )));
             NonterminalId::ObjectBindingPattern
         }
         313 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "}" => ObjectBindingPattern 2($0, $1, $2)
+            // ObjectBindingPattern ::= "{" BindingPropertyList "}" => object_binding_pattern($1, None)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.object_binding_pattern_p2(x1)));
+            stack.push(StackValue::from(handler.object_binding_pattern(x1, None)));
             NonterminalId::ObjectBindingPattern
         }
         314 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => ObjectBindingPattern 3($0, $1, $2, None, $3)
+            // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => object_binding_pattern($1, None)
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.object_binding_pattern_p3(x1, None),
-            ));
+            stack.push(StackValue::from(handler.object_binding_pattern(x1, None)));
             NonterminalId::ObjectBindingPattern
         }
         315 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => ObjectBindingPattern 3($0, $1, $2, Some($3), $4)
+            // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => object_binding_pattern($1, Some($3))
             stack.pop();
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(
-                handler.object_binding_pattern_p3(x1, Some(x3)),
+                handler.object_binding_pattern(x1, Some(x3)),
             ));
             NonterminalId::ObjectBindingPattern
         }
@@ -9628,24 +9632,26 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SubstitutionTemplate
         }
         356 => {
-            // BindingRestProperty ::= "..." BindingIdentifier => BindingRestProperty($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // BindingRestProperty ::= "..." BindingIdentifier => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.binding_rest_property(x1)));
+            stack.push(x1);
             NonterminalId::BindingRestProperty
         }
         357 => {
-            // BindingPropertyList ::= BindingProperty => BindingPropertyList 0($0)
+            // BindingPropertyList ::= BindingProperty => binding_property_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_property_list_p0(x0)));
+            stack.push(StackValue::from(handler.binding_property_list_single(x0)));
             NonterminalId::BindingPropertyList
         }
         358 => {
-            // BindingPropertyList ::= BindingPropertyList "," BindingProperty => BindingPropertyList 1($0, $1, $2)
+            // BindingPropertyList ::= BindingPropertyList "," BindingProperty => binding_property_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_property_list_p1(x0, x2)));
+            stack.push(StackValue::from(
+                handler.binding_property_list_append(x0, x2),
+            ));
             NonterminalId::BindingPropertyList
         }
         359 => {
@@ -10504,17 +10510,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::TemplateSpans
         }
         429 => {
-            // BindingProperty ::= SingleNameBinding => BindingProperty 0($0)
+            // BindingProperty ::= SingleNameBinding => binding_property_shorthand($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_property_p0(x0)));
+            stack.push(StackValue::from(handler.binding_property_shorthand(x0)));
             NonterminalId::BindingProperty
         }
         430 => {
-            // BindingProperty ::= PropertyName ":" BindingElement => BindingProperty 1($0, $1, $2)
+            // BindingProperty ::= PropertyName ":" BindingElement => binding_property($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_property_p1(x0, x2)));
+            stack.push(StackValue::from(handler.binding_property(x0, x2)));
             NonterminalId::BindingProperty
         }
         431 => {

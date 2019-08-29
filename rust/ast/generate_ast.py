@@ -33,6 +33,7 @@ def collect_types(ast):
     types.add('Vec<VariableDeclarator>')
     types.add('Vec<ArrayExpressionElement>')
     types.add('Vec<ClassElement>')
+    types.add('Vec<BindingProperty>')
     return sorted(types)
 
 

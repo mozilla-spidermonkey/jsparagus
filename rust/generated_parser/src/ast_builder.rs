@@ -1013,30 +1013,45 @@ impl AstBuilder {
         })
     }
 
-    // BindingPattern ::= ObjectBindingPattern => BindingPattern 0($0)
-    pub fn binding_pattern_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingPattern::new())
+    // ObjectBindingPattern : `{` `}`
+    // ObjectBindingPattern : `{` BindingRestProperty `}`
+    // ObjectBindingPattern : `{` BindingPropertyList `}`
+    // ObjectBindingPattern : `{` BindingPropertyList `,` BindingRestProperty? `}`
+    pub fn object_binding_pattern(
+        &self,
+        properties: Box<Vec<BindingProperty>>,
+        rest: Option<Box<BindingProperty>>,
+    ) -> Box<Binding> {
+        assert!(rest.is_none());
+        Box::new(Binding::BindingPattern(BindingPattern::ObjectBinding(
+            ObjectBinding {
+                properties: *properties,
+            },
+        )))
     }
-    // BindingPattern ::= ArrayBindingPattern => BindingPattern 1($0)
-    pub fn binding_pattern_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingPattern::new())
+
+    pub fn binding_property_list_empty(&self) -> Box<Vec<BindingProperty>> {
+        Box::new(vec![])
     }
-    // ObjectBindingPattern ::= "{" "}" => ObjectBindingPattern 0($0, $1)
-    pub fn object_binding_pattern_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ObjectBindingPattern::new())
+
+    // BindingPropertyList : BindingProperty
+    pub fn binding_property_list_single(
+        &self,
+        property: Box<BindingProperty>,
+    ) -> Box<Vec<BindingProperty>> {
+        Box::new(vec![*property])
     }
-    // ObjectBindingPattern ::= "{" BindingRestProperty "}" => ObjectBindingPattern 1($0, $1, $2)
-    pub fn object_binding_pattern_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ObjectBindingPattern::new())
+
+    // BindingPropertyList : BindingPropertyList `,` BindingProperty
+    pub fn binding_property_list_append(
+        &self,
+        mut list: Box<Vec<BindingProperty>>,
+        property: Box<BindingProperty>,
+    ) -> Box<Vec<BindingProperty>> {
+        list.push(*property);
+        list
     }
-    // ObjectBindingPattern ::= "{" BindingPropertyList "}" => ObjectBindingPattern 2($0, $1, $2)
-    pub fn object_binding_pattern_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ObjectBindingPattern::new())
-    }
-    // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => ObjectBindingPattern 3($0, $1, $2, Some($3), $4)
-    pub fn object_binding_pattern_p3(&self, a0: Box<Void>, a1: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(ObjectBindingPattern::new())
-    }
+
     // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => ArrayBindingPattern 0($0, Some($1), Some($2), $3)
     pub fn array_binding_pattern_p0(
         &self,
@@ -1082,13 +1097,43 @@ impl AstBuilder {
     pub fn binding_elision_element(&self, a0: Option<Box<Void>>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(BindingElisionElement::new())
     }
-    // BindingProperty ::= SingleNameBinding => BindingProperty 0($0)
-    pub fn binding_property_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingProperty::new())
+
+    // BindingProperty : SingleNameBinding
+    pub fn binding_property_shorthand(&self, binding: Box<Parameter>) -> Box<BindingProperty> {
+        // Previous parsing interpreted this as a Parameter. We need to take
+        // all the pieces out of that box and put them in a new box.
+        let (binding, init) = match *binding {
+            Parameter::Binding(binding) => (binding, None),
+            Parameter::BindingWithDefault(BindingWithDefault { binding, init }) => {
+                (binding, Some(*init))
+            }
+        };
+
+        let binding = match binding {
+            Binding::BindingIdentifier(bi) => bi,
+            _ => panic!("destructuring in shorthand BindingProperty"),
+        };
+
+        Box::new(BindingProperty::BindingPropertyIdentifier(
+            BindingPropertyIdentifier {
+                binding,
+                init: init.map(Box::new),
+            },
+        ))
     }
-    // BindingProperty ::= PropertyName ":" BindingElement => BindingProperty 1($0, $1, $2)
-    pub fn binding_property_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingProperty::new())
+
+    // BindingProperty : PropertyName `:` BindingElement
+    pub fn binding_property(
+        &self,
+        name: Box<PropertyName>,
+        binding: Box<Parameter>,
+    ) -> Box<BindingProperty> {
+        Box::new(BindingProperty::BindingPropertyProperty(
+            BindingPropertyProperty {
+                name: *name,
+                binding: *binding,
+            },
+        ))
     }
 
     // BindingElement : BindingPattern Initializer?
