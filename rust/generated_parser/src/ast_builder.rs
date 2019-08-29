@@ -1686,18 +1686,13 @@ impl AstBuilder {
     // GeneratorMethod : `*` PropertyName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`
     pub fn generator_method(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
         Box::new(MethodDefinition::Method(Method::new(
-            *a0, false, true, *a1, *a2,
+            *name, false, true, *params, *body,
         )))
-    }
-
-    // GeneratorBody ::= FunctionBody => GeneratorBody($0)
-    pub fn generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
-        a0
     }
 
     // YieldExpression : `yield`
@@ -1716,18 +1711,13 @@ impl AstBuilder {
     // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
     pub fn async_generator_method(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
         Box::new(MethodDefinition::Method(Method::new(
-            *a0, true, false, *a1, *a2,
+            *name, true, true, *params, *body,
         )))
-    }
-
-    // AsyncGeneratorBody ::= FunctionBody => AsyncGeneratorBody($0)
-    pub fn async_generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
-        a0
     }
 
     // ClassDeclaration : `class` BindingIdentifier ClassTail
@@ -1808,20 +1798,16 @@ impl AstBuilder {
         Box::new(vec![])
     }
 
-    // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => AsyncMethod($0, $1, $2, $3, $4, $5, $6, $7)
+    // AsyncMethod : `async` PropertyName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`
     pub fn async_method(
         &self,
-        a0: Box<PropertyName>,
-        a1: Box<FormalParameters>,
-        a2: Box<FunctionBody>,
+        name: Box<PropertyName>,
+        params: Box<FormalParameters>,
+        body: Box<FunctionBody>,
     ) -> Box<MethodDefinition> {
         Box::new(MethodDefinition::Method(Method::new(
-            *a0, true, false, *a1, *a2,
+            *name, true, false, *params, *body,
         )))
-    }
-    // AsyncFunctionBody ::= FunctionBody => AsyncFunctionBody($0)
-    pub fn async_function_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
-        a0
     }
 
     // AwaitExpression : `await` UnaryExpression

@@ -1338,6 +1338,7 @@ PropertySetParameterList :
 
 GeneratorMethod[Yield, Await] :
   `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+    => generator_method($1, $3, $6)
 
 GeneratorDeclaration[Yield, Await, Default] :
   `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
@@ -1351,6 +1352,7 @@ GeneratorExpression :
 
 GeneratorBody :
   FunctionBody[+Yield, ~Await]
+    => $0
 
 YieldExpression[In, Await] :
   `yield`
@@ -1363,6 +1365,7 @@ YieldExpression[In, Await] :
 
 AsyncGeneratorMethod[Yield, Await] :
   `async` `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+    => async_generator_method($2, $4, $7)
 
 AsyncGeneratorDeclaration[Yield, Await, Default] :
   `async` `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
@@ -1376,6 +1379,7 @@ AsyncGeneratorExpression :
 
 AsyncGeneratorBody :
   FunctionBody[+Yield, +Await]
+    => $0
 
 
 ClassDeclaration[Yield, Await, Default] :
@@ -1428,6 +1432,7 @@ AsyncFunctionExpression :
 
 AsyncMethod[Yield, Await] :
   `async` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+    => async_method($1, $3, $6)
 
 AsyncFunctionBody :
   FunctionBody[~Yield, +Await]
