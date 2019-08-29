@@ -16,33 +16,43 @@ ECMASCRIPT_GOAL_NTS = [
 
 
 def hack_grammar(g):
-    # We throw away all parameterized productions, as the current parser
-    # generator's approach of fully expanding them is a huge pain. We also
-    # throw away "in" expressions to avoid a shift-reduce conflict.
+    # We throw away most of the boolean parameters in the grammar, as the
+    # current parser generator's approach of fully expanding them is a huge
+    # pain.
 
-    def strip_args(e):
+    PARAM_WHITELIST = ['In', 'Default']
+
+    def filter_params(params):
+        return tuple(p for p in params if p in PARAM_WHITELIST)
+
+    def filter_args(args):
+        return tuple(pair for pair in args if pair[0] in PARAM_WHITELIST)
+
+    def filter_element(e):
         """ Strip nt arguments. """
         if isinstance(e, jsparagus.grammar.Nt):
-            return jsparagus.grammar.Nt(e.name)
+            return jsparagus.grammar.Nt(e.name, filter_args(e.args))
         elif isinstance(e, jsparagus.grammar.Optional):
-            return jsparagus.grammar.Optional(strip_args(e.inner))
+            return jsparagus.grammar.Optional(filter_element(e.inner))
         else:
             return e
 
-    def strip_args_in_production(p):
+    def filter_condition(c):
+        if c is None or c[0] not in PARAM_WHITELIST:
+            return None
+        return c
+
+    def filter_production(p):
         """ Discard production conditions and nt arguments. """
-        body = [strip_args(e) for e in p.body]
-        return jsparagus.grammar.Production(body, p.reducer)
+        body = [filter_element(e) for e in p.body]
+        return jsparagus.grammar.Production(body, p.reducer,
+                                            condition=filter_condition(p.condition))
 
     nonterminals = {}
     for nt, nt_def in g.nonterminals.items():
-        rhs_list = [
-            strip_args_in_production(p)
-            for p in nt_def.rhs_list
-            if p.condition != ('In', True)
-        ]
-        nt_def = jsparagus.grammar.NtDef([], rhs_list)
-        nonterminals[nt] = nt_def
+        params = list(filter_params(nt_def.params))
+        rhs_list = [filter_production(p) for p in nt_def.rhs_list]
+        nonterminals[nt] = jsparagus.grammar.NtDef(params, rhs_list)
     return g.with_nonterminals(nonterminals)
 
 
