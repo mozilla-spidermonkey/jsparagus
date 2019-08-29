@@ -8543,12 +8543,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::VariableDeclaration
         }
         217 => {
-            // VariableDeclaration ::= BindingPattern Initializer => variable_declaration(binding_pattern($0), Some($1))
+            // VariableDeclaration ::= BindingPattern Initializer => variable_declaration($0, Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(
-                handler.variable_declaration(handler.binding_pattern(x0), Some(x1)),
-            ));
+            stack.push(StackValue::from(handler.variable_declaration(x0, Some(x1))));
             NonterminalId::VariableDeclaration
         }
         218 => {
@@ -8566,9 +8564,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ForBinding
         }
         220 => {
-            // ForBinding ::= BindingPattern => binding_pattern($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_pattern(x0)));
+            // ForBinding ::= BindingPattern => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::ForBinding
         }
         221 => {
@@ -8650,9 +8648,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CatchParameter
         }
         229 => {
-            // CatchParameter ::= BindingPattern => binding_pattern($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_pattern(x0)));
+            // CatchParameter ::= BindingPattern => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::CatchParameter
         }
         230 => {
@@ -8774,12 +8772,10 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::LexicalBinding
         }
         247 => {
-            // LexicalBinding ::= BindingPattern Initializer => variable_declaration(binding_pattern($0), Some($1))
+            // LexicalBinding ::= BindingPattern Initializer => variable_declaration($0, Some($1))
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(
-                handler.variable_declaration(handler.binding_pattern(x0), Some(x1)),
-            ));
+            stack.push(StackValue::from(handler.variable_declaration(x0, Some(x1))));
             NonterminalId::LexicalBinding
         }
         248 => {
@@ -9128,14 +9124,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         295 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_pattern($2)))
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list(empty_parameter_list(), Some($2))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(StackValue::from(handler.cover_arrow_parameter_list(
                 handler.empty_parameter_list(),
-                Some(handler.binding_pattern(x2)),
+                Some(x2),
             )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
@@ -9154,7 +9150,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
         297 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_pattern($4)))
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression "," "..." BindingPattern ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some($4))
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9163,7 +9159,7 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             stack.pop();
             stack.push(StackValue::from(handler.cover_arrow_parameter_list(
                 handler.expression_to_parameter_list(x1),
-                Some(handler.binding_pattern(x4)),
+                Some(x4),
             )));
             NonterminalId::CoverParenthesizedExpressionAndArrowParameterList
         }
@@ -9430,17 +9426,17 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::CaseClause
         }
         327 => {
-            // BindingRestElement ::= "..." BindingIdentifier => binding_rest_element($1)
+            // BindingRestElement ::= "..." BindingIdentifier => binding_identifier_to_binding($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.binding_rest_element(x1)));
+            stack.push(StackValue::from(handler.binding_identifier_to_binding(x1)));
             NonterminalId::BindingRestElement
         }
         328 => {
-            // BindingRestElement ::= "..." BindingPattern => binding_rest_element_pattern($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // BindingRestElement ::= "..." BindingPattern => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.binding_rest_element_pattern(x1)));
+            stack.push(x1);
             NonterminalId::BindingRestElement
         }
         329 => {

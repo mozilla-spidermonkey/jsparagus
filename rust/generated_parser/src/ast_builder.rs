@@ -156,20 +156,24 @@ impl AstBuilder {
     /// and `[b, c]` are passed to this method.
     pub fn assignment_target_to_binding(&self, target: AssignmentTarget) -> Binding {
         match target {
+            // (a = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                 }),
             ) => Binding::BindingIdentifier(BindingIdentifier { name }),
 
+            // This case is always an early SyntaxError.
+            // (a.x = dv) => {}
+            // (a[i] = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::MemberAssignmentTarget(_),
             ) => {
-                // This happens with `(a.x = 1) => 2`.
                 // TODO - Handle this case by returning an error Result.
                 panic!("illegal binding");
             }
 
+            // ([a, b] = dv) => {}
             AssignmentTarget::AssignmentTargetPattern(
                 AssignmentTargetPattern::ArrayAssignmentTarget(ArrayAssignmentTarget {
                     elements,
@@ -191,6 +195,7 @@ impl AstBuilder {
                 }))
             }
 
+            // ({a, b: c} = dv) => {}
             AssignmentTarget::AssignmentTargetPattern(
                 AssignmentTargetPattern::ObjectAssignmentTarget(ObjectAssignmentTarget {
                     properties,
@@ -205,11 +210,89 @@ impl AstBuilder {
         }
     }
 
+    fn object_property_to_binding_property(&self, op: ObjectProperty) -> BindingProperty {
+        match op {
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
+                DataProperty {
+                    property_name,
+                    expression,
+                },
+            )) => BindingProperty::BindingPropertyProperty(BindingPropertyProperty {
+                name: property_name,
+                binding: self.expression_to_parameter(*expression),
+            }),
+
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
+                panic!("destructuring patterns can't have methods");
+            }
+
+            ObjectProperty::ShorthandProperty(ShorthandProperty {
+                name: IdentifierExpression { name },
+            }) => {
+                // TODO - CoverInitializedName can't be represented in an
+                // ObjectProperty, but we need it here.
+                BindingProperty::BindingPropertyIdentifier(BindingPropertyIdentifier {
+                    binding: BindingIdentifier { name },
+                    init: None,
+                })
+            }
+        }
+    }
+
+    /// Refine ObjectLiteral to ObjectBindingPattern.
+    fn object_expression_to_object_binding(&self, object: ObjectExpression) -> ObjectBinding {
+        ObjectBinding {
+            properties: object
+                .properties
+                .into_iter()
+                .map(|op| self.object_property_to_binding_property(*op))
+                .collect(),
+        }
+    }
+
+    fn pop_trailing_spread_element(
+        &self,
+        elements: &mut Vec<ArrayExpressionElement>,
+    ) -> Option<Box<Expression>> {
+        // Check whether we want to pop an element.
+        match elements.last() {
+            Some(ArrayExpressionElement::SpreadElement(_)) => {}
+            _ => return None,
+        }
+
+        // We do.
+        match elements.pop() {
+            Some(ArrayExpressionElement::SpreadElement(expression)) => Some(expression),
+            _ => panic!("last element changed since preceding check"), // can't happen
+        }
+    }
+
+    pub fn array_elements_to_parameters(
+        &self,
+        elements: Vec<ArrayExpressionElement>,
+    ) -> Vec<Option<Parameter>> {
+        elements
+            .into_iter()
+            .map(|element| match element {
+                ArrayExpressionElement::Expression(expr) => {
+                    Some(self.expression_to_parameter(*expr))
+                }
+                ArrayExpressionElement::SpreadElement(expr) => {
+                    // ([...a, b]) => {}
+                    // TODO - use Result to indicate this early error
+                    panic!("rest parameter not at end of arrow parameter list");
+                }
+                ArrayExpressionElement::Elision => None,
+            })
+            .collect()
+    }
+
     pub fn expression_to_parameter(&self, expression: Expression) -> Parameter {
         match expression {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name }))
             }
+
             Expression::AssignmentExpression(AssignmentExpression {
                 binding,
                 expression,
@@ -217,6 +300,26 @@ impl AstBuilder {
                 binding: self.assignment_target_to_binding(binding),
                 init: expression,
             }),
+
+            Expression::ArrayExpression(ArrayExpression { mut elements }) => {
+                let rest = self.pop_trailing_spread_element(&mut elements);
+                Parameter::Binding(Binding::BindingPattern(BindingPattern::ArrayBinding(
+                    ArrayBinding {
+                        elements: self.array_elements_to_parameters(elements),
+                        rest: rest.map(|expr| match self.expression_to_parameter(*expr) {
+                            Parameter::Binding(b) => Box::new(b),
+                            Parameter::BindingWithDefault(BindingWithDefault {
+                                binding, ..
+                            }) => Box::new(binding),
+                        }),
+                    },
+                )))
+            }
+
+            Expression::ObjectExpression(object) => Parameter::Binding(Binding::BindingPattern(
+                BindingPattern::ObjectBinding(self.object_expression_to_object_binding(object)),
+            )),
+
             other => panic!("Unimplemented expression_to_parameter: {:?}", other),
         }
     }
@@ -1258,11 +1361,6 @@ impl AstBuilder {
         Box::new(Binding::BindingIdentifier(*name))
     }
 
-    // BindingRestElement : `...` BindingPattern
-    pub fn binding_rest_element_pattern(&self, pattern: Box<BindingPattern>) -> Box<Binding> {
-        Box::new(Binding::BindingPattern(*pattern))
-    }
-
     // EmptyStatement : `;`
     pub fn empty_statement(&self) -> Box<Statement> {
         Box::new(Statement::EmptyStatement)
@@ -1443,14 +1541,6 @@ impl AstBuilder {
     // VariableDeclaration : BindingIdentifier Initializer?
     pub fn binding_identifier_to_binding(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
         Box::new(Binding::BindingIdentifier(*a0))
-    }
-
-    // CatchParameter : BindingPattern
-    // ForBinding : BindingPattern
-    // LexicalBinding : BindingPattern Initializer
-    // VariableDeclaration : BindingPattern Initializer
-    pub fn binding_pattern(&self, a0: Box<BindingPattern>) -> Box<Binding> {
-        Box::new(Binding::BindingPattern(*a0))
     }
 
     // ContinueStatement : `continue` `;`

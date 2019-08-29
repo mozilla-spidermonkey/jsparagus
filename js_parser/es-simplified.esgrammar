@@ -488,11 +488,11 @@ CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
   `(` `...` BindingIdentifier[?Yield, ?Await] `)`
     => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_identifier_to_binding($2)))
   `(` `...` BindingPattern[?Yield, ?Await] `)`
-    => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_pattern($2)))
+    => cover_arrow_parameter_list(empty_parameter_list(), Some($2))
   `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingIdentifier[?Yield, ?Await] `)`
     => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
   `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingPattern[?Yield, ?Await] `)`
-    => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_pattern($4)))
+    => cover_arrow_parameter_list(expression_to_parameter_list($1), Some($4))
 
 
 Literal :
@@ -1026,7 +1026,7 @@ LexicalBinding[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
     => variable_declaration(binding_identifier_to_binding($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
-    => variable_declaration(binding_pattern($0), Some($1))
+    => variable_declaration($0, Some($1))
 
 
 VariableStatement[Yield, Await] :
@@ -1043,7 +1043,7 @@ VariableDeclaration[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
     => variable_declaration(binding_identifier_to_binding($0), $1)
   BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
-    => variable_declaration(binding_pattern($0), Some($1))
+    => variable_declaration($0, Some($1))
 
 
 BindingPattern[Yield, Await] :
@@ -1102,9 +1102,9 @@ SingleNameBinding[Yield, Await] :
 
 BindingRestElement[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
-    => binding_rest_element($1)
+    => binding_identifier_to_binding($1)
   `...` BindingPattern[?Yield, ?Await]
-    => binding_rest_element_pattern($1)
+    => $1
 
 
 EmptyStatement :
@@ -1161,7 +1161,7 @@ ForBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => binding_identifier_to_binding($0)
   BindingPattern[?Yield, ?Await]
-    => binding_pattern($0)
+    => $0
 
 
 ContinueStatement[Yield, Await] :
@@ -1250,7 +1250,7 @@ CatchParameter[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => binding_identifier_to_binding($0)
   BindingPattern[?Yield, ?Await]
-    => binding_pattern($0)
+    => $0
 
 
 DebuggerStatement :
