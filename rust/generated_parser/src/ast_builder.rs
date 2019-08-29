@@ -380,7 +380,9 @@ impl AstBuilder {
                             Parameter::Binding(b) => Box::new(b),
                             Parameter::BindingWithDefault(BindingWithDefault {
                                 binding, ..
-                            }) => panic!("default value not allowed for rest binding in array destructuring"),
+                            }) => panic!(
+                                "default value not allowed for rest binding in array destructuring"
+                            ),
                         }),
                     },
                 )))
