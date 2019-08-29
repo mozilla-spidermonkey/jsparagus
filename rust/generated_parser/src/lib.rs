@@ -6988,18 +6988,18 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::HoistableDeclaration
         }
         83 => {
-            // ClassDeclaration ::= "class" BindingIdentifier ClassTail => ClassDeclaration 0($0, $1, $2)
+            // ClassDeclaration ::= "class" BindingIdentifier ClassTail => class_declaration(Some($1), $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.class_declaration_p0(x1, x2)));
+            stack.push(StackValue::from(handler.class_declaration(Some(x1), x2)));
             NonterminalId::ClassDeclaration
         }
         84 => {
-            // ClassDeclaration ::= "class" ClassTail => ClassDeclaration 1($0, $1)
+            // ClassDeclaration ::= "class" ClassTail => class_declaration(None, $1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.class_declaration_p1(x1)));
+            stack.push(StackValue::from(handler.class_declaration(None, x1)));
             NonterminalId::ClassDeclaration
         }
         85 => {
@@ -8766,16 +8766,16 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::AsyncGeneratorBody
         }
         243 => {
-            // ClassHeritage ::= "extends" LeftHandSideExpression => ClassHeritage($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // ClassHeritage ::= "extends" LeftHandSideExpression => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(StackValue::from(handler.class_heritage(x1)));
+            stack.push(x1);
             NonterminalId::ClassHeritage
         }
         244 => {
-            // ClassBody ::= ClassElementList => ClassBody($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.class_body(x0)));
+            // ClassBody ::= ClassElementList => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::ClassBody
         }
         245 => {
@@ -9066,16 +9066,16 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::FunctionStatementList
         }
         285 => {
-            // ClassElementList ::= ClassElement => ClassElementList 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.class_element_list_p0(x0)));
+            // ClassElementList ::= ClassElement => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::ClassElementList
         }
         286 => {
-            // ClassElementList ::= ClassElementList ClassElement => ClassElementList 1($0, $1)
+            // ClassElementList ::= ClassElementList ClassElement => class_element_list_append($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.class_element_list_p1(x0, x1)));
+            stack.push(StackValue::from(handler.class_element_list_append(x0, x1)));
             NonterminalId::ClassElementList
         }
         287 => {
@@ -9470,22 +9470,22 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::FormalParameter
         }
         330 => {
-            // ClassElement ::= MethodDefinition => ClassElement 0($0)
+            // ClassElement ::= MethodDefinition => class_element($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.class_element_p0(x0)));
+            stack.push(StackValue::from(handler.class_element(x0)));
             NonterminalId::ClassElement
         }
         331 => {
-            // ClassElement ::= "static" MethodDefinition => ClassElement 1($0, $1)
+            // ClassElement ::= "static" MethodDefinition => class_element_static($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.class_element_p1(x1)));
+            stack.push(StackValue::from(handler.class_element_static(x1)));
             NonterminalId::ClassElement
         }
         332 => {
-            // ClassElement ::= ";" => ClassElement 2($0)
+            // ClassElement ::= ";" => class_element_empty()
             stack.pop();
-            stack.push(StackValue::from(handler.class_element_p2()));
+            stack.push(StackValue::from(handler.class_element_empty()));
             NonterminalId::ClassElement
         }
         333 => {
@@ -10090,14 +10090,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::FunctionExpression
         }
         400 => {
-            // ClassExpression ::= "class" ClassTail => ClassExpression($0, None, $1)
+            // ClassExpression ::= "class" ClassTail => class_expression(None, $1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(handler.class_expression(None, x1)));
             NonterminalId::ClassExpression
         }
         401 => {
-            // ClassExpression ::= "class" BindingIdentifier ClassTail => ClassExpression($0, Some($1), $2)
+            // ClassExpression ::= "class" BindingIdentifier ClassTail => class_expression(Some($1), $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();

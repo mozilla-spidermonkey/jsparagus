@@ -608,7 +608,6 @@ pub trait Pass {
     }
 
     fn visit_class_element(&mut self, ast: &mut ClassElement) {
-        self.visit_property_name(&mut ast.property_name);
         self.visit_method_definition(&mut ast.method);
     }
 
@@ -1339,14 +1338,8 @@ pub trait PostfixPass {
         result
     }
 
-    fn visit_class_element(
-        &self,
-        property_name: Self::Value,
-        is_static: &mut bool,
-        method: Self::Value,
-    ) -> Self::Value {
+    fn visit_class_element(&self, is_static: &mut bool, method: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
-        result.append(property_name);
         result.append(method);
         result
     }
@@ -2561,10 +2554,9 @@ impl<T: PostfixPass> PostfixPassVisitor<T> {
     }
 
     pub fn visit_class_element(&mut self, ast: &mut ClassElement) -> T::Value {
-        let a0 = self.visit_property_name((&mut ast.property_name));
-        let a1 = &mut ast.is_static;
-        let a2 = self.visit_method_definition((&mut ast.method));
-        self.pass.visit_class_element(a0, a1, a2)
+        let a0 = &mut ast.is_static;
+        let a1 = self.visit_method_definition((&mut ast.method));
+        self.pass.visit_class_element(a0, a1)
     }
 
     pub fn visit_module_items(&mut self, ast: &mut ModuleItems) -> T::Value {

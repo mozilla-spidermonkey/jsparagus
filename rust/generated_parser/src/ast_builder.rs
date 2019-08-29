@@ -1728,49 +1728,83 @@ impl AstBuilder {
     pub fn async_generator_body(&self, a0: Box<FunctionBody>) -> Box<FunctionBody> {
         a0
     }
-    // ClassDeclaration ::= "class" BindingIdentifier ClassTail => ClassDeclaration 0($0, $1, $2)
-    pub fn class_declaration_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // ClassDeclaration : `class` BindingIdentifier ClassTail
+    // ClassDeclaration : `class` ClassTail
+    pub fn class_declaration(
+        &self,
+        name: Option<Box<BindingIdentifier>>,
+        tail: Box<ClassExpression>,
+    ) -> Box<Statement> {
+        Box::new(Statement::ClassDeclaration(ClassDeclaration {
+            name: match name {
+                None => BindingIdentifier {
+                    name: Identifier {
+                        value: "default".to_string(),
+                    },
+                },
+                Some(bi) => *bi,
+            },
+            super_: tail.super_,
+            elements: tail.elements,
+        }))
     }
-    // ClassDeclaration ::= "class" ClassTail => ClassDeclaration 1($0, $1)
-    pub fn class_declaration_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+
+    // ClassExpression : `class` BindingIdentifier? ClassTail
+    pub fn class_expression(
+        &self,
+        name: Option<Box<BindingIdentifier>>,
+        mut tail: Box<ClassExpression>,
+    ) -> Box<Expression> {
+        tail.name = name.map(|boxed| *boxed);
+        Box::new(Expression::ClassExpression(*tail))
     }
-    // ClassExpression ::= "class" BindingIdentifier ClassTail => ClassExpression($0, Some($1), $2)
-    pub fn class_expression(&self, a0: Option<Box<Void>>, a1: Box<Void>) -> Box<Expression> {
-        unimplemented!(); // Box::new(Expression::new())
+
+    // ClassTail : ClassHeritage? `{` ClassBody? `}`
+    pub fn class_tail(
+        &self,
+        heritage: Option<Box<Expression>>,
+        body: Option<Box<Vec<ClassElement>>>,
+    ) -> Box<ClassExpression> {
+        Box::new(ClassExpression {
+            name: None,
+            super_: heritage,
+            elements: match body {
+                None => vec![],
+                Some(boxed) => *boxed,
+            },
+        })
     }
-    // ClassTail ::= ClassHeritage "{" ClassBody "}" => ClassTail(Some($0), $1, Some($2), $3)
-    pub fn class_tail(&self, a0: Option<Box<Void>>, a1: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassTail::new())
+
+    // ClassElementList : ClassElementList ClassElement
+    pub fn class_element_list_append(
+        &self,
+        mut list: Box<Vec<ClassElement>>,
+        mut element: Box<Vec<ClassElement>>,
+    ) -> Box<Vec<ClassElement>> {
+        list.append(&mut element);
+        list
     }
-    // ClassHeritage ::= "extends" LeftHandSideExpression => ClassHeritage($0, $1)
-    pub fn class_heritage(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassHeritage::new())
+
+    // ClassElement : MethodDefinition
+    pub fn class_element(&self, method: Box<MethodDefinition>) -> Box<Vec<ClassElement>> {
+        Box::new(vec![ClassElement {
+            is_static: false,
+            method: *method,
+        }])
     }
-    // ClassBody ::= ClassElementList => ClassBody($0)
-    pub fn class_body(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassBody::new())
+
+    // ClassElement : `static` MethodDefinition
+    pub fn class_element_static(&self, method: Box<MethodDefinition>) -> Box<Vec<ClassElement>> {
+        Box::new(vec![ClassElement {
+            is_static: true,
+            method: *method,
+        }])
     }
-    // ClassElementList ::= ClassElement => ClassElementList 0($0)
-    pub fn class_element_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassElementList::new())
-    }
-    // ClassElementList ::= ClassElementList ClassElement => ClassElementList 1($0, $1)
-    pub fn class_element_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassElementList::new())
-    }
-    // ClassElement ::= MethodDefinition => ClassElement 0($0)
-    pub fn class_element_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassElement::new())
-    }
-    // ClassElement ::= "static" MethodDefinition => ClassElement 1($0, $1)
-    pub fn class_element_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassElement::new())
-    }
-    // ClassElement ::= ";" => ClassElement 2($0)
-    pub fn class_element_p2(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ClassElement::new())
+
+    // ClassElement : `;`
+    pub fn class_element_empty(&self) -> Box<Vec<ClassElement>> {
+        Box::new(vec![])
     }
 
     // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => AsyncMethod($0, $1, $2, $3, $4, $5, $6, $7)

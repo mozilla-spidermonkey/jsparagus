@@ -1373,28 +1373,38 @@ AsyncGeneratorBody :
 
 ClassDeclaration[Yield, Await, Default] :
   `class` BindingIdentifier[?Yield, ?Await] ClassTail[?Yield, ?Await]
+    => class_declaration(Some($1), $2)
   [+Default] `class` ClassTail[?Yield, ?Await]
+    => class_declaration(None, $1)
 
 ClassExpression[Yield, Await] :
   `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]
+    => class_expression($1, $2)
 
 ClassTail[Yield, Await] :
   ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
 
 ClassHeritage[Yield, Await] :
   `extends` LeftHandSideExpression[?Yield, ?Await]
+    => $1
 
 ClassBody[Yield, Await] :
   ClassElementList[?Yield, ?Await]
+    => $0
 
 ClassElementList[Yield, Await] :
   ClassElement[?Yield, ?Await]
+    => $0
   ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]
+    => class_element_list_append($0, $1)
 
 ClassElement[Yield, Await] :
   MethodDefinition[?Yield, ?Await]
+    => class_element($0)
   `static` MethodDefinition[?Yield, ?Await]
+    => class_element_static($1)
   `;`
+    => class_element_empty()
 
 
 AsyncFunctionDeclaration[Yield, Await, Default] :

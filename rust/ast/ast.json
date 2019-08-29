@@ -335,7 +335,6 @@
   },
   "ClassElement": {
     "_type": "struct",
-    "property_name": "PropertyName",
     "is_static": "bool",
     "method": "MethodDefinition"
   },

@@ -128,6 +128,7 @@ pub enum StackValue {
     VariableDeclarator(Box<VariableDeclarator>),
     VariableReference(Box<VariableReference>),
     VecArrayExpressionElement(Box<Vec<ArrayExpressionElement>>),
+    VecClassElement(Box<Vec<ClassElement>>),
     VecStatement(Box<Vec<Statement>>),
     VecSwitchCase(Box<Vec<SwitchCase>>),
     VecVariableDeclarator(Box<Vec<VariableDeclarator>>),
@@ -1300,6 +1301,15 @@ impl StackValueItem for Vec<ArrayExpressionElement> {
     }
 }
 
+impl StackValueItem for Vec<ClassElement> {
+    fn to_ast(sv: StackValue) -> Box<Self> {
+        match sv {
+            StackValue::VecClassElement(v) => v,
+            _ => panic!("StackValue expected Vec<ClassElement>, got {:?}", sv),
+        }
+    }
+}
+
 impl StackValueItem for Vec<Statement> {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -2107,6 +2117,12 @@ impl From<Box<VariableReference>> for StackValue {
 impl From<Box<Vec<ArrayExpressionElement>>> for StackValue {
     fn from(val: Box<Vec<ArrayExpressionElement>>) -> StackValue {
         StackValue::VecArrayExpressionElement(val)
+    }
+}
+
+impl From<Box<Vec<ClassElement>>> for StackValue {
+    fn from(val: Box<Vec<ClassElement>>) -> StackValue {
+        StackValue::VecClassElement(val)
     }
 }
 

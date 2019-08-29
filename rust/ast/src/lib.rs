@@ -542,18 +542,13 @@ impl ClassDeclaration {
 
 #[derive(Debug, PartialEq)]
 pub struct ClassElement {
-    pub property_name: PropertyName,
     pub is_static: bool,
     pub method: MethodDefinition,
 }
 
 impl ClassElement {
-    pub fn new(property_name: PropertyName, is_static: bool, method: MethodDefinition) -> Self {
-        Self {
-            property_name,
-            is_static,
-            method,
-        }
+    pub fn new(is_static: bool, method: MethodDefinition) -> Self {
+        Self { is_static, method }
     }
 }
 
