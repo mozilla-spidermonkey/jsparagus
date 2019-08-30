@@ -813,10 +813,19 @@ impl AstBuilder {
     pub fn cover_initialized_name(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
         unimplemented!(); // Box::new(CoverInitializedName::new())
     }
-    // TemplateLiteral ::= NoSubstitutionTemplate => TemplateLiteral 0($0)
-    pub fn template_literal_p0(&self, a0: Box<Void>) -> Box<TemplateExpression> {
-        unimplemented!(); // Box::new(TemplateLiteral::new())
+
+    // TemplateLiteral : NoSubstitutionTemplate
+    pub fn template_literal(&self, token: Box<Token>) -> Box<TemplateExpression> {
+        Box::new(TemplateExpression {
+            tag: None,
+            elements: vec![TemplateExpressionElement::TemplateElement(
+                TemplateElement {
+                    raw_value: token.value.unwrap(),
+                },
+            )],
+        })
     }
+
     // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
     pub fn template_literal_p1(&self, a0: Box<Void>) -> Box<TemplateExpression> {
         unimplemented!(); // Box::new(TemplateLiteral::new())

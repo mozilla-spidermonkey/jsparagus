@@ -589,6 +589,7 @@ Initializer[In, Yield, Await] :
 
 TemplateLiteral[Yield, Await, Tagged] :
   NoSubstitutionTemplate
+    => template_literal($0)
   SubstitutionTemplate[?Yield, ?Await, ?Tagged]
 
 SubstitutionTemplate[Yield, Await, Tagged] :

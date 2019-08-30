@@ -10645,9 +10645,9 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::SuperCall
         }
         345 => {
-            // TemplateLiteral ::= NoSubstitutionTemplate => TemplateLiteral 0($0)
+            // TemplateLiteral ::= NoSubstitutionTemplate => template_literal($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.template_literal_p0(x0)));
+            stack.push(StackValue::from(handler.template_literal(x0)));
             NonterminalId::TemplateLiteral
         }
         346 => {
