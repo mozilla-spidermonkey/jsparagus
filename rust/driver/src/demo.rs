@@ -53,7 +53,11 @@ fn run(buffer: &str) {
         Ok(ast) => {
             let mut script = ast::Program::Script(*ast);
             let emit_result = emit(&mut script);
-            println!("{:#?}", script);
+            if let Ok(script_json) = ast::json::to_string_pretty(&script) {
+                println!("{}", script_json);
+            } else {
+                println!("{:#?}", script);
+            }
             println!("{:#?}", emit_result);
         }
         Err(err) => println!("{}", err.message()),

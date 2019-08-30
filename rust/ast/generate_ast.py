@@ -263,13 +263,17 @@ def ast_(ast):
             write_impl(f, *args)
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
+        write(0, "pub mod json;")
+        write(0, "")
+        write(0, "use serde::{Deserialize, Serialize};")
+        write(0, "")
         for name, contents in ast.items():
             _type = contents["_type"]
             if _type == "struct":
                 if len(contents) <= 1:
-                    write(0, "#[derive(Default, Debug, PartialEq)]")
+                    write(0, "#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]")
                 else:
-                    write(0, "#[derive(Debug, PartialEq)]")
+                    write(0, "#[derive(Debug, PartialEq, Serialize, Deserialize)]")
                 write(0, "pub struct {} {{", name)
                 for field, field_type in contents.items():
                     if field != "_type":
@@ -291,7 +295,7 @@ def ast_(ast):
                 write(0, "}")
                 write(0, "")
             elif _type == "enum":
-                write(0, "#[derive(Debug, PartialEq)]")
+                write(0, "#[derive(Debug, PartialEq, Serialize, Deserialize)]")
                 write(0, "pub enum {} {{", name)
                 for field, field_type in contents.items():
                     if field != "_type":
