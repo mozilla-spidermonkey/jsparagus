@@ -10707,72 +10707,82 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ObjectBindingPattern
         }
         352 => {
-            // ArrayBindingPattern ::= "[" "]" => ArrayBindingPattern 0($0, None, None, $1)
+            // ArrayBindingPattern ::= "[" "]" => array_binding_pattern(binding_element_list_empty(), None, None)
             stack.pop();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.array_binding_pattern_p0(None, None),
-            ));
+            stack.push(StackValue::from(handler.array_binding_pattern(
+                handler.binding_element_list_empty(),
+                None,
+                None,
+            )));
             NonterminalId::ArrayBindingPattern
         }
         353 => {
-            // ArrayBindingPattern ::= "[" Elision "]" => ArrayBindingPattern 0($0, Some($1), None, $2)
+            // ArrayBindingPattern ::= "[" Elision "]" => array_binding_pattern(binding_element_list_empty(), Some($1), None)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.array_binding_pattern_p0(Some(x1), None),
-            ));
+            stack.push(StackValue::from(handler.array_binding_pattern(
+                handler.binding_element_list_empty(),
+                Some(x1),
+                None,
+            )));
             NonterminalId::ArrayBindingPattern
         }
         354 => {
-            // ArrayBindingPattern ::= "[" BindingRestElement "]" => ArrayBindingPattern 0($0, None, Some($1), $2)
+            // ArrayBindingPattern ::= "[" BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), None, Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.array_binding_pattern_p0(None, Some(x1)),
-            ));
+            stack.push(StackValue::from(handler.array_binding_pattern(
+                handler.binding_element_list_empty(),
+                None,
+                Some(x1),
+            )));
             NonterminalId::ArrayBindingPattern
         }
         355 => {
-            // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => ArrayBindingPattern 0($0, Some($1), Some($2), $3)
+            // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), Some($1), Some($2))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(
-                handler.array_binding_pattern_p0(Some(x1), Some(x2)),
-            ));
+            stack.push(StackValue::from(handler.array_binding_pattern(
+                handler.binding_element_list_empty(),
+                Some(x1),
+                Some(x2),
+            )));
             NonterminalId::ArrayBindingPattern
         }
         356 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "]" => ArrayBindingPattern 1($0, $1, $2)
+            // ArrayBindingPattern ::= "[" BindingElementList "]" => array_binding_pattern($1, None, None)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_binding_pattern_p1(x1)));
+            stack.push(StackValue::from(
+                handler.array_binding_pattern(x1, None, None),
+            ));
             NonterminalId::ArrayBindingPattern
         }
         357 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," "]" => ArrayBindingPattern 2($0, $1, $2, None, None, $3)
+            // ArrayBindingPattern ::= "[" BindingElementList "," "]" => array_binding_pattern($1, None, None)
             stack.pop();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(StackValue::from(
-                handler.array_binding_pattern_p2(x1, None, None),
+                handler.array_binding_pattern(x1, None, None),
             ));
             NonterminalId::ArrayBindingPattern
         }
         358 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => ArrayBindingPattern 2($0, $1, $2, Some($3), None, $4)
+            // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => array_binding_pattern($1, Some($3), None)
             stack.pop();
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_binding_pattern_p2(
+            stack.push(StackValue::from(handler.array_binding_pattern(
                 x1,
                 Some(x3),
                 None,
@@ -10780,13 +10790,13 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrayBindingPattern
         }
         359 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => ArrayBindingPattern 2($0, $1, $2, None, Some($3), $4)
+            // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => array_binding_pattern($1, None, Some($3))
             stack.pop();
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_binding_pattern_p2(
+            stack.push(StackValue::from(handler.array_binding_pattern(
                 x1,
                 None,
                 Some(x3),
@@ -10794,14 +10804,14 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::ArrayBindingPattern
         }
         360 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => ArrayBindingPattern 2($0, $1, $2, Some($3), Some($4), $5)
+            // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => array_binding_pattern($1, Some($3), Some($4))
             stack.pop();
             let x4 = stack.pop().unwrap().to_ast();
             let x3 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(StackValue::from(handler.array_binding_pattern_p2(
+            stack.push(StackValue::from(handler.array_binding_pattern(
                 x1,
                 Some(x3),
                 Some(x4),
@@ -11163,17 +11173,19 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::Elision
         }
         409 => {
-            // BindingElementList ::= BindingElisionElement => BindingElementList 0($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_element_list_p0(x0)));
+            // BindingElementList ::= BindingElisionElement => $0
+            let x0 = stack.pop().unwrap();
+            stack.push(x0);
             NonterminalId::BindingElementList
         }
         410 => {
-            // BindingElementList ::= BindingElementList "," BindingElisionElement => BindingElementList 1($0, $1, $2)
+            // BindingElementList ::= BindingElementList "," BindingElisionElement => binding_element_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(StackValue::from(handler.binding_element_list_p1(x0, x2)));
+            stack.push(StackValue::from(
+                handler.binding_element_list_append(x0, x2),
+            ));
             NonterminalId::BindingElementList
         }
         411 => {
@@ -12083,13 +12095,13 @@ pub fn reduce(handler: &AstBuilder, prod: usize, stack: &mut Vec<StackValue>) ->
             NonterminalId::BindingProperty
         }
         487 => {
-            // BindingElisionElement ::= BindingElement => BindingElisionElement(None, $0)
+            // BindingElisionElement ::= BindingElement => binding_elision_element(None, $0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(handler.binding_elision_element(None, x0)));
             NonterminalId::BindingElisionElement
         }
         488 => {
-            // BindingElisionElement ::= Elision BindingElement => BindingElisionElement(Some($0), $1)
+            // BindingElisionElement ::= Elision BindingElement => binding_elision_element(Some($0), $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(StackValue::from(

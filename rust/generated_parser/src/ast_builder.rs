@@ -1424,6 +1424,33 @@ impl AstBuilder {
         )))
     }
 
+    pub fn binding_element_list_empty(&self) -> Box<Vec<Option<Parameter>>> {
+        Box::new(vec![])
+    }
+
+    // ArrayBindingPattern : `[` Elision? BindingRestElement? `]`
+    // ArrayBindingPattern : `[` BindingElementList `]`
+    // ArrayBindingPattern : `[` BindingElementList `,` Elision? BindingRestElement? `]`
+    pub fn array_binding_pattern(
+        &self,
+        mut elements: Box<Vec<Option<Parameter>>>,
+        elision: Option<Box<ArrayExpression>>,
+        rest: Option<Box<Binding>>,
+    ) -> Box<Binding> {
+        if let Some(elision) = elision {
+            for e in elision.elements {
+                elements.push(None);
+            }
+        }
+
+        Box::new(Binding::BindingPattern(BindingPattern::ArrayBinding(
+            ArrayBinding {
+                elements: *elements,
+                rest,
+            },
+        )))
+    }
+
     pub fn binding_property_list_empty(&self) -> Box<Vec<BindingProperty>> {
         Box::new(vec![])
     }
@@ -1446,50 +1473,29 @@ impl AstBuilder {
         list
     }
 
-    // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => ArrayBindingPattern 0($0, Some($1), Some($2), $3)
-    pub fn array_binding_pattern_p0(
+    // BindingElementList : BindingElementList `,` BindingElisionElement
+    pub fn binding_element_list_append(
         &self,
-        a0: Option<Box<Void>>,
-        a1: Option<Box<Void>>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ArrayBindingPattern::new())
+        mut list: Box<Vec<Option<Parameter>>>,
+        mut element: Box<Vec<Option<Parameter>>>,
+    ) -> Box<Vec<Option<Parameter>>> {
+        list.append(&mut element);
+        list
     }
-    // ArrayBindingPattern ::= "[" BindingElementList "]" => ArrayBindingPattern 1($0, $1, $2)
-    pub fn array_binding_pattern_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ArrayBindingPattern::new())
-    }
-    // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => ArrayBindingPattern 2($0, $1, $2, Some($3), Some($4), $5)
-    pub fn array_binding_pattern_p2(
+
+    // BindingElisionElement : Elision? BindingElement
+    pub fn binding_elision_element(
         &self,
-        a0: Box<Void>,
-        a1: Option<Box<Void>>,
-        a2: Option<Box<Void>>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(ArrayBindingPattern::new())
-    }
-    // BindingRestProperty ::= "..." BindingIdentifier => BindingRestProperty($0, $1)
-    pub fn binding_rest_property(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingRestProperty::new())
-    }
-    // BindingPropertyList ::= BindingProperty => BindingPropertyList 0($0)
-    pub fn binding_property_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingPropertyList::new())
-    }
-    // BindingPropertyList ::= BindingPropertyList "," BindingProperty => BindingPropertyList 1($0, $1, $2)
-    pub fn binding_property_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingPropertyList::new())
-    }
-    // BindingElementList ::= BindingElisionElement => BindingElementList 0($0)
-    pub fn binding_element_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingElementList::new())
-    }
-    // BindingElementList ::= BindingElementList "," BindingElisionElement => BindingElementList 1($0, $1, $2)
-    pub fn binding_element_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingElementList::new())
-    }
-    // BindingElisionElement ::= Elision BindingElement => BindingElisionElement(Some($0), $1)
-    pub fn binding_elision_element(&self, a0: Option<Box<Void>>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(BindingElisionElement::new())
+        elision: Option<Box<ArrayExpression>>,
+        element: Box<Parameter>,
+    ) -> Box<Vec<Option<Parameter>>> {
+        let elision_count = elision.map(|v| v.elements.len()).unwrap_or(0);
+        let mut result = Box::new(Vec::with_capacity(elision_count + 1));
+        for _ in 0..elision_count {
+            result.push(None);
+        }
+        result.push(Some(*element));
+        result
     }
 
     // BindingProperty : SingleNameBinding

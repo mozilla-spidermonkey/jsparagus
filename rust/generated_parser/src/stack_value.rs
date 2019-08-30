@@ -130,6 +130,7 @@ pub enum StackValue {
     VecArrayExpressionElement(Box<Vec<ArrayExpressionElement>>),
     VecBindingProperty(Box<Vec<BindingProperty>>),
     VecClassElement(Box<Vec<ClassElement>>),
+    VecParameter(Box<Vec<Option<Parameter>>>),
     VecStatement(Box<Vec<Statement>>),
     VecSwitchCase(Box<Vec<SwitchCase>>),
     VecVariableDeclarator(Box<Vec<VariableDeclarator>>),
@@ -1320,6 +1321,15 @@ impl StackValueItem for Vec<ClassElement> {
     }
 }
 
+impl StackValueItem for Vec<Option<Parameter>> {
+    fn to_ast(sv: StackValue) -> Box<Self> {
+        match sv {
+            StackValue::VecParameter(v) => v,
+            _ => panic!("StackValue expected Vec<Option<Parameter>>, got {:?}", sv),
+        }
+    }
+}
+
 impl StackValueItem for Vec<Statement> {
     fn to_ast(sv: StackValue) -> Box<Self> {
         match sv {
@@ -2139,6 +2149,12 @@ impl From<Box<Vec<BindingProperty>>> for StackValue {
 impl From<Box<Vec<ClassElement>>> for StackValue {
     fn from(val: Box<Vec<ClassElement>>) -> StackValue {
         StackValue::VecClassElement(val)
+    }
+}
+
+impl From<Box<Vec<Option<Parameter>>>> for StackValue {
+    fn from(val: Box<Vec<Option<Parameter>>>) -> StackValue {
+        StackValue::VecParameter(val)
     }
 }
 

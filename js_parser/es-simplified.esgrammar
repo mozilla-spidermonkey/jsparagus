@@ -1064,8 +1064,11 @@ ObjectBindingPattern[Yield, Await] :
 
 ArrayBindingPattern[Yield, Await] :
   `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
+    => array_binding_pattern(binding_element_list_empty(), $1, $2)
   `[` BindingElementList[?Yield, ?Await] `]`
+    => array_binding_pattern($1, None, None)
   `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
+    => array_binding_pattern($1, $3, $4)
 
 BindingRestProperty[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
@@ -1079,10 +1082,13 @@ BindingPropertyList[Yield, Await] :
 
 BindingElementList[Yield, Await] :
   BindingElisionElement[?Yield, ?Await]
+    => $0
   BindingElementList[?Yield, ?Await] `,` BindingElisionElement[?Yield, ?Await]
+    => binding_element_list_append($0, $2)
 
 BindingElisionElement[Yield, Await] :
   Elision? BindingElement[?Yield, ?Await]
+   => binding_elision_element($0, $1)
 
 BindingProperty[Yield, Await] :
   SingleNameBinding[?Yield, ?Await]
