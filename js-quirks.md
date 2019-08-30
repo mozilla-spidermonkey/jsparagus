@@ -418,7 +418,7 @@ Wrinkles:
     > *LexicalDeclaration* : *LetOrConst* *BindingList* `;`
 
     It’s usually optional, but not if this is the *LexicalDeclaration*
-    in `for (let i=0; i < 9; i++)`!
+    in `for (let i = 0; i < 9; i++)`!
 
 4.  Semicolons are not inserted only as a last resort to avoid
     SyntaxErrors. That turned out to be too error-prone, so there are
