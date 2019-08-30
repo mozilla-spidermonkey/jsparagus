@@ -47,6 +47,56 @@ Alternatively, I believe it’s equivalent to add "[lookahead ≠ `else`]"
 at the end of the IfStatement production that doesn’t have an `else`.
 
 
+### Strict mode (*)
+
+*(entangled with: lazy compilation)*
+
+A script or function can start with this:
+
+```js
+"use strict";
+```
+
+This enables ["strict mode"](https://tc39.es/ecma262/#sec-strict-mode-of-ecmascript).
+Additionally, all classes and modules are strict mode code.
+
+Strict mode has both parse-time and run-time effects. Parse-time effects
+include:
+
+*   Strict mode affects the lexical grammar: octal integer literals are
+    SyntaxErrors, octal character escapes are SyntaxErrors, and a
+    handful of words like `private` and `interface` are reserved (and
+    thus usually SyntaxErrors) in strict mode.
+
+    Like the situation with slashes, this means it is not possible to
+    implement a complete lexer for JS without also parsing—at least
+    enough to detect class boundaries, "use strict" directives in
+    functions, and function boundaries.
+
+*   It’s a SyntaxError to have bindings named `eval` or `arguments` in
+    strict mode code, or to assign to `eval` or `arguments`.
+
+*   It’s a SyntaxError to have two argument bindings with the same name
+    in a strict function.
+
+    Interestingly, you don’t always know if you’re in strict mode or not
+    when parsing arguments.
+
+    ```js
+    function foo(a, a) {
+        "use strict";
+    }
+    ```
+
+    When the implementation reaches the Use Strict Directive, it must
+    either know that `foo` has two arguments both named `a`, or switch
+    to strict mode, go back, and reparse the function from the
+    beginning.
+
+*   The expression syntax “`delete` *Identifier*” and the abominable
+    *WithStatement* are banned in strict mode.
+
+
 ### Conditional keywords (**)
 
 In some programming languages, you could write a lexer that has rules
@@ -214,56 +264,6 @@ var { if: v } = obj;    // ok, `if` is an IdentifierName
 var { xy } = obj;       // ok
 var { if } = obj;       // SyntaxError: `if` is not an Identifier
 ```
-
-
-### Strict mode (*)
-
-*(entangled with: lazy compilation)*
-
-A script or function can start with this:
-
-```js
-"use strict";
-```
-
-This enables ["strict mode"](https://tc39.es/ecma262/#sec-strict-mode-of-ecmascript).
-Additionally, all classes and modules are strict mode code.
-
-Strict mode has both parse-time and run-time effects. Parse-time effects
-include:
-
-*   Strict mode affects the lexical grammar: octal integer literals are
-    SyntaxErrors, octal character escapes are SyntaxErrors, and a
-    handful of words like `private` and `interface` are reserved (and
-    thus usually SyntaxErrors) in strict mode.
-
-    Like the situation with slashes, this means it is not possible to
-    implement a complete lexer for JS without also parsing—at least
-    enough to detect class boundaries, "use strict" directives in
-    functions, and function boundaries.
-
-*   It’s a SyntaxError to have bindings named `eval` or `arguments` in
-    strict mode code, or to assign to `eval` or `arguments`.
-
-*   It’s a SyntaxError to have two argument bindings with the same name
-    in a strict function.
-
-    Interestingly, you don’t always know if you’re in strict mode or not
-    when parsing arguments.
-
-    ```js
-    function foo(a, a) {
-        "use strict";
-    }
-    ```
-
-    When the implementation reaches the Use Strict Directive, it must
-    either know that `foo` has two arguments both named `a`, or switch
-    to strict mode, go back, and reparse the function from the
-    beginning.
-
-*   The expression syntax “`delete` *Identifier*” and the abominable
-    *WithStatement* are banned in strict mode.
 
 
 ### Early errors (**)
