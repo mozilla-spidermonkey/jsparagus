@@ -269,6 +269,21 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
         Ok(TerminalId::RegularExpressionLiteral)
     }
 
+    fn conditional_keyword(
+        &mut self,
+        parser: &Parser,
+        text: &mut String,
+        name: String,
+        keyword_id: TerminalId,
+    ) -> Result<TerminalId> {
+        if parser.can_accept_terminal(keyword_id) {
+            Ok(keyword_id)
+        } else {
+            *text = name;
+            Ok(TerminalId::Identifier)
+        }
+    }
+
     fn identifier(&mut self, parser: &Parser, c: char, text: &mut String) -> Result<TerminalId> {
         let mut var = String::new();
         var.push(c);
@@ -285,9 +300,9 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
         }
 
         match &var as &str {
-            "as" => return Ok(TerminalId::As),
-            "async" => return Ok(TerminalId::Async),
-            "await" => return Ok(TerminalId::Await),
+            "as" => return self.conditional_keyword(parser, text, var, TerminalId::As),
+            "async" => return self.conditional_keyword(parser, text, var, TerminalId::Async),
+            "await" => return self.conditional_keyword(parser, text, var, TerminalId::Await),
             "break" => return Ok(TerminalId::Break),
             "case" => return Ok(TerminalId::Case),
             "catch" => return Ok(TerminalId::Catch),
@@ -303,22 +318,22 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
             "extends" => return Ok(TerminalId::Extends),
             "finally" => return Ok(TerminalId::Finally),
             "for" => return Ok(TerminalId::For),
-            "from" => return Ok(TerminalId::From),
+            "from" => return self.conditional_keyword(parser, text, var, TerminalId::From),
             "function" => return Ok(TerminalId::Function),
-            "get" => return Ok(TerminalId::Get),
+            "get" => return self.conditional_keyword(parser, text, var, TerminalId::Get),
             "if" => return Ok(TerminalId::If),
             "import" => return Ok(TerminalId::Import),
             "in" => return Ok(TerminalId::In),
             "instanceof" => return Ok(TerminalId::Instanceof),
-            "let" => return Ok(TerminalId::Let),
+            "let" => return self.conditional_keyword(parser, text, var, TerminalId::Let),
             "new" => return Ok(TerminalId::New),
-            "of" => return Ok(TerminalId::Of),
+            "of" => return self.conditional_keyword(parser, text, var, TerminalId::Of),
             "return" => return Ok(TerminalId::Return),
-            "set" => return Ok(TerminalId::Set),
+            "set" => return self.conditional_keyword(parser, text, var, TerminalId::Set),
             "static" => return Ok(TerminalId::Static),
             "super" => return Ok(TerminalId::Super),
             "switch" => return Ok(TerminalId::Switch),
-            "target" => return Ok(TerminalId::Target),
+            "target" => return self.conditional_keyword(parser, text, var, TerminalId::Target),
             "this" => return Ok(TerminalId::This),
             "throw" => return Ok(TerminalId::Throw),
             "try" => return Ok(TerminalId::Try),
@@ -327,7 +342,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
             "void" => return Ok(TerminalId::Void),
             "while" => return Ok(TerminalId::While),
             "with" => return Ok(TerminalId::With),
-            "yield" => return Ok(TerminalId::Yield),
+            "yield" => return self.conditional_keyword(parser, text, var, TerminalId::Yield),
             "null" => return Ok(TerminalId::NullLiteral),
             "true" => {
                 *text = var;
