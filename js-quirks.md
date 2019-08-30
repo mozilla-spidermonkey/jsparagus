@@ -24,6 +24,8 @@ The ambiguity is resolved with
 > be associated with the nearest possible `if` that would otherwise have
 > no corresponding `else`.
 
+I love this sentence. Something about it cracks me up, I dunno...
+
 In a recursive descent parser, just doing the dumbest possible thing
 correctly implements this rule.
 
@@ -382,6 +384,14 @@ parameters must be tracked at run time somehow.
 TODO (I implemented this by hacking the entire LR algorithm. Most every
 part of it is touched, although in ways that seem almost obvious once
 you understand LR inside and out.)
+
+(Note: It may seem like all of the lookahead restrictions in the spec
+are really just a way of saying “this production takes precedence over
+that one”—for example, that the lookahead restriction on
+*ExpressionStatement* just means that other productions for statements
+and declarations take precedence over it. But that isn't accurate; you
+can't have an *ExpressionStatement* that starts with `{`, even if it
+doesn't parse as a *Block* or any other kind of statement.)
 
 
 ### Automatic Semicolon Insertion (**)
