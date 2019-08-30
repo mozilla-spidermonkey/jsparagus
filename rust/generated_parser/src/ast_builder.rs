@@ -265,14 +265,42 @@ impl AstBuilder {
         &self,
         target: AssignmentTargetMaybeDefault,
     ) -> Parameter {
-        unimplemented!();
+        match target {
+            AssignmentTargetMaybeDefault::AssignmentTarget(target) => {
+                Parameter::Binding(self.assignment_target_to_binding(target))
+            }
+
+            AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(
+                AssignmentTargetWithDefault { binding, init },
+            ) => Parameter::BindingWithDefault(BindingWithDefault {
+                binding: self.assignment_target_to_binding(binding),
+                init,
+            }),
+        }
     }
 
     fn assignment_target_property_to_binding_property(
         &self,
         target: AssignmentTargetProperty,
     ) -> BindingProperty {
-        unimplemented!();
+        match target {
+            AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
+                AssignmentTargetPropertyIdentifier {
+                    binding: AssignmentTargetIdentifier { name },
+                    init,
+                },
+            ) => BindingProperty::BindingPropertyIdentifier(BindingPropertyIdentifier {
+                binding: BindingIdentifier { name },
+                init,
+            }),
+
+            AssignmentTargetProperty::AssignmentTargetPropertyProperty(
+                AssignmentTargetPropertyProperty { name, binding },
+            ) => BindingProperty::BindingPropertyProperty(BindingPropertyProperty {
+                name,
+                binding: self.assignment_target_maybe_default_to_binding(binding),
+            }),
+        }
     }
 
     /// Refine an AssignmentRestProperty into a BindingRestProperty.
