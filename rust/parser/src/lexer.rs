@@ -87,6 +87,14 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 '\n' | '\u{2028}' | '\u{2029}' => {
                     // LineContinuation. Ignore it.
                 }
+                '\r' => {
+                    // LineContinuation. Check for the sequence \r\n; otherwise
+                    // ignore it.
+                    if self.chars.peek() == Some(&'\n') {
+                        self.chars.next();
+                    }
+                }
+
                 '\'' | '"' | '\\' => {
                     text.push(c);
                 }
@@ -134,7 +142,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                         }
                     }
                 }
-                '0'..='9' | '\r' => {
+                '0'..='9' => {
                     panic!("unimplemented string literal escape character {:?}", c);
                 }
                 other => {
