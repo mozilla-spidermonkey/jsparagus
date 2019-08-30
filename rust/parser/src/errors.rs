@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
     IllegalCharacter(char),
+    InvalidEscapeSequence,
     UnterminatedString,
     UnterminatedRegExp,
     SyntaxError(Token),
@@ -16,6 +17,7 @@ impl ParseError {
     pub fn message(&self) -> String {
         match self {
             ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
+            ParseError::InvalidEscapeSequence => format!("invalid escape sequence"),
             ParseError::UnterminatedString => format!("unterminated string literal"),
             ParseError::UnterminatedRegExp => format!("unterminated regexp literal"),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),

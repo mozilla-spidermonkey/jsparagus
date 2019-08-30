@@ -3,6 +3,7 @@
 use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
 use generated_parser::{TerminalId, Token};
+use std::convert::TryFrom;
 
 pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
@@ -64,6 +65,109 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
             ParseError::IllegalCharacter(ch)
         } else {
             ParseError::UnexpectedEnd
+        }
+    }
+
+    fn hex_digit(&mut self) -> Result<u32> {
+        match self.chars.next() {
+            None => Err(ParseError::UnterminatedString),
+            Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
+            Some(c @ 'a'..='f') => Ok(10 + (c as u32 - 'a' as u32)),
+            Some(c @ 'A'..='F') => Ok(10 + (c as u32 - 'A' as u32)),
+            Some(other) => Err(ParseError::IllegalCharacter(other)),
+        }
+    }
+
+    fn escape_sequence(&mut self, text: &mut String) -> Result<()> {
+        match self.chars.next() {
+            None => {
+                return Err(ParseError::UnterminatedString);
+            }
+            Some(c) => match c {
+                '\n' | '\u{2028}' | '\u{2029}' => {
+                    // LineContinuation. Ignore it.
+                }
+                '\'' | '"' | '\\' => {
+                    text.push(c);
+                }
+                'b' => {
+                    text.push('\u{8}');
+                }
+                'f' => {
+                    text.push('\u{c}');
+                }
+                'n' => {
+                    text.push('\n');
+                }
+                'r' => {
+                    text.push('\r');
+                }
+                't' => {
+                    text.push('\t');
+                }
+                'v' => {
+                    text.push('\u{b}');
+                }
+                'x' => {
+                    let mut value = self.hex_digit()?;
+                    value = (value << 4) | self.hex_digit()?;
+                    match char::try_from(value) {
+                        Err(_) => {
+                            return Err(ParseError::InvalidEscapeSequence);
+                        }
+                        Ok(c) => {
+                            text.push(c);
+                        }
+                    }
+                }
+                'u' => {
+                    let mut value = 0;
+                    for _ in 0..4 {
+                        value = (value << 4) | self.hex_digit()?;
+                    }
+                    match char::try_from(value) {
+                        Err(_) => {
+                            return Err(ParseError::InvalidEscapeSequence);
+                        }
+                        Ok(c) => {
+                            text.push(c);
+                        }
+                    }
+                }
+                '0'..='9' | '\r' => {
+                    panic!("unimplemented string literal escape character {:?}", c);
+                }
+                other => {
+                    text.push(other);
+                }
+            },
+        }
+        Ok(())
+    }
+
+    fn string_literal(&mut self, stop: char, text: &mut String) -> Result<TerminalId> {
+        loop {
+            match self.chars.next() {
+                None | Some('\r') | Some('\n') => {
+                    return Err(ParseError::UnterminatedString);
+                }
+
+                Some(c @ '"') | Some(c @ '\'') => {
+                    if c == stop {
+                        return Ok(TerminalId::StringLiteral);
+                    } else {
+                        text.push(c);
+                    }
+                }
+
+                Some('\\') => {
+                    self.escape_sequence(text)?;
+                }
+
+                Some(other) => {
+                    text.push(other);
+                }
+            }
         }
     }
 
@@ -323,14 +427,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 }
                 // Strings
                 '"' | '\'' => {
-                    // include quotes?
-                    while let Some(ch) = self.chars.next() {
-                        if ch == c {
-                            break;
-                        }
-                        text.push(ch)
-                    }
-                    return Ok(TerminalId::StringLiteral);
+                    return self.string_literal(c, text);
                 }
 
                 '`' => {
