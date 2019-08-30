@@ -9,6 +9,23 @@ pub struct Lexer<Iter: Iterator<Item = char>> {
     chars: std::iter::Peekable<Iter>,
 }
 
+fn is_identifier_start(c: char) -> bool {
+    // TODO - Adjust this to match the Unicode ID_Start property (#23).
+    c == '$' || c == '_' || c.is_alphabetic()
+}
+
+fn is_identifier_part(c: char) -> bool {
+    if (c as u32) < 128 {
+        match c {
+            '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => true,
+            _ => false,
+        }
+    } else {
+        // TODO - Adjust this to match the Unicode ID_Continue property (#23).
+        c.is_alphabetic()
+    }
+}
+
 impl<Iter: Iterator<Item = char>> Lexer<Iter> {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
@@ -142,8 +159,14 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                         }
                     }
                 }
-                '0'..='9' => {
-                    panic!("unimplemented string literal escape character {:?}", c);
+                '0' => {
+                    if let Some('0'..='9') = self.chars.peek() {
+                        return Err(ParseError::InvalidEscapeSequence);
+                    }
+                    text.push('\0');
+                }
+                '1'..='9' => {
+                    return Err(ParseError::InvalidEscapeSequence);
                 }
                 other => {
                     text.push(other);
@@ -246,6 +269,81 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
         Ok(TerminalId::RegularExpressionLiteral)
     }
 
+    fn identifier(&mut self, parser: &Parser, c: char, text: &mut String) -> Result<TerminalId> {
+        let mut var = String::new();
+        var.push(c);
+        while let Some(&ch) = self.chars.peek() {
+            if !is_identifier_part(ch) {
+                break;
+            }
+            self.chars.next();
+            var.push(ch);
+        }
+        if parser.can_accept_terminal(TerminalId::IdentifierName) {
+            *text = var;
+            return Ok(TerminalId::IdentifierName);
+        }
+
+        match &var as &str {
+            "as" => return Ok(TerminalId::As),
+            "async" => return Ok(TerminalId::Async),
+            "await" => return Ok(TerminalId::Await),
+            "break" => return Ok(TerminalId::Break),
+            "case" => return Ok(TerminalId::Case),
+            "catch" => return Ok(TerminalId::Catch),
+            "class" => return Ok(TerminalId::Class),
+            "const" => return Ok(TerminalId::Const),
+            "continue" => return Ok(TerminalId::Continue),
+            "debugger" => return Ok(TerminalId::Debugger),
+            "default" => return Ok(TerminalId::Default),
+            "delete" => return Ok(TerminalId::Delete),
+            "do" => return Ok(TerminalId::Do),
+            "else" => return Ok(TerminalId::Else),
+            "export" => return Ok(TerminalId::Export),
+            "extends" => return Ok(TerminalId::Extends),
+            "finally" => return Ok(TerminalId::Finally),
+            "for" => return Ok(TerminalId::For),
+            "from" => return Ok(TerminalId::From),
+            "function" => return Ok(TerminalId::Function),
+            "get" => return Ok(TerminalId::Get),
+            "if" => return Ok(TerminalId::If),
+            "import" => return Ok(TerminalId::Import),
+            "in" => return Ok(TerminalId::In),
+            "instanceof" => return Ok(TerminalId::Instanceof),
+            "let" => return Ok(TerminalId::Let),
+            "new" => return Ok(TerminalId::New),
+            "of" => return Ok(TerminalId::Of),
+            "return" => return Ok(TerminalId::Return),
+            "set" => return Ok(TerminalId::Set),
+            "static" => return Ok(TerminalId::Static),
+            "super" => return Ok(TerminalId::Super),
+            "switch" => return Ok(TerminalId::Switch),
+            "target" => return Ok(TerminalId::Target),
+            "this" => return Ok(TerminalId::This),
+            "throw" => return Ok(TerminalId::Throw),
+            "try" => return Ok(TerminalId::Try),
+            "typeof" => return Ok(TerminalId::Typeof),
+            "var" => return Ok(TerminalId::Var),
+            "void" => return Ok(TerminalId::Void),
+            "while" => return Ok(TerminalId::While),
+            "with" => return Ok(TerminalId::With),
+            "yield" => return Ok(TerminalId::Yield),
+            "null" => return Ok(TerminalId::NullLiteral),
+            "true" => {
+                *text = var;
+                return Ok(TerminalId::BooleanLiteral);
+            }
+            "false" => {
+                *text = var;
+                return Ok(TerminalId::BooleanLiteral);
+            }
+            _ => {
+                *text = var;
+                return Ok(TerminalId::Identifier);
+            }
+        }
+    }
+
     fn advance_impl(
         &mut self,
         parser: &Parser,
@@ -258,87 +356,13 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 '\u{9}' | '\u{b}' | '\u{c}' | '\u{20}' | '\u{a0}' | '\u{feff}' => {
                     continue;
                 }
+
                 // LineTerminator
                 '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => {
                     *saw_newline = true;
                     continue;
                 }
-                // Idents
-                '$' | '_' | 'a'..='z' | 'A'..='Z' => {
-                    let mut var = String::new();
-                    var.push(c);
-                    while let Some(&ch) = self.chars.peek() {
-                        match ch {
-                            '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
-                                self.chars.next();
-                                var.push(ch);
-                            }
-                            _ => break,
-                        }
-                    }
-                    if parser.can_accept_terminal(TerminalId::IdentifierName) {
-                        *text = var;
-                        return Ok(TerminalId::IdentifierName);
-                    }
-                    match &var as &str {
-                        "as" => return Ok(TerminalId::As),
-                        "async" => return Ok(TerminalId::Async),
-                        "await" => return Ok(TerminalId::Await),
-                        "break" => return Ok(TerminalId::Break),
-                        "case" => return Ok(TerminalId::Case),
-                        "catch" => return Ok(TerminalId::Catch),
-                        "class" => return Ok(TerminalId::Class),
-                        "const" => return Ok(TerminalId::Const),
-                        "continue" => return Ok(TerminalId::Continue),
-                        "debugger" => return Ok(TerminalId::Debugger),
-                        "default" => return Ok(TerminalId::Default),
-                        "delete" => return Ok(TerminalId::Delete),
-                        "do" => return Ok(TerminalId::Do),
-                        "else" => return Ok(TerminalId::Else),
-                        "export" => return Ok(TerminalId::Export),
-                        "extends" => return Ok(TerminalId::Extends),
-                        "finally" => return Ok(TerminalId::Finally),
-                        "for" => return Ok(TerminalId::For),
-                        "from" => return Ok(TerminalId::From),
-                        "function" => return Ok(TerminalId::Function),
-                        "get" => return Ok(TerminalId::Get),
-                        "if" => return Ok(TerminalId::If),
-                        "import" => return Ok(TerminalId::Import),
-                        "in" => return Ok(TerminalId::In),
-                        "instanceof" => return Ok(TerminalId::Instanceof),
-                        "let" => return Ok(TerminalId::Let),
-                        "new" => return Ok(TerminalId::New),
-                        "of" => return Ok(TerminalId::Of),
-                        "return" => return Ok(TerminalId::Return),
-                        "set" => return Ok(TerminalId::Set),
-                        "static" => return Ok(TerminalId::Static),
-                        "super" => return Ok(TerminalId::Super),
-                        "switch" => return Ok(TerminalId::Switch),
-                        "target" => return Ok(TerminalId::Target),
-                        "this" => return Ok(TerminalId::This),
-                        "throw" => return Ok(TerminalId::Throw),
-                        "try" => return Ok(TerminalId::Try),
-                        "typeof" => return Ok(TerminalId::Typeof),
-                        "var" => return Ok(TerminalId::Var),
-                        "void" => return Ok(TerminalId::Void),
-                        "while" => return Ok(TerminalId::While),
-                        "with" => return Ok(TerminalId::With),
-                        "yield" => return Ok(TerminalId::Yield),
-                        "null" => return Ok(TerminalId::NullLiteral),
-                        "true" => {
-                            *text = var;
-                            return Ok(TerminalId::BooleanLiteral);
-                        }
-                        "false" => {
-                            *text = var;
-                            return Ok(TerminalId::BooleanLiteral);
-                        }
-                        _ => {
-                            *text = var;
-                            return Ok(TerminalId::Identifier);
-                        }
-                    }
-                }
+
                 // Numbers
                 '0'..='9' => {
                     text.push(c);
@@ -425,14 +449,18 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                             }
                         }
                     }
-                    // The SourceCharacter immediately following a NumericLiteral must not be an IdentifierStart or DecimalDigit.
+
+                    // The SourceCharacter immediately following a
+                    // NumericLiteral must not be an IdentifierStart or
+                    // DecimalDigit.
                     if let Some(&ch) = self.chars.peek() {
-                        if let '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' = ch {
+                        if is_identifier_start(ch) || ch.is_digit(10) {
                             return Err(ParseError::IllegalCharacter(ch));
                         }
                     }
                     return Ok(TerminalId::NumericLiteral);
                 }
+
                 // Strings
                 '"' | '\'' => {
                     return self.string_literal(c, text);
@@ -544,9 +572,12 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                         text.push('.');
                         self.accept_digits(text);
                         self.optional_exponent(text)?;
-                        // The SourceCharacter immediately following a NumericLiteral must not be an IdentifierStart or DecimalDigit.
+
+                        // The SourceCharacter immediately following a
+                        // NumericLiteral must not be an IdentifierStart or
+                        // DecimalDigit.
                         if let Some(&ch) = self.chars.peek() {
-                            if let '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' = ch {
+                            if is_identifier_start(ch) || ch.is_digit(10) {
                                 return Err(ParseError::IllegalCharacter(ch));
                             }
                         }
@@ -691,7 +722,18 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 '{' => return Ok(TerminalId::LeftCurlyBracket),
                 '}' => return Ok(TerminalId::RightCurlyBracket),
                 '~' => return Ok(TerminalId::Tilde),
-                x => return Err(ParseError::IllegalCharacter(x)),
+
+                // Idents
+                '$' | '_' | 'a'..='z' | 'A'..='Z' => {
+                    return self.identifier(parser, c, text);
+                }
+
+                other => {
+                    if is_identifier_start(other) {
+                        return self.identifier(parser, other, text);
+                    }
+                    return Err(ParseError::IllegalCharacter(other));
+                }
             }
         }
         Ok(TerminalId::End)
