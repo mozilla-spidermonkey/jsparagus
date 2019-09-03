@@ -378,8 +378,23 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
     ) -> Result<TerminalId> {
         while let Some(c) = self.chars.next() {
             match c {
-                // WhiteSpace
-                '\u{9}' | '\u{b}' | '\u{c}' | '\u{20}' | '\u{a0}' | '\u{feff}' => {
+                // WhiteSpace.
+                '\u{9}' | // <TAB>
+                '\u{b}' | // <VT>
+                '\u{c}' | // <FF>
+                '\u{20}' | // <SP>, the space character
+                '\u{a0}' | // <NBSP>
+                '\u{1680}' | // Ogham space mark (in <USP>)
+                '\u{2000}' ..= '\u{200a}' | // typesetting spaces (in <USP>)
+                '\u{202f}' | // Narrow no-break space (in <USP>)
+                '\u{205f}' | // Medium mathematical space (in <USP>)
+                '\u{3000}' | // Ideographic space (in <USP>)
+                '\u{feff}' // <ZWNBSP>
+                    => {
+                    // TODO - The spec uses <USP> to stand for any character
+                    // with category "Space_Separator" (Zs). New Unicode
+                    // standards may add characters to this set. This should therefore be
+                    // implemented using the Unicode database somehow.
                     continue;
                 }
 
