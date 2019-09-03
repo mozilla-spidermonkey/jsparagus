@@ -5,7 +5,7 @@ use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
 use ast::*;
-use generated_parser::{self, AstBuilder, TerminalId};
+use generated_parser::{self, AstBuilder, TerminalId, Token};
 
 #[cfg(all(feature = "unstable", test))]
 mod benchmarks {
@@ -25,6 +25,26 @@ mod benchmarks {
             let lexer = Lexer::new(buffer.chars());
             parse_script(lexer).unwrap();
         });
+    }
+}
+
+// Change Cow::Borrowed to Cow::Owned, and slap on a 'static
+fn alloc_result<T>(result: Result<T>) -> Result<'static, T> {
+    match result {
+        Ok(ok) => Ok(ok),
+        Err(err) => Err(match err {
+            ParseError::IllegalCharacter(c) => ParseError::IllegalCharacter(c),
+            ParseError::InvalidEscapeSequence => ParseError::InvalidEscapeSequence,
+            ParseError::UnterminatedString => ParseError::UnterminatedString,
+            ParseError::UnterminatedRegExp => ParseError::UnterminatedRegExp,
+            ParseError::SyntaxError(token) => ParseError::SyntaxError(Token {
+                terminal_id: token.terminal_id,
+                saw_newline: token.saw_newline,
+                value: token.value.map(|x| x.into_owned().into()),
+            }),
+            ParseError::UnexpectedEnd => ParseError::UnexpectedEnd,
+            ParseError::LexerError => ParseError::LexerError,
+        }),
     }
 }
 
@@ -57,9 +77,9 @@ fn chunks_to_string<'a, T: IntoChunks<'a>>(code: T) -> String {
     buf
 }
 
-fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<Box<Script>> {
+fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<'a, Box<Script>> {
     let buf = chunks_to_string(code);
-    parse_script(&buf)
+    alloc_result(parse_script(&buf))
 }
 
 fn assert_parses<'a, T: IntoChunks<'a>>(code: T) {

@@ -36,13 +36,13 @@ impl Action {
     }
 }
 
-pub struct Parser {
+pub struct Parser<'a> {
     state_stack: Vec<usize>,
-    node_stack: Vec<StackValue>,
+    node_stack: Vec<StackValue<'a>>,
     handler: AstBuilder,
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     pub fn new(handler: AstBuilder, entry_state: usize) -> Self {
         TABLES.check();
         assert!(entry_state < TABLES.state_count);
@@ -90,7 +90,7 @@ impl Parser {
         action
     }
 
-    pub fn write_token(&mut self, token: &Token) -> Result<()> {
+    pub fn write_token(&mut self, token: &Token<'a>) -> Result<'a, ()> {
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
@@ -107,7 +107,7 @@ impl Parser {
         }
     }
 
-    pub fn close(&mut self) -> Result<StackValue> {
+    pub fn close(&mut self) -> Result<'a, StackValue<'a>> {
         // Loop for error-handling.
         loop {
             let action = self.reduce_all(TerminalId::End);
@@ -121,7 +121,7 @@ impl Parser {
         }
     }
 
-    fn parse_error(t: &Token) -> Result<()> {
+    fn parse_error(t: &Token<'a>) -> Result<'a, ()> {
         Err(if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
@@ -129,7 +129,7 @@ impl Parser {
         })
     }
 
-    fn try_error_handling(&mut self, t: &Token) -> Result<()> {
+    fn try_error_handling(&mut self, t: &Token<'a>) -> Result<'a, ()> {
         // Error recovery version of the code in write_terminal. Differences
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
@@ -150,7 +150,12 @@ impl Parser {
         }
     }
 
-    fn recover(&mut self, t: &Token, error_code: ErrorCode, next_state: usize) -> Result<()> {
+    fn recover(
+        &mut self,
+        t: &Token<'a>,
+        error_code: ErrorCode,
+        next_state: usize,
+    ) -> Result<'a, ()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.saw_newline

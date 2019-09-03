@@ -3,17 +3,17 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ParseError {
+pub enum ParseError<'a> {
     IllegalCharacter(char),
     InvalidEscapeSequence,
     UnterminatedString,
     UnterminatedRegExp,
-    SyntaxError(Token),
+    SyntaxError(Token<'a>),
     UnexpectedEnd,
     LexerError,
 }
 
-impl ParseError {
+impl ParseError<'_> {
     pub fn message(&self) -> String {
         match self {
             ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
@@ -27,12 +27,12 @@ impl ParseError {
     }
 }
 
-impl fmt::Display for ParseError {
+impl fmt::Display for ParseError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message())
     }
 }
 
-impl Error for ParseError {}
+impl Error for ParseError<'_> {}
 
-pub type Result<T> = std::result::Result<T, ParseError>;
+pub type Result<'a, T> = std::result::Result<T, ParseError<'a>>;

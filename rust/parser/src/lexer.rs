@@ -28,14 +28,14 @@ fn is_identifier_part(c: char) -> bool {
     }
 }
 
-impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
+impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
             chars: chars.peekable(),
         }
     }
 
-    pub fn next(&mut self, parser: &Parser) -> Result<Token> {
+    pub fn next(&mut self, parser: &Parser<'a>) -> Result<'a, Token<'a>> {
         let mut text = String::new();
         let mut saw_newline = false;
         self.advance_impl(parser, &mut text, &mut saw_newline)
@@ -43,7 +43,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                 terminal_id,
                 saw_newline,
                 value: if !text.is_empty() || terminal_id == TerminalId::StringLiteral {
-                    Some(text)
+                    Some(text.into())
                 } else {
                     None
                 },
@@ -65,7 +65,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         at_least_one
     }
 
-    fn optional_exponent(&mut self, text: &mut String) -> Result<()> {
+    fn optional_exponent(&mut self, text: &mut String) -> Result<'a, ()> {
         if let Some('e') | Some('E') = self.chars.peek() {
             text.push(self.chars.next().unwrap());
             if let Some('+') | Some('-') = self.chars.peek() {
@@ -79,7 +79,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         Ok(())
     }
 
-    fn unexpected_err(&mut self) -> ParseError {
+    fn unexpected_err(&mut self) -> ParseError<'static> {
         if let Some(&ch) = self.chars.peek() {
             ParseError::IllegalCharacter(ch)
         } else {
@@ -87,7 +87,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         }
     }
 
-    fn hex_digit(&mut self) -> Result<u32> {
+    fn hex_digit(&mut self) -> Result<'a, u32> {
         match self.chars.next() {
             None => Err(ParseError::UnterminatedString),
             Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
@@ -97,7 +97,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         }
     }
 
-    fn escape_sequence(&mut self, text: &mut String) -> Result<()> {
+    fn escape_sequence(&mut self, text: &mut String) -> Result<'a, ()> {
         match self.chars.next() {
             None => {
                 return Err(ParseError::UnterminatedString);
@@ -178,7 +178,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         Ok(())
     }
 
-    fn string_literal(&mut self, stop: char, text: &mut String) -> Result<TerminalId> {
+    fn string_literal(&mut self, stop: char, text: &mut String) -> Result<'a, TerminalId> {
         loop {
             match self.chars.next() {
                 None | Some('\r') | Some('\n') => {
@@ -204,7 +204,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         }
     }
 
-    fn regular_expression_backslash_sequence(&mut self, text: &mut String) -> Result<()> {
+    fn regular_expression_backslash_sequence(&mut self, text: &mut String) -> Result<'a, ()> {
         text.push('\\');
         match self.chars.next() {
             None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
@@ -217,7 +217,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         }
     }
 
-    fn regular_expression_literal(&mut self, text: &mut String) -> Result<TerminalId> {
+    fn regular_expression_literal(&mut self, text: &mut String) -> Result<'a, TerminalId> {
         text.push('/');
         loop {
             match self.chars.next() {
@@ -375,7 +375,7 @@ impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         parser: &Parser,
         text: &mut String,
         saw_newline: &mut bool,
-    ) -> Result<TerminalId> {
+    ) -> Result<'a, TerminalId> {
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace.

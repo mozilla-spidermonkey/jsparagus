@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import json
+import os
 import re
 import subprocess
-import json
 
 
 def write_impl(f, indentation, string, *format_args):
@@ -20,14 +21,19 @@ def to_snek_case(ident):
 
 
 def case_name(ident):
-    return ident.replace("Box<", "").replace("Option<", "").replace("Vec<", "Vec").replace(">", "")
+    return ident\
+        .replace("<'a>", "")\
+        .replace("Box<", "")\
+        .replace("Option<", "")\
+        .replace("Vec<", "Vec")\
+        .replace(">", "")
 
 
 def collect_types(ast):
     types = set()
     for name, contents in ast.items():
         types.add(name)
-    types.add('Token')
+    types.add('Token<\'a>')
     types.add('Vec<SwitchCase>')
     types.add('Vec<Statement>')
     types.add('Vec<VariableDeclarator>')
@@ -49,24 +55,24 @@ def stack_value(ast):
         write(0, "use ast::*;")
         write(0, "")
         write(0, "#[derive(Debug, PartialEq)]")
-        write(0, "pub enum StackValue {")
+        write(0, "pub enum StackValue<'a> {")
         for name in types:
             write(1, "{}(Box<{}>),", case_name(name), name)
         write(0, "}")
         write(0, "")
-        write(0, "impl StackValue {")
-        write(1, "pub fn to_ast<T: StackValueItem>(self) -> Box<T> {")
+        write(0, "impl<'a> StackValue<'a> {")
+        write(1, "pub fn to_ast<T: StackValueItem<'a>>(self) -> Box<T> {")
         write(2, "T::to_ast(self)")
         write(1, "}")
         write(0, "}")
         write(0, "")
-        write(0, "pub trait StackValueItem {")
-        write(1, "fn to_ast(sv: StackValue) -> Box<Self>;")
+        write(0, "pub trait StackValueItem<'a> {")
+        write(1, "fn to_ast(sv: StackValue<'a>) -> Box<Self>;")
         write(0, "}")
         write(0, "")
         for name in types:
-            write(0, "impl StackValueItem for {} {{", name)
-            write(1, "fn to_ast(sv: StackValue) -> Box<Self> {")
+            write(0, "impl<'a> StackValueItem<'a> for {} {{", name)
+            write(1, "fn to_ast(sv: StackValue<'a>) -> Box<Self> {")
             write(2, "match sv {")
             write(3, "StackValue::{}(v) => v,", case_name(name))
             write(3, "_ => panic!(\"StackValue expected {}, got {{:?}}\", sv),", name)
@@ -75,8 +81,15 @@ def stack_value(ast):
             write(0, "}")
             write(0, "")
         for name in types:
-            write(0, "impl From<Box<{}>> for StackValue {{".format(name))
-            write(1, "fn from(val: Box<{}>) -> StackValue {{".format(name))
+            if name == "Token<'a>":
+                # more special hacks
+                lifetime = "a"
+                impl = "<'a>"
+            else:
+                lifetime = "static"
+                impl = ""
+            write(0, "impl{} From<Box<{}>> for StackValue<'{}> {{", impl, name, lifetime)
+            write(1, "fn from(val: Box<{}>) -> StackValue<'{}> {{", name, lifetime)
             write(2, "StackValue::{}(val)".format(case_name(name)))
             write(1, "}")
             write(0, "}")
@@ -319,4 +332,5 @@ def main():
 
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     main()

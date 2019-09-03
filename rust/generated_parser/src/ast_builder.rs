@@ -199,7 +199,7 @@ impl AstBuilder {
 
     // LabelIdentifier : Identifier
     pub fn label_identifier(&self, token: Box<Token>) -> Box<Label> {
-        Box::new(Label::new(token.value.unwrap()))
+        Box::new(Label::new(token.value.unwrap().into_owned()))
     }
 
     // PrimaryExpression : `this`
@@ -216,7 +216,7 @@ impl AstBuilder {
 
     // PrimaryExpression : RegularExpressionLiteral
     pub fn regexp_literal(&self, token: Box<Token>) -> Box<Expression> {
-        let pattern: String = token.value.unwrap();
+        let pattern: String = token.value.unwrap().into_owned();
         let global: bool = false;
         let ignore_case: bool = false;
         let multi_line: bool = false;
@@ -600,7 +600,7 @@ impl AstBuilder {
     }
 
     fn string_literal_value(token: Box<Token>) -> String {
-        token.value.unwrap()
+        token.value.unwrap().into_owned()
     }
 
     // Literal : StringLiteral
@@ -784,7 +784,7 @@ impl AstBuilder {
     // LiteralPropertyName : IdentifierName
     pub fn property_name_identifier(&self, token: Box<Token>) -> Box<PropertyName> {
         Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: token.value.unwrap(),
+            value: token.value.unwrap().into_owned(),
         }))
     }
 
@@ -820,7 +820,7 @@ impl AstBuilder {
             tag: None,
             elements: vec![TemplateExpressionElement::TemplateElement(
                 TemplateElement {
-                    raw_value: token.value.unwrap(),
+                    raw_value: token.value.unwrap().into_owned(),
                 },
             )],
         })
@@ -872,11 +872,11 @@ impl AstBuilder {
     }
 
     fn identifier(&self, token: Box<Token>) -> Identifier {
-        Identifier::new(token.value.unwrap())
+        Identifier::new(token.value.unwrap().into_owned())
     }
 
     fn identifier_name(&self, token: Box<Token>) -> IdentifierName {
-        IdentifierName::new(token.value.unwrap())
+        IdentifierName::new(token.value.unwrap().into_owned())
     }
 
     // MemberExpression : MemberExpression `.` IdentifierName

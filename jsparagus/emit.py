@@ -132,7 +132,6 @@ class RustParserWriter:
         # self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
-        # self.stack_value()
         self.reduce()
         self.reduce_simulator()
         self.entry()
@@ -152,6 +151,7 @@ class RustParserWriter:
         self.write(0, "mod ast_builder;")
         self.write(0, "mod stack_value;")
         self.write(0, "")
+        self.write(0, "use std::borrow::Cow;")
         self.write(0, "pub use ast_builder::*;")
         self.write(0, "pub use stack_value::*;")
         self.write(0, "")
@@ -190,14 +190,14 @@ class RustParserWriter:
 
     def token(self):
         self.write(0, "#[derive(Clone, Debug, PartialEq)]")
-        self.write(0, "pub struct Token {")
+        self.write(0, "pub struct Token<'a> {")
         self.write(1, "pub terminal_id: TerminalId,")
         self.write(1, "pub saw_newline: bool,")
-        self.write(1, "pub value: Option<String>,")
+        self.write(1, "pub value: Option<Cow<'a, str>>,")
         self.write(0, "}")
         self.write(0, "")
 
-        self.write(0, "impl Token {")
+        self.write(0, "impl Token<'_> {")
         self.write(1, "pub fn basic_token(terminal_id: TerminalId) -> Self {")
         self.write(2, "Self {")
         self.write(3, "terminal_id,")
@@ -472,41 +472,6 @@ class RustParserWriter:
         else:
             assert False, "unexpected element type: {!r}".format(e)
 
-    def stack_value(self):
-        self.write(0, "#[derive(Debug, PartialEq)]")
-        self.write(0, "pub enum StackValue {")
-        types = set((self.type_to_rust(ty, ""),
-                     self.type_to_rust(ty, "concrete", boxed=True))
-                    for ty in self.grammar.nt_types.values())
-        return_types.add(("Token", "Token"))
-        for type_plain, type_boxed in types:
-            # Bug: The code we currently emit only works for types that have
-            # simple identifier names (so, not `()` or `Option` types).
-            assert type_plain.isidentifier()
-            self.write(0, "{}({}),", type_plain, type_boxed)
-        self.write(0, "}")
-        self.write(0, "")
-
-        self.write(0, "impl StackValue {")
-        for return_type_plain, return_type_boxed in return_types:
-            self.write(1, "fn unwrap_{}(self) -> {} {{",
-                       self.to_snek_case(return_type_plain), return_type_boxed)
-            self.write(2, "match self {")
-            self.write(3, "StackValue::{}(v) => v,", return_type_plain)
-            self.write(3, "_ => panic!(\"StackValue expected {}, got {{:?}}\", self)", return_type_plain)
-            self.write(2, "}")
-            self.write(1, "}")
-        self.write(0, "}")
-        self.write(0, "")
-
-        for return_type_plain, return_type_boxed in return_types:
-            self.write(0, "impl From<{}> for StackValue {{", return_type_boxed)
-            self.write(1, "fn from(val: {}) -> StackValue {{", return_type_boxed)
-            self.write(2, "StackValue::{}(val)", return_type_plain)
-            self.write(1, "}")
-            self.write(0, "}")
-            self.write(0, "")
-
     def reduce(self):
         self.write(
             0,
@@ -622,17 +587,9 @@ class RustParserWriter:
 
         for init_nt, index in self.init_state_map.items():
             assert init_nt.args == ()
-            # result_type_jsparagus = self.grammar.nt_types[init_nt.name]
-            # result_type_name = self.type_to_rust(result_type_jsparagus, "")
-            # result_type_concrete = self.type_to_rust(result_type_jsparagus, "concrete", boxed=True)
             self.write(0, "pub static START_STATE_{}: usize = {};",
                        self.to_snek_case(init_nt.name).upper(), index)
             self.write(0, "")
-            # self.write(0, "pub fn get_result_{}(node: StackValue) -> {} {{",
-            #            self.to_snek_case(init_nt.name), result_type_concrete)
-            # self.write(1, "node.to_ast()")
-            # self.write(0, "}")
-            # self.write(0, "")
 
 
 def write_rust_parser(out, parser_states):

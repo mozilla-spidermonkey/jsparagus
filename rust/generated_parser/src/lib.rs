@@ -7,6 +7,7 @@ mod stack_value;
 
 pub use ast_builder::*;
 pub use stack_value::*;
+use std::borrow::Cow;
 
 const ERROR: i64 = -0x8000000000000000;
 
@@ -123,13 +124,13 @@ pub enum TerminalId {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Token {
+pub struct Token<'a> {
     pub terminal_id: TerminalId,
     pub saw_newline: bool,
-    pub value: Option<String>,
+    pub value: Option<Cow<'a, str>>,
 }
 
-impl Token {
+impl Token<'_> {
     pub fn basic_token(terminal_id: TerminalId) -> Self {
         Self {
             terminal_id,

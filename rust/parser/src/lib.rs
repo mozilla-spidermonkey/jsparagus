@@ -30,7 +30,7 @@ pub fn parse_module(source: &str) -> Result<Box<Module>> {
     Ok(parse(source, START_STATE_MODULE)?.to_ast())
 }
 
-fn parse(source: &str, start_state: usize) -> Result<StackValue> {
+fn parse<'a>(source: &'a str, start_state: usize) -> Result<'a, StackValue<'a>> {
     let mut tokens = Lexer::new(source.chars());
 
     TABLES.check();
