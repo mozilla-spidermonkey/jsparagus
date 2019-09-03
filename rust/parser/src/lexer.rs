@@ -5,7 +5,9 @@ use crate::parser::Parser;
 use generated_parser::{TerminalId, Token};
 use std::convert::TryFrom;
 
-pub struct Lexer<Iter: Iterator<Item = char>> {
+// Note: Clone is used when lexing `<!--`, which requires more than one
+// character of lookahead.
+pub struct Lexer<Iter: Iterator<Item = char> + Clone> {
     chars: std::iter::Peekable<Iter>,
 }
 
@@ -26,7 +28,7 @@ fn is_identifier_part(c: char) -> bool {
     }
 }
 
-impl<Iter: Iterator<Item = char>> Lexer<Iter> {
+impl<Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
     pub fn new(chars: Iter) -> Lexer<Iter> {
         Lexer {
             chars: chars.peekable(),
@@ -359,6 +361,15 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
         }
     }
 
+    fn skip_single_line_comment(&mut self) {
+        while let Some(ch) = self.chars.next() {
+            match ch {
+                '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => break,
+                _ => continue,
+            }
+        }
+    }
+
     fn advance_impl(
         &mut self,
         parser: &Parser,
@@ -563,7 +574,16 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                 '-' => match self.chars.peek() {
                     Some('-') => {
                         self.chars.next();
-                        return Ok(TerminalId::HyphenMinusHyphenMinus);
+                        match self.chars.peek() {
+                            Some('>') => {
+                                // B.1.3 SingleLineHTMLCloseComment
+                                // TODO: Limit this to Script (not Module) and
+                                // at the start of a line.
+                                self.skip_single_line_comment();
+                                continue;
+                            }
+                            _ => return Ok(TerminalId::HyphenMinusHyphenMinus),
+                        }
                     }
                     Some('=') => {
                         self.chars.next();
@@ -606,12 +626,7 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                     // Single-line comment
                     Some('/') => {
                         self.chars.next();
-                        while let Some(ch) = self.chars.next() {
-                            match ch {
-                                '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => break,
-                                _ => continue,
-                            }
-                        }
+                        self.skip_single_line_comment();
                         continue;
                     }
                     // Multiline comment
@@ -654,6 +669,21 @@ impl<Iter: Iterator<Item = char>> Lexer<Iter> {
                     Some('=') => {
                         self.chars.next();
                         return Ok(TerminalId::LessThanSignEqualsSign);
+                    }
+                    Some('!') => {
+                        // Check for B.1.3 SingleLineHTMLOpenComment. This
+                        // requires three characters of lookahead, because
+                        // `x<!--` has a comment but `x<!-y` does not.
+                        //
+                        // TODO: Limit this to Script (not Module).
+                        self.chars.next();
+                        let mut lookahead_iter = self.chars.clone();
+                        if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
+                        {
+                            self.skip_single_line_comment();
+                            continue;
+                        }
+                        return Ok(TerminalId::LessThanSign);
                     }
                     _ => return Ok(TerminalId::LessThanSign),
                 },
