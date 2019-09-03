@@ -3,12 +3,14 @@
 use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
 use generated_parser::{TerminalId, Token};
+use std::borrow::Cow;
 use std::convert::TryFrom;
+use std::str::Chars;
 
 // Note: Clone is used when lexing `<!--`, which requires more than one
 // character of lookahead.
-pub struct Lexer<Iter: Iterator<Item = char> + Clone> {
-    chars: std::iter::Peekable<Iter>,
+pub struct Lexer<'a> {
+    chars: Chars<'a>,
 }
 
 fn is_identifier_start(c: char) -> bool {
@@ -28,36 +30,32 @@ fn is_identifier_part(c: char) -> bool {
     }
 }
 
-impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
-    pub fn new(chars: Iter) -> Lexer<Iter> {
-        Lexer {
-            chars: chars.peekable(),
-        }
+impl<'a> Lexer<'a> {
+    pub fn new(chars: Chars<'a>) -> Lexer<'a> {
+        Lexer { chars }
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.chars.as_str().chars().next()
     }
 
     pub fn next(&mut self, parser: &Parser<'a>) -> Result<'a, Token<'a>> {
-        let mut text = String::new();
         let mut saw_newline = false;
-        self.advance_impl(parser, &mut text, &mut saw_newline)
-            .map(|terminal_id| Token {
+        self.advance_impl(parser, &mut saw_newline)
+            .map(|(value, terminal_id)| Token {
                 terminal_id,
                 saw_newline,
-                value: if !text.is_empty() || terminal_id == TerminalId::StringLiteral {
-                    Some(text.into())
-                } else {
-                    None
-                },
+                value,
             })
     }
 
-    fn accept_digits(&mut self, text: &mut String) -> bool {
+    fn accept_digits(&mut self) -> bool {
         let mut at_least_one = false;
-        while let Some(&next) = self.chars.peek() {
+        while let Some(next) = self.peek() {
             match next {
                 '0'..='9' => {
                     at_least_one = true;
                     self.chars.next();
-                    text.push(next);
                 }
                 _ => break,
             }
@@ -65,13 +63,13 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         at_least_one
     }
 
-    fn optional_exponent(&mut self, text: &mut String) -> Result<'a, ()> {
-        if let Some('e') | Some('E') = self.chars.peek() {
-            text.push(self.chars.next().unwrap());
-            if let Some('+') | Some('-') = self.chars.peek() {
-                text.push(self.chars.next().unwrap());
+    fn optional_exponent(&mut self) -> Result<'a, ()> {
+        if let Some('e') | Some('E') = self.peek() {
+            self.chars.next().unwrap();
+            if let Some('+') | Some('-') = self.peek() {
+                self.chars.next().unwrap();
             }
-            if !self.accept_digits(text) {
+            if !self.accept_digits() {
                 // require at least one digit
                 return Err(self.unexpected_err());
             }
@@ -80,7 +78,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
     }
 
     fn unexpected_err(&mut self) -> ParseError<'static> {
-        if let Some(&ch) = self.chars.peek() {
+        if let Some(ch) = self.peek() {
             ParseError::IllegalCharacter(ch)
         } else {
             ParseError::UnexpectedEnd
@@ -109,7 +107,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                 '\r' => {
                     // LineContinuation. Check for the sequence \r\n; otherwise
                     // ignore it.
-                    if self.chars.peek() == Some(&'\n') {
+                    if self.peek() == Some('\n') {
                         self.chars.next();
                     }
                 }
@@ -162,7 +160,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                     }
                 }
                 '0' => {
-                    if let Some('0'..='9') = self.chars.peek() {
+                    if let Some('0'..='9') = self.peek() {
                         return Err(ParseError::InvalidEscapeSequence);
                     }
                     text.push('\0');
@@ -178,7 +176,8 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         Ok(())
     }
 
-    fn string_literal(&mut self, stop: char, text: &mut String) -> Result<'a, TerminalId> {
+    fn string_literal(&mut self, stop: char) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
+        let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
                 None | Some('\r') | Some('\n') => {
@@ -187,18 +186,19 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
 
                 Some(c @ '"') | Some(c @ '\'') => {
                     if c == stop {
-                        return Ok(TerminalId::StringLiteral);
+                        return Ok((Some(builder.into_cow(&self)), TerminalId::StringLiteral));
                     } else {
-                        text.push(c);
+                        builder.push_matching(c);
                     }
                 }
 
                 Some('\\') => {
+                    let text = builder.get_mut_string(&self);
                     self.escape_sequence(text)?;
                 }
 
                 Some(other) => {
-                    text.push(other);
+                    builder.push_matching(other);
                 }
             }
         }
@@ -217,8 +217,9 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
         }
     }
 
-    fn regular_expression_literal(&mut self, text: &mut String) -> Result<'a, TerminalId> {
-        text.push('/');
+    fn regular_expression_literal(&mut self) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
+        // TODO: First `/` isn't included
+        let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
                 None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
@@ -229,7 +230,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                 }
                 Some('[') => {
                     // RegularExpressionClass.
-                    text.push('[');
+                    builder.push_matching('[');
                     loop {
                         match self.chars.next() {
                             None | Some('\r') | Some('\n') | Some('\u{2028}')
@@ -240,124 +241,120 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                                 break;
                             }
                             Some('\\') => {
+                                let text = builder.get_mut_string(&self);
                                 self.regular_expression_backslash_sequence(text)?;
                             }
                             Some(ch) => {
-                                text.push(ch);
+                                builder.push_matching(ch);
                             }
                         }
                     }
-                    text.push(']');
+                    builder.push_matching(']');
                 }
                 Some('\\') => {
+                    let text = builder.get_mut_string(&self);
                     self.regular_expression_backslash_sequence(text)?;
                 }
                 Some(ch) => {
-                    text.push(ch);
+                    builder.push_matching(ch);
                 }
             }
         }
-        text.push('/');
-        while let Some(&ch) = self.chars.peek() {
+        builder.push_matching('/');
+        while let Some(ch) = self.peek() {
             match ch {
                 '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
                     self.chars.next();
-                    text.push(ch);
+                    builder.push_matching(ch);
                 }
                 _ => break,
             }
         }
 
-        Ok(TerminalId::RegularExpressionLiteral)
+        Ok((
+            Some(builder.into_cow(&self)),
+            TerminalId::RegularExpressionLiteral,
+        ))
     }
 
     fn conditional_keyword(
         &mut self,
         parser: &Parser,
-        text: &mut String,
-        name: String,
         keyword_id: TerminalId,
-    ) -> Result<TerminalId> {
+        text: Cow<'a, str>,
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         if parser.can_accept_terminal(keyword_id) {
-            Ok(keyword_id)
+            Ok((None, keyword_id))
         } else {
-            *text = name;
-            Ok(TerminalId::Identifier)
+            Ok((Some(text), TerminalId::Identifier))
         }
     }
 
-    fn identifier(&mut self, parser: &Parser, c: char, text: &mut String) -> Result<TerminalId> {
-        let mut var = String::new();
-        var.push(c);
-        while let Some(&ch) = self.chars.peek() {
+    fn identifier(
+        &mut self,
+        parser: &Parser<'a>,
+        mut builder: AutoCow<'a>,
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
+        while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
                 break;
             }
             self.chars.next();
-            var.push(ch);
+            builder.push_matching(ch);
         }
+        let text = builder.into_cow(&self);
         if parser.can_accept_terminal(TerminalId::IdentifierName) {
-            *text = var;
-            return Ok(TerminalId::IdentifierName);
+            return Ok((Some(text), TerminalId::IdentifierName));
         }
 
-        match &var as &str {
-            "as" => return self.conditional_keyword(parser, text, var, TerminalId::As),
-            "async" => return self.conditional_keyword(parser, text, var, TerminalId::Async),
-            "await" => return self.conditional_keyword(parser, text, var, TerminalId::Await),
-            "break" => return Ok(TerminalId::Break),
-            "case" => return Ok(TerminalId::Case),
-            "catch" => return Ok(TerminalId::Catch),
-            "class" => return Ok(TerminalId::Class),
-            "const" => return Ok(TerminalId::Const),
-            "continue" => return Ok(TerminalId::Continue),
-            "debugger" => return Ok(TerminalId::Debugger),
-            "default" => return Ok(TerminalId::Default),
-            "delete" => return Ok(TerminalId::Delete),
-            "do" => return Ok(TerminalId::Do),
-            "else" => return Ok(TerminalId::Else),
-            "export" => return Ok(TerminalId::Export),
-            "extends" => return Ok(TerminalId::Extends),
-            "finally" => return Ok(TerminalId::Finally),
-            "for" => return Ok(TerminalId::For),
-            "from" => return self.conditional_keyword(parser, text, var, TerminalId::From),
-            "function" => return Ok(TerminalId::Function),
-            "get" => return self.conditional_keyword(parser, text, var, TerminalId::Get),
-            "if" => return Ok(TerminalId::If),
-            "import" => return Ok(TerminalId::Import),
-            "in" => return Ok(TerminalId::In),
-            "instanceof" => return Ok(TerminalId::Instanceof),
-            "let" => return self.conditional_keyword(parser, text, var, TerminalId::Let),
-            "new" => return Ok(TerminalId::New),
-            "of" => return self.conditional_keyword(parser, text, var, TerminalId::Of),
-            "return" => return Ok(TerminalId::Return),
-            "set" => return self.conditional_keyword(parser, text, var, TerminalId::Set),
-            "static" => return Ok(TerminalId::Static),
-            "super" => return Ok(TerminalId::Super),
-            "switch" => return Ok(TerminalId::Switch),
-            "target" => return self.conditional_keyword(parser, text, var, TerminalId::Target),
-            "this" => return Ok(TerminalId::This),
-            "throw" => return Ok(TerminalId::Throw),
-            "try" => return Ok(TerminalId::Try),
-            "typeof" => return Ok(TerminalId::Typeof),
-            "var" => return Ok(TerminalId::Var),
-            "void" => return Ok(TerminalId::Void),
-            "while" => return Ok(TerminalId::While),
-            "with" => return Ok(TerminalId::With),
-            "yield" => return self.conditional_keyword(parser, text, var, TerminalId::Yield),
-            "null" => return Ok(TerminalId::NullLiteral),
-            "true" => {
-                *text = var;
-                return Ok(TerminalId::BooleanLiteral);
-            }
-            "false" => {
-                *text = var;
-                return Ok(TerminalId::BooleanLiteral);
-            }
-            _ => {
-                *text = var;
-                return Ok(TerminalId::Identifier);
-            }
+        match &text as &str {
+            "as" => self.conditional_keyword(parser, TerminalId::As, text),
+            "async" => self.conditional_keyword(parser, TerminalId::Async, text),
+            "await" => self.conditional_keyword(parser, TerminalId::Await, text),
+            "break" => Ok((None, TerminalId::Break)),
+            "case" => Ok((None, TerminalId::Case)),
+            "catch" => Ok((None, TerminalId::Catch)),
+            "class" => Ok((None, TerminalId::Class)),
+            "const" => Ok((None, TerminalId::Const)),
+            "continue" => Ok((None, TerminalId::Continue)),
+            "debugger" => Ok((None, TerminalId::Debugger)),
+            "default" => Ok((None, TerminalId::Default)),
+            "delete" => Ok((None, TerminalId::Delete)),
+            "do" => Ok((None, TerminalId::Do)),
+            "else" => Ok((None, TerminalId::Else)),
+            "export" => Ok((None, TerminalId::Export)),
+            "extends" => Ok((None, TerminalId::Extends)),
+            "finally" => Ok((None, TerminalId::Finally)),
+            "for" => Ok((None, TerminalId::For)),
+            "from" => self.conditional_keyword(parser, TerminalId::From, text),
+            "function" => Ok((None, TerminalId::Function)),
+            "get" => self.conditional_keyword(parser, TerminalId::Get, text),
+            "if" => Ok((None, TerminalId::If)),
+            "import" => Ok((None, TerminalId::Import)),
+            "in" => Ok((None, TerminalId::In)),
+            "instanceof" => Ok((None, TerminalId::Instanceof)),
+            "let" => self.conditional_keyword(parser, TerminalId::Let, text),
+            "new" => Ok((None, TerminalId::New)),
+            "of" => self.conditional_keyword(parser, TerminalId::Of, text),
+            "return" => Ok((None, TerminalId::Return)),
+            "set" => self.conditional_keyword(parser, TerminalId::Set, text),
+            "static" => Ok((None, TerminalId::Static)),
+            "super" => Ok((None, TerminalId::Super)),
+            "switch" => Ok((None, TerminalId::Switch)),
+            "target" => self.conditional_keyword(parser, TerminalId::Target, text),
+            "this" => Ok((None, TerminalId::This)),
+            "throw" => Ok((None, TerminalId::Throw)),
+            "try" => Ok((None, TerminalId::Try)),
+            "typeof" => Ok((None, TerminalId::Typeof)),
+            "var" => Ok((None, TerminalId::Var)),
+            "void" => Ok((None, TerminalId::Void)),
+            "while" => Ok((None, TerminalId::While)),
+            "with" => Ok((None, TerminalId::With)),
+            "yield" => self.conditional_keyword(parser, TerminalId::Yield, text),
+            "null" => Ok((None, TerminalId::NullLiteral)),
+            "true" => Ok((None, TerminalId::BooleanLiteral)),
+            "false" => Ok((None, TerminalId::BooleanLiteral)),
+            _ => Ok((None, TerminalId::Identifier)),
         }
     }
 
@@ -372,10 +369,10 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
 
     fn advance_impl(
         &mut self,
-        parser: &Parser,
-        text: &mut String,
+        parser: &Parser<'a>,
         saw_newline: &mut bool,
-    ) -> Result<'a, TerminalId> {
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
+        let mut builder = AutoCow::new(&self);
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace.
@@ -406,36 +403,33 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
 
                 // Numbers
                 '0'..='9' => {
-                    text.push(c);
-                    match self.chars.peek() {
+                    let start = self.chars.as_str();
+                    match self.peek() {
                         // DecimalLiteral
                         Some('0'..='9') if c != '0' => {
-                            self.accept_digits(text);
-                            if let Some('.') = self.chars.peek() {
+                            self.accept_digits();
+                            if let Some('.') = self.peek() {
                                 self.chars.next();
-                                text.push('.');
-                                self.accept_digits(text);
+                                self.accept_digits();
                             }
-                            self.optional_exponent(text)?;
+                            self.optional_exponent()?;
                         }
                         Some('.') | Some('e') | Some('E') => {
-                            if let Some('.') = self.chars.peek() {
+                            if let Some('.') = self.peek() {
                                 self.chars.next();
-                                text.push('.');
-                                self.accept_digits(text);
+                                self.accept_digits();
                             }
-                            self.optional_exponent(text)?;
+                            self.optional_exponent()?;
                         }
                         // BinaryIntegerLiteral
                         Some('b') | Some('B') if c == '0' => {
-                            text.push(self.chars.next().unwrap());
+                            self.chars.next().unwrap();
                             let mut at_least_one = false;
-                            while let Some(&next) = self.chars.peek() {
+                            while let Some(next) = self.peek() {
                                 match next {
                                     '0' | '1' => {
                                         at_least_one = true;
                                         self.chars.next();
-                                        text.push(next);
                                     }
                                     _ => break,
                                 }
@@ -446,14 +440,14 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                         }
                         // OctalIntegerLiteral
                         Some('o') | Some('O') if c == '0' => {
-                            text.push(self.chars.next().unwrap());
+                            self.chars.next().unwrap();
                             let mut at_least_one = false;
-                            while let Some(&next) = self.chars.peek() {
+                            while let Some(next) = self.peek() {
                                 match next {
                                     '0'..='7' => {
                                         at_least_one = true;
                                         self.chars.next();
-                                        text.push(next);
+                                        next;
                                     }
                                     _ => break,
                                 }
@@ -464,14 +458,13 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                         }
                         // HexIntegerLiteral
                         Some('x') | Some('X') if c == '0' => {
-                            text.push(self.chars.next().unwrap());
+                            self.chars.next().unwrap();
                             let mut at_least_one = false;
-                            while let Some(&next) = self.chars.peek() {
+                            while let Some(next) = self.peek() {
                                 match next {
                                     '0'..='9' | 'a'..='f' | 'A'..='F' => {
                                         at_least_one = true;
                                         self.chars.next();
-                                        text.push(next);
                                     }
                                     _ => break,
                                 }
@@ -486,7 +479,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                             let strict_mode = true;
                             if !strict_mode {
                                 // TODO: Distinguish between Octal and NonOctal
-                                self.accept_digits(text);
+                                self.accept_digits();
                             }
                         }
                     }
@@ -494,102 +487,106 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                     // The SourceCharacter immediately following a
                     // NumericLiteral must not be an IdentifierStart or
                     // DecimalDigit.
-                    if let Some(&ch) = self.chars.peek() {
+                    if let Some(ch) = self.peek() {
                         if is_identifier_start(ch) || ch.is_digit(10) {
                             return Err(ParseError::IllegalCharacter(ch));
                         }
                     }
-                    return Ok(TerminalId::NumericLiteral);
+
+                    let token = &start[..start.len() - self.chars.as_str().len()];
+                    return Ok((Some(Cow::Borrowed(token)), TerminalId::NumericLiteral));
                 }
 
                 // Strings
                 '"' | '\'' => {
-                    return self.string_literal(c, text);
+                    return self.string_literal(c);
                 }
 
                 '`' => {
+                    let mut builder = AutoCow::new(&self);
                     // include quotes?
                     while let Some(ch) = self.chars.next() {
-                        if ch == '$' && self.chars.peek() == Some(&'{') {
+                        if ch == '$' && self.peek() == Some('{') {
                             self.chars.next();
-                            return Ok(TerminalId::TemplateHead);
+                            return Ok((None, TerminalId::TemplateHead));
                         }
                         if ch == '`' {
-                            return Ok(TerminalId::NoSubstitutionTemplate);
+                            return Ok((None, TerminalId::NoSubstitutionTemplate));
                         }
-                        text.push(ch)
+                        // TODO: Do escapes exist? Should we support them?
+                        builder.push_matching(ch);
                     }
-                    return Ok(TerminalId::StringLiteral);
+                    return Ok((Some(builder.into_cow(&self)), TerminalId::StringLiteral));
                 }
 
-                '!' => match self.chars.peek() {
+                '!' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::ExclamationMarkEqualsSignEqualsSign);
+                                return Ok((None, TerminalId::ExclamationMarkEqualsSignEqualsSign));
                             }
-                            _ => return Ok(TerminalId::ExclamationMarkEqualsSign),
+                            _ => return Ok((None, TerminalId::ExclamationMarkEqualsSign)),
                         }
                     }
-                    _ => return Ok(TerminalId::ExclamationMark),
+                    _ => return Ok((None, TerminalId::ExclamationMark)),
                 },
 
-                '%' => match self.chars.peek() {
+                '%' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::PercentSignEqualsSign);
+                        return Ok((None, TerminalId::PercentSignEqualsSign));
                     }
-                    _ => return Ok(TerminalId::PercentSign),
+                    _ => return Ok((None, TerminalId::PercentSign)),
                 },
 
-                '&' => match self.chars.peek() {
+                '&' => match self.peek() {
                     Some('&') => {
                         self.chars.next();
-                        return Ok(TerminalId::AmpersandAmpersand);
+                        return Ok((None, TerminalId::AmpersandAmpersand));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::AmpersandEqualsSign);
+                        return Ok((None, TerminalId::AmpersandEqualsSign));
                     }
-                    _ => return Ok(TerminalId::Ampersand),
+                    _ => return Ok((None, TerminalId::Ampersand)),
                 },
 
-                '*' => match self.chars.peek() {
+                '*' => match self.peek() {
                     Some('*') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::AsteriskAsteriskEqualsSign);
+                                return Ok((None, TerminalId::AsteriskAsteriskEqualsSign));
                             }
-                            _ => return Ok(TerminalId::AsteriskAsterisk),
+                            _ => return Ok((None, TerminalId::AsteriskAsterisk)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::AsteriskEqualsSign);
+                        return Ok((None, TerminalId::AsteriskEqualsSign));
                     }
-                    _ => return Ok(TerminalId::Asterisk),
+                    _ => return Ok((None, TerminalId::Asterisk)),
                 },
 
-                '+' => match self.chars.peek() {
+                '+' => match self.peek() {
                     Some('+') => {
                         self.chars.next();
-                        return Ok(TerminalId::PlusSignPlusSign);
+                        return Ok((None, TerminalId::PlusSignPlusSign));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::PlusSignEqualsSign);
+                        return Ok((None, TerminalId::PlusSignEqualsSign));
                     }
-                    _ => return Ok(TerminalId::PlusSign),
+                    _ => return Ok((None, TerminalId::PlusSign)),
                 },
 
-                '-' => match self.chars.peek() {
+                '-' => match self.peek() {
                     Some('-') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('>') => {
                                 // B.1.3 SingleLineHTMLCloseComment
                                 // TODO: Limit this to Script (not Module) and
@@ -597,46 +594,48 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                                 self.skip_single_line_comment();
                                 continue;
                             }
-                            _ => return Ok(TerminalId::HyphenMinusHyphenMinus),
+                            _ => return Ok((None, TerminalId::HyphenMinusHyphenMinus)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::HyphenMinusEqualsSign);
+                        return Ok((None, TerminalId::HyphenMinusEqualsSign));
                     }
-                    _ => return Ok(TerminalId::HyphenMinus),
+                    _ => return Ok((None, TerminalId::HyphenMinus)),
                 },
 
-                '.' => match self.chars.peek() {
+                '.' => match self.peek() {
                     Some('.') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('.') => {
                                 self.chars.next();
-                                return Ok(TerminalId::FullStopFullStopFullStop);
+                                return Ok((None, TerminalId::FullStopFullStopFullStop));
                             }
                             _ => return Err(ParseError::IllegalCharacter('.')),
                         }
                     }
                     Some('0'..='9') => {
-                        text.push('.');
-                        self.accept_digits(text);
-                        self.optional_exponent(text)?;
+                        let start = self.chars.as_str();
+                        self.accept_digits();
+                        self.optional_exponent()?;
 
                         // The SourceCharacter immediately following a
                         // NumericLiteral must not be an IdentifierStart or
                         // DecimalDigit.
-                        if let Some(&ch) = self.chars.peek() {
+                        if let Some(ch) = self.peek() {
                             if is_identifier_start(ch) || ch.is_digit(10) {
                                 return Err(ParseError::IllegalCharacter(ch));
                             }
                         }
-                        return Ok(TerminalId::NumericLiteral);
+
+                        let token = &start[..start.len() - self.chars.as_str().len()];
+                        return Ok((Some(Cow::Borrowed(token)), TerminalId::NumericLiteral));
                     }
-                    _ => return Ok(TerminalId::FullStop),
+                    _ => return Ok((None, TerminalId::FullStop)),
                 },
 
-                '/' => match self.chars.peek() {
+                '/' => match self.peek() {
                     // Comments take priority over regexps
                     // Single-line comment
                     Some('/') => {
@@ -649,7 +648,7 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                         self.chars.next();
                         while let Some(ch) = self.chars.next() {
                             // TODO: ASI
-                            if ch == '*' && self.chars.peek() == Some(&'/') {
+                            if ch == '*' && self.peek() == Some('/') {
                                 self.chars.next();
                                 break;
                             }
@@ -658,32 +657,32 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                     }
                     _ => {
                         if parser.can_accept_terminal(TerminalId::RegularExpressionLiteral) {
-                            return self.regular_expression_literal(text);
+                            return self.regular_expression_literal();
                         }
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::SolidusEqualsSign);
+                                return Ok((None, TerminalId::SolidusEqualsSign));
                             }
-                            _ => return Ok(TerminalId::Solidus),
+                            _ => return Ok((None, TerminalId::Solidus)),
                         }
                     }
                 },
 
-                '<' => match self.chars.peek() {
+                '<' => match self.peek() {
                     Some('<') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::LessThanSignLessThanSignEqualsSign);
+                                return Ok((None, TerminalId::LessThanSignLessThanSignEqualsSign));
                             }
-                            _ => return Ok(TerminalId::LessThanSignLessThanSign),
+                            _ => return Ok((None, TerminalId::LessThanSignLessThanSign)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::LessThanSignEqualsSign);
+                        return Ok((None, TerminalId::LessThanSignEqualsSign));
                     }
                     Some('!') => {
                         // Check for B.1.3 SingleLineHTMLOpenComment. This
@@ -698,104 +697,146 @@ impl<'a, Iter: Iterator<Item = char> + Clone> Lexer<Iter> {
                             self.skip_single_line_comment();
                             continue;
                         }
-                        return Ok(TerminalId::LessThanSign);
+                        return Ok((None, TerminalId::LessThanSign));
                     }
-                    _ => return Ok(TerminalId::LessThanSign),
+                    _ => return Ok((None, TerminalId::LessThanSign)),
                 },
 
-                '=' => match self.chars.peek() {
+                '=' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::EqualsSignEqualsSignEqualsSign);
+                                return Ok((None, TerminalId::EqualsSignEqualsSignEqualsSign));
                             }
-                            _ => return Ok(TerminalId::EqualsSignEqualsSign),
+                            _ => return Ok((None, TerminalId::EqualsSignEqualsSign)),
                         }
                     }
                     Some('>') => {
                         self.chars.next();
-                        return Ok(TerminalId::Arrow);
+                        return Ok((None, TerminalId::Arrow));
                     }
-                    _ => return Ok(TerminalId::EqualsSign),
+                    _ => return Ok((None, TerminalId::EqualsSign)),
                 },
 
-                '>' => match self.chars.peek() {
+                '>' => match self.peek() {
                     Some('>') => {
                         self.chars.next();
-                        match self.chars.peek() {
+                        match self.peek() {
                             Some('>') => {
                                 self.chars.next();
-                                match self.chars.peek() {
+                                match self.peek() {
                                     Some('=') => {
                                         self.chars.next();
-                                        return Ok(TerminalId::GreaterThanSignGreaterThanSignGreaterThanSignEqualsSign);
+                                        return Ok((None, TerminalId::GreaterThanSignGreaterThanSignGreaterThanSignEqualsSign));
                                     }
-                                    _ => return Ok(
-                                        TerminalId::GreaterThanSignGreaterThanSignGreaterThanSign,
-                                    ),
+                                    _ => return Ok((None, TerminalId::GreaterThanSignGreaterThanSignGreaterThanSign)),
                                 }
                             }
                             Some('=') => {
                                 self.chars.next();
-                                return Ok(TerminalId::GreaterThanSignGreaterThanSignEqualsSign);
+                                return Ok((None, TerminalId::GreaterThanSignGreaterThanSignEqualsSign));
                             }
-                            _ => return Ok(TerminalId::GreaterThanSignGreaterThanSign),
+                            _ => return Ok((None, TerminalId::GreaterThanSignGreaterThanSign)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::GreaterThanSignEqualsSign);
+                        return Ok((None, TerminalId::GreaterThanSignEqualsSign));
                     }
-                    _ => return Ok(TerminalId::GreaterThanSign),
+                    _ => return Ok((None, TerminalId::GreaterThanSign)),
                 },
 
-                '^' => match self.chars.peek() {
+                '^' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::CircumflexAccentEqualsSign);
+                        return Ok((None, TerminalId::CircumflexAccentEqualsSign));
                     }
-                    _ => return Ok(TerminalId::CircumflexAccent),
+                    _ => return Ok((None, TerminalId::CircumflexAccent)),
                 },
 
-                '|' => match self.chars.peek() {
+                '|' => match self.peek() {
                     Some('|') => {
                         self.chars.next();
-                        return Ok(TerminalId::VerticalLineVerticalLine);
+                        return Ok((None, TerminalId::VerticalLineVerticalLine));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok(TerminalId::VerticalLineEqualsSign);
+                        return Ok((None, TerminalId::VerticalLineEqualsSign));
                     }
-                    _ => return Ok(TerminalId::VerticalLine),
+                    _ => return Ok((None, TerminalId::VerticalLine)),
                 },
 
-                '(' => return Ok(TerminalId::LeftParenthesis),
-                ')' => return Ok(TerminalId::RightParenthesis),
-                ',' => return Ok(TerminalId::Comma),
-                ':' => return Ok(TerminalId::Colon),
-                ';' => return Ok(TerminalId::Semicolon),
-                '?' => return Ok(TerminalId::QuestionMark),
-                '[' => return Ok(TerminalId::LeftSquareBracket),
-                ']' => return Ok(TerminalId::RightSquareBracket),
-                '{' => return Ok(TerminalId::LeftCurlyBracket),
-                '}' => return Ok(TerminalId::RightCurlyBracket),
-                '~' => return Ok(TerminalId::Tilde),
+                '(' => return Ok((None, TerminalId::LeftParenthesis)),
+                ')' => return Ok((None, TerminalId::RightParenthesis)),
+                ',' => return Ok((None, TerminalId::Comma)),
+                ':' => return Ok((None, TerminalId::Colon)),
+                ';' => return Ok((None, TerminalId::Semicolon)),
+                '?' => return Ok((None, TerminalId::QuestionMark)),
+                '[' => return Ok((None, TerminalId::LeftSquareBracket)),
+                ']' => return Ok((None, TerminalId::RightSquareBracket)),
+                '{' => return Ok((None, TerminalId::LeftCurlyBracket)),
+                '}' => return Ok((None, TerminalId::RightCurlyBracket)),
+                '~' => return Ok((None, TerminalId::Tilde)),
 
                 // Idents
                 '$' | '_' | 'a'..='z' | 'A'..='Z' => {
-                    return self.identifier(parser, c, text);
+                    builder.push_matching(c);
+                    return self.identifier(parser, builder);
                 }
 
                 other => {
                     if is_identifier_start(other) {
-                        return self.identifier(parser, other, text);
+                        builder.push_matching(other);
+                        return self.identifier(parser, builder);
                     }
                     return Err(ParseError::IllegalCharacter(other));
                 }
             }
         }
-        Ok(TerminalId::End)
+        Ok((None, TerminalId::End))
+    }
+}
+
+struct AutoCow<'a> {
+    start: &'a str,
+    value: Option<String>,
+}
+
+impl<'a> AutoCow<'a> {
+    fn new(lexer: &Lexer<'a>) -> Self {
+        AutoCow {
+            start: lexer.chars.as_str(),
+            value: None,
+        }
+    }
+
+    // Push a char that matches lexer.chars.next()
+    fn push_matching(&mut self, c: char) {
+        if let Some(text) = &mut self.value {
+            text.push(c);
+        }
+    }
+
+    // Push a char that does not match lexer.chars.next() (for example, string escapes)
+    fn push_different(&mut self, lexer: &Lexer<'a>, c: char) {
+        self.get_mut_string(lexer).push(c);
+    }
+
+    // Force allocation of a String and return the reference to it
+    fn get_mut_string<'b, 'c>(&'b mut self, lexer: &'c Lexer<'a>) -> &'b mut String {
+        if self.value.is_none() {
+            self.value =
+                Some(self.start[..self.start.len() - lexer.chars.as_str().len()].to_string());
+        }
+        self.value.as_mut().unwrap()
+    }
+
+    fn into_cow(self, lexer: &Lexer<'a>) -> Cow<'a, str> {
+        match self.value {
+            Some(owned) => Cow::Owned(owned),
+            None => Cow::Borrowed(&self.start[..self.start.len() - lexer.chars.as_str().len()]),
+        }
     }
 }
