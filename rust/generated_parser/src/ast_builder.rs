@@ -1460,7 +1460,7 @@ impl AstBuilder {
         rest: Option<Box<Binding>>,
     ) -> Box<Binding> {
         if let Some(elision) = elision {
-            for e in elision.elements {
+            for _ in elision.elements {
                 elements.push(None);
             }
         }
@@ -1741,9 +1741,9 @@ impl AstBuilder {
     // IterationStatement : `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement
     pub fn for_await_of_statement(
         &self,
-        left: VariableDeclarationOrAssignmentTarget,
-        right: Box<Expression>,
-        block: Box<Statement>,
+        _left: VariableDeclarationOrAssignmentTarget,
+        _right: Box<Expression>,
+        _block: Box<Statement>,
     ) -> Box<Statement> {
         panic!("not present in current AST");
     }
@@ -2285,7 +2285,7 @@ impl AstBuilder {
 
     pub fn async_arrow_parameters(
         &self,
-        call_expression: Box<Expression>,
+        _call_expression: Box<Expression>,
     ) -> Box<FormalParameters> {
         unimplemented!()
     }
