@@ -150,12 +150,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn recover(
-        &mut self,
-        t: &Token<'a>,
-        error_code: ErrorCode,
-        next_state: usize,
-    ) -> Result<()> {
+    fn recover(&mut self, t: &Token<'a>, error_code: ErrorCode, next_state: usize) -> Result<()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.saw_newline
