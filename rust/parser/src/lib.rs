@@ -1,8 +1,5 @@
 #![cfg_attr(feature = "unstable", feature(test))]
 
-extern crate ast;
-extern crate generated_parser;
-
 mod errors;
 mod lexer;
 mod parser;
@@ -13,6 +10,7 @@ mod tests;
 pub use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
 use ast::{Module, Script};
+use elsa::FrozenVec;
 use generated_parser::{
     AstBuilder, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
 };
@@ -82,24 +80,24 @@ pub fn read_script_interactively(
     let mut parser = Parser::new(AstBuilder {}, START_STATE_SCRIPT);
 
     print!("{}", prompt);
-    let mut line = String::new();
+    let lines = FrozenVec::new();
     loop {
+        let mut line = String::new();
         io::stdout().flush()?;
         if io::stdin().read_line(&mut line)? == 0 {
             return Err(UserExit.into());
         }
-        let mut tokens = Lexer::new(line.chars());
+        let mut tokens = Lexer::new(lines.push_get(line).chars());
         loop {
             let t = tokens.next(&parser)?;
             if t.terminal_id == TerminalId::End {
                 break;
             }
-            parser.write_token(&t.into_static())?;
+            parser.write_token(&t)?;
         }
         if parser.can_close() {
             break;
         }
-        line.clear();
         print!("{}", continue_prompt);
     }
     match parser.close()? {
