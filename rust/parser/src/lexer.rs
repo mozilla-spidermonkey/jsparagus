@@ -823,6 +823,7 @@ impl<'a> AutoCow<'a> {
     }
 
     // Push a char that does not match lexer.chars.next() (for example, string escapes)
+    #[allow(dead_code)]
     fn push_different(&mut self, lexer: &Lexer<'a>, c: char) {
         self.get_mut_string(lexer).push(c);
     }
