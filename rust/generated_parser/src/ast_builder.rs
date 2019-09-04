@@ -3,179 +3,6 @@ use ast::*;
 
 pub struct AstBuilder {}
 
-fn pop_trailing_spread_element(
-    elements: &mut Vec<ArrayExpressionElement>,
-) -> Option<Box<Expression>> {
-    // Check whether we want to pop an element.
-    match elements.last() {
-        Some(ArrayExpressionElement::SpreadElement(_)) => {}
-        _ => return None,
-    }
-
-    // We do.
-    match elements.pop() {
-        Some(ArrayExpressionElement::SpreadElement(expression)) => Some(expression),
-        _ => panic!("last element changed since preceding check"), // can't happen
-    }
-}
-
-/// Refine an *ArrayLiteral* into an *ArrayAssignmentPattern*.
-fn array_expression_to_array_assignment_target(
-    mut elements: Vec<ArrayExpressionElement>,
-) -> ArrayAssignmentTarget {
-    let spread = pop_trailing_spread_element(&mut elements);
-    let elements = elements
-        .into_iter()
-        .map(|element| match element {
-            ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
-            ArrayExpressionElement::Expression(expression) => {
-                Some(expression_to_assignment_target_maybe_default(expression))
-            }
-            ArrayExpressionElement::Elision => None,
-        })
-        .collect();
-    ArrayAssignmentTarget {
-        elements,
-        rest: spread.map(|expr| Box::new(expression_to_assignment_target(expr))),
-    }
-}
-
-fn pop_trailing_spread_property(
-    properties: &mut Vec<Box<ObjectProperty>>,
-) -> Option<Box<Expression>> {
-    // Check whether we want to pop a PropertyDefinition
-    match properties.last().map(|boxed| &**boxed) {
-        Some(ObjectProperty::SpreadProperty(_)) => {}
-        _ => return None,
-    }
-
-    // We do.
-    match properties.pop().map(|boxed| *boxed) {
-        Some(ObjectProperty::SpreadProperty(expression)) => Some(expression),
-        _ => panic!("last property changed since preceding check"), // can't happen
-    }
-}
-
-fn object_property_to_assignment_target_property(
-    property: Box<ObjectProperty>,
-) -> AssignmentTargetProperty {
-    match *property {
-        ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
-            // TODO - change this to an error Result
-            panic!("destructuring patterns can't have methods");
-        }
-
-        ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(DataProperty {
-            property_name,
-            expression,
-        })) => AssignmentTargetProperty::AssignmentTargetPropertyProperty(
-            AssignmentTargetPropertyProperty {
-                name: property_name,
-                binding: expression_to_assignment_target_maybe_default(expression),
-            },
-        ),
-
-        ObjectProperty::ShorthandProperty(ShorthandProperty {
-            name: IdentifierExpression { name },
-        }) =>
-        // TODO - support CoverInitializedName
-        {
-            AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
-                AssignmentTargetPropertyIdentifier {
-                    binding: AssignmentTargetIdentifier { name },
-                    init: None,
-                },
-            )
-        }
-
-        ObjectProperty::SpreadProperty(expression) => {
-            // TODO - Handle this case by returning an error Result.
-            panic!("destructuring object patterns can have `...` only at the end");
-        }
-    }
-}
-
-// Refine an *ObjectLiteral* into an *ObjectAssignmentPattern*.
-fn object_expression_to_object_assignment_target(
-    mut properties: Vec<Box<ObjectProperty>>,
-) -> ObjectAssignmentTarget {
-    let spread = pop_trailing_spread_property(&mut properties);
-    let properties = properties
-        .into_iter()
-        .map(object_property_to_assignment_target_property)
-        .collect();
-    ObjectAssignmentTarget {
-        properties,
-        rest: spread.map(|expr| Box::new(expression_to_assignment_target(expr))),
-    }
-}
-
-fn expression_to_assignment_target_maybe_default(
-    expression: Box<Expression>,
-) -> AssignmentTargetMaybeDefault {
-    match *expression {
-        Expression::AssignmentExpression(AssignmentExpression {
-            binding,
-            expression,
-        }) => {
-            AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(AssignmentTargetWithDefault {
-                binding,
-                init: expression,
-            })
-        }
-        other => AssignmentTargetMaybeDefault::AssignmentTarget(expression_to_assignment_target(
-            Box::new(other),
-        )),
-    }
-}
-
-fn expression_to_assignment_target(expression: Box<Expression>) -> AssignmentTarget {
-    match *expression {
-        Expression::ArrayExpression(ArrayExpression { elements }) => {
-            AssignmentTarget::AssignmentTargetPattern(
-                AssignmentTargetPattern::ArrayAssignmentTarget(
-                    array_expression_to_array_assignment_target(elements),
-                ),
-            )
-        }
-
-        Expression::ObjectExpression(ObjectExpression { properties }) => {
-            AssignmentTarget::AssignmentTargetPattern(
-                AssignmentTargetPattern::ObjectAssignmentTarget(
-                    object_expression_to_object_assignment_target(properties),
-                ),
-            )
-        }
-
-        other => AssignmentTarget::SimpleAssignmentTarget(expression_to_simple_assignment_target(
-            Box::new(other),
-        )),
-    }
-}
-
-fn expression_to_simple_assignment_target(expression: Box<Expression>) -> SimpleAssignmentTarget {
-    match *expression {
-        Expression::IdentifierExpression(IdentifierExpression { name }) => {
-            SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier { name })
-        }
-        Expression::MemberExpression(MemberExpression::StaticMemberExpression(
-            StaticMemberExpression { object, property },
-        )) => SimpleAssignmentTarget::MemberAssignmentTarget(
-            MemberAssignmentTarget::StaticMemberAssignmentTarget(
-                StaticMemberAssignmentTarget::new(object, property),
-            ),
-        ),
-        Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
-            ComputedMemberExpression { object, expression },
-        )) => SimpleAssignmentTarget::MemberAssignmentTarget(
-            MemberAssignmentTarget::ComputedMemberAssignmentTarget(
-                ComputedMemberAssignmentTarget { object, expression },
-            ),
-        ),
-        other => panic!("invalid assignment left-hand side: {:?}", other),
-    }
-}
-
 impl AstBuilder {
     // IdentifierReference : Identifier
     pub fn identifier_reference(&self, token: Box<Token>) -> Box<Identifier> {
@@ -454,10 +281,27 @@ impl AstBuilder {
         }
     }
 
+    fn pop_trailing_spread_property(
+        &self,
+        properties: &mut Vec<Box<ObjectProperty>>,
+    ) -> Option<Box<Expression>> {
+        // Check whether we want to pop a PropertyDefinition
+        match properties.last().map(|boxed| &**boxed) {
+            Some(ObjectProperty::SpreadProperty(_)) => {}
+            _ => return None,
+        }
+
+        // We do.
+        match properties.pop().map(|boxed| *boxed) {
+            Some(ObjectProperty::SpreadProperty(expression)) => Some(expression),
+            _ => panic!("last property changed since preceding check"), // can't happen
+        }
+    }
+
     /// Refine an *ObjectLiteral* into an *ObjectBindingPattern*.
     fn object_expression_to_object_binding(&self, object: ObjectExpression) -> ObjectBinding {
         let mut properties = object.properties;
-        let rest = pop_trailing_spread_property(&mut properties);
+        let rest = self.pop_trailing_spread_property(&mut properties);
         ObjectBinding {
             properties: properties
                 .into_iter()
@@ -487,6 +331,23 @@ impl AstBuilder {
             .collect()
     }
 
+    fn pop_trailing_spread_element(
+        &self,
+        elements: &mut Vec<ArrayExpressionElement>,
+    ) -> Option<Box<Expression>> {
+        // Check whether we want to pop an element.
+        match elements.last() {
+            Some(ArrayExpressionElement::SpreadElement(_)) => {}
+            _ => return None,
+        }
+
+        // We do.
+        match elements.pop() {
+            Some(ArrayExpressionElement::SpreadElement(expression)) => Some(expression),
+            _ => panic!("last element changed since preceding check"), // can't happen
+        }
+    }
+
     fn expression_to_parameter(&self, expression: Expression) -> Parameter {
         match expression {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
@@ -502,7 +363,7 @@ impl AstBuilder {
             }),
 
             Expression::ArrayExpression(ArrayExpression { mut elements }) => {
-                let rest = pop_trailing_spread_element(&mut elements);
+                let rest = self.pop_trailing_spread_element(&mut elements);
                 Parameter::Binding(Binding::BindingPattern(BindingPattern::ArrayBinding(
                     ArrayBinding {
                         elements: self.array_elements_to_parameters(elements),
@@ -1000,7 +861,7 @@ impl AstBuilder {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             false,
             UpdateOperator::Increment,
-            expression_to_simple_assignment_target(operand),
+            self.expression_to_simple_assignment_target(operand),
         )))
     }
 
@@ -1009,7 +870,7 @@ impl AstBuilder {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             false,
             UpdateOperator::Decrement,
-            expression_to_simple_assignment_target(operand),
+            self.expression_to_simple_assignment_target(operand),
         )))
     }
 
@@ -1018,7 +879,7 @@ impl AstBuilder {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             true,
             UpdateOperator::Increment,
-            expression_to_simple_assignment_target(operand),
+            self.expression_to_simple_assignment_target(operand),
         )))
     }
 
@@ -1027,7 +888,7 @@ impl AstBuilder {
         Box::new(Expression::UpdateExpression(UpdateExpression::new(
             true,
             UpdateOperator::Decrement,
-            expression_to_simple_assignment_target(operand),
+            self.expression_to_simple_assignment_target(operand),
         )))
     }
 
@@ -1228,13 +1089,165 @@ impl AstBuilder {
         }))
     }
 
+    /// Refine an *ArrayLiteral* into an *ArrayAssignmentPattern*.
+    fn array_expression_to_array_assignment_target(
+        &self,
+        mut elements: Vec<ArrayExpressionElement>,
+    ) -> ArrayAssignmentTarget {
+        let spread = self.pop_trailing_spread_element(&mut elements);
+        let elements = elements
+            .into_iter()
+            .map(|element| match element {
+                ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
+                ArrayExpressionElement::Expression(expression) => {
+                    Some(self.expression_to_assignment_target_maybe_default(expression))
+                }
+                ArrayExpressionElement::Elision => None,
+            })
+            .collect();
+        ArrayAssignmentTarget {
+            elements,
+            rest: spread.map(|expr| Box::new(self.expression_to_assignment_target(expr))),
+        }
+    }
+
+    fn object_property_to_assignment_target_property(
+        &self,
+        property: Box<ObjectProperty>,
+    ) -> AssignmentTargetProperty {
+        match *property {
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
+                // TODO - change this to an error Result
+                panic!("destructuring patterns can't have methods");
+            }
+
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
+                DataProperty {
+                    property_name,
+                    expression,
+                },
+            )) => AssignmentTargetProperty::AssignmentTargetPropertyProperty(
+                AssignmentTargetPropertyProperty {
+                    name: property_name,
+                    binding: self.expression_to_assignment_target_maybe_default(expression),
+                },
+            ),
+
+            ObjectProperty::ShorthandProperty(ShorthandProperty {
+                name: IdentifierExpression { name },
+            }) =>
+            // TODO - support CoverInitializedName
+            {
+                AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
+                    AssignmentTargetPropertyIdentifier {
+                        binding: AssignmentTargetIdentifier { name },
+                        init: None,
+                    },
+                )
+            }
+
+            ObjectProperty::SpreadProperty(_expression) => {
+                // TODO - Handle this case by returning an error Result.
+                panic!("destructuring object patterns can have `...` only at the end");
+            }
+        }
+    }
+
+    // Refine an *ObjectLiteral* into an *ObjectAssignmentPattern*.
+    fn object_expression_to_object_assignment_target(
+        &self,
+        mut properties: Vec<Box<ObjectProperty>>,
+    ) -> ObjectAssignmentTarget {
+        let spread = self.pop_trailing_spread_property(&mut properties);
+        let properties = properties
+            .into_iter()
+            .map(|p| self.object_property_to_assignment_target_property(p))
+            .collect();
+        ObjectAssignmentTarget {
+            properties,
+            rest: spread.map(|expr| Box::new(self.expression_to_assignment_target(expr))),
+        }
+    }
+
+    fn expression_to_assignment_target_maybe_default(
+        &self,
+        expression: Box<Expression>,
+    ) -> AssignmentTargetMaybeDefault {
+        match *expression {
+            Expression::AssignmentExpression(AssignmentExpression {
+                binding,
+                expression,
+            }) => AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(
+                AssignmentTargetWithDefault {
+                    binding,
+                    init: expression,
+                },
+            ),
+            other => AssignmentTargetMaybeDefault::AssignmentTarget(
+                self.expression_to_assignment_target(Box::new(other)),
+            ),
+        }
+    }
+
+    fn expression_to_assignment_target(&self, expression: Box<Expression>) -> AssignmentTarget {
+        match *expression {
+            Expression::ArrayExpression(ArrayExpression { elements }) => {
+                AssignmentTarget::AssignmentTargetPattern(
+                    AssignmentTargetPattern::ArrayAssignmentTarget(
+                        self.array_expression_to_array_assignment_target(elements),
+                    ),
+                )
+            }
+
+            Expression::ObjectExpression(ObjectExpression { properties }) => {
+                AssignmentTarget::AssignmentTargetPattern(
+                    AssignmentTargetPattern::ObjectAssignmentTarget(
+                        self.object_expression_to_object_assignment_target(properties),
+                    ),
+                )
+            }
+
+            other => AssignmentTarget::SimpleAssignmentTarget(
+                self.expression_to_simple_assignment_target(Box::new(other)),
+            ),
+        }
+    }
+
+    fn expression_to_simple_assignment_target(
+        &self,
+        expression: Box<Expression>,
+    ) -> SimpleAssignmentTarget {
+        match *expression {
+            Expression::IdentifierExpression(IdentifierExpression { name }) => {
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                })
+            }
+            Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                StaticMemberExpression { object, property },
+            )) => SimpleAssignmentTarget::MemberAssignmentTarget(
+                MemberAssignmentTarget::StaticMemberAssignmentTarget(
+                    StaticMemberAssignmentTarget::new(object, property),
+                ),
+            ),
+            Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+                ComputedMemberExpression { object, expression },
+            )) => SimpleAssignmentTarget::MemberAssignmentTarget(
+                MemberAssignmentTarget::ComputedMemberAssignmentTarget(
+                    ComputedMemberAssignmentTarget { object, expression },
+                ),
+            ),
+            other => panic!("invalid assignment left-hand side: {:?}", other),
+        }
+    }
+
     // AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression
     pub fn assignment_expr(
         &self,
         left_hand_side: Box<Expression>,
         value: Box<Expression>,
     ) -> Box<Expression> {
-        let target = expression_to_assignment_target(left_hand_side);
+        let target = self.expression_to_assignment_target(left_hand_side);
         Box::new(Expression::AssignmentExpression(AssignmentExpression::new(
             target, value,
         )))
@@ -1288,7 +1301,7 @@ impl AstBuilder {
         operator: Box<CompoundAssignmentOperator>,
         value: Box<Expression>,
     ) -> Box<Expression> {
-        let target = expression_to_simple_assignment_target(left_hand_side);
+        let target = self.expression_to_simple_assignment_target(left_hand_side);
         Box::new(Expression::CompoundAssignmentExpression(
             CompoundAssignmentExpression::new(*operator, target, value),
         ))
@@ -1695,9 +1708,9 @@ impl AstBuilder {
         &self,
         expression: Box<Expression>,
     ) -> VariableDeclarationOrAssignmentTarget {
-        VariableDeclarationOrAssignmentTarget::AssignmentTarget(expression_to_assignment_target(
-            expression,
-        ))
+        VariableDeclarationOrAssignmentTarget::AssignmentTarget(
+            self.expression_to_assignment_target(expression),
+        )
     }
 
     pub fn unbox_for_declaration(
