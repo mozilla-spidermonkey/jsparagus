@@ -39,7 +39,7 @@ impl<'a> Lexer<'a> {
         self.chars.as_str().chars().next()
     }
 
-    pub fn next(&mut self, parser: &Parser<'a>) -> Result<Token<'a>> {
+    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<Token<'a>> {
         let mut saw_newline = false;
         self.advance_impl(parser, &mut saw_newline)
             .map(|(value, terminal_id)| Token {
@@ -290,9 +290,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn identifier(
+    fn identifier<'parser>(
         &mut self,
-        parser: &Parser<'a>,
+        parser: &Parser<'parser>,
         mut builder: AutoCow<'a>,
     ) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
         while let Some(ch) = self.peek() {
@@ -367,9 +367,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn advance_impl(
+    fn advance_impl<'parser>(
         &mut self,
-        parser: &Parser<'a>,
+        parser: &Parser<'parser>,
         saw_newline: &mut bool,
     ) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
         let mut builder = AutoCow::new(&self);

@@ -1,5 +1,3 @@
-fn main() {}
-/*
 fn main() {
     println!("Warning: The disassembler we're using here is extremely inaccurate.");
     loop {
@@ -19,4 +17,3 @@ fn main() {
         }
     }
 }
-*/

@@ -67,7 +67,6 @@ impl Error for UserExit {
     }
 }
 
-/*
 /// Prompt the user for some JS code and read a script from stdin.
 /// Returns the parsed script.
 ///
@@ -95,7 +94,7 @@ pub fn read_script_interactively(
             if t.terminal_id == TerminalId::End {
                 break;
             }
-            parser.write_token(&t)?;
+            parser.write_token(&t.into_static())?;
         }
         if parser.can_close() {
             break;
@@ -113,4 +112,3 @@ pub fn read_script_interactively(
         }
     }
 }
-*/
