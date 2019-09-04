@@ -67,6 +67,7 @@ impl Error for UserExit {
     }
 }
 
+/*
 /// Prompt the user for some JS code and read a script from stdin.
 /// Returns the parsed script.
 ///
@@ -112,3 +113,4 @@ pub fn read_script_interactively(
         }
     }
 }
+*/

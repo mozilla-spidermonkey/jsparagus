@@ -352,9 +352,9 @@ impl<'a> Lexer<'a> {
             "with" => Ok((None, TerminalId::With)),
             "yield" => self.conditional_keyword(parser, TerminalId::Yield, text),
             "null" => Ok((None, TerminalId::NullLiteral)),
-            "true" => Ok((None, TerminalId::BooleanLiteral)),
-            "false" => Ok((None, TerminalId::BooleanLiteral)),
-            _ => Ok((None, TerminalId::Identifier)),
+            "true" => Ok((Some(text), TerminalId::BooleanLiteral)),
+            "false" => Ok((Some(text), TerminalId::BooleanLiteral)),
+            _ => Ok((Some(text), TerminalId::Identifier)),
         }
     }
 
@@ -392,18 +392,19 @@ impl<'a> Lexer<'a> {
                     // with category "Space_Separator" (Zs). New Unicode
                     // standards may add characters to this set. This should therefore be
                     // implemented using the Unicode database somehow.
+                    builder = AutoCow::new(&self);
                     continue;
                 }
 
                 // LineTerminator
                 '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => {
                     *saw_newline = true;
+                    builder = AutoCow::new(&self);
                     continue;
                 }
 
                 // Numbers
                 '0'..='9' => {
-                    let start = self.chars.as_str();
                     match self.peek() {
                         // DecimalLiteral
                         Some('0'..='9') if c != '0' => {
@@ -447,7 +448,6 @@ impl<'a> Lexer<'a> {
                                     '0'..='7' => {
                                         at_least_one = true;
                                         self.chars.next();
-                                        next;
                                     }
                                     _ => break,
                                 }
@@ -493,8 +493,8 @@ impl<'a> Lexer<'a> {
                         }
                     }
 
-                    let token = &start[..start.len() - self.chars.as_str().len()];
-                    return Ok((Some(Cow::Borrowed(token)), TerminalId::NumericLiteral));
+                    // Don't have to push_matching since push_different is never called.
+                    return Ok((Some(builder.into_cow(&self)), TerminalId::NumericLiteral));
                 }
 
                 // Strings
@@ -592,6 +592,7 @@ impl<'a> Lexer<'a> {
                                 // TODO: Limit this to Script (not Module) and
                                 // at the start of a line.
                                 self.skip_single_line_comment();
+                                builder = AutoCow::new(&self);
                                 continue;
                             }
                             _ => return Ok((None, TerminalId::HyphenMinusHyphenMinus)),
@@ -616,7 +617,6 @@ impl<'a> Lexer<'a> {
                         }
                     }
                     Some('0'..='9') => {
-                        let start = self.chars.as_str();
                         self.accept_digits();
                         self.optional_exponent()?;
 
@@ -629,8 +629,8 @@ impl<'a> Lexer<'a> {
                             }
                         }
 
-                        let token = &start[..start.len() - self.chars.as_str().len()];
-                        return Ok((Some(Cow::Borrowed(token)), TerminalId::NumericLiteral));
+                        // Don't have to push_matching since push_different is never called.
+                        return Ok((Some(builder.into_cow(&self)), TerminalId::NumericLiteral));
                     }
                     _ => return Ok((None, TerminalId::FullStop)),
                 },
@@ -641,6 +641,7 @@ impl<'a> Lexer<'a> {
                     Some('/') => {
                         self.chars.next();
                         self.skip_single_line_comment();
+                        builder = AutoCow::new(&self);
                         continue;
                     }
                     // Multiline comment
@@ -653,6 +654,7 @@ impl<'a> Lexer<'a> {
                                 break;
                             }
                         }
+                        builder = AutoCow::new(&self);
                         continue;
                     }
                     _ => {
@@ -695,6 +697,7 @@ impl<'a> Lexer<'a> {
                         if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
                         {
                             self.skip_single_line_comment();
+                            builder = AutoCow::new(&self);
                             continue;
                         }
                         return Ok((None, TerminalId::LessThanSign));
