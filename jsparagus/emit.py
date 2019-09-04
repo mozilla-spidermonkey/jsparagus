@@ -205,6 +205,15 @@ class RustParserWriter:
         self.write(3, "value: None,")
         self.write(2, "}")
         self.write(1, "}")
+        self.write(0, "")
+
+        self.write(1, "pub fn into_static(self) -> Token<'static> {")
+        self.write(2, "Token {")
+        self.write(3, "terminal_id: self.terminal_id,")
+        self.write(3, "saw_newline: self.saw_newline,")
+        self.write(3, "value: self.value.map(|v| Cow::Owned(v.into_owned())),")
+        self.write(2, "}")
+        self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
 

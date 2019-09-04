@@ -90,7 +90,7 @@ impl<'a> Parser<'a> {
         action
     }
 
-    pub fn write_token(&mut self, token: &Token<'a>) -> Result<'a, ()> {
+    pub fn write_token(&mut self, token: &Token<'a>) -> Result<()> {
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn close(&mut self) -> Result<'a, StackValue<'a>> {
+    pub fn close(&mut self) -> Result<StackValue<'a>> {
         // Loop for error-handling.
         loop {
             let action = self.reduce_all(TerminalId::End);
@@ -121,15 +121,15 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_error(t: &Token<'a>) -> Result<'a, ()> {
+    fn parse_error(t: &Token<'a>) -> Result<()> {
         Err(if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
-            ParseError::SyntaxError(t.clone())
+            ParseError::SyntaxError(t.clone().into_static())
         })
     }
 
-    fn try_error_handling(&mut self, t: &Token<'a>) -> Result<'a, ()> {
+    fn try_error_handling(&mut self, t: &Token<'a>) -> Result<()> {
         // Error recovery version of the code in write_terminal. Differences
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
@@ -155,7 +155,7 @@ impl<'a> Parser<'a> {
         t: &Token<'a>,
         error_code: ErrorCode,
         next_state: usize,
-    ) -> Result<'a, ()> {
+    ) -> Result<()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.saw_newline

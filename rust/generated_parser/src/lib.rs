@@ -138,6 +138,14 @@ impl Token<'_> {
             value: None,
         }
     }
+
+    pub fn into_static(self) -> Token<'static> {
+        Token {
+            terminal_id: self.terminal_id,
+            saw_newline: self.saw_newline,
+            value: self.value.map(|v| Cow::Owned(v.into_owned())),
+        }
+    }
 }
 
 #[rustfmt::skip]

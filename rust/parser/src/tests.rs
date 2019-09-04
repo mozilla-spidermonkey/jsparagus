@@ -29,7 +29,7 @@ mod benchmarks {
 }
 
 // Change Cow::Borrowed to Cow::Owned, and slap on a 'static
-fn alloc_result<T>(result: Result<T>) -> Result<'static, T> {
+fn alloc_result<T>(result: Result<T>) -> Result<T> {
     match result {
         Ok(ok) => Ok(ok),
         Err(err) => Err(match err {
@@ -77,7 +77,7 @@ fn chunks_to_string<'a, T: IntoChunks<'a>>(code: T) -> String {
     buf
 }
 
-fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<'a, Box<Script>> {
+fn try_parse<'a, T: IntoChunks<'a>>(code: T) -> Result<Box<Script>> {
     let buf = chunks_to_string(code);
     alloc_result(parse_script(&buf))
 }

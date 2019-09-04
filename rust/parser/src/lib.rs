@@ -30,7 +30,7 @@ pub fn parse_module(source: &str) -> Result<Box<Module>> {
     Ok(parse(source, START_STATE_MODULE)?.to_ast())
 }
 
-fn parse<'a>(source: &'a str, start_state: usize) -> Result<'a, StackValue<'a>> {
+fn parse<'a>(source: &'a str, start_state: usize) -> Result<StackValue<'a>> {
     let mut tokens = Lexer::new(source.chars());
 
     TABLES.check();
@@ -67,7 +67,6 @@ impl Error for UserExit {
     }
 }
 
-/*
 /// Prompt the user for some JS code and read a script from stdin.
 /// Returns the parsed script.
 ///
@@ -113,4 +112,3 @@ pub fn read_script_interactively(
         }
     }
 }
-*/
