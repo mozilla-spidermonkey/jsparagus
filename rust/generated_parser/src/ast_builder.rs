@@ -10,8 +10,8 @@ impl AstBuilder {
     }
 
     // BindingIdentifier : Identifier
-    pub fn binding_identifier(&self, a0: Box<Token>) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(self.identifier(a0)))
+    pub fn binding_identifier(&self, token: Box<Token>) -> Box<BindingIdentifier> {
+        Box::new(BindingIdentifier::new(self.identifier(token)))
     }
 
     // BindingIdentifier : `yield`
@@ -1308,8 +1308,8 @@ impl AstBuilder {
     }
 
     // BlockStatement : Block
-    pub fn block_statement(&self, a0: Box<Block>) -> Box<Statement> {
-        Box::new(Statement::BlockStatement(BlockStatement::new(*a0)))
+    pub fn block_statement(&self, block: Box<Block>) -> Box<Statement> {
+        Box::new(Statement::BlockStatement(BlockStatement::new(*block)))
     }
 
     // Block : `{` StatementList? `}`
@@ -1341,11 +1341,11 @@ impl AstBuilder {
     // LexicalDeclaration : LetOrConst BindingList `;`
     pub fn lexical_declaration(
         &self,
-        a0: Box<VariableDeclarationKind>,
-        a1: Box<Vec<VariableDeclarator>>,
+        kind: Box<VariableDeclarationKind>,
+        declarators: Box<Vec<VariableDeclarator>>,
     ) -> Box<Statement> {
         Box::new(Statement::VariableDeclarationStatement(
-            VariableDeclaration::new(*a0, *a1),
+            VariableDeclaration::new(*kind, *declarators),
         ))
     }
 
@@ -1371,19 +1371,6 @@ impl AstBuilder {
     // LetOrConst : `const`
     pub fn const_kind(&self) -> Box<VariableDeclarationKind> {
         Box::new(VariableDeclarationKind::Const)
-    }
-
-    // LexicalBinding ::= BindingIdentifier Initializer => LexicalBinding 0($0, Some($1))
-    pub fn lexical_binding_p0(
-        &self,
-        a0: Box<BindingIdentifier>,
-        a1: Option<Box<Expression>>,
-    ) -> Box<VariableDeclarator> {
-        Box::new(VariableDeclarator::new(Binding::BindingIdentifier(*a0), a1))
-    }
-    // LexicalBinding ::= BindingPattern Initializer => LexicalBinding 1($0, $1)
-    pub fn lexical_binding_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(LexicalBinding::new())
     }
 
     // VariableStatement : `var` VariableDeclarationList `;`
@@ -1597,8 +1584,8 @@ impl AstBuilder {
     }
 
     // ExpressionStatement : [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression `;`
-    pub fn expression_statement(&self, a0: Box<Expression>) -> Box<Statement> {
-        Box::new(Statement::ExpressionStatement(a0))
+    pub fn expression_statement(&self, expression: Box<Expression>) -> Box<Statement> {
+        Box::new(Statement::ExpressionStatement(expression))
     }
 
     // IfStatement : `if` `(` Expression `)` Statement `else` Statement
@@ -1769,8 +1756,11 @@ impl AstBuilder {
     // ForBinding : BindingIdentifier
     // LexicalBinding : BindingIdentifier Initializer?
     // VariableDeclaration : BindingIdentifier Initializer?
-    pub fn binding_identifier_to_binding(&self, a0: Box<BindingIdentifier>) -> Box<Binding> {
-        Box::new(Binding::BindingIdentifier(*a0))
+    pub fn binding_identifier_to_binding(
+        &self,
+        identifier: Box<BindingIdentifier>,
+    ) -> Box<Binding> {
+        Box::new(Binding::BindingIdentifier(*identifier))
     }
 
     // ContinueStatement : `continue` `;`
@@ -1856,30 +1846,30 @@ impl AstBuilder {
     }
 
     // CaseClauses : CaseClause
-    pub fn case_clauses_single(&self, a0: Box<SwitchCase>) -> Box<Vec<SwitchCase>> {
-        Box::new(vec![*a0])
+    pub fn case_clauses_single(&self, case: Box<SwitchCase>) -> Box<Vec<SwitchCase>> {
+        Box::new(vec![*case])
     }
 
     // CaseClauses : CaseClauses CaseClause
     pub fn case_clauses_append(
         &self,
-        mut a0: Box<Vec<SwitchCase>>,
-        a1: Box<SwitchCase>,
+        mut cases: Box<Vec<SwitchCase>>,
+        case: Box<SwitchCase>,
     ) -> Box<Vec<SwitchCase>> {
-        a0.push(*a1);
-        a0
+        cases.push(*case);
+        cases
     }
 
     // CaseClause : `case` Expression `:` StatementList
     pub fn case_clause(
         &self,
-        a0: Box<Expression>,
-        a1: Option<Box<Vec<Statement>>>,
+        expression: Box<Expression>,
+        statements: Option<Box<Vec<Statement>>>,
     ) -> Box<SwitchCase> {
-        if let Some(a1) = a1 {
-            Box::new(SwitchCase::new(a0, *a1))
+        if let Some(statements) = statements {
+            Box::new(SwitchCase::new(expression, *statements))
         } else {
-            Box::new(SwitchCase::new(a0, Vec::new()))
+            Box::new(SwitchCase::new(expression, Vec::new()))
         }
     }
 
@@ -2006,9 +1996,12 @@ impl AstBuilder {
     }
 
     // UniqueFormalParameters : FormalParameters
-    pub fn unique_formal_parameters(&self, a0: Box<FormalParameters>) -> Box<FormalParameters> {
+    pub fn unique_formal_parameters(
+        &self,
+        parameters: Box<FormalParameters>,
+    ) -> Box<FormalParameters> {
         // TODO
-        a0
+        parameters
     }
 
     // FormalParameters : [empty]
@@ -2028,8 +2021,8 @@ impl AstBuilder {
     }
 
     // FormalParameterList : FormalParameter
-    pub fn formal_parameter_list_single(&self, a0: Box<Parameter>) -> Box<FormalParameters> {
-        Box::new(FormalParameters::new(vec![*a0], None))
+    pub fn formal_parameter_list_single(&self, parameter: Box<Parameter>) -> Box<FormalParameters> {
+        Box::new(FormalParameters::new(vec![*parameter], None))
     }
 
     // FormalParameterList : FormalParameterList "," FormalParameter
@@ -2043,15 +2036,18 @@ impl AstBuilder {
     }
 
     // FunctionBody : FunctionStatementList
-    pub fn function_body(&self, a0: Box<Vec<Statement>>) -> Box<FunctionBody> {
+    pub fn function_body(&self, statements: Box<Vec<Statement>>) -> Box<FunctionBody> {
         // TODO: Directives
-        Box::new(FunctionBody::new(Vec::new(), *a0))
+        Box::new(FunctionBody::new(Vec::new(), *statements))
     }
 
     // FunctionStatementList : StatementList?
-    pub fn function_statement_list(&self, a0: Option<Box<Vec<Statement>>>) -> Box<Vec<Statement>> {
-        match a0 {
-            Some(a0) => a0,
+    pub fn function_statement_list(
+        &self,
+        statements: Option<Box<Vec<Statement>>>,
+    ) -> Box<Vec<Statement>> {
+        match statements {
+            Some(statements) => statements,
             None => Box::new(Vec::new()),
         }
     }
@@ -2290,16 +2286,16 @@ impl AstBuilder {
         unimplemented!()
     }
 
-    // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => CoverCallExpressionAndAsyncArrowHead($0, $1)
+    // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments
     pub fn cover_call_expression_and_async_arrow_head(
         &self,
-        a0: Box<Expression>,
-        a1: Box<Arguments>,
+        callee: Box<Expression>,
+        arguments: Box<Arguments>,
     ) -> Box<Expression> {
         // TODO
         Box::new(Expression::CallExpression(CallExpression::new(
-            ExpressionOrSuper::Expression(Box::new(*a0)),
-            *a1,
+            ExpressionOrSuper::Expression(callee),
+            *arguments,
         )))
     }
 
@@ -2312,9 +2308,9 @@ impl AstBuilder {
     }
 
     // ScriptBody : StatementList
-    pub fn script_body(&self, a0: Box<Vec<Statement>>) -> Box<Script> {
+    pub fn script_body(&self, statements: Box<Vec<Statement>>) -> Box<Script> {
         // TODO: directives
-        Box::new(Script::new(Vec::new(), *a0))
+        Box::new(Script::new(Vec::new(), *statements))
     }
 
     // Module ::= ModuleBody => Module(Some($0))
