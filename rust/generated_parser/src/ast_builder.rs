@@ -257,7 +257,7 @@ impl AstBuilder {
                 })
             }
 
-            ObjectProperty::SpreadProperty(expression) => {
+            ObjectProperty::SpreadProperty(_expression) => {
                 // TODO - change this to an error Result
                 panic!("destructuring patterns can have `...` only at the end");
             }
@@ -321,7 +321,7 @@ impl AstBuilder {
                 ArrayExpressionElement::Expression(expr) => {
                     Some(self.expression_to_parameter(*expr))
                 }
-                ArrayExpressionElement::SpreadElement(expr) => {
+                ArrayExpressionElement::SpreadElement(_expr) => {
                     // ([...a, b]) => {}
                     // TODO - use Result to indicate this early error
                     panic!("rest parameter not at end of arrow parameter list");
@@ -369,9 +369,7 @@ impl AstBuilder {
                         elements: self.array_elements_to_parameters(elements),
                         rest: rest.map(|expr| match self.expression_to_parameter(*expr) {
                             Parameter::Binding(b) => Box::new(b),
-                            Parameter::BindingWithDefault(BindingWithDefault {
-                                binding, ..
-                            }) => panic!(
+                            Parameter::BindingWithDefault(_) => panic!(
                                 "default value not allowed for rest binding in array destructuring"
                             ),
                         }),
@@ -611,7 +609,7 @@ impl AstBuilder {
     }
 
     // PropertyDefinition : CoverInitializedName
-    pub fn property_definition_cover(&self, a0: Box<Void>) -> Box<ObjectProperty> {
+    pub fn property_definition_cover(&self, _a0: Box<Void>) -> Box<ObjectProperty> {
         // Awkward. This needs to be stored somehow until we reach an enclosing thing.
         unimplemented!();
     }
@@ -670,9 +668,12 @@ impl AstBuilder {
         }))
     }
 
-    // CoverInitializedName ::= IdentifierReference Initializer => CoverInitializedName($0, $1)
-    pub fn cover_initialized_name(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(CoverInitializedName::new())
+    // CoverInitializedName : IdentifierReference Initializer
+    pub fn cover_initialized_name(&self, _a0: Box<Void>, _a1: Box<Expression>) -> Box<Void> {
+        // Awkward. This needs to be stored somehow until we reach an enclosing
+        // context where it can be reinterpreted as a default value in an
+        // object destructuring assignment pattern.
+        unimplemented!();
     }
 
     // TemplateLiteral : NoSubstitutionTemplate
@@ -686,7 +687,10 @@ impl AstBuilder {
             )],
         })
     }
+}
 
+#[allow(unused_variables)]
+impl AstBuilder {
     // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
     pub fn template_literal_p1(&self, a0: Box<Void>) -> Box<TemplateExpression> {
         unimplemented!(); // Box::new(TemplateLiteral::new())
@@ -716,7 +720,9 @@ impl AstBuilder {
     ) -> Box<Void> {
         unimplemented!(); // Box::new(TemplateMiddleList::new())
     }
+}
 
+impl AstBuilder {
     // MemberExpression : MemberExpression `[` Expression `]`
     // CallExpression : CallExpression `[` Expression `]`
     pub fn computed_member_expr(
@@ -2312,7 +2318,10 @@ impl AstBuilder {
         // TODO: directives
         Box::new(Script::new(Vec::new(), *statements))
     }
+}
 
+#[allow(unused_variables)]
+impl AstBuilder {
     // Module ::= ModuleBody => Module(Some($0))
     pub fn module(&self, a0: Option<Box<Void>>) -> Box<Void> {
         unimplemented!(); // Box::new(Module::new())
