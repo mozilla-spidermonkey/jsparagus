@@ -135,7 +135,6 @@ export extends finally for function if import in instanceof new return super
 switch this throw try typeof var void while with yield
 enum
 null true false
-endif
 '''.split())
 
 
