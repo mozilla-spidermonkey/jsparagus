@@ -1,6 +1,10 @@
 mod demo;
 
+use jemallocator::Jemalloc;
 use std::env;
+
+#[global_allocator]
+static ALLOC: Jemalloc = Jemalloc;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

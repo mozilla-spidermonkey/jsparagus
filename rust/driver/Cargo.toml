@@ -8,3 +8,4 @@ edition = "2018"
 ast = { path = "../ast" }
 emitter = { path = "../emitter" }
 parser = { path = "../parser" }
+jemallocator = "0.3.2"
