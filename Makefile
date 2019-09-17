@@ -25,6 +25,7 @@ $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 
 $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
 	(cd rust/ast && $(PYTHON) generate_ast.py)
+	(cd rust && cargo fmt -- $(subst rust/,,$(RS_AST_OUT)))
 
 $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
