@@ -8,7 +8,7 @@ pub use crate::emitter::EmitResult;
 pub use dis::dis;
 
 pub fn emit(ast: &mut ast::Program) -> EmitResult {
-    lower::run(ast);
+    //lower::run(ast);
     ast_emitter::emit_program(ast)
 }
 
@@ -17,12 +17,14 @@ mod tests {
     use super::emit;
     use crate::dis::*;
     use crate::opcode::*;
+    use bumpalo::Bump;
     use parser::parse_script;
 
     fn bytecode(source: &str) -> Vec<u8> {
-        let parse_result = parse_script(source).expect("Failed to parse");
+        let alloc = &Bump::new();
+        let parse_result = parse_script(alloc, source).expect("Failed to parse");
         // println!("{:?}", parse_result);
-        let bc = emit(&mut ast::Program::Script(*parse_result)).bytecode;
+        let bc = emit(&mut ast::Program::Script(parse_result.unbox())).bytecode;
         println!("{}", dis(&bc));
         bc
     }

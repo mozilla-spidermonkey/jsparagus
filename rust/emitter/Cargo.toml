@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "../ast" }
+bumpalo = "2.6.0"
 
 [dev-dependencies]
 parser = { path = "../parser" }

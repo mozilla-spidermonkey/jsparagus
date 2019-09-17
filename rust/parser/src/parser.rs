@@ -36,14 +36,14 @@ impl Action {
     }
 }
 
-pub struct Parser<'a> {
+pub struct Parser<'alloc> {
     state_stack: Vec<usize>,
-    node_stack: Vec<StackValue<'a>>,
-    handler: AstBuilder,
+    node_stack: Vec<StackValue<'alloc>>,
+    handler: AstBuilder<'alloc>,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(handler: AstBuilder, entry_state: usize) -> Self {
+impl<'alloc> Parser<'alloc> {
+    pub fn new(handler: AstBuilder<'alloc>, entry_state: usize) -> Self {
         TABLES.check();
         assert!(entry_state < TABLES.state_count);
 
@@ -90,14 +90,14 @@ impl<'a> Parser<'a> {
         action
     }
 
-    pub fn write_token(&mut self, token: &Token<'a>) -> Result<()> {
+    pub fn write_token(&mut self, token: &Token<'alloc>) -> Result<()> {
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
             let action = self.reduce_all(token.terminal_id);
             if action.is_shift() {
                 self.node_stack
-                    .push(StackValue::Token(Box::new(token.clone())));
+                    .push(StackValue::Token(self.handler.alloc(token.clone())));
                 self.state_stack.push(action.shift_state());
                 return Ok(());
             } else {
@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn close(&mut self) -> Result<StackValue<'a>> {
+    pub fn close(&mut self) -> Result<StackValue<'alloc>> {
         // Loop for error-handling.
         loop {
             let action = self.reduce_all(TerminalId::End);
@@ -121,7 +121,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_error(t: &Token<'a>) -> Result<()> {
+    fn parse_error(t: &Token<'alloc>) -> Result<()> {
         Err(if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
@@ -129,7 +129,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn try_error_handling(&mut self, t: &Token<'a>) -> Result<()> {
+    fn try_error_handling(&mut self, t: &Token<'alloc>) -> Result<()> {
         // Error recovery version of the code in write_terminal. Differences
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
@@ -150,7 +150,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn recover(&mut self, t: &Token<'a>, error_code: ErrorCode, next_state: usize) -> Result<()> {
+    fn recover(
+        &mut self,
+        t: &Token<'alloc>,
+        error_code: ErrorCode,
+        next_state: usize,
+    ) -> Result<()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.saw_newline

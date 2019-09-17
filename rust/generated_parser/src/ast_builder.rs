@@ -1,55 +1,112 @@
 use crate::Token;
 use ast::*;
+use bumpalo::{vec, Bump};
 
-pub struct AstBuilder {}
+pub struct AstBuilder<'alloc> {
+    pub allocator: &'alloc Bump,
+}
 
-impl AstBuilder {
+impl<'alloc> AstBuilder<'alloc> {
+    pub fn alloc<T>(&self, value: T) -> arena::Box<'alloc, T> {
+        arena::alloc(self.allocator, value)
+    }
+
+    pub fn to_string(&self, s: &str) -> arena::String<'alloc> {
+        arena::String::from_str_in(s, self.allocator)
+    }
+
+    fn boxed_token_to_string(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::String<'alloc> {
+        self.to_string(token.unbox().value.unwrap().as_ref())
+    }
+
+    fn new_vec<T>(&self) -> arena::Vec<'alloc, T> {
+        arena::Vec::new_in(self.allocator)
+    }
+
+    fn new_vec_single<T>(&self, value: T) -> arena::Vec<'alloc, T> {
+        vec![in self.allocator; value]
+    }
+
+    fn collect_vec<C: IntoIterator>(&self, items: C) -> arena::Vec<'alloc, C::Item> {
+        arena::Vec::from_iter_in(items, self.allocator)
+    }
+
+    fn push<T>(&self, list: &mut arena::Vec<'alloc, T>, value: T) {
+        list.push(value);
+    }
+
+    fn append<T>(&self, list: &mut arena::Vec<'alloc, T>, elements: &mut arena::Vec<'alloc, T>) {
+        list.append(elements);
+    }
+
     // IdentifierReference : Identifier
-    pub fn identifier_reference(&self, token: Box<Token>) -> Box<Identifier> {
-        Box::new(self.identifier(token))
+    pub fn identifier_reference(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Identifier<'alloc>> {
+        self.alloc(self.identifier(token))
     }
 
     // BindingIdentifier : Identifier
-    pub fn binding_identifier(&self, token: Box<Token>) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(self.identifier(token)))
+    pub fn binding_identifier(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
+        self.alloc(BindingIdentifier::new(self.identifier(token)))
     }
 
     // BindingIdentifier : `yield`
-    pub fn binding_identifier_yield(&self) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(Identifier::new("yield".to_string())))
+    pub fn binding_identifier_yield(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
+        self.alloc(BindingIdentifier::new(Identifier::new(
+            self.to_string("yield"),
+        )))
     }
 
     // BindingIdentifier : `await`
-    pub fn binding_identifier_await(&self) -> Box<BindingIdentifier> {
-        Box::new(BindingIdentifier::new(Identifier::new("await".to_string())))
+    pub fn binding_identifier_await(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
+        self.alloc(BindingIdentifier::new(Identifier::new(
+            self.to_string("await"),
+        )))
     }
 
     // LabelIdentifier : Identifier
-    pub fn label_identifier(&self, token: Box<Token>) -> Box<Label> {
-        Box::new(Label::new(token.value.unwrap().into_owned()))
+    pub fn label_identifier(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Label<'alloc>> {
+        self.alloc(Label::new(self.boxed_token_to_string(token)))
     }
 
     // PrimaryExpression : `this`
-    pub fn this_expr(&self) -> Box<Expression> {
-        Box::new(Expression::ThisExpression)
+    pub fn this_expr(&self) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ThisExpression)
     }
 
     // PrimaryExpression : IdentifierReference
-    pub fn identifier_expr(&self, name: Box<Identifier>) -> Box<Expression> {
-        Box::new(Expression::IdentifierExpression(IdentifierExpression {
-            name: *name,
+    pub fn identifier_expr(
+        &self,
+        name: arena::Box<'alloc, Identifier<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::IdentifierExpression(IdentifierExpression {
+            name: name.unbox(),
         }))
     }
 
     // PrimaryExpression : RegularExpressionLiteral
-    pub fn regexp_literal(&self, token: Box<Token>) -> Box<Expression> {
-        let pattern: String = token.value.unwrap().into_owned();
+    pub fn regexp_literal(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let pattern = self.boxed_token_to_string(token);
         let global: bool = false;
         let ignore_case: bool = false;
         let multi_line: bool = false;
         let sticky: bool = false;
         let unicode: bool = false;
-        Box::new(Expression::LiteralRegExpExpression(
+        self.alloc(Expression::LiteralRegExpExpression(
             LiteralRegExpExpression::new(pattern, global, ignore_case, multi_line, sticky, unicode),
         ))
     }
@@ -57,17 +114,17 @@ impl AstBuilder {
     // PrimaryExpression : TemplateLiteral
     pub fn untagged_template_expr(
         &self,
-        template_literal: Box<TemplateExpression>,
-    ) -> Box<Expression> {
-        Box::new(Expression::TemplateExpression(*template_literal))
+        template_literal: arena::Box<'alloc, TemplateExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::TemplateExpression(template_literal.unbox()))
     }
 
     // PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
     pub fn uncover_parenthesized_expression(
         &self,
-        parenthesized: Box<CoverParenthesized>,
-    ) -> Box<Expression> {
-        match *parenthesized {
+        parenthesized: arena::Box<'alloc, CoverParenthesized<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        match parenthesized.unbox() {
             CoverParenthesized::Expression(expression) => expression,
             CoverParenthesized::Parameters(_parameters) => unimplemented!(), // TODO
         }
@@ -76,22 +133,22 @@ impl AstBuilder {
     // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `)`
     pub fn cover_parenthesized_expression(
         &self,
-        expression: Box<Expression>,
-    ) -> Box<CoverParenthesized> {
-        Box::new(CoverParenthesized::Expression(expression))
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, CoverParenthesized<'alloc>> {
+        self.alloc(CoverParenthesized::Expression(expression))
     }
 
     // CoverParenthesizedExpressionAndArrowParameterList : `(` `)`
-    pub fn empty_parameter_list(&self) -> Vec<Parameter> {
-        vec![]
+    pub fn empty_parameter_list(&self) -> arena::Vec<'alloc, Parameter<'alloc>> {
+        self.new_vec()
     }
 
     /// Used when parsing `([a, b=2]=arr) =>` to reinterpret as parameter bindings
     /// the snippets `a` and `b=2`, which were previously parsed as assignment targets.
     fn assignment_target_maybe_default_to_binding(
         &self,
-        target: AssignmentTargetMaybeDefault,
-    ) -> Parameter {
+        target: AssignmentTargetMaybeDefault<'alloc>,
+    ) -> Parameter<'alloc> {
         match target {
             AssignmentTargetMaybeDefault::AssignmentTarget(target) => {
                 Parameter::Binding(self.assignment_target_to_binding(target))
@@ -108,8 +165,8 @@ impl AstBuilder {
 
     fn assignment_target_property_to_binding_property(
         &self,
-        target: AssignmentTargetProperty,
-    ) -> BindingProperty {
+        target: AssignmentTargetProperty<'alloc>,
+    ) -> BindingProperty<'alloc> {
         match target {
             AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
                 AssignmentTargetPropertyIdentifier {
@@ -133,15 +190,15 @@ impl AstBuilder {
     /// Refine an AssignmentRestProperty into a BindingRestProperty.
     fn assignment_rest_property_to_binding_identifier(
         &self,
-        target: AssignmentTarget,
-    ) -> Box<BindingIdentifier> {
+        target: AssignmentTarget<'alloc>,
+    ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
         match target {
             // ({...x} = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                 }),
-            ) => Box::new(BindingIdentifier { name }),
+            ) => self.alloc(BindingIdentifier { name }),
 
             // ({...x.y} = dv) => {}
             _ => {
@@ -166,7 +223,7 @@ impl AstBuilder {
     ///
     /// When parsing `(a = 1, [b, c] = obj) => {}`, the assignment targets `a`
     /// and `[b, c]` are passed to this method.
-    fn assignment_target_to_binding(&self, target: AssignmentTarget) -> Binding {
+    fn assignment_target_to_binding(&self, target: AssignmentTarget<'alloc>) -> Binding<'alloc> {
         match target {
             // (a = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
@@ -192,15 +249,16 @@ impl AstBuilder {
                     rest,
                 }),
             ) => {
-                let elements: Vec<Option<Parameter>> = elements
-                    .into_iter()
-                    .map(|maybe_target| {
+                let elements: arena::Vec<'alloc, Option<AssignmentTargetMaybeDefault<'alloc>>> =
+                    elements;
+                let elements: arena::Vec<'alloc, Option<Parameter<'alloc>>> =
+                    self.collect_vec(elements.into_iter().map(|maybe_target| {
                         maybe_target
                             .map(|target| self.assignment_target_maybe_default_to_binding(target))
-                    })
-                    .collect();
-                let rest: Option<Box<Binding>> = rest
-                    .map(|rest_target| Box::new(self.assignment_target_to_binding(*rest_target)));
+                    }));
+                let rest: Option<arena::Box<'alloc, Binding<'alloc>>> = rest.map(|rest_target| {
+                    self.alloc(self.assignment_target_to_binding(rest_target.unbox()))
+                });
                 Binding::BindingPattern(BindingPattern::ArrayBinding(ArrayBinding {
                     elements,
                     rest,
@@ -214,12 +272,14 @@ impl AstBuilder {
                     rest,
                 }),
             ) => {
-                let properties = properties
-                    .into_iter()
-                    .map(|target| self.assignment_target_property_to_binding_property(target))
-                    .collect();
+                let properties = self.collect_vec(
+                    properties
+                        .into_iter()
+                        .map(|target| self.assignment_target_property_to_binding_property(target)),
+                );
+
                 let rest = rest.map(|rest_target| {
-                    self.assignment_rest_property_to_binding_identifier(*rest_target)
+                    self.assignment_rest_property_to_binding_identifier(rest_target.unbox())
                 });
                 Binding::BindingPattern(BindingPattern::ObjectBinding(ObjectBinding {
                     properties,
@@ -229,7 +289,10 @@ impl AstBuilder {
         }
     }
 
-    fn object_property_to_binding_property(&self, op: ObjectProperty) -> BindingProperty {
+    fn object_property_to_binding_property(
+        &self,
+        op: ObjectProperty<'alloc>,
+    ) -> BindingProperty<'alloc> {
         match op {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
                 DataProperty {
@@ -238,7 +301,7 @@ impl AstBuilder {
                 },
             )) => BindingProperty::BindingPropertyProperty(BindingPropertyProperty {
                 name: property_name,
-                binding: self.expression_to_parameter(*expression),
+                binding: self.expression_to_parameter(expression.unbox()),
             }),
 
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
@@ -268,11 +331,11 @@ impl AstBuilder {
     /// *AssignmentExpression*" into a *BindingRestProperty*.
     fn spread_expression_to_rest_binding(
         &self,
-        expression: Box<Expression>,
-    ) -> Box<BindingIdentifier> {
-        match *expression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
+        match expression.unbox() {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
-                Box::new(BindingIdentifier { name })
+                self.alloc(BindingIdentifier { name })
             }
             _ => {
                 // TODO - change this to an error Result
@@ -283,8 +346,8 @@ impl AstBuilder {
 
     fn pop_trailing_spread_property(
         &self,
-        properties: &mut Vec<Box<ObjectProperty>>,
-    ) -> Option<Box<Expression>> {
+        properties: &mut arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
+    ) -> Option<arena::Box<'alloc, Expression<'alloc>>> {
         // Check whether we want to pop a PropertyDefinition
         match properties.last().map(|boxed| &**boxed) {
             Some(ObjectProperty::SpreadProperty(_)) => {}
@@ -292,49 +355,50 @@ impl AstBuilder {
         }
 
         // We do.
-        match properties.pop().map(|boxed| *boxed) {
+        match properties.pop().map(|boxed| boxed.unbox()) {
             Some(ObjectProperty::SpreadProperty(expression)) => Some(expression),
             _ => panic!("last property changed since preceding check"), // can't happen
         }
     }
 
     /// Refine an *ObjectLiteral* into an *ObjectBindingPattern*.
-    fn object_expression_to_object_binding(&self, object: ObjectExpression) -> ObjectBinding {
+    fn object_expression_to_object_binding(
+        &self,
+        object: ObjectExpression<'alloc>,
+    ) -> ObjectBinding<'alloc> {
         let mut properties = object.properties;
         let rest = self.pop_trailing_spread_property(&mut properties);
         ObjectBinding {
-            properties: properties
-                .into_iter()
-                .map(|op| self.object_property_to_binding_property(*op))
-                .collect(),
+            properties: self.collect_vec(
+                properties
+                    .into_iter()
+                    .map(|prop| self.object_property_to_binding_property(prop.unbox())),
+            ),
             rest: rest.map(|expression| self.spread_expression_to_rest_binding(expression)),
         }
     }
 
     fn array_elements_to_parameters(
         &self,
-        elements: Vec<ArrayExpressionElement>,
-    ) -> Vec<Option<Parameter>> {
-        elements
-            .into_iter()
-            .map(|element| match element {
-                ArrayExpressionElement::Expression(expr) => {
-                    Some(self.expression_to_parameter(*expr))
-                }
-                ArrayExpressionElement::SpreadElement(_expr) => {
-                    // ([...a, b]) => {}
-                    // TODO - use Result to indicate this early error
-                    panic!("rest parameter not at end of arrow parameter list");
-                }
-                ArrayExpressionElement::Elision => None,
-            })
-            .collect()
+        elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
+    ) -> arena::Vec<'alloc, Option<Parameter<'alloc>>> {
+        self.collect_vec(elements.into_iter().map(|element| match element {
+            ArrayExpressionElement::Expression(expr) => {
+                Some(self.expression_to_parameter(expr.unbox()))
+            }
+            ArrayExpressionElement::SpreadElement(_expr) => {
+                // ([...a, b]) => {}
+                // TODO - use Result to indicate this early error
+                panic!("rest parameter not at end of arrow parameter list");
+            }
+            ArrayExpressionElement::Elision => None,
+        }))
     }
 
     fn pop_trailing_spread_element(
         &self,
-        elements: &mut Vec<ArrayExpressionElement>,
-    ) -> Option<Box<Expression>> {
+        elements: &mut arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
+    ) -> Option<arena::Box<'alloc, Expression<'alloc>>> {
         // Check whether we want to pop an element.
         match elements.last() {
             Some(ArrayExpressionElement::SpreadElement(_)) => {}
@@ -348,7 +412,7 @@ impl AstBuilder {
         }
     }
 
-    fn expression_to_parameter(&self, expression: Expression) -> Parameter {
+    fn expression_to_parameter(&self, expression: Expression<'alloc>) -> Parameter<'alloc> {
         match expression {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name }))
@@ -367,8 +431,8 @@ impl AstBuilder {
                 Parameter::Binding(Binding::BindingPattern(BindingPattern::ArrayBinding(
                     ArrayBinding {
                         elements: self.array_elements_to_parameters(elements),
-                        rest: rest.map(|expr| match self.expression_to_parameter(*expr) {
-                            Parameter::Binding(b) => Box::new(b),
+                        rest: rest.map(|expr| match self.expression_to_parameter(expr.unbox()) {
+                            Parameter::Binding(b) => self.alloc(b),
                             Parameter::BindingWithDefault(_) => panic!(
                                 "default value not allowed for rest binding in array destructuring"
                             ),
@@ -388,7 +452,10 @@ impl AstBuilder {
     // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `)`
     // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingIdentifier `)`
     // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingPattern `)`
-    pub fn expression_to_parameter_list(&self, expression: Box<Expression>) -> Vec<Parameter> {
+    pub fn expression_to_parameter_list(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Vec<'alloc, Parameter<'alloc>> {
         // When the production
         // *ArrowParameters* `:` *CoverParenthesizedExpressionAndArrowParameterList*
         // is recognized the following grammar is used to refine the
@@ -397,17 +464,17 @@ impl AstBuilder {
         //
         //     ArrowFormalParameters[Yield, Await]:
         //         `(` UniqueFormalParameters[?Yield, ?Await] `)`
-        match *expression {
+        match expression.unbox() {
             Expression::BinaryExpression(BinaryExpression {
                 operator: BinaryOperator::Comma,
                 left,
                 right,
             }) => {
                 let mut parameters = self.expression_to_parameter_list(left);
-                parameters.push(self.expression_to_parameter(*right));
+                self.push(&mut parameters, self.expression_to_parameter(right.unbox()));
                 parameters
             }
-            other => vec![self.expression_to_parameter(other)],
+            other => self.new_vec_single(self.expression_to_parameter(other)),
         }
     }
 
@@ -418,198 +485,242 @@ impl AstBuilder {
     // CoverParenthesizedExpressionAndArrowParameterList : `(` Expression `,` `...` BindingPattern `)`
     pub fn cover_arrow_parameter_list(
         &self,
-        parameters: Vec<Parameter>,
-        rest: Option<Box<Binding>>,
-    ) -> Box<CoverParenthesized> {
-        Box::new(CoverParenthesized::Parameters(Box::new(FormalParameters {
-            items: parameters,
-            rest: rest.map(|boxed| *boxed),
-        })))
+        parameters: arena::Vec<'alloc, Parameter<'alloc>>,
+        rest: Option<arena::Box<'alloc, Binding<'alloc>>>,
+    ) -> arena::Box<'alloc, CoverParenthesized<'alloc>> {
+        self.alloc(CoverParenthesized::Parameters(self.alloc(
+            FormalParameters {
+                items: parameters,
+                rest: rest.map(|boxed| boxed.unbox()),
+            },
+        )))
     }
 
     // Literal : NullLiteral
-    pub fn null_literal(&self) -> Box<Expression> {
-        Box::new(Expression::LiteralNullExpression)
+    pub fn null_literal(&self) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::LiteralNullExpression)
     }
 
     // Literal : BooleanLiteral
-    pub fn boolean_literal(&self, token: Box<Token>) -> Box<Expression> {
-        let s = token.value.unwrap();
+    pub fn boolean_literal(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let s = token.unbox().value.unwrap();
         assert!(&s == "true" || &s == "false");
 
-        Box::new(Expression::LiteralBooleanExpression(
+        self.alloc(Expression::LiteralBooleanExpression(
             LiteralBooleanExpression {
                 value: &s == "true",
             },
         ))
     }
 
-    fn numeric_literal_value(token: Box<Token>) -> f64 {
-        let s = token.value.unwrap();
+    fn numeric_literal_value(token: arena::Box<'alloc, Token<'alloc>>) -> f64 {
+        let s = token.unbox().value.unwrap();
 
         // BUG: Not all syntax is supported yet.
         s.parse::<f64>().unwrap_or(std::f64::NAN)
     }
 
     // Literal : NumericLiteral
-    pub fn numeric_literal(&self, token: Box<Token>) -> Box<Expression> {
-        Box::new(Expression::LiteralNumericExpression(
+    pub fn numeric_literal(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::LiteralNumericExpression(
             LiteralNumericExpression::new(Self::numeric_literal_value(token)),
         ))
     }
 
-    fn string_literal_value(token: Box<Token>) -> String {
-        token.value.unwrap().into_owned()
-    }
-
     // Literal : StringLiteral
-    pub fn string_literal(&self, token: Box<Token>) -> Box<Expression> {
-        Box::new(Expression::LiteralStringExpression(
+    pub fn string_literal(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::LiteralStringExpression(
             LiteralStringExpression {
-                value: Self::string_literal_value(token),
+                value: self.boxed_token_to_string(token),
             },
         ))
     }
 
     // ArrayLiteral : `[` Elision? `]`
-    pub fn array_literal_empty(&self, elision: Option<Box<ArrayExpression>>) -> Box<Expression> {
-        Box::new(Expression::ArrayExpression(match elision {
-            None => ArrayExpression { elements: vec![] },
-            Some(array) => *array,
+    pub fn array_literal_empty(
+        &self,
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ArrayExpression(match elision {
+            None => ArrayExpression {
+                elements: self.new_vec(),
+            },
+            Some(array) => array.unbox(),
         }))
     }
 
     // ArrayLiteral : `[` ElementList `]`
-    pub fn array_literal(&self, array: Box<ArrayExpression>) -> Box<Expression> {
-        Box::new(Expression::ArrayExpression(*array))
+    pub fn array_literal(
+        &self,
+        array: arena::Box<'alloc, ArrayExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ArrayExpression(array.unbox()))
     }
 
     // ArrayLiteral : `[` ElementList `,` Elision? `]`
     pub fn array_literal_with_trailing_elision(
         &self,
-        mut array: Box<ArrayExpression>,
-        elision: Option<Box<ArrayExpression>>,
-    ) -> Box<Expression> {
+        mut array: arena::Box<'alloc, ArrayExpression<'alloc>>,
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         if let Some(mut more) = elision {
-            array.elements.append(&mut more.elements);
+            self.append(&mut array.elements, &mut more.elements);
         }
-        Box::new(Expression::ArrayExpression(*array))
+        self.alloc(Expression::ArrayExpression(array.unbox()))
     }
 
     // ElementList : Elision? AssignmentExpression
     pub fn element_list_first(
         &self,
-        elision: Option<Box<ArrayExpression>>,
-        element: Box<Expression>,
-    ) -> Box<ArrayExpression> {
-        let mut array = elision.unwrap_or_else(|| Box::new(ArrayExpression { elements: vec![] }));
-        array
-            .elements
-            .push(ArrayExpressionElement::Expression(element));
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        element: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
+        let mut array = elision.unwrap_or_else(|| {
+            self.alloc(ArrayExpression {
+                elements: self.new_vec(),
+            })
+        });
+        self.push(
+            &mut array.elements,
+            ArrayExpressionElement::Expression(element),
+        );
         array
     }
 
     // ElementList : Elision? SpreadElement
     pub fn element_list_first_spread(
         &self,
-        elision: Option<Box<ArrayExpression>>,
-        spread_element: Box<Expression>,
-    ) -> Box<ArrayExpression> {
-        let mut array = elision.unwrap_or_else(|| Box::new(ArrayExpression { elements: vec![] }));
-        array
-            .elements
-            .push(ArrayExpressionElement::SpreadElement(spread_element));
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        spread_element: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
+        let mut array = elision.unwrap_or_else(|| {
+            self.alloc(ArrayExpression {
+                elements: self.new_vec(),
+            })
+        });
+        self.push(
+            &mut array.elements,
+            ArrayExpressionElement::SpreadElement(spread_element),
+        );
         array
     }
 
     // ElementList : ElementList `,` Elision? AssignmentExpression
     pub fn element_list_append(
         &self,
-        mut array: Box<ArrayExpression>,
-        elision: Option<Box<ArrayExpression>>,
-        element: Box<Expression>,
-    ) -> Box<ArrayExpression> {
+        mut array: arena::Box<'alloc, ArrayExpression<'alloc>>,
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        element: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
         if let Some(mut elision) = elision {
-            array.elements.append(&mut elision.elements);
+            self.append(&mut array.elements, &mut elision.elements);
         }
-        array
-            .elements
-            .push(ArrayExpressionElement::Expression(element));
+        self.push(
+            &mut array.elements,
+            ArrayExpressionElement::Expression(element),
+        );
         array
     }
 
     // ElementList : ElementList `,` Elision? SpreadElement
     pub fn element_list_append_spread(
         &self,
-        mut array: Box<ArrayExpression>,
-        elision: Option<Box<ArrayExpression>>,
-        spread_element: Box<Expression>,
-    ) -> Box<ArrayExpression> {
+        mut array: arena::Box<'alloc, ArrayExpression<'alloc>>,
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        spread_element: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
         if let Some(mut elision) = elision {
-            array.elements.append(&mut elision.elements);
+            self.append(&mut array.elements, &mut elision.elements);
         }
-        array
-            .elements
-            .push(ArrayExpressionElement::SpreadElement(spread_element));
+        self.push(
+            &mut array.elements,
+            ArrayExpressionElement::SpreadElement(spread_element),
+        );
         array
     }
 
     // Elision : `,`
-    pub fn elision_single(&self) -> Box<ArrayExpression> {
-        Box::new(ArrayExpression {
-            elements: vec![ArrayExpressionElement::Elision],
+    pub fn elision_single(&self) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
+        self.alloc(ArrayExpression {
+            elements: self.new_vec_single(ArrayExpressionElement::Elision),
         })
     }
 
     // Elision : Elision `,`
-    pub fn elision_append(&self, mut array: Box<ArrayExpression>) -> Box<ArrayExpression> {
-        array.elements.push(ArrayExpressionElement::Elision);
+    pub fn elision_append(
+        &self,
+        mut array: arena::Box<'alloc, ArrayExpression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
+        self.push(&mut array.elements, ArrayExpressionElement::Elision);
         array
     }
 
     // SpreadElement : `...` AssignmentExpression
-    pub fn spread_element(&self, expr: Box<Expression>) -> Box<Expression> {
+    pub fn spread_element(
+        &self,
+        expr: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         expr
     }
 
     // ObjectLiteral : `{` `}`
-    pub fn object_literal_empty(&self) -> Box<Expression> {
-        Box::new(Expression::ObjectExpression(ObjectExpression::new(vec![])))
+    pub fn object_literal_empty(&self) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ObjectExpression(ObjectExpression::new(
+            self.new_vec(),
+        )))
     }
 
     // ObjectLiteral : `{` PropertyDefinitionList `}`
     // ObjectLiteral : `{` PropertyDefinitionList `,` `}`
-    pub fn object_literal(&self, object: Box<ObjectExpression>) -> Box<Expression> {
-        Box::new(Expression::ObjectExpression(*object))
+    pub fn object_literal(
+        &self,
+        object: arena::Box<'alloc, ObjectExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ObjectExpression(object.unbox()))
     }
 
     // PropertyDefinitionList : PropertyDefinition
     pub fn property_definition_list_single(
         &self,
-        property: Box<ObjectProperty>,
-    ) -> Box<ObjectExpression> {
-        Box::new(ObjectExpression::new(vec![property]))
+        property: arena::Box<'alloc, ObjectProperty<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectExpression<'alloc>> {
+        self.alloc(ObjectExpression::new(self.new_vec_single(property)))
     }
 
     // PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition
     pub fn property_definition_list_append(
         &self,
-        mut object: Box<ObjectExpression>,
-        property: Box<ObjectProperty>,
-    ) -> Box<ObjectExpression> {
-        object.properties.push(property);
+        mut object: arena::Box<'alloc, ObjectExpression<'alloc>>,
+        property: arena::Box<'alloc, ObjectProperty<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectExpression<'alloc>> {
+        self.push(&mut object.properties, property);
         object
     }
 
     // PropertyDefinition : IdentifierReference
-    pub fn shorthand_property(&self, name: Box<Identifier>) -> Box<ObjectProperty> {
-        Box::new(ObjectProperty::ShorthandProperty(ShorthandProperty {
-            name: IdentifierExpression { name: *name },
+    pub fn shorthand_property(
+        &self,
+        name: arena::Box<'alloc, Identifier<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
+        self.alloc(ObjectProperty::ShorthandProperty(ShorthandProperty {
+            name: IdentifierExpression { name: name.unbox() },
         }))
     }
 
     // PropertyDefinition : CoverInitializedName
-    pub fn property_definition_cover(&self, _a0: Box<Void>) -> Box<ObjectProperty> {
+    pub fn property_definition_cover(
+        &self,
+        _a0: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
         // Awkward. This needs to be stored somehow until we reach an enclosing thing.
         unimplemented!();
     }
@@ -617,59 +728,81 @@ impl AstBuilder {
     // PropertyDefinition : PropertyName `:` AssignmentExpression
     pub fn property_definition(
         &self,
-        name: Box<PropertyName>,
-        expression: Box<Expression>,
-    ) -> Box<ObjectProperty> {
-        Box::new(ObjectProperty::NamedObjectProperty(
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
+        self.alloc(ObjectProperty::NamedObjectProperty(
             NamedObjectProperty::DataProperty(DataProperty {
-                property_name: *name,
+                property_name: name.unbox(),
                 expression,
             }),
         ))
     }
 
     // PropertyDefinition : MethodDefinition
-    pub fn property_definition_method(&self, method: Box<MethodDefinition>) -> Box<ObjectProperty> {
-        Box::new(ObjectProperty::NamedObjectProperty(
-            NamedObjectProperty::MethodDefinition(*method),
+    pub fn property_definition_method(
+        &self,
+        method: arena::Box<'alloc, MethodDefinition<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
+        self.alloc(ObjectProperty::NamedObjectProperty(
+            NamedObjectProperty::MethodDefinition(method.unbox()),
         ))
     }
 
     // PropertyDefinition : `...` AssignmentExpression
-    pub fn property_definition_spread(&self, spread: Box<Expression>) -> Box<ObjectProperty> {
-        Box::new(ObjectProperty::SpreadProperty(spread))
+    pub fn property_definition_spread(
+        &self,
+        spread: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
+        self.alloc(ObjectProperty::SpreadProperty(spread))
     }
 
     // LiteralPropertyName : IdentifierName
-    pub fn property_name_identifier(&self, token: Box<Token>) -> Box<PropertyName> {
-        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: token.value.unwrap().into_owned(),
+    pub fn property_name_identifier(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: self.boxed_token_to_string(token),
         }))
     }
 
     // LiteralPropertyName : StringLiteral
-    pub fn property_name_string(&self, token: Box<Token>) -> Box<PropertyName> {
-        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: Self::string_literal_value(token),
+    pub fn property_name_string(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: self.boxed_token_to_string(token),
         }))
     }
 
     // LiteralPropertyName : NumericLiteral
-    pub fn property_name_numeric(&self, token: Box<Token>) -> Box<PropertyName> {
-        Box::new(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: format!("{:?}", Self::numeric_literal_value(token)),
+    pub fn property_name_numeric(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+            value: self.to_string(&format!("{:?}", Self::numeric_literal_value(token))),
         }))
     }
 
     // ComputedPropertyName : `[` AssignmentExpression `]`
-    pub fn computed_property_name(&self, expression: Box<Expression>) -> Box<PropertyName> {
-        Box::new(PropertyName::ComputedPropertyName(ComputedPropertyName {
+    pub fn computed_property_name(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+        self.alloc(PropertyName::ComputedPropertyName(ComputedPropertyName {
             expression,
         }))
     }
 
     // CoverInitializedName : IdentifierReference Initializer
-    pub fn cover_initialized_name(&self, _a0: Box<Void>, _a1: Box<Expression>) -> Box<Void> {
+    pub fn cover_initialized_name(
+        &self,
+        _a0: arena::Box<'alloc, Void>,
+        _a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
         // Awkward. This needs to be stored somehow until we reach an enclosing
         // context where it can be reinterpreted as a default value in an
         // object destructuring assignment pattern.
@@ -677,60 +810,79 @@ impl AstBuilder {
     }
 
     // TemplateLiteral : NoSubstitutionTemplate
-    pub fn template_literal(&self, token: Box<Token>) -> Box<TemplateExpression> {
-        Box::new(TemplateExpression {
+    pub fn template_literal(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
+        self.alloc(TemplateExpression {
             tag: None,
-            elements: vec![TemplateExpressionElement::TemplateElement(
+            elements: self.new_vec_single(TemplateExpressionElement::TemplateElement(
                 TemplateElement {
-                    raw_value: token.value.unwrap().into_owned(),
+                    raw_value: self.boxed_token_to_string(token),
                 },
-            )],
+            )),
         })
     }
 }
 
 #[allow(unused_variables)]
-impl AstBuilder {
+impl<'alloc> AstBuilder<'alloc> {
     // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
-    pub fn template_literal_p1(&self, a0: Box<Void>) -> Box<TemplateExpression> {
-        unimplemented!(); // Box::new(TemplateLiteral::new())
+    pub fn template_literal_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
+        unimplemented!(); // self.alloc(TemplateLiteral::new())
     }
     // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
-    pub fn substitution_template(&self, a0: Box<Void>, a1: Box<Void>, a2: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(SubstitutionTemplate::new())
+    pub fn substitution_template(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+        a2: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(SubstitutionTemplate::new())
     }
     // TemplateSpans ::= "TemplateTail" => TemplateSpans 0($0)
-    pub fn template_spans_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(TemplateSpans::new())
+    pub fn template_spans_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(TemplateSpans::new())
     }
     // TemplateSpans ::= TemplateMiddleList "TemplateTail" => TemplateSpans 1($0, $1)
-    pub fn template_spans_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(TemplateSpans::new())
+    pub fn template_spans_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(TemplateSpans::new())
     }
     // TemplateMiddleList ::= "TemplateMiddle" Expression => TemplateMiddleList 0($0, $1)
-    pub fn template_middle_list_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(TemplateMiddleList::new())
+    pub fn template_middle_list_p0(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(TemplateMiddleList::new())
     }
     // TemplateMiddleList ::= TemplateMiddleList "TemplateMiddle" Expression => TemplateMiddleList 1($0, $1, $2)
     pub fn template_middle_list_p1(
         &self,
-        a0: Box<Void>,
-        a1: Box<Void>,
-        a2: Box<Void>,
-    ) -> Box<Void> {
-        unimplemented!(); // Box::new(TemplateMiddleList::new())
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+        a2: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(TemplateMiddleList::new())
     }
 }
 
-impl AstBuilder {
+impl<'alloc> AstBuilder<'alloc> {
     // MemberExpression : MemberExpression `[` Expression `]`
     // CallExpression : CallExpression `[` Expression `]`
     pub fn computed_member_expr(
         &self,
-        object: Box<Expression>,
-        expression: Box<Expression>,
-    ) -> Box<Expression> {
-        Box::new(Expression::MemberExpression(
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::MemberExpression(
             MemberExpression::ComputedMemberExpression(ComputedMemberExpression::new(
                 ExpressionOrSuper::Expression(object),
                 expression,
@@ -738,22 +890,22 @@ impl AstBuilder {
         ))
     }
 
-    fn identifier(&self, token: Box<Token>) -> Identifier {
-        Identifier::new(token.value.unwrap().into_owned())
+    fn identifier(&self, token: arena::Box<'alloc, Token<'alloc>>) -> Identifier<'alloc> {
+        Identifier::new(self.boxed_token_to_string(token))
     }
 
-    fn identifier_name(&self, token: Box<Token>) -> IdentifierName {
-        IdentifierName::new(token.value.unwrap().into_owned())
+    fn identifier_name(&self, token: arena::Box<'alloc, Token<'alloc>>) -> IdentifierName<'alloc> {
+        IdentifierName::new(self.boxed_token_to_string(token))
     }
 
     // MemberExpression : MemberExpression `.` IdentifierName
     // CallExpression : CallExpression `.` IdentifierName
     pub fn static_member_expr(
         &self,
-        object: Box<Expression>,
-        identifier_token: Box<Token>,
-    ) -> Box<Expression> {
-        Box::new(Expression::MemberExpression(
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        identifier_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
                 ExpressionOrSuper::Expression(object),
                 self.identifier_name(identifier_token),
@@ -765,28 +917,31 @@ impl AstBuilder {
     // CallExpression : CallExpression TemplateLiteral
     pub fn tagged_template_expr(
         &self,
-        tag: Box<Expression>,
-        mut template_literal: Box<TemplateExpression>,
-    ) -> Box<Expression> {
+        tag: arena::Box<'alloc, Expression<'alloc>>,
+        mut template_literal: arena::Box<'alloc, TemplateExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         template_literal.tag = Some(tag);
-        Box::new(Expression::TemplateExpression(*template_literal))
+        self.alloc(Expression::TemplateExpression(template_literal.unbox()))
     }
 
     // MemberExpression : `new` MemberExpression Arguments
     pub fn new_expr_with_arguments(
         &self,
-        callee: Box<Expression>,
-        arguments: Box<Arguments>,
-    ) -> Box<Expression> {
-        Box::new(Expression::NewExpression(NewExpression {
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::NewExpression(NewExpression {
             callee,
-            arguments: *arguments,
+            arguments: arguments.unbox(),
         }))
     }
 
     // SuperProperty : `super` `[` Expression `]`
-    pub fn super_property_computed(&self, expression: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::MemberExpression(
+    pub fn super_property_computed(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::MemberExpression(
             MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
                 object: ExpressionOrSuper::Super,
                 expression: expression,
@@ -795,8 +950,11 @@ impl AstBuilder {
     }
 
     // SuperProperty : `super` `.` IdentifierName
-    pub fn super_property_static(&self, identifier_token: Box<Token>) -> Box<Expression> {
-        Box::new(Expression::MemberExpression(
+    pub fn super_property_static(
+        &self,
+        identifier_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression {
                 object: ExpressionOrSuper::Super,
                 property: self.identifier_name(identifier_token),
@@ -805,49 +963,59 @@ impl AstBuilder {
     }
 
     // NewTarget : `new` `.` `target`
-    pub fn new_target_expr(&self) -> Box<Expression> {
-        return Box::new(Expression::NewTargetExpression);
+    pub fn new_target_expr(&self) -> arena::Box<'alloc, Expression<'alloc>> {
+        return self.alloc(Expression::NewTargetExpression);
     }
 
     // NewExpression : `new` NewExpression
-    pub fn new_expr_without_arguments(&self, callee: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::NewExpression(NewExpression {
+    pub fn new_expr_without_arguments(
+        &self,
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::NewExpression(NewExpression {
             callee,
-            arguments: Arguments::new(vec![]),
+            arguments: Arguments::new(self.new_vec()),
         }))
     }
 
     // CallExpression : CallExpression Arguments
     // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments
     // CallMemberExpression : MemberExpression Arguments
-    pub fn call_expr(&self, callee: Box<Expression>, arguments: Box<Arguments>) -> Box<Expression> {
-        Box::new(Expression::CallExpression(CallExpression {
+    pub fn call_expr(
+        &self,
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::CallExpression(CallExpression {
             callee: ExpressionOrSuper::Expression(callee),
-            arguments: *arguments,
+            arguments: arguments.unbox(),
         }))
     }
 
     // SuperCall : `super` Arguments
-    pub fn super_call(&self, arguments: Box<Arguments>) -> Box<Expression> {
-        Box::new(Expression::CallExpression(CallExpression {
+    pub fn super_call(
+        &self,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::CallExpression(CallExpression {
             callee: ExpressionOrSuper::Super,
-            arguments: *arguments,
+            arguments: arguments.unbox(),
         }))
     }
 
     // Arguments : `(` `)`
-    pub fn arguments_empty(&self) -> Box<Arguments> {
-        Box::new(Arguments::new(Vec::new()))
+    pub fn arguments_empty(&self) -> arena::Box<'alloc, Arguments<'alloc>> {
+        self.alloc(Arguments::new(self.new_vec()))
     }
 
     // ArgumentList : AssignmentExpression
     // ArgumentList : ArgumentList `,` AssignmentExpression
     pub fn arguments_append(
         &self,
-        mut arguments: Box<Arguments>,
-        expression: Box<Expression>,
-    ) -> Box<Arguments> {
-        arguments.args.push(Argument::Expression(expression));
+        mut arguments: arena::Box<'alloc, Arguments<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Arguments<'alloc>> {
+        self.push(&mut arguments.args, Argument::Expression(expression));
         arguments
     }
 
@@ -855,16 +1023,19 @@ impl AstBuilder {
     // ArgumentList : ArgumentList `,` `...` AssignmentExpression
     pub fn arguments_append_spread(
         &self,
-        mut arguments: Box<Arguments>,
-        expression: Box<Expression>,
-    ) -> Box<Arguments> {
-        arguments.args.push(Argument::SpreadElement(expression));
+        mut arguments: arena::Box<'alloc, Arguments<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Arguments<'alloc>> {
+        self.push(&mut arguments.args, Argument::SpreadElement(expression));
         arguments
     }
 
     // UpdateExpression : LeftHandSideExpression `++`
-    pub fn post_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+    pub fn post_increment_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
             false,
             UpdateOperator::Increment,
             self.expression_to_simple_assignment_target(operand),
@@ -872,8 +1043,11 @@ impl AstBuilder {
     }
 
     // UpdateExpression : LeftHandSideExpression `--`
-    pub fn post_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+    pub fn post_decrement_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
             false,
             UpdateOperator::Decrement,
             self.expression_to_simple_assignment_target(operand),
@@ -881,8 +1055,11 @@ impl AstBuilder {
     }
 
     // UpdateExpression : `++` UnaryExpression
-    pub fn pre_increment_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+    pub fn pre_increment_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
             true,
             UpdateOperator::Increment,
             self.expression_to_simple_assignment_target(operand),
@@ -890,8 +1067,11 @@ impl AstBuilder {
     }
 
     // UpdateExpression : `--` UnaryExpression
-    pub fn pre_decrement_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UpdateExpression(UpdateExpression::new(
+    pub fn pre_decrement_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
             true,
             UpdateOperator::Decrement,
             self.expression_to_simple_assignment_target(operand),
@@ -899,56 +1079,77 @@ impl AstBuilder {
     }
 
     // UnaryExpression : `delete` UnaryExpression
-    pub fn delete_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn delete_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Delete,
             operand,
         )))
     }
 
     // UnaryExpression : `void` UnaryExpression
-    pub fn void_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn void_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Void,
             operand,
         )))
     }
 
     // UnaryExpression : `typeof` UnaryExpression
-    pub fn typeof_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn typeof_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Typeof,
             operand,
         )))
     }
 
     // UnaryExpression : `+` UnaryExpression
-    pub fn unary_plus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn unary_plus_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Plus,
             operand,
         )))
     }
 
     // UnaryExpression : `-` UnaryExpression
-    pub fn unary_minus_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn unary_minus_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::Minus,
             operand,
         )))
     }
 
     // UnaryExpression : `~` UnaryExpression
-    pub fn bitwise_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn bitwise_not_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::BitwiseNot,
             operand,
         )))
     }
 
     // UnaryExpression : `!` UnaryExpression
-    pub fn logical_not_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::UnaryExpression(UnaryExpression::new(
+    pub fn logical_not_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
             UnaryOperator::LogicalNot,
             operand,
         )))
@@ -1033,18 +1234,18 @@ impl AstBuilder {
     // Due to limitations of the current parser generator,
     // MultiplicativeOperators and CompoundAssignmentOperators currently get
     // boxed.
-    pub fn box_op(&self, op: BinaryOperator) -> Box<BinaryOperator> {
-        Box::new(op)
+    pub fn box_op(&self, op: BinaryOperator) -> arena::Box<'alloc, BinaryOperator> {
+        self.alloc(op)
     }
 
     // MultiplicativeExpression : MultiplicativeExpression MultiplicativeOperator ExponentiationExpression
     pub fn multiplicative_expr(
         &self,
-        left: Box<Expression>,
-        operator: Box<BinaryOperator>,
-        right: Box<Expression>,
-    ) -> Box<Expression> {
-        self.binary_expr(*operator, left, right)
+        left: arena::Box<'alloc, Expression<'alloc>>,
+        operator: arena::Box<'alloc, BinaryOperator>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.binary_expr(operator.unbox(), left, right)
     }
 
     // ExponentiationExpression : UpdateExpression `**` ExponentiationExpression
@@ -1071,10 +1272,10 @@ impl AstBuilder {
     pub fn binary_expr(
         &self,
         operator: BinaryOperator,
-        left: Box<Expression>,
-        right: Box<Expression>,
-    ) -> Box<Expression> {
-        Box::new(Expression::BinaryExpression(BinaryExpression {
+        left: arena::Box<'alloc, Expression<'alloc>>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::BinaryExpression(BinaryExpression {
             operator,
             left,
             right,
@@ -1084,11 +1285,11 @@ impl AstBuilder {
     // ConditionalExpression : LogicalORExpression `?` AssignmentExpression `:` AssignmentExpression
     pub fn conditional_expr(
         &self,
-        test: Box<Expression>,
-        consequent: Box<Expression>,
-        alternate: Box<Expression>,
-    ) -> Box<Expression> {
-        Box::new(Expression::ConditionalExpression(ConditionalExpression {
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        consequent: arena::Box<'alloc, Expression<'alloc>>,
+        alternate: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ConditionalExpression(ConditionalExpression {
             test,
             consequent,
             alternate,
@@ -1098,30 +1299,27 @@ impl AstBuilder {
     /// Refine an *ArrayLiteral* into an *ArrayAssignmentPattern*.
     fn array_expression_to_array_assignment_target(
         &self,
-        mut elements: Vec<ArrayExpressionElement>,
-    ) -> ArrayAssignmentTarget {
+        mut elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
+    ) -> ArrayAssignmentTarget<'alloc> {
         let spread = self.pop_trailing_spread_element(&mut elements);
-        let elements = elements
-            .into_iter()
-            .map(|element| match element {
-                ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
-                ArrayExpressionElement::Expression(expression) => {
-                    Some(self.expression_to_assignment_target_maybe_default(expression))
-                }
-                ArrayExpressionElement::Elision => None,
-            })
-            .collect();
+        let elements = self.collect_vec(elements.into_iter().map(|element| match element {
+            ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
+            ArrayExpressionElement::Expression(expression) => {
+                Some(self.expression_to_assignment_target_maybe_default(expression))
+            }
+            ArrayExpressionElement::Elision => None,
+        }));
         ArrayAssignmentTarget {
             elements,
-            rest: spread.map(|expr| Box::new(self.expression_to_assignment_target(expr))),
+            rest: spread.map(|expr| self.alloc(self.expression_to_assignment_target(expr))),
         }
     }
 
     fn object_property_to_assignment_target_property(
         &self,
-        property: Box<ObjectProperty>,
-    ) -> AssignmentTargetProperty {
-        match *property {
+        property: arena::Box<'alloc, ObjectProperty<'alloc>>,
+    ) -> AssignmentTargetProperty<'alloc> {
+        match property.unbox() {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
                 // TODO - change this to an error Result
                 panic!("destructuring patterns can't have methods");
@@ -1162,24 +1360,25 @@ impl AstBuilder {
     // Refine an *ObjectLiteral* into an *ObjectAssignmentPattern*.
     fn object_expression_to_object_assignment_target(
         &self,
-        mut properties: Vec<Box<ObjectProperty>>,
-    ) -> ObjectAssignmentTarget {
+        mut properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
+    ) -> ObjectAssignmentTarget<'alloc> {
         let spread = self.pop_trailing_spread_property(&mut properties);
-        let properties = properties
-            .into_iter()
-            .map(|p| self.object_property_to_assignment_target_property(p))
-            .collect();
+        let properties = self.collect_vec(
+            properties
+                .into_iter()
+                .map(|p| self.object_property_to_assignment_target_property(p)),
+        );
         ObjectAssignmentTarget {
             properties,
-            rest: spread.map(|expr| Box::new(self.expression_to_assignment_target(expr))),
+            rest: spread.map(|expr| self.alloc(self.expression_to_assignment_target(expr))),
         }
     }
 
     fn expression_to_assignment_target_maybe_default(
         &self,
-        expression: Box<Expression>,
-    ) -> AssignmentTargetMaybeDefault {
-        match *expression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> AssignmentTargetMaybeDefault<'alloc> {
+        match expression.unbox() {
             Expression::AssignmentExpression(AssignmentExpression {
                 binding,
                 expression,
@@ -1190,13 +1389,16 @@ impl AstBuilder {
                 },
             ),
             other => AssignmentTargetMaybeDefault::AssignmentTarget(
-                self.expression_to_assignment_target(Box::new(other)),
+                self.expression_to_assignment_target(self.alloc(other)),
             ),
         }
     }
 
-    fn expression_to_assignment_target(&self, expression: Box<Expression>) -> AssignmentTarget {
-        match *expression {
+    fn expression_to_assignment_target(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> AssignmentTarget<'alloc> {
+        match expression.unbox() {
             Expression::ArrayExpression(ArrayExpression { elements }) => {
                 AssignmentTarget::AssignmentTargetPattern(
                     AssignmentTargetPattern::ArrayAssignmentTarget(
@@ -1214,16 +1416,16 @@ impl AstBuilder {
             }
 
             other => AssignmentTarget::SimpleAssignmentTarget(
-                self.expression_to_simple_assignment_target(Box::new(other)),
+                self.expression_to_simple_assignment_target(self.alloc(other)),
             ),
         }
     }
 
     fn expression_to_simple_assignment_target(
         &self,
-        expression: Box<Expression>,
-    ) -> SimpleAssignmentTarget {
-        match *expression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> SimpleAssignmentTarget<'alloc> {
+        match expression.unbox() {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
@@ -1250,11 +1452,11 @@ impl AstBuilder {
     // AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression
     pub fn assignment_expr(
         &self,
-        left_hand_side: Box<Expression>,
-        value: Box<Expression>,
-    ) -> Box<Expression> {
+        left_hand_side: arena::Box<'alloc, Expression<'alloc>>,
+        value: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         let target = self.expression_to_assignment_target(left_hand_side);
-        Box::new(Expression::AssignmentExpression(AssignmentExpression::new(
+        self.alloc(Expression::AssignmentExpression(AssignmentExpression::new(
             target, value,
         )))
     }
@@ -1296,95 +1498,112 @@ impl AstBuilder {
         CompoundAssignmentOperator::And
     }
 
-    pub fn box_assign_op(&self, op: CompoundAssignmentOperator) -> Box<CompoundAssignmentOperator> {
-        Box::new(op)
+    pub fn box_assign_op(
+        &self,
+        op: CompoundAssignmentOperator,
+    ) -> arena::Box<'alloc, CompoundAssignmentOperator> {
+        self.alloc(op)
     }
 
     // AssignmentExpression : LeftHandSideExpression AssignmentOperator AssignmentExpression
     pub fn compound_assignment_expr(
         &self,
-        left_hand_side: Box<Expression>,
-        operator: Box<CompoundAssignmentOperator>,
-        value: Box<Expression>,
-    ) -> Box<Expression> {
+        left_hand_side: arena::Box<'alloc, Expression<'alloc>>,
+        operator: arena::Box<'alloc, CompoundAssignmentOperator>,
+        value: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         let target = self.expression_to_simple_assignment_target(left_hand_side);
-        Box::new(Expression::CompoundAssignmentExpression(
-            CompoundAssignmentExpression::new(*operator, target, value),
+        self.alloc(Expression::CompoundAssignmentExpression(
+            CompoundAssignmentExpression::new(operator.unbox(), target, value),
         ))
     }
 
     // BlockStatement : Block
-    pub fn block_statement(&self, block: Box<Block>) -> Box<Statement> {
-        Box::new(Statement::BlockStatement(BlockStatement::new(*block)))
+    pub fn block_statement(
+        &self,
+        block: arena::Box<'alloc, Block<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::BlockStatement(BlockStatement::new(
+            block.unbox(),
+        )))
     }
 
     // Block : `{` StatementList? `}`
-    pub fn block(&self, statements: Option<Box<Vec<Statement>>>) -> Box<Block> {
-        Box::new(Block {
+    pub fn block(
+        &self,
+        statements: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
+    ) -> arena::Box<'alloc, Block<'alloc>> {
+        self.alloc(Block {
             statements: match statements {
-                Some(statements) => *statements,
-                None => vec![],
+                Some(statements) => statements.unbox(),
+                None => self.new_vec(),
             },
             declarations: None,
         })
     }
 
     // StatementList : StatementListItem
-    pub fn statement_list_single(&self, statement: Box<Statement>) -> Box<Vec<Statement>> {
-        Box::new(vec![*statement])
+    pub fn statement_list_single(
+        &self,
+        statement: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+        self.alloc(self.new_vec_single(statement.unbox()))
     }
 
     // StatementList : StatementList StatementListItem
     pub fn statement_list_append(
         &self,
-        mut list: Box<Vec<Statement>>,
-        statement: Box<Statement>,
-    ) -> Box<Vec<Statement>> {
-        list.push(*statement);
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
+        statement: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+        self.push(&mut list, statement.unbox());
         list
     }
 
     // LexicalDeclaration : LetOrConst BindingList `;`
     pub fn lexical_declaration(
         &self,
-        kind: Box<VariableDeclarationKind>,
-        declarators: Box<Vec<VariableDeclarator>>,
-    ) -> Box<Statement> {
-        Box::new(Statement::VariableDeclarationStatement(
-            VariableDeclaration::new(*kind, *declarators),
+        kind: arena::Box<'alloc, VariableDeclarationKind>,
+        declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::VariableDeclarationStatement(
+            VariableDeclaration::new(kind.unbox(), declarators.unbox()),
         ))
     }
 
     // ForLexicalDeclaration : LetOrConst BindingList `;`
     pub fn for_lexical_declaration(
         &self,
-        kind: Box<VariableDeclarationKind>,
-        declarators: Box<Vec<VariableDeclarator>>,
-    ) -> Box<VariableDeclarationOrExpression> {
-        Box::new(VariableDeclarationOrExpression::VariableDeclaration(
+        kind: arena::Box<'alloc, VariableDeclarationKind>,
+        declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
+    ) -> arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>> {
+        self.alloc(VariableDeclarationOrExpression::VariableDeclaration(
             VariableDeclaration {
-                kind: *kind,
-                declarators: *declarators,
+                kind: kind.unbox(),
+                declarators: declarators.unbox(),
             },
         ))
     }
 
     // LetOrConst : `let`
-    pub fn let_kind(&self) -> Box<VariableDeclarationKind> {
-        Box::new(VariableDeclarationKind::Let)
+    pub fn let_kind(&self) -> arena::Box<'alloc, VariableDeclarationKind> {
+        self.alloc(VariableDeclarationKind::Let)
     }
 
     // LetOrConst : `const`
-    pub fn const_kind(&self) -> Box<VariableDeclarationKind> {
-        Box::new(VariableDeclarationKind::Const)
+    pub fn const_kind(&self) -> arena::Box<'alloc, VariableDeclarationKind> {
+        self.alloc(VariableDeclarationKind::Const)
     }
 
     // VariableStatement : `var` VariableDeclarationList `;`
-    pub fn variable_statement(&self, declarators: Box<Vec<VariableDeclarator>>) -> Box<Statement> {
-        Box::new(Statement::VariableDeclarationStatement(
+    pub fn variable_statement(
+        &self,
+        declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::VariableDeclarationStatement(
             VariableDeclaration {
                 kind: VariableDeclarationKind::Var,
-                declarators: *declarators,
+                declarators: declarators.unbox(),
             },
         ))
     }
@@ -1393,19 +1612,19 @@ impl AstBuilder {
     // BindingList : LexicalBinding
     pub fn variable_declaration_list_single(
         &self,
-        decl: Box<VariableDeclarator>,
-    ) -> Box<Vec<VariableDeclarator>> {
-        Box::new(vec![*decl])
+        decl: arena::Box<'alloc, VariableDeclarator<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>> {
+        self.alloc(self.new_vec_single(decl.unbox()))
     }
 
     // VariableDeclarationList : VariableDeclarationList `,` VariableDeclaration
     // BindingList : BindingList `,` LexicalBinding
     pub fn variable_declaration_list_append(
         &self,
-        mut list: Box<Vec<VariableDeclarator>>,
-        decl: Box<VariableDeclarator>,
-    ) -> Box<Vec<VariableDeclarator>> {
-        list.push(*decl);
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
+        decl: arena::Box<'alloc, VariableDeclarator<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>> {
+        self.push(&mut list, decl.unbox());
         list
     }
 
@@ -1413,11 +1632,11 @@ impl AstBuilder {
     // VariableDeclaration : BindingPattern Initializer
     pub fn variable_declaration(
         &self,
-        binding: Box<Binding>,
-        init: Option<Box<Expression>>,
-    ) -> Box<VariableDeclarator> {
-        Box::new(VariableDeclarator {
-            binding: *binding,
+        binding: arena::Box<'alloc, Binding<'alloc>>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, VariableDeclarator<'alloc>> {
+        self.alloc(VariableDeclarator {
+            binding: binding.unbox(),
             init,
         })
     }
@@ -1428,19 +1647,21 @@ impl AstBuilder {
     // ObjectBindingPattern : `{` BindingPropertyList `,` BindingRestProperty? `}`
     pub fn object_binding_pattern(
         &self,
-        properties: Box<Vec<BindingProperty>>,
-        rest: Option<Box<BindingIdentifier>>,
-    ) -> Box<Binding> {
-        Box::new(Binding::BindingPattern(BindingPattern::ObjectBinding(
+        properties: arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>,
+        rest: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+    ) -> arena::Box<'alloc, Binding<'alloc>> {
+        self.alloc(Binding::BindingPattern(BindingPattern::ObjectBinding(
             ObjectBinding {
-                properties: *properties,
+                properties: properties.unbox(),
                 rest,
             },
         )))
     }
 
-    pub fn binding_element_list_empty(&self) -> Box<Vec<Option<Parameter>>> {
-        Box::new(vec![])
+    pub fn binding_element_list_empty(
+        &self,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>> {
+        self.alloc(self.new_vec())
     }
 
     // ArrayBindingPattern : `[` Elision? BindingRestElement? `]`
@@ -1448,79 +1669,84 @@ impl AstBuilder {
     // ArrayBindingPattern : `[` BindingElementList `,` Elision? BindingRestElement? `]`
     pub fn array_binding_pattern(
         &self,
-        mut elements: Box<Vec<Option<Parameter>>>,
-        elision: Option<Box<ArrayExpression>>,
-        rest: Option<Box<Binding>>,
-    ) -> Box<Binding> {
+        mut elements: arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>,
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        rest: Option<arena::Box<'alloc, Binding<'alloc>>>,
+    ) -> arena::Box<'alloc, Binding<'alloc>> {
         if let Some(elision) = elision {
-            for _ in elision.elements {
-                elements.push(None);
+            for _ in 0..elision.elements.len() {
+                self.push(&mut elements, None);
             }
         }
 
-        Box::new(Binding::BindingPattern(BindingPattern::ArrayBinding(
+        self.alloc(Binding::BindingPattern(BindingPattern::ArrayBinding(
             ArrayBinding {
-                elements: *elements,
+                elements: elements.unbox(),
                 rest,
             },
         )))
     }
 
-    pub fn binding_property_list_empty(&self) -> Box<Vec<BindingProperty>> {
-        Box::new(vec![])
+    pub fn binding_property_list_empty(
+        &self,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>> {
+        self.alloc(self.new_vec())
     }
 
     // BindingPropertyList : BindingProperty
     pub fn binding_property_list_single(
         &self,
-        property: Box<BindingProperty>,
-    ) -> Box<Vec<BindingProperty>> {
-        Box::new(vec![*property])
+        property: arena::Box<'alloc, BindingProperty<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>> {
+        self.alloc(self.new_vec_single(property.unbox()))
     }
 
     // BindingPropertyList : BindingPropertyList `,` BindingProperty
     pub fn binding_property_list_append(
         &self,
-        mut list: Box<Vec<BindingProperty>>,
-        property: Box<BindingProperty>,
-    ) -> Box<Vec<BindingProperty>> {
-        list.push(*property);
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>,
+        property: arena::Box<'alloc, BindingProperty<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>> {
+        self.push(&mut list, property.unbox());
         list
     }
 
     // BindingElementList : BindingElementList `,` BindingElisionElement
     pub fn binding_element_list_append(
         &self,
-        mut list: Box<Vec<Option<Parameter>>>,
-        mut element: Box<Vec<Option<Parameter>>>,
-    ) -> Box<Vec<Option<Parameter>>> {
-        list.append(&mut element);
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>,
+        mut element: arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>> {
+        self.append(&mut list, &mut element);
         list
     }
 
     // BindingElisionElement : Elision? BindingElement
     pub fn binding_elision_element(
         &self,
-        elision: Option<Box<ArrayExpression>>,
-        element: Box<Parameter>,
-    ) -> Box<Vec<Option<Parameter>>> {
+        elision: Option<arena::Box<'alloc, ArrayExpression<'alloc>>>,
+        element: arena::Box<'alloc, Parameter<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>> {
         let elision_count = elision.map(|v| v.elements.len()).unwrap_or(0);
-        let mut result = Box::new(Vec::with_capacity(elision_count + 1));
+        let mut result = self.alloc(self.new_vec());
         for _ in 0..elision_count {
-            result.push(None);
+            self.push(&mut result, None);
         }
-        result.push(Some(*element));
+        self.push(&mut result, Some(element.unbox()));
         result
     }
 
     // BindingProperty : SingleNameBinding
-    pub fn binding_property_shorthand(&self, binding: Box<Parameter>) -> Box<BindingProperty> {
+    pub fn binding_property_shorthand(
+        &self,
+        binding: arena::Box<'alloc, Parameter<'alloc>>,
+    ) -> arena::Box<'alloc, BindingProperty<'alloc>> {
         // Previous parsing interpreted this as a Parameter. We need to take
         // all the pieces out of that box and put them in a new box.
-        let (binding, init) = match *binding {
+        let (binding, init) = match binding.unbox() {
             Parameter::Binding(binding) => (binding, None),
             Parameter::BindingWithDefault(BindingWithDefault { binding, init }) => {
-                (binding, Some(*init))
+                (binding, Some(init.unbox()))
             }
         };
 
@@ -1529,10 +1755,10 @@ impl AstBuilder {
             _ => panic!("destructuring in shorthand BindingProperty"),
         };
 
-        Box::new(BindingProperty::BindingPropertyIdentifier(
+        self.alloc(BindingProperty::BindingPropertyIdentifier(
             BindingPropertyIdentifier {
                 binding,
-                init: init.map(Box::new),
+                init: init.map(|x| self.alloc(x)),
             },
         ))
     }
@@ -1540,13 +1766,13 @@ impl AstBuilder {
     // BindingProperty : PropertyName `:` BindingElement
     pub fn binding_property(
         &self,
-        name: Box<PropertyName>,
-        binding: Box<Parameter>,
-    ) -> Box<BindingProperty> {
-        Box::new(BindingProperty::BindingPropertyProperty(
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        binding: arena::Box<'alloc, Parameter<'alloc>>,
+    ) -> arena::Box<'alloc, BindingProperty<'alloc>> {
+        self.alloc(BindingProperty::BindingPropertyProperty(
             BindingPropertyProperty {
-                name: *name,
-                binding: *binding,
+                name: name.unbox(),
+                binding: binding.unbox(),
             },
         ))
     }
@@ -1554,13 +1780,13 @@ impl AstBuilder {
     // BindingElement : BindingPattern Initializer?
     pub fn binding_element_pattern(
         &self,
-        binding: Box<Binding>,
-        init: Option<Box<Expression>>,
-    ) -> Box<Parameter> {
-        Box::new(match init {
-            None => Parameter::Binding(*binding),
+        binding: arena::Box<'alloc, Binding<'alloc>>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, Parameter<'alloc>> {
+        self.alloc(match init {
+            None => Parameter::Binding(binding.unbox()),
             Some(init) => Parameter::BindingWithDefault(BindingWithDefault {
-                binding: *binding,
+                binding: binding.unbox(),
                 init,
             }),
         })
@@ -1569,40 +1795,46 @@ impl AstBuilder {
     // SingleNameBinding : BindingIdentifier Initializer?
     pub fn single_name_binding(
         &self,
-        name: Box<BindingIdentifier>,
-        init: Option<Box<Expression>>,
-    ) -> Box<Parameter> {
-        let binding = Binding::BindingIdentifier(*name);
-        Box::new(match init {
+        name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, Parameter<'alloc>> {
+        let binding = Binding::BindingIdentifier(name.unbox());
+        self.alloc(match init {
             None => Parameter::Binding(binding),
             Some(init) => Parameter::BindingWithDefault(BindingWithDefault { binding, init }),
         })
     }
 
     // BindingRestElement : `...` BindingIdentifier
-    pub fn binding_rest_element(&self, name: Box<BindingIdentifier>) -> Box<Binding> {
-        Box::new(Binding::BindingIdentifier(*name))
+    pub fn binding_rest_element(
+        &self,
+        name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+    ) -> arena::Box<'alloc, Binding<'alloc>> {
+        self.alloc(Binding::BindingIdentifier(name.unbox()))
     }
 
     // EmptyStatement : `;`
-    pub fn empty_statement(&self) -> Box<Statement> {
-        Box::new(Statement::EmptyStatement)
+    pub fn empty_statement(&self) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::EmptyStatement)
     }
 
     // ExpressionStatement : [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression `;`
-    pub fn expression_statement(&self, expression: Box<Expression>) -> Box<Statement> {
-        Box::new(Statement::ExpressionStatement(expression))
+    pub fn expression_statement(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ExpressionStatement(expression))
     }
 
     // IfStatement : `if` `(` Expression `)` Statement `else` Statement
     // IfStatement : `if` `(` Expression `)` Statement
     pub fn if_statement(
         &self,
-        test: Box<Expression>,
-        consequent: Box<Statement>,
-        alternate: Option<Box<Statement>>,
-    ) -> Box<Statement> {
-        Box::new(Statement::IfStatement(IfStatement {
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        consequent: arena::Box<'alloc, Statement<'alloc>>,
+        alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::IfStatement(IfStatement {
             test,
             consequent,
             alternate,
@@ -1612,18 +1844,22 @@ impl AstBuilder {
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
     pub fn do_while_statement(
         &self,
-        block: Box<Statement>,
-        test: Box<Expression>,
-    ) -> Box<Statement> {
-        Box::new(Statement::DoWhileStatement(DoWhileStatement {
+        block: arena::Box<'alloc, Statement<'alloc>>,
+        test: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::DoWhileStatement(DoWhileStatement {
             block,
             test,
         }))
     }
 
     // IterationStatement : `while` `(` Expression `)` Statement
-    pub fn while_statement(&self, test: Box<Expression>, block: Box<Statement>) -> Box<Statement> {
-        Box::new(Statement::WhileStatement(WhileStatement { test, block }))
+    pub fn while_statement(
+        &self,
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::WhileStatement(WhileStatement { test, block }))
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
@@ -1631,12 +1867,12 @@ impl AstBuilder {
     // IterationStatement : `for` `(` ForLexicalDeclaration Expression? `;` Expression? `)` Statement
     pub fn for_statement(
         &self,
-        init: Option<VariableDeclarationOrExpression>,
-        test: Option<Box<Expression>>,
-        update: Option<Box<Expression>>,
-        block: Box<Statement>,
-    ) -> Box<Statement> {
-        Box::new(Statement::ForStatement(ForStatement {
+        init: Option<VariableDeclarationOrExpression<'alloc>>,
+        test: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        update: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ForStatement(ForStatement {
             init,
             test,
             update,
@@ -1646,26 +1882,26 @@ impl AstBuilder {
 
     pub fn for_expression(
         &self,
-        expr: Option<Box<Expression>>,
-    ) -> Option<VariableDeclarationOrExpression> {
+        expr: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> Option<VariableDeclarationOrExpression<'alloc>> {
         expr.map(|expr| VariableDeclarationOrExpression::Expression(expr))
     }
 
     pub fn for_var_declaration(
         &self,
-        declarators: Box<Vec<VariableDeclarator>>,
-    ) -> VariableDeclarationOrExpression {
+        declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
+    ) -> VariableDeclarationOrExpression<'alloc> {
         VariableDeclarationOrExpression::VariableDeclaration(VariableDeclaration {
             kind: VariableDeclarationKind::Var,
-            declarators: *declarators,
+            declarators: declarators.unbox(),
         })
     }
 
     pub fn unbox_for_lexical_declaration(
         &self,
-        declaration: Box<VariableDeclarationOrExpression>,
-    ) -> VariableDeclarationOrExpression {
-        *declaration
+        declaration: arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>>,
+    ) -> VariableDeclarationOrExpression<'alloc> {
+        declaration.unbox()
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `in` Expression `)` Statement
@@ -1673,11 +1909,11 @@ impl AstBuilder {
     // IterationStatement : `for` `(` ForDeclaration `in` Expression `)` Statement
     pub fn for_in_statement(
         &self,
-        left: VariableDeclarationOrAssignmentTarget,
-        right: Box<Expression>,
-        block: Box<Statement>,
-    ) -> Box<Statement> {
-        Box::new(Statement::ForInStatement(ForInStatement {
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ForInStatement(ForInStatement {
             left,
             right,
             block,
@@ -1686,21 +1922,21 @@ impl AstBuilder {
 
     pub fn for_in_or_of_var_declaration(
         &self,
-        binding: Box<Binding>,
-    ) -> VariableDeclarationOrAssignmentTarget {
+        binding: arena::Box<'alloc, Binding<'alloc>>,
+    ) -> VariableDeclarationOrAssignmentTarget<'alloc> {
         VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
             kind: VariableDeclarationKind::Var,
-            declarators: vec![VariableDeclarator {
-                binding: *binding,
+            declarators: self.new_vec_single(VariableDeclarator {
+                binding: binding.unbox(),
                 init: None,
-            }],
+            }),
         })
     }
 
     pub fn for_assignment_target(
         &self,
-        expression: Box<Expression>,
-    ) -> VariableDeclarationOrAssignmentTarget {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> VariableDeclarationOrAssignmentTarget<'alloc> {
         VariableDeclarationOrAssignmentTarget::AssignmentTarget(
             self.expression_to_assignment_target(expression),
         )
@@ -1708,9 +1944,9 @@ impl AstBuilder {
 
     pub fn unbox_for_declaration(
         &self,
-        declaration: Box<VariableDeclarationOrAssignmentTarget>,
-    ) -> VariableDeclarationOrAssignmentTarget {
-        *declaration
+        declaration: arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>>,
+    ) -> VariableDeclarationOrAssignmentTarget<'alloc> {
+        declaration.unbox()
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
@@ -1718,11 +1954,11 @@ impl AstBuilder {
     // IterationStatement : `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement
     pub fn for_of_statement(
         &self,
-        left: VariableDeclarationOrAssignmentTarget,
-        right: Box<Expression>,
-        block: Box<Statement>,
-    ) -> Box<Statement> {
-        Box::new(Statement::ForOfStatement(ForOfStatement {
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ForOfStatement(ForOfStatement {
             left,
             right,
             block,
@@ -1735,25 +1971,25 @@ impl AstBuilder {
     pub fn for_await_of_statement(
         &self,
         _left: VariableDeclarationOrAssignmentTarget,
-        _right: Box<Expression>,
-        _block: Box<Statement>,
-    ) -> Box<Statement> {
+        _right: arena::Box<'alloc, Expression<'alloc>>,
+        _block: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
         panic!("not present in current AST");
     }
 
     // ForDeclaration : LetOrConst ForBinding => ForDeclaration($0, $1)
     pub fn for_declaration(
         &self,
-        kind: Box<VariableDeclarationKind>,
-        binding: Box<Binding>,
-    ) -> Box<VariableDeclarationOrAssignmentTarget> {
-        Box::new(VariableDeclarationOrAssignmentTarget::VariableDeclaration(
+        kind: arena::Box<'alloc, VariableDeclarationKind>,
+        binding: arena::Box<'alloc, Binding<'alloc>>,
+    ) -> arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>> {
+        self.alloc(VariableDeclarationOrAssignmentTarget::VariableDeclaration(
             VariableDeclaration {
-                kind: *kind,
-                declarators: vec![VariableDeclarator {
-                    binding: *binding,
+                kind: kind.unbox(),
+                declarators: self.new_vec_single(VariableDeclarator {
+                    binding: binding.unbox(),
                     init: None,
-                }],
+                }),
             },
         ))
     }
@@ -1764,44 +2000,57 @@ impl AstBuilder {
     // VariableDeclaration : BindingIdentifier Initializer?
     pub fn binding_identifier_to_binding(
         &self,
-        identifier: Box<BindingIdentifier>,
-    ) -> Box<Binding> {
-        Box::new(Binding::BindingIdentifier(*identifier))
+        identifier: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+    ) -> arena::Box<'alloc, Binding<'alloc>> {
+        self.alloc(Binding::BindingIdentifier(identifier.unbox()))
     }
 
     // ContinueStatement : `continue` `;`
     // ContinueStatement : `continue` LabelIdentifier `;`
-    pub fn continue_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
-        Box::new(Statement::ContinueStatement(ContinueStatement {
-            label: label.map(|boxed| *boxed),
+    pub fn continue_statement(
+        &self,
+        label: Option<arena::Box<'alloc, Label<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ContinueStatement(ContinueStatement {
+            label: label.map(|boxed| boxed.unbox()),
         }))
     }
 
     // BreakStatement : `break` `;`
     // BreakStatement : `break` LabelIdentifier `;`
-    pub fn break_statement(&self, label: Option<Box<Label>>) -> Box<Statement> {
-        Box::new(Statement::BreakStatement(BreakStatement {
-            label: label.map(|boxed| *boxed),
+    pub fn break_statement(
+        &self,
+        label: Option<arena::Box<'alloc, Label<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::BreakStatement(BreakStatement {
+            label: label.map(|boxed| boxed.unbox()),
         }))
     }
 
     // ReturnStatement : `return` `;`
     // ReturnStatement : `return` Expression `;`
-    pub fn return_statement(&self, expression: Option<Box<Expression>>) -> Box<Statement> {
-        Box::new(Statement::ReturnStatement(ReturnStatement { expression }))
+    pub fn return_statement(
+        &self,
+        expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ReturnStatement(ReturnStatement { expression }))
     }
 
     // WithStatement : `with` `(` Expression `)` Statement
-    pub fn with_statement(&self, object: Box<Expression>, body: Box<Statement>) -> Box<Statement> {
-        Box::new(Statement::WithStatement(WithStatement { object, body }))
+    pub fn with_statement(
+        &self,
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        body: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::WithStatement(WithStatement { object, body }))
     }
 
     // SwitchStatement : `switch` `(` Expression `)` CaseBlock
     pub fn switch_statement(
         &self,
-        discriminant: Box<Expression>,
-        mut cases: Box<Statement>,
-    ) -> Box<Statement> {
+        discriminant: arena::Box<'alloc, Expression<'alloc>>,
+        mut cases: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
         match &mut *cases {
             Statement::SwitchStatement(stmt) => {
                 stmt.discriminant = discriminant;
@@ -1818,12 +2067,15 @@ impl AstBuilder {
     }
 
     // CaseBlock : `{` CaseClauses? `}`
-    pub fn case_block(&self, cases: Option<Box<Vec<SwitchCase>>>) -> Box<Statement> {
-        Box::new(Statement::SwitchStatement(SwitchStatement {
-            discriminant: Box::new(Expression::LiteralNullExpression),
+    pub fn case_block(
+        &self,
+        cases: Option<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::SwitchStatement(SwitchStatement {
+            discriminant: self.alloc(Expression::LiteralNullExpression),
             cases: match cases {
-                None => vec![],
-                Some(boxed) => *boxed,
+                None => self.new_vec(),
+                Some(boxed) => boxed.unbox(),
             },
         }))
     }
@@ -1831,75 +2083,88 @@ impl AstBuilder {
     // CaseBlock : `{` CaseClauses DefaultClause CaseClauses `}`
     pub fn case_block_with_default(
         &self,
-        pre_default_cases: Option<Box<Vec<SwitchCase>>>,
-        default_case: Box<SwitchDefault>,
-        post_default_cases: Option<Box<Vec<SwitchCase>>>,
-    ) -> Box<Statement> {
-        Box::new(Statement::SwitchStatementWithDefault(
+        pre_default_cases: Option<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>,
+        default_case: arena::Box<'alloc, SwitchDefault<'alloc>>,
+        post_default_cases: Option<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::SwitchStatementWithDefault(
             SwitchStatementWithDefault {
-                discriminant: Box::new(Expression::LiteralNullExpression),
+                discriminant: self.alloc(Expression::LiteralNullExpression),
                 pre_default_cases: match pre_default_cases {
-                    None => vec![],
-                    Some(boxed) => *boxed,
+                    None => self.new_vec(),
+                    Some(boxed) => boxed.unbox(),
                 },
-                default_case: *default_case,
+                default_case: default_case.unbox(),
                 post_default_cases: match post_default_cases {
-                    None => vec![],
-                    Some(boxed) => *boxed,
+                    None => self.new_vec(),
+                    Some(boxed) => boxed.unbox(),
                 },
             },
         ))
     }
 
     // CaseClauses : CaseClause
-    pub fn case_clauses_single(&self, case: Box<SwitchCase>) -> Box<Vec<SwitchCase>> {
-        Box::new(vec![*case])
+    pub fn case_clauses_single(
+        &self,
+        case: arena::Box<'alloc, SwitchCase<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>> {
+        self.alloc(self.new_vec_single(case.unbox()))
     }
 
     // CaseClauses : CaseClauses CaseClause
     pub fn case_clauses_append(
         &self,
-        mut cases: Box<Vec<SwitchCase>>,
-        case: Box<SwitchCase>,
-    ) -> Box<Vec<SwitchCase>> {
-        cases.push(*case);
+        mut cases: arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>,
+        case: arena::Box<'alloc, SwitchCase<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>> {
+        self.push(&mut cases, case.unbox());
         cases
     }
 
     // CaseClause : `case` Expression `:` StatementList
     pub fn case_clause(
         &self,
-        expression: Box<Expression>,
-        statements: Option<Box<Vec<Statement>>>,
-    ) -> Box<SwitchCase> {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+        statements: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
+    ) -> arena::Box<'alloc, SwitchCase<'alloc>> {
         if let Some(statements) = statements {
-            Box::new(SwitchCase::new(expression, *statements))
+            self.alloc(SwitchCase::new(expression, statements.unbox()))
         } else {
-            Box::new(SwitchCase::new(expression, Vec::new()))
+            self.alloc(SwitchCase::new(expression, self.new_vec()))
         }
     }
 
     // DefaultClause : `default` `:` StatementList
-    pub fn default_clause(&self, statements: Option<Box<Vec<Statement>>>) -> Box<SwitchDefault> {
-        Box::new(SwitchDefault {
+    pub fn default_clause(
+        &self,
+        statements: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
+    ) -> arena::Box<'alloc, SwitchDefault<'alloc>> {
+        self.alloc(SwitchDefault {
             consequent: match statements {
-                None => vec![],
-                Some(boxed) => *boxed,
+                None => self.new_vec(),
+                Some(boxed) => boxed.unbox(),
             },
         })
     }
 
     // LabelledStatement : LabelIdentifier `:` LabelledItem
-    pub fn labelled_statement(&self, label: Box<Label>, body: Box<Statement>) -> Box<Statement> {
-        Box::new(Statement::LabeledStatement(LabeledStatement {
-            label: *label,
+    pub fn labelled_statement(
+        &self,
+        label: arena::Box<'alloc, Label<'alloc>>,
+        body: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::LabeledStatement(LabeledStatement {
+            label: label.unbox(),
             body,
         }))
     }
 
     // ThrowStatement : `throw` Expression `;`
-    pub fn throw_statement(&self, expression: Box<Expression>) -> Box<Statement> {
-        Box::new(Statement::ThrowStatement(ThrowStatement { expression }))
+    pub fn throw_statement(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::ThrowStatement(ThrowStatement { expression }))
     }
 
     // TryStatement : `try` Block Catch
@@ -1907,22 +2172,22 @@ impl AstBuilder {
     // TryStatement : `try` Block Catch Finally
     pub fn try_statement(
         &self,
-        body: Box<Block>,
-        catch_clause: Option<Box<CatchClause>>,
-        finally_block: Option<Box<Block>>,
-    ) -> Box<Statement> {
+        body: arena::Box<'alloc, Block<'alloc>>,
+        catch_clause: Option<arena::Box<'alloc, CatchClause<'alloc>>>,
+        finally_block: Option<arena::Box<'alloc, Block<'alloc>>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
         match (catch_clause, finally_block) {
             (Some(catch_clause), None) => {
-                Box::new(Statement::TryCatchStatement(TryCatchStatement {
-                    body: *body,
-                    catch_clause: *catch_clause,
+                self.alloc(Statement::TryCatchStatement(TryCatchStatement {
+                    body: body.unbox(),
+                    catch_clause: catch_clause.unbox(),
                 }))
             }
             (catch_clause, Some(finally_block)) => {
-                Box::new(Statement::TryFinallyStatement(TryFinallyStatement {
-                    body: *body,
-                    catch_clause: catch_clause.map(|boxed| *boxed),
-                    finalizer: *finally_block,
+                self.alloc(Statement::TryFinallyStatement(TryFinallyStatement {
+                    body: body.unbox(),
+                    catch_clause: catch_clause.map(|boxed| boxed.unbox()),
+                    finalizer: finally_block.unbox(),
                 }))
             }
             _ => {
@@ -1933,24 +2198,28 @@ impl AstBuilder {
     }
 
     // Catch : `catch` `(` CatchParameter `)` Block
-    pub fn catch(&self, binding: Box<Binding>, body: Box<Block>) -> Box<CatchClause> {
-        Box::new(CatchClause {
-            binding: *binding,
-            body: *body,
+    pub fn catch(
+        &self,
+        binding: arena::Box<'alloc, Binding<'alloc>>,
+        body: arena::Box<'alloc, Block<'alloc>>,
+    ) -> arena::Box<'alloc, CatchClause<'alloc>> {
+        self.alloc(CatchClause {
+            binding: binding.unbox(),
+            body: body.unbox(),
         })
     }
 
     // DebuggerStatement : `debugger` `;`
-    pub fn debugger_statement(&self) -> Box<Statement> {
-        Box::new(Statement::DebuggerStatement)
+    pub fn debugger_statement(&self) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::DebuggerStatement)
     }
 
-    pub fn function_decl(&self, f: Function) -> Box<Statement> {
-        Box::new(Statement::FunctionDeclaration(f))
+    pub fn function_decl(&self, f: Function<'alloc>) -> arena::Box<'alloc, Statement<'alloc>> {
+        self.alloc(Statement::FunctionDeclaration(f))
     }
 
-    pub fn function_expr(&self, f: Function) -> Box<Expression> {
-        Box::new(Expression::FunctionExpression(f))
+    pub fn function_expr(&self, f: Function<'alloc>) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::FunctionExpression(f))
     }
 
     // FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`
@@ -1958,11 +2227,17 @@ impl AstBuilder {
     // FunctionExpression : `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`
     pub fn function(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Function {
-        Function::new(name.map(|b| *b), false, false, *params, *body)
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> Function<'alloc> {
+        Function::new(
+            name.map(|b| b.unbox()),
+            false,
+            false,
+            params.unbox(),
+            body.unbox(),
+        )
     }
 
     // AsyncFunctionDeclaration : `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
@@ -1970,11 +2245,17 @@ impl AstBuilder {
     // AsyncFunctionExpression : `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`
     pub fn async_function(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Function {
-        Function::new(name.map(|b| *b), true, false, *params, *body)
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> Function<'alloc> {
+        Function::new(
+            name.map(|b| b.unbox()),
+            true,
+            false,
+            params.unbox(),
+            body.unbox(),
+        )
     }
 
     // GeneratorDeclaration : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`
@@ -1982,11 +2263,17 @@ impl AstBuilder {
     // GeneratorExpression : `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`
     pub fn generator(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Function {
-        Function::new(name.map(|b| *b), false, true, *params, *body)
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> Function<'alloc> {
+        Function::new(
+            name.map(|b| b.unbox()),
+            false,
+            true,
+            params.unbox(),
+            body.unbox(),
+        )
     }
 
     // AsyncGeneratorDeclaration : `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
@@ -1994,90 +2281,107 @@ impl AstBuilder {
     // AsyncGeneratorExpression : `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
     pub fn async_generator(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Function {
-        Function::new(name.map(|b| *b), true, true, *params, *body)
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> Function<'alloc> {
+        Function::new(
+            name.map(|b| b.unbox()),
+            true,
+            true,
+            params.unbox(),
+            body.unbox(),
+        )
     }
 
     // UniqueFormalParameters : FormalParameters
     pub fn unique_formal_parameters(
         &self,
-        parameters: Box<FormalParameters>,
-    ) -> Box<FormalParameters> {
+        parameters: arena::Box<'alloc, FormalParameters<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
         // TODO
         parameters
     }
 
     // FormalParameters : [empty]
-    pub fn empty_formal_parameters(&self) -> Box<FormalParameters> {
-        Box::new(FormalParameters::new(Vec::new(), None))
+    pub fn empty_formal_parameters(&self) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        self.alloc(FormalParameters::new(self.new_vec(), None))
     }
 
     // FormalParameters : FunctionRestParameter
     // FormalParameters : FormalParameterList `,` FunctionRestParameter
     pub fn with_rest_parameter(
         &self,
-        mut params: Box<FormalParameters>,
-        rest: Box<Binding>,
-    ) -> Box<FormalParameters> {
-        params.rest = Some(*rest);
+        mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        rest: arena::Box<'alloc, Binding<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        params.rest = Some(rest.unbox());
         params
     }
 
     // FormalParameterList : FormalParameter
-    pub fn formal_parameter_list_single(&self, parameter: Box<Parameter>) -> Box<FormalParameters> {
-        Box::new(FormalParameters::new(vec![*parameter], None))
+    pub fn formal_parameter_list_single(
+        &self,
+        parameter: arena::Box<'alloc, Parameter<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        self.alloc(FormalParameters::new(
+            self.new_vec_single(parameter.unbox()),
+            None,
+        ))
     }
 
     // FormalParameterList : FormalParameterList "," FormalParameter
     pub fn formal_parameter_list_append(
         &self,
-        mut params: Box<FormalParameters>,
-        next_param: Box<Parameter>,
-    ) -> Box<FormalParameters> {
-        params.items.push(*next_param);
+        mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        next_param: arena::Box<'alloc, Parameter<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        self.push(&mut params.items, next_param.unbox());
         params
     }
 
     // FunctionBody : FunctionStatementList
-    pub fn function_body(&self, statements: Box<Vec<Statement>>) -> Box<FunctionBody> {
+    pub fn function_body(
+        &self,
+        statements: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
+    ) -> arena::Box<'alloc, FunctionBody<'alloc>> {
         // TODO: Directives
-        Box::new(FunctionBody::new(Vec::new(), *statements))
+        self.alloc(FunctionBody::new(self.new_vec(), statements.unbox()))
     }
 
     // FunctionStatementList : StatementList?
     pub fn function_statement_list(
         &self,
-        statements: Option<Box<Vec<Statement>>>,
-    ) -> Box<Vec<Statement>> {
+        statements: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
         match statements {
             Some(statements) => statements,
-            None => Box::new(Vec::new()),
+            None => self.alloc(self.new_vec()),
         }
     }
 
     // ArrowFunction : ArrowParameters `=>` ConciseBody
     pub fn arrow_function(
         &self,
-        params: Box<FormalParameters>,
-        body: Box<ArrowExpressionBody>,
-    ) -> Box<Expression> {
-        Box::new(Expression::ArrowExpression(ArrowExpression {
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, ArrowExpressionBody<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ArrowExpression(ArrowExpression {
             is_async: false,
-            params: *params,
-            body: *body,
+            params: params.unbox(),
+            body: body.unbox(),
         }))
     }
 
     // ArrowParameters : BindingIdentifier
     pub fn arrow_parameters_bare(
         &self,
-        identifier: Box<BindingIdentifier>,
-    ) -> Box<FormalParameters> {
-        Box::new(FormalParameters {
-            items: vec![Parameter::Binding(Binding::BindingIdentifier(*identifier))],
+        identifier: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        self.alloc(FormalParameters {
+            items: self.new_vec_single(Parameter::Binding(Binding::BindingIdentifier(
+                identifier.unbox(),
+            ))),
             rest: None,
         })
     }
@@ -2085,10 +2389,10 @@ impl AstBuilder {
     // ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
     pub fn uncover_arrow_parameters(
         &self,
-        covered: Box<CoverParenthesized>,
-    ) -> Box<FormalParameters> {
-        match *covered {
-            CoverParenthesized::Expression(expression) => Box::new(FormalParameters {
+        covered: arena::Box<'alloc, CoverParenthesized<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
+        match covered.unbox() {
+            CoverParenthesized::Expression(expression) => self.alloc(FormalParameters {
                 items: self.expression_to_parameter_list(expression),
                 rest: None,
             }),
@@ -2097,69 +2401,94 @@ impl AstBuilder {
     }
 
     // ConciseBody : [lookahead != `{`] AssignmentExpression
-    pub fn concise_body_expression(&self, expression: Box<Expression>) -> Box<ArrowExpressionBody> {
-        Box::new(ArrowExpressionBody::Expression(expression))
+    pub fn concise_body_expression(
+        &self,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, ArrowExpressionBody<'alloc>> {
+        self.alloc(ArrowExpressionBody::Expression(expression))
     }
 
     // ConciseBody : `{` FunctionBody `}`
-    pub fn concise_body_block(&self, body: Box<FunctionBody>) -> Box<ArrowExpressionBody> {
-        Box::new(ArrowExpressionBody::FunctionBody(*body))
+    pub fn concise_body_block(
+        &self,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, ArrowExpressionBody<'alloc>> {
+        self.alloc(ArrowExpressionBody::FunctionBody(body.unbox()))
     }
 
     // MethodDefinition : PropertyName `(` UniqueFormalParameters `)` `{` FunctionBody `}`
     pub fn method_definition(
         &self,
-        name: Box<PropertyName>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Method(Method::new(
-            *name, false, false, *params, *body,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Method(Method::new(
+            name.unbox(),
+            false,
+            false,
+            params.unbox(),
+            body.unbox(),
         )))
     }
 
     // MethodDefinition : `get` PropertyName `(` `)` `{` FunctionBody `}`
     pub fn getter(
         &self,
-        name: Box<PropertyName>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Getter(Getter::new(*name, *body)))
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Getter(Getter::new(
+            name.unbox(),
+            body.unbox(),
+        )))
     }
 
     // MethodDefinition : `set` PropertyName `(` PropertySetParameterList `)` `{` FunctionBody `}`
     pub fn setter(
         &self,
-        name: Box<PropertyName>,
-        parameter: Box<Parameter>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Setter(Setter::new(
-            *name, *parameter, *body,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        parameter: arena::Box<'alloc, Parameter<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Setter(Setter::new(
+            name.unbox(),
+            parameter.unbox(),
+            body.unbox(),
         )))
     }
 
     // GeneratorMethod : `*` PropertyName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`
     pub fn generator_method(
         &self,
-        name: Box<PropertyName>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Method(Method::new(
-            *name, false, true, *params, *body,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Method(Method::new(
+            name.unbox(),
+            false,
+            true,
+            params.unbox(),
+            body.unbox(),
         )))
     }
 
     // YieldExpression : `yield`
     // YieldExpression : `yield` AssignmentExpression
-    pub fn yield_expr(&self, operand: Option<Box<Expression>>) -> Box<Expression> {
-        Box::new(Expression::YieldExpression(YieldExpression::new(operand)))
+    pub fn yield_expr(
+        &self,
+        operand: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::YieldExpression(YieldExpression::new(operand)))
     }
 
     // YieldExpression : `yield` `*` AssignmentExpression
-    pub fn yield_star_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::YieldGeneratorExpression(
+    pub fn yield_star_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::YieldGeneratorExpression(
             YieldGeneratorExpression::new(operand),
         ))
     }
@@ -2167,12 +2496,16 @@ impl AstBuilder {
     // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
     pub fn async_generator_method(
         &self,
-        name: Box<PropertyName>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Method(Method::new(
-            *name, true, true, *params, *body,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Method(Method::new(
+            name.unbox(),
+            true,
+            true,
+            params.unbox(),
+            body.unbox(),
         )))
     }
 
@@ -2180,17 +2513,18 @@ impl AstBuilder {
     // ClassDeclaration : `class` ClassTail
     pub fn class_declaration(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        tail: Box<ClassExpression>,
-    ) -> Box<Statement> {
-        Box::new(Statement::ClassDeclaration(ClassDeclaration {
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        tail: arena::Box<'alloc, ClassExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Statement<'alloc>> {
+        let tail = tail.unbox();
+        self.alloc(Statement::ClassDeclaration(ClassDeclaration {
             name: match name {
                 None => BindingIdentifier {
                     name: Identifier {
-                        value: "default".to_string(),
+                        value: self.to_string("default"),
                     },
                 },
-                Some(bi) => *bi,
+                Some(bi) => bi.unbox(),
             },
             super_: tail.super_,
             elements: tail.elements,
@@ -2200,25 +2534,25 @@ impl AstBuilder {
     // ClassExpression : `class` BindingIdentifier? ClassTail
     pub fn class_expression(
         &self,
-        name: Option<Box<BindingIdentifier>>,
-        mut tail: Box<ClassExpression>,
-    ) -> Box<Expression> {
-        tail.name = name.map(|boxed| *boxed);
-        Box::new(Expression::ClassExpression(*tail))
+        name: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        mut tail: arena::Box<'alloc, ClassExpression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        tail.name = name.map(|boxed| boxed.unbox());
+        self.alloc(Expression::ClassExpression(tail.unbox()))
     }
 
     // ClassTail : ClassHeritage? `{` ClassBody? `}`
     pub fn class_tail(
         &self,
-        heritage: Option<Box<Expression>>,
-        body: Option<Box<Vec<ClassElement>>>,
-    ) -> Box<ClassExpression> {
-        Box::new(ClassExpression {
+        heritage: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        body: Option<arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>>,
+    ) -> arena::Box<'alloc, ClassExpression<'alloc>> {
+        self.alloc(ClassExpression {
             name: None,
             super_: heritage,
             elements: match body {
-                None => vec![],
-                Some(boxed) => *boxed,
+                None => self.new_vec(),
+                Some(boxed) => boxed.unbox(),
             },
         })
     }
@@ -2226,252 +2560,314 @@ impl AstBuilder {
     // ClassElementList : ClassElementList ClassElement
     pub fn class_element_list_append(
         &self,
-        mut list: Box<Vec<ClassElement>>,
-        mut element: Box<Vec<ClassElement>>,
-    ) -> Box<Vec<ClassElement>> {
-        list.append(&mut element);
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>,
+        mut element: arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+        self.append(&mut list, &mut element);
         list
     }
 
     // ClassElement : MethodDefinition
-    pub fn class_element(&self, method: Box<MethodDefinition>) -> Box<Vec<ClassElement>> {
-        Box::new(vec![ClassElement {
+    pub fn class_element(
+        &self,
+        method: arena::Box<'alloc, MethodDefinition<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+        self.alloc(self.new_vec_single(ClassElement {
             is_static: false,
-            method: *method,
-        }])
+            method: method.unbox(),
+        }))
     }
 
     // ClassElement : `static` MethodDefinition
-    pub fn class_element_static(&self, method: Box<MethodDefinition>) -> Box<Vec<ClassElement>> {
-        Box::new(vec![ClassElement {
+    pub fn class_element_static(
+        &self,
+        method: arena::Box<'alloc, MethodDefinition<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+        self.alloc(self.new_vec_single(ClassElement {
             is_static: true,
-            method: *method,
-        }])
+            method: method.unbox(),
+        }))
     }
 
     // ClassElement : `;`
-    pub fn class_element_empty(&self) -> Box<Vec<ClassElement>> {
-        Box::new(vec![])
+    pub fn class_element_empty(
+        &self,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+        self.alloc(self.new_vec())
     }
 
     // AsyncMethod : `async` PropertyName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`
     pub fn async_method(
         &self,
-        name: Box<PropertyName>,
-        params: Box<FormalParameters>,
-        body: Box<FunctionBody>,
-    ) -> Box<MethodDefinition> {
-        Box::new(MethodDefinition::Method(Method::new(
-            *name, true, false, *params, *body,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, FunctionBody<'alloc>>,
+    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
+        self.alloc(MethodDefinition::Method(Method::new(
+            name.unbox(),
+            true,
+            false,
+            params.unbox(),
+            body.unbox(),
         )))
     }
 
     // AwaitExpression : `await` UnaryExpression
-    pub fn await_expr(&self, operand: Box<Expression>) -> Box<Expression> {
-        Box::new(Expression::AwaitExpression(AwaitExpression::new(operand)))
+    pub fn await_expr(
+        &self,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::AwaitExpression(AwaitExpression::new(operand)))
     }
 
     // AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody
     // AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody
     pub fn async_arrow_function(
         &self,
-        params: Box<FormalParameters>,
-        body: Box<ArrowExpressionBody>,
-    ) -> Box<Expression> {
-        Box::new(Expression::ArrowExpression(ArrowExpression {
+        params: arena::Box<'alloc, FormalParameters<'alloc>>,
+        body: arena::Box<'alloc, ArrowExpressionBody<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ArrowExpression(ArrowExpression {
             is_async: true,
-            params: *params,
-            body: *body,
+            params: params.unbox(),
+            body: body.unbox(),
         }))
     }
 
     pub fn async_arrow_parameters(
         &self,
-        _call_expression: Box<Expression>,
-    ) -> Box<FormalParameters> {
+        _call_expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
         unimplemented!()
     }
 
     // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments
     pub fn cover_call_expression_and_async_arrow_head(
         &self,
-        callee: Box<Expression>,
-        arguments: Box<Arguments>,
-    ) -> Box<Expression> {
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
         // TODO
-        Box::new(Expression::CallExpression(CallExpression::new(
-            ExpressionOrSuper::Expression(callee),
-            *arguments,
+        self.alloc(Expression::CallExpression(CallExpression::new(
+            ExpressionOrSuper::Expression(self.alloc(callee.unbox())),
+            arguments.unbox(),
         )))
     }
 
     // Script : ScriptBody?
-    pub fn script(&self, script: Option<Box<Script>>) -> Box<Script> {
+    pub fn script(
+        &self,
+        script: Option<arena::Box<'alloc, Script<'alloc>>>,
+    ) -> arena::Box<'alloc, Script<'alloc>> {
         match script {
             Some(script) => script,
-            None => Box::new(Script::new(Vec::new(), Vec::new())),
+            None => self.alloc(Script::new(self.new_vec(), self.new_vec())),
         }
     }
 
     // ScriptBody : StatementList
-    pub fn script_body(&self, statements: Box<Vec<Statement>>) -> Box<Script> {
+    pub fn script_body(
+        &self,
+        statements: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
+    ) -> arena::Box<'alloc, Script<'alloc>> {
         // TODO: directives
-        Box::new(Script::new(Vec::new(), *statements))
+        self.alloc(Script::new(self.new_vec(), statements.unbox()))
     }
 }
 
 #[allow(unused_variables)]
-impl AstBuilder {
+impl<'alloc> AstBuilder<'alloc> {
     // Module ::= ModuleBody => Module(Some($0))
-    pub fn module(&self, a0: Option<Box<Void>>) -> Box<Void> {
-        unimplemented!(); // Box::new(Module::new())
+    pub fn module(&self, a0: Option<arena::Box<'alloc, Void>>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(Module::new())
     }
     // ModuleBody ::= ModuleItemList => ModuleBody($0)
-    pub fn module_body(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleBody::new())
+    pub fn module_body(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleBody::new())
     }
     // ModuleItemList ::= ModuleItem => ModuleItemList 0($0)
-    pub fn module_item_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItemList::new())
+    pub fn module_item_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItemList::new())
     }
     // ModuleItemList ::= ModuleItemList ModuleItem => ModuleItemList 1($0, $1)
-    pub fn module_item_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItemList::new())
+    pub fn module_item_list_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItemList::new())
     }
+
     // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
-    pub fn import_declaration_p0(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn import_declaration_p0(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
-    pub fn import_declaration_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn import_declaration_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ImportClause ::= ImportedDefaultBinding => ImportClause 0($0)
-    pub fn import_clause_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportClause::new())
+    pub fn import_clause_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportClause::new())
     }
     // ImportClause ::= NameSpaceImport => ImportClause 1($0)
-    pub fn import_clause_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportClause::new())
+    pub fn import_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportClause::new())
     }
     // ImportClause ::= NamedImports => ImportClause 2($0)
-    pub fn import_clause_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportClause::new())
+    pub fn import_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportClause::new())
     }
     // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => ImportClause 3($0, $1, $2)
-    pub fn import_clause_p3(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportClause::new())
+    pub fn import_clause_p3(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportClause::new())
     }
     // ImportClause ::= ImportedDefaultBinding "," NamedImports => ImportClause 4($0, $1, $2)
-    pub fn import_clause_p4(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportClause::new())
+    pub fn import_clause_p4(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportClause::new())
     }
     // ImportedDefaultBinding ::= ImportedBinding => ImportedDefaultBinding($0)
-    pub fn imported_default_binding(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportedDefaultBinding::new())
+    pub fn imported_default_binding(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportedDefaultBinding::new())
     }
     // NameSpaceImport ::= "*" "as" ImportedBinding => NameSpaceImport($0, $1, $2)
-    pub fn name_space_import(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(NameSpaceImport::new())
+    pub fn name_space_import(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(NameSpaceImport::new())
     }
     // NamedImports ::= "{" "}" => NamedImports 0($0, $1)
-    pub fn named_imports_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(NamedImports::new())
+    pub fn named_imports_p0(&self) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(NamedImports::new())
     }
     // NamedImports ::= "{" ImportsList "}" => NamedImports 1($0, $1, $2)
-    pub fn named_imports_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(NamedImports::new())
+    pub fn named_imports_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(NamedImports::new())
     }
     // NamedImports ::= "{" ImportsList "," "}" => NamedImports 2($0, $1, $2, $3)
-    pub fn named_imports_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(NamedImports::new())
+    pub fn named_imports_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(NamedImports::new())
     }
     // FromClause ::= "from" ModuleSpecifier => FromClause($0, $1)
-    pub fn from_clause(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(FromClause::new())
+    pub fn from_clause(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(FromClause::new())
     }
     // ImportsList ::= ImportSpecifier => ImportsList 0($0)
-    pub fn imports_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportsList::new())
+    pub fn imports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportsList::new())
     }
     // ImportsList ::= ImportsList "," ImportSpecifier => ImportsList 1($0, $1, $2)
-    pub fn imports_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportsList::new())
+    pub fn imports_list_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportsList::new())
     }
     // ImportSpecifier ::= ImportedBinding => ImportSpecifier 0($0)
-    pub fn import_specifier_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportSpecifier::new())
+    pub fn import_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportSpecifier::new())
     }
     // ImportSpecifier ::= IdentifierName "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
-    pub fn import_specifier_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportSpecifier::new())
+    pub fn import_specifier_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportSpecifier::new())
     }
     // ModuleSpecifier ::= StringLiteral => ModuleSpecifier($0)
-    pub fn module_specifier(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleSpecifier::new())
+    pub fn module_specifier(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleSpecifier::new())
     }
     // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
-    pub fn imported_binding(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ImportedBinding::new())
+    pub fn imported_binding(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ImportedBinding::new())
     }
+
     // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
-    pub fn export_declaration_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
-    pub fn export_declaration_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
-    pub fn export_declaration_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" VariableStatement => ExportDeclaration 3($0, $1)
-    pub fn export_declaration_p3(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p3(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" Declaration => ExportDeclaration 4($0, $1)
-    pub fn export_declaration_p4(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p4(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" "default" HoistableDeclaration => ExportDeclaration 5($0, $1, $2)
-    pub fn export_declaration_p5(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p5(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" "default" ClassDeclaration => ExportDeclaration 6($0, $1, $2)
-    pub fn export_declaration_p6(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p6(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
-    pub fn export_declaration_p7(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ModuleItem::new())
+    pub fn export_declaration_p7(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ModuleItem::new())
     }
     // ExportClause ::= "{" "}" => ExportClause 0($0, $1)
-    pub fn export_clause_p0(&self) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportClause::new())
+    pub fn export_clause_p0(&self) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportClause::new())
     }
     // ExportClause ::= "{" ExportsList "}" => ExportClause 1($0, $1, $2)
-    pub fn export_clause_p1(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportClause::new())
+    pub fn export_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportClause::new())
     }
     // ExportClause ::= "{" ExportsList "," "}" => ExportClause 2($0, $1, $2, $3)
-    pub fn export_clause_p2(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportClause::new())
+    pub fn export_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportClause::new())
     }
     // ExportsList ::= ExportSpecifier => ExportsList 0($0)
-    pub fn exports_list_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportsList::new())
+    pub fn exports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportsList::new())
     }
     // ExportsList ::= ExportsList "," ExportSpecifier => ExportsList 1($0, $1, $2)
-    pub fn exports_list_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportsList::new())
+    pub fn exports_list_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportsList::new())
     }
     // ExportSpecifier ::= IdentifierName => ExportSpecifier 0($0)
-    pub fn export_specifier_p0(&self, a0: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportSpecifier::new())
+    pub fn export_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportSpecifier::new())
     }
     // ExportSpecifier ::= IdentifierName "as" IdentifierName => ExportSpecifier 1($0, $1, $2)
-    pub fn export_specifier_p1(&self, a0: Box<Void>, a1: Box<Void>) -> Box<Void> {
-        unimplemented!(); // Box::new(ExportSpecifier::new())
+    pub fn export_specifier_p1(
+        &self,
+        a0: arena::Box<'alloc, Void>,
+        a1: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!(); // self.alloc(ExportSpecifier::new())
     }
 }

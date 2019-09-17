@@ -8,6 +8,7 @@ use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
 use ast;
+use bumpalo::Bump;
 use emitter::emit;
 use parser::parse_script;
 
@@ -54,7 +55,8 @@ fn parse_file(path: &Path, size_bytes: u64) -> io::Result<DemoStats> {
         }
         Ok(s) => s,
     };
-    let result = parse_script(&contents);
+    let allocator = &Bump::new();
+    let result = parse_script(allocator, &contents);
     let stats = DemoStats::new_single(size_bytes, result.is_ok());
     match result {
         Ok(_ast) => println!(" ok"),
@@ -103,16 +105,18 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
 }
 
 fn run(buffer: &str) {
-    let parse_result = parse_script(buffer);
+    let allocator = &Bump::new();
+    let parse_result = parse_script(allocator, buffer);
     match parse_result {
         Ok(ast) => {
-            let mut script = ast::Program::Script(*ast);
+            let mut script = ast::Program::Script(ast.unbox());
             let emit_result = emit(&mut script);
-            if let Ok(script_json) = ast::json::to_string_pretty(&script) {
-                println!("{}", script_json);
-            } else {
-                println!("{:#?}", script);
-            }
+            // FIXME - json support removed for now
+            // if let Ok(script_json) = ast::json::to_string_pretty(&script) {
+            //     println!("{}", script_json);
+            // } else {
+            println!("{:#?}", script);
+            // }
             println!("{:#?}", emit_result);
         }
         Err(err) => println!("{}", err.message()),

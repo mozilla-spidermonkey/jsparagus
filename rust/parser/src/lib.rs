@@ -9,8 +9,8 @@ mod tests;
 
 pub use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
-use ast::{Module, Script};
-use elsa::FrozenVec;
+use ast::{arena, Module, Script};
+use bumpalo;
 use generated_parser::{
     AstBuilder, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
 };
@@ -20,20 +20,30 @@ use std::fmt::{self, Display};
 use std::io::{self, Write};
 use std::result;
 
-pub fn parse_script(source: &str) -> Result<Box<Script>> {
-    Ok(parse(source, START_STATE_SCRIPT)?.to_ast())
+pub fn parse_script<'alloc>(
+    allocator: &'alloc bumpalo::Bump,
+    source: &'alloc str,
+) -> Result<arena::Box<'alloc, Script<'alloc>>> {
+    Ok(parse(allocator, source, START_STATE_SCRIPT)?.to_ast())
 }
 
-pub fn parse_module(source: &str) -> Result<Box<Module>> {
-    Ok(parse(source, START_STATE_MODULE)?.to_ast())
+pub fn parse_module<'alloc>(
+    allocator: &'alloc bumpalo::Bump,
+    source: &'alloc str,
+) -> Result<arena::Box<'alloc, Module<'alloc>>> {
+    Ok(parse(allocator, source, START_STATE_MODULE)?.to_ast())
 }
 
-fn parse<'a>(source: &'a str, start_state: usize) -> Result<StackValue<'a>> {
+fn parse<'alloc>(
+    allocator: &'alloc bumpalo::Bump,
+    source: &'alloc str,
+    start_state: usize,
+) -> Result<StackValue<'alloc>> {
     let mut tokens = Lexer::new(source.chars());
 
     TABLES.check();
 
-    let mut parser = Parser::new(AstBuilder {}, start_state);
+    let mut parser = Parser::new(AstBuilder { allocator }, start_state);
 
     loop {
         let t = tokens.next(&parser)?;
@@ -71,23 +81,25 @@ impl Error for UserExit {
 /// Errors can be `parser::UserExit` if the user typed Ctrl-D,
 /// `std::io::Error` if reading stdin or writing stdout failed, or
 /// `parser::errors::ParseError` if the input isn't valid JS.
-pub fn read_script_interactively(
+pub fn read_script_interactively<'alloc>(
+    allocator: &'alloc bumpalo::Bump,
     prompt: &str,
     continue_prompt: &str,
-) -> std::result::Result<Box<Script>, Box<dyn Error>> {
+) -> std::result::Result<arena::Box<'alloc, Script<'alloc>>, Box<dyn Error>> {
     TABLES.check();
 
-    let mut parser = Parser::new(AstBuilder {}, START_STATE_SCRIPT);
+    let mut parser = Parser::new(AstBuilder { allocator }, START_STATE_SCRIPT);
 
     print!("{}", prompt);
-    let lines = FrozenVec::new();
     loop {
         let mut line = String::new();
         io::stdout().flush()?;
         if io::stdin().read_line(&mut line)? == 0 {
             return Err(UserExit.into());
         }
-        let mut tokens = Lexer::new(lines.push_get(line).chars());
+        let line_str: &'alloc str = arena::alloc_str(allocator, &line);
+
+        let mut tokens = Lexer::new(line_str.chars());
         loop {
             let t = tokens.next(&parser)?;
             if t.terminal_id == TerminalId::End {

@@ -482,10 +482,11 @@ class RustParserWriter:
             assert False, "unexpected element type: {!r}".format(e)
 
     def reduce(self):
-        self.write(
-            0,
-            "pub fn reduce(handler: &AstBuilder, prod: usize, "
-            "stack: &mut Vec<StackValue>) -> NonterminalId {")
+        self.write(0, "pub fn reduce<'alloc>(")
+        self.write(1, "handler: &AstBuilder<'alloc>,")
+        self.write(1, "prod: usize,")
+        self.write(1, "stack: &mut Vec<StackValue<'alloc>>,")
+        self.write(0, ") -> NonterminalId {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal
