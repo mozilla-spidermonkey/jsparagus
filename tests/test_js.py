@@ -140,7 +140,7 @@ class ESTestCase(unittest.TestCase):
             self.parse(["/xyzzy/", "g;"]),
             ('script',
              ('script_body',
-              ('StatementList 0',
+              ('statement_list_single',
                ('expression_statement',
                 ('regexp_literal', '/xyzzy/g'))))))
 
@@ -148,10 +148,10 @@ class ESTestCase(unittest.TestCase):
             self.parse(['x/', '=2;']),
             ('script',
              ('script_body',
-              ('StatementList 0',
+              ('statement_list_single',
                ('expression_statement',
                 ('compound_assignment_expr',
-                 ('identifier_expr', ('IdentifierReference', 'x')),
+                 ('identifier_expr', ('identifier_reference', 'x')),
                  ('box_assign_op', ('div_assign_op',)),
                  ('numeric_literal', '2')))))))
 
