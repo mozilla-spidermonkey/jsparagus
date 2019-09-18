@@ -394,9 +394,9 @@ class Struct(AggregateTypeDecl):
 
     def write_rust_type_decl(self, ast, write):
         if len(self.fields) == 0:
-            write(0, "#[derive(Default, Debug)]")
+            write(0, "#[derive(Default, Debug, PartialEq)]")
         else:
-            write(0, "#[derive(Debug)]")
+            write(0, "#[derive(Debug, PartialEq)]")
         lifetime_params = self.lifetime_params()
         write(0, "pub struct {}{} {{", self.name, lifetime_params)
         for field, field_type in self.fields.items():
@@ -471,7 +471,7 @@ class Enum(AggregateTypeDecl):
         return iter(self.variants.values())
 
     def write_rust_type_decl(self, ast, write):
-        write(0, "#[derive(Debug)]")
+        write(0, "#[derive(Debug, PartialEq)]")
         lifetime_params = self.lifetime_params()
         write(0, "pub enum {}{} {{", self.name, lifetime_params)
         for variant_name, ty in self.variants.items():

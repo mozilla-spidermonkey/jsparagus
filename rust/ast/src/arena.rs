@@ -8,7 +8,7 @@ use std::{
 
 pub use bumpalo::collections::{String, Vec};
 
-pub struct Box<'alloc, T>(&'alloc mut T);
+pub struct Box<'alloc, T: ?Sized>(&'alloc mut T);
 
 impl<'alloc, T> Box<'alloc, T> {
     pub fn unbox(self) -> T {
@@ -21,7 +21,7 @@ impl<'alloc, T> Box<'alloc, T> {
     }
 }
 
-impl<'alloc, T> ops::Deref for Box<'alloc, T> {
+impl<'alloc, T: ?Sized> ops::Deref for Box<'alloc, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -29,18 +29,31 @@ impl<'alloc, T> ops::Deref for Box<'alloc, T> {
     }
 }
 
-impl<'alloc, T> ops::DerefMut for Box<'alloc, T> {
+impl<'alloc, T: ?Sized> ops::DerefMut for Box<'alloc, T> {
     fn deref_mut(&mut self) -> &mut T {
         self.0
     }
 }
 
-impl<'alloc, T> Debug for Box<'alloc, T>
+impl<'alloc, T: ?Sized> Debug for Box<'alloc, T>
 where
     T: Debug,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+impl<'alloc, T> PartialEq for Box<'alloc, T>
+where
+    T: PartialEq<T> + ?Sized,
+{
+    fn eq(&self, other: &Box<'alloc, T>) -> bool {
+        PartialEq::eq(&**self, &**other)
+    }
+
+    fn ne(&self, other: &Box<'alloc, T>) -> bool {
+        PartialEq::ne(&**self, &**other)
     }
 }
 

@@ -5,7 +5,7 @@ use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
 use ast::{arena, types::*};
-use bumpalo::Bump;
+use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, TerminalId, Token};
 
 #[cfg(all(feature = "unstable", test))]
@@ -342,27 +342,34 @@ fn test_awkward_chunks() {
     //       ('ExpressionStatement',
     //        ('PrimaryExpression 10', '/xyzzy/g'))))));
 
-    // XXX FIXME - needs `==` to work on AST types.
-    // let actual = try_parse(&vec!["x/", "=2;"]).unwrap();
-    // let expected = Script {
-    //     directives: vec![],
-    //     statements: vec![Statement::ExpressionStatement(Box::new(
-    //         Expression::CompoundAssignmentExpression(CompoundAssignmentExpression {
-    //             operator: CompoundAssignmentOperator::Div,
-    //             binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
-    //                 AssignmentTargetIdentifier {
-    //                     name: Identifier {
-    //                         value: "x".to_string(),
-    //                     },
-    //                 },
-    //             ),
-    //             expression: Box::new(Expression::LiteralNumericExpression(
-    //                 LiteralNumericExpression { value: 2.0 },
-    //             )),
-    //         }),
-    //     ))],
-    // };
-    // assert_eq!(format!("{:?}", actual), format!("{:?}", expected));
+    let allocator = &Bump::new();
+    let actual = try_parse(allocator, &vec!["x/", "=2;"]).unwrap();
+    let expected = Script {
+        directives: arena::Vec::new_in(allocator),
+        statements: bumpalo::vec![
+            in allocator;
+            Statement::ExpressionStatement(arena::alloc(
+                allocator,
+                Expression::CompoundAssignmentExpression(CompoundAssignmentExpression {
+                    operator: CompoundAssignmentOperator::Div,
+                    binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
+                        AssignmentTargetIdentifier {
+                            name: Identifier {
+                                value: bumpalo::collections::String::from_str_in("x", allocator),
+                            },
+                        },
+                    ),
+                    expression: arena::alloc(
+                        allocator,
+                        Expression::LiteralNumericExpression(
+                            LiteralNumericExpression { value: 2.0 },
+                        ),
+                    ),
+                }),
+            ))
+        ],
+    };
+    assert_eq!(format!("{:?}", actual), format!("{:?}", expected));
 }
 
 #[test]
