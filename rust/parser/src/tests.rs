@@ -4,8 +4,8 @@ use crate::errors::{ParseError, Result};
 use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
-use bumpalo::Bump;
 use ast::*;
+use bumpalo::Bump;
 use generated_parser::{self, AstBuilder, TerminalId, Token};
 
 #[cfg(all(feature = "unstable", test))]
@@ -120,7 +120,10 @@ fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     let buf = chunks_to_string(code);
     let mut lexer = Lexer::new(buf.chars());
-    let mut parser = Parser::new(AstBuilder { allocator }, generated_parser::START_STATE_SCRIPT);
+    let mut parser = Parser::new(
+        AstBuilder { allocator },
+        generated_parser::START_STATE_SCRIPT,
+    );
     loop {
         let t = lexer.next(&parser).expect("lexer error");
         if t.terminal_id == TerminalId::End {
