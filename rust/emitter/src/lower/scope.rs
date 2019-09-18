@@ -1,6 +1,5 @@
 pub mod full {
-    use super::super::pass::Pass;
-    use ast::*;
+    use ast::{arena, types::*, visit::Pass};
     use bumpalo::Bump;
     use std::mem::replace;
 
@@ -46,8 +45,9 @@ pub mod full {
 }
 
 pub mod postfix {
-    //use super::super::pass::{PostfixPass, PostfixPassMonoid, PostfixPassVisitor};
-    use ast::*;
+    //use ast::visit::{PostfixPass, PostfixPassMonoid, PostfixPassVisitor};
+    use ast::arena;
+    //use ast::types::*;
 
     // #[allow(dead_code)]
     // pub fn pass(ast: &mut Program) {

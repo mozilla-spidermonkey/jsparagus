@@ -1,5 +1,5 @@
 use crate::Token;
-use ast::*;
+use ast::{arena, types::*};
 use bumpalo::{vec, Bump};
 
 pub struct AstBuilder<'alloc> {

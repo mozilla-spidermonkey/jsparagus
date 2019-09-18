@@ -13,7 +13,7 @@ fn main() {
                 eprintln!("error: {}", err);
             }
             Ok(script) => {
-                let mut program = ast::Program::Script(script.unbox());
+                let mut program = ast::types::Program::Script(script.unbox());
                 let result = emitter::emit(&mut program);
                 println!("{}", emitter::dis(&result.bytecode));
             }

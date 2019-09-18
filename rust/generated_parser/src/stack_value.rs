@@ -1,7 +1,8 @@
 // WARNING: This file is auto-generated.
 
 use crate::Token;
-use ast::*;
+use ast::arena;
+use ast::types::*;
 
 #[derive(Debug)]
 pub enum StackValue<'alloc> {

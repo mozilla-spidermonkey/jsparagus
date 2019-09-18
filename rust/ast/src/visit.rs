@@ -5,7 +5,8 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-use ast::*;
+use crate::arena;
+use crate::types::*;
 use bumpalo;
 
 pub trait Pass<'alloc> {

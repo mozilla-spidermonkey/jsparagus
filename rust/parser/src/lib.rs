@@ -9,7 +9,10 @@ mod tests;
 
 pub use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
-use ast::{arena, Module, Script};
+use ast::{
+    arena,
+    types::{Module, Script},
+};
 use bumpalo;
 use generated_parser::{
     AstBuilder, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,

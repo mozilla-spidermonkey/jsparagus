@@ -178,7 +178,8 @@ def stack_value(ast):
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
         write(0, "use crate::Token;")
-        write(0, "use ast::*;")
+        write(0, "use ast::arena;")
+        write(0, "use ast::types::*;")
         write(0, "")
         write(0, "#[derive(Debug)]")
         write(0, "pub enum StackValue<'alloc> {")
@@ -217,7 +218,7 @@ def stack_value(ast):
 
 
 def pass_(ast):
-    with open("../emitter/src/lower/pass.rs", "w+") as f:
+    with open("src/visit.rs", "w+") as f:
         def write(*args):
             write_impl(f, *args)
 
@@ -249,8 +250,9 @@ def pass_(ast):
         write(0, "#![allow(unused_variables)]")
         write(0, "#![allow(dead_code)]")
         write(0, "")
+        write(0, "use crate::arena;")
+        write(0, "use crate::types::*;")
         write(0, "use bumpalo;")
-        write(0, "use ast::*;")
         write(0, "")
         write(0, "pub trait Pass<'alloc> {")
         for name, type_decl in ast.type_decls.items():
@@ -356,12 +358,12 @@ def pass_(ast):
 
 
 def ast_(ast):
-    with open("src/lib.rs", "w+") as f:
+    with open("src/types.rs", "w+") as f:
         def write(*args):
             write_impl(f, *args)
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
-        write(0, "pub mod arena;")
+        write(0, "use crate::arena;")
         write(0, "")
         for type_decl in ast.type_decls.values():
             type_decl.write_rust_type_decl(ast, write)

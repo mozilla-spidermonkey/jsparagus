@@ -7,7 +7,7 @@ mod opcode;
 pub use crate::emitter::EmitResult;
 pub use dis::dis;
 
-pub fn emit(ast: &mut ast::Program) -> EmitResult {
+pub fn emit(ast: &mut ast::types::Program) -> EmitResult {
     //lower::run(ast);
     ast_emitter::emit_program(ast)
 }
@@ -24,7 +24,7 @@ mod tests {
         let alloc = &Bump::new();
         let parse_result = parse_script(alloc, source).expect("Failed to parse");
         // println!("{:?}", parse_result);
-        let bc = emit(&mut ast::Program::Script(parse_result.unbox())).bytecode;
+        let bc = emit(&mut ast::types::Program::Script(parse_result.unbox())).bytecode;
         println!("{}", dis(&bc));
         bc
     }

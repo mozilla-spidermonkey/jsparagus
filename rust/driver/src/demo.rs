@@ -7,7 +7,7 @@ use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use ast;
+use ast::{self, types::Program};
 use bumpalo::Bump;
 use emitter::emit;
 use parser::parse_script;
@@ -109,7 +109,7 @@ fn run(buffer: &str) {
     let parse_result = parse_script(allocator, buffer);
     match parse_result {
         Ok(ast) => {
-            let mut script = ast::Program::Script(ast.unbox());
+            let mut script = Program::Script(ast.unbox());
             let emit_result = emit(&mut script);
             // FIXME - json support removed for now
             // if let Ok(script_json) = ast::json::to_string_pretty(&script) {

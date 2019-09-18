@@ -1,7 +1,6 @@
-mod pass;
 mod scope;
 
-use ast::*;
+use ast::types::Program;
 
 #[allow(dead_code)]
 pub fn run(_ast: &mut Program) {

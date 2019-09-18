@@ -4,7 +4,7 @@
 
 use super::emitter::{EmitResult, Emitter};
 use super::opcode::Opcode;
-use ast::*;
+use ast::types::*;
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> EmitResult {

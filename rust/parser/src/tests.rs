@@ -4,7 +4,7 @@ use crate::errors::{ParseError, Result};
 use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
-use ast::*;
+use ast::{arena, types::*};
 use bumpalo::Bump;
 use generated_parser::{self, AstBuilder, TerminalId, Token};
 
