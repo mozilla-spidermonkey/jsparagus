@@ -497,6 +497,7 @@ class RustParserWriter:
                            self.grammar.production_to_str(prod.nt, prod.rhs, prod.reducer))
 
                 elements = [e for e in prod.rhs if is_concrete_element(e)]
+                is_trivial_reduction = len(elements) == 1 and prod.reducer == 0
                 variable_used = [False] * len(elements)
                 method_used = False
 
@@ -528,21 +529,23 @@ class RustParserWriter:
 
                 compiled_expr = compile_reduce_expr(prod.reducer)
 
-                for index, e in reversed(list(enumerate(elements))):
-                    # ty = self.element_type(e)
-                    # rust_ty = self.type_to_rust(ty, "")
-                    if variable_used[index]:
-                        if method_used:
-                            self.write(3, "let x{} = stack.pop().unwrap().to_ast();", index)
+                if not is_trivial_reduction:
+                    for index, e in reversed(list(enumerate(elements))):
+                        # ty = self.element_type(e)
+                        # rust_ty = self.type_to_rust(ty, "")
+                        if variable_used[index]:
+                            if method_used:
+                                self.write(3, "let x{} = stack.pop().unwrap().to_ast();", index)
+                            else:
+                                self.write(3, "let x{} = stack.pop().unwrap();", index)
                         else:
-                            self.write(3, "let x{} = stack.pop().unwrap();", index)
-                    else:
-                        self.write(3, "stack.pop();", index)
+                            self.write(3, "stack.pop();", index)
 
-                if method_used:
-                    self.write(3, "stack.push(StackValue::from({}));", compiled_expr)
-                else:
-                    self.write(3, "stack.push({});", compiled_expr)
+                    if method_used:
+                        self.write(3, "stack.push(StackValue::from({}));", compiled_expr)
+                    else:
+                        self.write(3, "stack.push({});", compiled_expr)
+
                 self.write(3, "NonterminalId::{}",
                            self.nonterminal_to_camel(prod.nt))
                 self.write(2, "}")

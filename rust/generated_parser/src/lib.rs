@@ -7459,134 +7459,90 @@ pub fn reduce<'alloc>(
         }
         10 => {
             // StatementListItem ::= Statement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::StatementListItem
         }
         11 => {
             // StatementListItem ::= Declaration => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::StatementListItem
         }
         12 => {
             // ModuleItem ::= ImportDeclaration => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ModuleItem
         }
         13 => {
             // ModuleItem ::= ExportDeclaration => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ModuleItem
         }
         14 => {
             // ModuleItem ::= StatementListItem => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ModuleItem
         }
         15 => {
             // Statement ::= BlockStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         16 => {
             // Statement ::= VariableStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         17 => {
             // Statement ::= EmptyStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         18 => {
             // Statement ::= ExpressionStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         19 => {
             // Statement ::= IfStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         20 => {
             // Statement ::= BreakableStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         21 => {
             // Statement ::= ContinueStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         22 => {
             // Statement ::= BreakStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         23 => {
             // Statement ::= ReturnStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         24 => {
             // Statement ::= WithStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         25 => {
             // Statement ::= LabelledStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         26 => {
             // Statement ::= ThrowStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         27 => {
             // Statement ::= TryStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         28 => {
             // Statement ::= DebuggerStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Statement
         }
         29 => {
             // Declaration ::= HoistableDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Declaration
         }
         30 => {
             // Declaration ::= ClassDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Declaration
         }
         31 => {
             // Declaration ::= LexicalDeclaration[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Declaration
         }
         32 => {
@@ -7781,14 +7737,10 @@ pub fn reduce<'alloc>(
         }
         56 => {
             // BreakableStatement ::= IterationStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BreakableStatement
         }
         57 => {
             // BreakableStatement ::= SwitchStatement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BreakableStatement
         }
         58 => {
@@ -7952,26 +7904,18 @@ pub fn reduce<'alloc>(
         }
         79 => {
             // HoistableDeclaration[~Default] ::= FunctionDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclaration
         }
         80 => {
             // HoistableDeclaration[~Default] ::= GeneratorDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclaration
         }
         81 => {
             // HoistableDeclaration[~Default] ::= AsyncFunctionDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclaration
         }
         82 => {
             // HoistableDeclaration[~Default] ::= AsyncGeneratorDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclaration
         }
         83 => {
@@ -8070,26 +8014,18 @@ pub fn reduce<'alloc>(
         }
         96 => {
             // HoistableDeclaration[+Default] ::= FunctionDeclaration[+Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclarationDefault
         }
         97 => {
             // HoistableDeclaration[+Default] ::= GeneratorDeclaration[+Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclarationDefault
         }
         98 => {
             // HoistableDeclaration[+Default] ::= AsyncFunctionDeclaration[+Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclarationDefault
         }
         99 => {
             // HoistableDeclaration[+Default] ::= AsyncGeneratorDeclaration[+Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::HoistableDeclarationDefault
         }
         100 => {
@@ -8109,26 +8045,18 @@ pub fn reduce<'alloc>(
         }
         102 => {
             // AssignmentExpression[+In] ::= ConditionalExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpressionIn
         }
         103 => {
             // AssignmentExpression[+In] ::= YieldExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpressionIn
         }
         104 => {
             // AssignmentExpression[+In] ::= ArrowFunction[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpressionIn
         }
         105 => {
             // AssignmentExpression[+In] ::= AsyncArrowFunction[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpressionIn
         }
         106 => {
@@ -8184,8 +8112,6 @@ pub fn reduce<'alloc>(
         }
         112 => {
             // Expression[+In] ::= AssignmentExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ExpressionIn
         }
         113 => {
@@ -8685,14 +8611,10 @@ pub fn reduce<'alloc>(
         }
         144 => {
             // LabelledItem ::= Statement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LabelledItem
         }
         145 => {
             // LabelledItem ::= FunctionDeclaration[~Default] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LabelledItem
         }
         146 => {
@@ -9642,8 +9564,6 @@ pub fn reduce<'alloc>(
         }
         214 => {
             // ConditionalExpression[+In] ::= LogicalORExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ConditionalExpressionIn
         }
         215 => {
@@ -9708,14 +9628,10 @@ pub fn reduce<'alloc>(
         }
         222 => {
             // LeftHandSideExpression ::= NewExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LeftHandSideExpression
         }
         223 => {
             // LeftHandSideExpression ::= CallExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LeftHandSideExpression
         }
         224 => {
@@ -9842,8 +9758,6 @@ pub fn reduce<'alloc>(
         }
         239 => {
             // Expression[~In] ::= AssignmentExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::Expression
         }
         240 => {
@@ -9892,8 +9806,6 @@ pub fn reduce<'alloc>(
         }
         245 => {
             // ForBinding ::= BindingPattern => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ForBinding
         }
         246 => {
@@ -9976,8 +9888,6 @@ pub fn reduce<'alloc>(
         }
         254 => {
             // CatchParameter ::= BindingPattern => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::CatchParameter
         }
         255 => {
@@ -9995,8 +9905,6 @@ pub fn reduce<'alloc>(
         }
         257 => {
             // FormalParameters ::= FormalParameterList => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::FormalParameters
         }
         258 => {
@@ -10036,8 +9944,6 @@ pub fn reduce<'alloc>(
         }
         263 => {
             // GeneratorBody ::= FunctionBody => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::GeneratorBody
         }
         264 => {
@@ -10049,8 +9955,6 @@ pub fn reduce<'alloc>(
         }
         265 => {
             // AsyncFunctionBody ::= FunctionBody => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AsyncFunctionBody
         }
         266 => {
@@ -10062,8 +9966,6 @@ pub fn reduce<'alloc>(
         }
         267 => {
             // AsyncGeneratorBody ::= FunctionBody => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AsyncGeneratorBody
         }
         268 => {
@@ -10075,8 +9977,6 @@ pub fn reduce<'alloc>(
         }
         269 => {
             // ClassBody ::= ClassElementList => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ClassBody
         }
         270 => {
@@ -10141,8 +10041,6 @@ pub fn reduce<'alloc>(
         }
         278 => {
             // LogicalORExpression[+In] ::= LogicalANDExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LogicalOrExpressionIn
         }
         279 => {
@@ -10194,8 +10092,6 @@ pub fn reduce<'alloc>(
         }
         285 => {
             // AsyncArrowBindingIdentifier ::= BindingIdentifier => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AsyncArrowBindingIdentifier
         }
         286 => {
@@ -10230,8 +10126,6 @@ pub fn reduce<'alloc>(
         }
         290 => {
             // NewExpression ::= MemberExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::NewExpression
         }
         291 => {
@@ -10243,14 +10137,10 @@ pub fn reduce<'alloc>(
         }
         292 => {
             // CallExpression ::= CoverCallExpressionAndAsyncArrowHead => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::CallExpression
         }
         293 => {
             // CallExpression ::= SuperCall => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::CallExpression
         }
         294 => {
@@ -10293,38 +10183,26 @@ pub fn reduce<'alloc>(
         }
         299 => {
             // BindingPattern ::= ObjectBindingPattern => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BindingPattern
         }
         300 => {
             // BindingPattern ::= ArrayBindingPattern => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BindingPattern
         }
         301 => {
             // AssignmentExpression[~In] ::= ConditionalExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         302 => {
             // AssignmentExpression[~In] ::= YieldExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         303 => {
             // AssignmentExpression[~In] ::= ArrowFunction[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         304 => {
             // AssignmentExpression[~In] ::= AsyncArrowFunction[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AssignmentExpression
         }
         305 => {
@@ -10419,8 +10297,6 @@ pub fn reduce<'alloc>(
         }
         316 => {
             // FunctionRestParameter ::= BindingRestElement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::FunctionRestParameter
         }
         317 => {
@@ -10452,8 +10328,6 @@ pub fn reduce<'alloc>(
         }
         321 => {
             // ClassElementList ::= ClassElement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ClassElementList
         }
         322 => {
@@ -10479,8 +10353,6 @@ pub fn reduce<'alloc>(
         }
         325 => {
             // LogicalANDExpression[+In] ::= BitwiseORExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LogicalAndExpressionIn
         }
         326 => {
@@ -10578,8 +10450,6 @@ pub fn reduce<'alloc>(
         }
         334 => {
             // MemberExpression ::= PrimaryExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MemberExpression
         }
         335 => {
@@ -10608,14 +10478,10 @@ pub fn reduce<'alloc>(
         }
         338 => {
             // MemberExpression ::= SuperProperty => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MemberExpression
         }
         339 => {
             // MemberExpression ::= MetaProperty => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MemberExpression
         }
         340 => {
@@ -10833,8 +10699,6 @@ pub fn reduce<'alloc>(
         }
         361 => {
             // ConditionalExpression[~In] ::= LogicalORExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ConditionalExpression
         }
         362 => {
@@ -10963,8 +10827,6 @@ pub fn reduce<'alloc>(
         }
         377 => {
             // FormalParameter ::= BindingElement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::FormalParameter
         }
         378 => {
@@ -10988,8 +10850,6 @@ pub fn reduce<'alloc>(
         }
         381 => {
             // BitwiseORExpression[+In] ::= BitwiseXORExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseOrExpressionIn
         }
         382 => {
@@ -11018,50 +10878,34 @@ pub fn reduce<'alloc>(
         }
         385 => {
             // PrimaryExpression ::= Literal => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         386 => {
             // PrimaryExpression ::= ArrayLiteral => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         387 => {
             // PrimaryExpression ::= ObjectLiteral => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         388 => {
             // PrimaryExpression ::= FunctionExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         389 => {
             // PrimaryExpression ::= ClassExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         390 => {
             // PrimaryExpression ::= GeneratorExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         391 => {
             // PrimaryExpression ::= AsyncFunctionExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         392 => {
             // PrimaryExpression ::= AsyncGeneratorExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PrimaryExpression
         }
         393 => {
@@ -11103,8 +10947,6 @@ pub fn reduce<'alloc>(
         }
         398 => {
             // MetaProperty ::= NewTarget => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MetaProperty
         }
         399 => {
@@ -11187,8 +11029,6 @@ pub fn reduce<'alloc>(
         }
         409 => {
             // BindingElementList ::= BindingElisionElement => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BindingElementList
         }
         410 => {
@@ -11203,8 +11043,6 @@ pub fn reduce<'alloc>(
         }
         411 => {
             // LogicalORExpression[~In] ::= LogicalANDExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LogicalOrExpression
         }
         412 => {
@@ -11267,8 +11105,6 @@ pub fn reduce<'alloc>(
         }
         419 => {
             // BindingElement ::= SingleNameBinding => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BindingElement
         }
         420 => {
@@ -11344,20 +11180,14 @@ pub fn reduce<'alloc>(
         }
         426 => {
             // MethodDefinition ::= GeneratorMethod => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MethodDefinition
         }
         427 => {
             // MethodDefinition ::= AsyncMethod => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MethodDefinition
         }
         428 => {
             // MethodDefinition ::= AsyncGeneratorMethod => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MethodDefinition
         }
         429 => {
@@ -11417,8 +11247,6 @@ pub fn reduce<'alloc>(
         }
         433 => {
             // BitwiseXORExpression[+In] ::= BitwiseANDExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseXorExpressionIn
         }
         434 => {
@@ -12124,8 +11952,6 @@ pub fn reduce<'alloc>(
         }
         489 => {
             // LogicalANDExpression[~In] ::= BitwiseORExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::LogicalAndExpression
         }
         490 => {
@@ -12155,14 +11981,10 @@ pub fn reduce<'alloc>(
         }
         493 => {
             // PropertyName ::= LiteralPropertyName => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PropertyName
         }
         494 => {
             // PropertyName ::= ComputedPropertyName => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PropertyName
         }
         495 => {
@@ -12364,14 +12186,10 @@ pub fn reduce<'alloc>(
         }
         509 => {
             // PropertySetParameterList ::= FormalParameter => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::PropertySetParameterList
         }
         510 => {
             // BitwiseANDExpression[+In] ::= EqualityExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseAndExpressionIn
         }
         511 => {
@@ -12497,8 +12315,6 @@ pub fn reduce<'alloc>(
         }
         524 => {
             // BitwiseORExpression[~In] ::= BitwiseXORExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseOrExpression
         }
         525 => {
@@ -12541,8 +12357,6 @@ pub fn reduce<'alloc>(
         }
         530 => {
             // EqualityExpression[+In] ::= RelationalExpression[+In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::EqualityExpressionIn
         }
         531 => {
@@ -12635,8 +12449,6 @@ pub fn reduce<'alloc>(
         }
         541 => {
             // BitwiseXORExpression[~In] ::= BitwiseANDExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseXorExpression
         }
         542 => {
@@ -12653,8 +12465,6 @@ pub fn reduce<'alloc>(
         }
         543 => {
             // RelationalExpression[+In] ::= ShiftExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::RelationalExpressionIn
         }
         544 => {
@@ -12738,8 +12548,6 @@ pub fn reduce<'alloc>(
         }
         551 => {
             // BitwiseANDExpression[~In] ::= EqualityExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::BitwiseAndExpression
         }
         552 => {
@@ -12756,8 +12564,6 @@ pub fn reduce<'alloc>(
         }
         553 => {
             // ShiftExpression ::= AdditiveExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ShiftExpression
         }
         554 => {
@@ -12798,8 +12604,6 @@ pub fn reduce<'alloc>(
         }
         557 => {
             // EqualityExpression[~In] ::= RelationalExpression[~In] => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::EqualityExpression
         }
         558 => {
@@ -12852,8 +12656,6 @@ pub fn reduce<'alloc>(
         }
         562 => {
             // AdditiveExpression ::= MultiplicativeExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::AdditiveExpression
         }
         563 => {
@@ -12882,8 +12684,6 @@ pub fn reduce<'alloc>(
         }
         565 => {
             // RelationalExpression[~In] ::= ShiftExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::RelationalExpression
         }
         566 => {
@@ -12948,8 +12748,6 @@ pub fn reduce<'alloc>(
         }
         571 => {
             // MultiplicativeExpression ::= ExponentiationExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::MultiplicativeExpression
         }
         572 => {
@@ -12962,8 +12760,6 @@ pub fn reduce<'alloc>(
         }
         573 => {
             // ExponentiationExpression ::= UnaryExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::ExponentiationExpression
         }
         574 => {
@@ -12998,8 +12794,6 @@ pub fn reduce<'alloc>(
         }
         578 => {
             // UnaryExpression ::= UpdateExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::UnaryExpression
         }
         579 => {
@@ -13053,14 +12847,10 @@ pub fn reduce<'alloc>(
         }
         586 => {
             // UnaryExpression ::= AwaitExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::UnaryExpression
         }
         587 => {
             // UpdateExpression ::= LeftHandSideExpression => $0
-            let x0 = stack.pop().unwrap();
-            stack.push(x0);
             NonterminalId::UpdateExpression
         }
         588 => {
