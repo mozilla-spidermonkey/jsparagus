@@ -267,15 +267,15 @@ fn test_numbers() {
     assert_parses("1..x");
 }
 
-// XXX TODO
-//#[test]
-//fn test_arrow() {
-//    assert_parses("x => x");
-//    assert_parses("f = x => x;");
-//    assert_parses("(x, y) => [y, x]");
-//    assert_parses("f = (x, y) => {}");
-//    assert_syntax_error("(x, y) => {x: x, y: y}");
-//}
+#[test]
+fn test_arrow() {
+    assert_parses("x => x");
+    assert_parses("f = x => x;");
+    assert_parses("(x, y) => [y, x]");
+    assert_parses("f = (x, y) => {}");
+    // XXX TODO
+    // assert_syntax_error("(x, y) => {x: x, y: y}");
+}
 
 // XXX TODO
 //#[test]
@@ -285,17 +285,16 @@ fn test_numbers() {
 //    assert_syntax_error("const ONE_THIRD = 1 ÷ 3;");
 //}
 
-// XXX TODO
-//#[test]
-//fn test_regexp() {
-//    assert_parses(r"/\w/");
-//    assert_parses("/[A-Z]/");
-//    assert_parses("/[//]/");
-//    assert_parses("/a*a/");
-//    assert_parses("/**//x*/");
-//    assert_parses("{} /x/");
-//    assert_parses("of / 2");
-//}
+#[test]
+fn test_regexp() {
+    assert_parses(r"/\w/");
+    assert_parses("/[A-Z]/");
+    assert_parses("/[//]/");
+    assert_parses("/a*a/");
+    assert_parses("/**//x*/");
+    assert_parses("{} /x/");
+    assert_parses("of / 2");
+}
 
 #[test]
 fn test_incomplete_comments() {
