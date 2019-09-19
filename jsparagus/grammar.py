@@ -92,8 +92,16 @@ class Production:
 # specify what happens when a production is matched. A reduce expression is
 # one of these:
 #
-# *   An integer in the range(0, len(production.body)) returns a previously
-#     parsed value from the parser's stack.
+# *   An integer evaluates to one of the syntactic components of the
+#     production. For example, if the production we're reducing is
+#     `sum ::= sum + term`, the integer `0` evaluates the `sum` to the left of
+#     the plus sign, and `2` means the `term` on the right. (The integer
+#     `1` would refer to the `+` token itself, but that's not super useful.)
+#
+#     These integers are not quite indexes into `production.body`, because
+#     LookaheadRule and ErrorSymbol elements don't count: in the production
+#     `stmt ::= [lookahead != "let"] expr ";"`, `0` is the expr, and `1` is the
+#     semicolon token.  See `is_concrete_element(e)`.
 #
 # *   CallMethod objects pass values to a builder method and return the result.
 #     The `args` are nested reduce expressions.
@@ -668,7 +676,10 @@ a "reduce" action.
 
 
 def is_concrete_element(e):
-    """True if parsing the element `e` pushes a value to the parser stack."""
+    """True if parsing the element `e` produces a value.
+
+    A production's concrete elements can be used in reduce expressions.
+    """
     return not isinstance(e, (LookaheadRule, ErrorSymbol))
 
 
