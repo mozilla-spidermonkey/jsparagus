@@ -661,10 +661,10 @@ a "reduce" action.
 # *   `LookaheadRule` objects are like lookahead assertions in regular
 #     expressions.
 #
-# *   `ErrorSymbol` objects count as nonterminals but are never produced by the
-#     lexer. Instead they match an ErrorToken that's artificially injected into
-#     the token stream at runtime, by the parser itself, just before a token
-#     that does not match anything else.
+# *   `ErrorSymbol` objects never match anything produced by the lexer. Instead
+#     they match an ErrorToken that's artificially injected into the token
+#     stream at runtime, by the parser itself, just before a token that does
+#     not match anything else.
 
 
 def is_concrete_element(e):
