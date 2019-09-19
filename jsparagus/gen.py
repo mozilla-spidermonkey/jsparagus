@@ -63,8 +63,6 @@ def empty_nt_set(grammar):
 
     then the resulting dictionary will contain the entry
     `("a", CallMethod("a", [None, None]))`.
-
-    We need this expr to fix issue #1, but it isn't used yet.
     """
 
     empties = {}  # maps nts to reducers.
