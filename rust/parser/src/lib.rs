@@ -26,14 +26,14 @@ use std::result;
 pub fn parse_script<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     source: &'alloc str,
-) -> Result<arena::Box<'alloc, Script<'alloc>>> {
+) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
     Ok(parse(allocator, source, START_STATE_SCRIPT)?.to_ast())
 }
 
 pub fn parse_module<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     source: &'alloc str,
-) -> Result<arena::Box<'alloc, Module<'alloc>>> {
+) -> Result<'alloc, arena::Box<'alloc, Module<'alloc>>> {
     Ok(parse(allocator, source, START_STATE_MODULE)?.to_ast())
 }
 
@@ -41,7 +41,7 @@ fn parse<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     source: &'alloc str,
     start_state: usize,
-) -> Result<StackValue<'alloc>> {
+) -> Result<'alloc, StackValue<'alloc>> {
     let mut tokens = Lexer::new(source.chars());
 
     TABLES.check();
@@ -88,7 +88,7 @@ pub fn read_script_interactively<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     prompt: &str,
     continue_prompt: &str,
-) -> std::result::Result<arena::Box<'alloc, Script<'alloc>>, Box<dyn Error>> {
+) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
     TABLES.check();
 
     let mut parser = Parser::new(AstBuilder { allocator }, START_STATE_SCRIPT);
@@ -98,7 +98,7 @@ pub fn read_script_interactively<'alloc>(
         let mut line = String::new();
         io::stdout().flush()?;
         if io::stdin().read_line(&mut line)? == 0 {
-            return Err(UserExit.into());
+            return Err(ParseError::UnexpectedEnd);
         }
         let line_str: &'alloc str = arena::alloc_str(allocator, &line);
 

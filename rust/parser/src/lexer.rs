@@ -39,7 +39,7 @@ impl<'a> Lexer<'a> {
         self.chars.as_str().chars().next()
     }
 
-    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<Token<'a>> {
+    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'a, Token<'a>> {
         let mut saw_newline = false;
         self.advance_impl(parser, &mut saw_newline)
             .map(|(value, terminal_id)| Token {
@@ -63,7 +63,7 @@ impl<'a> Lexer<'a> {
         at_least_one
     }
 
-    fn optional_exponent(&mut self) -> Result<()> {
+    fn optional_exponent(&mut self) -> Result<'a, ()> {
         if let Some('e') | Some('E') = self.peek() {
             self.chars.next().unwrap();
             if let Some('+') | Some('-') = self.peek() {
@@ -77,7 +77,7 @@ impl<'a> Lexer<'a> {
         Ok(())
     }
 
-    fn unexpected_err(&mut self) -> ParseError {
+    fn unexpected_err(&mut self) -> ParseError<'a> {
         if let Some(ch) = self.peek() {
             ParseError::IllegalCharacter(ch)
         } else {
@@ -85,7 +85,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn hex_digit(&mut self) -> Result<u32> {
+    fn hex_digit(&mut self) -> Result<'a, u32> {
         match self.chars.next() {
             None => Err(ParseError::UnterminatedString),
             Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
@@ -95,7 +95,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn escape_sequence(&mut self, text: &mut String) -> Result<()> {
+    fn escape_sequence(&mut self, text: &mut String) -> Result<'a, ()> {
         match self.chars.next() {
             None => {
                 return Err(ParseError::UnterminatedString);
@@ -176,7 +176,7 @@ impl<'a> Lexer<'a> {
         Ok(())
     }
 
-    fn string_literal(&mut self, stop: char) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
+    fn string_literal(&mut self, stop: char) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
@@ -204,7 +204,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn regular_expression_backslash_sequence(&mut self, text: &mut String) -> Result<()> {
+    fn regular_expression_backslash_sequence(&mut self, text: &mut String) -> Result<'a, ()> {
         text.push('\\');
         match self.chars.next() {
             None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
@@ -217,7 +217,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn regular_expression_literal(&mut self) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
+    fn regular_expression_literal(&mut self) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         // TODO: First `/` isn't included
         let mut builder = AutoCow::new(&self);
         loop {
@@ -282,7 +282,7 @@ impl<'a> Lexer<'a> {
         parser: &Parser,
         keyword_id: TerminalId,
         text: Cow<'a, str>,
-    ) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         if parser.can_accept_terminal(keyword_id) {
             Ok((None, keyword_id))
         } else {
@@ -294,7 +294,7 @@ impl<'a> Lexer<'a> {
         &mut self,
         parser: &Parser<'parser>,
         mut builder: AutoCow<'a>,
-    ) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
                 break;
@@ -371,7 +371,7 @@ impl<'a> Lexer<'a> {
         &mut self,
         parser: &Parser<'parser>,
         saw_newline: &mut bool,
-    ) -> Result<(Option<Cow<'a, str>>, TerminalId)> {
+    ) -> Result<'a, (Option<Cow<'a, str>>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         while let Some(c) = self.chars.next() {
             match c {
