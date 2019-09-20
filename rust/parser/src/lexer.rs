@@ -9,9 +9,9 @@ use std::str::Chars;
 
 // Note: Clone is used when lexing `<!--`, which requires more than one
 // character of lookahead.
-pub struct Lexer<'a> {
-    allocator: &'a Bump,
-    chars: Chars<'a>,
+pub struct Lexer<'alloc> {
+    allocator: &'alloc Bump,
+    chars: Chars<'alloc>,
 }
 
 fn is_identifier_start(c: char) -> bool {
@@ -31,8 +31,8 @@ fn is_identifier_part(c: char) -> bool {
     }
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(allocator: &'a Bump, chars: Chars<'a>) -> Lexer<'a> {
+impl<'alloc> Lexer<'alloc> {
+    pub fn new(allocator: &'alloc Bump, chars: Chars<'alloc>) -> Lexer<'alloc> {
         Lexer { allocator, chars }
     }
 
@@ -40,7 +40,7 @@ impl<'a> Lexer<'a> {
         self.chars.as_str().chars().next()
     }
 
-    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'a, Token<'a>> {
+    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
         let mut saw_newline = false;
         self.advance_impl(parser, &mut saw_newline)
             .map(|(value, terminal_id)| Token {
@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
         at_least_one
     }
 
-    fn optional_exponent(&mut self) -> Result<'a, ()> {
+    fn optional_exponent(&mut self) -> Result<'alloc, ()> {
         if let Some('e') | Some('E') = self.peek() {
             self.chars.next().unwrap();
             if let Some('+') | Some('-') = self.peek() {
@@ -78,7 +78,7 @@ impl<'a> Lexer<'a> {
         Ok(())
     }
 
-    fn unexpected_err(&mut self) -> ParseError<'a> {
+    fn unexpected_err(&mut self) -> ParseError<'alloc> {
         if let Some(ch) = self.peek() {
             ParseError::IllegalCharacter(ch)
         } else {
@@ -86,7 +86,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn hex_digit(&mut self) -> Result<'a, u32> {
+    fn hex_digit(&mut self) -> Result<'alloc, u32> {
         match self.chars.next() {
             None => Err(ParseError::UnterminatedString),
             Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
@@ -96,7 +96,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn escape_sequence(&mut self, text: &mut String<'a>) -> Result<'a, ()> {
+    fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<'alloc, ()> {
         match self.chars.next() {
             None => {
                 return Err(ParseError::UnterminatedString);
@@ -177,7 +177,7 @@ impl<'a> Lexer<'a> {
         Ok(())
     }
 
-    fn string_literal(&mut self, stop: char) -> Result<'a, (Option<&'a str>, TerminalId)> {
+    fn string_literal(&mut self, stop: char) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
@@ -205,7 +205,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn regular_expression_backslash_sequence(&mut self, text: &mut String<'a>) -> Result<'a, ()> {
+    fn regular_expression_backslash_sequence(
+        &mut self,
+        text: &mut String<'alloc>,
+    ) -> Result<'alloc, ()> {
         text.push('\\');
         match self.chars.next() {
             None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
@@ -218,7 +221,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn regular_expression_literal(&mut self) -> Result<'a, (Option<&'a str>, TerminalId)> {
+    fn regular_expression_literal(&mut self) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         // TODO: First `/` isn't included
         let mut builder = AutoCow::new(&self);
         loop {
@@ -282,8 +285,8 @@ impl<'a> Lexer<'a> {
         &mut self,
         parser: &Parser,
         keyword_id: TerminalId,
-        text: &'a str,
-    ) -> Result<'a, (Option<&'a str>, TerminalId)> {
+        text: &'alloc str,
+    ) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         if parser.can_accept_terminal(keyword_id) {
             Ok((None, keyword_id))
         } else {
@@ -294,8 +297,8 @@ impl<'a> Lexer<'a> {
     fn identifier<'parser>(
         &mut self,
         parser: &Parser<'parser>,
-        mut builder: AutoCow<'a>,
-    ) -> Result<'a, (Option<&'a str>, TerminalId)> {
+        mut builder: AutoCow<'alloc>,
+    ) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
                 break;
@@ -372,7 +375,7 @@ impl<'a> Lexer<'a> {
         &mut self,
         parser: &Parser<'parser>,
         saw_newline: &mut bool,
-    ) -> Result<'a, (Option<&'a str>, TerminalId)> {
+    ) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         while let Some(c) = self.chars.next() {
             match c {
@@ -803,13 +806,13 @@ impl<'a> Lexer<'a> {
     }
 }
 
-struct AutoCow<'a> {
-    start: &'a str,
-    value: Option<String<'a>>,
+struct AutoCow<'alloc> {
+    start: &'alloc str,
+    value: Option<String<'alloc>>,
 }
 
-impl<'a> AutoCow<'a> {
-    fn new(lexer: &Lexer<'a>) -> Self {
+impl<'alloc> AutoCow<'alloc> {
+    fn new(lexer: &Lexer<'alloc>) -> Self {
         AutoCow {
             start: lexer.chars.as_str(),
             value: None,
@@ -825,12 +828,12 @@ impl<'a> AutoCow<'a> {
 
     // Push a char that does not match lexer.chars.next() (for example, string escapes)
     #[allow(dead_code)]
-    fn push_different(&mut self, lexer: &Lexer<'a>, c: char) {
+    fn push_different(&mut self, lexer: &Lexer<'alloc>, c: char) {
         self.get_mut_string(lexer).push(c);
     }
 
     // Force allocation of a String and return the reference to it
-    fn get_mut_string<'b>(&'b mut self, lexer: &'_ Lexer<'a>) -> &'b mut String<'a> {
+    fn get_mut_string<'b>(&'b mut self, lexer: &'_ Lexer<'alloc>) -> &'b mut String<'alloc> {
         if self.value.is_none() {
             self.value = Some(String::from_str_in(
                 &self.start[..self.start.len() - lexer.chars.as_str().len()],
@@ -840,7 +843,7 @@ impl<'a> AutoCow<'a> {
         self.value.as_mut().unwrap()
     }
 
-    fn finish(self, lexer: &Lexer<'a>) -> &'a str {
+    fn finish(self, lexer: &Lexer<'alloc>) -> &'alloc str {
         match self.value {
             Some(arena_string) => arena_string.into_bump_str(),
             None => &self.start[..self.start.len() - lexer.chars.as_str().len()],
