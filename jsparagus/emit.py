@@ -148,7 +148,6 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "use crate::ast_builder::AstBuilder;")
         self.write(0, "use crate::stack_value_generated::StackValue;")
-        self.write(0, "use std::borrow::Cow;")
         self.write(0, "")
         self.write(0, "const ERROR: i64 = {};", hex(ERROR))
         self.write(0, "")
@@ -188,7 +187,7 @@ class RustParserWriter:
         self.write(0, "pub struct Token<'a> {")
         self.write(1, "pub terminal_id: TerminalId,")
         self.write(1, "pub saw_newline: bool,")
-        self.write(1, "pub value: Option<Cow<'a, str>>,")
+        self.write(1, "pub value: Option<&'a str>,")
         self.write(0, "}")
         self.write(0, "")
 
@@ -206,7 +205,7 @@ class RustParserWriter:
         self.write(2, "Token {")
         self.write(3, "terminal_id: self.terminal_id,")
         self.write(3, "saw_newline: self.saw_newline,")
-        self.write(3, "value: self.value.map(|v| Cow::Owned(v.into_owned())),")
+        self.write(3, "value: None,")  # drop the value, which has limited lifetime
         self.write(2, "}")
         self.write(1, "}")
         self.write(0, "}")

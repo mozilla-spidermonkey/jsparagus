@@ -2,7 +2,6 @@
 
 use crate::ast_builder::AstBuilder;
 use crate::stack_value_generated::StackValue;
-use std::borrow::Cow;
 
 const ERROR: i64 = -0x8000000000000000;
 
@@ -122,7 +121,7 @@ pub enum TerminalId {
 pub struct Token<'a> {
     pub terminal_id: TerminalId,
     pub saw_newline: bool,
-    pub value: Option<Cow<'a, str>>,
+    pub value: Option<&'a str>,
 }
 
 impl Token<'_> {
@@ -138,7 +137,7 @@ impl Token<'_> {
         Token {
             terminal_id: self.terminal_id,
             saw_newline: self.saw_newline,
-            value: self.value.map(|v| Cow::Owned(v.into_owned())),
+            value: None,
         }
     }
 }

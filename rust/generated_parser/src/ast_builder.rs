@@ -507,12 +507,10 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let s = token.unbox().value.unwrap();
-        assert!(&s == "true" || &s == "false");
+        assert!(s == "true" || s == "false");
 
         self.alloc(Expression::LiteralBooleanExpression(
-            LiteralBooleanExpression {
-                value: &s == "true",
-            },
+            LiteralBooleanExpression { value: s == "true" },
         ))
     }
 

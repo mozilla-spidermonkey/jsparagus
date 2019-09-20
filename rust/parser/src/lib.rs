@@ -42,7 +42,7 @@ fn parse<'alloc>(
     source: &'alloc str,
     start_state: usize,
 ) -> Result<'alloc, StackValue<'alloc>> {
-    let mut tokens = Lexer::new(source.chars());
+    let mut tokens = Lexer::new(allocator, source.chars());
 
     TABLES.check();
 
@@ -102,7 +102,7 @@ pub fn read_script_interactively<'alloc>(
         }
         let line_str: &'alloc str = arena::alloc_str(allocator, &line);
 
-        let mut tokens = Lexer::new(line_str.chars());
+        let mut tokens = Lexer::new(allocator, line_str.chars());
         loop {
             let t = tokens.next(&parser)?;
             if t.terminal_id == TerminalId::End {
