@@ -172,7 +172,7 @@ def collect_stack_value_types(ast):
 
 def stack_value(ast):
     types = collect_stack_value_types(ast)
-    with open("../generated_parser/src/stack_value.rs", "w+") as f:
+    with open("../generated_parser/src/stack_value_generated.rs", "w+") as f:
         def write(*args):
             write_impl(f, *args)
         write(0, "// WARNING: This file is auto-generated.")
