@@ -15,7 +15,7 @@ pub mod full {
     }
 
     struct Scope<'alloc> {
-        declarations: arena::Vec<'alloc, arena::String<'alloc>>,
+        declarations: arena::Vec<'alloc, &'alloc str>,
     }
 
     struct ScopePass<'alloc> {

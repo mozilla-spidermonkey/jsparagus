@@ -44,7 +44,7 @@ class Type(TypeBase):
     def to_rust_type(self, ast):
         params_str = ", ".join(p.to_rust_type(ast) for p in self.params)
         if self.name == 'String':
-            return "arena::String<'alloc>"
+            return "&'alloc str"
         if self.name == 'Box':
             return "arena::Box<'alloc, {}>".format(params_str)
         if self.name == 'Vec':

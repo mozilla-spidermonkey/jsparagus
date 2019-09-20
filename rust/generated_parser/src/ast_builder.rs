@@ -11,15 +11,12 @@ impl<'alloc> AstBuilder<'alloc> {
         arena::alloc(self.allocator, value)
     }
 
-    pub fn to_string(&self, s: &str) -> arena::String<'alloc> {
-        arena::String::from_str_in(s, self.allocator)
+    pub fn alloc_str(&self, s: &str) -> &'alloc str {
+        arena::alloc_str(self.allocator, s)
     }
 
-    fn boxed_token_to_string(
-        &self,
-        token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::String<'alloc> {
-        self.to_string(token.unbox().value.unwrap().as_ref())
+    fn boxed_token_to_string(&self, token: arena::Box<'alloc, Token<'alloc>>) -> &'alloc str {
+        token.value.unwrap()
     }
 
     fn new_vec<T>(&self) -> arena::Vec<'alloc, T> {
@@ -60,16 +57,12 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // BindingIdentifier : `yield`
     pub fn binding_identifier_yield(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        self.alloc(BindingIdentifier::new(Identifier::new(
-            self.to_string("yield"),
-        )))
+        self.alloc(BindingIdentifier::new(Identifier::new("yield")))
     }
 
     // BindingIdentifier : `await`
     pub fn binding_identifier_await(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        self.alloc(BindingIdentifier::new(Identifier::new(
-            self.to_string("await"),
-        )))
+        self.alloc(BindingIdentifier::new(Identifier::new("await")))
     }
 
     // LabelIdentifier : Identifier
@@ -781,7 +774,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, PropertyName<'alloc>> {
         self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: self.to_string(&format!("{:?}", Self::numeric_literal_value(token))),
+            value: self.alloc_str(&format!("{:?}", Self::numeric_literal_value(token))),
         }))
     }
 
@@ -2518,9 +2511,7 @@ impl<'alloc> AstBuilder<'alloc> {
         self.alloc(Statement::ClassDeclaration(ClassDeclaration {
             name: match name {
                 None => BindingIdentifier {
-                    name: Identifier {
-                        value: self.to_string("default"),
-                    },
+                    name: Identifier { value: "default" },
                 },
                 Some(bi) => bi.unbox(),
             },

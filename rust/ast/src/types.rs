@@ -24,33 +24,33 @@ impl<'alloc> Arguments<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct Identifier<'alloc> {
-    pub value: arena::String<'alloc>,
+    pub value: &'alloc str,
 }
 
 impl<'alloc> Identifier<'alloc> {
-    pub fn new(value: arena::String<'alloc>) -> Self {
+    pub fn new(value: &'alloc str) -> Self {
         Self { value }
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct IdentifierName<'alloc> {
-    pub value: arena::String<'alloc>,
+    pub value: &'alloc str,
 }
 
 impl<'alloc> IdentifierName<'alloc> {
-    pub fn new(value: arena::String<'alloc>) -> Self {
+    pub fn new(value: &'alloc str) -> Self {
         Self { value }
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Label<'alloc> {
-    pub value: arena::String<'alloc>,
+    pub value: &'alloc str,
 }
 
 impl<'alloc> Label<'alloc> {
-    pub fn new(value: arena::String<'alloc>) -> Self {
+    pub fn new(value: &'alloc str) -> Self {
         Self { value }
     }
 }
@@ -602,14 +602,14 @@ impl<'alloc> Module<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct Import<'alloc> {
-    pub module_specifier: arena::String<'alloc>,
+    pub module_specifier: &'alloc str,
     pub default_binding: Option<BindingIdentifier<'alloc>>,
     pub named_imports: arena::Vec<'alloc, ImportSpecifier<'alloc>>,
 }
 
 impl<'alloc> Import<'alloc> {
     pub fn new(
-        module_specifier: arena::String<'alloc>,
+        module_specifier: &'alloc str,
         default_binding: Option<BindingIdentifier<'alloc>>,
         named_imports: arena::Vec<'alloc, ImportSpecifier<'alloc>>,
     ) -> Self {
@@ -623,14 +623,14 @@ impl<'alloc> Import<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct ImportNamespace<'alloc> {
-    pub module_specifier: arena::String<'alloc>,
+    pub module_specifier: &'alloc str,
     pub default_binding: Option<BindingIdentifier<'alloc>>,
     pub namespace_binding: BindingIdentifier<'alloc>,
 }
 
 impl<'alloc> ImportNamespace<'alloc> {
     pub fn new(
-        module_specifier: arena::String<'alloc>,
+        module_specifier: &'alloc str,
         default_binding: Option<BindingIdentifier<'alloc>>,
         namespace_binding: BindingIdentifier<'alloc>,
     ) -> Self {
@@ -656,11 +656,11 @@ impl<'alloc> ImportSpecifier<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct ExportAllFrom<'alloc> {
-    pub module_specifier: arena::String<'alloc>,
+    pub module_specifier: &'alloc str,
 }
 
 impl<'alloc> ExportAllFrom<'alloc> {
-    pub fn new(module_specifier: arena::String<'alloc>) -> Self {
+    pub fn new(module_specifier: &'alloc str) -> Self {
         Self { module_specifier }
     }
 }
@@ -668,13 +668,13 @@ impl<'alloc> ExportAllFrom<'alloc> {
 #[derive(Debug, PartialEq)]
 pub struct ExportFrom<'alloc> {
     pub named_exports: arena::Vec<'alloc, ExportFromSpecifier<'alloc>>,
-    pub module_specifier: arena::String<'alloc>,
+    pub module_specifier: &'alloc str,
 }
 
 impl<'alloc> ExportFrom<'alloc> {
     pub fn new(
         named_exports: arena::Vec<'alloc, ExportFromSpecifier<'alloc>>,
-        module_specifier: arena::String<'alloc>,
+        module_specifier: &'alloc str,
     ) -> Self {
         Self {
             named_exports,
@@ -849,11 +849,11 @@ impl<'alloc> ComputedPropertyName<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct StaticPropertyName<'alloc> {
-    pub value: arena::String<'alloc>,
+    pub value: &'alloc str,
 }
 
 impl<'alloc> StaticPropertyName<'alloc> {
-    pub fn new(value: arena::String<'alloc>) -> Self {
+    pub fn new(value: &'alloc str) -> Self {
         Self { value }
     }
 }
@@ -882,7 +882,7 @@ impl LiteralNumericExpression {
 
 #[derive(Debug, PartialEq)]
 pub struct LiteralRegExpExpression<'alloc> {
-    pub pattern: arena::String<'alloc>,
+    pub pattern: &'alloc str,
     pub global: bool,
     pub ignore_case: bool,
     pub multi_line: bool,
@@ -892,7 +892,7 @@ pub struct LiteralRegExpExpression<'alloc> {
 
 impl<'alloc> LiteralRegExpExpression<'alloc> {
     pub fn new(
-        pattern: arena::String<'alloc>,
+        pattern: &'alloc str,
         global: bool,
         ignore_case: bool,
         multi_line: bool,
@@ -912,11 +912,11 @@ impl<'alloc> LiteralRegExpExpression<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct LiteralStringExpression<'alloc> {
-    pub value: arena::String<'alloc>,
+    pub value: &'alloc str,
 }
 
 impl<'alloc> LiteralStringExpression<'alloc> {
-    pub fn new(value: arena::String<'alloc>) -> Self {
+    pub fn new(value: &'alloc str) -> Self {
         Self { value }
     }
 }
@@ -1491,13 +1491,13 @@ impl<'alloc> WithStatement<'alloc> {
 #[derive(Debug, PartialEq)]
 pub struct Block<'alloc> {
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
-    pub declarations: Option<arena::Vec<'alloc, arena::String<'alloc>>>,
+    pub declarations: Option<arena::Vec<'alloc, &'alloc str>>,
 }
 
 impl<'alloc> Block<'alloc> {
     pub fn new(
         statements: arena::Vec<'alloc, Statement<'alloc>>,
-        declarations: Option<arena::Vec<'alloc, arena::String<'alloc>>>,
+        declarations: Option<arena::Vec<'alloc, &'alloc str>>,
     ) -> Self {
         Self {
             statements,
@@ -1520,11 +1520,11 @@ impl<'alloc> CatchClause<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct Directive<'alloc> {
-    pub raw_value: arena::String<'alloc>,
+    pub raw_value: &'alloc str,
 }
 
 impl<'alloc> Directive<'alloc> {
-    pub fn new(raw_value: arena::String<'alloc>) -> Self {
+    pub fn new(raw_value: &'alloc str) -> Self {
         Self { raw_value }
     }
 }
@@ -1608,11 +1608,11 @@ impl<'alloc> SwitchDefault<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct TemplateElement<'alloc> {
-    pub raw_value: arena::String<'alloc>,
+    pub raw_value: &'alloc str,
 }
 
 impl<'alloc> TemplateElement<'alloc> {
-    pub fn new(raw_value: arena::String<'alloc>) -> Self {
+    pub fn new(raw_value: &'alloc str) -> Self {
         Self { raw_value }
     }
 }

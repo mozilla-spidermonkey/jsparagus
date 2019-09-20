@@ -1147,17 +1147,17 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_identifier(&self, value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_identifier(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
 
-    fn visit_identifier_name(&self, value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_identifier_name(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
 
-    fn visit_label(&self, value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_label(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -1402,7 +1402,7 @@ pub trait PostfixPass<'alloc> {
 
     fn visit_import(
         &self,
-        module_specifier: &mut arena::String<'alloc>,
+        module_specifier: &mut &'alloc str,
         default_binding: Option<Self::Value>,
         named_imports: arena::Vec<'alloc, Self::Value>,
     ) -> Self::Value {
@@ -1418,7 +1418,7 @@ pub trait PostfixPass<'alloc> {
 
     fn visit_import_namespace(
         &self,
-        module_specifier: &mut arena::String<'alloc>,
+        module_specifier: &mut &'alloc str,
         default_binding: Option<Self::Value>,
         namespace_binding: Self::Value,
     ) -> Self::Value {
@@ -1443,7 +1443,7 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_export_all_from(&self, module_specifier: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_export_all_from(&self, module_specifier: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -1451,7 +1451,7 @@ pub trait PostfixPass<'alloc> {
     fn visit_export_from(
         &self,
         named_exports: arena::Vec<'alloc, Self::Value>,
-        module_specifier: &mut arena::String<'alloc>,
+        module_specifier: &mut &'alloc str,
     ) -> Self::Value {
         let mut result = Self::Value::default();
         for item in named_exports {
@@ -1552,7 +1552,7 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_static_property_name(&self, value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_static_property_name(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -1569,7 +1569,7 @@ pub trait PostfixPass<'alloc> {
 
     fn visit_literal_reg_exp_expression(
         &self,
-        pattern: &mut arena::String<'alloc>,
+        pattern: &mut &'alloc str,
         global: &mut bool,
         ignore_case: &mut bool,
         multi_line: &mut bool,
@@ -1580,7 +1580,7 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_literal_string_expression(&self, value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_literal_string_expression(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -1946,7 +1946,7 @@ pub trait PostfixPass<'alloc> {
     fn visit_block(
         &self,
         statements: arena::Vec<'alloc, Self::Value>,
-        declarations: &mut Option<arena::Vec<'alloc, arena::String<'alloc>>>,
+        declarations: &mut Option<arena::Vec<'alloc, &'alloc str>>,
     ) -> Self::Value {
         let mut result = Self::Value::default();
         for item in statements {
@@ -1965,7 +1965,7 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_directive(&self, raw_value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_directive(&self, raw_value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -2036,7 +2036,7 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_template_element(&self, raw_value: &mut arena::String<'alloc>) -> Self::Value {
+    fn visit_template_element(&self, raw_value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
