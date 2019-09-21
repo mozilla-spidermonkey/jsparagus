@@ -69,12 +69,12 @@ impl<'alloc> Parser<'alloc> {
         Action(TABLES.action_table[state * TABLES.action_width + t])
     }
 
-    fn reduce_all(&mut self, t: TerminalId) -> Action {
+    fn reduce_all(&mut self, t: TerminalId) -> Result<'alloc, Action> {
         let tables = TABLES;
         let mut action = self.action(t);
         while action.is_reduce() {
             let prod_index = action.reduce_prod_index();
-            let nt = reduce(&self.handler, prod_index, &mut self.node_stack);
+            let nt = reduce(&self.handler, prod_index, &mut self.node_stack)?;
             debug_assert!((nt as usize) < tables.goto_width);
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             self.state_stack.truncate(self.node_stack.len());
@@ -87,14 +87,14 @@ impl<'alloc> Parser<'alloc> {
         }
 
         debug_assert_eq!(self.state_stack.len(), self.node_stack.len() + 1);
-        action
+        Ok(action)
     }
 
     pub fn write_token(&mut self, token: &Token<'alloc>) -> Result<'alloc, ()> {
         // Loop for error-handling. The normal path through this code reaches
         // the `return` statement.
         loop {
-            let action = self.reduce_all(token.terminal_id);
+            let action = self.reduce_all(token.terminal_id)?;
             if action.is_shift() {
                 self.node_stack
                     .push(StackValue::Token(self.handler.alloc(token.clone())));
@@ -110,7 +110,7 @@ impl<'alloc> Parser<'alloc> {
     pub fn close(&mut self) -> Result<'alloc, StackValue<'alloc>> {
         // Loop for error-handling.
         loop {
-            let action = self.reduce_all(TerminalId::End);
+            let action = self.reduce_all(TerminalId::End)?;
             if action.is_accept() {
                 assert_eq!(self.node_stack.len(), 1);
                 return Ok(self.node_stack.pop().unwrap());
@@ -134,7 +134,7 @@ impl<'alloc> Parser<'alloc> {
         // between this and write_terminal are commented below.
         assert!(t.terminal_id != TerminalId::ErrorToken);
 
-        let action = self.reduce_all(TerminalId::ErrorToken);
+        let action = self.reduce_all(TerminalId::ErrorToken)?;
         if action.is_shift() {
             let state = *self.state_stack.last().unwrap();
             let error_code = TABLES.error_codes[state]

@@ -180,6 +180,7 @@ def stack_value(ast):
         write(0, "use crate::Token;")
         write(0, "use ast::arena;")
         write(0, "use ast::types::*;")
+        write(0, "use std::convert::Infallible;")
         write(0, "")
         write(0, "#[derive(Debug)]")
         write(0, "pub enum StackValue<'alloc> {")
@@ -197,6 +198,12 @@ def stack_value(ast):
         write(1, "fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self>;")
         write(0, "}")
         write(0, "")
+        write(0, "/// Values that can be converted to StackValues, fallibly.")
+        write(0, "pub trait TryIntoStack<'alloc> {")
+        write(1, "type Error;")
+        write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, Self::Error>;")
+        write(0, "}")
+        write(0, "")
         for ty in types:
             write(0, "impl<'alloc> StackValueItem<'alloc> for {} {{", ty.to_rust_type(ast))
             write(1, "fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {")
@@ -209,13 +216,23 @@ def stack_value(ast):
             write(0, "")
         for ty in types:
             rust_ty = ty.to_rust_type(ast)
-            write(0, "impl<'alloc> From<arena::Box<'alloc, {}>> for StackValue<'alloc> {{", rust_ty)
-            write(1, "fn from(val: arena::Box<'alloc, {}>) -> StackValue<'alloc> {{", rust_ty)
-            write(2, "StackValue::{}(val)".format(ty.rust_variant_name()))
+            write(0, "impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, {}> {{", rust_ty)
+            write(1, "type Error = Infallible;")
+            write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {{", rust_ty)
+            write(2, "Ok(StackValue::{}(self))".format(ty.rust_variant_name()))
             write(1, "}")
             write(0, "}")
             write(0, "")
-
+        write(0, "impl<'alloc, T, E> TryIntoStack<'alloc> for Result<T, E>")
+        write(0, "where")
+        write(1, "T: TryIntoStack<'alloc>,")
+        write(1, "E: From<T::Error>,")
+        write(0, "{")
+        write(1, "type Error = E;")
+        write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, E> {")
+        write(2, "Ok(self?.try_into_stack()?)")
+        write(1, "}")
+        write(0, "}")
 
 def pass_(ast):
     with open("src/visit.rs", "w+") as f:

@@ -3,6 +3,7 @@
 use crate::Token;
 use ast::arena;
 use ast::types::*;
+use std::convert::Infallible;
 
 #[derive(Debug)]
 pub enum StackValue<'alloc> {
@@ -156,6 +157,12 @@ impl<'alloc> StackValue<'alloc> {
 
 pub trait StackValueItem<'alloc>: Sized {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self>;
+}
+
+/// Values that can be converted to StackValues, fallibly.
+pub trait TryIntoStack<'alloc> {
+    type Error;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Self::Error>;
 }
 
 impl<'alloc> StackValueItem<'alloc> for Argument<'alloc> {
@@ -1409,848 +1416,963 @@ impl<'alloc> StackValueItem<'alloc> for YieldGeneratorExpression<'alloc> {
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, Argument<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Argument<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Argument(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Argument<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Argument(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, Arguments<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Arguments<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Arguments(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Arguments<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Arguments(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrayAssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrayAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrayAssignmentTarget(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrayAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrayAssignmentTarget(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrayBinding<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrayBinding<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrayBinding(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrayBinding<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrayBinding(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrayExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrayExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrayExpression(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrayExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrayExpression(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrayExpressionElement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrayExpressionElement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrayExpressionElement(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrayExpressionElement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrayExpressionElement(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrowExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrowExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrowExpression(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrowExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrowExpression(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ArrowExpressionBody<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ArrowExpressionBody<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ArrowExpressionBody(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrowExpressionBody<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ArrowExpressionBody(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentExpression(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentExpression(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTarget(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTarget(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetIdentifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTargetIdentifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetIdentifier(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetIdentifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetIdentifier(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetMaybeDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTargetMaybeDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetMaybeDefault(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetMaybeDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetMaybeDefault(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetPattern<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTargetPattern<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetPattern(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetPattern<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetPattern(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTargetProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetProperty(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetProperty(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetPropertyIdentifier<'alloc>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, AssignmentTargetPropertyIdentifier<'alloc>>
 {
-    fn from(
-        val: arena::Box<'alloc, AssignmentTargetPropertyIdentifier<'alloc>>,
-    ) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetPropertyIdentifier(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetPropertyIdentifier(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetPropertyProperty<'alloc>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetPropertyProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetPropertyProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetWithDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AssignmentTargetWithDefault(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AwaitExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::AwaitExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BinaryExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BinaryExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BinaryOperator> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BinaryOperator(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Binding<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Binding(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingIdentifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingIdentifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingPattern<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingPattern(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingPropertyIdentifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingPropertyIdentifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingPropertyProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingPropertyProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BindingWithDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BindingWithDefault(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Block<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Block(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BlockStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BlockStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BreakStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::BreakStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CallExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CallExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CatchClause<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CatchClause(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassDeclaration<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ClassDeclaration(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassElement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ClassElement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ClassExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CompoundAssignmentExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CompoundAssignmentExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CompoundAssignmentOperator> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CompoundAssignmentOperator(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ComputedMemberAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ComputedMemberAssignmentTarget(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ComputedMemberExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ComputedMemberExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ComputedPropertyName<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ComputedPropertyName(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ConditionalExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ConditionalExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ContinueStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ContinueStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CoverParenthesized<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CoverParenthesized(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, DataProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::DataProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Directive<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Directive(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, DoWhileStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::DoWhileStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Export<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Export(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportAllFrom<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportAllFrom(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportDeclaration<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportDeclaration(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportDefault(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportFrom<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportFrom(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportFromSpecifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportFromSpecifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportLocalSpecifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportLocalSpecifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExportLocals<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExportLocals(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Expression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Expression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExpressionOrSuper<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ExpressionOrSuper(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForInStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ForInStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForOfStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ForOfStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ForStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, FormalParameters<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::FormalParameters(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Function<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Function(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, FunctionBody<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::FunctionBody(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Getter<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Getter(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Identifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Identifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, IdentifierExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::IdentifierExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, IdentifierName<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::IdentifierName(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, IfStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::IfStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Import<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Import(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportDeclaration<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ImportDeclaration(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportNamespace<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ImportNamespace(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportSpecifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ImportSpecifier(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Label<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Label(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LabeledStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::LabeledStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralBooleanExpression> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::LiteralBooleanExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralNumericExpression> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::LiteralNumericExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralRegExpExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::LiteralRegExpExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralStringExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::LiteralStringExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, MemberAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::MemberAssignmentTarget(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, MemberExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::MemberExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Method<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Method(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, MethodDefinition<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::MethodDefinition(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Module<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Module(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ModuleItems<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ModuleItems(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, NamedObjectProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::NamedObjectProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, NewExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::NewExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ObjectAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ObjectAssignmentTarget(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ObjectBinding<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ObjectBinding(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ObjectExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ObjectExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ObjectProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ObjectProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Parameter<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Parameter(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Program<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Program(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, PropertyName<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::PropertyName(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ReturnStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ReturnStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Script<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Script(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Setter<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Setter(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ShorthandProperty<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ShorthandProperty(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SimpleAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::SimpleAssignmentTarget(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Statement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Statement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, StaticMemberAssignmentTarget<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::StaticMemberAssignmentTarget(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, StaticMemberExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::StaticMemberExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, StaticPropertyName<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::StaticPropertyName(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchCase<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::SwitchCase(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::SwitchDefault(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::SwitchStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchStatementWithDefault<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::SwitchStatementWithDefault(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TemplateElement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::TemplateElement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TemplateExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::TemplateExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TemplateExpressionElement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::TemplateExpressionElement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ThrowStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ThrowStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Token<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Token(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TryCatchStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::TryCatchStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TryFinallyStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::TryFinallyStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UnaryExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::UnaryExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UnaryOperator> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::UnaryOperator(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UpdateExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::UpdateExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UpdateOperator> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::UpdateOperator(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, VariableDeclaration<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableDeclaration(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, VariableDeclarationKind> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableDeclarationKind(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>>
 {
-    fn from(
-        val: arena::Box<'alloc, AssignmentTargetPropertyProperty<'alloc>>,
-    ) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetPropertyProperty(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableDeclarationOrAssignmentTarget(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AssignmentTargetWithDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AssignmentTargetWithDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AssignmentTargetWithDefault(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableDeclarationOrExpression(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, AwaitExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, AwaitExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::AwaitExpression(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, VariableDeclarator<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableDeclarator(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, BinaryExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BinaryExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BinaryExpression(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, VariableReference<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VariableReference(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, BinaryOperator>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BinaryOperator>) -> StackValue<'alloc> {
-        StackValue::BinaryOperator(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Binding<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Binding<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Binding(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingIdentifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingIdentifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingIdentifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingPattern<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingPattern<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingPattern(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingPropertyIdentifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingPropertyIdentifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingPropertyIdentifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingPropertyProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingPropertyProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingPropertyProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BindingWithDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BindingWithDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BindingWithDefault(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Block<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Block<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Block(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BlockStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BlockStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BlockStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, BreakStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, BreakStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::BreakStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, CallExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, CallExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::CallExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, CatchClause<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, CatchClause<'alloc>>) -> StackValue<'alloc> {
-        StackValue::CatchClause(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ClassDeclaration<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ClassDeclaration<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ClassDeclaration(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ClassElement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ClassElement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ClassElement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ClassExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ClassExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ClassExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, CompoundAssignmentExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, CompoundAssignmentExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::CompoundAssignmentExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, CompoundAssignmentOperator>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, CompoundAssignmentOperator>) -> StackValue<'alloc> {
-        StackValue::CompoundAssignmentOperator(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ComputedMemberAssignmentTarget<'alloc>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, arena::Vec<'alloc, ArrayExpressionElement<'alloc>>>
 {
-    fn from(val: arena::Box<'alloc, ComputedMemberAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ComputedMemberAssignmentTarget(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecArrayExpressionElement(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, ComputedMemberExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ComputedMemberExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ComputedMemberExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ComputedPropertyName<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ComputedPropertyName<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ComputedPropertyName(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ConditionalExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ConditionalExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ConditionalExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ContinueStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ContinueStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ContinueStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, CoverParenthesized<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, CoverParenthesized<'alloc>>) -> StackValue<'alloc> {
-        StackValue::CoverParenthesized(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, DataProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, DataProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::DataProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Directive<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Directive<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Directive(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, DoWhileStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, DoWhileStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::DoWhileStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Export<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Export<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Export(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportAllFrom<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportAllFrom<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportAllFrom(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportDeclaration<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportDeclaration<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportDeclaration(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportDefault(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportFrom<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportFrom<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportFrom(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportFromSpecifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportFromSpecifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportFromSpecifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportLocalSpecifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportLocalSpecifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportLocalSpecifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExportLocals<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExportLocals<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExportLocals(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Expression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Expression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Expression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ExpressionOrSuper<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ExpressionOrSuper<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ExpressionOrSuper(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ForInStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ForInStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ForInStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ForOfStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ForOfStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ForOfStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ForStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ForStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ForStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, FormalParameters<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, FormalParameters<'alloc>>) -> StackValue<'alloc> {
-        StackValue::FormalParameters(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Function<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Function<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Function(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, FunctionBody<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, FunctionBody<'alloc>>) -> StackValue<'alloc> {
-        StackValue::FunctionBody(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Getter<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Getter<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Getter(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Identifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Identifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Identifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, IdentifierExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, IdentifierExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::IdentifierExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, IdentifierName<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, IdentifierName<'alloc>>) -> StackValue<'alloc> {
-        StackValue::IdentifierName(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, IfStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, IfStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::IfStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Import<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Import<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Import(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ImportDeclaration<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ImportDeclaration<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ImportDeclaration(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ImportNamespace<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ImportNamespace<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ImportNamespace(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ImportSpecifier<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ImportSpecifier<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ImportSpecifier(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Label<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Label<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Label(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, LabeledStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, LabeledStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::LabeledStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, LiteralBooleanExpression>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, LiteralBooleanExpression>) -> StackValue<'alloc> {
-        StackValue::LiteralBooleanExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, LiteralNumericExpression>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, LiteralNumericExpression>) -> StackValue<'alloc> {
-        StackValue::LiteralNumericExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, LiteralRegExpExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, LiteralRegExpExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::LiteralRegExpExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, LiteralStringExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, LiteralStringExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::LiteralStringExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, MemberAssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, MemberAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::MemberAssignmentTarget(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, MemberExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, MemberExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::MemberExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Method<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Method<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Method(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, MethodDefinition<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, MethodDefinition<'alloc>>) -> StackValue<'alloc> {
-        StackValue::MethodDefinition(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Module<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Module<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Module(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ModuleItems<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ModuleItems<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ModuleItems(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, NamedObjectProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, NamedObjectProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::NamedObjectProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, NewExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, NewExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::NewExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ObjectAssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ObjectAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ObjectAssignmentTarget(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ObjectBinding<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ObjectBinding<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ObjectBinding(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ObjectExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ObjectExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ObjectExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ObjectProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ObjectProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ObjectProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Parameter<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Parameter<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Parameter(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Program<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Program<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Program(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, PropertyName<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, PropertyName<'alloc>>) -> StackValue<'alloc> {
-        StackValue::PropertyName(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ReturnStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ReturnStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ReturnStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Script<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Script<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Script(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Setter<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Setter<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Setter(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ShorthandProperty<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ShorthandProperty<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ShorthandProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, SimpleAssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, SimpleAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::SimpleAssignmentTarget(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Statement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Statement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Statement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, StaticMemberAssignmentTarget<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, StaticMemberAssignmentTarget<'alloc>>) -> StackValue<'alloc> {
-        StackValue::StaticMemberAssignmentTarget(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, StaticMemberExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, StaticMemberExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::StaticMemberExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, StaticPropertyName<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, StaticPropertyName<'alloc>>) -> StackValue<'alloc> {
-        StackValue::StaticPropertyName(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, SwitchCase<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, SwitchCase<'alloc>>) -> StackValue<'alloc> {
-        StackValue::SwitchCase(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, SwitchDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, SwitchDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::SwitchDefault(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, SwitchStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, SwitchStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::SwitchStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, SwitchStatementWithDefault<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, SwitchStatementWithDefault<'alloc>>) -> StackValue<'alloc> {
-        StackValue::SwitchStatementWithDefault(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, TemplateElement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, TemplateElement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::TemplateElement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, TemplateExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, TemplateExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::TemplateExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, TemplateExpressionElement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, TemplateExpressionElement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::TemplateExpressionElement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, ThrowStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, ThrowStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::ThrowStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Token<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Token<'alloc>>) -> StackValue<'alloc> {
-        StackValue::Token(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, TryCatchStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, TryCatchStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::TryCatchStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, TryFinallyStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, TryFinallyStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::TryFinallyStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, UnaryExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, UnaryExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::UnaryExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, UnaryOperator>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, UnaryOperator>) -> StackValue<'alloc> {
-        StackValue::UnaryOperator(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, UpdateExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, UpdateExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::UpdateExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, UpdateOperator>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, UpdateOperator>) -> StackValue<'alloc> {
-        StackValue::UpdateOperator(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, VariableDeclaration<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, VariableDeclaration<'alloc>>) -> StackValue<'alloc> {
-        StackValue::VariableDeclaration(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, VariableDeclarationKind>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, VariableDeclarationKind>) -> StackValue<'alloc> {
-        StackValue::VariableDeclarationKind(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>
 {
-    fn from(
-        val: arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VariableDeclarationOrAssignmentTarget(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecBindingProperty(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecClassElement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>
 {
-    fn from(
-        val: arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VariableDeclarationOrExpression(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecOption(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, VariableDeclarator<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, VariableDeclarator<'alloc>>) -> StackValue<'alloc> {
-        StackValue::VariableDeclarator(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecStatement(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, VariableReference<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, VariableReference<'alloc>>) -> StackValue<'alloc> {
-        StackValue::VariableReference(val)
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecSwitchCase(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, ArrayExpressionElement<'alloc>>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>
 {
-    fn from(
-        val: arena::Box<'alloc, arena::Vec<'alloc, ArrayExpressionElement<'alloc>>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VecArrayExpressionElement(val)
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::VecVariableDeclarator(self))
     }
 }
 
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>>
-    for StackValue<'alloc>
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Void> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::Void(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, WhileStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::WhileStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, WithStatement<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::WithStatement(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, YieldExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::YieldExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, YieldGeneratorExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::YieldGeneratorExpression(self))
+    }
+}
+
+impl<'alloc, T, E> TryIntoStack<'alloc> for Result<T, E>
+where
+    T: TryIntoStack<'alloc>,
+    E: From<T::Error>,
 {
-    fn from(
-        val: arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VecBindingProperty(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>>
-    for StackValue<'alloc>
-{
-    fn from(
-        val: arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VecClassElement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>>
-    for StackValue<'alloc>
-{
-    fn from(
-        val: arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VecOption(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>
-    for StackValue<'alloc>
-{
-    fn from(val: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>) -> StackValue<'alloc> {
-        StackValue::VecStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>
-    for StackValue<'alloc>
-{
-    fn from(val: arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>) -> StackValue<'alloc> {
-        StackValue::VecSwitchCase(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>>
-    for StackValue<'alloc>
-{
-    fn from(
-        val: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
-    ) -> StackValue<'alloc> {
-        StackValue::VecVariableDeclarator(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, Void>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, Void>) -> StackValue<'alloc> {
-        StackValue::Void(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, WhileStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, WhileStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::WhileStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, WithStatement<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, WithStatement<'alloc>>) -> StackValue<'alloc> {
-        StackValue::WithStatement(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, YieldExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, YieldExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::YieldExpression(val)
-    }
-}
-
-impl<'alloc> From<arena::Box<'alloc, YieldGeneratorExpression<'alloc>>> for StackValue<'alloc> {
-    fn from(val: arena::Box<'alloc, YieldGeneratorExpression<'alloc>>) -> StackValue<'alloc> {
-        StackValue::YieldGeneratorExpression(val)
+    type Error = E;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, E> {
+        Ok(self?.try_into_stack()?)
     }
 }
