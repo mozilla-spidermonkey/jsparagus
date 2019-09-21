@@ -1,6 +1,6 @@
-use generated_parser::{reduce, AstBuilder, ErrorCode, StackValue, TerminalId, Token, TABLES};
-
-use crate::errors::{ParseError, Result};
+use generated_parser::{
+    reduce, AstBuilder, ErrorCode, ParseError, Result, StackValue, TerminalId, Token, TABLES,
+};
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;

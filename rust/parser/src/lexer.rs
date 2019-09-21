@@ -1,9 +1,8 @@
 //! JavaScript lexer.
 
-use crate::errors::{ParseError, Result};
 use crate::parser::Parser;
 use bumpalo::{collections::String, Bump};
-use generated_parser::{TerminalId, Token};
+use generated_parser::{ParseError, Result, TerminalId, Token};
 use std::convert::TryFrom;
 use std::str::Chars;
 

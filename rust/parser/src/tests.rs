@@ -1,12 +1,11 @@
 use std::iter;
 
-use crate::errors::{ParseError, Result};
 use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
 use ast::{arena, types::*};
 use bumpalo::{self, Bump};
-use generated_parser::{self, AstBuilder, TerminalId, Token};
+use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId, Token};
 
 #[cfg(all(feature = "unstable", test))]
 mod benchmarks {

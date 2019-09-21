@@ -1,5 +1,5 @@
-use generated_parser::Token;
-use std::{error::Error, fmt, io};
+use crate::Token;
+use std::{convert::Infallible, error::Error, fmt, io};
 
 #[derive(Debug)]
 pub enum ParseError<'alloc> {
@@ -55,6 +55,12 @@ impl<'alloc> fmt::Display for ParseError<'alloc> {
 impl<'alloc> From<io::Error> for ParseError<'alloc> {
     fn from(err: io::Error) -> ParseError<'alloc> {
         ParseError::IOError(err)
+    }
+}
+
+impl<'alloc> From<Infallible> for ParseError<'alloc> {
+    fn from(err: Infallible) -> ParseError<'alloc> {
+        match err {}
     }
 }
 
