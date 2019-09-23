@@ -206,7 +206,7 @@ impl<'alloc> AstBuilder<'alloc> {
             ) => Ok(self.alloc(BindingIdentifier { name })),
 
             // ({...x.y} = dv) => {}
-            _ => Err(ParseError::ObjectPatternWithInvalidRestBinding),
+            _ => Err(ParseError::ObjectBindingPatternWithInvalidRest),
         }
     }
 
@@ -440,7 +440,7 @@ impl<'alloc> AstBuilder<'alloc> {
                     .map(|expr| match self.expression_to_parameter(expr.unbox())? {
                         Parameter::Binding(b) => Ok(self.alloc(b)),
                         Parameter::BindingWithDefault(_) => {
-                            Err(ParseError::ArrayPatternWithInvalidRestBinding)
+                            Err(ParseError::ArrayBindingPatternWithInvalidRest)
                         }
                     })
                     .transpose()?;

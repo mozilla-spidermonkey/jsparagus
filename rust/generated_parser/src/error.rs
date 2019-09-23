@@ -19,10 +19,10 @@ pub enum ParseError<'alloc> {
 
     // Destructuring errors
     ArrayPatternWithNonFinalRest,
-    ArrayPatternWithInvalidRestBinding,
+    ArrayBindingPatternWithInvalidRest,
     ObjectPatternWithMethod,
     ObjectPatternWithNonFinalRest,
-    ObjectPatternWithInvalidRestBinding,
+    ObjectBindingPatternWithInvalidRest,
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -40,14 +40,14 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::ArrayPatternWithNonFinalRest => {
                 format!("array patterns can have a rest element (`...x`) only at the end")
             }
-            ParseError::ArrayPatternWithInvalidRestBinding => format!(
+            ParseError::ArrayBindingPatternWithInvalidRest => format!(
                 "the expression after `...` in this array pattern must be a single identifier"
             ),
             ParseError::ObjectPatternWithMethod => format!("object patterns can't have methods"),
             ParseError::ObjectPatternWithNonFinalRest => {
                 format!("object patterns can have a rest element (`...x`) only at the end")
             }
-            ParseError::ObjectPatternWithInvalidRestBinding => format!(
+            ParseError::ObjectBindingPatternWithInvalidRest => format!(
                 "the expression after `...` in this object pattern must be a single identifier"
             ),
         }
