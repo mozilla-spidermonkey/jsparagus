@@ -1,3 +1,4 @@
+use crate::error::{ParseError, Result};
 use crate::Token;
 use ast::{arena, types::*};
 use bumpalo::{vec, Bump};
@@ -29,6 +30,17 @@ impl<'alloc> AstBuilder<'alloc> {
 
     fn collect_vec<C: IntoIterator>(&self, items: C) -> arena::Vec<'alloc, C::Item> {
         arena::Vec::from_iter_in(items, self.allocator)
+    }
+
+    fn collect_vec_from_results<T, C>(&self, results: C) -> Result<'alloc, arena::Vec<'alloc, T>>
+    where
+        C: IntoIterator<Item = Result<'alloc, T>>,
+    {
+        let mut out = self.new_vec();
+        for result in results {
+            out.push(result?);
+        }
+        Ok(out)
     }
 
     fn push<T>(&self, list: &mut arena::Vec<'alloc, T>, value: T) {
@@ -141,26 +153,26 @@ impl<'alloc> AstBuilder<'alloc> {
     fn assignment_target_maybe_default_to_binding(
         &self,
         target: AssignmentTargetMaybeDefault<'alloc>,
-    ) -> Parameter<'alloc> {
+    ) -> Result<'alloc, Parameter<'alloc>> {
         match target {
-            AssignmentTargetMaybeDefault::AssignmentTarget(target) => {
-                Parameter::Binding(self.assignment_target_to_binding(target))
-            }
+            AssignmentTargetMaybeDefault::AssignmentTarget(target) => Ok(Parameter::Binding(
+                self.assignment_target_to_binding(target)?,
+            )),
 
             AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(
                 AssignmentTargetWithDefault { binding, init },
-            ) => Parameter::BindingWithDefault(BindingWithDefault {
-                binding: self.assignment_target_to_binding(binding),
+            ) => Ok(Parameter::BindingWithDefault(BindingWithDefault {
+                binding: self.assignment_target_to_binding(binding)?,
                 init,
-            }),
+            })),
         }
     }
 
     fn assignment_target_property_to_binding_property(
         &self,
         target: AssignmentTargetProperty<'alloc>,
-    ) -> BindingProperty<'alloc> {
-        match target {
+    ) -> Result<'alloc, BindingProperty<'alloc>> {
+        Ok(match target {
             AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
                 AssignmentTargetPropertyIdentifier {
                     binding: AssignmentTargetIdentifier { name },
@@ -175,29 +187,26 @@ impl<'alloc> AstBuilder<'alloc> {
                 AssignmentTargetPropertyProperty { name, binding },
             ) => BindingProperty::BindingPropertyProperty(BindingPropertyProperty {
                 name,
-                binding: self.assignment_target_maybe_default_to_binding(binding),
+                binding: self.assignment_target_maybe_default_to_binding(binding)?,
             }),
-        }
+        })
     }
 
     /// Refine an AssignmentRestProperty into a BindingRestProperty.
     fn assignment_rest_property_to_binding_identifier(
         &self,
         target: AssignmentTarget<'alloc>,
-    ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, BindingIdentifier<'alloc>>> {
         match target {
             // ({...x} = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                 }),
-            ) => self.alloc(BindingIdentifier { name }),
+            ) => Ok(self.alloc(BindingIdentifier { name })),
 
             // ({...x.y} = dv) => {}
-            _ => {
-                // TODO - Handle this case by returning an error Result.
-                panic!("invalid rest binding");
-            }
+            _ => Err(ParseError::ObjectPatternWithInvalidRestBinding),
         }
     }
 
@@ -216,24 +225,24 @@ impl<'alloc> AstBuilder<'alloc> {
     ///
     /// When parsing `(a = 1, [b, c] = obj) => {}`, the assignment targets `a`
     /// and `[b, c]` are passed to this method.
-    fn assignment_target_to_binding(&self, target: AssignmentTarget<'alloc>) -> Binding<'alloc> {
+    fn assignment_target_to_binding(
+        &self,
+        target: AssignmentTarget<'alloc>,
+    ) -> Result<'alloc, Binding<'alloc>> {
         match target {
             // (a = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                 }),
-            ) => Binding::BindingIdentifier(BindingIdentifier { name }),
+            ) => Ok(Binding::BindingIdentifier(BindingIdentifier { name })),
 
             // This case is always an early SyntaxError.
             // (a.x = dv) => {}
             // (a[i] = dv) => {}
             AssignmentTarget::SimpleAssignmentTarget(
                 SimpleAssignmentTarget::MemberAssignmentTarget(_),
-            ) => {
-                // TODO - Handle this case by returning an error Result.
-                panic!("illegal binding");
-            }
+            ) => Err(ParseError::InvalidParameter),
 
             // ([a, b] = dv) => {}
             AssignmentTarget::AssignmentTargetPattern(
@@ -244,18 +253,21 @@ impl<'alloc> AstBuilder<'alloc> {
             ) => {
                 let elements: arena::Vec<'alloc, Option<AssignmentTargetMaybeDefault<'alloc>>> =
                     elements;
-                let elements: arena::Vec<'alloc, Option<Parameter<'alloc>>> =
-                    self.collect_vec(elements.into_iter().map(|maybe_target| {
+                let elements: arena::Vec<'alloc, Option<Parameter<'alloc>>> = self
+                    .collect_vec_from_results(elements.into_iter().map(|maybe_target| {
                         maybe_target
                             .map(|target| self.assignment_target_maybe_default_to_binding(target))
-                    }));
-                let rest: Option<arena::Box<'alloc, Binding<'alloc>>> = rest.map(|rest_target| {
-                    self.alloc(self.assignment_target_to_binding(rest_target.unbox()))
-                });
-                Binding::BindingPattern(BindingPattern::ArrayBinding(ArrayBinding {
-                    elements,
-                    rest,
-                }))
+                            .transpose()
+                    }))?;
+                let rest: Option<Result<'alloc, arena::Box<'alloc, Binding<'alloc>>>> = rest.map(
+                    |rest_target| -> Result<'alloc, arena::Box<'alloc, Binding<'alloc>>> {
+                        Ok(self.alloc(self.assignment_target_to_binding(rest_target.unbox())?))
+                    },
+                );
+                let rest: Option<arena::Box<'alloc, Binding<'alloc>>> = rest.transpose()?;
+                Ok(Binding::BindingPattern(BindingPattern::ArrayBinding(
+                    ArrayBinding { elements, rest },
+                )))
             }
 
             // ({a, b: c} = dv) => {}
@@ -265,19 +277,19 @@ impl<'alloc> AstBuilder<'alloc> {
                     rest,
                 }),
             ) => {
-                let properties = self.collect_vec(
-                    properties
-                        .into_iter()
-                        .map(|target| self.assignment_target_property_to_binding_property(target)),
-                );
+                let properties =
+                    self.collect_vec_from_results(properties.into_iter().map(|target| {
+                        self.assignment_target_property_to_binding_property(target)
+                    }))?;
 
-                let rest = rest.map(|rest_target| {
-                    self.assignment_rest_property_to_binding_identifier(rest_target.unbox())
-                });
-                Binding::BindingPattern(BindingPattern::ObjectBinding(ObjectBinding {
-                    properties,
-                    rest,
-                }))
+                let rest = if let Some(rest_target) = rest {
+                    Some(self.assignment_rest_property_to_binding_identifier(rest_target.unbox())?)
+                } else {
+                    None
+                };
+                Ok(Binding::BindingPattern(BindingPattern::ObjectBinding(
+                    ObjectBinding { properties, rest },
+                )))
             }
         }
     }
@@ -285,21 +297,22 @@ impl<'alloc> AstBuilder<'alloc> {
     fn object_property_to_binding_property(
         &self,
         op: ObjectProperty<'alloc>,
-    ) -> BindingProperty<'alloc> {
+    ) -> Result<'alloc, BindingProperty<'alloc>> {
         match op {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
                 DataProperty {
                     property_name,
                     expression,
                 },
-            )) => BindingProperty::BindingPropertyProperty(BindingPropertyProperty {
-                name: property_name,
-                binding: self.expression_to_parameter(expression.unbox()),
-            }),
+            )) => Ok(BindingProperty::BindingPropertyProperty(
+                BindingPropertyProperty {
+                    name: property_name,
+                    binding: self.expression_to_parameter(expression.unbox())?,
+                },
+            )),
 
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
-                // TODO - change this to an error Result
-                panic!("destructuring patterns can't have methods");
+                Err(ParseError::ObjectPatternWithMethod)
             }
 
             ObjectProperty::ShorthandProperty(ShorthandProperty {
@@ -307,15 +320,16 @@ impl<'alloc> AstBuilder<'alloc> {
             }) => {
                 // TODO - CoverInitializedName can't be represented in an
                 // ObjectProperty, but we need it here.
-                BindingProperty::BindingPropertyIdentifier(BindingPropertyIdentifier {
-                    binding: BindingIdentifier { name },
-                    init: None,
-                })
+                Ok(BindingProperty::BindingPropertyIdentifier(
+                    BindingPropertyIdentifier {
+                        binding: BindingIdentifier { name },
+                        init: None,
+                    },
+                ))
             }
 
             ObjectProperty::SpreadProperty(_expression) => {
-                // TODO - change this to an error Result
-                panic!("destructuring patterns can have `...` only at the end");
+                Err(ParseError::ObjectPatternWithNonFinalRest)
             }
         }
     }
@@ -358,34 +372,31 @@ impl<'alloc> AstBuilder<'alloc> {
     fn object_expression_to_object_binding(
         &self,
         object: ObjectExpression<'alloc>,
-    ) -> ObjectBinding<'alloc> {
+    ) -> Result<'alloc, ObjectBinding<'alloc>> {
         let mut properties = object.properties;
         let rest = self.pop_trailing_spread_property(&mut properties);
-        ObjectBinding {
-            properties: self.collect_vec(
+        Ok(ObjectBinding {
+            properties: self.collect_vec_from_results(
                 properties
                     .into_iter()
                     .map(|prop| self.object_property_to_binding_property(prop.unbox())),
-            ),
+            )?,
             rest: rest.map(|expression| self.spread_expression_to_rest_binding(expression)),
-        }
+        })
     }
 
     fn array_elements_to_parameters(
         &self,
         elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
-    ) -> arena::Vec<'alloc, Option<Parameter<'alloc>>> {
-        self.collect_vec(elements.into_iter().map(|element| match element {
-            ArrayExpressionElement::Expression(expr) => {
-                Some(self.expression_to_parameter(expr.unbox()))
-            }
-            ArrayExpressionElement::SpreadElement(_expr) => {
-                // ([...a, b]) => {}
-                // TODO - use Result to indicate this early error
-                panic!("rest parameter not at end of arrow parameter list");
-            }
-            ArrayExpressionElement::Elision => None,
-        }))
+    ) -> Result<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>> {
+        self.collect_vec_from_results(elements.into_iter().map(|element| match element {
+                ArrayExpressionElement::Expression(expr) =>
+                    Ok(Some(self.expression_to_parameter(expr.unbox())?)),
+                ArrayExpressionElement::SpreadElement(_expr) =>
+                    // ([...a, b]) => {}
+                    Err(ParseError::ArrayPatternWithNonFinalRest),
+                ArrayExpressionElement::Elision => Ok(None),
+            }))
     }
 
     fn pop_trailing_spread_element(
@@ -405,40 +416,46 @@ impl<'alloc> AstBuilder<'alloc> {
         }
     }
 
-    fn expression_to_parameter(&self, expression: Expression<'alloc>) -> Parameter<'alloc> {
+    fn expression_to_parameter(
+        &self,
+        expression: Expression<'alloc>,
+    ) -> Result<'alloc, Parameter<'alloc>> {
         match expression {
-            Expression::IdentifierExpression(IdentifierExpression { name }) => {
-                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name }))
-            }
+            Expression::IdentifierExpression(IdentifierExpression { name }) => Ok(
+                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name })),
+            ),
 
             Expression::AssignmentExpression(AssignmentExpression {
                 binding,
                 expression,
-            }) => Parameter::BindingWithDefault(BindingWithDefault {
-                binding: self.assignment_target_to_binding(binding),
+            }) => Ok(Parameter::BindingWithDefault(BindingWithDefault {
+                binding: self.assignment_target_to_binding(binding)?,
                 init: expression,
-            }),
+            })),
 
             Expression::ArrayExpression(ArrayExpression { mut elements }) => {
                 let rest = self.pop_trailing_spread_element(&mut elements);
-                Parameter::Binding(Binding::BindingPattern(BindingPattern::ArrayBinding(
-                    ArrayBinding {
-                        elements: self.array_elements_to_parameters(elements),
-                        rest: rest.map(|expr| match self.expression_to_parameter(expr.unbox()) {
-                            Parameter::Binding(b) => self.alloc(b),
-                            Parameter::BindingWithDefault(_) => panic!(
-                                "default value not allowed for rest binding in array destructuring"
-                            ),
-                        }),
-                    },
+                let elements = self.array_elements_to_parameters(elements)?;
+                let rest = rest
+                    .map(|expr| match self.expression_to_parameter(expr.unbox())? {
+                        Parameter::Binding(b) => Ok(self.alloc(b)),
+                        Parameter::BindingWithDefault(_) => {
+                            Err(ParseError::ArrayPatternWithInvalidRestBinding)
+                        }
+                    })
+                    .transpose()?;
+                Ok(Parameter::Binding(Binding::BindingPattern(
+                    BindingPattern::ArrayBinding(ArrayBinding { elements, rest }),
                 )))
             }
 
-            Expression::ObjectExpression(object) => Parameter::Binding(Binding::BindingPattern(
-                BindingPattern::ObjectBinding(self.object_expression_to_object_binding(object)),
+            Expression::ObjectExpression(object) => Ok(Parameter::Binding(
+                Binding::BindingPattern(BindingPattern::ObjectBinding(
+                    self.object_expression_to_object_binding(object)?,
+                )),
             )),
 
-            other => panic!("Unimplemented expression_to_parameter: {:?}", other),
+            _ => Err(ParseError::InvalidParameter),
         }
     }
 
@@ -448,7 +465,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn expression_to_parameter_list(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Vec<'alloc, Parameter<'alloc>> {
+    ) -> Result<'alloc, arena::Vec<'alloc, Parameter<'alloc>>> {
         // When the production
         // *ArrowParameters* `:` *CoverParenthesizedExpressionAndArrowParameterList*
         // is recognized the following grammar is used to refine the
@@ -463,11 +480,14 @@ impl<'alloc> AstBuilder<'alloc> {
                 left,
                 right,
             }) => {
-                let mut parameters = self.expression_to_parameter_list(left);
-                self.push(&mut parameters, self.expression_to_parameter(right.unbox()));
-                parameters
+                let mut parameters = self.expression_to_parameter_list(left)?;
+                self.push(
+                    &mut parameters,
+                    self.expression_to_parameter(right.unbox())?,
+                );
+                Ok(parameters)
             }
-            other => self.new_vec_single(self.expression_to_parameter(other)),
+            other => Ok(self.new_vec_single(self.expression_to_parameter(other)?)),
         }
     }
 
@@ -2381,14 +2401,14 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn uncover_arrow_parameters(
         &self,
         covered: arena::Box<'alloc, CoverParenthesized<'alloc>>,
-    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
-        match covered.unbox() {
+    ) -> Result<'alloc, arena::Box<'alloc, FormalParameters<'alloc>>> {
+        Ok(match covered.unbox() {
             CoverParenthesized::Expression(expression) => self.alloc(FormalParameters {
-                items: self.expression_to_parameter_list(expression),
+                items: self.expression_to_parameter_list(expression)?,
                 rest: None,
             }),
             CoverParenthesized::Parameters(parameters) => parameters,
-        }
+        })
     }
 
     // ConciseBody : [lookahead != `{`] AssignmentExpression

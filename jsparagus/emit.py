@@ -108,6 +108,10 @@ TERMINAL_NAMES = {
     "=>": "Arrow",
 }
 
+# List of output method names that are fallible and must therefore be called
+# with a trailing `?`. A bad hack which we need to fix by having more type
+# information about output methods.
+FALLIBLE_METHOD_NAMES = { 'expression_to_parameter_list' }
 
 class RustParserWriter:
     def __init__(self, out, parser_states):
@@ -510,7 +514,14 @@ class RustParserWriter:
                                                expr.args)
                             if ty != types.UnitType)
                         call = "handler.{}({})".format(method_name, args)
-                        return "{}".format(call)
+
+                        # Extremely bad hack. In Rust, since type inference is
+                        # currently so poor, we don't have enough information
+                        # to know if this method can fail or not, and Rust
+                        # requires us to know that.
+                        if method_name in FALLIBLE_METHOD_NAMES:
+                            call += "?"
+                        return call
                     elif isinstance(expr, Some):
                         return "Some({})".format(compile_reduce_expr(expr.inner))
                     elif expr is None:

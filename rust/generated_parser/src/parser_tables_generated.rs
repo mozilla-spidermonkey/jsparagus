@@ -10567,7 +10567,7 @@ pub fn reduce<'alloc>(
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_arrow_parameter_list(handler.expression_to_parameter_list(x1), None),
+                handler.cover_arrow_parameter_list(handler.expression_to_parameter_list(x1)?, None),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
@@ -10615,7 +10615,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
-                    handler.expression_to_parameter_list(x1),
+                    handler.expression_to_parameter_list(x1)?,
                     Some(handler.binding_identifier_to_binding(x4)),
                 ),
             )?);
@@ -10630,8 +10630,10 @@ pub fn reduce<'alloc>(
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler
-                    .cover_arrow_parameter_list(handler.expression_to_parameter_list(x1), Some(x4)),
+                handler.cover_arrow_parameter_list(
+                    handler.expression_to_parameter_list(x1)?,
+                    Some(x4),
+                ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }

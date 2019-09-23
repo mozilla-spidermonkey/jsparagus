@@ -4,13 +4,25 @@ use std::{convert::Infallible, error::Error, fmt, io};
 #[derive(Debug)]
 pub enum ParseError<'alloc> {
     IOError(io::Error),
+
+    // Lexical errors
     IllegalCharacter(char),
     InvalidEscapeSequence,
     UnterminatedString,
     UnterminatedRegExp,
+    LexerError,
+
+    // Generic syntax errors
     SyntaxError(Token<'alloc>),
     UnexpectedEnd,
-    LexerError,
+    InvalidParameter,
+
+    // Destructuring errors
+    ArrayPatternWithNonFinalRest,
+    ArrayPatternWithInvalidRestBinding,
+    ObjectPatternWithMethod,
+    ObjectPatternWithNonFinalRest,
+    ObjectPatternWithInvalidRestBinding,
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -21,28 +33,32 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::InvalidEscapeSequence => format!("invalid escape sequence"),
             ParseError::UnterminatedString => format!("unterminated string literal"),
             ParseError::UnterminatedRegExp => format!("unterminated regexp literal"),
+            ParseError::LexerError => format!("lexical error"),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
-            ParseError::LexerError => format!("lexical error"),
+            ParseError::InvalidParameter => format!("invalid parameter"),
+            ParseError::ArrayPatternWithNonFinalRest => {
+                format!("array patterns can have a rest element (`...x`) only at the end")
+            }
+            ParseError::ArrayPatternWithInvalidRestBinding => format!(
+                "the expression after `...` in this array pattern must be a single identifier"
+            ),
+            ParseError::ObjectPatternWithMethod => format!("object patterns can't have methods"),
+            ParseError::ObjectPatternWithNonFinalRest => {
+                format!("object patterns can have a rest element (`...x`) only at the end")
+            }
+            ParseError::ObjectPatternWithInvalidRestBinding => format!(
+                "the expression after `...` in this object pattern must be a single identifier"
+            ),
         }
     }
 }
 
+/// This PartialEq impl should be used in tests only.
+#[cfg(debug)]
 impl<'alloc> PartialEq for ParseError<'alloc> {
     fn eq(&self, other: &ParseError<'alloc>) -> bool {
-        match (self, other) {
-            (ParseError::IOError(e1), ParseError::IOError(e2)) => {
-                format!("{:?}", e1) == format!("{:?}", e2)
-            }
-            (ParseError::IllegalCharacter(c1), ParseError::IllegalCharacter(c2)) => c1 == c2,
-            (ParseError::InvalidEscapeSequence, ParseError::InvalidEscapeSequence) => true,
-            (ParseError::UnterminatedString, ParseError::UnterminatedString) => true,
-            (ParseError::UnterminatedRegExp, ParseError::UnterminatedRegExp) => true,
-            (ParseError::SyntaxError(t1), ParseError::SyntaxError(t2)) => t1 == t2,
-            (ParseError::UnexpectedEnd, ParseError::UnexpectedEnd) => true,
-            (ParseError::LexerError, ParseError::LexerError) => true,
-            _ => false,
-        }
+        format!("{:?}", self) == format!("{:?}", other)
     }
 }
 
