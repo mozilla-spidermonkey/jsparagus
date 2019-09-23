@@ -383,7 +383,6 @@ class RustParserWriter:
         for i, prod in enumerate(self.prods):
             if prod.nt in self.nonterminals:
                 def find_first_method(expr):
-                    """Compile a reduce expression to Rust"""
                     if isinstance(expr, CallMethod):
                         return self.method_name_to_rust(expr.method)
                     elif isinstance(expr, Some):
@@ -497,9 +496,9 @@ class RustParserWriter:
                 method_used = False
 
                 def compile_reduce_expr(expr):
+                    """Compile a reduce expression to Rust"""
                     nonlocal method_used
                     nonlocal variable_used
-                    """Compile a reduce expression to Rust"""
                     if isinstance(expr, CallMethod):
                         method_used = True
                         method_type = self.grammar.methods[expr.method]
