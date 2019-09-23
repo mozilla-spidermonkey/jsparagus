@@ -115,11 +115,11 @@ grammar. The same goes for `target`.
 
 This poses a deceptively difficult problem for table-driven parsers.
 Such parsers run on a stream of token-ids, but the question of which
-token-id to use for a word like `if` and `target` is ambiguous. The
-ambiguity can only mostly be resolved using the current parser state:
-there are cases like `class C { get` where the token `get` might match
-either literally (in the case of a getter) or as an *IdentifierName* (a
-method or property named `get`) in different grammatical productions.
+token-id to use for a word like `if` or `target` is ambiguous. The
+current parser state can't fully resolve the ambiguity: there are cases
+like `class C { get` where the token `get` might match either as a
+keyword (the start of a getter) or as an *IdentifierName* (a method or
+property named `get`) in different grammatical productions.
 
 All keywords are conditional, but some are more conditional than others.
 The rules are inconsistent to a tragicomic extent. Keywords like `if`
@@ -131,19 +131,19 @@ same time as strict mode was awarded keyword status in strict mode. The
 rules are scattered through the spec. All this interacts with `\u0065`
 Unicode escape sequences somehow. It’s just unbelievably confusing.
 
-*   Thirty-two words are full *Keywords*:
+(After writing this section, I
+[proposed revisions to the specification](https://github.com/tc39/ecma262/pull/1694)
+to make it a little less confusing.)
+
+*   Thirty-six words are always reserved:
 
     > `break` `case` `catch` `class` `const` `continue` `debugger`
-    > `default` `delete` `do` `else` `export` `extends` `finally` `for`
-    > `function` `if` `import` `in` `instanceof` `new` `return` `super`
-    > `switch` `this` `throw` `try` `typeof` `var` `void` `while` `with`
+    > `default` `delete` `do` `else` `enum` `export` `extends` `false`
+    > `finally` `for` `function` `if` `import` `in` `instanceof` `new`
+    > `null` `return` `super` `switch` `this` `throw` `true` `try`
+    > `typeof` `var` `void` `while` `with`
 
-    Four additional words are not in the *Keyword* list, even though
-    they follow exactly the same rules:
-
-    > `true` `false` `null` `enum`
-
-    These 36 words can't be used as names of variables or arguments.
+    These tokens can't be used as names of variables or arguments.
     They're always considered special *except* when used as property
     names, method names, or import/export names in modules.
 
@@ -160,7 +160,7 @@ Unicode escape sequences somehow. It’s just unbelievably confusing.
 
     // imports and exports
     import {if as my_if} from "modulename";
-    export {if, if as while};
+    export {my_if as if};
     ```
 
 *   Two more words, `yield` and `await`, are in the *Keyword* list but
