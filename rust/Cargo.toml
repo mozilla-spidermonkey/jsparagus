@@ -7,3 +7,6 @@ members = [
     "generated_parser",
     "parser",
 ]
+
+[profile.release]
+debug = true  # enable debug symbols in release builds
