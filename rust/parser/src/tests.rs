@@ -5,7 +5,7 @@ use crate::parse_script;
 use crate::parser::Parser;
 use ast::{arena, types::*};
 use bumpalo::{self, Bump};
-use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId, Token};
+use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
 
 #[cfg(all(feature = "unstable", test))]
 mod benchmarks {
@@ -25,26 +25,6 @@ mod benchmarks {
             let lexer = Lexer::new(buffer.chars());
             parse_script(lexer).unwrap();
         });
-    }
-}
-
-// Change Cow::Borrowed to Cow::Owned, and slap on a 'static
-fn alloc_result<T>(result: Result<T>) -> Result<T> {
-    match result {
-        Ok(ok) => Ok(ok),
-        Err(err) => Err(match err {
-            ParseError::IllegalCharacter(c) => ParseError::IllegalCharacter(c),
-            ParseError::InvalidEscapeSequence => ParseError::InvalidEscapeSequence,
-            ParseError::UnterminatedString => ParseError::UnterminatedString,
-            ParseError::UnterminatedRegExp => ParseError::UnterminatedRegExp,
-            ParseError::SyntaxError(token) => ParseError::SyntaxError(Token {
-                terminal_id: token.terminal_id,
-                saw_newline: token.saw_newline,
-                value: token.value.map(|x| x.into_owned().into()),
-            }),
-            ParseError::UnexpectedEnd => ParseError::UnexpectedEnd,
-            ParseError::LexerError => ParseError::LexerError,
-        }),
     }
 }
 
@@ -85,7 +65,7 @@ where
     Source: IntoChunks<'source>,
 {
     let buf = arena::alloc_str(allocator, &chunks_to_string(code));
-    alloc_result(parse_script(allocator, &buf))
+    parse_script(allocator, &buf)
 }
 
 fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
@@ -118,7 +98,7 @@ fn assert_incomplete<'alloc, T: IntoChunks<'alloc>>(code: T) {
 fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     let buf = chunks_to_string(code);
-    let mut lexer = Lexer::new(buf.chars());
+    let mut lexer = Lexer::new(allocator, buf.chars());
     let mut parser = Parser::new(
         AstBuilder { allocator },
         generated_parser::START_STATE_SCRIPT,
@@ -352,9 +332,7 @@ fn test_awkward_chunks() {
                     operator: CompoundAssignmentOperator::Div,
                     binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier {
-                            name: Identifier {
-                                value: bumpalo::collections::String::from_str_in("x", allocator),
-                            },
+                            name: Identifier { value: "x" },
                         },
                     ),
                     expression: arena::alloc(
@@ -396,6 +374,13 @@ fn test_regex() {
     assert_parses("x = /+=351*/");
     assert_parses("x = /^\\s*function (\\w+)/;");
     assert_parses("let regexp = /this is fine: [/] dont @ me/;");
+}
+
+#[test]
+fn test_arrow_parameters() {
+    assert_error_eq("({a:a, ...b, c:c}) => {}", ParseError::ObjectPatternWithNonFinalRest);
+    assert_error_eq("(a, [...zero, one]) => {}", ParseError::ArrayPatternWithNonFinalRest);
+    assert_error_eq("(a, {items: [...zero, one]}) => {}", ParseError::ArrayPatternWithNonFinalRest);
 }
 
 // XXX TODO

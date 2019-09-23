@@ -1,15 +1,17 @@
 use bumpalo;
 
+use parser::ParseError;
+
 fn main() {
     println!("Warning: The disassembler we're using here is extremely inaccurate.");
     loop {
         let alloc = &bumpalo::Bump::new();
         match parser::read_script_interactively(alloc, "js> ", "..> ") {
+            Err(ParseError::UnexpectedEnd) => {
+                println!();
+                break;
+            }
             Err(err) => {
-                if err.is::<parser::UserExit>() {
-                    println!();
-                    break;
-                }
                 eprintln!("error: {}", err);
             }
             Ok(script) => {

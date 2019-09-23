@@ -54,8 +54,6 @@ impl<'alloc> ParseError<'alloc> {
     }
 }
 
-/// This PartialEq impl should be used in tests only.
-#[cfg(debug)]
 impl<'alloc> PartialEq for ParseError<'alloc> {
     fn eq(&self, other: &ParseError<'alloc>) -> bool {
         format!("{:?}", self) == format!("{:?}", other)

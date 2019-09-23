@@ -13,9 +13,10 @@ use ast::{
 };
 use bumpalo;
 use generated_parser::{
-    AstBuilder, ParseError, Result, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT,
+    AstBuilder, StackValue, TerminalId, START_STATE_MODULE, START_STATE_SCRIPT,
     TABLES,
 };
+pub use generated_parser::{ParseError, Result};
 use lexer::Lexer;
 use std::io::{self, Write};
 
