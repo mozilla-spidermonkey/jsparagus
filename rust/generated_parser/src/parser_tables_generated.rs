@@ -8556,7 +8556,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
-                handler.for_assignment_target(x2),
+                handler.for_assignment_target(x2)?,
                 x4,
                 x6,
             ))?);
@@ -8605,7 +8605,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
-                handler.for_assignment_target(x2),
+                handler.for_assignment_target(x2)?,
                 x4,
                 x6,
             ))?);
@@ -8655,7 +8655,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.for_assignment_target(x3), x5, x7),
+                handler.for_await_of_statement(handler.for_assignment_target(x3)?, x5, x7),
             )?);
             Ok(NonterminalId::IterationStatement)
         }
@@ -13163,7 +13163,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.post_increment_expr(x0),
+                handler.post_increment_expr(x0)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
@@ -13172,7 +13172,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.post_decrement_expr(x0),
+                handler.post_decrement_expr(x0)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
@@ -13181,7 +13181,7 @@ pub fn reduce<'alloc>(
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.pre_decrement_expr(x1),
+                handler.pre_decrement_expr(x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
@@ -13190,7 +13190,7 @@ pub fn reduce<'alloc>(
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.pre_decrement_expr(x1),
+                handler.pre_decrement_expr(x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }

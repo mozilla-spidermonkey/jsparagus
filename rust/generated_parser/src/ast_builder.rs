@@ -28,10 +28,6 @@ impl<'alloc> AstBuilder<'alloc> {
         vec![in self.allocator; value]
     }
 
-    fn collect_vec<C: IntoIterator>(&self, items: C) -> arena::Vec<'alloc, C::Item> {
-        arena::Vec::from_iter_in(items, self.allocator)
-    }
-
     fn collect_vec_from_results<T, C>(&self, results: C) -> Result<'alloc, arena::Vec<'alloc, T>>
     where
         C: IntoIterator<Item = Result<'alloc, T>>,
@@ -339,16 +335,15 @@ impl<'alloc> AstBuilder<'alloc> {
     fn spread_expression_to_rest_binding(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        match expression.unbox() {
+    ) -> Result<'alloc, arena::Box<'alloc, BindingIdentifier<'alloc>>> {
+        Ok(match expression.unbox() {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 self.alloc(BindingIdentifier { name })
             }
             _ => {
-                // TODO - change this to an error Result
-                panic!("invalid rest binding");
+                return Err(ParseError::ObjectBindingPatternWithInvalidRest);
             }
-        }
+        })
     }
 
     fn pop_trailing_spread_property(
@@ -381,7 +376,9 @@ impl<'alloc> AstBuilder<'alloc> {
                     .into_iter()
                     .map(|prop| self.object_property_to_binding_property(prop.unbox())),
             )?,
-            rest: rest.map(|expression| self.spread_expression_to_rest_binding(expression)),
+            rest: rest
+                .map(|expression| self.spread_expression_to_rest_binding(expression))
+                .transpose()?,
         })
     }
 
@@ -1045,48 +1042,56 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn post_increment_expr(
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-            false,
-            UpdateOperator::Increment,
-            self.expression_to_simple_assignment_target(operand),
-        )))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Ok(
+            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
+                false,
+                UpdateOperator::Increment,
+                self.expression_to_simple_assignment_target(operand)?,
+            ))),
+        )
     }
 
     // UpdateExpression : LeftHandSideExpression `--`
     pub fn post_decrement_expr(
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-            false,
-            UpdateOperator::Decrement,
-            self.expression_to_simple_assignment_target(operand),
-        )))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Ok(
+            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
+                false,
+                UpdateOperator::Decrement,
+                self.expression_to_simple_assignment_target(operand)?,
+            ))),
+        )
     }
 
     // UpdateExpression : `++` UnaryExpression
     pub fn pre_increment_expr(
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-            true,
-            UpdateOperator::Increment,
-            self.expression_to_simple_assignment_target(operand),
-        )))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Ok(
+            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
+                true,
+                UpdateOperator::Increment,
+                self.expression_to_simple_assignment_target(operand)?,
+            ))),
+        )
     }
 
     // UpdateExpression : `--` UnaryExpression
     pub fn pre_decrement_expr(
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-            true,
-            UpdateOperator::Decrement,
-            self.expression_to_simple_assignment_target(operand),
-        )))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Ok(
+            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
+                true,
+                UpdateOperator::Decrement,
+                self.expression_to_simple_assignment_target(operand)?,
+            ))),
+        )
     }
 
     // UnaryExpression : `delete` UnaryExpression
@@ -1311,29 +1316,30 @@ impl<'alloc> AstBuilder<'alloc> {
     fn array_expression_to_array_assignment_target(
         &self,
         mut elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
-    ) -> ArrayAssignmentTarget<'alloc> {
+    ) -> Result<'alloc, ArrayAssignmentTarget<'alloc>> {
         let spread = self.pop_trailing_spread_element(&mut elements);
-        let elements = self.collect_vec(elements.into_iter().map(|element| match element {
-            ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
-            ArrayExpressionElement::Expression(expression) => {
-                Some(self.expression_to_assignment_target_maybe_default(expression))
-            }
-            ArrayExpressionElement::Elision => None,
-        }));
-        ArrayAssignmentTarget {
-            elements,
-            rest: spread.map(|expr| self.alloc(self.expression_to_assignment_target(expr))),
-        }
+        let elements = self.collect_vec_from_results(elements.into_iter().map(|element| {
+            Ok(match element {
+                ArrayExpressionElement::SpreadElement(_) => unimplemented!(),
+                ArrayExpressionElement::Expression(expression) => {
+                    Some(self.expression_to_assignment_target_maybe_default(expression)?)
+                }
+                ArrayExpressionElement::Elision => None,
+            })
+        }))?;
+        let rest: Option<Result<'alloc, arena::Box<'alloc, AssignmentTarget<'alloc>>>> =
+            spread.map(|expr| Ok(self.alloc(self.expression_to_assignment_target(expr)?)));
+        let rest = rest.transpose()?;
+        Ok(ArrayAssignmentTarget { elements, rest })
     }
 
     fn object_property_to_assignment_target_property(
         &self,
         property: arena::Box<'alloc, ObjectProperty<'alloc>>,
-    ) -> AssignmentTargetProperty<'alloc> {
-        match property.unbox() {
+    ) -> Result<'alloc, AssignmentTargetProperty<'alloc>> {
+        Ok(match property.unbox() {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::MethodDefinition(_)) => {
-                // TODO - change this to an error Result
-                panic!("destructuring patterns can't have methods");
+                return Err(ParseError::ObjectPatternWithMethod)
             }
 
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
@@ -1344,15 +1350,14 @@ impl<'alloc> AstBuilder<'alloc> {
             )) => AssignmentTargetProperty::AssignmentTargetPropertyProperty(
                 AssignmentTargetPropertyProperty {
                     name: property_name,
-                    binding: self.expression_to_assignment_target_maybe_default(expression),
+                    binding: self.expression_to_assignment_target_maybe_default(expression)?,
                 },
             ),
 
             ObjectProperty::ShorthandProperty(ShorthandProperty {
                 name: IdentifierExpression { name },
-            }) =>
-            // TODO - support CoverInitializedName
-            {
+            }) => {
+                // TODO - support CoverInitializedName
                 AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
                     AssignmentTargetPropertyIdentifier {
                         binding: AssignmentTargetIdentifier { name },
@@ -1362,34 +1367,33 @@ impl<'alloc> AstBuilder<'alloc> {
             }
 
             ObjectProperty::SpreadProperty(_expression) => {
-                // TODO - Handle this case by returning an error Result.
-                panic!("destructuring object patterns can have `...` only at the end");
+                return Err(ParseError::ObjectPatternWithNonFinalRest)
             }
-        }
+        })
     }
 
     // Refine an *ObjectLiteral* into an *ObjectAssignmentPattern*.
     fn object_expression_to_object_assignment_target(
         &self,
         mut properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
-    ) -> ObjectAssignmentTarget<'alloc> {
+    ) -> Result<'alloc, ObjectAssignmentTarget<'alloc>> {
         let spread = self.pop_trailing_spread_property(&mut properties);
-        let properties = self.collect_vec(
+        let properties = self.collect_vec_from_results(
             properties
                 .into_iter()
                 .map(|p| self.object_property_to_assignment_target_property(p)),
-        );
-        ObjectAssignmentTarget {
-            properties,
-            rest: spread.map(|expr| self.alloc(self.expression_to_assignment_target(expr))),
-        }
+        )?;
+        let rest: Option<Result<'alloc, arena::Box<'alloc, AssignmentTarget<'alloc>>>> =
+            spread.map(|expr| Ok(self.alloc(self.expression_to_assignment_target(expr)?)));
+        let rest = rest.transpose()?;
+        Ok(ObjectAssignmentTarget { properties, rest })
     }
 
     fn expression_to_assignment_target_maybe_default(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> AssignmentTargetMaybeDefault<'alloc> {
-        match expression.unbox() {
+    ) -> Result<'alloc, AssignmentTargetMaybeDefault<'alloc>> {
+        Ok(match expression.unbox() {
             Expression::AssignmentExpression(AssignmentExpression {
                 binding,
                 expression,
@@ -1399,21 +1403,22 @@ impl<'alloc> AstBuilder<'alloc> {
                     init: expression,
                 },
             ),
+
             other => AssignmentTargetMaybeDefault::AssignmentTarget(
-                self.expression_to_assignment_target(self.alloc(other)),
+                self.expression_to_assignment_target(self.alloc(other))?,
             ),
-        }
+        })
     }
 
     fn expression_to_assignment_target(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> AssignmentTarget<'alloc> {
-        match expression.unbox() {
+    ) -> Result<'alloc, AssignmentTarget<'alloc>> {
+        Ok(match expression.unbox() {
             Expression::ArrayExpression(ArrayExpression { elements }) => {
                 AssignmentTarget::AssignmentTargetPattern(
                     AssignmentTargetPattern::ArrayAssignmentTarget(
-                        self.array_expression_to_array_assignment_target(elements),
+                        self.array_expression_to_array_assignment_target(elements)?,
                     ),
                 )
             }
@@ -1421,27 +1426,28 @@ impl<'alloc> AstBuilder<'alloc> {
             Expression::ObjectExpression(ObjectExpression { properties }) => {
                 AssignmentTarget::AssignmentTargetPattern(
                     AssignmentTargetPattern::ObjectAssignmentTarget(
-                        self.object_expression_to_object_assignment_target(properties),
+                        self.object_expression_to_object_assignment_target(properties)?,
                     ),
                 )
             }
 
             other => AssignmentTarget::SimpleAssignmentTarget(
-                self.expression_to_simple_assignment_target(self.alloc(other)),
+                self.expression_to_simple_assignment_target(self.alloc(other))?,
             ),
-        }
+        })
     }
 
     fn expression_to_simple_assignment_target(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> SimpleAssignmentTarget<'alloc> {
-        match expression.unbox() {
+    ) -> Result<'alloc, SimpleAssignmentTarget<'alloc>> {
+        Ok(match expression.unbox() {
             Expression::IdentifierExpression(IdentifierExpression { name }) => {
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                 })
             }
+
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                 StaticMemberExpression { object, property },
             )) => SimpleAssignmentTarget::MemberAssignmentTarget(
@@ -1456,8 +1462,11 @@ impl<'alloc> AstBuilder<'alloc> {
                     ComputedMemberAssignmentTarget { object, expression },
                 ),
             ),
-            other => panic!("invalid assignment left-hand side: {:?}", other),
-        }
+
+            _ => {
+                return Err(ParseError::InvalidAssignmentTarget);
+            }
+        })
     }
 
     // AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression
@@ -1465,11 +1474,14 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         left_hand_side: arena::Box<'alloc, Expression<'alloc>>,
         value: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        let target = self.expression_to_assignment_target(left_hand_side);
-        self.alloc(Expression::AssignmentExpression(AssignmentExpression::new(
-            target, value,
-        )))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        let target = self.expression_to_assignment_target(left_hand_side)?;
+        Ok(
+            self.alloc(Expression::AssignmentExpression(AssignmentExpression {
+                binding: target,
+                expression: value,
+            })),
+        )
     }
 
     pub fn add_assign_op(&self) -> CompoundAssignmentOperator {
@@ -1522,11 +1534,15 @@ impl<'alloc> AstBuilder<'alloc> {
         left_hand_side: arena::Box<'alloc, Expression<'alloc>>,
         operator: arena::Box<'alloc, CompoundAssignmentOperator>,
         value: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        let target = self.expression_to_simple_assignment_target(left_hand_side);
-        self.alloc(Expression::CompoundAssignmentExpression(
-            CompoundAssignmentExpression::new(operator.unbox(), target, value),
-        ))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        let target = self.expression_to_simple_assignment_target(left_hand_side)?;
+        Ok(self.alloc(Expression::CompoundAssignmentExpression(
+            CompoundAssignmentExpression {
+                operator: operator.unbox(),
+                binding: target,
+                expression: value,
+            },
+        )))
     }
 
     // BlockStatement : Block
@@ -1947,10 +1963,10 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn for_assignment_target(
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> VariableDeclarationOrAssignmentTarget<'alloc> {
-        VariableDeclarationOrAssignmentTarget::AssignmentTarget(
-            self.expression_to_assignment_target(expression),
-        )
+    ) -> Result<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>> {
+        Ok(VariableDeclarationOrAssignmentTarget::AssignmentTarget(
+            self.expression_to_assignment_target(expression)?,
+        ))
     }
 
     pub fn unbox_for_declaration(

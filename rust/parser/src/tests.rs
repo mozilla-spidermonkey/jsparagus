@@ -392,6 +392,14 @@ fn test_arrow_parameters() {
     );
 }
 
+#[test]
+fn test_invalid_assignment_targets() {
+    assert_syntax_error("2 + 2 = x;");
+    assert_error_eq("(2 + 2) = x;", ParseError::InvalidAssignmentTarget);
+    assert_error_eq("++-x;", ParseError::InvalidAssignmentTarget);
+    assert_error_eq("(x && y)--;", ParseError::InvalidAssignmentTarget);
+}
+
 // XXX TODO
 //#[test]
 //fn test_can_close_with_asi() {

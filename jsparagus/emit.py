@@ -111,7 +111,16 @@ TERMINAL_NAMES = {
 # List of output method names that are fallible and must therefore be called
 # with a trailing `?`. A bad hack which we need to fix by having more type
 # information about output methods.
-FALLIBLE_METHOD_NAMES = { 'expression_to_parameter_list' }
+FALLIBLE_METHOD_NAMES = {
+    'assignment_expression',
+    'compound_assignment_expression',
+    'expression_to_parameter_list',
+    'for_assignment_target',
+    'post_decrement_expr',
+    'post_increment_expr',
+    'pre_decrement_expr',
+    'pre_increment_expr',
+}
 
 class RustParserWriter:
     def __init__(self, out, parser_states):

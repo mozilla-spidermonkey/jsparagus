@@ -15,6 +15,7 @@ pub enum ParseError<'alloc> {
     // Generic syntax errors
     SyntaxError(Token<'alloc>),
     UnexpectedEnd,
+    InvalidAssignmentTarget,
     InvalidParameter,
 
     // Destructuring errors
@@ -36,6 +37,7 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::LexerError => format!("lexical error"),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
+            ParseError::InvalidAssignmentTarget => format!("invalid left-hand side of assignment"),
             ParseError::InvalidParameter => format!("invalid parameter"),
             ParseError::ArrayPatternWithNonFinalRest => {
                 format!("array patterns can have a rest element (`...x`) only at the end")
