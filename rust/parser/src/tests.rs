@@ -378,9 +378,18 @@ fn test_regex() {
 
 #[test]
 fn test_arrow_parameters() {
-    assert_error_eq("({a:a, ...b, c:c}) => {}", ParseError::ObjectPatternWithNonFinalRest);
-    assert_error_eq("(a, [...zero, one]) => {}", ParseError::ArrayPatternWithNonFinalRest);
-    assert_error_eq("(a, {items: [...zero, one]}) => {}", ParseError::ArrayPatternWithNonFinalRest);
+    assert_error_eq(
+        "({a:a, ...b, c:c}) => {}",
+        ParseError::ObjectPatternWithNonFinalRest,
+    );
+    assert_error_eq(
+        "(a, [...zero, one]) => {}",
+        ParseError::ArrayPatternWithNonFinalRest,
+    );
+    assert_error_eq(
+        "(a, {items: [...zero, one]}) => {}",
+        ParseError::ArrayPatternWithNonFinalRest,
+    );
 }
 
 // XXX TODO
