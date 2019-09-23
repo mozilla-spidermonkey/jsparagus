@@ -362,8 +362,8 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         // We do.
-        match properties.pop().map(|boxed| boxed.unbox()) {
-            Some(ObjectProperty::SpreadProperty(expression)) => Some(expression),
+        match properties.pop().unwrap().unbox() {
+            ObjectProperty::SpreadProperty(expression) => Some(expression),
             _ => panic!("last property changed since preceding check"), // can't happen
         }
     }
