@@ -5,6 +5,9 @@ PYTHON = python3
 
 all: $(PY_OUT) $(RS_AST_OUT) $(RS_TABLES_OUT)
 
+ECMA262_SPEC_HTML = ../tc39/ecma262/spec.html
+STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
+
 # Incomplete list of files that contribute to the dump file.
 SOURCE_FILES = \
 jsparagus/gen.py \
@@ -29,6 +32,11 @@ $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
 
 $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
+
+# This isn't part of the `all` target because it relies on a file that might
+# not be there -- it lives in a different git respository.
+$(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
+	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
 check: $(PY_OUT)
 	./test.sh
