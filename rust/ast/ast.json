@@ -671,7 +671,7 @@
   },
   "CatchClause": {
     "_type": "struct",
-    "binding": "Binding",
+    "binding": "Option<Box<Binding>>",
     "body": "Block"
   },
   "Directive": {

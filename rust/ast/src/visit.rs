@@ -1059,7 +1059,9 @@ pub trait Pass<'alloc> {
     }
 
     fn visit_catch_clause(&mut self, ast: &mut CatchClause<'alloc>) {
-        self.visit_binding(&mut ast.binding);
+        if let Some(item) = &mut ast.binding {
+            self.visit_binding(item);
+        }
         self.visit_block(&mut ast.body);
     }
 
@@ -1958,9 +1960,11 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_catch_clause(&self, binding: Self::Value, body: Self::Value) -> Self::Value {
+    fn visit_catch_clause(&self, binding: Option<Self::Value>, body: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
-        result.append(binding);
+        if let Some(item) = binding {
+            result.append(item);
+        }
         result.append(body);
         result
     }
@@ -3238,7 +3242,9 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
     }
 
     pub fn visit_catch_clause(&mut self, ast: &mut CatchClause<'alloc>) -> T::Value {
-        let a0 = self.visit_binding((&mut ast.binding));
+        let a0 = (&mut ast.binding)
+            .as_mut()
+            .map(|item| self.visit_binding(item));
         let a1 = self.visit_block((&mut ast.body));
         self.pass.visit_catch_clause(a0, a1)
     }

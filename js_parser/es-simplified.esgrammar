@@ -1251,7 +1251,9 @@ TryStatement[Yield, Await, Return] :
 
 Catch[Yield, Await, Return] :
   `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]
-    => catch($2, $4)
+    => catch(Some($2), $4)
+  `catch` Block[?Yield, ?Await, ?Return]
+    => catch(None, $1)
 
 Finally[Yield, Await, Return] :
   `finally` Block[?Yield, ?Await, ?Return]

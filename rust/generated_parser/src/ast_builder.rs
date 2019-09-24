@@ -2259,11 +2259,11 @@ impl<'alloc> AstBuilder<'alloc> {
     // Catch : `catch` `(` CatchParameter `)` Block
     pub fn catch(
         &self,
-        binding: arena::Box<'alloc, Binding<'alloc>>,
+        binding: Option<arena::Box<'alloc, Binding<'alloc>>>,
         body: arena::Box<'alloc, Block<'alloc>>,
     ) -> arena::Box<'alloc, CatchClause<'alloc>> {
         self.alloc(CatchClause {
-            binding: binding.unbox(),
+            binding,
             body: body.unbox(),
         })
     }

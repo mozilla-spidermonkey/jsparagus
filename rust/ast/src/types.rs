@@ -788,7 +788,7 @@ pub struct Block<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub struct CatchClause<'alloc> {
-    pub binding: Binding<'alloc>,
+    pub binding: Option<arena::Box<'alloc, Binding<'alloc>>>,
     pub body: Block<'alloc>,
 }
 
