@@ -9,8 +9,8 @@ from jsparagus.ordered import OrderedFrozenSet
 
 ESGrammarLexer = LexicalGrammar(
     # the operators and keywords:
-    "[ ] { } , ~ + ? <! == != => ( ) "
-    "but empty here lookahead no not of one or through Some None",
+    "[ ] { } , ~ + ? <! == != => ( ) @ < > "
+    "but empty here lookahead no not of one or returns through Some None",
 
     NL="\n",
 
@@ -23,10 +23,10 @@ ESGrammarLexer = LexicalGrammar(
     # also terminals, denoting control characters
     CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',
 
-    # nonterminals that will be followed by boolean parameters
-    NTCALL=r'[A-Za-z]\w*(?=\[)',
+    # nonterminals/types that will be followed by parameters
+    NTCALL=r'[A-Za-z]\w*(?=[\[<])',
 
-    # nonterminals (also, boolean parameters)
+    # nonterminals (also, boolean parameters and type names)
     NT=r'[A-Za-z]\w*',
 
     # nonterminals wrapped in vertical bars for no apparent reason
@@ -172,7 +172,7 @@ class ESGrammarBuilder:
                         reducer=reducer),
         ]
 
-    def nt_def(self, lhs, eq, rhs_list):
+    def nt_def(self, nt_type, lhs, eq, rhs_list):
         has_sole_production = (len(rhs_list) == 1)
         production_list = []
         for i, rhs in enumerate(rhs_list):
@@ -185,14 +185,22 @@ class ESGrammarBuilder:
         name, args = lhs
         return (name, eq, grammar.NtDef(args, production_list))
 
-    def nt_def_one_of(self, nt_lhs, eq, terminals):
-        return self.nt_def(nt_lhs, eq, [([t], None, None) for t in terminals])
+    def nt_def_one_of(self, nt_type, nt_lhs, eq, terminals):
+        return self.nt_def(nt_type, nt_lhs, eq, [([t], None, None) for t in terminals])
 
     def nt_lhs_no_params(self, name):
         return (name, ())
 
     def nt_lhs_with_params(self, name, params):
         return (name, params)
+
+    def simple_type(self, name):
+        # Ignore for now.
+        return None
+
+    def parameterized_type(self, name, args):
+        # Ignore for now.
+        return None
 
     def t_list_line(self, terminals):
         return terminals

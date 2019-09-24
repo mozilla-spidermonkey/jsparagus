@@ -6,7 +6,7 @@ var token MATCH_REF;  # $0
 var token NL;         # (actual newline character)
 var token NT;         # IdentifierName
 var token NTALT;      # |LineTerminator|
-var token NTCALL;     # Expression (when followed by `[`)
+var token NTCALL;     # Expression (when followed by `[` or `<`)
 var token PRODID;     # #comment
 var token PROSE;      # > any text following a greater than sign
 var token T;          # `var`
@@ -22,6 +22,7 @@ token Of = "of";
 token One = "one";
 token Or = "or";
 token Through = "through";
+token Returns = "returns";
 token Some = "Some";
 token None = "None";
 token Arrow = "=>";
@@ -38,6 +39,9 @@ token OpenBrace = "{";
 token CloseBrace = "}";
 token OpenParen = "(";
 token CloseParen = ")";
+token AtSign = "@";
+token OpenAngle = "<";
+token CloseAngle = ">";
 
 
 goal nt grammar {
@@ -51,8 +55,8 @@ nt nt_def_or_blank_line {
 }
 
 nt nt_def {
-    nt_lhs EQ NL rhs_lines NL => nt_def($0, $1, $3);
-    nt_lhs EQ "one" "of" NL t_list_lines NL => nt_def_one_of($0, $1, $5);
+    nt_type_line? nt_lhs EQ NL rhs_lines NL => nt_def($0, $1, $2, $4);
+    nt_type_line? nt_lhs EQ "one" "of" NL t_list_lines NL => nt_def_one_of($0, $1, $2, $6);
 }
 
 nt nt_lhs {
@@ -67,6 +71,20 @@ nt params {
 
 nt param {
     NT;
+}
+
+nt nt_type_line {
+    "@" "returns" nt_type NL => $2;
+}
+
+nt nt_type {
+   NT => simple_type($0);
+   NTCALL "<" nt_types ">" => parameterized_type($0, $2);
+}
+
+nt nt_types {
+    nt_type => single($0);
+    nt_types "," nt_type => append($0, $2);
 }
 
 nt t_list_lines {
