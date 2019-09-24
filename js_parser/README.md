@@ -31,7 +31,7 @@ $ pip install -r requirements.txt
 $ make all
 ```
 
-**Note:** The last step currently takes about 3 minutes to run on my
+**Note:** The last step currently takes about 35 seconds to run on my
 laptop.  jsparagus is slow.
 
 Once you're done, to see your parser run, try this:
