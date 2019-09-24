@@ -16,10 +16,6 @@ impl<'alloc> AstBuilder<'alloc> {
         arena::alloc_str(self.allocator, s)
     }
 
-    fn boxed_token_to_string(&self, token: arena::Box<'alloc, Token<'alloc>>) -> &'alloc str {
-        token.value.unwrap()
-    }
-
     fn new_vec<T>(&self) -> arena::Vec<'alloc, T> {
         arena::Vec::new_in(self.allocator)
     }
@@ -60,17 +56,23 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        self.alloc(BindingIdentifier::new(self.identifier(token)))
+        self.alloc(BindingIdentifier {
+            name: self.identifier(token),
+        })
     }
 
     // BindingIdentifier : `yield`
     pub fn binding_identifier_yield(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        self.alloc(BindingIdentifier::new(Identifier::new("yield")))
+        self.alloc(BindingIdentifier {
+            name: Identifier { value: "yield" },
+        })
     }
 
     // BindingIdentifier : `await`
     pub fn binding_identifier_await(&self) -> arena::Box<'alloc, BindingIdentifier<'alloc>> {
-        self.alloc(BindingIdentifier::new(Identifier::new("await")))
+        self.alloc(BindingIdentifier {
+            name: Identifier { value: "await" },
+        })
     }
 
     // LabelIdentifier : Identifier
@@ -78,7 +80,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Label<'alloc>> {
-        self.alloc(Label::new(self.boxed_token_to_string(token)))
+        self.alloc(Label {
+            value: token.value.unwrap(),
+        })
     }
 
     // PrimaryExpression : `this`
@@ -101,14 +105,21 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        let pattern = self.boxed_token_to_string(token);
+        let pattern = token.value.unwrap();
         let global: bool = false;
         let ignore_case: bool = false;
         let multi_line: bool = false;
         let sticky: bool = false;
         let unicode: bool = false;
         self.alloc(Expression::LiteralRegExpExpression(
-            LiteralRegExpExpression::new(pattern, global, ignore_case, multi_line, sticky, unicode),
+            LiteralRegExpExpression {
+                pattern,
+                global,
+                ignore_case,
+                multi_line,
+                sticky,
+                unicode,
+            },
         ))
     }
 
@@ -537,7 +548,9 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::LiteralNumericExpression(
-            LiteralNumericExpression::new(Self::numeric_literal_value(token)),
+            LiteralNumericExpression {
+                value: Self::numeric_literal_value(token),
+            },
         ))
     }
 
@@ -548,7 +561,7 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::LiteralStringExpression(
             LiteralStringExpression {
-                value: self.boxed_token_to_string(token),
+                value: token.value.unwrap(),
             },
         ))
     }
@@ -682,9 +695,9 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // ObjectLiteral : `{` `}`
     pub fn object_literal_empty(&self) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::ObjectExpression(ObjectExpression::new(
-            self.new_vec(),
-        )))
+        self.alloc(Expression::ObjectExpression(ObjectExpression {
+            properties: self.new_vec(),
+        }))
     }
 
     // ObjectLiteral : `{` PropertyDefinitionList `}`
@@ -701,7 +714,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         property: arena::Box<'alloc, ObjectProperty<'alloc>>,
     ) -> arena::Box<'alloc, ObjectExpression<'alloc>> {
-        self.alloc(ObjectExpression::new(self.new_vec_single(property)))
+        self.alloc(ObjectExpression {
+            properties: self.new_vec_single(property),
+        })
     }
 
     // PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition
@@ -771,7 +786,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, PropertyName<'alloc>> {
         self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: self.boxed_token_to_string(token),
+            value: token.value.unwrap(),
         }))
     }
 
@@ -781,7 +796,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, PropertyName<'alloc>> {
         self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: self.boxed_token_to_string(token),
+            value: token.value.unwrap(),
         }))
     }
 
@@ -826,7 +841,7 @@ impl<'alloc> AstBuilder<'alloc> {
             tag: None,
             elements: self.new_vec_single(TemplateExpressionElement::TemplateElement(
                 TemplateElement {
-                    raw_value: self.boxed_token_to_string(token),
+                    raw_value: token.value.unwrap(),
                 },
             )),
         })
@@ -840,7 +855,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         a0: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
-        unimplemented!(); // self.alloc(TemplateLiteral::new())
+        unimplemented!();
     }
     // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
     pub fn substitution_template(
@@ -849,11 +864,11 @@ impl<'alloc> AstBuilder<'alloc> {
         a1: arena::Box<'alloc, Void>,
         a2: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(SubstitutionTemplate::new())
+        unimplemented!();
     }
     // TemplateSpans ::= "TemplateTail" => TemplateSpans 0($0)
     pub fn template_spans_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(TemplateSpans::new())
+        unimplemented!();
     }
     // TemplateSpans ::= TemplateMiddleList "TemplateTail" => TemplateSpans 1($0, $1)
     pub fn template_spans_p1(
@@ -861,7 +876,7 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(TemplateSpans::new())
+        unimplemented!();
     }
     // TemplateMiddleList ::= "TemplateMiddle" Expression => TemplateMiddleList 0($0, $1)
     pub fn template_middle_list_p0(
@@ -869,7 +884,7 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(TemplateMiddleList::new())
+        unimplemented!();
     }
     // TemplateMiddleList ::= TemplateMiddleList "TemplateMiddle" Expression => TemplateMiddleList 1($0, $1, $2)
     pub fn template_middle_list_p1(
@@ -878,7 +893,7 @@ impl<'alloc> AstBuilder<'alloc> {
         a1: arena::Box<'alloc, Void>,
         a2: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(TemplateMiddleList::new())
+        unimplemented!();
     }
 }
 
@@ -891,19 +906,23 @@ impl<'alloc> AstBuilder<'alloc> {
         expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::MemberExpression(
-            MemberExpression::ComputedMemberExpression(ComputedMemberExpression::new(
-                ExpressionOrSuper::Expression(object),
+            MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
                 expression,
-            )),
+            }),
         ))
     }
 
     fn identifier(&self, token: arena::Box<'alloc, Token<'alloc>>) -> Identifier<'alloc> {
-        Identifier::new(self.boxed_token_to_string(token))
+        Identifier {
+            value: token.value.unwrap(),
+        }
     }
 
     fn identifier_name(&self, token: arena::Box<'alloc, Token<'alloc>>) -> IdentifierName<'alloc> {
-        IdentifierName::new(self.boxed_token_to_string(token))
+        IdentifierName {
+            value: token.value.unwrap(),
+        }
     }
 
     // MemberExpression : MemberExpression `.` IdentifierName
@@ -914,10 +933,10 @@ impl<'alloc> AstBuilder<'alloc> {
         identifier_token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::MemberExpression(
-            MemberExpression::StaticMemberExpression(StaticMemberExpression::new(
-                ExpressionOrSuper::Expression(object),
-                self.identifier_name(identifier_token),
-            )),
+            MemberExpression::StaticMemberExpression(StaticMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
+                property: self.identifier_name(identifier_token),
+            }),
         ))
     }
 
@@ -982,7 +1001,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::NewExpression(NewExpression {
             callee,
-            arguments: Arguments::new(self.new_vec()),
+            arguments: Arguments {
+                args: self.new_vec(),
+            },
         }))
     }
 
@@ -1013,7 +1034,9 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // Arguments : `(` `)`
     pub fn arguments_empty(&self) -> arena::Box<'alloc, Arguments<'alloc>> {
-        self.alloc(Arguments::new(self.new_vec()))
+        self.alloc(Arguments {
+            args: self.new_vec(),
+        })
     }
 
     // ArgumentList : AssignmentExpression
@@ -1043,13 +1066,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(
-            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-                false,
-                UpdateOperator::Increment,
-                self.expression_to_simple_assignment_target(operand)?,
-            ))),
-        )
+        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+            is_prefix: false,
+            operator: UpdateOperator::Increment,
+            operand: self.expression_to_simple_assignment_target(operand)?,
+        })))
     }
 
     // UpdateExpression : LeftHandSideExpression `--`
@@ -1057,13 +1078,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(
-            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-                false,
-                UpdateOperator::Decrement,
-                self.expression_to_simple_assignment_target(operand)?,
-            ))),
-        )
+        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+            is_prefix: false,
+            operator: UpdateOperator::Decrement,
+            operand: self.expression_to_simple_assignment_target(operand)?,
+        })))
     }
 
     // UpdateExpression : `++` UnaryExpression
@@ -1071,13 +1090,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(
-            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-                true,
-                UpdateOperator::Increment,
-                self.expression_to_simple_assignment_target(operand)?,
-            ))),
-        )
+        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+            is_prefix: true,
+            operator: UpdateOperator::Increment,
+            operand: self.expression_to_simple_assignment_target(operand)?,
+        })))
     }
 
     // UpdateExpression : `--` UnaryExpression
@@ -1085,13 +1102,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(
-            self.alloc(Expression::UpdateExpression(UpdateExpression::new(
-                true,
-                UpdateOperator::Decrement,
-                self.expression_to_simple_assignment_target(operand)?,
-            ))),
-        )
+        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+            is_prefix: true,
+            operator: UpdateOperator::Decrement,
+            operand: self.expression_to_simple_assignment_target(operand)?,
+        })))
     }
 
     // UnaryExpression : `delete` UnaryExpression
@@ -1099,10 +1114,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::Delete,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::Delete,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `void` UnaryExpression
@@ -1110,10 +1125,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::Void,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::Void,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `typeof` UnaryExpression
@@ -1121,10 +1136,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::Typeof,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::Typeof,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `+` UnaryExpression
@@ -1132,10 +1147,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::Plus,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::Plus,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `-` UnaryExpression
@@ -1143,10 +1158,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::Minus,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::Minus,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `~` UnaryExpression
@@ -1154,10 +1169,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::BitwiseNot,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::BitwiseNot,
             operand,
-        )))
+        }))
     }
 
     // UnaryExpression : `!` UnaryExpression
@@ -1165,10 +1180,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression::new(
-            UnaryOperator::LogicalNot,
+        self.alloc(Expression::UnaryExpression(UnaryExpression {
+            operator: UnaryOperator::LogicalNot,
             operand,
-        )))
+        }))
     }
 
     pub fn equals_op(&self) -> BinaryOperator {
@@ -1452,7 +1467,7 @@ impl<'alloc> AstBuilder<'alloc> {
                 StaticMemberExpression { object, property },
             )) => SimpleAssignmentTarget::MemberAssignmentTarget(
                 MemberAssignmentTarget::StaticMemberAssignmentTarget(
-                    StaticMemberAssignmentTarget::new(object, property),
+                    StaticMemberAssignmentTarget { object, property },
                 ),
             ),
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
@@ -1550,9 +1565,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         block: arena::Box<'alloc, Block<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::BlockStatement(BlockStatement::new(
-            block.unbox(),
-        )))
+        self.alloc(Statement::BlockStatement(BlockStatement {
+            block: block.unbox(),
+        }))
     }
 
     // Block : `{` StatementList? `}`
@@ -1594,7 +1609,10 @@ impl<'alloc> AstBuilder<'alloc> {
         declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
         self.alloc(Statement::VariableDeclarationStatement(
-            VariableDeclaration::new(kind.unbox(), declarators.unbox()),
+            VariableDeclaration {
+                kind: kind.unbox(),
+                declarators: declarators.unbox(),
+            },
         ))
     }
 
@@ -2162,9 +2180,15 @@ impl<'alloc> AstBuilder<'alloc> {
         statements: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
     ) -> arena::Box<'alloc, SwitchCase<'alloc>> {
         if let Some(statements) = statements {
-            self.alloc(SwitchCase::new(expression, statements.unbox()))
+            self.alloc(SwitchCase {
+                test: expression,
+                consequent: statements.unbox(),
+            })
         } else {
-            self.alloc(SwitchCase::new(expression, self.new_vec()))
+            self.alloc(SwitchCase {
+                test: expression,
+                consequent: self.new_vec(),
+            })
         }
     }
 
@@ -2266,13 +2290,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> Function<'alloc> {
-        Function::new(
-            name.map(|b| b.unbox()),
-            false,
-            false,
-            params.unbox(),
-            body.unbox(),
-        )
+        Function {
+            name: name.map(|b| b.unbox()),
+            is_async: false,
+            is_generator: false,
+            params: params.unbox(),
+            body: body.unbox(),
+        }
     }
 
     // AsyncFunctionDeclaration : `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`
@@ -2284,13 +2308,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> Function<'alloc> {
-        Function::new(
-            name.map(|b| b.unbox()),
-            true,
-            false,
-            params.unbox(),
-            body.unbox(),
-        )
+        Function {
+            name: name.map(|b| b.unbox()),
+            is_async: true,
+            is_generator: false,
+            params: params.unbox(),
+            body: body.unbox(),
+        }
     }
 
     // GeneratorDeclaration : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`
@@ -2302,13 +2326,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> Function<'alloc> {
-        Function::new(
-            name.map(|b| b.unbox()),
-            false,
-            true,
-            params.unbox(),
-            body.unbox(),
-        )
+        Function {
+            name: name.map(|b| b.unbox()),
+            is_async: false,
+            is_generator: true,
+            params: params.unbox(),
+            body: body.unbox(),
+        }
     }
 
     // AsyncGeneratorDeclaration : `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`
@@ -2320,13 +2344,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> Function<'alloc> {
-        Function::new(
-            name.map(|b| b.unbox()),
-            true,
-            true,
-            params.unbox(),
-            body.unbox(),
-        )
+        Function {
+            name: name.map(|b| b.unbox()),
+            is_async: true,
+            is_generator: true,
+            params: params.unbox(),
+            body: body.unbox(),
+        }
     }
 
     // UniqueFormalParameters : FormalParameters
@@ -2340,7 +2364,10 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // FormalParameters : [empty]
     pub fn empty_formal_parameters(&self) -> arena::Box<'alloc, FormalParameters<'alloc>> {
-        self.alloc(FormalParameters::new(self.new_vec(), None))
+        self.alloc(FormalParameters {
+            items: self.new_vec(),
+            rest: None,
+        })
     }
 
     // FormalParameters : FunctionRestParameter
@@ -2359,10 +2386,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         parameter: arena::Box<'alloc, Parameter<'alloc>>,
     ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
-        self.alloc(FormalParameters::new(
-            self.new_vec_single(parameter.unbox()),
-            None,
-        ))
+        self.alloc(FormalParameters {
+            items: self.new_vec_single(parameter.unbox()),
+            rest: None,
+        })
     }
 
     // FormalParameterList : FormalParameterList "," FormalParameter
@@ -2381,7 +2408,10 @@ impl<'alloc> AstBuilder<'alloc> {
         statements: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
     ) -> arena::Box<'alloc, FunctionBody<'alloc>> {
         // TODO: Directives
-        self.alloc(FunctionBody::new(self.new_vec(), statements.unbox()))
+        self.alloc(FunctionBody {
+            directives: self.new_vec(),
+            statements: statements.unbox(),
+        })
     }
 
     // FunctionStatementList : StatementList?
@@ -2458,13 +2488,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Method(Method::new(
-            name.unbox(),
-            false,
-            false,
-            params.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Method(Method {
+            name: name.unbox(),
+            is_async: false,
+            is_generator: false,
+            params: params.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // MethodDefinition : `get` PropertyName `(` `)` `{` FunctionBody `}`
@@ -2473,10 +2503,10 @@ impl<'alloc> AstBuilder<'alloc> {
         name: arena::Box<'alloc, PropertyName<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Getter(Getter::new(
-            name.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Getter(Getter {
+            property_name: name.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // MethodDefinition : `set` PropertyName `(` PropertySetParameterList `)` `{` FunctionBody `}`
@@ -2486,11 +2516,11 @@ impl<'alloc> AstBuilder<'alloc> {
         parameter: arena::Box<'alloc, Parameter<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Setter(Setter::new(
-            name.unbox(),
-            parameter.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Setter(Setter {
+            property_name: name.unbox(),
+            param: parameter.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // GeneratorMethod : `*` PropertyName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`
@@ -2500,13 +2530,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Method(Method::new(
-            name.unbox(),
-            false,
-            true,
-            params.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Method(Method {
+            name: name.unbox(),
+            is_async: false,
+            is_generator: true,
+            params: params.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // YieldExpression : `yield`
@@ -2515,7 +2545,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: Option<arena::Box<'alloc, Expression<'alloc>>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::YieldExpression(YieldExpression::new(operand)))
+        self.alloc(Expression::YieldExpression(YieldExpression {
+            expression: operand,
+        }))
     }
 
     // YieldExpression : `yield` `*` AssignmentExpression
@@ -2524,7 +2556,9 @@ impl<'alloc> AstBuilder<'alloc> {
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         self.alloc(Expression::YieldGeneratorExpression(
-            YieldGeneratorExpression::new(operand),
+            YieldGeneratorExpression {
+                expression: operand,
+            },
         ))
     }
 
@@ -2535,13 +2569,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Method(Method::new(
-            name.unbox(),
-            true,
-            true,
-            params.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Method(Method {
+            name: name.unbox(),
+            is_async: true,
+            is_generator: true,
+            params: params.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // ClassDeclaration : `class` BindingIdentifier ClassTail
@@ -2636,13 +2670,13 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, FunctionBody<'alloc>>,
     ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        self.alloc(MethodDefinition::Method(Method::new(
-            name.unbox(),
-            true,
-            false,
-            params.unbox(),
-            body.unbox(),
-        )))
+        self.alloc(MethodDefinition::Method(Method {
+            name: name.unbox(),
+            is_async: true,
+            is_generator: false,
+            params: params.unbox(),
+            body: body.unbox(),
+        }))
     }
 
     // AwaitExpression : `await` UnaryExpression
@@ -2650,7 +2684,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::AwaitExpression(AwaitExpression::new(operand)))
+        self.alloc(Expression::AwaitExpression(AwaitExpression {
+            expression: operand,
+        }))
     }
 
     // AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody
@@ -2681,10 +2717,10 @@ impl<'alloc> AstBuilder<'alloc> {
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         // TODO
-        self.alloc(Expression::CallExpression(CallExpression::new(
-            ExpressionOrSuper::Expression(self.alloc(callee.unbox())),
-            arguments.unbox(),
-        )))
+        self.alloc(Expression::CallExpression(CallExpression {
+            callee: ExpressionOrSuper::Expression(self.alloc(callee.unbox())),
+            arguments: arguments.unbox(),
+        }))
     }
 
     // Script : ScriptBody?
@@ -2694,7 +2730,10 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Script<'alloc>> {
         match script {
             Some(script) => script,
-            None => self.alloc(Script::new(self.new_vec(), self.new_vec())),
+            None => self.alloc(Script {
+                directives: self.new_vec(),
+                statements: self.new_vec(),
+            }),
         }
     }
 
@@ -2704,7 +2743,10 @@ impl<'alloc> AstBuilder<'alloc> {
         statements: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
     ) -> arena::Box<'alloc, Script<'alloc>> {
         // TODO: directives
-        self.alloc(Script::new(self.new_vec(), statements.unbox()))
+        self.alloc(Script {
+            directives: self.new_vec(),
+            statements: statements.unbox(),
+        })
     }
 }
 
@@ -2712,15 +2754,15 @@ impl<'alloc> AstBuilder<'alloc> {
 impl<'alloc> AstBuilder<'alloc> {
     // Module ::= ModuleBody => Module(Some($0))
     pub fn module(&self, a0: Option<arena::Box<'alloc, Void>>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(Module::new())
+        unimplemented!();
     }
     // ModuleBody ::= ModuleItemList => ModuleBody($0)
     pub fn module_body(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleBody::new())
+        unimplemented!();
     }
     // ModuleItemList ::= ModuleItem => ModuleItemList 0($0)
     pub fn module_item_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItemList::new())
+        unimplemented!();
     }
     // ModuleItemList ::= ModuleItemList ModuleItem => ModuleItemList 1($0, $1)
     pub fn module_item_list_p1(
@@ -2728,7 +2770,7 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItemList::new())
+        unimplemented!();
     }
 
     // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
@@ -2737,23 +2779,23 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
     pub fn import_declaration_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ImportClause ::= ImportedDefaultBinding => ImportClause 0($0)
     pub fn import_clause_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportClause::new())
+        unimplemented!();
     }
     // ImportClause ::= NameSpaceImport => ImportClause 1($0)
     pub fn import_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportClause::new())
+        unimplemented!();
     }
     // ImportClause ::= NamedImports => ImportClause 2($0)
     pub fn import_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportClause::new())
+        unimplemented!();
     }
     // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => ImportClause 3($0, $1, $2)
     pub fn import_clause_p3(
@@ -2761,7 +2803,7 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportClause::new())
+        unimplemented!();
     }
     // ImportClause ::= ImportedDefaultBinding "," NamedImports => ImportClause 4($0, $1, $2)
     pub fn import_clause_p4(
@@ -2769,38 +2811,38 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportClause::new())
+        unimplemented!();
     }
     // ImportedDefaultBinding ::= ImportedBinding => ImportedDefaultBinding($0)
     pub fn imported_default_binding(
         &self,
         a0: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportedDefaultBinding::new())
+        unimplemented!();
     }
     // NameSpaceImport ::= "*" "as" ImportedBinding => NameSpaceImport($0, $1, $2)
     pub fn name_space_import(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(NameSpaceImport::new())
+        unimplemented!();
     }
     // NamedImports ::= "{" "}" => NamedImports 0($0, $1)
     pub fn named_imports_p0(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(NamedImports::new())
+        unimplemented!();
     }
     // NamedImports ::= "{" ImportsList "}" => NamedImports 1($0, $1, $2)
     pub fn named_imports_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(NamedImports::new())
+        unimplemented!();
     }
     // NamedImports ::= "{" ImportsList "," "}" => NamedImports 2($0, $1, $2, $3)
     pub fn named_imports_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(NamedImports::new())
+        unimplemented!();
     }
     // FromClause ::= "from" ModuleSpecifier => FromClause($0, $1)
     pub fn from_clause(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(FromClause::new())
+        unimplemented!();
     }
     // ImportsList ::= ImportSpecifier => ImportsList 0($0)
     pub fn imports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportsList::new())
+        unimplemented!();
     }
     // ImportsList ::= ImportsList "," ImportSpecifier => ImportsList 1($0, $1, $2)
     pub fn imports_list_p1(
@@ -2808,11 +2850,11 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportsList::new())
+        unimplemented!();
     }
     // ImportSpecifier ::= ImportedBinding => ImportSpecifier 0($0)
     pub fn import_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportSpecifier::new())
+        unimplemented!();
     }
     // ImportSpecifier ::= IdentifierName "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
     pub fn import_specifier_p1(
@@ -2820,20 +2862,20 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportSpecifier::new())
+        unimplemented!();
     }
     // ModuleSpecifier ::= StringLiteral => ModuleSpecifier($0)
     pub fn module_specifier(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleSpecifier::new())
+        unimplemented!();
     }
     // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
     pub fn imported_binding(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ImportedBinding::new())
+        unimplemented!();
     }
 
     // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
     pub fn export_declaration_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
     pub fn export_declaration_p1(
@@ -2841,47 +2883,47 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
     pub fn export_declaration_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" VariableStatement => ExportDeclaration 3($0, $1)
     pub fn export_declaration_p3(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" Declaration => ExportDeclaration 4($0, $1)
     pub fn export_declaration_p4(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" "default" HoistableDeclaration => ExportDeclaration 5($0, $1, $2)
     pub fn export_declaration_p5(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" "default" ClassDeclaration => ExportDeclaration 6($0, $1, $2)
     pub fn export_declaration_p6(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
     pub fn export_declaration_p7(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ModuleItem::new())
+        unimplemented!();
     }
     // ExportClause ::= "{" "}" => ExportClause 0($0, $1)
     pub fn export_clause_p0(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportClause::new())
+        unimplemented!();
     }
     // ExportClause ::= "{" ExportsList "}" => ExportClause 1($0, $1, $2)
     pub fn export_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportClause::new())
+        unimplemented!();
     }
     // ExportClause ::= "{" ExportsList "," "}" => ExportClause 2($0, $1, $2, $3)
     pub fn export_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportClause::new())
+        unimplemented!();
     }
     // ExportsList ::= ExportSpecifier => ExportsList 0($0)
     pub fn exports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportsList::new())
+        unimplemented!();
     }
     // ExportsList ::= ExportsList "," ExportSpecifier => ExportsList 1($0, $1, $2)
     pub fn exports_list_p1(
@@ -2889,11 +2931,11 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportsList::new())
+        unimplemented!();
     }
     // ExportSpecifier ::= IdentifierName => ExportSpecifier 0($0)
     pub fn export_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportSpecifier::new())
+        unimplemented!();
     }
     // ExportSpecifier ::= IdentifierName "as" IdentifierName => ExportSpecifier 1($0, $1, $2)
     pub fn export_specifier_p1(
@@ -2901,6 +2943,6 @@ impl<'alloc> AstBuilder<'alloc> {
         a0: arena::Box<'alloc, Void>,
         a1: arena::Box<'alloc, Void>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!(); // self.alloc(ExportSpecifier::new())
+        unimplemented!();
     }
 }
