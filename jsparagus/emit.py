@@ -116,6 +116,7 @@ FALLIBLE_METHOD_NAMES = {
     'compound_assignment_expression',
     'expression_to_parameter_list',
     'for_assignment_target',
+    'for_await_of_statement',
     'post_decrement_expr',
     'post_increment_expr',
     'pre_decrement_expr',

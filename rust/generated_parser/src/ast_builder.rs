@@ -359,7 +359,7 @@ impl<'alloc> AstBuilder<'alloc> {
         // We do.
         match properties.pop().unwrap().unbox() {
             ObjectProperty::SpreadProperty(expression) => Some(expression),
-            _ => panic!("last property changed since preceding check"), // can't happen
+            _ => panic!("bug"), // can't happen: we just checked this above
         }
     }
 
@@ -409,7 +409,7 @@ impl<'alloc> AstBuilder<'alloc> {
         // We do.
         match elements.pop() {
             Some(ArrayExpressionElement::SpreadElement(expression)) => Some(expression),
-            _ => panic!("last element changed since preceding check"), // can't happen
+            _ => panic!("bug"), // can't happen: we just checked this above
         }
     }
 
@@ -1779,7 +1779,11 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let binding = match binding {
             Binding::BindingIdentifier(bi) => bi,
-            _ => panic!("destructuring in shorthand BindingProperty"),
+            _ => {
+                // The grammar ensures that the parser always passes a valid
+                // argument to this method.
+                panic!("invalid argument: binding_property_shorthand requires a Binding::BindingIdentifier");
+            }
         };
 
         self.alloc(BindingProperty::BindingPropertyIdentifier(
@@ -2000,8 +2004,10 @@ impl<'alloc> AstBuilder<'alloc> {
         _left: VariableDeclarationOrAssignmentTarget,
         _right: arena::Box<'alloc, Expression<'alloc>>,
         _block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        panic!("not present in current AST");
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        Err(ParseError::NotImplemented(
+            "for await statement (missing from AST)",
+        ))
     }
 
     // ForDeclaration : LetOrConst ForBinding => ForDeclaration($0, $1)
@@ -2086,8 +2092,9 @@ impl<'alloc> AstBuilder<'alloc> {
                 stmt.discriminant = discriminant;
             }
             _ => {
-                // Can't happen, grammatically.
-                panic!("unrecognized switch statement");
+                // The grammar ensures that the parser always passes a valid
+                // argument to this method.
+                panic!("invalid argument: argument 2 must be a SwitchStatement");
             }
         }
         cases
@@ -2218,8 +2225,9 @@ impl<'alloc> AstBuilder<'alloc> {
                 }))
             }
             _ => {
-                // can't happen, as the grammar won't accept a bare try-block
-                panic!("try statement requires either a catch or finally block");
+                // The grammar won't accept a bare try-block, so the parser always
+                // a catch clause, a finally block, or both.
+                panic!("invalid argument: try_statement requires a catch or finally block");
             }
         }
     }

@@ -8655,7 +8655,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.for_assignment_target(x3)?, x5, x7),
+                handler.for_await_of_statement(handler.for_assignment_target(x3)?, x5, x7)?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }
@@ -8671,7 +8671,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.for_in_or_of_var_declaration(x4), x6, x8),
+                handler.for_await_of_statement(handler.for_in_or_of_var_declaration(x4), x6, x8)?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }
@@ -8686,7 +8686,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.unbox_for_declaration(x3), x5, x7),
+                handler.for_await_of_statement(handler.unbox_for_declaration(x3), x5, x7)?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }

@@ -13,6 +13,7 @@ pub enum ParseError<'alloc> {
     LexerError,
 
     // Generic syntax errors
+    NotImplemented(&'static str),
     SyntaxError(Token<'alloc>),
     UnexpectedEnd,
     InvalidAssignmentTarget,
@@ -35,6 +36,7 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::UnterminatedString => format!("unterminated string literal"),
             ParseError::UnterminatedRegExp => format!("unterminated regexp literal"),
             ParseError::LexerError => format!("lexical error"),
+            ParseError::NotImplemented(message) => format!("not implemented: {}", message),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
             ParseError::InvalidAssignmentTarget => format!("invalid left-hand side of assignment"),
