@@ -296,11 +296,15 @@ SingleStringCharacters ::
 
 DoubleStringCharacter ::
   SourceCharacter but not one of `"` or `\` or LineTerminator
+  <LS>
+  <PS>
   `\` EscapeSequence
   LineContinuation
 
 SingleStringCharacter ::
   SourceCharacter but not one of `'` or `\` or LineTerminator
+  <LS>
+  <PS>
   `\` EscapeSequence
   LineContinuation
 
@@ -428,10 +432,10 @@ NotEscapeSequence ::
   `u` `{` CodePoint [lookahead <! HexDigit] [lookahead != `}`]
 
 NotCodePoint ::
-  HexDigits [> but only if MV of HexDigits > 0x10FFFF ]
+  HexDigits [> but only if MV of |HexDigits| > 0x10FFFF ]
 
 CodePoint ::
-  HexDigits [> but only if MV of HexDigits ≤ 0x10FFFF ]
+  HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
 
 
 IdentifierReference[Yield, Await] :
@@ -1135,13 +1139,13 @@ IterationStatement[Yield, Await, Return] :
     => do_while_statement($1, $4)
   `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => while_statement($2, $4)
-  `for` `(` [lookahead <! {`let`}] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+  `for` `(` [lookahead != `let`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
     => for_statement(for_expression($2), $4, $6, $8)
   `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
     => for_statement(Some(for_var_declaration($3)), $5, $7, $9)
   `for` `(` ForLexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
     => for_statement(Some(unbox_for_lexical_declaration($2)), $3, $5, $7)
-  `for` `(` [lookahead <! {`let`}] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+  `for` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_in_statement(for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
@@ -1602,6 +1606,9 @@ uriMark ::: one of
   `-` `_` `.` `!` `~` `*` `'` `(` `)`
 
 
+NativeFunction :
+  `function` PropertyName[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` `[` `native` `code` `]` `}`
+
 Pattern[U, N] ::
   Disjunction[?U, ?N]
 
@@ -1772,7 +1779,7 @@ UnicodePropertyNameCharacter ::
   `_`
 
 CharacterClass[U] ::
-  `[` [lookahead <! {`^`}] ClassRanges[?U] `]`
+  `[` [lookahead != `^`] ClassRanges[?U] `]`
   `[` `^` ClassRanges[?U] `]`
 
 ClassRanges[U] ::
@@ -1802,11 +1809,6 @@ ClassEscape[U] ::
   [+U] `-`
   CharacterClassEscape[?U]
   CharacterEscape[?U]
-
-
-DoubleStringCharacter ::
-  SourceCharacter but not one of `"` or `\` or U+0000 through U+001F
-  `\` EscapeSequence
 
 
 NumericLiteral ::
