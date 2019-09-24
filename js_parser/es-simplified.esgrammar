@@ -649,6 +649,8 @@ CallExpression[Yield, Await] :
     => $0
   SuperCall[?Yield, ?Await]
     => $0
+  ImportCall[?Yield, ?Await]
+    => $0
   CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
     => call_expr($0, $1)
   CallExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
@@ -661,6 +663,10 @@ CallExpression[Yield, Await] :
 SuperCall[Yield, Await] :
   `super` Arguments[?Yield, ?Await]
     => super_call($1)
+
+ImportCall[Yield, Await] :
+  `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `)`
+    => import_call($2)
 
 Arguments[Yield, Await] :
   `(` `)`

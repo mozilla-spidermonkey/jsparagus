@@ -1032,6 +1032,16 @@ impl<'alloc> AstBuilder<'alloc> {
         }))
     }
 
+    // ImportCall : `import` `(` AssignmentExpression `)`
+    pub fn import_call(
+        &self,
+        argument: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::ImportCallExpression(ImportCallExpression {
+            argument,
+        }))
+    }
+
     // Arguments : `(` `)`
     pub fn arguments_empty(&self) -> arena::Box<'alloc, Arguments<'alloc>> {
         self.alloc(Arguments {
