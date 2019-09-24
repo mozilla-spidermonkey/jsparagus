@@ -16,21 +16,9 @@ pub struct Arguments<'alloc> {
     pub args: arena::Vec<'alloc, Argument<'alloc>>,
 }
 
-impl<'alloc> Arguments<'alloc> {
-    pub fn new(args: arena::Vec<'alloc, Argument<'alloc>>) -> Self {
-        Self { args }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Identifier<'alloc> {
     pub value: &'alloc str,
-}
-
-impl<'alloc> Identifier<'alloc> {
-    pub fn new(value: &'alloc str) -> Self {
-        Self { value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,21 +26,9 @@ pub struct IdentifierName<'alloc> {
     pub value: &'alloc str,
 }
 
-impl<'alloc> IdentifierName<'alloc> {
-    pub fn new(value: &'alloc str) -> Self {
-        Self { value }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Label<'alloc> {
     pub value: &'alloc str,
-}
-
-impl<'alloc> Label<'alloc> {
-    pub fn new(value: &'alloc str) -> Self {
-        Self { value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -131,24 +107,6 @@ pub struct Function<'alloc> {
     pub is_generator: bool,
     pub params: FormalParameters<'alloc>,
     pub body: FunctionBody<'alloc>,
-}
-
-impl<'alloc> Function<'alloc> {
-    pub fn new(
-        name: Option<BindingIdentifier<'alloc>>,
-        is_async: bool,
-        is_generator: bool,
-        params: FormalParameters<'alloc>,
-        body: FunctionBody<'alloc>,
-    ) -> Self {
-        Self {
-            name,
-            is_async,
-            is_generator,
-            params,
-            body,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -310,32 +268,14 @@ pub struct BindingWithDefault<'alloc> {
     pub init: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> BindingWithDefault<'alloc> {
-    pub fn new(binding: Binding<'alloc>, init: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { binding, init }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct BindingIdentifier<'alloc> {
     pub name: Identifier<'alloc>,
 }
 
-impl<'alloc> BindingIdentifier<'alloc> {
-    pub fn new(name: Identifier<'alloc>) -> Self {
-        Self { name }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetIdentifier<'alloc> {
     pub name: Identifier<'alloc>,
-}
-
-impl<'alloc> AssignmentTargetIdentifier<'alloc> {
-    pub fn new(name: Identifier<'alloc>) -> Self {
-        Self { name }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -356,25 +296,10 @@ pub struct ComputedMemberAssignmentTarget<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> ComputedMemberAssignmentTarget<'alloc> {
-    pub fn new(
-        object: ExpressionOrSuper<'alloc>,
-        expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self { object, expression }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberAssignmentTarget<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub property: IdentifierName<'alloc>,
-}
-
-impl<'alloc> StaticMemberAssignmentTarget<'alloc> {
-    pub fn new(object: ExpressionOrSuper<'alloc>, property: IdentifierName<'alloc>) -> Self {
-        Self { object, property }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -383,28 +308,10 @@ pub struct ArrayBinding<'alloc> {
     pub rest: Option<arena::Box<'alloc, Binding<'alloc>>>,
 }
 
-impl<'alloc> ArrayBinding<'alloc> {
-    pub fn new(
-        elements: arena::Vec<'alloc, Option<Parameter<'alloc>>>,
-        rest: Option<arena::Box<'alloc, Binding<'alloc>>>,
-    ) -> Self {
-        Self { elements, rest }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectBinding<'alloc> {
     pub properties: arena::Vec<'alloc, BindingProperty<'alloc>>,
     pub rest: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
-}
-
-impl<'alloc> ObjectBinding<'alloc> {
-    pub fn new(
-        properties: arena::Vec<'alloc, BindingProperty<'alloc>>,
-        rest: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
-    ) -> Self {
-        Self { properties, rest }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -419,40 +326,16 @@ pub struct BindingPropertyIdentifier<'alloc> {
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
 }
 
-impl<'alloc> BindingPropertyIdentifier<'alloc> {
-    pub fn new(
-        binding: BindingIdentifier<'alloc>,
-        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    ) -> Self {
-        Self { binding, init }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct BindingPropertyProperty<'alloc> {
     pub name: PropertyName<'alloc>,
     pub binding: Parameter<'alloc>,
 }
 
-impl<'alloc> BindingPropertyProperty<'alloc> {
-    pub fn new(name: PropertyName<'alloc>, binding: Parameter<'alloc>) -> Self {
-        Self { name, binding }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetWithDefault<'alloc> {
     pub binding: AssignmentTarget<'alloc>,
     pub init: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> AssignmentTargetWithDefault<'alloc> {
-    pub fn new(
-        binding: AssignmentTarget<'alloc>,
-        init: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self { binding, init }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -467,28 +350,10 @@ pub struct ArrayAssignmentTarget<'alloc> {
     pub rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
 }
 
-impl<'alloc> ArrayAssignmentTarget<'alloc> {
-    pub fn new(
-        elements: arena::Vec<'alloc, Option<AssignmentTargetMaybeDefault<'alloc>>>,
-        rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
-    ) -> Self {
-        Self { elements, rest }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectAssignmentTarget<'alloc> {
     pub properties: arena::Vec<'alloc, AssignmentTargetProperty<'alloc>>,
     pub rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
-}
-
-impl<'alloc> ObjectAssignmentTarget<'alloc> {
-    pub fn new(
-        properties: arena::Vec<'alloc, AssignmentTargetProperty<'alloc>>,
-        rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
-    ) -> Self {
-        Self { properties, rest }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -503,25 +368,10 @@ pub struct AssignmentTargetPropertyIdentifier<'alloc> {
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
 }
 
-impl<'alloc> AssignmentTargetPropertyIdentifier<'alloc> {
-    pub fn new(
-        binding: AssignmentTargetIdentifier<'alloc>,
-        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    ) -> Self {
-        Self { binding, init }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetPropertyProperty<'alloc> {
     pub name: PropertyName<'alloc>,
     pub binding: AssignmentTargetMaybeDefault<'alloc>,
-}
-
-impl<'alloc> AssignmentTargetPropertyProperty<'alloc> {
-    pub fn new(name: PropertyName<'alloc>, binding: AssignmentTargetMaybeDefault<'alloc>) -> Self {
-        Self { name, binding }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -531,20 +381,6 @@ pub struct ClassExpression<'alloc> {
     pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
 }
 
-impl<'alloc> ClassExpression<'alloc> {
-    pub fn new(
-        name: Option<BindingIdentifier<'alloc>>,
-        super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        elements: arena::Vec<'alloc, ClassElement<'alloc>>,
-    ) -> Self {
-        Self {
-            name,
-            super_,
-            elements,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ClassDeclaration<'alloc> {
     pub name: BindingIdentifier<'alloc>,
@@ -552,30 +388,10 @@ pub struct ClassDeclaration<'alloc> {
     pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
 }
 
-impl<'alloc> ClassDeclaration<'alloc> {
-    pub fn new(
-        name: BindingIdentifier<'alloc>,
-        super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        elements: arena::Vec<'alloc, ClassElement<'alloc>>,
-    ) -> Self {
-        Self {
-            name,
-            super_,
-            elements,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ClassElement<'alloc> {
     pub is_static: bool,
     pub method: MethodDefinition<'alloc>,
-}
-
-impl<'alloc> ClassElement<'alloc> {
-    pub fn new(is_static: bool, method: MethodDefinition<'alloc>) -> Self {
-        Self { is_static, method }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -591,34 +407,11 @@ pub struct Module<'alloc> {
     pub items: arena::Vec<'alloc, ModuleItems<'alloc>>,
 }
 
-impl<'alloc> Module<'alloc> {
-    pub fn new(
-        directives: arena::Vec<'alloc, Directive<'alloc>>,
-        items: arena::Vec<'alloc, ModuleItems<'alloc>>,
-    ) -> Self {
-        Self { directives, items }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Import<'alloc> {
     pub module_specifier: &'alloc str,
     pub default_binding: Option<BindingIdentifier<'alloc>>,
     pub named_imports: arena::Vec<'alloc, ImportSpecifier<'alloc>>,
-}
-
-impl<'alloc> Import<'alloc> {
-    pub fn new(
-        module_specifier: &'alloc str,
-        default_binding: Option<BindingIdentifier<'alloc>>,
-        named_imports: arena::Vec<'alloc, ImportSpecifier<'alloc>>,
-    ) -> Self {
-        Self {
-            module_specifier,
-            default_binding,
-            named_imports,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -628,41 +421,15 @@ pub struct ImportNamespace<'alloc> {
     pub namespace_binding: BindingIdentifier<'alloc>,
 }
 
-impl<'alloc> ImportNamespace<'alloc> {
-    pub fn new(
-        module_specifier: &'alloc str,
-        default_binding: Option<BindingIdentifier<'alloc>>,
-        namespace_binding: BindingIdentifier<'alloc>,
-    ) -> Self {
-        Self {
-            module_specifier,
-            default_binding,
-            namespace_binding,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ImportSpecifier<'alloc> {
     pub name: Option<IdentifierName<'alloc>>,
     pub binding: BindingIdentifier<'alloc>,
 }
 
-impl<'alloc> ImportSpecifier<'alloc> {
-    pub fn new(name: Option<IdentifierName<'alloc>>, binding: BindingIdentifier<'alloc>) -> Self {
-        Self { name, binding }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ExportAllFrom<'alloc> {
     pub module_specifier: &'alloc str,
-}
-
-impl<'alloc> ExportAllFrom<'alloc> {
-    pub fn new(module_specifier: &'alloc str) -> Self {
-        Self { module_specifier }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -671,27 +438,9 @@ pub struct ExportFrom<'alloc> {
     pub module_specifier: &'alloc str,
 }
 
-impl<'alloc> ExportFrom<'alloc> {
-    pub fn new(
-        named_exports: arena::Vec<'alloc, ExportFromSpecifier<'alloc>>,
-        module_specifier: &'alloc str,
-    ) -> Self {
-        Self {
-            named_exports,
-            module_specifier,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ExportLocals<'alloc> {
     pub named_exports: arena::Vec<'alloc, ExportLocalSpecifier<'alloc>>,
-}
-
-impl<'alloc> ExportLocals<'alloc> {
-    pub fn new(named_exports: arena::Vec<'alloc, ExportLocalSpecifier<'alloc>>) -> Self {
-        Self { named_exports }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -714,34 +463,10 @@ pub struct ExportFromSpecifier<'alloc> {
     pub exported_name: Option<IdentifierName<'alloc>>,
 }
 
-impl<'alloc> ExportFromSpecifier<'alloc> {
-    pub fn new(
-        name: IdentifierName<'alloc>,
-        exported_name: Option<IdentifierName<'alloc>>,
-    ) -> Self {
-        Self {
-            name,
-            exported_name,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ExportLocalSpecifier<'alloc> {
     pub name: IdentifierExpression<'alloc>,
     pub exported_name: Option<IdentifierName<'alloc>>,
-}
-
-impl<'alloc> ExportLocalSpecifier<'alloc> {
-    pub fn new(
-        name: IdentifierExpression<'alloc>,
-        exported_name: Option<IdentifierName<'alloc>>,
-    ) -> Self {
-        Self {
-            name,
-            exported_name,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -753,37 +478,10 @@ pub struct Method<'alloc> {
     pub body: FunctionBody<'alloc>,
 }
 
-impl<'alloc> Method<'alloc> {
-    pub fn new(
-        name: PropertyName<'alloc>,
-        is_async: bool,
-        is_generator: bool,
-        params: FormalParameters<'alloc>,
-        body: FunctionBody<'alloc>,
-    ) -> Self {
-        Self {
-            name,
-            is_async,
-            is_generator,
-            params,
-            body,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Getter<'alloc> {
     pub property_name: PropertyName<'alloc>,
     pub body: FunctionBody<'alloc>,
-}
-
-impl<'alloc> Getter<'alloc> {
-    pub fn new(property_name: PropertyName<'alloc>, body: FunctionBody<'alloc>) -> Self {
-        Self {
-            property_name,
-            body,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -793,36 +491,10 @@ pub struct Setter<'alloc> {
     pub body: FunctionBody<'alloc>,
 }
 
-impl<'alloc> Setter<'alloc> {
-    pub fn new(
-        property_name: PropertyName<'alloc>,
-        param: Parameter<'alloc>,
-        body: FunctionBody<'alloc>,
-    ) -> Self {
-        Self {
-            property_name,
-            param,
-            body,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct DataProperty<'alloc> {
     pub property_name: PropertyName<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> DataProperty<'alloc> {
-    pub fn new(
-        property_name: PropertyName<'alloc>,
-        expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self {
-            property_name,
-            expression,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -830,21 +502,9 @@ pub struct ShorthandProperty<'alloc> {
     pub name: IdentifierExpression<'alloc>,
 }
 
-impl<'alloc> ShorthandProperty<'alloc> {
-    pub fn new(name: IdentifierExpression<'alloc>) -> Self {
-        Self { name }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ComputedPropertyName<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> ComputedPropertyName<'alloc> {
-    pub fn new(expression: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -852,32 +512,14 @@ pub struct StaticPropertyName<'alloc> {
     pub value: &'alloc str,
 }
 
-impl<'alloc> StaticPropertyName<'alloc> {
-    pub fn new(value: &'alloc str) -> Self {
-        Self { value }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct LiteralBooleanExpression {
     pub value: bool,
 }
 
-impl LiteralBooleanExpression {
-    pub fn new(value: bool) -> Self {
-        Self { value }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct LiteralNumericExpression {
     pub value: f64,
-}
-
-impl LiteralNumericExpression {
-    pub fn new(value: f64) -> Self {
-        Self { value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -890,35 +532,9 @@ pub struct LiteralRegExpExpression<'alloc> {
     pub unicode: bool,
 }
 
-impl<'alloc> LiteralRegExpExpression<'alloc> {
-    pub fn new(
-        pattern: &'alloc str,
-        global: bool,
-        ignore_case: bool,
-        multi_line: bool,
-        sticky: bool,
-        unicode: bool,
-    ) -> Self {
-        Self {
-            pattern,
-            global,
-            ignore_case,
-            multi_line,
-            sticky,
-            unicode,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct LiteralStringExpression<'alloc> {
     pub value: &'alloc str,
-}
-
-impl<'alloc> LiteralStringExpression<'alloc> {
-    pub fn new(value: &'alloc str) -> Self {
-        Self { value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -931,12 +547,6 @@ pub enum ArrayExpressionElement<'alloc> {
 #[derive(Debug, PartialEq)]
 pub struct ArrayExpression<'alloc> {
     pub elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
-}
-
-impl<'alloc> ArrayExpression<'alloc> {
-    pub fn new(elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>) -> Self {
-        Self { elements }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -952,36 +562,10 @@ pub struct ArrowExpression<'alloc> {
     pub body: ArrowExpressionBody<'alloc>,
 }
 
-impl<'alloc> ArrowExpression<'alloc> {
-    pub fn new(
-        is_async: bool,
-        params: FormalParameters<'alloc>,
-        body: ArrowExpressionBody<'alloc>,
-    ) -> Self {
-        Self {
-            is_async,
-            params,
-            body,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AssignmentExpression<'alloc> {
     pub binding: AssignmentTarget<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> AssignmentExpression<'alloc> {
-    pub fn new(
-        binding: AssignmentTarget<'alloc>,
-        expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self {
-            binding,
-            expression,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -991,30 +575,10 @@ pub struct BinaryExpression<'alloc> {
     pub right: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> BinaryExpression<'alloc> {
-    pub fn new(
-        operator: BinaryOperator,
-        left: arena::Box<'alloc, Expression<'alloc>>,
-        right: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self {
-            operator,
-            left,
-            right,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct CallExpression<'alloc> {
     pub callee: ExpressionOrSuper<'alloc>,
     pub arguments: Arguments<'alloc>,
-}
-
-impl<'alloc> CallExpression<'alloc> {
-    pub fn new(callee: ExpressionOrSuper<'alloc>, arguments: Arguments<'alloc>) -> Self {
-        Self { callee, arguments }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1024,33 +588,10 @@ pub struct CompoundAssignmentExpression<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> CompoundAssignmentExpression<'alloc> {
-    pub fn new(
-        operator: CompoundAssignmentOperator,
-        binding: SimpleAssignmentTarget<'alloc>,
-        expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self {
-            operator,
-            binding,
-            expression,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ComputedMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> ComputedMemberExpression<'alloc> {
-    pub fn new(
-        object: ExpressionOrSuper<'alloc>,
-        expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self { object, expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1060,29 +601,9 @@ pub struct ConditionalExpression<'alloc> {
     pub alternate: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> ConditionalExpression<'alloc> {
-    pub fn new(
-        test: arena::Box<'alloc, Expression<'alloc>>,
-        consequent: arena::Box<'alloc, Expression<'alloc>>,
-        alternate: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self {
-            test,
-            consequent,
-            alternate,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct IdentifierExpression<'alloc> {
     pub name: Identifier<'alloc>,
-}
-
-impl<'alloc> IdentifierExpression<'alloc> {
-    pub fn new(name: Identifier<'alloc>) -> Self {
-        Self { name }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1091,24 +612,9 @@ pub struct NewExpression<'alloc> {
     pub arguments: Arguments<'alloc>,
 }
 
-impl<'alloc> NewExpression<'alloc> {
-    pub fn new(
-        callee: arena::Box<'alloc, Expression<'alloc>>,
-        arguments: Arguments<'alloc>,
-    ) -> Self {
-        Self { callee, arguments }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ObjectExpression<'alloc> {
     pub properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
-}
-
-impl<'alloc> ObjectExpression<'alloc> {
-    pub fn new(properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>) -> Self {
-        Self { properties }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1117,22 +623,10 @@ pub struct UnaryExpression<'alloc> {
     pub operand: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> UnaryExpression<'alloc> {
-    pub fn new(operator: UnaryOperator, operand: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { operator, operand }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub property: IdentifierName<'alloc>,
-}
-
-impl<'alloc> StaticMemberExpression<'alloc> {
-    pub fn new(object: ExpressionOrSuper<'alloc>, property: IdentifierName<'alloc>) -> Self {
-        Self { object, property }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1147,15 +641,6 @@ pub struct TemplateExpression<'alloc> {
     pub elements: arena::Vec<'alloc, TemplateExpressionElement<'alloc>>,
 }
 
-impl<'alloc> TemplateExpression<'alloc> {
-    pub fn new(
-        tag: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        elements: arena::Vec<'alloc, TemplateExpressionElement<'alloc>>,
-    ) -> Self {
-        Self { tag, elements }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct UpdateExpression<'alloc> {
     pub is_prefix: bool,
@@ -1163,29 +648,9 @@ pub struct UpdateExpression<'alloc> {
     pub operand: SimpleAssignmentTarget<'alloc>,
 }
 
-impl<'alloc> UpdateExpression<'alloc> {
-    pub fn new(
-        is_prefix: bool,
-        operator: UpdateOperator,
-        operand: SimpleAssignmentTarget<'alloc>,
-    ) -> Self {
-        Self {
-            is_prefix,
-            operator,
-            operand,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct YieldExpression<'alloc> {
     pub expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
-}
-
-impl<'alloc> YieldExpression<'alloc> {
-    pub fn new(expression: Option<arena::Box<'alloc, Expression<'alloc>>>) -> Self {
-        Self { expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1193,21 +658,9 @@ pub struct YieldGeneratorExpression<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
 }
 
-impl<'alloc> YieldGeneratorExpression<'alloc> {
-    pub fn new(expression: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { expression }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct AwaitExpression<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> AwaitExpression<'alloc> {
-    pub fn new(expression: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1215,21 +668,9 @@ pub struct BlockStatement<'alloc> {
     pub block: Block<'alloc>,
 }
 
-impl<'alloc> BlockStatement<'alloc> {
-    pub fn new(block: Block<'alloc>) -> Self {
-        Self { block }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct BreakStatement<'alloc> {
     pub label: Option<Label<'alloc>>,
-}
-
-impl<'alloc> BreakStatement<'alloc> {
-    pub fn new(label: Option<Label<'alloc>>) -> Self {
-        Self { label }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1237,25 +678,10 @@ pub struct ContinueStatement<'alloc> {
     pub label: Option<Label<'alloc>>,
 }
 
-impl<'alloc> ContinueStatement<'alloc> {
-    pub fn new(label: Option<Label<'alloc>>) -> Self {
-        Self { label }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct DoWhileStatement<'alloc> {
     pub block: arena::Box<'alloc, Statement<'alloc>>,
     pub test: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> DoWhileStatement<'alloc> {
-    pub fn new(
-        block: arena::Box<'alloc, Statement<'alloc>>,
-        test: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> Self {
-        Self { block, test }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1271,31 +697,11 @@ pub struct ForInStatement<'alloc> {
     pub block: arena::Box<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> ForInStatement<'alloc> {
-    pub fn new(
-        left: VariableDeclarationOrAssignmentTarget<'alloc>,
-        right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self { left, right, block }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ForOfStatement<'alloc> {
     pub left: VariableDeclarationOrAssignmentTarget<'alloc>,
     pub right: arena::Box<'alloc, Expression<'alloc>>,
     pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-impl<'alloc> ForOfStatement<'alloc> {
-    pub fn new(
-        left: VariableDeclarationOrAssignmentTarget<'alloc>,
-        right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self { left, right, block }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1312,41 +718,11 @@ pub struct ForStatement<'alloc> {
     pub block: arena::Box<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> ForStatement<'alloc> {
-    pub fn new(
-        init: Option<VariableDeclarationOrExpression<'alloc>>,
-        test: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        update: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self {
-            init,
-            test,
-            update,
-            block,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct IfStatement<'alloc> {
     pub test: arena::Box<'alloc, Expression<'alloc>>,
     pub consequent: arena::Box<'alloc, Statement<'alloc>>,
     pub alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
-}
-
-impl<'alloc> IfStatement<'alloc> {
-    pub fn new(
-        test: arena::Box<'alloc, Expression<'alloc>>,
-        consequent: arena::Box<'alloc, Statement<'alloc>>,
-        alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
-    ) -> Self {
-        Self {
-            test,
-            consequent,
-            alternate,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1355,39 +731,15 @@ pub struct LabeledStatement<'alloc> {
     pub body: arena::Box<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> LabeledStatement<'alloc> {
-    pub fn new(label: Label<'alloc>, body: arena::Box<'alloc, Statement<'alloc>>) -> Self {
-        Self { label, body }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement<'alloc> {
     pub expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
-}
-
-impl<'alloc> ReturnStatement<'alloc> {
-    pub fn new(expression: Option<arena::Box<'alloc, Expression<'alloc>>>) -> Self {
-        Self { expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchStatement<'alloc> {
     pub discriminant: arena::Box<'alloc, Expression<'alloc>>,
     pub cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-}
-
-impl<'alloc> SwitchStatement<'alloc> {
-    pub fn new(
-        discriminant: arena::Box<'alloc, Expression<'alloc>>,
-        cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-    ) -> Self {
-        Self {
-            discriminant,
-            cases,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1398,43 +750,15 @@ pub struct SwitchStatementWithDefault<'alloc> {
     pub post_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
 }
 
-impl<'alloc> SwitchStatementWithDefault<'alloc> {
-    pub fn new(
-        discriminant: arena::Box<'alloc, Expression<'alloc>>,
-        pre_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-        default_case: SwitchDefault<'alloc>,
-        post_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-    ) -> Self {
-        Self {
-            discriminant,
-            pre_default_cases,
-            default_case,
-            post_default_cases,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct ThrowStatement<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-impl<'alloc> ThrowStatement<'alloc> {
-    pub fn new(expression: arena::Box<'alloc, Expression<'alloc>>) -> Self {
-        Self { expression }
-    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct TryCatchStatement<'alloc> {
     pub body: Block<'alloc>,
     pub catch_clause: CatchClause<'alloc>,
-}
-
-impl<'alloc> TryCatchStatement<'alloc> {
-    pub fn new(body: Block<'alloc>, catch_clause: CatchClause<'alloc>) -> Self {
-        Self { body, catch_clause }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1444,33 +768,10 @@ pub struct TryFinallyStatement<'alloc> {
     pub finalizer: Block<'alloc>,
 }
 
-impl<'alloc> TryFinallyStatement<'alloc> {
-    pub fn new(
-        body: Block<'alloc>,
-        catch_clause: Option<CatchClause<'alloc>>,
-        finalizer: Block<'alloc>,
-    ) -> Self {
-        Self {
-            body,
-            catch_clause,
-            finalizer,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct WhileStatement<'alloc> {
     pub test: arena::Box<'alloc, Expression<'alloc>>,
     pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-impl<'alloc> WhileStatement<'alloc> {
-    pub fn new(
-        test: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self { test, block }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1479,31 +780,10 @@ pub struct WithStatement<'alloc> {
     pub body: arena::Box<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> WithStatement<'alloc> {
-    pub fn new(
-        object: arena::Box<'alloc, Expression<'alloc>>,
-        body: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self { object, body }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Block<'alloc> {
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
     pub declarations: Option<arena::Vec<'alloc, &'alloc str>>,
-}
-
-impl<'alloc> Block<'alloc> {
-    pub fn new(
-        statements: arena::Vec<'alloc, Statement<'alloc>>,
-        declarations: Option<arena::Vec<'alloc, &'alloc str>>,
-    ) -> Self {
-        Self {
-            statements,
-            declarations,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1512,21 +792,9 @@ pub struct CatchClause<'alloc> {
     pub body: Block<'alloc>,
 }
 
-impl<'alloc> CatchClause<'alloc> {
-    pub fn new(binding: Binding<'alloc>, body: Block<'alloc>) -> Self {
-        Self { binding, body }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Directive<'alloc> {
     pub raw_value: &'alloc str,
-}
-
-impl<'alloc> Directive<'alloc> {
-    pub fn new(raw_value: &'alloc str) -> Self {
-        Self { raw_value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1535,31 +803,10 @@ pub struct FormalParameters<'alloc> {
     pub rest: Option<Binding<'alloc>>,
 }
 
-impl<'alloc> FormalParameters<'alloc> {
-    pub fn new(
-        items: arena::Vec<'alloc, Parameter<'alloc>>,
-        rest: Option<Binding<'alloc>>,
-    ) -> Self {
-        Self { items, rest }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct FunctionBody<'alloc> {
     pub directives: arena::Vec<'alloc, Directive<'alloc>>,
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
-}
-
-impl<'alloc> FunctionBody<'alloc> {
-    pub fn new(
-        directives: arena::Vec<'alloc, Directive<'alloc>>,
-        statements: arena::Vec<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self {
-            directives,
-            statements,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1568,31 +815,10 @@ pub struct Script<'alloc> {
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> Script<'alloc> {
-    pub fn new(
-        directives: arena::Vec<'alloc, Directive<'alloc>>,
-        statements: arena::Vec<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self {
-            directives,
-            statements,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct SwitchCase<'alloc> {
     pub test: arena::Box<'alloc, Expression<'alloc>>,
     pub consequent: arena::Vec<'alloc, Statement<'alloc>>,
-}
-
-impl<'alloc> SwitchCase<'alloc> {
-    pub fn new(
-        test: arena::Box<'alloc, Expression<'alloc>>,
-        consequent: arena::Vec<'alloc, Statement<'alloc>>,
-    ) -> Self {
-        Self { test, consequent }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1600,21 +826,9 @@ pub struct SwitchDefault<'alloc> {
     pub consequent: arena::Vec<'alloc, Statement<'alloc>>,
 }
 
-impl<'alloc> SwitchDefault<'alloc> {
-    pub fn new(consequent: arena::Vec<'alloc, Statement<'alloc>>) -> Self {
-        Self { consequent }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct TemplateElement<'alloc> {
     pub raw_value: &'alloc str,
-}
-
-impl<'alloc> TemplateElement<'alloc> {
-    pub fn new(raw_value: &'alloc str) -> Self {
-        Self { raw_value }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -1623,28 +837,10 @@ pub struct VariableDeclaration<'alloc> {
     pub declarators: arena::Vec<'alloc, VariableDeclarator<'alloc>>,
 }
 
-impl<'alloc> VariableDeclaration<'alloc> {
-    pub fn new(
-        kind: VariableDeclarationKind,
-        declarators: arena::Vec<'alloc, VariableDeclarator<'alloc>>,
-    ) -> Self {
-        Self { kind, declarators }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclarator<'alloc> {
     pub binding: Binding<'alloc>,
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
-}
-
-impl<'alloc> VariableDeclarator<'alloc> {
-    pub fn new(
-        binding: Binding<'alloc>,
-        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    ) -> Self {
-        Self { binding, init }
-    }
 }
 
 #[derive(Debug, PartialEq)]

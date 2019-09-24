@@ -421,19 +421,6 @@ class Struct(AggregateTypeDecl):
         write(0, "}")
         write(0, "")
 
-        write(0, "impl{} {}{} {{", lifetime_params, self.name, lifetime_params)
-        write(1, "pub fn new(")
-        for field_name, field_ty in self.fields.items():
-            write(1, "{}: {},", field_name, field_ty.to_rust_type(ast))
-        write(1, ") -> Self {")
-        write(2, "Self {")
-        for field_name in self.fields:
-            write(3, "{},", field_name)
-        write(2, "}")
-        write(1, "}")
-        write(0, "}")
-        write(0, "")
-
     def write_rust_pass_method_body(self, write, emit_call):
         for name, ty in self.fields.items():
             emit_call(2, ty, "&mut ast.{}".format(name))
