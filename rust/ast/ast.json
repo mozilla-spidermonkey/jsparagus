@@ -154,7 +154,8 @@
     "UpdateExpression": "UpdateExpression",
     "YieldExpression": "YieldExpression",
     "YieldGeneratorExpression": "YieldGeneratorExpression",
-    "AwaitExpression": "AwaitExpression"
+    "AwaitExpression": "AwaitExpression",
+    "ImportCallExpression": "ImportCallExpression"
   },
   "MemberExpression": {
     "_type": "enum",
@@ -492,6 +493,10 @@
     "operator": "BinaryOperator",
     "left": "Box<Expression>",
     "right": "Box<Expression>"
+  },
+  "ImportCallExpression": {
+    "_type": "struct",
+    "argument": "Box<Expression>"
   },
   "CallExpression": {
     "_type": "struct",

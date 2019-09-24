@@ -171,6 +171,7 @@ pub enum Expression<'alloc> {
     YieldExpression(YieldExpression<'alloc>),
     YieldGeneratorExpression(YieldGeneratorExpression<'alloc>),
     AwaitExpression(AwaitExpression<'alloc>),
+    ImportCallExpression(ImportCallExpression<'alloc>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -573,6 +574,11 @@ pub struct BinaryExpression<'alloc> {
     pub operator: BinaryOperator,
     pub left: arena::Box<'alloc, Expression<'alloc>>,
     pub right: arena::Box<'alloc, Expression<'alloc>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ImportCallExpression<'alloc> {
+    pub argument: arena::Box<'alloc, Expression<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]

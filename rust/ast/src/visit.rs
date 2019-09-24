@@ -271,6 +271,9 @@ pub trait Pass<'alloc> {
             Expression::AwaitExpression(ast) => {
                 self.visit_await_expression(ast);
             }
+            Expression::ImportCallExpression(ast) => {
+                self.visit_import_call_expression(ast);
+            }
         }
     }
 
@@ -817,6 +820,10 @@ pub trait Pass<'alloc> {
         self.visit_binary_operator(&mut ast.operator);
         self.visit_expression(&mut ast.left);
         self.visit_expression(&mut ast.right);
+    }
+
+    fn visit_import_call_expression(&mut self, ast: &mut ImportCallExpression<'alloc>) {
+        self.visit_expression(&mut ast.argument);
     }
 
     fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) {
@@ -1631,6 +1638,12 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
+    fn visit_import_call_expression(&self, argument: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(argument);
+        result
+    }
+
     fn visit_call_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(callee);
@@ -2271,6 +2284,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             Expression::YieldExpression(ast) => self.visit_yield_expression(ast),
             Expression::YieldGeneratorExpression(ast) => self.visit_yield_generator_expression(ast),
             Expression::AwaitExpression(ast) => self.visit_await_expression(ast),
+            Expression::ImportCallExpression(ast) => self.visit_import_call_expression(ast),
         }
     }
 
@@ -2927,6 +2941,14 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         let a1 = self.visit_expression((&mut ast.left));
         let a2 = self.visit_expression((&mut ast.right));
         self.pass.visit_binary_expression(a0, a1, a2)
+    }
+
+    pub fn visit_import_call_expression(
+        &mut self,
+        ast: &mut ImportCallExpression<'alloc>,
+    ) -> T::Value {
+        let a0 = self.visit_expression((&mut ast.argument));
+        self.pass.visit_import_call_expression(a0)
     }
 
     pub fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) -> T::Value {

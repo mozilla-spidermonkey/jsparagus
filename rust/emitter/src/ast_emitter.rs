@@ -223,6 +223,7 @@ impl AstEmitter {
             Expression::YieldExpression(_) => unimplemented!(),
             Expression::YieldGeneratorExpression(_) => unimplemented!(),
             Expression::AwaitExpression(_) => unimplemented!(),
+            Expression::ImportCallExpression(_) => unimplemented!(),
         }
     }
 

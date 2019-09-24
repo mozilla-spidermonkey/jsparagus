@@ -77,6 +77,7 @@ pub enum StackValue<'alloc> {
     IdentifierName(arena::Box<'alloc, IdentifierName<'alloc>>),
     IfStatement(arena::Box<'alloc, IfStatement<'alloc>>),
     Import(arena::Box<'alloc, Import<'alloc>>),
+    ImportCallExpression(arena::Box<'alloc, ImportCallExpression<'alloc>>),
     ImportDeclaration(arena::Box<'alloc, ImportDeclaration<'alloc>>),
     ImportNamespace(arena::Box<'alloc, ImportNamespace<'alloc>>),
     ImportSpecifier(arena::Box<'alloc, ImportSpecifier<'alloc>>),
@@ -800,6 +801,15 @@ impl<'alloc> StackValueItem<'alloc> for Import<'alloc> {
         match sv {
             StackValue::Import(v) => v,
             _ => panic!("StackValue expected Import, got {:?}", sv),
+        }
+    }
+}
+
+impl<'alloc> StackValueItem<'alloc> for ImportCallExpression<'alloc> {
+    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
+        match sv {
+            StackValue::ImportCallExpression(v) => v,
+            _ => panic!("StackValue expected ImportCallExpression, got {:?}", sv),
         }
     }
 }
@@ -1891,6 +1901,13 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Import<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Import(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportCallExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ImportCallExpression(self))
     }
 }
 
