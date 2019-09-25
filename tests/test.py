@@ -782,14 +782,14 @@ class GenTestCase(unittest.TestCase):
             'stmts': NtDef(['Yield'], [
                 [stmt],
                 [stmts, stmt],
-            ]),
+            ], None),
             'stmt': NtDef(['Yield'], [
                 [name, "(", ")", ";"],
                 [name, "=", name, ";"],
                 Production(["yield", name, ";"],
                            reducer=CallMethod("yield_stmt", [1]),
                            condition=('Yield', True)),
-            ]),
+            ], None),
             'name': NtDef(['Yield'], [
                 ["IDENT"],
                 # Specifically ask for a method here, because otherwise we
@@ -797,7 +797,7 @@ class GenTestCase(unittest.TestCase):
                 Production(["yield"],
                            CallMethod("yield_as_name", []),
                            condition=('Yield', False)),
-            ]),
+            ], None),
         }, variable_terminals=["IDENT"])
         self.compile(lexer.LexicalGrammar("( ) { } ; * = function yield",
                                           IDENT=r'[A-Za-z]\w*'),

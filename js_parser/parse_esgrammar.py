@@ -2,7 +2,7 @@
 
 import os
 import re
-from jsparagus import parse_pgen, gen, grammar
+from jsparagus import parse_pgen, gen, grammar, types
 from jsparagus.lexer import LexicalGrammar
 from jsparagus.ordered import OrderedFrozenSet
 
@@ -34,9 +34,6 @@ ESGrammarLexer = LexicalGrammar(
 
     # the spec also gives a few productions names
     PRODID=r'#[A-Za-z]\w*',
-
-    # prose to the end of the line
-    PROSE=r'>.*',
 
     # prose wrapped in square brackets
     WPROSE=r'\[>[^]]*\]',
@@ -183,7 +180,7 @@ class ESGrammarBuilder:
             else:
                 production_list.append(p)
         name, args = lhs
-        return (name, eq, grammar.NtDef(args, production_list))
+        return (name, eq, grammar.NtDef(args, production_list, nt_type))
 
     def nt_def_one_of(self, nt_type, nt_lhs, eq, terminals):
         return self.nt_def(nt_type, nt_lhs, eq, [([t], None, None) for t in terminals])
@@ -195,12 +192,10 @@ class ESGrammarBuilder:
         return (name, params)
 
     def simple_type(self, name):
-        # Ignore for now.
-        return None
+        return types.Type(name)
 
     def parameterized_type(self, name, args):
-        # Ignore for now.
-        return None
+        return types.Type(name, args)
 
     def t_list_line(self, terminals):
         return terminals

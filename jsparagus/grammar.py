@@ -376,9 +376,11 @@ class Grammar:
                             .format(i + 1, nt, param))
                 params = nt_def.params[:]
                 rhs_list = nt_def.rhs_list
+                ty = nt_def.type
             else:
                 params = []
                 rhs_list = nt_def
+                ty = None
 
             if not isinstance(rhs_list, list):
                 raise TypeError(
@@ -389,7 +391,7 @@ class Grammar:
             sole_production = len(rhs_list) == 1
             rhs_list = [copy_rhs(nt, i, sole_production, rhs, params)
                         for i, rhs in enumerate(rhs_list)]
-            return NtDef(params, rhs_list)
+            return NtDef(params, rhs_list, ty)
 
         def check_nt_key(nt):
             if isinstance(nt, str):
@@ -506,7 +508,7 @@ class Grammar:
                 init_key = init_nt
             if init_key not in self.nonterminals:
                 self.nonterminals[init_key] = NtDef(
-                    [], [Production([goal], 'accept')])
+                    [], [Production([goal], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
     def intern(self, obj):
@@ -806,13 +808,16 @@ class ErrorSymbol:
 class NtDef:
     """Definition of a nonterminal.
 
-    Instances have two attributes:
+    Instances have three attributes:
 
     .params - List of strings, the names of the parameters.
 
     .rhs_list - List of Production objects. Arguments to Nt elements in the
     productions can be Var(s) where `s in params`, indicating that parameter
     should be passed through unchanged.
+
+    .type - The type of runtime value produced by parsing an instance of this
+    nonterminal, or None.
 
     An NtDef is a sort of lambda.
 
@@ -840,7 +845,7 @@ class NtDef:
         "StatementList": NtDef(["Return"], [
             Production(["ReturnStatement"], condition=("Return", True)),
             ["ExpressionStatement"],
-        ]),
+        ], None),
 
     This is an abbreviation for:
 
@@ -854,20 +859,22 @@ class NtDef:
 
     """
 
-    __slots__ = ['params', 'rhs_list']
+    __slots__ = ['params', 'rhs_list', 'type']
 
-    def __init__(self, params, rhs_list):
+    def __init__(self, params, rhs_list, type):
         self.params = params
         self.rhs_list = rhs_list
+        self.type = type
 
     def __eq__(self, other):
         return (isinstance(other, NtDef)
-                and (self.params, self.rhs_list) == (other.params, other.rhs_list))
+                and ((self.params, self.rhs_list, self.type)
+                     == (other.params, other.rhs_list, other.type)))
 
     __hash__ = None
 
     def __repr__(self):
-        return "NtDef({!r}, {!r})".format(self.params, self.rhs_list)
+        return "NtDef({!r}, {!r}, {!r})".format(self.params, self.rhs_list, self.type)
 
 
 Var = collections.namedtuple("Var", "name")

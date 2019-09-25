@@ -60,6 +60,10 @@ UnitType = Type('Unit')
 StringType = Type('String')
 TokenType = Type('Token')
 
+# The type of expressions that can't be fully evaluated, like Rust `panic!()`;
+# likewise, the return type of functions that don't return.
+NoReturnType = Type('!')
+
 
 class TypeVar:
     """A type variable, used only during type inference.
@@ -191,10 +195,9 @@ def infer_types(g):
     throws a JsparagusTypeError.
     """
 
-    # TODO - get type annotations from the grammar here :)
     nt_types = {
-        nt: TypeVar(nt, 2)
-        for nt in g.nonterminals
+        nt: nt_def.type or TypeVar(nt, 2)
+        for nt, nt_def in g.nonterminals.items()
         if not isinstance(nt, grammar.InitNt)
     }
 
