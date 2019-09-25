@@ -44,7 +44,10 @@ class Type(TypeBase):
         return hash((self.name, self.args))
 
     def __str__(self):
-        return '{}<{}>'.format(self.name, ', '.join(map(str, self.args)))
+        if self.args:
+            return '{}<{}>'.format(self.name, ', '.join(map(str, self.args)))
+        else:
+            return self.name
 
     def __repr__(self):
         if self.args:
