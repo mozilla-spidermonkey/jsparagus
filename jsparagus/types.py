@@ -94,9 +94,7 @@ class JsparagusTypeError(Exception):
 
     @classmethod
     def clash(cls, expected, actual):
-        return cls(
-            "expected type {}, got type {}"
-            .format(type_to_str(expected), type_to_str(actual)))
+        return cls("expected type {}, got type {}".format(expected, actual))
 
 
 def deref(t):
