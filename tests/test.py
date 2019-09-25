@@ -1021,19 +1021,18 @@ class GenTestCase(unittest.TestCase):
         # we infer that f() returns a goal.
         self.assertEqual(
             grammar.methods['f'].return_type,
-            jsparagus.types.NtType('goal'))
+            jsparagus.types.Type('goal'))
 
         # Since the return value of g() isn't used except as an argument, we
-        # just give it the type `g`. I guess NtType is a bit of a misnomer for
-        # this.
+        # just give it the type `g`.
         self.assertEqual(
             grammar.methods['g'].return_type,
-            jsparagus.types.NtType('g'))
+            jsparagus.types.Type('g'))
 
         # Since g() is passed to f(), we infer this:
         self.assertEqual(
             grammar.methods['f'].argument_types,
-            [jsparagus.types.NtType('g')])
+            [jsparagus.types.Type('g')])
 
     def testEpsilonFreeTransform(self):
         tokenize = lexer.LexicalGrammar('{ } X')

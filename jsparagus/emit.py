@@ -307,10 +307,10 @@ class RustParserWriter:
         names = OrderedSet()
 
         def visit_type(ty):
-            if isinstance(ty, types.NtType):
+            for arg in ty.args:
+                visit_type(arg)
+            if len(ty.args) == 0:
                 names.add(ty.name)
-            elif isinstance(ty, types.OptionType):
-                visit_type(ty.t)
 
         for ty in self.grammar.nt_types:
             visit_type(ty)
@@ -324,25 +324,27 @@ class RustParserWriter:
 
         Pass boxed=True if the type needs to be boxed.
         """
-        if ty is types.UnitType:
+        if ty == types.UnitType:
             return '()'
-        elif ty == 'str':
+        elif ty == types.StringType:
             return 'String'
-        elif ty == 'bool':
+        elif ty == types.BoolType:
             return 'bool'
-        elif isinstance(ty, types.NtType):
+        elif ty.name == 'Option' and len(ty.args) == 1:
+            [arg] = ty.args
+            return 'Option<{}>'.format(self.type_to_rust(arg, namespace, boxed))
+        else:
             if namespace == "":
                 rty = ty.name
             else:
                 rty = namespace + '::' + ty.name
+            if ty.args:
+                rty += '<{}>'.format(', '.join(self.type_to_rust(arg, namespace, boxed)
+                                               for arg in ty.args))
             if boxed:
                 return 'Box<{}>'.format(rty)
             else:
                 return rty
-        elif isinstance(ty, types.OptionType):
-            return 'Option<{}>'.format(self.type_to_rust(ty.t, namespace, boxed))
-        else:
-            raise TypeError("unexpected type: {!r}".format(ty))
 
     def handler_trait(self):
         # NOTE: unused, code kept if we need it later

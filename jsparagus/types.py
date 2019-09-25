@@ -1,22 +1,11 @@
 """Type inference for reduce expressions.
 
-A type is one of the following:
+The nonterminals and reduce expressions in a grammar can have types, to support
+generating parsers in typeful languages. Types are represented by `Type` objects.
 
-*   `UnitType`, which is kind of like `void` in Java or `None` in Python,
-    a type that doesn't carry any information.
-
-*   `'str'` or `'bool'` - That is, the Python strings, which stand for the
-    target language's string type and boolean type respectively. 'str' is the
-    type of variable terminals, and 'bool' is the type of optional
-    non-variable terminals.
-
-*   `NtType(name)` - A type. We generate at most one of these per
-    nonterminal in the language.
-
-*   `Option(t)`, an option type.
-
-*   `TypeVar()`, a type variable that might be bound to any type.
-    This is used only during inference.
+A `TypeVar` is a type variable that might be bound to any type.  This is used
+only during inference. So during inference, a type is either a `Type` or a
+`TypeVar`
 
 In addition, MethodType simply gathers together a return type and a list of
 argument types.
@@ -28,43 +17,45 @@ import collections
 from . import grammar
 
 
-class JsparagusTypeError(Exception):
-    def annotate(self, line):
-        message, *rest = self.args
-        message = line + "\n" + message
-        self.args = message, *rest
+TypeBase = collections.namedtuple('Type', 'name args')
 
+_all_types = {}
 
-def type_to_str(ty):
-    ty = deref(ty)
-    if ty is UnitType:
-        return "()"
-    elif isinstance(ty, str):
-        return ty
-    elif isinstance(ty, OptionType):
-        return "Option<{}>".format(type_to_str(ty.t))
-    elif isinstance(ty, TypeVar):
-        if ty.name is not None:
-            return ty.name
+class Type(TypeBase):
+    def __new__(cls, name, args=()):
+        # type checking
+        if type(name) is not str:
+            raise TypeError("Type() first argument must be a str, not {!r}".format(name))
+        args = tuple(args)
+        for arg in args:
+            if not isinstance(arg, (Type, TypeVar)):
+                raise TypeError("Type parameters must be types, not {!r}".format(arg))
+
+        # caching
+        key = name, args
+        if key not in _all_types:
+            _all_types[key] = super().__new__(cls, name, args)
+        return _all_types[key]
+
+    def __eq__(self, other):
+        return self.name == other.name and self.args == other.args
+
+    def __hash__(self):
+        return hash((self.name, self.args))
+
+    def __str__(self):
+        return '{}<{}>'.format(self.name, ', '.join(map(str, self.args)))
+
+    def __repr__(self):
+        if self.args:
+            return 'Type({!r}, {!r})'.format(self.name, self.args)
         else:
-            return repr(ty)
-    elif isinstance(ty, NtType):
-        return ty.name
-    else:
-        raise TypeError("not a type: {!r}".format(ty))
+            return 'Type({!r})'.format(self.name)
 
 
-UnitType = ()
-
-
-class OptionType:
-    __slots__ = ['t']
-
-    def __init__(self, t):
-        self.t = t
-
-
-NtType = collections.namedtuple("NtType", "name")
+UnitType = Type('Unit')
+StringType = Type('String')
+TokenType = Type('Token')
 
 
 class TypeVar:
@@ -91,8 +82,25 @@ class TypeVar:
         self.precedence = precedence
         self.value = None
 
+    def __str__(self):
+        return 'TypeVar({!r})'.format(self.name)
+
+
+class JsparagusTypeError(Exception):
+    def annotate(self, line):
+        message, *rest = self.args
+        message = line + "\n" + message
+        self.args = message, *rest
+
+    @classmethod
+    def clash(cls, expected, actual):
+        return cls(
+            "expected type {}, got type {}"
+            .format(type_to_str(expected), type_to_str(actual)))
+
 
 def deref(t):
+    assert isinstance(t, (Type, TypeVar))
     if isinstance(t, TypeVar):
         if t.value is not None:
             t.value = deref(t.value)
@@ -101,53 +109,59 @@ def deref(t):
 
 
 def final_deref(ty):
-    """Like deref(), but also replace any remaining unresolved type variables with
-    NtTypes.
+    """ Like deref(), but also replace any remaining unresolved type variables with
+    synthesized Types.
     """
     ty = deref(ty)
     if isinstance(ty, TypeVar):
         if ty.name is not None:
             # ty becomes an nt type.
-            ty.value = NtType(ty.name)
+            assert ty.name != 'Unit'
+            ty.value = Type(ty.name)
             return ty.value
         else:
             raise Exception("internal error: no way to assign a type to variable")
-    elif isinstance(ty, OptionType):
-        return OptionType(final_deref(ty.t))
     else:
+        assert isinstance(ty, Type)
+        if ty.args:
+            assert ty.name != 'Unit'
+            return Type(ty.name, tuple(final_deref(arg) for arg in ty.args))
         return ty
 
 
 def unify(actual, expected):
     actual = deref(actual)
     expected = deref(expected)
-    if actual == '!' or expected == '!':
+
+    assert isinstance(actual, (Type, TypeVar))
+    assert isinstance(expected, (Type, TypeVar))
+
+    if actual is expected:
         pass
-    elif actual is UnitType and expected is UnitType:
-        pass
-    elif isinstance(actual, OptionType) and isinstance(expected, OptionType):
-        unify(actual.t, expected.t)
-    elif isinstance(actual, str) and isinstance(expected, str):
-        if actual != expected:
-            raise JsparagusTypeError(
-                "expected type {}, got type {}"
-                .format(actual, expected))
+    elif isinstance(actual, Type) and isinstance(expected, Type):
+        if actual.name != expected.name or len(actual.args) != len(expected.args):
+            raise JsparagusTypeError.clash(expected, actual)
+
+        for i, (actual_arg, expected_arg) in enumerate(zip(actual.args, expected.args)):
+            try:
+                unify(actual_arg, expected_arg)
+            except JsparagusTypeError as exc:
+                # The error message has to do with the parameter, but we want
+                # to provide the complete problem types.
+                raise JsparagusTypeError.clash(expected, actual)
+
     elif isinstance(expected, TypeVar):
         assert expected.value is None
-        if actual is not expected:
-            if (isinstance(actual, TypeVar)
-                    and actual.precedence <= expected.precedence):
-                actual.value = expected
-            else:
-                expected.value = actual
-    elif isinstance(actual, TypeVar):
+        if (isinstance(actual, TypeVar)
+                and actual.precedence <= expected.precedence):
+            actual.value = expected
+        else:
+            expected.value = actual
+    else:
+        assert isinstance(actual, TypeVar)
         assert actual.value is None
         if actual is not expected:
             actual.value = expected
-    else:
-        raise JsparagusTypeError(
-            "expected type {}, got type {}"
-            .format(type_to_str(actual), type_to_str(expected)))
 
 
 class MethodType:
@@ -162,6 +176,9 @@ class MethodType:
             [final_deref(t) for t in self.argument_types],
             final_deref(self.return_type))
 
+    def __repr__(self):
+        return 'MethodType({!r}, {!r})'.format(self.argument_types, self.return_type)
+
 
 def infer_types(g):
     """Assign a type to each nonterminal and each method in a grammar.
@@ -173,6 +190,7 @@ def infer_types(g):
     throws a JsparagusTypeError.
     """
 
+    # TODO - get type annotations from the grammar here :)
     nt_types = {
         nt: TypeVar(nt, 2)
         for nt in g.nonterminals
@@ -186,12 +204,12 @@ def infer_types(g):
             if e in g.nonterminals:
                 return nt_types[e]
             elif e in g.variable_terminals:
-                return 'str'
+                return StringType
             else:
                 # constant terminal
                 return UnitType
         elif isinstance(e, grammar.Optional):
-            return OptionType(element_type(e.inner))
+            return Type('Option', [element_type(e.inner)])
         elif isinstance(e, grammar.Nt):
             return nt_types[e.name]
         else:
@@ -201,9 +219,9 @@ def infer_types(g):
         if isinstance(expr, int):
             return concrete_element_types[expr]
         elif expr is None:
-            return OptionType(TypeVar())
+            return Type('Option', [TypeVar()])
         elif isinstance(expr, grammar.Some):
-            return OptionType(expr_type(expr.inner))
+            return Type('Option', [expr_type(expr.inner)])
         elif isinstance(expr, grammar.CallMethod):
             arg_types = [expr_type(arg) for arg in expr.args]
             if expr.method in method_types:
