@@ -40,6 +40,7 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 
 check: $(PY_OUT)
 	./test.sh
+	cd rust && cargo test
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
