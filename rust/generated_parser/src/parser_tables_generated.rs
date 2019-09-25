@@ -9074,7 +9074,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BindingIdentifier)
         }
         168 => {
-            // ClassTail ::= "{" "}" => ClassTail(None, $0, None, $1)
+            // ClassTail ::= "{" "}" => class_tail(None, None)
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -9083,7 +9083,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ClassTail)
         }
         169 => {
-            // ClassTail ::= ClassHeritage "{" "}" => ClassTail(Some($0), $1, None, $2)
+            // ClassTail ::= ClassHeritage "{" "}" => class_tail(Some($0), None)
             stack.pop();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
@@ -9093,7 +9093,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ClassTail)
         }
         170 => {
-            // ClassTail ::= "{" ClassBody "}" => ClassTail(None, $0, Some($1), $2)
+            // ClassTail ::= "{" ClassBody "}" => class_tail(None, Some($1))
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9103,7 +9103,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ClassTail)
         }
         171 => {
-            // ClassTail ::= ClassHeritage "{" ClassBody "}" => ClassTail(Some($0), $1, Some($2), $3)
+            // ClassTail ::= ClassHeritage "{" ClassBody "}" => class_tail(Some($0), Some($2))
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
@@ -9765,7 +9765,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::YieldExpressionIn)
         }
         220 => {
-            // ArrowFunction[+In] ::= ArrowParameters "=>" ConciseBody[+In] => ArrowFunction($0, $1, $2)
+            // ArrowFunction[+In] ::= ArrowParameters "=>" ConciseBody[+In] => arrow_function($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
@@ -10983,7 +10983,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::YieldExpression)
         }
         369 => {
-            // ArrowFunction[~In] ::= ArrowParameters "=>" ConciseBody[~In] => ArrowFunction($0, $1, $2)
+            // ArrowFunction[~In] ::= ArrowParameters "=>" ConciseBody[~In] => arrow_function($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();

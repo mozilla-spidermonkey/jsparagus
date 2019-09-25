@@ -1328,6 +1328,7 @@ FunctionStatementList[Yield, Await] :
 
 ArrowFunction[In, Yield, Await] :
   ArrowParameters[?Yield, ?Await] `=>` ConciseBody[?In]
+    => arrow_function($0, $2)
 
 ArrowParameters[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
@@ -1423,6 +1424,7 @@ ClassExpression[Yield, Await] :
 
 ClassTail[Yield, Await] :
   ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
+    => class_tail($0, $2)
 
 ClassHeritage[Yield, Await] :
   `extends` LeftHandSideExpression[?Yield, ?Await]
