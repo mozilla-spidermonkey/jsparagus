@@ -1,4 +1,4 @@
-"""Emit code pelled the saor parser tables in either Python or Rust. """
+"""Emit code and parser tables in either Python or Rust. """
 
 import re
 import unicodedata
