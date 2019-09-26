@@ -230,7 +230,7 @@ def expand_function_nonterminals(grammar):
     def expand(nt):
         """Expand grammar.nonterminals[nt](**args).
 
-        Returns the expanded rhs list, which contains no conditional
+        Returns the expanded NtDef, which contains no conditional
         productions or Nt objects.
         """
 
@@ -532,9 +532,9 @@ def expand_all_optional_elements(grammar):
     prods = []
     prods_with_indexes_by_nt = collections.defaultdict(list)
 
-    for nt in grammar.nonterminals:
-        expanded_grammar[nt] = []
-        for prod_index, p in enumerate(grammar.nonterminals[nt].rhs_list):
+    for nt, nt_def in grammar.nonterminals.items():
+        prods_expanded = []
+        for prod_index, p in enumerate(nt_def.rhs_list):
             # Aggravatingly, a reduce-expression that's an int is not
             # simply an offset into p.body. It only counts "concrete"
             # elements. Make a mapping for converting reduce-expressions to
@@ -576,13 +576,14 @@ def expand_all_optional_elements(grammar):
                             .format(expr))
 
                 adjusted_reducer = adjust_reduce_expr(p.reducer)
-                expanded_grammar[nt].append(
+                prods_expanded.append(
                     Production(body=expanded_rhs,
                                reducer=adjusted_reducer))
                 prods.append(Prod(nt, prod_index, expanded_rhs,
                                   adjusted_reducer))
                 prods_with_indexes_by_nt[nt].append(
                     (len(prods) - 1, expanded_rhs))
+        expanded_grammar[nt] = nt_def.with_rhs_list(prods_expanded)
 
     return (grammar.with_nonterminals(expanded_grammar),
             prods,
