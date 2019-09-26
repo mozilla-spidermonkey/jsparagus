@@ -823,8 +823,8 @@ impl<'alloc> AstBuilder<'alloc> {
     // CoverInitializedName : IdentifierReference Initializer
     pub fn cover_initialized_name(
         &self,
-        _a0: arena::Box<'alloc, Void>,
-        _a1: arena::Box<'alloc, Void>,
+        _a0: arena::Box<'alloc, Identifier<'alloc>>,
+        _a1: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Void> {
         // Awkward. This needs to be stored somehow until we reach an enclosing
         // context where it can be reinterpreted as a default value in an
@@ -846,51 +846,46 @@ impl<'alloc> AstBuilder<'alloc> {
             )),
         })
     }
-}
 
-#[allow(unused_variables)]
-impl<'alloc> AstBuilder<'alloc> {
-    // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
+    // SubstitutionTemplate : TemplateHead Expression TemplateSpans
     pub fn substitution_template(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-        a2: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
+        _head: arena::Box<'alloc, Token<'alloc>>,
+        _expression: arena::Box<'alloc, Expression<'alloc>>,
+        _spans: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
         unimplemented!();
     }
-    // TemplateSpans ::= "TemplateTail" => TemplateSpans 0($0)
-    pub fn template_spans_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // TemplateSpans ::= TemplateMiddleList "TemplateTail" => TemplateSpans 1($0, $1)
-    pub fn template_spans_p1(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // TemplateMiddleList ::= "TemplateMiddle" Expression => TemplateMiddleList 0($0, $1)
-    pub fn template_middle_list_p0(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // TemplateMiddleList ::= TemplateMiddleList "TemplateMiddle" Expression => TemplateMiddleList 1($0, $1, $2)
-    pub fn template_middle_list_p1(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-        a2: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-}
 
-impl<'alloc> AstBuilder<'alloc> {
+    // TemplateSpans : TemplateTail
+    // TemplateSpans : TemplateMiddleList TemplateTail
+    pub fn template_spans(
+        &self,
+        _middle_list: Option<arena::Box<'alloc, Void>>,
+        _tail: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // TemplateMiddleList : TemplateMiddle Expression
+    pub fn template_middle_list_single(
+        &self,
+        _middle: arena::Box<'alloc, Token<'alloc>>,
+        _expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // TemplateMiddleList : TemplateMiddleList TemplateMiddle Expression
+    pub fn template_middle_list_append(
+        &self,
+        _middle_list: arena::Box<'alloc, Void>,
+        _middle: arena::Box<'alloc, Token<'alloc>>,
+        _expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
     // MemberExpression : MemberExpression `[` Expression `]`
     // CallExpression : CallExpression `[` Expression `]`
     pub fn computed_member_expr(
@@ -2751,200 +2746,195 @@ impl<'alloc> AstBuilder<'alloc> {
             statements: statements.unbox(),
         })
     }
-}
 
-#[allow(unused_variables)]
-impl<'alloc> AstBuilder<'alloc> {
-    // Module ::= ModuleBody => Module(Some($0))
-    pub fn module(&self, a0: Option<arena::Box<'alloc, Void>>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ModuleBody ::= ModuleItemList => ModuleBody($0)
-    pub fn module_body(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ModuleItemList ::= ModuleItem => ModuleItemList 0($0)
-    pub fn module_item_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ModuleItemList ::= ModuleItemList ModuleItem => ModuleItemList 1($0, $1)
-    pub fn module_item_list_p1(
+    // Module : ModuleBody?
+    pub fn module(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
+        body: Option<arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+        body.unwrap_or_else(|| self.alloc(self.new_vec()))
     }
 
-    // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
-    pub fn import_declaration_p0(
+    // ModuleItemList : ModuleItem
+    pub fn module_item_list_single(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
+        item: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+        self.alloc(self.new_vec_single(item.unbox()))
     }
-    // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
-    pub fn import_declaration_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportClause ::= ImportedDefaultBinding => ImportClause 0($0)
-    pub fn import_clause_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportClause ::= NameSpaceImport => ImportClause 1($0)
-    pub fn import_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportClause ::= NamedImports => ImportClause 2($0)
-    pub fn import_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => ImportClause 3($0, $1, $2)
-    pub fn import_clause_p3(
+
+    // ModuleItemList : ModuleItemList ModuleItem
+    pub fn module_item_list_append(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>,
+        item: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>> {
+        self.push(&mut list, item.unbox());
+        list
     }
-    // ImportClause ::= ImportedDefaultBinding "," NamedImports => ImportClause 4($0, $1, $2)
-    pub fn import_clause_p4(
+
+    // ImportDeclaration : `import` ImportClause FromClause `;`
+    // ImportDeclaration : `import` ModuleSpecifier `;`
+    pub fn import_declaration(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
+        _import_clause: Option<arena::Box<'alloc, Void>>,
+        _module_specifier: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportedDefaultBinding ::= ImportedBinding => ImportedDefaultBinding($0)
-    pub fn imported_default_binding(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // NameSpaceImport ::= "*" "as" ImportedBinding => NameSpaceImport($0, $1, $2)
-    pub fn name_space_import(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // NamedImports ::= "{" "}" => NamedImports 0($0, $1)
-    pub fn named_imports_p0(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // NamedImports ::= "{" ImportsList "}" => NamedImports 1($0, $1, $2)
-    pub fn named_imports_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // NamedImports ::= "{" ImportsList "," "}" => NamedImports 2($0, $1, $2, $3)
-    pub fn named_imports_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // FromClause ::= "from" ModuleSpecifier => FromClause($0, $1)
-    pub fn from_clause(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportsList ::= ImportSpecifier => ImportsList 0($0)
-    pub fn imports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportsList ::= ImportsList "," ImportSpecifier => ImportsList 1($0, $1, $2)
-    pub fn imports_list_p1(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportSpecifier ::= ImportedBinding => ImportSpecifier 0($0)
-    pub fn import_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportSpecifier ::= IdentifierName "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
-    pub fn import_specifier_p1(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ModuleSpecifier ::= StringLiteral => ModuleSpecifier($0)
-    pub fn module_specifier(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
-    pub fn imported_binding(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
         unimplemented!();
     }
 
-    // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
-    pub fn export_declaration_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
-    pub fn export_declaration_p1(
+    // ImportClause : ImportedDefaultBinding
+    // ImportClause : NameSpaceImport
+    // ImportClause : NamedImports
+    // ImportClause : ImportedDefaultBinding `,` NameSpaceImport
+    // ImportClause : ImportedDefaultBinding `,` NamedImports
+    pub fn import_clause(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
+        _default_binding: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+        _name_space_import: Option<arena::Box<'alloc, Void>>,
+        _named_imports: Option<arena::Box<'alloc, Void>>,
     ) -> arena::Box<'alloc, Void> {
         unimplemented!();
     }
-    // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
-    pub fn export_declaration_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" VariableStatement => ExportDeclaration 3($0, $1)
-    pub fn export_declaration_p3(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" Declaration => ExportDeclaration 4($0, $1)
-    pub fn export_declaration_p4(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" "default" HoistableDeclaration => ExportDeclaration 5($0, $1, $2)
-    pub fn export_declaration_p5(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" "default" ClassDeclaration => ExportDeclaration 6($0, $1, $2)
-    pub fn export_declaration_p6(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
-    pub fn export_declaration_p7(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportClause ::= "{" "}" => ExportClause 0($0, $1)
-    pub fn export_clause_p0(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportClause ::= "{" ExportsList "}" => ExportClause 1($0, $1, $2)
-    pub fn export_clause_p1(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportClause ::= "{" ExportsList "," "}" => ExportClause 2($0, $1, $2, $3)
-    pub fn export_clause_p2(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportsList ::= ExportSpecifier => ExportsList 0($0)
-    pub fn exports_list_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!();
-    }
-    // ExportsList ::= ExportsList "," ExportSpecifier => ExportsList 1($0, $1, $2)
-    pub fn exports_list_p1(
+
+    // NameSpaceImport : `*` `as` ImportedBinding
+    pub fn name_space_import(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
+        _name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
     ) -> arena::Box<'alloc, Void> {
         unimplemented!();
     }
-    // ExportSpecifier ::= IdentifierName => ExportSpecifier 0($0)
-    pub fn export_specifier_p0(&self, a0: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+
+    // NamedImports : `{` `}`
+    pub fn imports_list_empty(&self) -> arena::Box<'alloc, Void> {
         unimplemented!();
     }
-    // ExportSpecifier ::= IdentifierName "as" IdentifierName => ExportSpecifier 1($0, $1, $2)
-    pub fn export_specifier_p1(
+
+    // ImportsList : ImportSpecifier
+    // ImportsList : ImportsList `,` ImportSpecifier
+    pub fn imports_list_append(
         &self,
-        a0: arena::Box<'alloc, Void>,
-        a1: arena::Box<'alloc, Void>,
+        _list: arena::Box<'alloc, Void>,
+        _item: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ImportSpecifier : ImportedBinding
+    pub fn import_specifier(
+        &self,
+        _name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ImportSpecifier : IdentifierName `as` ImportedBinding
+    pub fn import_specifier_renaming(
+        &self,
+        _original_name: arena::Box<'alloc, Token<'alloc>>,
+        _local_name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ModuleSpecifier : StringLiteral
+    pub fn module_specifier(
+        &self,
+        _token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Token<'alloc>> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` `*` FromClause `;`
+    pub fn export_all_from(
+        &self,
+        _module_specifier: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` ExportClause FromClause `;`
+    pub fn export_set_from(
+        &self,
+        _export_clause: arena::Box<'alloc, Void>,
+        _module_specifier: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` ExportClause `;`
+    pub fn export_set(&self, _export_clause: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` VariableStatement
+    pub fn export_vars(
+        &self,
+        _statement: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` Declaration
+    pub fn export_declaration(
+        &self,
+        _declaration: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` `default` HoistableDeclaration
+    pub fn export_default_hoistable(
+        &self,
+        _declaration: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` `default` ClassDeclaration
+    pub fn export_default_class(
+        &self,
+        _class_declaration: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportDeclaration : `export` `default` [lookahead <! {`function`, `async`, `class`}] AssignmentExpression `;`
+    pub fn export_default_value(
+        &self,
+        _expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportClause : `{` `}`
+    pub fn exports_list_empty(&self) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportsList : ExportSpecifier
+    // ExportsList : ExportsList `,` ExportSpecifier
+    pub fn exports_list_append(
+        &self,
+        _list: arena::Box<'alloc, Void>,
+        _export_specifier: arena::Box<'alloc, Void>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportSpecifier : IdentifierName
+    pub fn export_specifier(
+        &self,
+        _identifier: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Void> {
+        unimplemented!();
+    }
+
+    // ExportSpecifier : IdentifierName `as` IdentifierName
+    pub fn export_specifier_renaming(
+        &self,
+        _local_name: arena::Box<'alloc, Token<'alloc>>,
+        _exported_name: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Void> {
         unimplemented!();
     }

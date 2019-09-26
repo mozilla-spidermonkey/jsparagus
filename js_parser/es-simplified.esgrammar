@@ -600,14 +600,19 @@ TemplateLiteral[Yield, Await, Tagged] :
 
 SubstitutionTemplate[Yield, Await, Tagged] :
   TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await, ?Tagged]
+    => substitution_template($0, $1, $2)
 
 TemplateSpans[Yield, Await, Tagged] :
   TemplateTail
+    => template_spans(None, $0)
   TemplateMiddleList[?Yield, ?Await, ?Tagged] TemplateTail
+    => template_spans(Some($0), $1)
 
 TemplateMiddleList[Yield, Await, Tagged] :
   TemplateMiddle Expression[+In, ?Yield, ?Await]
+    => template_middle_list_single($0, $1)
   TemplateMiddleList[?Yield, ?Await, ?Tagged] TemplateMiddle Expression[+In, ?Yield, ?Await]
+    => template_middle_list_append($0, $1, $2)
 
 
 MemberExpression[Yield, Await] :
@@ -1511,82 +1516,123 @@ ScriptBody :
 
 Module :
   ModuleBody?
+    => module($0)
 
 ModuleBody :
   ModuleItemList
+    => $0
 
 ModuleItemList :
   ModuleItem
+    => module_item_list_single($0)
   ModuleItemList ModuleItem
+    => module_item_list_append($0, $1)
 
 ModuleItem :
   ImportDeclaration
+    => $0
   ExportDeclaration
+    => $0
   StatementListItem[~Yield, ~Await, ~Return]
+    => $0
 
 
 ImportDeclaration :
   `import` ImportClause FromClause `;`
+    => import_declaration(Some($1), $2)
   `import` ModuleSpecifier `;`
+    => import_declaration(None, $1)
 
 ImportClause :
   ImportedDefaultBinding
+    => import_clause(Some($0), None, None)
   NameSpaceImport
+    => import_clause(None, Some($0), None)
   NamedImports
+    => import_clause(None, None, Some($0))
   ImportedDefaultBinding `,` NameSpaceImport
+    => import_clause(Some($0), Some($2), None)
   ImportedDefaultBinding `,` NamedImports
+    => import_clause(Some($0), None, Some($2))
 
 ImportedDefaultBinding :
   ImportedBinding
+    => $0
 
 NameSpaceImport :
   `*` `as` ImportedBinding
+    => name_space_import($2)
 
 NamedImports :
   `{` `}`
+    => imports_list_empty()
   `{` ImportsList `}`
+    => $1
   `{` ImportsList `,` `}`
+    => $1
 
 FromClause :
   `from` ModuleSpecifier
+    => $1
 
 ImportsList :
   ImportSpecifier
+    => imports_list_append(imports_list_empty(), $0)
   ImportsList `,` ImportSpecifier
+    => imports_list_append($0, $2)
 
 ImportSpecifier :
   ImportedBinding
+    => import_specifier($0)
   IdentifierName `as` ImportedBinding
+    => import_specifier_renaming($0, $2)
 
 ModuleSpecifier :
   StringLiteral
+    => module_specifier($0)
 
 ImportedBinding :
   BindingIdentifier[~Yield, ~Await]
+    => $0
 
 
 ExportDeclaration :
   `export` `*` FromClause `;`
+    => export_all_from($2)
   `export` ExportClause FromClause `;`
+    => export_set_from($1, $2)
   `export` ExportClause `;`
+    => export_set($1)
   `export` VariableStatement[~Yield, ~Await]
+    => export_vars($1)
   `export` Declaration[~Yield, ~Await]
+    => export_declaration($1)
   `export` `default` HoistableDeclaration[~Yield, ~Await, +Default]
+    => export_default_hoistable($2)
   `export` `default` ClassDeclaration[~Yield, ~Await, +Default]
+    => export_default_class($2)
   `export` `default` [lookahead <! {`function`, `async`, `class`}] AssignmentExpression[+In, ~Yield, ~Await] `;`
+    => export_default_value($2)
 
 ExportClause :
   `{` `}`
+    => exports_list_empty()
   `{` ExportsList `}`
+    => $1
   `{` ExportsList `,` `}`
+    => $1
 
 ExportsList :
   ExportSpecifier
+    => exports_list_append(exports_list_empty(), $0)
   ExportsList `,` ExportSpecifier
+    => exports_list_append($0, $2)
 
 ExportSpecifier :
   IdentifierName
+    => export_specifier($0)
   IdentifierName `as` IdentifierName
+    => export_specifier_renaming($0, $2)
 
 uri :::
   uriCharacters?

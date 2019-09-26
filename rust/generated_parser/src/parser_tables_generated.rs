@@ -7441,12 +7441,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::Script)
         }
         2 => {
-            // Module ::= [empty] => Module(None)
+            // Module ::= [empty] => module(None)
             stack.push(TryIntoStack::try_into_stack(handler.module(None))?);
             Ok(NonterminalId::Module)
         }
         3 => {
-            // Module ::= ModuleBody => Module(Some($0))
+            // Module ::= ModuleBody => module(Some($0))
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.module(Some(x0)))?);
             Ok(NonterminalId::Module)
@@ -7458,9 +7458,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ScriptBody)
         }
         5 => {
-            // ModuleBody ::= ModuleItemList => ModuleBody($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.module_body(x0))?);
+            // ModuleBody ::= ModuleItemList => $0
             Ok(NonterminalId::ModuleBody)
         }
         6 => {
@@ -7481,19 +7479,19 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::StatementList)
         }
         8 => {
-            // ModuleItemList ::= ModuleItem => ModuleItemList 0($0)
+            // ModuleItemList ::= ModuleItem => module_item_list_single($0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.module_item_list_p0(x0),
+                handler.module_item_list_single(x0),
             )?);
             Ok(NonterminalId::ModuleItemList)
         }
         9 => {
-            // ModuleItemList ::= ModuleItemList ModuleItem => ModuleItemList 1($0, $1)
+            // ModuleItemList ::= ModuleItemList ModuleItem => module_item_list_append($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.module_item_list_p1(x0, x1),
+                handler.module_item_list_append(x0, x1),
             )?);
             Ok(NonterminalId::ModuleItemList)
         }
@@ -7586,162 +7584,152 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::Declaration)
         }
         32 => {
-            // ImportDeclaration ::= "import" ImportClause FromClause ";" => ImportDeclaration 0($0, $1, $2)
+            // ImportDeclaration ::= "import" ImportClause FromClause ";" => import_declaration(Some($1), $2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration_p0(x1, x2),
+                handler.import_declaration(Some(x1), x2),
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
         33 => {
-            // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => ImportDeclaration 0($0, $1, $2)
+            // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => import_declaration(Some($1), $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration_p0(x1, x2),
+                handler.import_declaration(Some(x1), x2),
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
         34 => {
-            // ImportDeclaration ::= "import" ModuleSpecifier ";" => ImportDeclaration 1($0, $1)
+            // ImportDeclaration ::= "import" ModuleSpecifier ";" => import_declaration(None, $1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration_p1(x1),
+                handler.import_declaration(None, x1),
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
         35 => {
-            // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => ImportDeclaration 1($0, $1)
+            // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => import_declaration(None, $1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration_p1(x1),
+                handler.import_declaration(None, x1),
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
         36 => {
-            // ExportDeclaration ::= "export" "*" FromClause ";" => ExportDeclaration 0($0, $1, $2)
+            // ExportDeclaration ::= "export" "*" FromClause ";" => export_all_from($2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p0(x2),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         37 => {
-            // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => ExportDeclaration 0($0, $1, $2)
+            // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => export_all_from($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p0(x2),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         38 => {
-            // ExportDeclaration ::= "export" ExportClause FromClause ";" => ExportDeclaration 1($0, $1, $2)
+            // ExportDeclaration ::= "export" ExportClause FromClause ";" => export_set_from($1, $2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p1(x1, x2),
+                handler.export_set_from(x1, x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         39 => {
-            // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => ExportDeclaration 1($0, $1, $2)
+            // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => export_set_from($1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p1(x1, x2),
+                handler.export_set_from(x1, x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         40 => {
-            // ExportDeclaration ::= "export" ExportClause ";" => ExportDeclaration 2($0, $1)
+            // ExportDeclaration ::= "export" ExportClause ";" => export_set($1)
             stack.pop();
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p2(x1),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         41 => {
-            // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => ExportDeclaration 2($0, $1)
+            // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => export_set($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p2(x1),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         42 => {
-            // ExportDeclaration ::= "export" VariableStatement => ExportDeclaration 3($0, $1)
+            // ExportDeclaration ::= "export" VariableStatement => export_vars($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p3(x1),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_vars(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         43 => {
-            // ExportDeclaration ::= "export" Declaration => ExportDeclaration 4($0, $1)
+            // ExportDeclaration ::= "export" Declaration => export_declaration($1)
             let x1 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p4(x1),
+                handler.export_declaration(x1),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         44 => {
-            // ExportDeclaration ::= "export" "default" HoistableDeclaration[+Default] => ExportDeclaration 5($0, $1, $2)
+            // ExportDeclaration ::= "export" "default" HoistableDeclaration[+Default] => export_default_hoistable($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p5(x2),
+                handler.export_default_hoistable(x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         45 => {
-            // ExportDeclaration ::= "export" "default" ClassDeclaration[+Default] => ExportDeclaration 6($0, $1, $2)
+            // ExportDeclaration ::= "export" "default" ClassDeclaration[+Default] => export_default_class($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p6(x2),
+                handler.export_default_class(x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         46 => {
-            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ";" => ExportDeclaration 7($0, $1, $2)
+            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ";" => export_default_value($2)
             stack.pop();
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p7(x2),
+                handler.export_default_value(x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
         47 => {
-            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ErrorSymbol(asi) => ExportDeclaration 7($0, $1, $2)
+            // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ErrorSymbol(asi) => export_default_value($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration_p7(x2),
+                handler.export_default_value(x2),
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -8066,78 +8054,94 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LexicalDeclarationIn)
         }
         86 => {
-            // ImportClause ::= ImportedDefaultBinding => ImportClause 0($0)
+            // ImportClause ::= ImportedDefaultBinding => import_clause(Some($0), None, None)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.import_clause_p0(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_clause(
+                Some(x0),
+                None,
+                None,
+            ))?);
             Ok(NonterminalId::ImportClause)
         }
         87 => {
-            // ImportClause ::= NameSpaceImport => ImportClause 1($0)
+            // ImportClause ::= NameSpaceImport => import_clause(None, Some($0), None)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.import_clause_p1(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_clause(
+                None,
+                Some(x0),
+                None,
+            ))?);
             Ok(NonterminalId::ImportClause)
         }
         88 => {
-            // ImportClause ::= NamedImports => ImportClause 2($0)
+            // ImportClause ::= NamedImports => import_clause(None, None, Some($0))
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.import_clause_p2(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_clause(
+                None,
+                None,
+                Some(x0),
+            ))?);
             Ok(NonterminalId::ImportClause)
         }
         89 => {
-            // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => ImportClause 3($0, $1, $2)
+            // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => import_clause(Some($0), Some($2), None)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.import_clause_p3(x0, x2),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_clause(
+                Some(x0),
+                Some(x2),
+                None,
+            ))?);
             Ok(NonterminalId::ImportClause)
         }
         90 => {
-            // ImportClause ::= ImportedDefaultBinding "," NamedImports => ImportClause 4($0, $1, $2)
+            // ImportClause ::= ImportedDefaultBinding "," NamedImports => import_clause(Some($0), None, Some($2))
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.import_clause_p4(x0, x2),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_clause(
+                Some(x0),
+                None,
+                Some(x2),
+            ))?);
             Ok(NonterminalId::ImportClause)
         }
         91 => {
-            // FromClause ::= "from" ModuleSpecifier => FromClause($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            // FromClause ::= "from" ModuleSpecifier => $1
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.from_clause(x1))?);
+            stack.push(x1);
             Ok(NonterminalId::FromClause)
         }
         92 => {
-            // ModuleSpecifier ::= StringLiteral => ModuleSpecifier($0)
+            // ModuleSpecifier ::= StringLiteral => module_specifier($0)
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.module_specifier(x0))?);
             Ok(NonterminalId::ModuleSpecifier)
         }
         93 => {
-            // ExportClause ::= "{" "}" => ExportClause 0($0, $1)
+            // ExportClause ::= "{" "}" => exports_list_empty()
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_clause_p0())?);
+            stack.push(TryIntoStack::try_into_stack(handler.exports_list_empty())?);
             Ok(NonterminalId::ExportClause)
         }
         94 => {
-            // ExportClause ::= "{" ExportsList "}" => ExportClause 1($0, $1, $2)
+            // ExportClause ::= "{" ExportsList "}" => $1
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_clause_p1(x1))?);
+            stack.push(x1);
             Ok(NonterminalId::ExportClause)
         }
         95 => {
-            // ExportClause ::= "{" ExportsList "," "}" => ExportClause 2($0, $1, $2, $3)
+            // ExportClause ::= "{" ExportsList "," "}" => $1
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_clause_p2(x1))?);
+            stack.push(x1);
             Ok(NonterminalId::ExportClause)
         }
         96 => {
@@ -9144,15 +9148,11 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BindingListIn)
         }
         176 => {
-            // ImportedDefaultBinding ::= ImportedBinding => ImportedDefaultBinding($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.imported_default_binding(x0),
-            )?);
+            // ImportedDefaultBinding ::= ImportedBinding => $0
             Ok(NonterminalId::ImportedDefaultBinding)
         }
         177 => {
-            // NameSpaceImport ::= "*" "as" ImportedBinding => NameSpaceImport($0, $1, $2)
+            // NameSpaceImport ::= "*" "as" ImportedBinding => name_space_import($2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
@@ -9160,42 +9160,44 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::NameSpaceImport)
         }
         178 => {
-            // NamedImports ::= "{" "}" => NamedImports 0($0, $1)
+            // NamedImports ::= "{" "}" => imports_list_empty()
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.named_imports_p0())?);
+            stack.push(TryIntoStack::try_into_stack(handler.imports_list_empty())?);
             Ok(NonterminalId::NamedImports)
         }
         179 => {
-            // NamedImports ::= "{" ImportsList "}" => NamedImports 1($0, $1, $2)
+            // NamedImports ::= "{" ImportsList "}" => $1
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.named_imports_p1(x1))?);
+            stack.push(x1);
             Ok(NonterminalId::NamedImports)
         }
         180 => {
-            // NamedImports ::= "{" ImportsList "," "}" => NamedImports 2($0, $1, $2, $3)
+            // NamedImports ::= "{" ImportsList "," "}" => $1
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1 = stack.pop().unwrap();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.named_imports_p2(x1))?);
+            stack.push(x1);
             Ok(NonterminalId::NamedImports)
         }
         181 => {
-            // ExportsList ::= ExportSpecifier => ExportsList 0($0)
+            // ExportsList ::= ExportSpecifier => exports_list_append(exports_list_empty(), $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.exports_list_p0(x0))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.exports_list_append(handler.exports_list_empty(), x0),
+            )?);
             Ok(NonterminalId::ExportsList)
         }
         182 => {
-            // ExportsList ::= ExportsList "," ExportSpecifier => ExportsList 1($0, $1, $2)
+            // ExportsList ::= ExportsList "," ExportSpecifier => exports_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.exports_list_p1(x0, x2),
+                handler.exports_list_append(x0, x2),
             )?);
             Ok(NonterminalId::ExportsList)
         }
@@ -10185,42 +10187,40 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LexicalBindingIn)
         }
         274 => {
-            // ImportedBinding ::= BindingIdentifier => ImportedBinding($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.imported_binding(x0))?);
+            // ImportedBinding ::= BindingIdentifier => $0
             Ok(NonterminalId::ImportedBinding)
         }
         275 => {
-            // ImportsList ::= ImportSpecifier => ImportsList 0($0)
+            // ImportsList ::= ImportSpecifier => imports_list_append(imports_list_empty(), $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.imports_list_p0(x0))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.imports_list_append(handler.imports_list_empty(), x0),
+            )?);
             Ok(NonterminalId::ImportsList)
         }
         276 => {
-            // ImportsList ::= ImportsList "," ImportSpecifier => ImportsList 1($0, $1, $2)
+            // ImportsList ::= ImportsList "," ImportSpecifier => imports_list_append($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.imports_list_p1(x0, x2),
+                handler.imports_list_append(x0, x2),
             )?);
             Ok(NonterminalId::ImportsList)
         }
         277 => {
-            // ExportSpecifier ::= IdentifierName => ExportSpecifier 0($0)
+            // ExportSpecifier ::= IdentifierName => export_specifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.export_specifier_p0(x0),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_specifier(x0))?);
             Ok(NonterminalId::ExportSpecifier)
         }
         278 => {
-            // ExportSpecifier ::= IdentifierName "as" IdentifierName => ExportSpecifier 1($0, $1, $2)
+            // ExportSpecifier ::= IdentifierName "as" IdentifierName => export_specifier_renaming($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_specifier_p1(x0, x2),
+                handler.export_specifier_renaming(x0, x2),
             )?);
             Ok(NonterminalId::ExportSpecifier)
         }
@@ -10565,20 +10565,18 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ClassElementList)
         }
         325 => {
-            // ImportSpecifier ::= ImportedBinding => ImportSpecifier 0($0)
+            // ImportSpecifier ::= ImportedBinding => import_specifier($0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.import_specifier_p0(x0),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_specifier(x0))?);
             Ok(NonterminalId::ImportSpecifier)
         }
         326 => {
-            // ImportSpecifier ::= IdentifierName "as" ImportedBinding => ImportSpecifier 1($0, $1, $2)
+            // ImportSpecifier ::= IdentifierName "as" ImportedBinding => import_specifier_renaming($0, $2)
             let x2 = stack.pop().unwrap().to_ast();
             stack.pop();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_specifier_p1(x0, x2),
+                handler.import_specifier_renaming(x0, x2),
             )?);
             Ok(NonterminalId::ImportSpecifier)
         }
@@ -11250,7 +11248,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ArgumentList)
         }
         406 => {
-            // SubstitutionTemplate ::= TemplateHead Expression[+In] TemplateSpans => SubstitutionTemplate($0, $1, $2)
+            // SubstitutionTemplate ::= TemplateHead Expression[+In] TemplateSpans => substitution_template($0, $1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
@@ -12207,17 +12205,19 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::NewTarget)
         }
         486 => {
-            // TemplateSpans ::= TemplateTail => TemplateSpans 0($0)
+            // TemplateSpans ::= TemplateTail => template_spans(None, $0)
             let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.template_spans_p0(x0))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.template_spans(None, x0),
+            )?);
             Ok(NonterminalId::TemplateSpans)
         }
         487 => {
-            // TemplateSpans ::= TemplateMiddleList TemplateTail => TemplateSpans 1($0, $1)
+            // TemplateSpans ::= TemplateMiddleList TemplateTail => template_spans(Some($0), $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_spans_p1(x0, x1),
+                handler.template_spans(Some(x0), x1),
             )?);
             Ok(NonterminalId::TemplateSpans)
         }
@@ -12625,21 +12625,21 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::PropertyDefinitionList)
         }
         525 => {
-            // TemplateMiddleList ::= TemplateMiddle Expression[+In] => TemplateMiddleList 0($0, $1)
+            // TemplateMiddleList ::= TemplateMiddle Expression[+In] => template_middle_list_single($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_middle_list_p0(x0, x1),
+                handler.template_middle_list_single(x0, x1),
             )?);
             Ok(NonterminalId::TemplateMiddleList)
         }
         526 => {
-            // TemplateMiddleList ::= TemplateMiddleList TemplateMiddle Expression[+In] => TemplateMiddleList 1($0, $1, $2)
+            // TemplateMiddleList ::= TemplateMiddleList TemplateMiddle Expression[+In] => template_middle_list_append($0, $1, $2)
             let x2 = stack.pop().unwrap().to_ast();
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_middle_list_p1(x0, x1, x2),
+                handler.template_middle_list_append(x0, x1, x2),
             )?);
             Ok(NonterminalId::TemplateMiddleList)
         }
