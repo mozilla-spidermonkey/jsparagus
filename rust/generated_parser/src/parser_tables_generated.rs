@@ -10784,11 +10784,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::TemplateLiteral)
         }
         349 => {
-            // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
-            let x0 = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.template_literal_p1(x0),
-            )?);
+            // TemplateLiteral ::= SubstitutionTemplate => $0
             Ok(NonterminalId::TemplateLiteral)
         }
         350 => {
@@ -12892,7 +12888,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::RelationalExpressionIn)
         }
         553 => {
-            // CoverInitializedName ::= IdentifierReference Initializer[+In] => CoverInitializedName($0, $1)
+            // CoverInitializedName ::= IdentifierReference Initializer[+In] => cover_initialized_name($0, $1)
             let x1 = stack.pop().unwrap().to_ast();
             let x0 = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(

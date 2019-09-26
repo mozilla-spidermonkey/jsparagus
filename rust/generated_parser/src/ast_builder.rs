@@ -850,13 +850,6 @@ impl<'alloc> AstBuilder<'alloc> {
 
 #[allow(unused_variables)]
 impl<'alloc> AstBuilder<'alloc> {
-    // TemplateLiteral ::= SubstitutionTemplate => TemplateLiteral 1($0)
-    pub fn template_literal_p1(
-        &self,
-        a0: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
-        unimplemented!();
-    }
     // SubstitutionTemplate ::= "TemplateHead" Expression TemplateSpans => SubstitutionTemplate($0, $1, $2)
     pub fn substitution_template(
         &self,

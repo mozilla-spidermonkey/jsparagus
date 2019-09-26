@@ -585,6 +585,7 @@ ComputedPropertyName[Yield, Await] :
 
 CoverInitializedName[Yield, Await] :
   IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
+    => cover_initialized_name($0, $1)
 
 Initializer[In, Yield, Await] :
   `=` AssignmentExpression[?In, ?Yield, ?Await]
@@ -595,6 +596,7 @@ TemplateLiteral[Yield, Await, Tagged] :
   NoSubstitutionTemplate
     => template_literal($0)
   SubstitutionTemplate[?Yield, ?Await, ?Tagged]
+    => $0
 
 SubstitutionTemplate[Yield, Await, Tagged] :
   TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await, ?Tagged]
