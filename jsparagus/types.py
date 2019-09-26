@@ -57,7 +57,6 @@ class Type(TypeBase):
 
 
 UnitType = Type('Unit')
-StringType = Type('String')
 TokenType = Type('Token')
 
 # The type of expressions that can't be fully evaluated, like Rust `panic!()`;
@@ -85,6 +84,7 @@ class TypeVar:
 
     def __init__(self, name=None, precedence=0):
         assert (precedence > 0) == (name is not None)
+        assert name is None or isinstance(name, str)
         self.name = name
         self.precedence = precedence
         self.value = None
@@ -119,13 +119,11 @@ def final_deref(ty):
     """
     ty = deref(ty)
     if isinstance(ty, TypeVar):
-        if ty.name is not None:
-            # ty becomes an nt type.
-            assert ty.name != 'Unit'
-            ty.value = Type(ty.name)
-            return ty.value
-        else:
-            raise Exception("internal error: no way to assign a type to variable")
+        assert ty.name is not None, "internal error: no way to assign a type to variable"
+        # ty becomes an nt type.
+        assert ty.name != 'Unit'
+        ty.value = Type(ty.name)
+        return ty.value
     else:
         assert isinstance(ty, Type)
         if ty.args:
@@ -193,10 +191,20 @@ def infer_types(g):
     will typically just unify the two types, which can result in mysterious
     output. If it can't do that (e.g. if one of the types is `str`) then it
     throws a JsparagusTypeError.
+
+    This mutates the Grammar `g` in place, assigning to the `.type` field of
+    each NtDef in `g.nonterminals` and to `g.methods`.
     """
 
+    def type_of_nt(nt, nt_def):
+        if nt_def.type is not None:
+            return nt_def.type
+        else:
+            nt_name = nt if isinstance(nt, str) else nt.name
+            return TypeVar(nt_name, 2)
+
     nt_types = {
-        nt: nt_def.type or TypeVar(nt, 2)
+        nt: type_of_nt(nt, nt_def)
         for nt, nt_def in g.nonterminals.items()
         if not isinstance(nt, grammar.InitNt)
     }
@@ -208,14 +216,16 @@ def infer_types(g):
             if e in g.nonterminals:
                 return nt_types[e]
             elif e in g.variable_terminals:
-                return StringType
+                return TokenType
             else:
                 # constant terminal
                 return UnitType
         elif isinstance(e, grammar.Optional):
             return Type('Option', [element_type(e.inner)])
         elif isinstance(e, grammar.Nt):
-            return nt_types[e.name]
+            # Cope with the awkward fact that g.nonterminals keys may be either
+            # strings or Nt objects.
+            return nt_types[e if e in nt_types else e.name]
         else:
             assert False, "unexpected element type: {!r}".format(e)
 
@@ -256,6 +266,8 @@ def infer_types(g):
                 mtype = MethodType(arg_types, TypeVar(name, 1))
                 method_types[expr.method] = mtype
             return mtype.return_type
+        elif expr == 'accept':
+            return NoReturnType
         else:
             raise TypeError("unrecognized reduce expr: {!r}".format(expr))
 
@@ -277,6 +289,6 @@ def infer_types(g):
                     .format(nt, i + 1))
                 raise
 
-    nt_types = {name: final_deref(ty) for name, ty in nt_types.items()}
-    method_types = {name: mtype.resolve() for name, mtype in method_types.items()}
-    return nt_types, method_types
+    for nt, ty in nt_types.items():
+        g.nonterminals[nt].type = final_deref(ty)
+    g.methods = {name: mtype.resolve() for name, mtype in method_types.items()}

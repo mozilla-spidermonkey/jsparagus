@@ -151,12 +151,6 @@ class Grammar:
         in the pipeline, or Nt objects later on. Values are the NtDef objects
         that contain the actual Productions.
 
-    *   self.nt_types - {str: jsparagus type} - Type information for each
-        nonterminal.  Regardless of whether we've expanded parameterized
-        nonterminals yet, this dict uses string keys. A parameterized
-        nonterminal must always expand to a set of nonterminals that share
-        a type.
-
     *   self.methods - {str: MethodType} - Type information for methods.
 
     *   self.init_nts - [InitNt or Nt] - The list of all elements of
@@ -172,7 +166,7 @@ class Grammar:
             nonterminals,
             goal_nts=None,
             variable_terminals=(),
-            type_info=None):
+            method_types=None):
 
         # This constructor supports passing in a sort of jumbled blob of
         # strings, lists, and actual objects, and normalizes it all to a more
@@ -478,9 +472,12 @@ class Grammar:
         # caller passed in precalculated type info, skip it -- otherwise we
         # would redo type checking many times as we make minor changes to the
         # Grammar along the pipeline.
-        if type_info is None:
-            type_info = types.infer_types(self)
-        self.nt_types, self.methods = type_info
+        if method_types is None:
+            types.infer_types(self)
+        else:
+            for nt, nt_def in self.nonterminals.items():
+                assert isinstance(nt_def.type, types.Type)
+            self.methods = method_types
 
         # Synthesize "init" nonterminals.
         self.init_nts = []
@@ -538,13 +535,16 @@ class Grammar:
 
     def clone(self):
         """Return a deep copy of a grammar (which must contain no functions)."""
-        return Grammar(self.nonterminals, self.goals(), self.variable_terminals)
+        return Grammar(self.nonterminals, self.goals(), self.variable_terminals, self.methods)
 
     def with_nonterminals(self, nonterminals):
         """Return a copy of self with the same attributes except different nonterminals."""
+        if self.methods is not None:
+            for nt_def in nonterminals.values():
+                assert nt_def.type is not None
         return Grammar(
             nonterminals, self.goals(), self.variable_terminals,
-            (self.nt_types, self.methods))
+            self.methods)
 
     # === A few methods for dumping pieces of grammar.
 
@@ -633,8 +633,8 @@ class Grammar:
             print()
 
     def dump_type_info(self):
-        for nt, ty in self.nt_types.items():
-            print(nt, ty)
+        for nt, nt_def in self.nonterminals.items():
+            print(nt, nt_def.type)
         for name, mty in self.methods.items():
             print("fn {}({}) -> {}"
                   .format(name,

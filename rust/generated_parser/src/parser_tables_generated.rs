@@ -3,6 +3,10 @@
 use crate::ast_builder::AstBuilder;
 use crate::error::Result;
 use crate::stack_value_generated::{StackValue, TryIntoStack};
+use ast::{
+    arena::{Box, Vec},
+    types::*,
+};
 
 const ERROR: i64 = -0x8000000000000000;
 
@@ -7426,7 +7430,7 @@ static GOTO: [u16; 219294] = [
 pub fn reduce<'alloc>(
     handler: &AstBuilder<'alloc>,
     prod: usize,
-    stack: &mut Vec<StackValue<'alloc>>,
+    stack: &mut std::vec::Vec<StackValue<'alloc>>,
 ) -> Result<'alloc, NonterminalId> {
     match prod {
         0 => {
@@ -7436,7 +7440,7 @@ pub fn reduce<'alloc>(
         }
         1 => {
             // Script ::= ScriptBody => script(Some($0))
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Script> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.script(Some(x0)))?);
             Ok(NonterminalId::Script)
         }
@@ -7447,13 +7451,13 @@ pub fn reduce<'alloc>(
         }
         3 => {
             // Module ::= ModuleBody => module(Some($0))
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.module(Some(x0)))?);
             Ok(NonterminalId::Module)
         }
         4 => {
             // ScriptBody ::= StatementList => script_body($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.script_body(x0))?);
             Ok(NonterminalId::ScriptBody)
         }
@@ -7463,7 +7467,7 @@ pub fn reduce<'alloc>(
         }
         6 => {
             // StatementList ::= StatementListItem => statement_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.statement_list_single(x0),
             )?);
@@ -7471,8 +7475,8 @@ pub fn reduce<'alloc>(
         }
         7 => {
             // StatementList ::= StatementList StatementListItem => statement_list_append($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.statement_list_append(x0, x1),
             )?);
@@ -7480,7 +7484,7 @@ pub fn reduce<'alloc>(
         }
         8 => {
             // ModuleItemList ::= ModuleItem => module_item_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.module_item_list_single(x0),
             )?);
@@ -7488,8 +7492,8 @@ pub fn reduce<'alloc>(
         }
         9 => {
             // ModuleItemList ::= ModuleItemList ModuleItem => module_item_list_append($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.module_item_list_append(x0, x1),
             )?);
@@ -7586,8 +7590,8 @@ pub fn reduce<'alloc>(
         32 => {
             // ImportDeclaration ::= "import" ImportClause FromClause ";" => import_declaration(Some($1), $2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.import_declaration(Some(x1), x2),
@@ -7596,8 +7600,8 @@ pub fn reduce<'alloc>(
         }
         33 => {
             // ImportDeclaration ::= "import" ImportClause FromClause ErrorSymbol(asi) => import_declaration(Some($1), $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.import_declaration(Some(x1), x2),
@@ -7607,7 +7611,7 @@ pub fn reduce<'alloc>(
         34 => {
             // ImportDeclaration ::= "import" ModuleSpecifier ";" => import_declaration(None, $1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.import_declaration(None, x1),
@@ -7616,7 +7620,7 @@ pub fn reduce<'alloc>(
         }
         35 => {
             // ImportDeclaration ::= "import" ModuleSpecifier ErrorSymbol(asi) => import_declaration(None, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.import_declaration(None, x1),
@@ -7626,7 +7630,7 @@ pub fn reduce<'alloc>(
         36 => {
             // ExportDeclaration ::= "export" "*" FromClause ";" => export_all_from($2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
@@ -7634,7 +7638,7 @@ pub fn reduce<'alloc>(
         }
         37 => {
             // ExportDeclaration ::= "export" "*" FromClause ErrorSymbol(asi) => export_all_from($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
@@ -7643,8 +7647,8 @@ pub fn reduce<'alloc>(
         38 => {
             // ExportDeclaration ::= "export" ExportClause FromClause ";" => export_set_from($1, $2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.export_set_from(x1, x2),
@@ -7653,8 +7657,8 @@ pub fn reduce<'alloc>(
         }
         39 => {
             // ExportDeclaration ::= "export" ExportClause FromClause ErrorSymbol(asi) => export_set_from($1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.export_set_from(x1, x2),
@@ -7664,28 +7668,28 @@ pub fn reduce<'alloc>(
         40 => {
             // ExportDeclaration ::= "export" ExportClause ";" => export_set($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         41 => {
             // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => export_set($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         42 => {
             // ExportDeclaration ::= "export" VariableStatement => export_vars($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.export_vars(x1))?);
             Ok(NonterminalId::ExportDeclaration)
         }
         43 => {
             // ExportDeclaration ::= "export" Declaration => export_declaration($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.export_declaration(x1),
@@ -7694,7 +7698,7 @@ pub fn reduce<'alloc>(
         }
         44 => {
             // ExportDeclaration ::= "export" "default" HoistableDeclaration[+Default] => export_default_hoistable($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7704,7 +7708,7 @@ pub fn reduce<'alloc>(
         }
         45 => {
             // ExportDeclaration ::= "export" "default" ClassDeclaration[+Default] => export_default_class($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7715,7 +7719,7 @@ pub fn reduce<'alloc>(
         46 => {
             // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ";" => export_default_value($2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7725,7 +7729,7 @@ pub fn reduce<'alloc>(
         }
         47 => {
             // ExportDeclaration ::= "export" "default" [lookahead not in {'function', 'async', 'class'}] AssignmentExpression[+In] ErrorSymbol(asi) => export_default_value($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7735,14 +7739,14 @@ pub fn reduce<'alloc>(
         }
         48 => {
             // BlockStatement ::= Block => block_statement($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.block_statement(x0))?);
             Ok(NonterminalId::BlockStatement)
         }
         49 => {
             // VariableStatement ::= "var" VariableDeclarationList[+In] ";" => variable_statement($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_statement(x1),
@@ -7751,7 +7755,7 @@ pub fn reduce<'alloc>(
         }
         50 => {
             // VariableStatement ::= "var" VariableDeclarationList[+In] ErrorSymbol(asi) => variable_statement($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_statement(x1),
@@ -7767,7 +7771,7 @@ pub fn reduce<'alloc>(
         52 => {
             // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression[+In] ";" => expression_statement($0)
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.expression_statement(x0),
             )?);
@@ -7775,7 +7779,7 @@ pub fn reduce<'alloc>(
         }
         53 => {
             // ExpressionStatement ::= [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression[+In] ErrorSymbol(asi) => expression_statement($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.expression_statement(x0),
             )?);
@@ -7783,11 +7787,11 @@ pub fn reduce<'alloc>(
         }
         54 => {
             // IfStatement ::= "if" "(" Expression[+In] ")" Statement "else" Statement => if_statement($2, $4, Some($6))
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.if_statement(
@@ -7799,9 +7803,9 @@ pub fn reduce<'alloc>(
         }
         55 => {
             // IfStatement ::= "if" "(" Expression[+In] ")" Statement => if_statement($2, $4, None)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7837,7 +7841,7 @@ pub fn reduce<'alloc>(
         60 => {
             // ContinueStatement ::= "continue" LabelIdentifier ";" => continue_statement(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.continue_statement(Some(x1)),
@@ -7846,7 +7850,7 @@ pub fn reduce<'alloc>(
         }
         61 => {
             // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => continue_statement(Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.continue_statement(Some(x1)),
@@ -7869,7 +7873,7 @@ pub fn reduce<'alloc>(
         64 => {
             // BreakStatement ::= "break" LabelIdentifier ";" => break_statement(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.break_statement(Some(x1)),
@@ -7878,7 +7882,7 @@ pub fn reduce<'alloc>(
         }
         65 => {
             // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => break_statement(Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.break_statement(Some(x1)),
@@ -7905,7 +7909,7 @@ pub fn reduce<'alloc>(
         68 => {
             // ReturnStatement ::= "return" Expression[+In] ";" => return_statement(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.return_statement(Some(x1)),
@@ -7914,7 +7918,7 @@ pub fn reduce<'alloc>(
         }
         69 => {
             // ReturnStatement ::= "return" Expression[+In] ErrorSymbol(asi) => return_statement(Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.return_statement(Some(x1)),
@@ -7923,9 +7927,9 @@ pub fn reduce<'alloc>(
         }
         70 => {
             // WithStatement ::= "with" "(" Expression[+In] ")" Statement => with_statement($2, $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -7935,9 +7939,9 @@ pub fn reduce<'alloc>(
         }
         71 => {
             // LabelledStatement ::= LabelIdentifier ":" LabelledItem => labelled_statement($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Label> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.labelled_statement(x0, x2),
             )?);
@@ -7946,22 +7950,22 @@ pub fn reduce<'alloc>(
         72 => {
             // ThrowStatement ::= "throw" Expression[+In] ";" => throw_statement($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.throw_statement(x1))?);
             Ok(NonterminalId::ThrowStatement)
         }
         73 => {
             // ThrowStatement ::= "throw" Expression[+In] ErrorSymbol(asi) => throw_statement($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.throw_statement(x1))?);
             Ok(NonterminalId::ThrowStatement)
         }
         74 => {
             // TryStatement ::= "try" Block Catch => try_statement($1, Some($2), None)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, CatchClause> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
                 x1,
@@ -7972,8 +7976,8 @@ pub fn reduce<'alloc>(
         }
         75 => {
             // TryStatement ::= "try" Block Finally => try_statement($1, None, Some($2))
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
                 x1,
@@ -7984,9 +7988,9 @@ pub fn reduce<'alloc>(
         }
         76 => {
             // TryStatement ::= "try" Block Catch Finally => try_statement($1, Some($2), Some($3))
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, CatchClause> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
                 x1,
@@ -8026,8 +8030,8 @@ pub fn reduce<'alloc>(
         }
         83 => {
             // ClassDeclaration[~Default] ::= "class" BindingIdentifier ClassTail => class_declaration(Some($1), $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_declaration(Some(x1), x2),
@@ -8037,8 +8041,8 @@ pub fn reduce<'alloc>(
         84 => {
             // LexicalDeclaration[+In] ::= LetOrConst BindingList[+In] ";" => lexical_declaration($0, $1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.lexical_declaration(x0, x1),
             )?);
@@ -8046,8 +8050,8 @@ pub fn reduce<'alloc>(
         }
         85 => {
             // LexicalDeclaration[+In] ::= LetOrConst BindingList[+In] ErrorSymbol(asi) => lexical_declaration($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.lexical_declaration(x0, x1),
             )?);
@@ -8055,7 +8059,7 @@ pub fn reduce<'alloc>(
         }
         86 => {
             // ImportClause ::= ImportedDefaultBinding => import_clause(Some($0), None, None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_clause(
                 Some(x0),
                 None,
@@ -8065,7 +8069,7 @@ pub fn reduce<'alloc>(
         }
         87 => {
             // ImportClause ::= NameSpaceImport => import_clause(None, Some($0), None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_clause(
                 None,
                 Some(x0),
@@ -8075,7 +8079,7 @@ pub fn reduce<'alloc>(
         }
         88 => {
             // ImportClause ::= NamedImports => import_clause(None, None, Some($0))
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_clause(
                 None,
                 None,
@@ -8085,9 +8089,9 @@ pub fn reduce<'alloc>(
         }
         89 => {
             // ImportClause ::= ImportedDefaultBinding "," NameSpaceImport => import_clause(Some($0), Some($2), None)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_clause(
                 Some(x0),
                 Some(x2),
@@ -8097,9 +8101,9 @@ pub fn reduce<'alloc>(
         }
         90 => {
             // ImportClause ::= ImportedDefaultBinding "," NamedImports => import_clause(Some($0), None, Some($2))
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_clause(
                 Some(x0),
                 None,
@@ -8116,7 +8120,7 @@ pub fn reduce<'alloc>(
         }
         92 => {
             // ModuleSpecifier ::= StringLiteral => module_specifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.module_specifier(x0))?);
             Ok(NonterminalId::ModuleSpecifier)
         }
@@ -8162,8 +8166,8 @@ pub fn reduce<'alloc>(
         }
         100 => {
             // ClassDeclaration[+Default] ::= "class" BindingIdentifier ClassTail => class_declaration(Some($1), $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_declaration(Some(x1), x2),
@@ -8172,7 +8176,7 @@ pub fn reduce<'alloc>(
         }
         101 => {
             // ClassDeclaration[+Default] ::= "class" ClassTail => class_declaration(None, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_declaration(None, x1),
@@ -8197,9 +8201,9 @@ pub fn reduce<'alloc>(
         }
         106 => {
             // AssignmentExpression[+In] ::= LeftHandSideExpression "=" AssignmentExpression[+In] => assignment_expr($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.assignment_expr(x0, x2),
             )?);
@@ -8207,9 +8211,9 @@ pub fn reduce<'alloc>(
         }
         107 => {
             // AssignmentExpression[+In] ::= LeftHandSideExpression AssignmentOperator AssignmentExpression[+In] => compound_assignment_expr($0, $1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, CompoundAssignmentOperator> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.compound_assignment_expr(x0, x1, x2),
             )?);
@@ -8225,14 +8229,14 @@ pub fn reduce<'alloc>(
         109 => {
             // Block ::= "{" StatementList "}" => block(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.block(Some(x1)))?);
             Ok(NonterminalId::Block)
         }
         110 => {
             // VariableDeclarationList[+In] ::= VariableDeclaration[+In] => variable_declaration_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_single(x0),
             )?);
@@ -8240,9 +8244,9 @@ pub fn reduce<'alloc>(
         }
         111 => {
             // VariableDeclarationList[+In] ::= VariableDeclarationList[+In] "," VariableDeclaration[+In] => variable_declaration_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_append(x0, x2),
             )?);
@@ -8254,9 +8258,9 @@ pub fn reduce<'alloc>(
         }
         113 => {
             // Expression[+In] ::= Expression[+In] "," AssignmentExpression[+In] => binary_expr(comma_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.comma_op(),
                 x0,
@@ -8268,10 +8272,10 @@ pub fn reduce<'alloc>(
             // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ";" => do_while_statement($1, $4)
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.do_while_statement(x1, x4),
@@ -8281,10 +8285,10 @@ pub fn reduce<'alloc>(
         115 => {
             // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ErrorSymbol(do_while_asi) => do_while_statement($1, $4)
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.do_while_statement(x1, x4),
@@ -8293,9 +8297,9 @@ pub fn reduce<'alloc>(
         }
         116 => {
             // IterationStatement ::= "while" "(" Expression[+In] ")" Statement => while_statement($2, $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -8305,7 +8309,7 @@ pub fn reduce<'alloc>(
         }
         117 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => for_statement(for_expression(None), None, None, $5)
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8321,11 +8325,11 @@ pub fn reduce<'alloc>(
         }
         118 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" ")" Statement => for_statement(for_expression(Some($2)), None, None, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8338,10 +8342,10 @@ pub fn reduce<'alloc>(
         }
         119 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" ")" Statement => for_statement(for_expression(None), Some($3), None, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8355,12 +8359,12 @@ pub fn reduce<'alloc>(
         }
         120 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" ")" Statement => for_statement(for_expression(Some($2)), Some($4), None, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8373,9 +8377,9 @@ pub fn reduce<'alloc>(
         }
         121 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression[+In] ")" Statement => for_statement(for_expression(None), None, Some($4), $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8390,12 +8394,12 @@ pub fn reduce<'alloc>(
         }
         122 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" Expression[+In] ")" Statement => for_statement(for_expression(Some($2)), None, Some($5), $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8408,11 +8412,11 @@ pub fn reduce<'alloc>(
         }
         123 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(for_expression(None), Some($3), Some($5), $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8426,13 +8430,13 @@ pub fn reduce<'alloc>(
         }
         124 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(for_expression(Some($2)), Some($4), Some($6), $8)
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8445,11 +8449,11 @@ pub fn reduce<'alloc>(
         }
         125 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" ")" Statement => for_statement(Some(for_var_declaration($3)), None, None, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8463,12 +8467,12 @@ pub fn reduce<'alloc>(
         }
         126 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), None, $8)
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8482,12 +8486,12 @@ pub fn reduce<'alloc>(
         }
         127 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" Expression[+In] ")" Statement => for_statement(Some(for_var_declaration($3)), None, Some($6), $8)
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8501,13 +8505,13 @@ pub fn reduce<'alloc>(
         }
         128 => {
             // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), Some($7), $9)
-            let x9 = stack.pop().unwrap().to_ast();
+            let x9: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8521,10 +8525,10 @@ pub fn reduce<'alloc>(
         }
         129 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, None, $5)
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8537,11 +8541,11 @@ pub fn reduce<'alloc>(
         }
         130 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), None, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8554,11 +8558,11 @@ pub fn reduce<'alloc>(
         }
         131 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" Expression[+In] ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, Some($4), $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8571,12 +8575,12 @@ pub fn reduce<'alloc>(
         }
         132 => {
             // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" Expression[+In] ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), Some($5), $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
@@ -8589,11 +8593,11 @@ pub fn reduce<'alloc>(
         }
         133 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression[+In] ")" Statement => for_in_statement(for_assignment_target($2), $4, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
@@ -8605,11 +8609,11 @@ pub fn reduce<'alloc>(
         }
         134 => {
             // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression[+In] ")" Statement => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8622,11 +8626,12 @@ pub fn reduce<'alloc>(
         }
         135 => {
             // IterationStatement ::= "for" "(" ForDeclaration "in" Expression[+In] ")" Statement => for_in_statement(unbox_for_declaration($2), $4, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrAssignmentTarget> =
+                stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
@@ -8638,11 +8643,11 @@ pub fn reduce<'alloc>(
         }
         136 => {
             // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_of_statement(for_assignment_target($2), $4, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
@@ -8654,11 +8659,11 @@ pub fn reduce<'alloc>(
         }
         137 => {
             // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_of_statement(for_in_or_of_var_declaration($3), $5, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8671,11 +8676,12 @@ pub fn reduce<'alloc>(
         }
         138 => {
             // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_of_statement(unbox_for_declaration($2), $4, $6)
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarationOrAssignmentTarget> =
+                stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
@@ -8687,11 +8693,11 @@ pub fn reduce<'alloc>(
         }
         139 => {
             // IterationStatement ::= "for" "await" "(" [lookahead != 'let'] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(for_assignment_target($3), $5, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8702,11 +8708,11 @@ pub fn reduce<'alloc>(
         }
         140 => {
             // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(for_in_or_of_var_declaration($4), $6, $8)
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8718,11 +8724,12 @@ pub fn reduce<'alloc>(
         }
         141 => {
             // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(unbox_for_declaration($3), $5, $7)
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, VariableDeclarationOrAssignmentTarget> =
+                stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -8733,9 +8740,9 @@ pub fn reduce<'alloc>(
         }
         142 => {
             // SwitchStatement ::= "switch" "(" Expression[+In] ")" CaseBlock => switch_statement($2, $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -8745,7 +8752,7 @@ pub fn reduce<'alloc>(
         }
         143 => {
             // LabelIdentifier ::= Identifier => label_identifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.label_identifier(x0))?);
             Ok(NonterminalId::LabelIdentifier)
         }
@@ -8759,9 +8766,9 @@ pub fn reduce<'alloc>(
         }
         146 => {
             // Catch ::= "catch" "(" CatchParameter ")" Block => catch(Some($2), $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.catch(Some(x2), x4))?);
@@ -8769,7 +8776,7 @@ pub fn reduce<'alloc>(
         }
         147 => {
             // Catch ::= "catch" Block => catch(None, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.catch(None, x1))?);
             Ok(NonterminalId::Catch)
@@ -8787,7 +8794,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
@@ -8803,9 +8810,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
@@ -8819,11 +8826,11 @@ pub fn reduce<'alloc>(
         151 => {
             // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function(Some($1), empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(Some(x1), handler.empty_formal_parameters(), x5),
@@ -8833,12 +8840,12 @@ pub fn reduce<'alloc>(
         152 => {
             // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(Some($1), $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.function_decl(handler.function(Some(x1), x3, x6)),
@@ -8851,7 +8858,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8868,9 +8875,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8885,11 +8892,11 @@ pub fn reduce<'alloc>(
         155 => {
             // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8900,12 +8907,12 @@ pub fn reduce<'alloc>(
         156 => {
             // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -8919,7 +8926,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8936,9 +8943,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8953,11 +8960,11 @@ pub fn reduce<'alloc>(
         159 => {
             // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -8968,12 +8975,12 @@ pub fn reduce<'alloc>(
         160 => {
             // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -8987,7 +8994,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9005,9 +9012,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9023,11 +9030,11 @@ pub fn reduce<'alloc>(
         163 => {
             // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9039,12 +9046,12 @@ pub fn reduce<'alloc>(
         164 => {
             // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), $5, $8))
             stack.pop();
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9055,7 +9062,7 @@ pub fn reduce<'alloc>(
         }
         165 => {
             // BindingIdentifier ::= Identifier => binding_identifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_identifier(x0),
             )?);
@@ -9090,7 +9097,7 @@ pub fn reduce<'alloc>(
             // ClassTail ::= ClassHeritage "{" "}" => class_tail(Some($0), None)
             stack.pop();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_tail(Some(x0), None),
             )?);
@@ -9099,7 +9106,7 @@ pub fn reduce<'alloc>(
         170 => {
             // ClassTail ::= "{" ClassBody "}" => class_tail(None, Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_tail(None, Some(x1)),
@@ -9109,9 +9116,9 @@ pub fn reduce<'alloc>(
         171 => {
             // ClassTail ::= ClassHeritage "{" ClassBody "}" => class_tail(Some($0), Some($2))
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_tail(Some(x0), Some(x2)),
             )?);
@@ -9131,7 +9138,7 @@ pub fn reduce<'alloc>(
         }
         174 => {
             // BindingList[+In] ::= LexicalBinding[+In] => variable_declaration_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_single(x0),
             )?);
@@ -9139,9 +9146,9 @@ pub fn reduce<'alloc>(
         }
         175 => {
             // BindingList[+In] ::= BindingList[+In] "," LexicalBinding[+In] => variable_declaration_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_append(x0, x2),
             )?);
@@ -9153,7 +9160,7 @@ pub fn reduce<'alloc>(
         }
         177 => {
             // NameSpaceImport ::= "*" "as" ImportedBinding => name_space_import($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.name_space_import(x2))?);
@@ -9185,7 +9192,7 @@ pub fn reduce<'alloc>(
         }
         181 => {
             // ExportsList ::= ExportSpecifier => exports_list_append(exports_list_empty(), $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.exports_list_append(handler.exports_list_empty(), x0),
             )?);
@@ -9193,9 +9200,9 @@ pub fn reduce<'alloc>(
         }
         182 => {
             // ExportsList ::= ExportsList "," ExportSpecifier => exports_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.exports_list_append(x0, x2),
             )?);
@@ -9207,7 +9214,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
@@ -9223,9 +9230,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
@@ -9239,11 +9246,11 @@ pub fn reduce<'alloc>(
         185 => {
             // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function(Some($1), empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(Some(x1), handler.empty_formal_parameters(), x5),
@@ -9253,12 +9260,12 @@ pub fn reduce<'alloc>(
         186 => {
             // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(Some($1), $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.function_decl(handler.function(Some(x1), x3, x6)),
@@ -9286,7 +9293,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9301,7 +9308,7 @@ pub fn reduce<'alloc>(
         189 => {
             // FunctionDeclaration[+Default] ::= "function" "(" ")" "{" FunctionBody "}" => function_decl(function(None, empty_formal_parameters(), $4))
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9314,10 +9321,10 @@ pub fn reduce<'alloc>(
         190 => {
             // FunctionDeclaration[+Default] ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(None, $2, $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -9331,7 +9338,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9348,9 +9355,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9365,11 +9372,11 @@ pub fn reduce<'alloc>(
         193 => {
             // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9380,12 +9387,12 @@ pub fn reduce<'alloc>(
         194 => {
             // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -9415,7 +9422,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9431,7 +9438,7 @@ pub fn reduce<'alloc>(
         197 => {
             // GeneratorDeclaration[+Default] ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_decl(generator(None, empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9445,10 +9452,10 @@ pub fn reduce<'alloc>(
         198 => {
             // GeneratorDeclaration[+Default] ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(None, $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9463,7 +9470,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9480,9 +9487,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9497,11 +9504,11 @@ pub fn reduce<'alloc>(
         201 => {
             // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
@@ -9512,12 +9519,12 @@ pub fn reduce<'alloc>(
         202 => {
             // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -9547,7 +9554,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9563,7 +9570,7 @@ pub fn reduce<'alloc>(
         205 => {
             // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(None, empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9577,10 +9584,10 @@ pub fn reduce<'alloc>(
         206 => {
             // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(None, $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9595,7 +9602,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9613,9 +9620,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9631,11 +9638,11 @@ pub fn reduce<'alloc>(
         209 => {
             // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9647,12 +9654,12 @@ pub fn reduce<'alloc>(
         210 => {
             // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), $5, $8))
             stack.pop();
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9684,7 +9691,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9701,7 +9708,7 @@ pub fn reduce<'alloc>(
         213 => {
             // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(None, empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9716,10 +9723,10 @@ pub fn reduce<'alloc>(
         214 => {
             // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(None, $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -9735,11 +9742,11 @@ pub fn reduce<'alloc>(
         }
         216 => {
             // ConditionalExpression[+In] ::= LogicalORExpression[+In] "?" AssignmentExpression[+In] ":" AssignmentExpression[+In] => conditional_expr($0, $2, $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.conditional_expr(x0, x2, x4),
             )?);
@@ -9753,14 +9760,14 @@ pub fn reduce<'alloc>(
         }
         218 => {
             // YieldExpression[+In] ::= "yield" AssignmentExpression[+In] => yield_expr(Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.yield_expr(Some(x1)))?);
             Ok(NonterminalId::YieldExpressionIn)
         }
         219 => {
             // YieldExpression[+In] ::= "yield" "*" AssignmentExpression[+In] => yield_star_expr($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.yield_star_expr(x2))?);
@@ -9768,9 +9775,9 @@ pub fn reduce<'alloc>(
         }
         220 => {
             // ArrowFunction[+In] ::= ArrowParameters "=>" ConciseBody[+In] => arrow_function($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arrow_function(x0, x2),
             )?);
@@ -9778,9 +9785,9 @@ pub fn reduce<'alloc>(
         }
         221 => {
             // AsyncArrowFunction[+In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[+In] => async_arrow_function(arrow_parameters_bare($1), $3)
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_arrow_function(handler.arrow_parameters_bare(x1), x3),
@@ -9789,9 +9796,9 @@ pub fn reduce<'alloc>(
         }
         222 => {
             // AsyncArrowFunction[+In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[+In] => async_arrow_function(async_arrow_parameters($0), $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_arrow_function(handler.async_arrow_parameters(x0), x2),
             )?);
@@ -9903,7 +9910,7 @@ pub fn reduce<'alloc>(
         }
         237 => {
             // VariableDeclaration[+In] ::= BindingIdentifier => variable_declaration(binding_identifier_to_binding($0), None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 None,
@@ -9912,8 +9919,8 @@ pub fn reduce<'alloc>(
         }
         238 => {
             // VariableDeclaration[+In] ::= BindingIdentifier Initializer[+In] => variable_declaration(binding_identifier_to_binding($0), Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 Some(x1),
@@ -9922,8 +9929,8 @@ pub fn reduce<'alloc>(
         }
         239 => {
             // VariableDeclaration[+In] ::= BindingPattern Initializer[+In] => variable_declaration($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration(x0, Some(x1)),
             )?);
@@ -9935,9 +9942,9 @@ pub fn reduce<'alloc>(
         }
         241 => {
             // Expression[~In] ::= Expression[~In] "," AssignmentExpression[~In] => binary_expr(comma_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.comma_op(),
                 x0,
@@ -9947,7 +9954,7 @@ pub fn reduce<'alloc>(
         }
         242 => {
             // VariableDeclarationList[~In] ::= VariableDeclaration[~In] => variable_declaration_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_single(x0),
             )?);
@@ -9955,9 +9962,9 @@ pub fn reduce<'alloc>(
         }
         243 => {
             // VariableDeclarationList[~In] ::= VariableDeclarationList[~In] "," VariableDeclaration[~In] => variable_declaration_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_append(x0, x2),
             )?);
@@ -9966,8 +9973,8 @@ pub fn reduce<'alloc>(
         244 => {
             // ForLexicalDeclaration[~In] ::= LetOrConst BindingList[~In] ";" => for_lexical_declaration($0, $1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.for_lexical_declaration(x0, x1),
             )?);
@@ -9975,7 +9982,7 @@ pub fn reduce<'alloc>(
         }
         245 => {
             // ForBinding ::= BindingIdentifier => binding_identifier_to_binding($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_identifier_to_binding(x0),
             )?);
@@ -9987,8 +9994,8 @@ pub fn reduce<'alloc>(
         }
         247 => {
             // ForDeclaration ::= LetOrConst ForBinding => for_declaration($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.for_declaration(x0, x1),
             )?);
@@ -10004,7 +10011,7 @@ pub fn reduce<'alloc>(
         249 => {
             // CaseBlock ::= "{" CaseClauses "}" => case_block(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.case_block(Some(x1)))?);
             Ok(NonterminalId::CaseBlock)
@@ -10012,7 +10019,7 @@ pub fn reduce<'alloc>(
         250 => {
             // CaseBlock ::= "{" DefaultClause "}" => case_block_with_default(None, $1, None)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_block_with_default(None, x1, None),
@@ -10022,8 +10029,8 @@ pub fn reduce<'alloc>(
         251 => {
             // CaseBlock ::= "{" CaseClauses DefaultClause "}" => case_block_with_default(Some($1), $2, None)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_block_with_default(Some(x1), x2, None),
@@ -10033,8 +10040,8 @@ pub fn reduce<'alloc>(
         252 => {
             // CaseBlock ::= "{" DefaultClause CaseClauses "}" => case_block_with_default(None, $1, Some($2))
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_block_with_default(None, x1, Some(x2)),
@@ -10044,9 +10051,9 @@ pub fn reduce<'alloc>(
         253 => {
             // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => case_block_with_default(Some($1), $2, Some($3))
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_block_with_default(Some(x1), x2, Some(x3)),
@@ -10055,7 +10062,7 @@ pub fn reduce<'alloc>(
         }
         254 => {
             // CatchParameter ::= BindingIdentifier => binding_identifier_to_binding($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_identifier_to_binding(x0),
             )?);
@@ -10074,7 +10081,7 @@ pub fn reduce<'alloc>(
         }
         257 => {
             // FormalParameters ::= FunctionRestParameter => with_rest_parameter(empty_formal_parameters(), $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.with_rest_parameter(handler.empty_formal_parameters(), x0),
             )?);
@@ -10093,9 +10100,9 @@ pub fn reduce<'alloc>(
         }
         260 => {
             // FormalParameters ::= FormalParameterList "," FunctionRestParameter => with_rest_parameter($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.with_rest_parameter(x0, x2),
             )?);
@@ -10110,7 +10117,7 @@ pub fn reduce<'alloc>(
         }
         262 => {
             // FunctionBody ::= FunctionStatementList => function_body($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.function_body(x0))?);
             Ok(NonterminalId::FunctionBody)
         }
@@ -10160,7 +10167,7 @@ pub fn reduce<'alloc>(
         }
         271 => {
             // LexicalBinding[+In] ::= BindingIdentifier => variable_declaration(binding_identifier_to_binding($0), None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 None,
@@ -10169,8 +10176,8 @@ pub fn reduce<'alloc>(
         }
         272 => {
             // LexicalBinding[+In] ::= BindingIdentifier Initializer[+In] => variable_declaration(binding_identifier_to_binding($0), Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 Some(x1),
@@ -10179,8 +10186,8 @@ pub fn reduce<'alloc>(
         }
         273 => {
             // LexicalBinding[+In] ::= BindingPattern Initializer[+In] => variable_declaration($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration(x0, Some(x1)),
             )?);
@@ -10192,7 +10199,7 @@ pub fn reduce<'alloc>(
         }
         275 => {
             // ImportsList ::= ImportSpecifier => imports_list_append(imports_list_empty(), $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.imports_list_append(handler.imports_list_empty(), x0),
             )?);
@@ -10200,9 +10207,9 @@ pub fn reduce<'alloc>(
         }
         276 => {
             // ImportsList ::= ImportsList "," ImportSpecifier => imports_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.imports_list_append(x0, x2),
             )?);
@@ -10210,15 +10217,15 @@ pub fn reduce<'alloc>(
         }
         277 => {
             // ExportSpecifier ::= IdentifierName => export_specifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.export_specifier(x0))?);
             Ok(NonterminalId::ExportSpecifier)
         }
         278 => {
             // ExportSpecifier ::= IdentifierName "as" IdentifierName => export_specifier_renaming($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.export_specifier_renaming(x0, x2),
             )?);
@@ -10230,9 +10237,9 @@ pub fn reduce<'alloc>(
         }
         280 => {
             // LogicalORExpression[+In] ::= LogicalORExpression[+In] "||" LogicalANDExpression[+In] => binary_expr(logical_or_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.logical_or_op(),
                 x0,
@@ -10242,7 +10249,7 @@ pub fn reduce<'alloc>(
         }
         281 => {
             // ArrowParameters ::= BindingIdentifier => arrow_parameters_bare($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arrow_parameters_bare(x0),
             )?);
@@ -10250,7 +10257,7 @@ pub fn reduce<'alloc>(
         }
         282 => {
             // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_arrow_parameters($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, CoverParenthesized> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.uncover_arrow_parameters(x0),
             )?);
@@ -10258,7 +10265,7 @@ pub fn reduce<'alloc>(
         }
         283 => {
             // ConciseBody[+In] ::= [lookahead != '{'] AssignmentExpression[+In] => concise_body_expression($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_expression(x0),
             )?);
@@ -10276,7 +10283,7 @@ pub fn reduce<'alloc>(
         285 => {
             // ConciseBody[+In] ::= "{" FunctionBody "}" => concise_body_block($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_block(x1),
@@ -10289,7 +10296,7 @@ pub fn reduce<'alloc>(
         }
         287 => {
             // AsyncConciseBody[+In] ::= [lookahead != '{'] AssignmentExpression[+In] => concise_body_expression($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_expression(x0),
             )?);
@@ -10307,7 +10314,7 @@ pub fn reduce<'alloc>(
         289 => {
             // AsyncConciseBody[+In] ::= "{" AsyncFunctionBody "}" => concise_body_block($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_block(x1),
@@ -10316,8 +10323,8 @@ pub fn reduce<'alloc>(
         }
         290 => {
             // CoverCallExpressionAndAsyncArrowHead ::= MemberExpression Arguments => call_expr($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.call_expr(x0, x1))?);
             Ok(NonterminalId::CoverCallExpressionAndAsyncArrowHead)
         }
@@ -10327,7 +10334,7 @@ pub fn reduce<'alloc>(
         }
         292 => {
             // NewExpression ::= "new" NewExpression => new_expr_without_arguments($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.new_expr_without_arguments(x1),
@@ -10348,17 +10355,17 @@ pub fn reduce<'alloc>(
         }
         296 => {
             // CallExpression ::= CallExpression Arguments => call_expr($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.call_expr(x0, x1))?);
             Ok(NonterminalId::CallExpression)
         }
         297 => {
             // CallExpression ::= CallExpression "[" Expression[+In] "]" => computed_member_expr($0, $2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.computed_member_expr(x0, x2),
             )?);
@@ -10366,9 +10373,9 @@ pub fn reduce<'alloc>(
         }
         298 => {
             // CallExpression ::= CallExpression "." IdentifierName => static_member_expr($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.static_member_expr(x0, x2),
             )?);
@@ -10376,8 +10383,8 @@ pub fn reduce<'alloc>(
         }
         299 => {
             // CallExpression ::= CallExpression TemplateLiteral => tagged_template_expr($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, TemplateExpression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.tagged_template_expr(x0, x1),
             )?);
@@ -10416,9 +10423,9 @@ pub fn reduce<'alloc>(
         }
         307 => {
             // AssignmentExpression[~In] ::= LeftHandSideExpression "=" AssignmentExpression[~In] => assignment_expr($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.assignment_expr(x0, x2),
             )?);
@@ -10426,9 +10433,9 @@ pub fn reduce<'alloc>(
         }
         308 => {
             // AssignmentExpression[~In] ::= LeftHandSideExpression AssignmentOperator AssignmentExpression[~In] => compound_assignment_expr($0, $1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, CompoundAssignmentOperator> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.compound_assignment_expr(x0, x1, x2),
             )?);
@@ -10436,7 +10443,7 @@ pub fn reduce<'alloc>(
         }
         309 => {
             // VariableDeclaration[~In] ::= BindingIdentifier => variable_declaration(binding_identifier_to_binding($0), None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 None,
@@ -10445,8 +10452,8 @@ pub fn reduce<'alloc>(
         }
         310 => {
             // VariableDeclaration[~In] ::= BindingIdentifier Initializer[~In] => variable_declaration(binding_identifier_to_binding($0), Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 Some(x1),
@@ -10455,8 +10462,8 @@ pub fn reduce<'alloc>(
         }
         311 => {
             // VariableDeclaration[~In] ::= BindingPattern Initializer[~In] => variable_declaration($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration(x0, Some(x1)),
             )?);
@@ -10464,7 +10471,7 @@ pub fn reduce<'alloc>(
         }
         312 => {
             // BindingList[~In] ::= LexicalBinding[~In] => variable_declaration_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_single(x0),
             )?);
@@ -10472,9 +10479,9 @@ pub fn reduce<'alloc>(
         }
         313 => {
             // BindingList[~In] ::= BindingList[~In] "," LexicalBinding[~In] => variable_declaration_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, VariableDeclarator> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration_list_append(x0, x2),
             )?);
@@ -10482,7 +10489,7 @@ pub fn reduce<'alloc>(
         }
         314 => {
             // CaseClauses ::= CaseClause => case_clauses_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, SwitchCase> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_clauses_single(x0),
             )?);
@@ -10490,8 +10497,8 @@ pub fn reduce<'alloc>(
         }
         315 => {
             // CaseClauses ::= CaseClauses CaseClause => case_clauses_append($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, SwitchCase> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_clauses_append(x0, x1),
             )?);
@@ -10506,7 +10513,7 @@ pub fn reduce<'alloc>(
         }
         317 => {
             // DefaultClause ::= "default" ":" StatementList => default_clause(Some($2))
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -10520,7 +10527,7 @@ pub fn reduce<'alloc>(
         }
         319 => {
             // FormalParameterList ::= FormalParameter => formal_parameter_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.formal_parameter_list_single(x0),
             )?);
@@ -10528,9 +10535,9 @@ pub fn reduce<'alloc>(
         }
         320 => {
             // FormalParameterList ::= FormalParameterList "," FormalParameter => formal_parameter_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.formal_parameter_list_append(x0, x2),
             )?);
@@ -10545,7 +10552,7 @@ pub fn reduce<'alloc>(
         }
         322 => {
             // FunctionStatementList ::= StatementList => function_statement_list(Some($0))
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.function_statement_list(Some(x0)),
             )?);
@@ -10557,8 +10564,8 @@ pub fn reduce<'alloc>(
         }
         324 => {
             // ClassElementList ::= ClassElementList ClassElement => class_element_list_append($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_element_list_append(x0, x1),
             )?);
@@ -10566,15 +10573,15 @@ pub fn reduce<'alloc>(
         }
         325 => {
             // ImportSpecifier ::= ImportedBinding => import_specifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.import_specifier(x0))?);
             Ok(NonterminalId::ImportSpecifier)
         }
         326 => {
             // ImportSpecifier ::= IdentifierName "as" ImportedBinding => import_specifier_renaming($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.import_specifier_renaming(x0, x2),
             )?);
@@ -10586,9 +10593,9 @@ pub fn reduce<'alloc>(
         }
         328 => {
             // LogicalANDExpression[+In] ::= LogicalANDExpression[+In] "&&" BitwiseORExpression[+In] => binary_expr(logical_and_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.logical_and_op(),
                 x0,
@@ -10599,7 +10606,7 @@ pub fn reduce<'alloc>(
         329 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] ")" => cover_parenthesized_expression($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_parenthesized_expression(x1),
@@ -10610,7 +10617,7 @@ pub fn reduce<'alloc>(
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), None)
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(handler.expression_to_parameter_list(x1)?, None),
@@ -10629,7 +10636,7 @@ pub fn reduce<'alloc>(
         332 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_identifier_to_binding($2)))
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -10643,7 +10650,7 @@ pub fn reduce<'alloc>(
         333 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list(empty_parameter_list(), Some($2))
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -10654,10 +10661,10 @@ pub fn reduce<'alloc>(
         334 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingIdentifier ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
@@ -10670,10 +10677,10 @@ pub fn reduce<'alloc>(
         335 => {
             // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingPattern ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some($4))
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
@@ -10690,9 +10697,9 @@ pub fn reduce<'alloc>(
         337 => {
             // MemberExpression ::= MemberExpression "[" Expression[+In] "]" => computed_member_expr($0, $2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.computed_member_expr(x0, x2),
             )?);
@@ -10700,9 +10707,9 @@ pub fn reduce<'alloc>(
         }
         338 => {
             // MemberExpression ::= MemberExpression "." IdentifierName => static_member_expr($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.static_member_expr(x0, x2),
             )?);
@@ -10710,8 +10717,8 @@ pub fn reduce<'alloc>(
         }
         339 => {
             // MemberExpression ::= MemberExpression TemplateLiteral => tagged_template_expr($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, TemplateExpression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.tagged_template_expr(x0, x1),
             )?);
@@ -10727,8 +10734,8 @@ pub fn reduce<'alloc>(
         }
         342 => {
             // MemberExpression ::= "new" MemberExpression Arguments => new_expr_with_arguments($1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.new_expr_with_arguments(x1, x2),
@@ -10761,7 +10768,7 @@ pub fn reduce<'alloc>(
         }
         346 => {
             // SuperCall ::= "super" Arguments => super_call($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.super_call(x1))?);
             Ok(NonterminalId::SuperCall)
@@ -10769,7 +10776,7 @@ pub fn reduce<'alloc>(
         347 => {
             // ImportCall ::= "import" "(" AssignmentExpression[+In] ")" => import_call($2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.import_call(x2))?);
@@ -10777,7 +10784,7 @@ pub fn reduce<'alloc>(
         }
         348 => {
             // TemplateLiteral ::= NoSubstitutionTemplate => template_literal($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.template_literal(x0))?);
             Ok(NonterminalId::TemplateLiteral)
         }
@@ -10797,7 +10804,7 @@ pub fn reduce<'alloc>(
         351 => {
             // ObjectBindingPattern ::= "{" BindingRestProperty "}" => object_binding_pattern(binding_property_list_empty(), Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.object_binding_pattern(handler.binding_property_list_empty(), Some(x1)),
@@ -10807,7 +10814,7 @@ pub fn reduce<'alloc>(
         352 => {
             // ObjectBindingPattern ::= "{" BindingPropertyList "}" => object_binding_pattern($1, None)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.object_binding_pattern(x1, None),
@@ -10818,7 +10825,7 @@ pub fn reduce<'alloc>(
             // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => object_binding_pattern($1, None)
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.object_binding_pattern(x1, None),
@@ -10828,9 +10835,9 @@ pub fn reduce<'alloc>(
         354 => {
             // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => object_binding_pattern($1, Some($3))
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.object_binding_pattern(x1, Some(x3)),
@@ -10849,7 +10856,7 @@ pub fn reduce<'alloc>(
         356 => {
             // ArrayBindingPattern ::= "[" Elision "]" => array_binding_pattern(binding_element_list_empty(), Some($1), None)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(handler.binding_element_list_empty(), Some(x1), None),
@@ -10859,7 +10866,7 @@ pub fn reduce<'alloc>(
         357 => {
             // ArrayBindingPattern ::= "[" BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), None, Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(handler.binding_element_list_empty(), None, Some(x1)),
@@ -10869,8 +10876,8 @@ pub fn reduce<'alloc>(
         358 => {
             // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), Some($1), Some($2))
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(
@@ -10884,7 +10891,7 @@ pub fn reduce<'alloc>(
         359 => {
             // ArrayBindingPattern ::= "[" BindingElementList "]" => array_binding_pattern($1, None, None)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(x1, None, None),
@@ -10895,7 +10902,7 @@ pub fn reduce<'alloc>(
             // ArrayBindingPattern ::= "[" BindingElementList "," "]" => array_binding_pattern($1, None, None)
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(x1, None, None),
@@ -10905,9 +10912,9 @@ pub fn reduce<'alloc>(
         361 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => array_binding_pattern($1, Some($3), None)
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(x1, Some(x3), None),
@@ -10917,9 +10924,9 @@ pub fn reduce<'alloc>(
         362 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => array_binding_pattern($1, None, Some($3))
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(x1, None, Some(x3)),
@@ -10929,10 +10936,10 @@ pub fn reduce<'alloc>(
         363 => {
             // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => array_binding_pattern($1, Some($3), Some($4))
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(x1, Some(x3), Some(x4)),
@@ -10945,11 +10952,11 @@ pub fn reduce<'alloc>(
         }
         365 => {
             // ConditionalExpression[~In] ::= LogicalORExpression[~In] "?" AssignmentExpression[+In] ":" AssignmentExpression[~In] => conditional_expr($0, $2, $4)
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.conditional_expr(x0, x2, x4),
             )?);
@@ -10963,14 +10970,14 @@ pub fn reduce<'alloc>(
         }
         367 => {
             // YieldExpression[~In] ::= "yield" AssignmentExpression[~In] => yield_expr(Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.yield_expr(Some(x1)))?);
             Ok(NonterminalId::YieldExpression)
         }
         368 => {
             // YieldExpression[~In] ::= "yield" "*" AssignmentExpression[~In] => yield_star_expr($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.yield_star_expr(x2))?);
@@ -10978,9 +10985,9 @@ pub fn reduce<'alloc>(
         }
         369 => {
             // ArrowFunction[~In] ::= ArrowParameters "=>" ConciseBody[~In] => arrow_function($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arrow_function(x0, x2),
             )?);
@@ -10988,9 +10995,9 @@ pub fn reduce<'alloc>(
         }
         370 => {
             // AsyncArrowFunction[~In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[~In] => async_arrow_function(arrow_parameters_bare($1), $3)
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_arrow_function(handler.arrow_parameters_bare(x1), x3),
@@ -10999,9 +11006,9 @@ pub fn reduce<'alloc>(
         }
         371 => {
             // AsyncArrowFunction[~In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[~In] => async_arrow_function(async_arrow_parameters($0), $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_arrow_function(handler.async_arrow_parameters(x0), x2),
             )?);
@@ -11016,7 +11023,7 @@ pub fn reduce<'alloc>(
         }
         373 => {
             // LexicalBinding[~In] ::= BindingIdentifier => variable_declaration(binding_identifier_to_binding($0), None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 None,
@@ -11025,8 +11032,8 @@ pub fn reduce<'alloc>(
         }
         374 => {
             // LexicalBinding[~In] ::= BindingIdentifier Initializer[~In] => variable_declaration(binding_identifier_to_binding($0), Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.variable_declaration(
                 handler.binding_identifier_to_binding(x0),
                 Some(x1),
@@ -11035,8 +11042,8 @@ pub fn reduce<'alloc>(
         }
         375 => {
             // LexicalBinding[~In] ::= BindingPattern Initializer[~In] => variable_declaration($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.variable_declaration(x0, Some(x1)),
             )?);
@@ -11045,16 +11052,16 @@ pub fn reduce<'alloc>(
         376 => {
             // CaseClause ::= "case" Expression[+In] ":" => case_clause($1, None)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.case_clause(x1, None))?);
             Ok(NonterminalId::CaseClause)
         }
         377 => {
             // CaseClause ::= "case" Expression[+In] ":" StatementList => case_clause($1, Some($3))
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.case_clause(x1, Some(x3)),
@@ -11063,7 +11070,7 @@ pub fn reduce<'alloc>(
         }
         378 => {
             // BindingRestElement ::= "..." BindingIdentifier => binding_identifier_to_binding($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_identifier_to_binding(x1),
@@ -11083,13 +11090,13 @@ pub fn reduce<'alloc>(
         }
         381 => {
             // ClassElement ::= MethodDefinition => class_element($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, MethodDefinition> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.class_element(x0))?);
             Ok(NonterminalId::ClassElement)
         }
         382 => {
             // ClassElement ::= "static" MethodDefinition => class_element_static($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, MethodDefinition> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_element_static(x1),
@@ -11108,9 +11115,9 @@ pub fn reduce<'alloc>(
         }
         385 => {
             // BitwiseORExpression[+In] ::= BitwiseORExpression[+In] "|" BitwiseXORExpression[+In] => binary_expr(bitwise_or_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_or_op(),
                 x0,
@@ -11126,7 +11133,7 @@ pub fn reduce<'alloc>(
         }
         387 => {
             // PrimaryExpression ::= IdentifierReference => identifier_expr($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Identifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.identifier_expr(x0))?);
             Ok(NonterminalId::PrimaryExpression)
         }
@@ -11164,13 +11171,13 @@ pub fn reduce<'alloc>(
         }
         396 => {
             // PrimaryExpression ::= RegularExpressionLiteral => regexp_literal($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.regexp_literal(x0))?);
             Ok(NonterminalId::PrimaryExpression)
         }
         397 => {
             // PrimaryExpression ::= TemplateLiteral => untagged_template_expr($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, TemplateExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.untagged_template_expr(x0),
             )?);
@@ -11178,7 +11185,7 @@ pub fn reduce<'alloc>(
         }
         398 => {
             // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_parenthesized_expression($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, CoverParenthesized> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.uncover_parenthesized_expression(x0),
             )?);
@@ -11187,7 +11194,7 @@ pub fn reduce<'alloc>(
         399 => {
             // SuperProperty ::= "super" "[" Expression[+In] "]" => super_property_computed($2)
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -11197,7 +11204,7 @@ pub fn reduce<'alloc>(
         }
         400 => {
             // SuperProperty ::= "super" "." IdentifierName => super_property_static($2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -11211,7 +11218,7 @@ pub fn reduce<'alloc>(
         }
         402 => {
             // ArgumentList ::= AssignmentExpression[+In] => arguments_append(arguments_empty(), $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arguments_append(handler.arguments_empty(), x0),
             )?);
@@ -11219,7 +11226,7 @@ pub fn reduce<'alloc>(
         }
         403 => {
             // ArgumentList ::= "..." AssignmentExpression[+In] => arguments_append_spread(arguments_empty(), $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arguments_append_spread(handler.arguments_empty(), x1),
@@ -11228,9 +11235,9 @@ pub fn reduce<'alloc>(
         }
         404 => {
             // ArgumentList ::= ArgumentList "," AssignmentExpression[+In] => arguments_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arguments_append(x0, x2),
             )?);
@@ -11238,10 +11245,10 @@ pub fn reduce<'alloc>(
         }
         405 => {
             // ArgumentList ::= ArgumentList "," "..." AssignmentExpression[+In] => arguments_append_spread($0, $3)
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.arguments_append_spread(x0, x3),
             )?);
@@ -11249,9 +11256,9 @@ pub fn reduce<'alloc>(
         }
         406 => {
             // SubstitutionTemplate ::= TemplateHead Expression[+In] TemplateSpans => substitution_template($0, $1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.substitution_template(x0, x1, x2),
             )?);
@@ -11266,7 +11273,7 @@ pub fn reduce<'alloc>(
         }
         408 => {
             // BindingPropertyList ::= BindingProperty => binding_property_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingProperty> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_property_list_single(x0),
             )?);
@@ -11274,9 +11281,9 @@ pub fn reduce<'alloc>(
         }
         409 => {
             // BindingPropertyList ::= BindingPropertyList "," BindingProperty => binding_property_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingProperty> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_property_list_append(x0, x2),
             )?);
@@ -11291,7 +11298,7 @@ pub fn reduce<'alloc>(
         411 => {
             // Elision ::= Elision "," => elision_append($0)
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.elision_append(x0))?);
             Ok(NonterminalId::Elision)
         }
@@ -11301,9 +11308,9 @@ pub fn reduce<'alloc>(
         }
         413 => {
             // BindingElementList ::= BindingElementList "," BindingElisionElement => binding_element_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_element_list_append(x0, x2),
             )?);
@@ -11315,9 +11322,9 @@ pub fn reduce<'alloc>(
         }
         415 => {
             // LogicalORExpression[~In] ::= LogicalORExpression[~In] "||" LogicalANDExpression[~In] => binary_expr(logical_or_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.logical_or_op(),
                 x0,
@@ -11327,7 +11334,7 @@ pub fn reduce<'alloc>(
         }
         416 => {
             // ConciseBody[~In] ::= [lookahead != '{'] AssignmentExpression[~In] => concise_body_expression($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_expression(x0),
             )?);
@@ -11345,7 +11352,7 @@ pub fn reduce<'alloc>(
         418 => {
             // ConciseBody[~In] ::= "{" FunctionBody "}" => concise_body_block($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_block(x1),
@@ -11354,7 +11361,7 @@ pub fn reduce<'alloc>(
         }
         419 => {
             // AsyncConciseBody[~In] ::= [lookahead != '{'] AssignmentExpression[~In] => concise_body_expression($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_expression(x0),
             )?);
@@ -11372,7 +11379,7 @@ pub fn reduce<'alloc>(
         421 => {
             // AsyncConciseBody[~In] ::= "{" AsyncFunctionBody "}" => concise_body_block($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.concise_body_block(x1),
@@ -11385,7 +11392,7 @@ pub fn reduce<'alloc>(
         }
         423 => {
             // BindingElement ::= BindingPattern => binding_element_pattern($0, None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_element_pattern(x0, None),
             )?);
@@ -11393,8 +11400,8 @@ pub fn reduce<'alloc>(
         }
         424 => {
             // BindingElement ::= BindingPattern Initializer[+In] => binding_element_pattern($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Binding> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_element_pattern(x0, Some(x1)),
             )?);
@@ -11406,7 +11413,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.method_definition(
                 x0,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
@@ -11419,9 +11426,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.method_definition(
                 x0,
                 x2,
@@ -11432,11 +11439,11 @@ pub fn reduce<'alloc>(
         427 => {
             // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => method_definition($0, unique_formal_parameters(empty_formal_parameters()), $4)
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.method_definition(
                 x0,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
@@ -11447,12 +11454,12 @@ pub fn reduce<'alloc>(
         428 => {
             // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => method_definition($0, $2, $5)
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.method_definition(x0, x2, x5),
             )?);
@@ -11476,7 +11483,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.getter(
                 x1,
@@ -11487,11 +11494,11 @@ pub fn reduce<'alloc>(
         433 => {
             // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => getter($1, $5)
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.getter(x1, x5))?);
             Ok(NonterminalId::MethodDefinition)
@@ -11501,9 +11508,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.setter(
                 x1,
@@ -11515,12 +11522,12 @@ pub fn reduce<'alloc>(
         435 => {
             // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => setter($1, $3, $6)
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.setter(x1, x3, x6))?);
             Ok(NonterminalId::MethodDefinition)
@@ -11531,9 +11538,9 @@ pub fn reduce<'alloc>(
         }
         437 => {
             // BitwiseXORExpression[+In] ::= BitwiseXORExpression[+In] "^" BitwiseANDExpression[+In] => binary_expr(bitwise_xor_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_xor_op(),
                 x0,
@@ -11543,7 +11550,7 @@ pub fn reduce<'alloc>(
         }
         438 => {
             // IdentifierReference ::= Identifier => identifier_reference($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.identifier_reference(x0),
             )?);
@@ -11557,19 +11564,19 @@ pub fn reduce<'alloc>(
         }
         440 => {
             // Literal ::= BooleanLiteral => boolean_literal($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.boolean_literal(x0))?);
             Ok(NonterminalId::Literal)
         }
         441 => {
             // Literal ::= NumericLiteral => numeric_literal($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.numeric_literal(x0))?);
             Ok(NonterminalId::Literal)
         }
         442 => {
             // Literal ::= StringLiteral => string_literal($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.string_literal(x0))?);
             Ok(NonterminalId::Literal)
         }
@@ -11585,7 +11592,7 @@ pub fn reduce<'alloc>(
         444 => {
             // ArrayLiteral ::= "[" Elision "]" => array_literal_empty(Some($1))
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_literal_empty(Some(x1)),
@@ -11595,7 +11602,7 @@ pub fn reduce<'alloc>(
         445 => {
             // ArrayLiteral ::= "[" ElementList "]" => array_literal($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.array_literal(x1))?);
             Ok(NonterminalId::ArrayLiteral)
@@ -11604,7 +11611,7 @@ pub fn reduce<'alloc>(
             // ArrayLiteral ::= "[" ElementList "," "]" => array_literal_with_trailing_elision($1, None)
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_literal_with_trailing_elision(x1, None),
@@ -11614,9 +11621,9 @@ pub fn reduce<'alloc>(
         447 => {
             // ArrayLiteral ::= "[" ElementList "," Elision "]" => array_literal_with_trailing_elision($1, Some($3))
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_literal_with_trailing_elision(x1, Some(x3)),
@@ -11635,7 +11642,7 @@ pub fn reduce<'alloc>(
         449 => {
             // ObjectLiteral ::= "{" PropertyDefinitionList "}" => object_literal($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ObjectExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.object_literal(x1))?);
             Ok(NonterminalId::ObjectLiteral)
@@ -11644,7 +11651,7 @@ pub fn reduce<'alloc>(
             // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => object_literal($1)
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ObjectExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.object_literal(x1))?);
             Ok(NonterminalId::ObjectLiteral)
@@ -11671,7 +11678,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
@@ -11687,7 +11694,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -11704,9 +11711,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
@@ -11720,7 +11727,7 @@ pub fn reduce<'alloc>(
         455 => {
             // FunctionExpression ::= "function" "(" ")" "{" FunctionBody "}" => function_expr(function(None, empty_formal_parameters(), $4))
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11733,11 +11740,11 @@ pub fn reduce<'alloc>(
         456 => {
             // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_expr(function(Some($1), empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(Some(x1), handler.empty_formal_parameters(), x5),
@@ -11747,10 +11754,10 @@ pub fn reduce<'alloc>(
         457 => {
             // FunctionExpression ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function(None, $2, $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -11761,12 +11768,12 @@ pub fn reduce<'alloc>(
         458 => {
             // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function(Some($1), $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.function_expr(handler.function(Some(x1), x3, x6)),
@@ -11775,7 +11782,7 @@ pub fn reduce<'alloc>(
         }
         459 => {
             // ClassExpression ::= "class" ClassTail => class_expression(None, $1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_expression(None, x1),
@@ -11784,8 +11791,8 @@ pub fn reduce<'alloc>(
         }
         460 => {
             // ClassExpression ::= "class" BindingIdentifier ClassTail => class_expression(Some($1), $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_expression(Some(x1), x2),
@@ -11815,7 +11822,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -11832,7 +11839,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11850,9 +11857,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -11867,7 +11874,7 @@ pub fn reduce<'alloc>(
         465 => {
             // GeneratorExpression ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_expr(generator(None, empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11881,11 +11888,11 @@ pub fn reduce<'alloc>(
         466 => {
             // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_expr(generator(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -11896,10 +11903,10 @@ pub fn reduce<'alloc>(
         467 => {
             // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator(None, $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11911,12 +11918,12 @@ pub fn reduce<'alloc>(
         468 => {
             // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -11946,7 +11953,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11962,7 +11969,7 @@ pub fn reduce<'alloc>(
         471 => {
             // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function(None, empty_formal_parameters(), $5))
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11976,10 +11983,10 @@ pub fn reduce<'alloc>(
         472 => {
             // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function(None, $3, $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -11994,7 +12001,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -12011,9 +12018,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -12028,11 +12035,11 @@ pub fn reduce<'alloc>(
         475 => {
             // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function(Some($2), empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
@@ -12043,12 +12050,12 @@ pub fn reduce<'alloc>(
         476 => {
             // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function(Some($2), $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -12080,7 +12087,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12098,7 +12105,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12117,9 +12124,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12135,7 +12142,7 @@ pub fn reduce<'alloc>(
         481 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(None, empty_formal_parameters(), $6))
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12150,11 +12157,11 @@ pub fn reduce<'alloc>(
         482 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(Some($3), empty_formal_parameters(), $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12166,10 +12173,10 @@ pub fn reduce<'alloc>(
         483 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(None, $4, $7))
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12182,12 +12189,12 @@ pub fn reduce<'alloc>(
         484 => {
             // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(Some($3), $5, $8))
             stack.pop();
-            let x8 = stack.pop().unwrap().to_ast();
+            let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
@@ -12206,7 +12213,7 @@ pub fn reduce<'alloc>(
         }
         486 => {
             // TemplateSpans ::= TemplateTail => template_spans(None, $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.template_spans(None, x0),
             )?);
@@ -12214,8 +12221,8 @@ pub fn reduce<'alloc>(
         }
         487 => {
             // TemplateSpans ::= TemplateMiddleList TemplateTail => template_spans(Some($0), $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.template_spans(Some(x0), x1),
             )?);
@@ -12223,7 +12230,7 @@ pub fn reduce<'alloc>(
         }
         488 => {
             // BindingProperty ::= SingleNameBinding => binding_property_shorthand($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_property_shorthand(x0),
             )?);
@@ -12231,9 +12238,9 @@ pub fn reduce<'alloc>(
         }
         489 => {
             // BindingProperty ::= PropertyName ":" BindingElement => binding_property($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_property(x0, x2),
             )?);
@@ -12241,7 +12248,7 @@ pub fn reduce<'alloc>(
         }
         490 => {
             // BindingElisionElement ::= BindingElement => binding_elision_element(None, $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_elision_element(None, x0),
             )?);
@@ -12249,8 +12256,8 @@ pub fn reduce<'alloc>(
         }
         491 => {
             // BindingElisionElement ::= Elision BindingElement => binding_elision_element(Some($0), $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.binding_elision_element(Some(x0), x1),
             )?);
@@ -12262,9 +12269,9 @@ pub fn reduce<'alloc>(
         }
         493 => {
             // LogicalANDExpression[~In] ::= LogicalANDExpression[~In] "&&" BitwiseORExpression[~In] => binary_expr(logical_and_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.logical_and_op(),
                 x0,
@@ -12274,7 +12281,7 @@ pub fn reduce<'alloc>(
         }
         494 => {
             // SingleNameBinding ::= BindingIdentifier => single_name_binding($0, None)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.single_name_binding(x0, None),
             )?);
@@ -12282,8 +12289,8 @@ pub fn reduce<'alloc>(
         }
         495 => {
             // SingleNameBinding ::= BindingIdentifier Initializer[+In] => single_name_binding($0, Some($1))
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.single_name_binding(x0, Some(x1)),
             )?);
@@ -12306,7 +12313,7 @@ pub fn reduce<'alloc>(
         }
         499 => {
             // UniqueFormalParameters ::= FormalParameters => unique_formal_parameters($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.unique_formal_parameters(x0),
             )?);
@@ -12318,7 +12325,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
                 x1,
@@ -12332,9 +12339,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
                 x1,
@@ -12346,11 +12353,11 @@ pub fn reduce<'alloc>(
         502 => {
             // GeneratorMethod ::= "*" PropertyName "(" ")" "{" GeneratorBody "}" => generator_method($1, unique_formal_parameters(empty_formal_parameters()), $5)
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
                 x1,
@@ -12362,12 +12369,12 @@ pub fn reduce<'alloc>(
         503 => {
             // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}" => generator_method($1, $3, $6)
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.generator_method(x1, x3, x6),
@@ -12380,7 +12387,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.async_method(
                 x1,
@@ -12394,9 +12401,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.async_method(
                 x1,
@@ -12408,11 +12415,11 @@ pub fn reduce<'alloc>(
         506 => {
             // AsyncMethod ::= "async" PropertyName "(" ")" "{" AsyncFunctionBody "}" => async_method($1, unique_formal_parameters(empty_formal_parameters()), $5)
             stack.pop();
-            let x5 = stack.pop().unwrap().to_ast();
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.async_method(
                 x1,
@@ -12424,12 +12431,12 @@ pub fn reduce<'alloc>(
         507 => {
             // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => async_method($1, $3, $6)
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x3 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_method(x1, x3, x6),
@@ -12442,7 +12449,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -12459,9 +12466,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -12476,11 +12483,11 @@ pub fn reduce<'alloc>(
         510 => {
             // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody "}" => async_generator_method($2, unique_formal_parameters(empty_formal_parameters()), $6)
             stack.pop();
-            let x6 = stack.pop().unwrap().to_ast();
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -12495,12 +12502,12 @@ pub fn reduce<'alloc>(
         511 => {
             // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => async_generator_method($2, $4, $7)
             stack.pop();
-            let x7 = stack.pop().unwrap().to_ast();
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            let x4 = stack.pop().unwrap().to_ast();
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
@@ -12518,9 +12525,9 @@ pub fn reduce<'alloc>(
         }
         514 => {
             // BitwiseANDExpression[+In] ::= BitwiseANDExpression[+In] "&" EqualityExpression[+In] => binary_expr(bitwise_and_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_and_op(),
                 x0,
@@ -12530,7 +12537,7 @@ pub fn reduce<'alloc>(
         }
         515 => {
             // ElementList ::= AssignmentExpression[+In] => element_list_first(None, $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_first(None, x0),
             )?);
@@ -12538,8 +12545,8 @@ pub fn reduce<'alloc>(
         }
         516 => {
             // ElementList ::= Elision AssignmentExpression[+In] => element_list_first(Some($0), $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_first(Some(x0), x1),
             )?);
@@ -12547,7 +12554,7 @@ pub fn reduce<'alloc>(
         }
         517 => {
             // ElementList ::= SpreadElement => element_list_first_spread(None, $0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_first_spread(None, x0),
             )?);
@@ -12555,8 +12562,8 @@ pub fn reduce<'alloc>(
         }
         518 => {
             // ElementList ::= Elision SpreadElement => element_list_first_spread(Some($0), $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_first_spread(Some(x0), x1),
             )?);
@@ -12564,9 +12571,9 @@ pub fn reduce<'alloc>(
         }
         519 => {
             // ElementList ::= ElementList "," AssignmentExpression[+In] => element_list_append($0, None, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_append(x0, None, x2),
             )?);
@@ -12574,10 +12581,10 @@ pub fn reduce<'alloc>(
         }
         520 => {
             // ElementList ::= ElementList "," Elision AssignmentExpression[+In] => element_list_append($0, Some($2), $3)
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.element_list_append(
                 x0,
                 Some(x2),
@@ -12587,9 +12594,9 @@ pub fn reduce<'alloc>(
         }
         521 => {
             // ElementList ::= ElementList "," SpreadElement => element_list_append_spread($0, None, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_append_spread(x0, None, x2),
             )?);
@@ -12597,10 +12604,10 @@ pub fn reduce<'alloc>(
         }
         522 => {
             // ElementList ::= ElementList "," Elision SpreadElement => element_list_append_spread($0, Some($2), $3)
-            let x3 = stack.pop().unwrap().to_ast();
-            let x2 = stack.pop().unwrap().to_ast();
+            let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.element_list_append_spread(x0, Some(x2), x3),
             )?);
@@ -12608,7 +12615,7 @@ pub fn reduce<'alloc>(
         }
         523 => {
             // PropertyDefinitionList ::= PropertyDefinition => property_definition_list_single($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ObjectProperty> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition_list_single(x0),
             )?);
@@ -12616,9 +12623,9 @@ pub fn reduce<'alloc>(
         }
         524 => {
             // PropertyDefinitionList ::= PropertyDefinitionList "," PropertyDefinition => property_definition_list_append($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, ObjectProperty> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, ObjectExpression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition_list_append(x0, x2),
             )?);
@@ -12626,8 +12633,8 @@ pub fn reduce<'alloc>(
         }
         525 => {
             // TemplateMiddleList ::= TemplateMiddle Expression[+In] => template_middle_list_single($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.template_middle_list_single(x0, x1),
             )?);
@@ -12635,9 +12642,9 @@ pub fn reduce<'alloc>(
         }
         526 => {
             // TemplateMiddleList ::= TemplateMiddleList TemplateMiddle Expression[+In] => template_middle_list_append($0, $1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.template_middle_list_append(x0, x1, x2),
             )?);
@@ -12649,9 +12656,9 @@ pub fn reduce<'alloc>(
         }
         528 => {
             // BitwiseORExpression[~In] ::= BitwiseORExpression[~In] "|" BitwiseXORExpression[~In] => binary_expr(bitwise_or_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_or_op(),
                 x0,
@@ -12661,7 +12668,7 @@ pub fn reduce<'alloc>(
         }
         529 => {
             // LiteralPropertyName ::= IdentifierName => property_name_identifier($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_name_identifier(x0),
             )?);
@@ -12669,7 +12676,7 @@ pub fn reduce<'alloc>(
         }
         530 => {
             // LiteralPropertyName ::= StringLiteral => property_name_string($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_name_string(x0),
             )?);
@@ -12677,7 +12684,7 @@ pub fn reduce<'alloc>(
         }
         531 => {
             // LiteralPropertyName ::= NumericLiteral => property_name_numeric($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_name_numeric(x0),
             )?);
@@ -12686,7 +12693,7 @@ pub fn reduce<'alloc>(
         532 => {
             // ComputedPropertyName ::= "[" AssignmentExpression[+In] "]" => computed_property_name($1)
             stack.pop();
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.computed_property_name(x1),
@@ -12699,9 +12706,9 @@ pub fn reduce<'alloc>(
         }
         534 => {
             // EqualityExpression[+In] ::= EqualityExpression[+In] "==" RelationalExpression[+In] => binary_expr(equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.equals_op(),
                 x0,
@@ -12711,9 +12718,9 @@ pub fn reduce<'alloc>(
         }
         535 => {
             // EqualityExpression[+In] ::= EqualityExpression[+In] "!=" RelationalExpression[+In] => binary_expr(not_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.not_equals_op(),
                 x0,
@@ -12723,9 +12730,9 @@ pub fn reduce<'alloc>(
         }
         536 => {
             // EqualityExpression[+In] ::= EqualityExpression[+In] "===" RelationalExpression[+In] => binary_expr(strict_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.strict_equals_op(),
                 x0,
@@ -12735,9 +12742,9 @@ pub fn reduce<'alloc>(
         }
         537 => {
             // EqualityExpression[+In] ::= EqualityExpression[+In] "!==" RelationalExpression[+In] => binary_expr(strict_not_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.strict_not_equals_op(),
                 x0,
@@ -12747,14 +12754,14 @@ pub fn reduce<'alloc>(
         }
         538 => {
             // SpreadElement ::= "..." AssignmentExpression[+In] => spread_element($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.spread_element(x1))?);
             Ok(NonterminalId::SpreadElement)
         }
         539 => {
             // PropertyDefinition ::= IdentifierReference => shorthand_property($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Identifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.shorthand_property(x0),
             )?);
@@ -12762,7 +12769,7 @@ pub fn reduce<'alloc>(
         }
         540 => {
             // PropertyDefinition ::= CoverInitializedName => property_definition_cover($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition_cover(x0),
             )?);
@@ -12770,9 +12777,9 @@ pub fn reduce<'alloc>(
         }
         541 => {
             // PropertyDefinition ::= PropertyName ":" AssignmentExpression[+In] => property_definition($0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition(x0, x2),
             )?);
@@ -12780,7 +12787,7 @@ pub fn reduce<'alloc>(
         }
         542 => {
             // PropertyDefinition ::= MethodDefinition => property_definition_method($0)
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, MethodDefinition> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition_method(x0),
             )?);
@@ -12788,7 +12795,7 @@ pub fn reduce<'alloc>(
         }
         543 => {
             // PropertyDefinition ::= "..." AssignmentExpression[+In] => property_definition_spread($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.property_definition_spread(x1),
@@ -12801,9 +12808,9 @@ pub fn reduce<'alloc>(
         }
         545 => {
             // BitwiseXORExpression[~In] ::= BitwiseXORExpression[~In] "^" BitwiseANDExpression[~In] => binary_expr(bitwise_xor_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_xor_op(),
                 x0,
@@ -12817,9 +12824,9 @@ pub fn reduce<'alloc>(
         }
         547 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] "<" ShiftExpression => binary_expr(less_than_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.less_than_op(),
                 x0,
@@ -12829,9 +12836,9 @@ pub fn reduce<'alloc>(
         }
         548 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] ">" ShiftExpression => binary_expr(greater_than_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.greater_than_op(),
                 x0,
@@ -12841,9 +12848,9 @@ pub fn reduce<'alloc>(
         }
         549 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.less_than_or_equal_op(),
                 x0,
@@ -12853,9 +12860,9 @@ pub fn reduce<'alloc>(
         }
         550 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.greater_than_or_equal_op(),
                 x0,
@@ -12865,9 +12872,9 @@ pub fn reduce<'alloc>(
         }
         551 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] "instanceof" ShiftExpression => binary_expr(instanceof_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.instanceof_op(),
                 x0,
@@ -12877,9 +12884,9 @@ pub fn reduce<'alloc>(
         }
         552 => {
             // RelationalExpression[+In] ::= RelationalExpression[+In] "in" ShiftExpression => binary_expr(in_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.in_op(),
                 x0,
@@ -12889,8 +12896,8 @@ pub fn reduce<'alloc>(
         }
         553 => {
             // CoverInitializedName ::= IdentifierReference Initializer[+In] => cover_initialized_name($0, $1)
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Identifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_initialized_name(x0, x1),
             )?);
@@ -12902,9 +12909,9 @@ pub fn reduce<'alloc>(
         }
         555 => {
             // BitwiseANDExpression[~In] ::= BitwiseANDExpression[~In] "&" EqualityExpression[~In] => binary_expr(bitwise_and_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.bitwise_and_op(),
                 x0,
@@ -12918,9 +12925,9 @@ pub fn reduce<'alloc>(
         }
         557 => {
             // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => binary_expr(left_shift_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.left_shift_op(),
                 x0,
@@ -12930,9 +12937,9 @@ pub fn reduce<'alloc>(
         }
         558 => {
             // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => binary_expr(right_shift_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.right_shift_op(),
                 x0,
@@ -12942,9 +12949,9 @@ pub fn reduce<'alloc>(
         }
         559 => {
             // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => binary_expr(right_shift_ext_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.right_shift_ext_op(),
                 x0,
@@ -12958,9 +12965,9 @@ pub fn reduce<'alloc>(
         }
         561 => {
             // EqualityExpression[~In] ::= EqualityExpression[~In] "==" RelationalExpression[~In] => binary_expr(equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.equals_op(),
                 x0,
@@ -12970,9 +12977,9 @@ pub fn reduce<'alloc>(
         }
         562 => {
             // EqualityExpression[~In] ::= EqualityExpression[~In] "!=" RelationalExpression[~In] => binary_expr(not_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.not_equals_op(),
                 x0,
@@ -12982,9 +12989,9 @@ pub fn reduce<'alloc>(
         }
         563 => {
             // EqualityExpression[~In] ::= EqualityExpression[~In] "===" RelationalExpression[~In] => binary_expr(strict_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.strict_equals_op(),
                 x0,
@@ -12994,9 +13001,9 @@ pub fn reduce<'alloc>(
         }
         564 => {
             // EqualityExpression[~In] ::= EqualityExpression[~In] "!==" RelationalExpression[~In] => binary_expr(strict_not_equals_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.strict_not_equals_op(),
                 x0,
@@ -13010,9 +13017,9 @@ pub fn reduce<'alloc>(
         }
         566 => {
             // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => binary_expr(add_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.add_op(),
                 x0,
@@ -13022,9 +13029,9 @@ pub fn reduce<'alloc>(
         }
         567 => {
             // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => binary_expr(sub_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.sub_op(),
                 x0,
@@ -13038,9 +13045,9 @@ pub fn reduce<'alloc>(
         }
         569 => {
             // RelationalExpression[~In] ::= RelationalExpression[~In] "<" ShiftExpression => binary_expr(less_than_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.less_than_op(),
                 x0,
@@ -13050,9 +13057,9 @@ pub fn reduce<'alloc>(
         }
         570 => {
             // RelationalExpression[~In] ::= RelationalExpression[~In] ">" ShiftExpression => binary_expr(greater_than_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.greater_than_op(),
                 x0,
@@ -13062,9 +13069,9 @@ pub fn reduce<'alloc>(
         }
         571 => {
             // RelationalExpression[~In] ::= RelationalExpression[~In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.less_than_or_equal_op(),
                 x0,
@@ -13074,9 +13081,9 @@ pub fn reduce<'alloc>(
         }
         572 => {
             // RelationalExpression[~In] ::= RelationalExpression[~In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.greater_than_or_equal_op(),
                 x0,
@@ -13086,9 +13093,9 @@ pub fn reduce<'alloc>(
         }
         573 => {
             // RelationalExpression[~In] ::= RelationalExpression[~In] "instanceof" ShiftExpression => binary_expr(instanceof_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.instanceof_op(),
                 x0,
@@ -13102,9 +13109,9 @@ pub fn reduce<'alloc>(
         }
         575 => {
             // MultiplicativeExpression ::= MultiplicativeExpression MultiplicativeOperator ExponentiationExpression => multiplicative_expr($0, $1, $2)
-            let x2 = stack.pop().unwrap().to_ast();
-            let x1 = stack.pop().unwrap().to_ast();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, BinaryOperator> = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.multiplicative_expr(x0, x1, x2),
             )?);
@@ -13116,9 +13123,9 @@ pub fn reduce<'alloc>(
         }
         577 => {
             // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => binary_expr(pow_op(), $0, $2)
-            let x2 = stack.pop().unwrap().to_ast();
+            let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
                 handler.pow_op(),
                 x0,
@@ -13156,49 +13163,49 @@ pub fn reduce<'alloc>(
         }
         582 => {
             // UnaryExpression ::= "delete" UnaryExpression => delete_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.delete_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         583 => {
             // UnaryExpression ::= "void" UnaryExpression => void_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.void_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         584 => {
             // UnaryExpression ::= "typeof" UnaryExpression => typeof_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.typeof_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         585 => {
             // UnaryExpression ::= "+" UnaryExpression => unary_plus_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.unary_plus_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         586 => {
             // UnaryExpression ::= "-" UnaryExpression => unary_minus_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.unary_minus_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         587 => {
             // UnaryExpression ::= "~" UnaryExpression => bitwise_not_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.bitwise_not_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         588 => {
             // UnaryExpression ::= "!" UnaryExpression => logical_not_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.logical_not_expr(x1))?);
             Ok(NonterminalId::UnaryExpression)
@@ -13214,7 +13221,7 @@ pub fn reduce<'alloc>(
         591 => {
             // UpdateExpression ::= LeftHandSideExpression "++" => post_increment_expr($0)
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.post_increment_expr(x0)?,
             )?);
@@ -13223,7 +13230,7 @@ pub fn reduce<'alloc>(
         592 => {
             // UpdateExpression ::= LeftHandSideExpression "--" => post_decrement_expr($0)
             stack.pop();
-            let x0 = stack.pop().unwrap().to_ast();
+            let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
                 handler.post_decrement_expr(x0)?,
             )?);
@@ -13231,7 +13238,7 @@ pub fn reduce<'alloc>(
         }
         593 => {
             // UpdateExpression ::= "++" UnaryExpression => pre_decrement_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.pre_decrement_expr(x1)?,
@@ -13240,7 +13247,7 @@ pub fn reduce<'alloc>(
         }
         594 => {
             // UpdateExpression ::= "--" UnaryExpression => pre_decrement_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
                 handler.pre_decrement_expr(x1)?,
@@ -13249,7 +13256,7 @@ pub fn reduce<'alloc>(
         }
         595 => {
             // AwaitExpression ::= "await" UnaryExpression => await_expr($1)
-            let x1 = stack.pop().unwrap().to_ast();
+            let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.await_expr(x1))?);
             Ok(NonterminalId::AwaitExpression)
