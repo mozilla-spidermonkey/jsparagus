@@ -438,10 +438,12 @@ CodePoint ::
   HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
 
 
+@returns Identifier
 IdentifierReference[Yield, Await] :
   Identifier
     => identifier_reference($0)
 
+@returns BindingIdentifier
 BindingIdentifier[Yield, Await] :
   Identifier
     => binding_identifier($0)
@@ -450,10 +452,12 @@ BindingIdentifier[Yield, Await] :
   `await`
     => binding_identifier_await()
 
+@returns Label
 LabelIdentifier[Yield, Await] :
   Identifier
     => label_identifier($0)
 
+@returns Expression
 PrimaryExpression[Yield, Await] :
   `this`
     => this_expr()
@@ -482,6 +486,7 @@ PrimaryExpression[Yield, Await] :
   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
     => uncover_parenthesized_expression($0)
 
+@returns CoverParenthesized
 CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
   `(` Expression[+In, ?Yield, ?Await] `)`
     => cover_parenthesized_expression($1)
@@ -499,6 +504,7 @@ CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
     => cover_arrow_parameter_list(expression_to_parameter_list($1), Some($4))
 
 
+@returns Expression
 Literal :
   NullLiteral
     => null_literal()
@@ -510,6 +516,7 @@ Literal :
     => string_literal($0)
 
 
+@returns Expression
 ArrayLiteral[Yield, Await] :
   `[` Elision? `]`
     => array_literal_empty($1)
@@ -518,6 +525,7 @@ ArrayLiteral[Yield, Await] :
   `[` ElementList[?Yield, ?Await] `,` Elision? `]`
     => array_literal_with_trailing_elision($1, $3)
 
+@returns ArrayExpression
 ElementList[Yield, Await] :
   Elision? AssignmentExpression[+In, ?Yield, ?Await]
     => element_list_first($0, $1)
@@ -528,17 +536,20 @@ ElementList[Yield, Await] :
   ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]
     => element_list_append_spread($0, $2, $3)
 
+@returns ArrayExpression
 Elision :
   `,`
     => elision_single()
   Elision `,`
     => elision_append($0)
 
+@returns Expression
 SpreadElement[Yield, Await] :
   `...` AssignmentExpression[+In, ?Yield, ?Await]
     => spread_element($1)
 
 
+@returns Expression
 ObjectLiteral[Yield, Await] :
   `{` `}`
     => object_literal_empty()
@@ -547,12 +558,14 @@ ObjectLiteral[Yield, Await] :
   `{` PropertyDefinitionList[?Yield, ?Await] `,` `}`
     => object_literal($1)
 
+@returns ObjectExpression
 PropertyDefinitionList[Yield, Await] :
   PropertyDefinition[?Yield, ?Await]
     => property_definition_list_single($0)
   PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]
     => property_definition_list_append($0, $2)
 
+@returns ObjectProperty
 PropertyDefinition[Yield, Await] :
   IdentifierReference[?Yield, ?Await]
     => shorthand_property($0)
@@ -565,12 +578,14 @@ PropertyDefinition[Yield, Await] :
   `...` AssignmentExpression[+In, ?Yield, ?Await]
     => property_definition_spread($1)
 
+@returns PropertyName
 PropertyName[Yield, Await] :
   LiteralPropertyName
     => $0
   ComputedPropertyName[?Yield, ?Await]
     => $0
 
+@returns PropertyName
 LiteralPropertyName :
   IdentifierName
     => property_name_identifier($0)
@@ -579,35 +594,42 @@ LiteralPropertyName :
   NumericLiteral
     => property_name_numeric($0)
 
+@returns PropertyName
 ComputedPropertyName[Yield, Await] :
   `[` AssignmentExpression[+In, ?Yield, ?Await] `]`
     => computed_property_name($1)
 
+@returns Void
 CoverInitializedName[Yield, Await] :
   IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
     => cover_initialized_name($0, $1)
 
+@returns Expression
 Initializer[In, Yield, Await] :
   `=` AssignmentExpression[?In, ?Yield, ?Await]
     => $1
 
 
+@returns TemplateExpression
 TemplateLiteral[Yield, Await, Tagged] :
   NoSubstitutionTemplate
     => template_literal($0)
   SubstitutionTemplate[?Yield, ?Await, ?Tagged]
     => $0
 
+@returns TemplateExpression
 SubstitutionTemplate[Yield, Await, Tagged] :
   TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await, ?Tagged]
     => substitution_template($0, $1, $2)
 
+@returns Void
 TemplateSpans[Yield, Await, Tagged] :
   TemplateTail
     => template_spans(None, $0)
   TemplateMiddleList[?Yield, ?Await, ?Tagged] TemplateTail
     => template_spans(Some($0), $1)
 
+@returns Void
 TemplateMiddleList[Yield, Await, Tagged] :
   TemplateMiddle Expression[+In, ?Yield, ?Await]
     => template_middle_list_single($0, $1)
@@ -615,6 +637,7 @@ TemplateMiddleList[Yield, Await, Tagged] :
     => template_middle_list_append($0, $1, $2)
 
 
+@returns Expression
 MemberExpression[Yield, Await] :
   PrimaryExpression[?Yield, ?Await]
     => $0
@@ -631,26 +654,31 @@ MemberExpression[Yield, Await] :
   `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
     => new_expr_with_arguments($1, $2)
 
+@returns Expression
 SuperProperty[Yield, Await] :
   `super` `[` Expression[+In, ?Yield, ?Await] `]`
     => super_property_computed($2)
   `super` `.` IdentifierName
     => super_property_static($2)
 
+@returns Expression
 MetaProperty :
   NewTarget
     => $0
 
+@returns Expression
 NewTarget :
   `new` `.` `target`
     => new_target_expr()
 
+@returns Expression
 NewExpression[Yield, Await] :
   MemberExpression[?Yield, ?Await]
     => $0
   `new` NewExpression[?Yield, ?Await]
     => new_expr_without_arguments($1)
 
+@returns Expression
 CallExpression[Yield, Await] :
   CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]
     => $0
@@ -667,14 +695,17 @@ CallExpression[Yield, Await] :
   CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
     => tagged_template_expr($0, $1)
 
+@returns Expression
 SuperCall[Yield, Await] :
   `super` Arguments[?Yield, ?Await]
     => super_call($1)
 
+@returns Expression
 ImportCall[Yield, Await] :
   `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `)`
     => import_call($2)
 
+@returns Arguments
 Arguments[Yield, Await] :
   `(` `)`
     => arguments_empty()
@@ -683,6 +714,7 @@ Arguments[Yield, Await] :
   `(` ArgumentList[?Yield, ?Await] `,` `)`
     => $1
 
+@returns Arguments
 ArgumentList[Yield, Await] :
   AssignmentExpression[+In, ?Yield, ?Await]
     => arguments_append(arguments_empty(), $0)
@@ -693,6 +725,7 @@ ArgumentList[Yield, Await] :
   ArgumentList[?Yield, ?Await] `,` `...` AssignmentExpression[+In, ?Yield, ?Await]
     => arguments_append_spread($0, $3)
 
+@returns Expression
 LeftHandSideExpression[Yield, Await] :
   NewExpression[?Yield, ?Await]
     => $0
@@ -700,11 +733,13 @@ LeftHandSideExpression[Yield, Await] :
     => $0
 
 
+@returns Expression
 CallMemberExpression[Yield, Await] :
   MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
     => call_expr($0, $1)
 
 
+@returns Expression
 UpdateExpression[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
     => $0
@@ -718,6 +753,7 @@ UpdateExpression[Yield, Await] :
     => pre_decrement_expr($1)
 
 
+@returns Expression
 UnaryExpression[Yield, Await] :
   UpdateExpression[?Yield, ?Await]
     => $0
@@ -739,6 +775,7 @@ UnaryExpression[Yield, Await] :
     => $0
 
 
+@returns Expression
 ExponentiationExpression[Yield, Await] :
   UnaryExpression[?Yield, ?Await]
     => $0
@@ -746,12 +783,14 @@ ExponentiationExpression[Yield, Await] :
     => binary_expr(pow_op(), $0, $2)
 
 
+@returns Expression
 MultiplicativeExpression[Yield, Await] :
   ExponentiationExpression[?Yield, ?Await]
     => $0
   MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]
     => multiplicative_expr($0, $1, $2)
 
+@returns BinaryOperator
 MultiplicativeOperator :
   `*`
     => box_op(mul_op())
@@ -761,6 +800,7 @@ MultiplicativeOperator :
     => box_op(mod_op())
 
 
+@returns Expression
 AdditiveExpression[Yield, Await] :
   MultiplicativeExpression[?Yield, ?Await]
     => $0
@@ -770,6 +810,7 @@ AdditiveExpression[Yield, Await] :
     => binary_expr(sub_op(), $0, $2)
 
 
+@returns Expression
 ShiftExpression[Yield, Await] :
   AdditiveExpression[?Yield, ?Await]
     => $0
@@ -781,6 +822,7 @@ ShiftExpression[Yield, Await] :
     => binary_expr(right_shift_ext_op(), $0, $2)
 
 
+@returns Expression
 RelationalExpression[In, Yield, Await] :
   ShiftExpression[?Yield, ?Await]
     => $0
@@ -798,6 +840,7 @@ RelationalExpression[In, Yield, Await] :
     => binary_expr(in_op(), $0, $2)
 
 
+@returns Expression
 EqualityExpression[In, Yield, Await] :
   RelationalExpression[?In, ?Yield, ?Await]
     => $0
@@ -811,18 +854,21 @@ EqualityExpression[In, Yield, Await] :
     => binary_expr(strict_not_equals_op(), $0, $2)
 
 
+@returns Expression
 BitwiseANDExpression[In, Yield, Await] :
   EqualityExpression[?In, ?Yield, ?Await]
     => $0
   BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_and_op(), $0, $2)
 
+@returns Expression
 BitwiseXORExpression[In, Yield, Await] :
   BitwiseANDExpression[?In, ?Yield, ?Await]
     => $0
   BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_xor_op(), $0, $2)
 
+@returns Expression
 BitwiseORExpression[In, Yield, Await] :
   BitwiseXORExpression[?In, ?Yield, ?Await]
     => $0
@@ -830,12 +876,14 @@ BitwiseORExpression[In, Yield, Await] :
     => binary_expr(bitwise_or_op(), $0, $2)
 
 
+@returns Expression
 LogicalANDExpression[In, Yield, Await] :
   BitwiseORExpression[?In, ?Yield, ?Await]
     => $0
   LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]
     => binary_expr(logical_and_op(), $0, $2)
 
+@returns Expression
 LogicalORExpression[In, Yield, Await] :
   LogicalANDExpression[?In, ?Yield, ?Await]
     => $0
@@ -843,6 +891,7 @@ LogicalORExpression[In, Yield, Await] :
     => binary_expr(logical_or_op(), $0, $2)
 
 
+@returns Expression
 ConditionalExpression[In, Yield, Await] :
   LogicalORExpression[?In, ?Yield, ?Await]
     => $0
@@ -850,6 +899,7 @@ ConditionalExpression[In, Yield, Await] :
     => conditional_expr($0, $2, $4)
 
 
+@returns Expression
 AssignmentExpression[In, Yield, Await] :
   ConditionalExpression[?In, ?Yield, ?Await]
     => $0
@@ -864,6 +914,7 @@ AssignmentExpression[In, Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]
     => compound_assignment_expr($0, $1, $2)
 
+@returns CompoundAssignmentOperator
 AssignmentOperator :
   `*=`
     => box_assign_op(mul_assign_op())
@@ -934,6 +985,7 @@ DestructuringAssignmentTarget[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
 
 
+@returns Expression
 Expression[In, Yield, Await] :
   AssignmentExpression[?In, ?Yield, ?Await]
     => $0
@@ -941,6 +993,7 @@ Expression[In, Yield, Await] :
     => binary_expr(comma_op(), $0, $2)
 
 
+@returns Statement
 Statement[Yield, Await, Return] :
   BlockStatement[?Yield, ?Await, ?Return]
     => $0
@@ -971,6 +1024,7 @@ Statement[Yield, Await, Return] :
   DebuggerStatement
     => $0
 
+@returns Statement
 Declaration[Yield, Await] :
   HoistableDeclaration[?Yield, ?Await, ~Default]
     => $0
@@ -979,6 +1033,7 @@ Declaration[Yield, Await] :
   LexicalDeclaration[+In, ?Yield, ?Await]
     => $0
 
+@returns Statement
 HoistableDeclaration[Yield, Await, Default] :
   FunctionDeclaration[?Yield, ?Await, ?Default]
     => $0
@@ -989,6 +1044,7 @@ HoistableDeclaration[Yield, Await, Default] :
   AsyncGeneratorDeclaration[?Yield, ?Await, ?Default]
     => $0
 
+@returns Statement
 BreakableStatement[Yield, Await, Return] :
   IterationStatement[?Yield, ?Await, ?Return]
     => $0
@@ -996,20 +1052,24 @@ BreakableStatement[Yield, Await, Return] :
     => $0
 
 
+@returns Statement
 BlockStatement[Yield, Await, Return] :
   Block[?Yield, ?Await, ?Return]
     => block_statement($0)
 
+@returns Block
 Block[Yield, Await, Return] :
   `{` StatementList[?Yield, ?Await, ?Return]? `}`
     => block($1)
 
+@returns Vec<Statement>
 StatementList[Yield, Await, Return] :
   StatementListItem[?Yield, ?Await, ?Return]
     => statement_list_single($0)
   StatementList[?Yield, ?Await, ?Return] StatementListItem[?Yield, ?Await, ?Return]
     => statement_list_append($0, $1)
 
+@returns Statement
 StatementListItem[Yield, Await, Return] :
   Statement[?Yield, ?Await, ?Return]
     => $0
@@ -1017,26 +1077,31 @@ StatementListItem[Yield, Await, Return] :
     => $0
 
 
+@returns Statement
 LexicalDeclaration[In, Yield, Await] :
   LetOrConst BindingList[?In, ?Yield, ?Await] `;`
     => lexical_declaration($0, $1)
 
+@returns VariableDeclarationOrExpression
 ForLexicalDeclaration[In, Yield, Await] :
   LetOrConst BindingList[?In, ?Yield, ?Await] `;`
     => for_lexical_declaration($0, $1)
 
+@returns VariableDeclarationKind
 LetOrConst :
   `let`
     => let_kind()
   `const`
     => const_kind()
 
+@returns Vec<VariableDeclarator>
 BindingList[In, Yield, Await] :
   LexicalBinding[?In, ?Yield, ?Await]
     => variable_declaration_list_single($0)
   BindingList[?In, ?Yield, ?Await] `,` LexicalBinding[?In, ?Yield, ?Await]
     => variable_declaration_list_append($0, $2)
 
+@returns VariableDeclarator
 LexicalBinding[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
     => variable_declaration(binding_identifier_to_binding($0), $1)
@@ -1044,16 +1109,19 @@ LexicalBinding[In, Yield, Await] :
     => variable_declaration($0, Some($1))
 
 
+@returns Statement
 VariableStatement[Yield, Await] :
   `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`
     => variable_statement($1)
 
+@returns Vec<VariableDeclarator>
 VariableDeclarationList[In, Yield, Await] :
   VariableDeclaration[?In, ?Yield, ?Await]
     => variable_declaration_list_single($0)
   VariableDeclarationList[?In, ?Yield, ?Await] `,` VariableDeclaration[?In, ?Yield, ?Await]
     => variable_declaration_list_append($0, $2)
 
+@returns VariableDeclarator
 VariableDeclaration[In, Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
     => variable_declaration(binding_identifier_to_binding($0), $1)
@@ -1061,12 +1129,14 @@ VariableDeclaration[In, Yield, Await] :
     => variable_declaration($0, Some($1))
 
 
+@returns Binding
 BindingPattern[Yield, Await] :
   ObjectBindingPattern[?Yield, ?Await]
     => $0
   ArrayBindingPattern[?Yield, ?Await]
     => $0
 
+@returns Binding
 ObjectBindingPattern[Yield, Await] :
   `{` `}`
     => object_binding_pattern(binding_property_list_empty(), None)
@@ -1077,6 +1147,7 @@ ObjectBindingPattern[Yield, Await] :
   `{` BindingPropertyList[?Yield, ?Await] `,` BindingRestProperty[?Yield, ?Await]? `}`
     => object_binding_pattern($1, $3)
 
+@returns Binding
 ArrayBindingPattern[Yield, Await] :
   `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
     => array_binding_pattern(binding_element_list_empty(), $1, $2)
@@ -1085,42 +1156,50 @@ ArrayBindingPattern[Yield, Await] :
   `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
     => array_binding_pattern($1, $3, $4)
 
+@returns BindingIdentifier
 BindingRestProperty[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
     => $1
 
+@returns Vec<BindingProperty>
 BindingPropertyList[Yield, Await] :
   BindingProperty[?Yield, ?Await]
     => binding_property_list_single($0)
   BindingPropertyList[?Yield, ?Await] `,` BindingProperty[?Yield, ?Await]
     => binding_property_list_append($0, $2)
 
+@returns Vec<Option<Parameter>>
 BindingElementList[Yield, Await] :
   BindingElisionElement[?Yield, ?Await]
     => $0
   BindingElementList[?Yield, ?Await] `,` BindingElisionElement[?Yield, ?Await]
     => binding_element_list_append($0, $2)
 
+@returns Vec<Option<Parameter>>
 BindingElisionElement[Yield, Await] :
   Elision? BindingElement[?Yield, ?Await]
    => binding_elision_element($0, $1)
 
+@returns BindingProperty
 BindingProperty[Yield, Await] :
   SingleNameBinding[?Yield, ?Await]
     => binding_property_shorthand($0)
   PropertyName[?Yield, ?Await] `:` BindingElement[?Yield, ?Await]
     => binding_property($0, $2)
 
+@returns Parameter
 BindingElement[Yield, Await] :
   SingleNameBinding[?Yield, ?Await]
     => $0
   BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
     => binding_element_pattern($0, $1)
 
+@returns Parameter
 SingleNameBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
     => single_name_binding($0, $1)
 
+@returns Binding
 BindingRestElement[Yield, Await] :
   `...` BindingIdentifier[?Yield, ?Await]
     => binding_identifier_to_binding($1)
@@ -1128,15 +1207,18 @@ BindingRestElement[Yield, Await] :
     => $1
 
 
+@returns Statement
 EmptyStatement :
   `;`
     => empty_statement()
 
+@returns Statement
 ExpressionStatement[Yield, Await] :
   [lookahead <! {`{`, `function`, `async`, `class`, `let`}] Expression[+In, ?Yield, ?Await] `;`
     => expression_statement($0)
 
 
+@returns Statement
 IfStatement[Yield, Await, Return] :
   `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]
     => if_statement($2, $4, Some($6))
@@ -1144,6 +1226,7 @@ IfStatement[Yield, Await, Return] :
     => if_statement($2, $4, None)
 
 
+@returns Statement
 IterationStatement[Yield, Await, Return] :
   `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`
     => do_while_statement($1, $4)
@@ -1174,10 +1257,12 @@ IterationStatement[Yield, Await, Return] :
   [+Await] `for` `await` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_await_of_statement(unbox_for_declaration($3), $5, $7)
 
+@returns VariableDeclarationOrAssignmentTarget
 ForDeclaration[Yield, Await] :
   LetOrConst ForBinding[?Yield, ?Await]
     => for_declaration($0, $1)
 
+@returns Binding
 ForBinding[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => binding_identifier_to_binding($0)
@@ -1185,6 +1270,7 @@ ForBinding[Yield, Await] :
     => $0
 
 
+@returns Statement
 ContinueStatement[Yield, Await] :
   `continue` `;`
     => continue_statement(None)
@@ -1192,6 +1278,7 @@ ContinueStatement[Yield, Await] :
     => continue_statement(Some($1))
 
 
+@returns Statement
 BreakStatement[Yield, Await] :
   `break` `;`
     => break_statement(None)
@@ -1199,6 +1286,7 @@ BreakStatement[Yield, Await] :
     => break_statement(Some($1))
 
 
+@returns Statement
 ReturnStatement[Yield, Await] :
   `return` `;`
     => return_statement(None)
@@ -1206,40 +1294,48 @@ ReturnStatement[Yield, Await] :
     => return_statement(Some($1))
 
 
+@returns Statement
 WithStatement[Yield, Await, Return] :
   `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => with_statement($2, $4)
 
 
+@returns Statement
 SwitchStatement[Yield, Await, Return] :
   `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]
     => switch_statement($2, $4)
 
+@returns Statement
 CaseBlock[Yield, Await, Return] :
   `{` CaseClauses[?Yield, ?Await, ?Return]? `}`
     => case_block($1)
   `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
     => case_block_with_default($1, $2, $3)
 
+@returns Vec<SwitchCase>
 CaseClauses[Yield, Await, Return] :
   CaseClause[?Yield, ?Await, ?Return]
     => case_clauses_single($0)
   CaseClauses[?Yield, ?Await, ?Return] CaseClause[?Yield, ?Await, ?Return]
     => case_clauses_append($0, $1)
 
+@returns SwitchCase
 CaseClause[Yield, Await, Return] :
   `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?
     => case_clause($1, $3)
 
+@returns SwitchDefault
 DefaultClause[Yield, Await, Return] :
   `default` `:` StatementList[?Yield, ?Await, ?Return]?
     => default_clause($2)
 
 
+@returns Statement
 LabelledStatement[Yield, Await, Return] :
   LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]
     => labelled_statement($0, $2)
 
+@returns Statement
 LabelledItem[Yield, Await, Return] :
   Statement[?Yield, ?Await, ?Return]
     => $0
@@ -1247,10 +1343,12 @@ LabelledItem[Yield, Await, Return] :
     => $0
 
 
+@returns Statement
 ThrowStatement[Yield, Await] :
   `throw` Expression[+In, ?Yield, ?Await] `;`
     => throw_statement($1)
 
+@returns Statement
 TryStatement[Yield, Await, Return] :
   `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return]
     => try_statement($1, Some($2), None)
@@ -1259,16 +1357,19 @@ TryStatement[Yield, Await, Return] :
   `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]
     => try_statement($1, Some($2), Some($3))
 
+@returns CatchClause
 Catch[Yield, Await, Return] :
   `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]
     => catch(Some($2), $4)
   `catch` Block[?Yield, ?Await, ?Return]
     => catch(None, $1)
 
+@returns Block
 Finally[Yield, Await, Return] :
   `finally` Block[?Yield, ?Await, ?Return]
     => $1
 
+@returns Binding
 CatchParameter[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => binding_identifier_to_binding($0)
@@ -1276,25 +1377,30 @@ CatchParameter[Yield, Await] :
     => $0
 
 
+@returns Statement
 DebuggerStatement :
   `debugger` `;`
     => debugger_statement()
 
 
+@returns Statement
 FunctionDeclaration[Yield, Await, Default] :
   `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
     => function_decl(function(Some($1), $3, $6))
   [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
     => function_decl(function(None, $2, $5))
 
+@returns Expression
 FunctionExpression :
   `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
     => function_expr(function($1, $3, $6))
 
+@returns FormalParameters
 UniqueFormalParameters[Yield, Await] :
   FormalParameters[?Yield, ?Await]
     => unique_formal_parameters($0)
 
+@returns FormalParameters
 FormalParameters[Yield, Await] :
   [empty]
     => empty_formal_parameters()
@@ -1307,39 +1413,47 @@ FormalParameters[Yield, Await] :
   FormalParameterList[?Yield, ?Await] `,` FunctionRestParameter[?Yield, ?Await]
     => with_rest_parameter($0, $2)
 
+@returns FormalParameters
 FormalParameterList[Yield, Await] :
   FormalParameter[?Yield, ?Await]
     => formal_parameter_list_single($0)
   FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]
     => formal_parameter_list_append($0, $2)
 
+@returns Binding
 FunctionRestParameter[Yield, Await] :
   BindingRestElement[?Yield, ?Await]
     => $0
 
+@returns Parameter
 FormalParameter[Yield, Await] :
   BindingElement[?Yield, ?Await]
     => $0
 
+@returns FunctionBody
 FunctionBody[Yield, Await] :
   FunctionStatementList[?Yield, ?Await]
     => function_body($0)
 
+@returns Vec<Statement>
 FunctionStatementList[Yield, Await] :
   StatementList[?Yield, ?Await, +Return]?
     => function_statement_list($0)
 
 
+@returns Expression
 ArrowFunction[In, Yield, Await] :
   ArrowParameters[?Yield, ?Await] `=>` ConciseBody[?In]
     => arrow_function($0, $2)
 
+@returns FormalParameters
 ArrowParameters[Yield, Await] :
   BindingIdentifier[?Yield, ?Await]
     => arrow_parameters_bare($0)
   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
     => uncover_arrow_parameters($0)
 
+@returns ArrowExpressionBody
 ConciseBody[In] :
   [lookahead != `{` ] AssignmentExpression[?In, ~Yield, ~Await]
     => concise_body_expression($0)
@@ -1351,6 +1465,7 @@ ArrowFormalParameters[Yield, Await] :
   `(` UniqueFormalParameters[?Yield, ?Await] `)`
 
 
+@returns MethodDefinition
 MethodDefinition[Yield, Await] :
   PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
     => method_definition($0, $2, $5)
@@ -1365,29 +1480,35 @@ MethodDefinition[Yield, Await] :
   `set` PropertyName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`
     => setter($1, $3, $6)
 
+@returns Parameter
 PropertySetParameterList :
   FormalParameter[~Yield, ~Await]
     => $0
 
 
+@returns MethodDefinition
 GeneratorMethod[Yield, Await] :
   `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
     => generator_method($1, $3, $6)
 
+@returns Statement
 GeneratorDeclaration[Yield, Await, Default] :
   `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
     => function_decl(generator(Some($2), $4, $7))
   [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
     => function_decl(generator(None, $3, $6))
 
+@returns Expression
 GeneratorExpression :
   `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
     => function_expr(generator($2, $4, $7))
 
+@returns FunctionBody
 GeneratorBody :
   FunctionBody[+Yield, ~Await]
     => $0
 
+@returns Expression
 YieldExpression[In, Await] :
   `yield`
     => yield_expr(None)
@@ -1397,53 +1518,64 @@ YieldExpression[In, Await] :
     => yield_star_expr($2)
 
 
+@returns MethodDefinition
 AsyncGeneratorMethod[Yield, Await] :
   `async` `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => async_generator_method($2, $4, $7)
 
+@returns Statement
 AsyncGeneratorDeclaration[Yield, Await, Default] :
   `async` `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_decl(async_generator(Some($3), $5, $8))
   [+Default] `async` `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_decl(async_generator(None, $4, $7))
 
+@returns Expression
 AsyncGeneratorExpression :
   `async` `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_expr(async_function($3, $5, $8))
 
+@returns FunctionBody
 AsyncGeneratorBody :
   FunctionBody[+Yield, +Await]
     => $0
 
 
+@returns Statement
 ClassDeclaration[Yield, Await, Default] :
   `class` BindingIdentifier[?Yield, ?Await] ClassTail[?Yield, ?Await]
     => class_declaration(Some($1), $2)
   [+Default] `class` ClassTail[?Yield, ?Await]
     => class_declaration(None, $1)
 
+@returns Expression
 ClassExpression[Yield, Await] :
   `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]
     => class_expression($1, $2)
 
+@returns ClassExpression
 ClassTail[Yield, Await] :
   ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
     => class_tail($0, $2)
 
+@returns Expression
 ClassHeritage[Yield, Await] :
   `extends` LeftHandSideExpression[?Yield, ?Await]
     => $1
 
+@returns Vec<ClassElement>
 ClassBody[Yield, Await] :
   ClassElementList[?Yield, ?Await]
     => $0
 
+@returns Vec<ClassElement>
 ClassElementList[Yield, Await] :
   ClassElement[?Yield, ?Await]
     => $0
   ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]
     => class_element_list_append($0, $1)
 
+@returns Vec<ClassElement>
 ClassElement[Yield, Await] :
   MethodDefinition[?Yield, ?Await]
     => class_element($0)
@@ -1453,47 +1585,56 @@ ClassElement[Yield, Await] :
     => class_element_empty()
 
 
+@returns Statement
 AsyncFunctionDeclaration[Yield, Await, Default] :
   `async` `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_decl(async_function(Some($2), $4, $7))
   [+Default] `async` `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_decl(async_function(None, $3, $6))
 
+@returns Expression
 AsyncFunctionExpression :
   `async` `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_expr(async_function(None, $3, $6))
   `async` `function` BindingIdentifier[~Yield, +Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_expr(async_function(Some($2), $4, $7))
 
+@returns MethodDefinition
 AsyncMethod[Yield, Await] :
   `async` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => async_method($1, $3, $6)
 
+@returns FunctionBody
 AsyncFunctionBody :
   FunctionBody[~Yield, +Await]
     => $0
 
+@returns Expression
 AwaitExpression[Yield] :
   `await` UnaryExpression[?Yield, +Await]
     => await_expr($1)
 
 
+@returns Expression
 AsyncArrowFunction[In, Yield, Await] :
   `async` AsyncArrowBindingIdentifier[?Yield] `=>` AsyncConciseBody[?In]
     => async_arrow_function(arrow_parameters_bare($1), $3)
   CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] `=>` AsyncConciseBody[?In]
     => async_arrow_function(async_arrow_parameters($0), $2)
 
+@returns ArrowExpressionBody
 AsyncConciseBody[In] :
   [lookahead != `{`] AssignmentExpression[?In, ~Yield, +Await]
     => concise_body_expression($0)
   `{` AsyncFunctionBody `}`
     => concise_body_block($1)
 
+@returns BindingIdentifier
 AsyncArrowBindingIdentifier[Yield] :
   BindingIdentifier[?Yield, +Await]
     => $0
 
+@returns Expression
 CoverCallExpressionAndAsyncArrowHead[Yield, Await] :
   MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
     => call_expr($0, $1)
@@ -1503,28 +1644,34 @@ AsyncArrowHead :
   `async` ArrowFormalParameters[~Yield, +Await]
 
 
+@returns Script
 Script :
   ScriptBody?
     => script($0)
 
+@returns Script
 ScriptBody :
   StatementList[~Yield, ~Await, ~Return]
     => script_body($0)
 
+@returns Vec<Statement>
 Module :
   ModuleBody?
     => module($0)
 
+@returns Vec<Statement>
 ModuleBody :
   ModuleItemList
     => $0
 
+@returns Vec<Statement>
 ModuleItemList :
   ModuleItem
     => module_item_list_single($0)
   ModuleItemList ModuleItem
     => module_item_list_append($0, $1)
 
+@returns Statement
 ModuleItem :
   ImportDeclaration
     => $0
@@ -1534,12 +1681,14 @@ ModuleItem :
     => $0
 
 
+@returns Statement
 ImportDeclaration :
   `import` ImportClause FromClause `;`
     => import_declaration(Some($1), $2)
   `import` ModuleSpecifier `;`
     => import_declaration(None, $1)
 
+@returns Void
 ImportClause :
   ImportedDefaultBinding
     => import_clause(Some($0), None, None)
@@ -1552,14 +1701,17 @@ ImportClause :
   ImportedDefaultBinding `,` NamedImports
     => import_clause(Some($0), None, Some($2))
 
+@returns BindingIdentifier
 ImportedDefaultBinding :
   ImportedBinding
     => $0
 
+@returns Void
 NameSpaceImport :
   `*` `as` ImportedBinding
     => name_space_import($2)
 
+@returns Void
 NamedImports :
   `{` `}`
     => imports_list_empty()
@@ -1568,31 +1720,37 @@ NamedImports :
   `{` ImportsList `,` `}`
     => $1
 
+@returns Token
 FromClause :
   `from` ModuleSpecifier
     => $1
 
+@returns Void
 ImportsList :
   ImportSpecifier
     => imports_list_append(imports_list_empty(), $0)
   ImportsList `,` ImportSpecifier
     => imports_list_append($0, $2)
 
+@returns Void
 ImportSpecifier :
   ImportedBinding
     => import_specifier($0)
   IdentifierName `as` ImportedBinding
     => import_specifier_renaming($0, $2)
 
+@returns Token
 ModuleSpecifier :
   StringLiteral
     => module_specifier($0)
 
+@returns BindingIdentifier
 ImportedBinding :
   BindingIdentifier[~Yield, ~Await]
     => $0
 
 
+@returns Statement
 ExportDeclaration :
   `export` `*` FromClause `;`
     => export_all_from($2)
@@ -1611,6 +1769,7 @@ ExportDeclaration :
   `export` `default` [lookahead <! {`function`, `async`, `class`}] AssignmentExpression[+In, ~Yield, ~Await] `;`
     => export_default_value($2)
 
+@returns Void
 ExportClause :
   `{` `}`
     => exports_list_empty()
@@ -1619,12 +1778,14 @@ ExportClause :
   `{` ExportsList `,` `}`
     => $1
 
+@returns Void
 ExportsList :
   ExportSpecifier
     => exports_list_append(exports_list_empty(), $0)
   ExportsList `,` ExportSpecifier
     => exports_list_append($0, $2)
 
+@returns Void
 ExportSpecifier :
   IdentifierName
     => export_specifier($0)
