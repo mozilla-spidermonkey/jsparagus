@@ -38,9 +38,9 @@ $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
 $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
-check: $(PY_OUT)
+check: all
 	./test.sh
-	cd rust && cargo test
+	cd rust && cargo fmt && cargo test
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
