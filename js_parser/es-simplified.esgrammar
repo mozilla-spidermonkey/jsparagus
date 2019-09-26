@@ -893,9 +893,7 @@ AssignmentOperator :
 
 AssignmentPattern[Yield, Await] :
   ObjectAssignmentPattern[?Yield, ?Await]
-    => $0
   ArrayAssignmentPattern[?Yield, ?Await]
-    => $0
 
 ObjectAssignmentPattern[Yield, Await] :
   `{` `}`
@@ -934,7 +932,6 @@ AssignmentRestElement[Yield, Await] :
 
 DestructuringAssignmentTarget[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
-    => $0
 
 
 Expression[In, Yield, Await] :
