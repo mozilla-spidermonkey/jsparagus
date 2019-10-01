@@ -11,12 +11,16 @@ STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
 # Incomplete list of files that contribute to the dump file.
 SOURCE_FILES = \
 jsparagus/gen.py \
+jsparagus/types.py \
 js_parser/esgrammar.pgen \
 js_parser/generate_js_parser_tables.py \
 js_parser/parse_esgrammar.py \
 js_parser/es-simplified.esgrammar
 
-EMIT_FILES = $(SOURCE_FILES) jsparagus/emit.py
+EMIT_FILES = $(SOURCE_FILES) \
+jsparagus/emit/__init__.py \
+jsparagus/emit/python.py \
+jsparagus/emit/rust.py
 
 DUMP_FILE = js_parser/parser_generated.jsparagus_dump
 

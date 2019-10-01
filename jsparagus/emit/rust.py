@@ -6,8 +6,7 @@ import unicodedata
 from ..runtime import (ERROR, ErrorToken)
 from ..ordered import OrderedSet
 
-from ..grammar import (InitNt, CallMethod, Some, is_concrete_element, Nt,
-                       Optional)
+from ..grammar import (CallMethod, Some, is_concrete_element, Nt, Optional)
 
 from .. import types
 
@@ -392,16 +391,13 @@ class RustParserWriter:
         # Mostly duplicated from types.py. :(
         g = self.grammar
         if isinstance(e, str):
-            if e in g.nonterminals:
-                assert nt_types[e] is not None
-                return nt_types[e]
-            elif e in g.variable_terminals:
+            if e in g.variable_terminals:
                 return types.TokenType
             else:
                 # constant terminal
                 return types.UnitType
         elif isinstance(e, Optional):
-            return Type('Option', [element_type(e.inner)])
+            return types.Type('Option', [self.element_type(e.inner)])
         elif isinstance(e, Nt):
             # Cope with the awkward fact that g.nonterminals keys may be either
             # strings or Nt objects.
