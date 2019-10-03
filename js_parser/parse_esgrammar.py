@@ -296,6 +296,21 @@ class ESGrammarBuilder:
 
 
 def finish_grammar(nt_defs, goals):
+    # Figure out which grammar we were trying to get (":" for syntactic,
+    # "::" for lexical) based on the goal symbols.
+    goals = list(goals)
+    if len(goals) == 0:
+        raise ValueError("no goal nonterminals specified")
+    nt_grammars = {nt_name: eq for nt_name, eq, rhs_list in nt_defs}
+    selected_grammars = set(nt_grammars[goal] for goal in goals)
+    assert len(selected_grammars) != 0
+    if len(selected_grammars) > 1:
+        raise ValueError(
+            "all goal nonterminals must be part of the same grammar; "
+            "got {!r} (matching these grammars: {!r})"
+            .format(set(goals), set(selected_grammars)))
+    [selected_grammar] = selected_grammars
+
     terminal_set = set()
 
     def hack_production(p):
@@ -311,10 +326,11 @@ def finish_grammar(nt_defs, goals):
     nonterminals = {}
     variable_terminals = set()
     for nt_name, eq, rhs_list_or_lambda in nt_defs:
-        if eq == "::" or eq == ":::":
-            # Is a lexical or sub-lexical construct
-            variable_terminals.add(nt_name)
-            continue
+        if eq != selected_grammar:
+            if selected_grammar == ':':
+                # Is a lexical or sub-lexical construct
+                variable_terminals.add(nt_name)
+                continue
 
         if isinstance(rhs_list_or_lambda, grammar.NtDef):
             nonterminals[nt_name] = rhs_list_or_lambda
