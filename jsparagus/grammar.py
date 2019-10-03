@@ -763,7 +763,7 @@ matches a Thing that does not start with the token `a` or `b`.
 #
 # -   A positive lookahead restriction explicitly lists all allowed tokens.
 #
-# -   A negative lookahead restriction instead specfies the set of all tokens
+# -   A negative lookahead restriction instead specifies the set of all tokens
 #     except a few.
 #
 def lookahead_contains(rule, t):
