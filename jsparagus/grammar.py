@@ -164,6 +164,7 @@ class Grammar:
     def __init__(
             self,
             nonterminals,
+            *,
             goal_nts=None,
             variable_terminals=(),
             method_types=None):
@@ -543,8 +544,10 @@ class Grammar:
             for nt_def in nonterminals.values():
                 assert nt_def.type is not None
         return Grammar(
-            nonterminals, self.goals(), self.variable_terminals,
-            self.methods)
+            nonterminals,
+            goal_nts=self.goals(),
+            variable_terminals=self.variable_terminals,
+            method_types=self.methods)
 
     # === A few methods for dumping pieces of grammar.
 

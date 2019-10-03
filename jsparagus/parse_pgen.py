@@ -251,7 +251,9 @@ def load_grammar(filename):
     result = lexer.close()
     tokens, nonterminals, goals = check_grammar(result)
     variable_terminals = [name for name, image in tokens if image is None]
-    return Grammar(nonterminals, goals, variable_terminals)
+    return Grammar(nonterminals,
+                   goal_nts=goals,
+                   variable_terminals=variable_terminals)
 
 
 def regenerate():

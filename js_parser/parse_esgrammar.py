@@ -352,7 +352,7 @@ def finish_grammar(nt_defs, goals):
                 "grammar contains both a terminal `{}` and nonterminal {}"
                 .format(t, t))
 
-    return grammar.Grammar(nonterminals, goals, variable_terminals)
+    return grammar.Grammar(nonterminals, goal_nts=goals, variable_terminals=variable_terminals)
 
 
 def parse_esgrammar(text, filename=None, goals=None):
