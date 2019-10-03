@@ -4,7 +4,7 @@
 from .grammar import Nt
 from .lexer import UnexpectedEndError
 
-__all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken', 'make_parse_fn']
+__all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
@@ -233,11 +233,3 @@ class Parser:
                 state = self.ctns[state][tag_name]
             else:
                 return state
-
-
-def make_parse_fn(actions, ctns, reductions, error_codes, entry_state, builder_cls):
-    def parse_fn(lexer_cls, text, builder=None):
-        if builder is None:
-            builder = builder_cls()
-        return parse(actions, ctns, reductions, error_codes, entry_state, lexer_cls, text, builder)
-    return parse_fn
