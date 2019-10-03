@@ -62,7 +62,7 @@ TokenType = Type('Token')
 
 # The type of expressions that can't be fully evaluated, like Rust `panic!()`;
 # likewise, the return type of functions that don't return.
-NoReturnType = Type('!')
+NoReturnType = Type('NoReturn')
 
 
 class TypeVar:
