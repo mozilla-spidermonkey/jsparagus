@@ -50,8 +50,6 @@ class RustParserWriter:
         self.actions()
         self.error_codes()
         self.check_camel_case()
-        # self.nt_node()
-        # self.nt_node_impl()
         self.nonterminal_id()
         self.goto()
         self.reduce()
@@ -283,88 +281,6 @@ class RustParserWriter:
                               for i, t in enumerate(arg_types)))
             self.write(1, "fn {}(&self, {}){};",
                        method_name, args, return_type_tag)
-        self.write(0, "}")
-        self.write(0, "")
-
-    def nt_node(self):
-        self.write(0, "pub mod concrete {")
-        for name in self.get_associated_type_names():
-            self.write(0, "#[derive(Debug, PartialEq)]")
-            self.write(0, "pub enum {} {{", name)
-            for tag, method in self.grammar.methods.items():
-                # TODO: Make this check better
-                if method.return_type.name != name:
-                    continue
-                method_name = self.to_camel_case(self.method_name_to_rust(tag))
-                arg_types = [
-                    self.type_to_rust(ty, "", boxed=True)
-                    for ty in method.argument_types
-                    if ty != types.UnitType
-                ]
-                self.write(1, "{}({}),", method_name, ", ".join(arg_types))
-            self.write(0, "}")
-            self.write(0, "")
-        self.write(0, "}")
-        self.write(0, "")
-
-    def nt_node_impl(self):
-        method_to_prod = {}
-        for i, prod in enumerate(self.prods):
-            if prod.nt in self.nonterminals:
-                def find_first_method(expr):
-                    if isinstance(expr, CallMethod):
-                        return self.method_name_to_rust(expr.method)
-                    elif isinstance(expr, Some):
-                        return find_first_method
-                    elif expr is None:
-                        return None
-                    else:
-                        assert isinstance(expr, int)
-                        return None
-
-                method_name = find_first_method(prod.reducer)
-                if method_name is not None:
-                    method_to_prod[method_name] = self.grammar.production_to_str(
-                        prod.nt, prod.rhs, prod.reducer)
-
-        # for method in self.grammar.methods.items():
-        # if prod.nt in self.nonterminals:
-        #    self.write(2, "{} => {{", i)
-        #    self.write(3, "// {}",
-
-        self.write(0, "pub struct DefaultHandler {}")
-        self.write(0, "")
-        self.write(0, "impl DefaultHandler {")
-
-        for tag, method in self.grammar.methods.items():
-            method_name = self.method_name_to_rust(tag)
-            if method_name in method_to_prod:
-                prod_name = method_to_prod[method_name]
-            else:
-                prod_name = "<unknown production>"
-            method_name_camel = self.to_camel_case(method_name)
-            arg_types = [
-                self.type_to_rust(ty, "concrete", boxed=True)
-                for ty in method.argument_types
-                if ty != types.UnitType
-            ]
-            if method.return_type == types.UnitType:
-                return_type_tag = ''
-            else:
-                return_type_tag = ' -> ' + \
-                    self.type_to_rust(method.return_type, "concrete", boxed=True)
-
-            args = "".join(", a{}: {}".format(i, t)
-                           for i, t in enumerate(arg_types))
-            params = ", ".join("a{}".format(i)
-                               for i, t in enumerate(arg_types))
-
-            self.write(1, "// {}", prod_name)
-            self.write(1, "fn {}(&self{}){} {{",
-                       method_name, args, return_type_tag)
-            self.write(2, "Box::new(concrete::{}::{}({}))",
-                       method.return_type.name, method_name_camel, params)
-            self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
 
