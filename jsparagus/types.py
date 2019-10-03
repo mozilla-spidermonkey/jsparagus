@@ -21,6 +21,7 @@ TypeBase = collections.namedtuple('Type', 'name args')
 
 _all_types = {}
 
+
 class Type(TypeBase):
     def __new__(cls, name, args=()):
         # type checking
@@ -148,7 +149,7 @@ def unify(actual, expected):
         for i, (actual_arg, expected_arg) in enumerate(zip(actual.args, expected.args)):
             try:
                 unify(actual_arg, expected_arg)
-            except JsparagusTypeError as exc:
+            except JsparagusTypeError:
                 # The error message has to do with the parameter, but we want
                 # to provide the complete problem types.
                 raise JsparagusTypeError.clash(expected, actual)

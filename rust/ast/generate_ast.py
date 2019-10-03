@@ -234,6 +234,7 @@ def stack_value(ast):
         write(1, "}")
         write(0, "}")
 
+
 def pass_(ast):
     with open("src/visit.rs", "w+") as f:
         def write(*args):
