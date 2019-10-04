@@ -405,3 +405,44 @@ fn test_invalid_assignment_targets() {
 //fn test_can_close_with_asi() {
 //    assert_can_close_after("2 + 2\n");
 //}
+
+#[test]
+fn test_conditional_keywords() {
+    // property names
+    assert_parses("let obj = {if: 3, function: 4};");
+    assert_parses("assert(obj.if == 3);");
+
+    // method names
+    assert_parses(
+        "
+        class C {
+            if() {}
+            function() {}
+        }
+        ",
+    );
+
+    assert_parses("var let = [new Date];"); // let as identifier
+    assert_parses("let v = let;"); // let as keyword, then identifier
+
+    // Next line would fail because the multitoken `let [` lookahead isn't implemented yet.
+    // assert_parses("let.length;");           // `let .` -> ExpressionStatement
+
+    assert_syntax_error("let[0].getYear();"); // `let [` -> LexicalDeclaration
+
+    assert_parses(
+        "
+        var of = [1, 2, 3];
+        for (of of of) console.log(of);  // logs 1, 2, 3
+        ",
+    );
+
+    assert_parses("var of, let, private, target;");
+    assert_parses("class X { get y() {} }");
+    assert_parses("async: { break async; }");
+    assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };");
+    assert_parses("for (async of => {};;) {}");
+
+    // This would fail because this case is currently disabled syntactically.
+    // assert_parses("for (async of []) {}");  // would fail
+}
