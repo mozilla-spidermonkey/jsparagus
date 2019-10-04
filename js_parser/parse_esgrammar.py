@@ -295,7 +295,7 @@ class ESGrammarBuilder:
         return None
 
 
-def finish_grammar(nt_defs, goals):
+def finish_grammar(nt_defs, goals, synthetic_terminals):
     # Figure out which grammar we were trying to get (":" for syntactic,
     # "::" for lexical) based on the goal symbols.
     goals = list(goals)
@@ -352,12 +352,21 @@ def finish_grammar(nt_defs, goals):
                 "grammar contains both a terminal `{}` and nonterminal {}"
                 .format(t, t))
 
-    return grammar.Grammar(nonterminals, goal_nts=goals, variable_terminals=variable_terminals)
+    return grammar.Grammar(
+        nonterminals,
+        goal_nts=goals,
+        variable_terminals=variable_terminals,
+        synthetic_terminals=synthetic_terminals)
 
 
-def parse_esgrammar(text, filename=None, goals=None):
+def parse_esgrammar(
+        text,
+        *,
+        filename=None,
+        goals=None,
+        synthetic_terminals=None):
     parser = ESGrammarParser(builder=ESGrammarBuilder())
     lexer = ESGrammarLexer(parser, filename=filename)
     lexer.write(text)
     nt_defs = lexer.close()
-    return finish_grammar(nt_defs, goals=goals)
+    return finish_grammar(nt_defs, goals=goals, synthetic_terminals=synthetic_terminals)

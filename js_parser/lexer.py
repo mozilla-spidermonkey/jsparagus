@@ -129,13 +129,78 @@ REGEXP_RE = re.compile(r'''(?x)
 )
 ''')
 
-RESERVED_WORDS = set('''
-await break case catch class const continue debugger default delete do else
-export extends finally for function if import in instanceof new return super
-switch this throw try typeof var void while with yield
-enum
-null true false
-'''.split())
+# Words that never match Identifier. (`await` and `yield` nonetheless
+# conditionally match IdentifierReference, BindingIdentifier, and
+# LabelIdentifier.)
+#
+# Technically the term for these is "reserved word", not "keyword", but
+# whatever.
+ECMASCRIPT_FULL_KEYWORDS = [
+    'await',
+    'break',
+    'case',
+    'catch',
+    'class',
+    'const',
+    'continue',
+    'debugger',
+    'default',
+    'delete',
+    'do',
+    'else',
+    'enum',
+    'export',
+    'extends',
+    'finally',
+    'for',
+    'function',
+    'if',
+    'import',
+    'in',
+    'instanceof',
+    'new',
+    'null',
+    'return',
+    'super',
+    'switch',
+    'this',
+    'throw',
+    'true',
+    'false',
+    'try',
+    'typeof',
+    'var',
+    'void',
+    'while',
+    'with',
+    'yield',
+]
+
+ECMASCRIPT_CONDITIONAL_KEYWORDS = [
+    # Words that are identifiers except in strict mode
+    'let',  # this one is also banned at the beginning of an ExpressionStatement
+    'static',
+    'implements',
+    'interface',
+    'package',
+    'private',
+    'protected',
+    'public',
+
+    # Words that are always allowed as identifiers, but are also keywords in
+    # other contexts.
+    'as',
+    'async',
+    'from',
+    'get',
+    'of',
+    'set',
+    'target',
+]
+
+# Technically this set includes a reserved word that isn't currently being used
+# as a keyword in the grammar: `enum`.
+ALL_KEYWORDS = set(ECMASCRIPT_FULL_KEYWORDS + ECMASCRIPT_CONDITIONAL_KEYWORDS)
 
 
 class JSLexer(jsparagus.lexer.FlatStringLexer):
@@ -170,21 +235,15 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
         if c.isdigit() or c == '.' and token != '.':
             t = 'NumericLiteral'
         elif c.isalpha() or c in '$_':
-            if self.parser.can_accept_terminal('IdentifierName'):
-                t = 'IdentifierName'
-            elif token in RESERVED_WORDS:  # TODO support strict mode
+            if token in ALL_KEYWORDS:  # TODO support strict mode
                 if token == 'null':
                     t = 'NullLiteral'
                 elif token in ('true', 'false'):
                     t = 'BooleanLiteral'
                 else:
                     t = token
-            elif (token in ('let', 'static', 'yield', 'async', 'of')
-                  and self.parser.can_accept_terminal(token)):
-                # This is not what the standard says but eh
-                t = token
             else:
-                t = 'Identifier'
+                t = 'Name'
         elif c == '/':
             if token.startswith(('/*', '//')):
                 # Incomplete comment. (In non-closing mode, this is handled

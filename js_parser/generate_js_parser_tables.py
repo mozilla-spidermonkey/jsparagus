@@ -5,6 +5,7 @@ import os
 import jsparagus.gen
 import jsparagus.grammar
 from .parse_esgrammar import parse_esgrammar
+from .lexer import ECMASCRIPT_FULL_KEYWORDS, ECMASCRIPT_CONDITIONAL_KEYWORDS
 
 
 ECMASCRIPT_GOAL_NTS = [
@@ -13,6 +14,18 @@ ECMASCRIPT_GOAL_NTS = [
     # 'FormalParameters',
     # 'FunctionBody',
 ]
+
+ECMASCRIPT_SYNTHETIC_TERMINALS = {
+    'IdentifierName': {
+        'Name',
+        *ECMASCRIPT_FULL_KEYWORDS,
+        *ECMASCRIPT_CONDITIONAL_KEYWORDS
+    },
+    'Identifier': {
+        'Name',
+        *ECMASCRIPT_CONDITIONAL_KEYWORDS
+    }
+}
 
 
 def hack_grammar(g):
@@ -101,8 +114,11 @@ def main():
         with open(in_filename) as f:
             text = f.read()
 
-        grammar = parse_esgrammar(text, filename=args.filename,
-                                  goals=ECMASCRIPT_GOAL_NTS)
+        grammar = parse_esgrammar(
+            text,
+            filename=args.filename,
+            goals=ECMASCRIPT_GOAL_NTS,
+            synthetic_terminals=ECMASCRIPT_SYNTHETIC_TERMINALS)
         grammar = hack_grammar(grammar)
         if args.verbose:
             grammar.dump()

@@ -1244,13 +1244,13 @@ IterationStatement[Yield, Await, Return] :
     => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_in_statement(unbox_for_declaration($2), $4, $6)
-  `for` `(` [lookahead != `let` ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+  `for` `(` [lookahead <! {`async`, `let`} ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_of_statement(for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_of_statement(for_in_or_of_var_declaration($3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_of_statement(unbox_for_declaration($2), $4, $6)
-  [+Await] `for` `await` `(` [lookahead != `let` ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+  [+Await] `for` `await` `(` [lookahead <! {`async`, `let`} ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_await_of_statement(for_assignment_target($3), $5, $7)
   [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_await_of_statement(for_in_or_of_var_declaration($4), $6, $8)

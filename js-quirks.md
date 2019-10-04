@@ -237,6 +237,19 @@ to make it a little less confusing.)
     for (of of of) console.log(of);  // logs 1, 2, 3
     ```
 
+    Amazingly, both of the following are valid JS code:
+
+    ```js
+    for (async of => {};;) {}
+    for (async of []) {}
+    ```
+
+    In the first line, `async` is a keyword and `of` is an identifier;
+    in the second line it's the other way round.
+
+    Even a simplified JS grammar can't be LR(1) as long as it includes
+    the features used here!
+
 *   `get` and `set` are special only in a class or an object literal,
     and then only if followed by a PropertyName:
 

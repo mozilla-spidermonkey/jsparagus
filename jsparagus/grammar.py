@@ -145,7 +145,12 @@ class Grammar:
         data, like (in JS) numeric literals and RegExps.
 
     *   self.terminals - OrderedFrozenSet(str) - All terminals used in the
-        language, including those in self.variable_terminals.
+        language, including those in self.variable_terminals and
+        self.synthetic_terminals.
+
+    *   self.synthetic_terminals - {str: OrderedFrozenSet(str)} - Maps terminals
+        to sets of terminals. An entry `name: set` in this dictionary means
+        that `name` is shorthand for "one of the terminals in `set`".
 
     *   self.nonterminals - {key: NtDef} - Keys are either (str|InitNt), early
         in the pipeline, or Nt objects later on. Values are the NtDef objects
@@ -167,6 +172,7 @@ class Grammar:
             *,
             goal_nts=None,
             variable_terminals=(),
+            synthetic_terminals=None,
             method_types=None):
 
         # This constructor supports passing in a sort of jumbled blob of
@@ -188,6 +194,34 @@ class Grammar:
         else:
             goal_nts = list(goal_nts)
         self.variable_terminals = OrderedFrozenSet(variable_terminals)
+        if synthetic_terminals is None:
+            synthetic_terminals = {}
+        else:
+            synthetic_terminals = {
+                name: OrderedFrozenSet(set)
+                for name, set in synthetic_terminals.items()
+            }
+            for key, values in synthetic_terminals.items():
+                if key in nonterminals:
+                    raise ValueError(
+                        "invalid grammar: {!r} is both a terminal and a nonterminal"
+                        .format(key))
+                for t in values:
+                    if t in nonterminals:
+                        raise ValueError(
+                            "invalid grammar: {!r} is both ".format(t)
+                            + "a representation of a synthetic terminal and a nonterminal")
+                    if t in synthetic_terminals:
+                        # Nested synthetic terminals. Throw, for now. (This
+                        # should pretty much just work, except expand_terminal
+                        # doesn't support it; and we don't check for cycles
+                        # where a synthetic terminal includes itself directly
+                        # or indirectly.)
+                        raise ValueError(
+                            "unsupported: synthetic terminals can't include other "
+                            "synthetic terminals; {!r} includes {!r}"
+                            .format(key, t))
+        self.synthetic_terminals = synthetic_terminals
 
         keys_are_nt = isinstance(next(iter(nonterminals)), Nt)
         key_type = Nt if keys_are_nt else (str, InitNt)
@@ -233,6 +267,14 @@ class Grammar:
         # all_terminals.
         all_terminals = OrderedSet(self.variable_terminals)
 
+        def note_terminal(t):
+            """Add t (and all representations of it, if synthetic) to all_terminals."""
+            if t not in all_terminals:
+                all_terminals.add(t)
+                if t in synthetic_terminals:
+                    for k in synthetic_terminals[t]:
+                        note_terminal(k)
+
         def validate_element(nt, i, j, e, context_params):
             if isinstance(e, str):
                 if e in nt_params:
@@ -243,7 +285,7 @@ class Grammar:
                             .format(nt, i, j, e))
                     return str_to_nt[e]
                 else:
-                    all_terminals.add(e)
+                    note_terminal(e)
                     return e
             elif isinstance(e, Optional):
                 if not isinstance(e.inner, (str, Nt)):
@@ -530,6 +572,22 @@ class Grammar:
     def is_variable_terminal(self, element):
         return type(element) is str and element in self.variable_terminals
 
+    def expand_set_of_terminals(self, terminals):
+        """Copy a set of terminals, replacing any synthetic terminals with their representations.
+
+        Returns a new OrderedSet.
+
+        terminals - an iterable of terminals and/or other unique elements like
+        None or ErrorToken.
+        """
+        result = OrderedSet()
+        for t in terminals:
+            if t in self.synthetic_terminals:
+                result |= self.expand_set_of_terminals(self.synthetic_terminals[t])
+            else:
+                result.add(t)
+        return result
+
     def goals(self):
         """Return a list of this grammar's goal nonterminals."""
         return [init_nt.name.goal for init_nt in self.init_nts]
@@ -547,6 +605,7 @@ class Grammar:
             nonterminals,
             goal_nts=self.goals(),
             variable_terminals=self.variable_terminals,
+            synthetic_terminals=self.synthetic_terminals,
             method_types=self.methods)
 
     # === A few methods for dumping pieces of grammar.
@@ -624,6 +683,20 @@ class Grammar:
         return "{{{}}}".format(
             ",  ".join(self.lr_item_to_str(prods, item) for item in item_set)
         )
+
+    def expand_terminal(self, t):
+        return self.synthetic_terminals.get(t) or OrderedFrozenSet([t])
+
+    def compatible_elements(self, e1, e2):
+        return (e1 == e2
+                or (self.is_terminal(e1)
+                    and self.is_terminal(e2)
+                    and len(self.expand_terminal(e1) & self.expand_terminal(e2)) > 0))
+
+    def compatible_sequences(self, seq1, seq2):
+        """True if the two sequences could be the same terminals."""
+        return (len(seq1) == len(seq1)
+                and all(self.compatible_elements(e1, e2) for e1, e2 in zip(seq1, seq2)))
 
     def dump(self):
         for nt, nt_def in self.nonterminals.items():

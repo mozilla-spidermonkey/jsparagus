@@ -788,7 +788,7 @@ def assert_items_are_compatible(grammar, prods, items):
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
     for item, history in pairs:
-        assert history[:item.offset] == known_history[-item.offset:], \
+        assert grammar.compatible_sequences(history[:item.offset], known_history[-item.offset:]), \
             "incompatible LR items:\n    {}\n    {}\n".format(
                 grammar.lr_item_to_str(prods, max_item),
                 grammar.lr_item_to_str(prods, item))
@@ -1174,6 +1174,20 @@ class State:
         error_item = None  # item that contains an ErrorSymbol that could match here
         error_code = None  # that ErrorSymbol's error code
 
+        def add_edge(table, item, t, *, check_lookahead):
+            """Make an edge from one item to a new item."""
+            if t in grammar.synthetic_terminals:
+                for rep in grammar.synthetic_terminals[t]:
+                    add_edge(table, item, rep, check_lookahead=check_lookahead)
+            elif not check_lookahead or lookahead_contains(item.lookahead, t):
+                next_item = context.make_lr_item(
+                    item.prod_index,
+                    offset + 1,
+                    lookahead=None,
+                    followed_by=item.followed_by)
+                if next_item is not None:
+                    table[t].add(next_item)
+
         # Each item has three ways to advance.
         # - We can step over a terminal.
         # - We can step over a nonterminal.
@@ -1189,7 +1203,6 @@ class State:
                 next_symbol = rhs[offset]
                 if (grammar.is_terminal(next_symbol)
                         or isinstance(next_symbol, ErrorSymbol)):
-                    t = next_symbol
                     if isinstance(next_symbol, ErrorSymbol):
                         t = ErrorToken
                         if error_item is None:
@@ -1197,15 +1210,10 @@ class State:
                             error_code = next_symbol.error_code
                         else:
                             context.raise_error_conflict(error_item, item)
+                    else:
+                        t = next_symbol
 
-                    if lookahead_contains(item.lookahead, t):
-                        next_item = context.make_lr_item(
-                            item.prod_index,
-                            offset + 1,
-                            None,
-                            item.followed_by)
-                        if next_item is not None:
-                            shift_items[t].add(next_item)
+                    add_edge(shift_items, item, t, check_lookahead=True)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
@@ -1213,14 +1221,8 @@ class State:
                     assert isinstance(next_symbol, Nt)
 
                     # We never reduce with a lookahead restriction still
-                    # active, so `lookahead=None` is appropriate.
-                    next_item = context.make_lr_item(
-                        item.prod_index,
-                        offset + 1,
-                        lookahead=None,
-                        followed_by=item.followed_by)
-                    if next_item is not None:
-                        ctn_items[next_symbol].add(next_item)
+                    # active, so `check_lookahead=False` is appropriate.
+                    add_edge(ctn_items, item, next_symbol, check_lookahead=False)
             else:
                 if item.lookahead is not None:
                     # I think we could improve on this with canonical LR. The
@@ -1229,12 +1231,15 @@ class State:
                         "invalid grammar: lookahead restriction still active "
                         "at end of production {}"
                         .format(grammar.production_to_str(nt, rhs)))
-                for t in item.followed_by:
-                    if t in follow[nt]:
+                for t in grammar.expand_set_of_terminals(item.followed_by):
+                    if t in grammar.expand_set_of_terminals(follow[nt]):
                         if t in reduce_prods:
                             context.raise_reduce_reduce_conflict(
                                 self, t, reduce_prods[t], item.prod_index)
                         reduce_prods[t] = item.prod_index
+
+        assert not any(t in grammar.synthetic_terminals for t in shift_items)
+        assert not any(t in grammar.synthetic_terminals for t in ctn_items)
 
         # Step 2. Turn that information into table data to drive the parser.
         action_row = {}

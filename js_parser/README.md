@@ -81,3 +81,6 @@ actually handle:
 
     Making sense of this rule in the context of an LR parser is an
     interesting task; see issue #28.
+
+*   Ban loops of the form `for (async of EXPR) STMT` by adjusting a
+    lookahead assertion. The grammar is not LR(1).

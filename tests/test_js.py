@@ -164,6 +164,37 @@ class ESTestCase(unittest.TestCase):
     def test_can_close_with_asi(self):
         self.assert_can_close_after("2 + 2\n")
 
+    def test_conditional_keywords(self):
+        # property names
+        self.assert_parses("let obj = {if: 3, function: 4};")
+        self.assert_parses("assert(obj.if == 3);")
+
+        # method names
+        self.assert_parses("""
+            class C {
+                if() {}
+                function() {}
+            }
+        """)
+
+
+        self.assert_parses("var let = [new Date];")    # let as identifier
+        self.assert_parses("let v = let;")             # let as keyword, then identifier
+        # Next line would fail because the multitoken `let [` lookahead isn't implemented yet.
+        # self.assert_parses("let.length;")            # `let .` -> ExpressionStatement
+        self.assert_syntax_error("let[0].getYear();")  # `let [` -> LexicalDeclaration
+
+        self.assert_parses("""
+            var of = [1, 2, 3];
+            for (of of of) console.log(of);  // logs 1, 2, 3
+        """)
+        self.assert_parses("var of, let, private, target;")
+        self.assert_parses("class X { get y() {} }")
+        self.assert_parses("async: { break async; }")
+        self.assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };")
+        self.assert_parses("for (async of => {};;) {}")
+        #self.assert_parses("for (async of []) {}")  # would fail
+
 
 if __name__ == '__main__':
     unittest.main()

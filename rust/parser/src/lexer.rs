@@ -280,22 +280,8 @@ impl<'alloc> Lexer<'alloc> {
         ))
     }
 
-    fn conditional_keyword(
+    fn identifier(
         &mut self,
-        parser: &Parser,
-        keyword_id: TerminalId,
-        text: &'alloc str,
-    ) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
-        if parser.can_accept_terminal(keyword_id) {
-            Ok((None, keyword_id))
-        } else {
-            Ok((Some(text), TerminalId::Identifier))
-        }
-    }
-
-    fn identifier<'parser>(
-        &mut self,
-        parser: &Parser<'parser>,
         mut builder: AutoCow<'alloc>,
     ) -> Result<'alloc, (Option<&'alloc str>, TerminalId)> {
         while let Some(ch) = self.peek() {
@@ -306,59 +292,57 @@ impl<'alloc> Lexer<'alloc> {
             builder.push_matching(ch);
         }
         let text = builder.finish(&self);
-        if parser.can_accept_terminal(TerminalId::IdentifierName) {
-            return Ok((Some(text), TerminalId::IdentifierName));
-        }
 
-        match &text as &str {
-            "as" => self.conditional_keyword(parser, TerminalId::As, text),
-            "async" => self.conditional_keyword(parser, TerminalId::Async, text),
-            "await" => self.conditional_keyword(parser, TerminalId::Await, text),
-            "break" => Ok((None, TerminalId::Break)),
-            "case" => Ok((None, TerminalId::Case)),
-            "catch" => Ok((None, TerminalId::Catch)),
-            "class" => Ok((None, TerminalId::Class)),
-            "const" => Ok((None, TerminalId::Const)),
-            "continue" => Ok((None, TerminalId::Continue)),
-            "debugger" => Ok((None, TerminalId::Debugger)),
-            "default" => Ok((None, TerminalId::Default)),
-            "delete" => Ok((None, TerminalId::Delete)),
-            "do" => Ok((None, TerminalId::Do)),
-            "else" => Ok((None, TerminalId::Else)),
-            "export" => Ok((None, TerminalId::Export)),
-            "extends" => Ok((None, TerminalId::Extends)),
-            "finally" => Ok((None, TerminalId::Finally)),
-            "for" => Ok((None, TerminalId::For)),
-            "from" => self.conditional_keyword(parser, TerminalId::From, text),
-            "function" => Ok((None, TerminalId::Function)),
-            "get" => self.conditional_keyword(parser, TerminalId::Get, text),
-            "if" => Ok((None, TerminalId::If)),
-            "import" => Ok((None, TerminalId::Import)),
-            "in" => Ok((None, TerminalId::In)),
-            "instanceof" => Ok((None, TerminalId::Instanceof)),
-            "let" => self.conditional_keyword(parser, TerminalId::Let, text),
-            "new" => Ok((None, TerminalId::New)),
-            "of" => self.conditional_keyword(parser, TerminalId::Of, text),
-            "return" => Ok((None, TerminalId::Return)),
-            "set" => self.conditional_keyword(parser, TerminalId::Set, text),
-            "static" => Ok((None, TerminalId::Static)),
-            "super" => Ok((None, TerminalId::Super)),
-            "switch" => Ok((None, TerminalId::Switch)),
-            "target" => self.conditional_keyword(parser, TerminalId::Target, text),
-            "this" => Ok((None, TerminalId::This)),
-            "throw" => Ok((None, TerminalId::Throw)),
-            "try" => Ok((None, TerminalId::Try)),
-            "typeof" => Ok((None, TerminalId::Typeof)),
-            "var" => Ok((None, TerminalId::Var)),
-            "void" => Ok((None, TerminalId::Void)),
-            "while" => Ok((None, TerminalId::While)),
-            "with" => Ok((None, TerminalId::With)),
-            "yield" => self.conditional_keyword(parser, TerminalId::Yield, text),
-            "null" => Ok((None, TerminalId::NullLiteral)),
-            "true" => Ok((Some(text), TerminalId::BooleanLiteral)),
-            "false" => Ok((Some(text), TerminalId::BooleanLiteral)),
-            _ => Ok((Some(text), TerminalId::Identifier)),
-        }
+        let id = match &text as &str {
+            "as" => TerminalId::As,
+            "async" => TerminalId::Async,
+            "await" => TerminalId::Await,
+            "break" => TerminalId::Break,
+            "case" => TerminalId::Case,
+            "catch" => TerminalId::Catch,
+            "class" => TerminalId::Class,
+            "const" => TerminalId::Const,
+            "continue" => TerminalId::Continue,
+            "debugger" => TerminalId::Debugger,
+            "default" => TerminalId::Default,
+            "delete" => TerminalId::Delete,
+            "do" => TerminalId::Do,
+            "else" => TerminalId::Else,
+            "export" => TerminalId::Export,
+            "extends" => TerminalId::Extends,
+            "finally" => TerminalId::Finally,
+            "for" => TerminalId::For,
+            "from" => TerminalId::From,
+            "function" => TerminalId::Function,
+            "get" => TerminalId::Get,
+            "if" => TerminalId::If,
+            "import" => TerminalId::Import,
+            "in" => TerminalId::In,
+            "instanceof" => TerminalId::Instanceof,
+            "let" => TerminalId::Let,
+            "new" => TerminalId::New,
+            "of" => TerminalId::Of,
+            "return" => TerminalId::Return,
+            "set" => TerminalId::Set,
+            "static" => TerminalId::Static,
+            "super" => TerminalId::Super,
+            "switch" => TerminalId::Switch,
+            "target" => TerminalId::Target,
+            "this" => TerminalId::This,
+            "throw" => TerminalId::Throw,
+            "try" => TerminalId::Try,
+            "typeof" => TerminalId::Typeof,
+            "var" => TerminalId::Var,
+            "void" => TerminalId::Void,
+            "while" => TerminalId::While,
+            "with" => TerminalId::With,
+            "yield" => TerminalId::Yield,
+            "null" => TerminalId::NullLiteral,
+            "true" | "false" => TerminalId::BooleanLiteral,
+            _ => TerminalId::Name,
+        };
+
+        Ok((Some(text), id))
     }
 
     fn skip_single_line_comment(&mut self) {
@@ -789,13 +773,13 @@ impl<'alloc> Lexer<'alloc> {
                 // Idents
                 '$' | '_' | 'a'..='z' | 'A'..='Z' => {
                     builder.push_matching(c);
-                    return self.identifier(parser, builder);
+                    return self.identifier(builder);
                 }
 
                 other => {
                     if is_identifier_start(other) {
                         builder.push_matching(other);
-                        return self.identifier(parser, builder);
+                        return self.identifier(builder);
                     }
                     return Err(ParseError::IllegalCharacter(other));
                 }
