@@ -446,3 +446,19 @@ fn test_conditional_keywords() {
     // This would fail because this case is currently disabled syntactically.
     // assert_parses("for (async of []) {}");  // would fail
 }
+
+#[test]
+fn async_arrows() {
+    assert_parses("let f = async arg => body;");
+    assert_parses("f = async (a1, a2) => {};");
+    assert_parses("f = async (a1 = b + c, ...a2) => {};");
+
+    assert_error_eq("f = async (a, b + c) => {};", ParseError::InvalidParameter);
+    assert_error_eq(
+        "f = async (...a1, a2) => {};",
+        ParseError::ArrowParametersWithNonFinalRest,
+    );
+
+    assert_error_eq("foo(a, b) => {}", ParseError::ArrowHeadInvalid);
+    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
+}

@@ -424,22 +424,14 @@ impl<'alloc> AstBuilder<'alloc> {
         }
     }
 
-    fn expression_to_parameter(
+    fn expression_to_binding_no_default(
         &self,
         expression: Expression<'alloc>,
-    ) -> Result<'alloc, Parameter<'alloc>> {
+    ) -> Result<'alloc, Binding<'alloc>> {
         match expression {
-            Expression::IdentifierExpression(IdentifierExpression { name }) => Ok(
-                Parameter::Binding(Binding::BindingIdentifier(BindingIdentifier { name })),
-            ),
-
-            Expression::AssignmentExpression(AssignmentExpression {
-                binding,
-                expression,
-            }) => Ok(Parameter::BindingWithDefault(BindingWithDefault {
-                binding: self.assignment_target_to_binding(binding)?,
-                init: expression,
-            })),
+            Expression::IdentifierExpression(IdentifierExpression { name }) => {
+                Ok(Binding::BindingIdentifier(BindingIdentifier { name }))
+            }
 
             Expression::ArrayExpression(ArrayExpression { mut elements }) => {
                 let rest = self.pop_trailing_spread_element(&mut elements);
@@ -452,18 +444,35 @@ impl<'alloc> AstBuilder<'alloc> {
                         }
                     })
                     .transpose()?;
-                Ok(Parameter::Binding(Binding::BindingPattern(
-                    BindingPattern::ArrayBinding(ArrayBinding { elements, rest }),
+                Ok(Binding::BindingPattern(BindingPattern::ArrayBinding(
+                    ArrayBinding { elements, rest },
                 )))
             }
 
-            Expression::ObjectExpression(object) => Ok(Parameter::Binding(
-                Binding::BindingPattern(BindingPattern::ObjectBinding(
-                    self.object_expression_to_object_binding(object)?,
-                )),
+            Expression::ObjectExpression(object) => Ok(Binding::BindingPattern(
+                BindingPattern::ObjectBinding(self.object_expression_to_object_binding(object)?),
             )),
 
             _ => Err(ParseError::InvalidParameter),
+        }
+    }
+
+    fn expression_to_parameter(
+        &self,
+        expression: Expression<'alloc>,
+    ) -> Result<'alloc, Parameter<'alloc>> {
+        match expression {
+            Expression::AssignmentExpression(AssignmentExpression {
+                binding,
+                expression,
+            }) => Ok(Parameter::BindingWithDefault(BindingWithDefault {
+                binding: self.assignment_target_to_binding(binding)?,
+                init: expression,
+            })),
+
+            other => Ok(Parameter::Binding(
+                self.expression_to_binding_no_default(other)?,
+            )),
         }
     }
 
@@ -497,6 +506,30 @@ impl<'alloc> AstBuilder<'alloc> {
             }
             other => Ok(self.new_vec_single(self.expression_to_parameter(other)?)),
         }
+    }
+
+    /// Used to convert `async(x, y, ...z)` from a *CallExpression* to async
+    /// arrow function parameters.
+    fn arguments_to_parameter_list(
+        &self,
+        arguments: arena::Vec<'alloc, Argument<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, FormalParameters<'alloc>>> {
+        let mut items = self.new_vec();
+        let mut rest: Option<Binding<'alloc>> = None;
+        for arg in arguments {
+            if rest.is_some() {
+                return Err(ParseError::ArrowParametersWithNonFinalRest);
+            }
+            match arg {
+                Argument::Expression(expr) => {
+                    self.push(&mut items, self.expression_to_parameter(expr.unbox())?);
+                }
+                Argument::SpreadElement(spread_expr) => {
+                    rest = Some(self.expression_to_binding_no_default(spread_expr.unbox())?);
+                }
+            }
+        }
+        Ok(self.alloc(FormalParameters { items, rest }))
     }
 
     // CoverParenthesizedExpressionAndArrowParameterList : `(` `)`
@@ -2701,11 +2734,48 @@ impl<'alloc> AstBuilder<'alloc> {
         }))
     }
 
+    // AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody
+    //
+    // This is used to convert the Expression that is produced by parsing a CoverCallExpressionAndAsyncArrowHead
     pub fn async_arrow_parameters(
         &self,
-        _call_expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, FormalParameters<'alloc>> {
-        unimplemented!()
+        call_expression: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, FormalParameters<'alloc>>> {
+        match call_expression.unbox() {
+            Expression::CallExpression(CallExpression {
+                callee: ce,
+                arguments,
+            }) => {
+                // Check that `callee` is `async`.
+                match ce {
+                    ExpressionOrSuper::Expression(callee) => match callee.unbox() {
+                        Expression::IdentifierExpression(IdentifierExpression { name }) => {
+                            if name.value != "async" {
+                                // `foo(a, b) => {}`
+                                return Err(ParseError::ArrowHeadInvalid);
+                            }
+                        }
+                        _ => {
+                            // `obj.async() => {}`
+                            return Err(ParseError::ArrowHeadInvalid);
+                        }
+                    },
+
+                    ExpressionOrSuper::Super => {
+                        // Can't happen: `super()` doesn't match
+                        // CoverCallExpressionAndAsyncArrowHead.
+                        return Err(ParseError::ArrowHeadInvalid);
+                    }
+                }
+
+                self.arguments_to_parameter_list(arguments.args)
+            }
+            _ => {
+                // The grammar ensures that the parser always passes
+                // a valid CallExpression to this function.
+                panic!("invalid argument");
+            }
+        }
     }
 
     // CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments

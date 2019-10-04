@@ -25,6 +25,10 @@ pub enum ParseError<'alloc> {
     ObjectPatternWithMethod,
     ObjectPatternWithNonFinalRest,
     ObjectBindingPatternWithInvalidRest,
+
+    // 14.8 Async arrow function definitions
+    ArrowHeadInvalid,
+    ArrowParametersWithNonFinalRest,
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -53,6 +57,12 @@ impl<'alloc> ParseError<'alloc> {
             }
             ParseError::ObjectBindingPatternWithInvalidRest => format!(
                 "the expression after `...` in this object pattern must be a single identifier"
+            ),
+            ParseError::ArrowHeadInvalid => format!(
+                "unexpected `=>` after function call (parentheses around the arrow function may help)"
+            ),
+            ParseError::ArrowParametersWithNonFinalRest => format!(
+                "arrow function parameters can have a rest element (`...x`) only at the end"
             ),
         }
     }

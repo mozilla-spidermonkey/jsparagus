@@ -20,6 +20,7 @@ TERMINAL_NAMES = {
 # information about output methods.
 FALLIBLE_METHOD_NAMES = {
     'assignment_expression',
+    'async_arrow_parameters',
     'compound_assignment_expression',
     'expression_to_parameter_list',
     'for_assignment_target',
