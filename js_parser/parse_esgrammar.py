@@ -296,12 +296,19 @@ class ESGrammarBuilder:
 
 
 def finish_grammar(nt_defs, goals, synthetic_terminals):
+    nt_grammars = {}
+    for nt_name, eq, _ in nt_defs:
+        if nt_name in nt_grammars:
+            raise ValueError(
+                "duplicate definitions for nonterminal {!r}"
+                .format(nt_name))
+        nt_grammars[nt_name] = eq
+
     # Figure out which grammar we were trying to get (":" for syntactic,
     # "::" for lexical) based on the goal symbols.
     goals = list(goals)
     if len(goals) == 0:
         raise ValueError("no goal nonterminals specified")
-    nt_grammars = {nt_name: eq for nt_name, eq, rhs_list in nt_defs}
     selected_grammars = set(nt_grammars[goal] for goal in goals)
     assert len(selected_grammars) != 0
     if len(selected_grammars) > 1:

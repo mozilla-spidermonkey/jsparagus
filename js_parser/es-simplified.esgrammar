@@ -89,13 +89,6 @@ LineTerminatorSequence ::
   <CR> <LF>
 
 
-Comment ::
-  MultiLineComment
-  SingleLineComment
-
-MultiLineComment ::
-  `/*` MultiLineCommentChars? `*/`
-
 MultiLineCommentChars ::
   MultiLineNotAsteriskChar MultiLineCommentChars?
   `*` PostAsteriskCommentChars?
@@ -214,20 +207,10 @@ BooleanLiteral ::
   `false`
 
 
-NumericLiteral ::
-  DecimalLiteral
-  BinaryIntegerLiteral
-  OctalIntegerLiteral
-  HexIntegerLiteral
-
 DecimalLiteral ::
   DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
   `.` DecimalDigits ExponentPart?
   DecimalIntegerLiteral ExponentPart?
-
-DecimalIntegerLiteral ::
-  `0`
-  NonZeroDigit DecimalDigits?
 
 DecimalDigits ::
   DecimalDigit
@@ -310,12 +293,6 @@ SingleStringCharacter ::
 
 LineContinuation ::
   `\` LineTerminatorSequence
-
-EscapeSequence ::
-  CharacterEscapeSequence
-  `0` [lookahead <! DecimalDigit]
-  HexEscapeSequence
-  UnicodeEscapeSequence
 
 
 CharacterEscapeSequence ::
@@ -1836,21 +1813,6 @@ Alternative[U, N] ::
   [empty]
   Alternative[?U, ?N] Term[?U, ?N]
 
-Term[U, N] ::
-  Assertion[?U, ?N]
-  Atom[?U, ?N]
-  Atom[?U, ?N] Quantifier
-
-Assertion[U, N] ::
-  `^`
-  `$`
-  `\` `b`
-  `\` `B`
-  `(` `?` `=` Disjunction[?U, ?N] `)`
-  `(` `?` `!` Disjunction[?U, ?N] `)`
-  `(` `?` `<=` Disjunction[?U, ?N] `)`
-  `(` `?` `<!` Disjunction[?U, ?N] `)`
-
 Quantifier ::
   QuantifierPrefix
   QuantifierPrefix `?`
@@ -1876,20 +1838,6 @@ SyntaxCharacter :: one of
 
 PatternCharacter ::
   SourceCharacter but not SyntaxCharacter
-
-AtomEscape[U, N] ::
-  DecimalEscape
-  CharacterClassEscape[?U]
-  CharacterEscape[?U]
-  [+N] `k` GroupName[?U]
-
-CharacterEscape[U] ::
-  ControlEscape
-  `c` ControlLetter
-  `0` [lookahead <! DecimalDigit]
-  HexEscapeSequence
-  RegExpUnicodeEscapeSequence[?U]
-  IdentityEscape[?U]
 
 ControlEscape :: one of
   `f` `n` `r` `t` `v`
@@ -1939,11 +1887,6 @@ TrailSurrogate ::
 
 NonSurrogate ::
   Hex4Digits [> but only if the SV of |Hex4Digits| is not in the inclusive range 0xD800 to 0xDFFF]
-
-IdentityEscape[U] ::
-  [+U] SyntaxCharacter
-  [+U] `/`
-  [~U] SourceCharacter but not UnicodeIDContinue
 
 DecimalEscape ::
   NonZeroDigit DecimalDigits? [lookahead <! DecimalDigit]
@@ -2015,16 +1958,6 @@ NonemptyClassRangesNoDash[U] ::
 ClassAtom[U] ::
   `-`
   ClassAtomNoDash[?U]
-
-ClassAtomNoDash[U] ::
-  SourceCharacter but not one of `\` or `]` or `-`
-  `\` ClassEscape[?U]
-
-ClassEscape[U] ::
-  `b`
-  [+U] `-`
-  CharacterClassEscape[?U]
-  CharacterEscape[?U]
 
 
 NumericLiteral ::
