@@ -1272,7 +1272,7 @@ class State:
         self.ctn_row = ctn_row
         self.error_code = error_code
 
-    def traceback(self):
+    def traceback_scenario(self):
         """Return example input that could have gotten us here.
 
         The result is a list of terminals and nonterminals.
@@ -1297,7 +1297,14 @@ class State:
                 i -= 1
                 assert i >= 0
             scenario.append(prod.rhs[i])
-        return self.context.grammar.symbols_to_str(scenario)
+        return scenario
+
+    def traceback(self):
+        """Return a string giving example input that could have gotten us here.
+
+        This is for error messages.
+        """
+        return self.context.grammar.symbols_to_str(self.traceback_scenario())
 
 
 def specific_follow(start_set_cache, prod_id, offset, followed_by):
