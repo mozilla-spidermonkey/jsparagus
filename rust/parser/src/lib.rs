@@ -51,7 +51,7 @@ fn parse<'alloc>(
         }
         parser.write_token(&t)?;
     }
-    parser.close()
+    parser.close(tokens.offset())
 }
 
 /// Prompt the user for some JS code and read a script from stdin.
@@ -91,7 +91,7 @@ pub fn read_script_interactively<'alloc>(
         }
         print!("{}", continue_prompt);
     }
-    match parser.close()? {
+    match parser.close(0)? {
         StackValue::Script(s) => Ok(s),
         other => {
             // Can't happen due to invariants provided by the parser generator;

@@ -107,7 +107,7 @@ impl<'alloc> Parser<'alloc> {
         }
     }
 
-    pub fn close(&mut self) -> Result<'alloc, StackValue<'alloc>> {
+    pub fn close(&mut self, position: usize) -> Result<'alloc, StackValue<'alloc>> {
         // Loop for error-handling.
         loop {
             let action = self.reduce_all(TerminalId::End)?;
@@ -116,7 +116,7 @@ impl<'alloc> Parser<'alloc> {
                 return Ok(self.node_stack.pop().unwrap());
             } else {
                 assert!(action.is_error());
-                self.try_error_handling(&Token::basic_token(TerminalId::End))?;
+                self.try_error_handling(&Token::basic_token(TerminalId::End, position))?;
             }
         }
     }
