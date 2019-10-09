@@ -223,6 +223,12 @@ def infer_types(g):
                 return UnitType
         elif isinstance(e, grammar.Optional):
             return Type('Option', [element_type(e.inner)])
+        elif isinstance(e, grammar.Literal):
+            return TokenType
+        elif isinstance(e, grammar.UnicodeCategory):
+            return TokenType
+        elif isinstance(e, grammar.Exclude):
+            return Type('Exclude', [element_type(e.inner)] + [element_type(v) for v in e.exclusion_list])
         elif isinstance(e, grammar.Nt):
             # Cope with the awkward fact that g.nonterminals keys may be either
             # strings or Nt objects.

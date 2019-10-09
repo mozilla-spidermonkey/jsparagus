@@ -2,6 +2,7 @@
 
 import os
 import re
+import unicodedata
 from jsparagus import parse_pgen, gen, grammar, types
 from jsparagus.lexer import LexicalGrammar
 from jsparagus.ordered import OrderedFrozenSet
@@ -21,7 +22,10 @@ ESGrammarLexer = LexicalGrammar(
     T=r'`[^` \n]+`|```',
 
     # also terminals, denoting control characters
-    CHR=r'<[A-Z]+>|U\+[0-9A-f]{4}',
+    CHR=r'<[A-Z ]+>|U\+[0-9A-f]{4}',
+
+    # also terminals, denoting control characters
+    CHRCLASS=r'[{][A-Za-z]*[}]',
 
     # nonterminals/types that will be followed by parameters
     NTCALL=r'[A-Za-z]\w*(?=[\[<])',
@@ -34,6 +38,9 @@ ESGrammarLexer = LexicalGrammar(
 
     # the spec also gives a few productions names
     PRODID=r'#[A-Za-z]\w*',
+
+    # prose wrapped in square brackets
+    PROSE=r'>[^\n]*',
 
     # prose wrapped in square brackets
     WPROSE=r'\[>[^]]*\]',
@@ -212,7 +219,7 @@ class ESGrammarBuilder:
         return (rhs, reducer, ifdef)
 
     def rhs_line_prose(self, prose):
-        return prose
+        return ([prose], None, None)
 
     def empty_rhs(self):
         return []
@@ -237,10 +244,14 @@ class ESGrammarBuilder:
         return grammar.Optional(nt)
 
     def but_not(self, nt, exclusion):
-        return ('-', nt, exclusion)
+        _, exclusion = exclusion
+        return grammar.Exclude(nt, [exclusion])
+        # return ('-', nt, exclusion)
 
     def but_not_one_of(self, nt, exclusion_list):
-        return ('-', nt, exclusion_list)
+        exclusion_list = [ exclusion for _, exclusion in exclusion_list]
+        return grammar.Exclude(nt, exclusion_list)
+        # return ('-', nt, exclusion_list)
 
     def no_line_terminator_here(self):
         return ("no-LineTerminator-here",)
@@ -281,7 +292,8 @@ class ESGrammarBuilder:
         return grammar.LookaheadRule(OrderedFrozenSet([t]), False)
 
     def la_not_in_nonterminal(self, nt):
-        return ('?!', nt)
+        return grammar.LookaheadRule(OrderedFrozenSet([nt]), False)
+        #return ('?!', nt)
 
     def la_not_in_set(self, lookahead_exclusions):
         if all(len(excl) == 1 for excl in lookahead_exclusions):
@@ -292,24 +304,37 @@ class ESGrammarBuilder:
                          .format(lookahead_exclusions))
 
     def chr(self, t):
-        return None
+        assert t[0] == "<" or t[0] == 'U'
+        if t[0] == "<":
+            assert t[-1] == ">"
+            return grammar.Literal(unicodedata.lookup(t[1:-1]))
+        else:
+            assert t[1] == "+"
+            return grammar.Literal(chr(int(t[2:], base=16)))
+
+    def chr_class(self, t):
+        assert t[0] == "{"
+        assert t[-1] == "}"
+        return grammar.UnicodeCategory(t[1:-1])
 
 
-def finish_grammar(nt_defs, goals, synthetic_terminals):
+
+def finish_grammar(nt_defs, goals, synthetic_terminals, single_grammar = True):
     # Figure out which grammar we were trying to get (":" for syntactic,
     # "::" for lexical) based on the goal symbols.
     goals = list(goals)
     if len(goals) == 0:
         raise ValueError("no goal nonterminals specified")
     nt_grammars = {nt_name: eq for nt_name, eq, rhs_list in nt_defs}
-    selected_grammars = set(nt_grammars[goal] for goal in goals)
-    assert len(selected_grammars) != 0
-    if len(selected_grammars) > 1:
-        raise ValueError(
-            "all goal nonterminals must be part of the same grammar; "
-            "got {!r} (matching these grammars: {!r})"
-            .format(set(goals), set(selected_grammars)))
-    [selected_grammar] = selected_grammars
+    if single_grammar:
+        selected_grammars = set(nt_grammars[goal] for goal in goals)
+        assert len(selected_grammars) != 0
+        if len(selected_grammars) > 1:
+            raise ValueError(
+                "all goal nonterminals must be part of the same grammar; "
+                "got {!r} (matching these grammars: {!r})"
+                .format(set(goals), set(selected_grammars)))
+        [selected_grammar] = selected_grammars
 
     terminal_set = set()
 
@@ -326,7 +351,7 @@ def finish_grammar(nt_defs, goals, synthetic_terminals):
     nonterminals = {}
     variable_terminals = set()
     for nt_name, eq, rhs_list_or_lambda in nt_defs:
-        if eq != selected_grammar:
+        if single_grammar and eq != selected_grammar:
             if selected_grammar == ':':
                 # Is a lexical or sub-lexical construct
                 variable_terminals.add(nt_name)
@@ -364,9 +389,10 @@ def parse_esgrammar(
         *,
         filename=None,
         goals=None,
-        synthetic_terminals=None):
+        synthetic_terminals=None,
+        single_grammar=True):
     parser = ESGrammarParser(builder=ESGrammarBuilder())
     lexer = ESGrammarLexer(parser, filename=filename)
     lexer.write(text)
     nt_defs = lexer.close()
-    return finish_grammar(nt_defs, goals=goals, synthetic_terminals=synthetic_terminals)
+    return finish_grammar(nt_defs, goals=goals, synthetic_terminals=synthetic_terminals, single_grammar=single_grammar)

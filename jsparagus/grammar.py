@@ -295,6 +295,37 @@ class Grammar:
                         .format(nt, i, j, e.inner))
                 inner = validate_element(nt, i, j, e.inner, context_params)
                 return self.intern(Optional(inner))
+            elif isinstance(e, Literal):
+                if not isinstance(e.text, str):
+                    raise TypeError(
+                        "invalid grammar: unrecognized element "
+                        "in production `grammar[{!r}][{}][{}].text`: {!r}"
+                        .format(nt, i, j, e.text))
+                return self.intern(e)
+            elif isinstance(e, UnicodeCategory):
+                if not isinstance(e.cat_prefix, str):
+                    raise TypeError(
+                        "invalid grammar: unrecognized element "
+                        "in production `grammar[{!r}][{}][{}].cat_prefix`: {!r}"
+                        .format(nt, i, j, e.cat_prefix))
+                return self.intern(e)
+            elif isinstance(e, Exclude):
+                if not isinstance(e.inner, (str, Nt)):
+                    raise TypeError(
+                        "invalid grammar: unrecognized element "
+                        "in production `grammar[{!r}][{}][{}].inner`: {!r}"
+                        .format(nt, i, j, e.inner))
+                exclusion_list = []
+                for value in e.exclusion_list:
+                    if not isinstance(value, (str, Nt)):
+                        raise TypeError(
+                            "invalid grammar: unrecognized element "
+                            "in production `grammar[{!r}][{}][{}].exclusion_list`: {!r}"
+                            .format(nt, i, j, value))
+                    value = validate_element(nt, i, j, value, context_params)
+                    exclusion_list.append(value)
+                inner = validate_element(nt, i, j, e.inner, context_params)
+                return self.intern(Exclude(inner, tuple(exclusion_list)))
             elif isinstance(e, Nt):
                 # Either the application or the original parameterized
                 # production must be present in the dictionary.
@@ -822,6 +853,19 @@ Optional = collections.namedtuple("Optional", "inner")
 Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
 
 
+# Literal elements. These are sequences of characters which are expected as
+# input.
+Literal = collections.namedtuple("Literal", "text")
+Literal.__doc__ = """Literal(str) matches a sequence of characters."""
+
+
+# UnicodeCategory elements. These are a set of literal elements which
+# correspond to a given unicode cat_prefix.
+UnicodeCategory = collections.namedtuple("UnicodeCategory", "cat_prefix")
+UnicodeCategory.__doc__ = """UnicodeCategory(str) matches any character with
+a category matching the cat_prefix."""
+
+
 # Lookahead restrictions stay with us throughout the algorithm.
 LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
 LookaheadRule.__doc__ = """\
@@ -865,6 +909,12 @@ def lookahead_intersect(a, b):
             return LookaheadRule(b.set - a.set, True)
         else:
             return LookaheadRule(a.set | b.set, False)
+
+# Optional elements. These are expanded out before states are calculated,
+# so the core of the algorithm never sees them.
+Exclude = collections.namedtuple("Exclude", "inner exclusion_list")
+Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."""
+
 
 
 class ErrorSymbol:
