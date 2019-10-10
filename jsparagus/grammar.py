@@ -282,7 +282,7 @@ class Grammar:
                         raise ValueError(
                             "invalid grammar: missing parameters for {!r} "
                             "in production `grammar[{!r}][{}][{}].inner`: {!r}"
-                            .format(nt, i, j, e))
+                            .format(e, nt, i, j, nt_params[e]))
                     return str_to_nt[e]
                 else:
                     note_terminal(e)

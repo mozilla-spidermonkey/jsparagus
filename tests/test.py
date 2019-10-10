@@ -810,6 +810,22 @@ class GenTestCase(unittest.TestCase):
             "function* farm() { yield = corn; yield yield; }",
             message="expected 'IDENT', got '='")
 
+    def testMissingParameterError(self):
+        grammar = {
+            'Foo': [
+                ['Bar'],
+            ],
+            'Bar': NtDef(['Arg'], [
+                ['NUM'],
+                Production(['STR'],
+                           reducer=0,
+                           condition=('Arg', True)),
+            ], None),
+        }
+
+        self.assertRaisesRegex(ValueError, "missing parameters for 'Bar'",
+                               lambda: Grammar(grammar))
+
     def testCanonicalLR(self):
         """Example 4.39 (grammar 4.20) from the book."""
 
