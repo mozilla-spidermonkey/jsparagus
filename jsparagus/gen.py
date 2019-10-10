@@ -798,10 +798,11 @@ class PgenContext:
     """ The immutable part of the parser generator's data. """
 
     def __init__(self, grammar, prods, prods_with_indexes_by_nt,
-                 start_set_cache, follow):
+                 nt_start_sets, start_set_cache, follow):
         self.grammar = grammar
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
+        self.nt_start_sets = nt_start_sets
         self.start_set_cache = start_set_cache
         self.follow = follow
 
@@ -1157,6 +1158,7 @@ class State:
         grammar = context.grammar
         prods = context.prods
         follow = context.follow
+        nt_start_sets = context.nt_start_sets
 
         if verbose:
             print("State {}.".format(self.id))
@@ -1174,19 +1176,30 @@ class State:
         error_item = None  # item that contains an ErrorSymbol that could match here
         error_code = None  # that ErrorSymbol's error code
 
-        def add_edge(table, item, t, *, check_lookahead):
+        def add_edge(table, item, e):
             """Make an edge from one item to a new item."""
-            if t in grammar.synthetic_terminals:
-                for rep in grammar.synthetic_terminals[t]:
-                    add_edge(table, item, rep, check_lookahead=check_lookahead)
-            elif not check_lookahead or lookahead_contains(item.lookahead, t):
+            if e in grammar.synthetic_terminals:
+                for rep in grammar.synthetic_terminals[e]:
+                    add_edge(table, item, rep)
+            else:
+                # Check lookahead.
+                if grammar.is_terminal(e):
+                    if not lookahead_contains(item.lookahead, e):
+                        return
+                elif isinstance(e, Nt):
+                    if not any(lookahead_contains(item.lookahead, t)
+                               for t in nt_start_sets[e]):
+                        return
+                else:
+                    assert e ==  ErrorToken
+
                 next_item = context.make_lr_item(
                     item.prod_index,
                     offset + 1,
                     lookahead=None,
                     followed_by=item.followed_by)
                 if next_item is not None:
-                    table[t].add(next_item)
+                    table[e].add(next_item)
 
         # Each item has three ways to advance.
         # - We can step over a terminal.
@@ -1213,7 +1226,7 @@ class State:
                     else:
                         t = next_symbol
 
-                    add_edge(shift_items, item, t, check_lookahead=True)
+                    add_edge(shift_items, item, t)
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
@@ -1222,7 +1235,7 @@ class State:
 
                     # We never reduce with a lookahead restriction still
                     # active, so `check_lookahead=False` is appropriate.
-                    add_edge(ctn_items, item, next_symbol, check_lookahead=False)
+                    add_edge(ctn_items, item, next_symbol)
             else:
                 if item.lookahead is not None:
                     # I think we could improve on this with canonical LR. The
@@ -1437,7 +1450,7 @@ def generate_parser_states(grammar, *, verbose=False, progress=False):
     start_set_cache = make_start_set_cache(grammar, prods, start)
     follow = follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache)
     context = PgenContext(
-        grammar, prods, prods_with_indexes_by_nt, start_set_cache, follow)
+        grammar, prods, prods_with_indexes_by_nt, start, start_set_cache, follow)
 
     # Run the core LR table generation algorithm.
     return analyze_states(context, prods, verbose=verbose, progress=progress)

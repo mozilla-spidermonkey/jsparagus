@@ -653,6 +653,39 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("for (0;;) ;")
         self.assertNoParse("for (let;;) ;", message="expected '0', got 'let'")
 
+    def testLookaheadDisambiguation(self):
+        """A lookahead restriction should be able to rule out certain nonterminals entirely."""
+
+        grammar = Grammar({
+            'Script': [
+                ['Statement'],
+                ['Statement', 'Statement'],
+            ],
+            'Statement': [
+                [LookaheadRule(frozenset({'function'}), False), 'Expression', ';'],
+                ['Function'],
+            ],
+            'Function': [
+                ['function', 'x', '(', ')', '{', '}'],
+            ],
+            'Expression': [
+                ['Primary'],
+                ['++', 'Primary'],
+                ['Primary', '++'],
+            ],
+            'Primary': [
+                ['Function'],
+                ['x'],
+            ],
+        })
+
+        self.compile(lexer.LexicalGrammar("function x ( ) { } ++ ;"), grammar)
+        self.assertParse("function x() {}")
+        self.assertParse("++function x() {};")
+        self.assertNoParse("++function x() {}", message="unexpected end")
+        self.assertNoParse("function x() {}++;", message="got ';'")
+        self.assertParse("function x() {} ++x;")
+
     # XXX to test: combination of lookaheads, ++, +-, -+, --
     # XXX todo: find an example where lookahead canonicalization matters
 
