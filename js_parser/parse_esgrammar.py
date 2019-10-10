@@ -39,8 +39,9 @@ ESGrammarLexer = LexicalGrammar(
     # the spec also gives a few productions names
     PRODID=r'#[A-Za-z]\w*',
 
-    # prose wrapped in square brackets
-    PROSE=r'>[^\n]*',
+    # prose not wrapped in square brackets
+    # To avoid conflict with the `>` token, this is recognized only after a space.
+    PROSE=r'(?<= )>[^\n]*',
 
     # prose wrapped in square brackets
     WPROSE=r'\[>[^]]*\]',
