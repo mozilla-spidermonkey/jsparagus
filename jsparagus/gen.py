@@ -36,7 +36,7 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, Nt, Var, ErrorSymbol,
+                      Optional, Exclude, Literal, UnicodeCategory, Nt, Var, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
@@ -159,10 +159,22 @@ def check_cycle_free(grammar):
                         if isinstance(e.inner, Nt):
                             # XXX FIXME BUG this can't be right
                             result.append(e.inner)
+                    elif isinstance(e, Exclude):
+                        if isinstance(e.inner, Nt):
+                            result.append(e.inner)
                     elif isinstance(e, LookaheadRule):
                         # Ignore the restriction. We lose a little precision
                         # here; there could be a bug.
                         pass
+                    elif isinstance(e, Literal):
+                        if e.text != "":
+                            # This production contains a non-empty character,
+                            # therefore it cannot correspond to an empty cycle.
+                            break
+                    elif isinstance(e, UnicodeCategory):
+                        # This production consume a class of character,
+                        # therefore it cannot correspond to an empty cycle.
+                        break
                     else:
                         # ErrorSymbol effectively matches the empty string
                         # (though only if nothing else matches).
