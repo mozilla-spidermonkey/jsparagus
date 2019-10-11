@@ -24,9 +24,6 @@ ESGrammarLexer = LexicalGrammar(
     # also terminals, denoting control characters
     CHR=r'<[A-Z ]+>|U\+[0-9A-f]{4}',
 
-    # also terminals, denoting control characters
-    CHRCLASS=r'[{][A-Za-z]*[}]',
-
     # nonterminals/types that will be followed by parameters
     NTCALL=r'[A-Za-z]\w*(?=[\[<])',
 
@@ -58,6 +55,30 @@ ESGrammarParser = gen.compile(
 
 SIGIL_FALSE = '~'
 SIGIL_TRUE = '+'
+
+# Abbreviations for single-character terminals, used in the lexical grammar.
+ECMASCRIPT_CODE_POINTS = {
+    # From <https://tc39.es/ecma262/#table-31>
+    '<ZWNJ>': grammar.Literal('\u200c'),
+    '<ZWJ>': grammar.Literal('\u200d'),
+    '<ZWNBSP>': grammar.Literal('\ufeff'),
+
+    # From <https://tc39.es/ecma262/#table-32>
+    '<TAB>': grammar.Literal('\t'),
+    '<VT>': grammar.Literal('\u000b'),
+    '<FF>': grammar.Literal('\u000c'),
+    '<SP>': grammar.Literal(' '),
+    '<NBSP>': grammar.Literal('\u00a0'),
+    # <ZWNBSP> already defined above
+    '<USP>': grammar.UnicodeCategory('Zs'),
+
+    # From <https://tc39.es/ecma262/#table-33>
+    '<LF>': grammar.Literal('\u000a'),
+    '<CR>': grammar.Literal('\u000d'),
+    '<LS>': grammar.Literal('\u2028'),
+    '<PS>': grammar.Literal('\u2028'),
+}
+
 
 # Productions like
 #
@@ -308,15 +329,12 @@ class ESGrammarBuilder:
         assert t[0] == "<" or t[0] == 'U'
         if t[0] == "<":
             assert t[-1] == ">"
-            return grammar.Literal(unicodedata.lookup(t[1:-1]))
+            if t not in ECMASCRIPT_CODE_POINTS:
+                raise ValueError("unrecognized character abbreviation {!r}".format(t))
+            return ECMASCRIPT_CODE_POINTS[t]
         else:
             assert t[1] == "+"
             return grammar.Literal(chr(int(t[2:], base=16)))
-
-    def chr_class(self, t):
-        assert t[0] == "{"
-        assert t[-1] == "}"
-        return grammar.UnicodeCategory(t[1:-1])
 
 
 def finish_grammar(nt_defs, goals, synthetic_terminals, single_grammar = True):

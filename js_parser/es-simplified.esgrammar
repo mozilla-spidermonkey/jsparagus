@@ -72,20 +72,20 @@ WhiteSpace ::
   <SP>
   <NBSP>
   <ZWNBSP>
-  {Zs}
+  <USP>
 
 
 LineTerminator ::
   <LF>
   <CR>
-  <LINE SEPARATOR>
-  <PARAGRAPH SEPARATOR>
+  <LS>
+  <PS>
 
 LineTerminatorSequence ::
   <LF>
   <CR> [lookahead != <LF> ]
-  <LINE SEPARATOR>
-  <PARAGRAPH SEPARATOR>
+  <LS>
+  <PS>
   <CR> <LF>
 
 
@@ -279,15 +279,15 @@ SingleStringCharacters ::
 
 DoubleStringCharacter ::
   SourceCharacter but not one of `"` or `\` or LineTerminator
-  <LINE SEPARATOR>
-  <PARAGRAPH SEPARATOR>
+  <LS>
+  <PS>
   `\` EscapeSequence
   LineContinuation
 
 SingleStringCharacter ::
   SourceCharacter but not one of `'` or `\` or LineTerminator
-  <LINE SEPARATOR>
-  <PARAGRAPH SEPARATOR>
+  <LS>
+  <PS>
   `\` EscapeSequence
   LineContinuation
 

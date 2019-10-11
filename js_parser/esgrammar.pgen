@@ -1,7 +1,6 @@
 # Grammar for ECMArkup grammar descriptions
 
 var token CHR;        # <NL>
-var token CHRCLASS;   # <Zs>
 var token EQ;         # ::
 var token MATCH_REF;  # $0
 var token NL;         # (actual newline character)
@@ -105,7 +104,6 @@ nt terminal_seq {
 nt terminal {
     T => terminal($0);
     CHR => chr($0);
-    CHRCLASS => chr_class($0);
 }
 
 nt rhs_lines {
