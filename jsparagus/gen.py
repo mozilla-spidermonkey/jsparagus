@@ -260,6 +260,8 @@ def expand_function_nonterminals(grammar):
         def expand_element(e):
             if isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
+            elif isinstance(e, Exclude):
+                return Exclude(expand_element(e.inner), tuple(map(expand_element, e.exclusion_list)))
             elif isinstance(e, Nt):
                 args = tuple((name, evaluate_arg(arg))
                              for name, arg in e.args)
