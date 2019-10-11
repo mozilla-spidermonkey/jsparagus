@@ -180,7 +180,8 @@ to make it a little less confusing.)
     *   `await` is like that, but in async functions. Also it’s not a
         valid identifier in modules.
 
-    I don't understand why these are specified in this way.
+    Conditional keywords are entangled with slashes: `yield /a/g` is two
+    tokens in a generator but five tokens elsewhere.
 
 *   In strict mode code, `implements`, `interface`, `package`,
     `private`, `protected`, and `public` are reserved (via Early Errors
