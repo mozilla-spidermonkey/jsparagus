@@ -4,6 +4,7 @@ import argparse
 import os
 import jsparagus.gen
 import jsparagus.grammar
+from jsparagus.ordered import OrderedSet
 from .parse_esgrammar import parse_esgrammar
 from .lexer import ECMASCRIPT_FULL_KEYWORDS, ECMASCRIPT_CONDITIONAL_KEYWORDS
 
@@ -16,15 +17,15 @@ ECMASCRIPT_GOAL_NTS = [
 ]
 
 ECMASCRIPT_SYNTHETIC_TERMINALS = {
-    'IdentifierName': {
+    'IdentifierName': OrderedSet([
         'Name',
         *ECMASCRIPT_FULL_KEYWORDS,
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
-    },
-    'Identifier': {
+    ]),
+    'Identifier': OrderedSet([
         'Name',
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
-    }
+    ]),
 }
 
 
