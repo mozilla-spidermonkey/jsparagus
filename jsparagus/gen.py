@@ -222,7 +222,7 @@ def check_lookahead_rules(grammar):
                         .format(grammar.production_to_str(nt, body)))
 
 
-def expand_function_nonterminals(grammar):
+def expand_parameterized_nonterminals(grammar):
     """Replace parameterized nonterminals with specialized copies.
 
     For example, a single pair `nt_name: NtDef(params=['A', 'B'], ...)` in
@@ -1451,7 +1451,7 @@ def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
 
     # Step by step, we check the grammar and lower it to a more primitive form.
-    grammar = expand_function_nonterminals(grammar)
+    grammar = expand_parameterized_nonterminals(grammar)
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
