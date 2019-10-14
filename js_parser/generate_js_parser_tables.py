@@ -64,7 +64,7 @@ def hack_grammar(g):
 
     nonterminals = {}
     for nt, nt_def in g.nonterminals.items():
-        params = list(filter_params(nt_def.params))
+        params = tuple(filter_params(nt_def.params))
         rhs_list = [filter_production(p) for p in nt_def.rhs_list]
         nonterminals[nt] = jsparagus.grammar.NtDef(params, rhs_list, nt_def.type)
     return g.with_nonterminals(nonterminals)

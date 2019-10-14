@@ -442,11 +442,11 @@ class Grammar:
                             "invalid grammar: parameter {} of {} should be "
                             "a string, not {!r}"
                             .format(i + 1, nt, param))
-                params = nt_def.params[:]
+                params = nt_def.params
                 rhs_list = nt_def.rhs_list
                 ty = nt_def.type
             else:
-                params = []
+                params = ()
                 rhs_list = nt_def
                 ty = None
 
@@ -579,7 +579,7 @@ class Grammar:
                 init_key = init_nt
             if init_key not in self.nonterminals:
                 self.nonterminals[init_key] = NtDef(
-                    [], [Production([goal], 'accept')], types.NoReturnType)
+                    (), [Production([goal], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
     def intern(self, obj):
@@ -936,7 +936,7 @@ class NtDef:
 
     Instances have three attributes:
 
-    .params - List of strings, the names of the parameters.
+    .params - Tuple of strings, the names of the parameters.
 
     .rhs_list - List of Production objects. Arguments to Nt elements in the
     productions can be Var(s) where `s in params`, indicating that parameter
@@ -968,7 +968,7 @@ class NtDef:
 
     We offer NtDef.params as a way of representing this in our system.
 
-        "StatementList": NtDef(["Return"], [
+        "StatementList": NtDef(("Return",), [
             Production(["ReturnStatement"], condition=("Return", True)),
             ["ExpressionStatement"],
         ], None),
@@ -988,6 +988,7 @@ class NtDef:
     __slots__ = ['params', 'rhs_list', 'type']
 
     def __init__(self, params, rhs_list, type):
+        assert isinstance(params, tuple)
         self.params = params
         self.rhs_list = rhs_list
         self.type = type

@@ -215,10 +215,10 @@ class ESGrammarBuilder:
         return self.nt_def(nt_type, nt_lhs, eq, [([t], None, None) for t in terminals])
 
     def nt_lhs_no_params(self, name):
-        return (name, [])
+        return (name, ())
 
     def nt_lhs_with_params(self, name, params):
-        return (name, params)
+        return (name, tuple(params))
 
     def simple_type(self, name):
         return types.Type(name)

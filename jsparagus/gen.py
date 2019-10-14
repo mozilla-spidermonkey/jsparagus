@@ -225,7 +225,7 @@ def check_lookahead_rules(grammar):
 def expand_parameterized_nonterminals(grammar):
     """Replace parameterized nonterminals with specialized copies.
 
-    For example, a single pair `nt_name: NtDef(params=['A', 'B'], ...)` in
+    For example, a single pair `nt_name: NtDef(params=('A', 'B'), ...)` in
     `grammar.nonterminals` will be replaced with (assuming A and B are boolean
     parameters) up to four pairs, each having an Nt object as the key and an
     NtDef with no parameters as the value.
@@ -287,10 +287,10 @@ def expand_parameterized_nonterminals(grammar):
                     included = (args_dict[param] == value)
                 if included:
                     result.append(expand_production(p))
-            return NtDef([], result, nt_def.type)
+            return NtDef((), result, nt_def.type)
 
         nt_def = grammar.nonterminals[nt.name]
-        assert [name for name, value in nt.args] == nt_def.params
+        assert tuple(name for name, value in nt.args) == nt_def.params
         return expand_productions(nt_def)
 
     while todo:
@@ -612,7 +612,7 @@ def remove_empty_productions(grammar):
     """
     goal_nts = set(grammar.goals())
     return grammar.with_nonterminals({
-        nt: NtDef([], [p for p in nt_def.rhs_list
+        nt: NtDef((), [p for p in nt_def.rhs_list
                        if len(p.body) > 0 or nt in goal_nts], nt_def.type)
         for nt, nt_def in grammar.nonterminals.items()
     })

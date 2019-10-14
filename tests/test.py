@@ -812,18 +812,18 @@ class GenTestCase(unittest.TestCase):
                     Nt('stmts', (('Yield', True),)), '}'
                 ],
             ],
-            'stmts': NtDef(['Yield'], [
+            'stmts': NtDef(('Yield',), [
                 [stmt],
                 [stmts, stmt],
             ], None),
-            'stmt': NtDef(['Yield'], [
+            'stmt': NtDef(('Yield',), [
                 [name, "(", ")", ";"],
                 [name, "=", name, ";"],
                 Production(["yield", name, ";"],
                            reducer=CallMethod("yield_stmt", [1]),
                            condition=('Yield', True)),
             ], None),
-            'name': NtDef(['Yield'], [
+            'name': NtDef(('Yield',), [
                 ["IDENT"],
                 # Specifically ask for a method here, because otherwise we
                 # wouldn't get one and then type checking would fail.
@@ -848,7 +848,7 @@ class GenTestCase(unittest.TestCase):
             'Foo': [
                 ['Bar'],
             ],
-            'Bar': NtDef(['Arg'], [
+            'Bar': NtDef(('Arg',), [
                 ['NUM'],
                 Production(['STR'],
                            reducer=0,
