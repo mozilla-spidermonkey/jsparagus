@@ -80,27 +80,6 @@ ECMASCRIPT_CODE_POINTS = {
 }
 
 
-# Productions like
-#
-#     Expression : AssignmentExpression
-#     PrimaryExpression : ArrayLiteral
-#     Statement : IfStatement
-#
-# should not cause an extra method call; the reducer for each of these
-# productions should be `$0`, i.e. just return the right-hand side unchanged.
-# Then type inference will make sure that the two nonterminals (Statement and
-# IfStatement, for example) are given the same type.
-#
-# ESGrammarBuilder uses the regular expressions below to determine when to do
-# this. A production gets the special `$0` reducer if any of the regular
-# expressions matches both sides.
-PRODUCTION_GROUPS = [
-    r'(Expression|^(Array|Object)?Literal)$',
-    r'(Statement|Declaration|^StatementListItem|^ModuleItem)$',
-    r'Method(Definition)?$'
-]
-
-
 class ESGrammarBuilder:
     def __init__(self, terminal_names):
         # Names of terminals that are written as nonterminals in the grammar.
@@ -125,15 +104,6 @@ class ESGrammarBuilder:
     def nt_def_to_list(self, nt_def):
         return [nt_def]
 
-    def is_matched_pair(self, lhs_name, rhs_element):
-        if isinstance(rhs_element, grammar.Nt):
-            rhs_element = rhs_element.name
-        for group in PRODUCTION_GROUPS:
-            if (re.search(group, lhs_name) is not None
-                    and re.search(group, rhs_element) is not None):
-                return True
-        return False
-
     def to_production(self, lhs, i, rhs, is_sole_production):
         """Wrap a list of grammar symbols `rhs` in a Production object."""
         body, reducer, condition = rhs
@@ -148,16 +118,11 @@ class ESGrammarBuilder:
             nt_name = lhs
 
         nargs = sum(1 for e in body if grammar.is_concrete_element(e))
-        if (len(body) == 1
-                and nargs == 1
-                and self.is_matched_pair(nt_name, body[0])):
-            return 0
+        if is_sole_production:
+            method_name = nt_name
         else:
-            if is_sole_production:
-                method_name = nt_name
-            else:
-                method_name = '{} {}'.format(nt_name, i)
-            return grammar.CallMethod(method_name, tuple(range(nargs)))
+            method_name = '{} {}'.format(nt_name, i)
+        return grammar.CallMethod(method_name, tuple(range(nargs)))
 
     def needs_asi(self, lhs, p):
         """True if p is a production in which ASI can happen."""
