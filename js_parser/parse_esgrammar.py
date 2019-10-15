@@ -102,6 +102,14 @@ PRODUCTION_GROUPS = [
 
 
 class ESGrammarBuilder:
+    def __init__(self, terminal_names):
+        # Names of terminals that are written as nonterminals in the grammar.
+        # For example, "BooleanLiteral" is a terminal name when parsing the
+        # syntactic grammar.
+        if terminal_names is None:
+            terminal_names = frozenset()
+        self.terminal_names = terminal_names
+
     def single(self, x):
         return [x]
 
@@ -282,6 +290,8 @@ class ESGrammarBuilder:
         return nt
 
     def nonterminal_apply(self, name, args):
+        if name in self.terminal_names:
+            raise ValueError("parameters applied to nonterminal {!r}".format(nt))
         if len(set(k for k, expr in args)) != len(args):
             raise ValueError("parameter passed multiple times")
         return grammar.Nt(name, tuple(args))
@@ -414,9 +424,10 @@ def parse_esgrammar(
         *,
         filename=None,
         goals=None,
+        terminal_names=None,
         synthetic_terminals=None,
         single_grammar=True):
-    parser = ESGrammarParser(builder=ESGrammarBuilder())
+    parser = ESGrammarParser(builder=ESGrammarBuilder(terminal_names))
     lexer = ESGrammarLexer(parser, filename=filename)
     lexer.write(text)
     nt_defs = lexer.close()

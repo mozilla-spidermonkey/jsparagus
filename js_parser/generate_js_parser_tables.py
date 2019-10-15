@@ -4,29 +4,7 @@ import argparse
 import os
 import jsparagus.gen
 import jsparagus.grammar
-from jsparagus.ordered import OrderedSet
-from .parse_esgrammar import parse_esgrammar
-from .lexer import ECMASCRIPT_FULL_KEYWORDS, ECMASCRIPT_CONDITIONAL_KEYWORDS
-
-
-ECMASCRIPT_GOAL_NTS = [
-    'Script',
-    'Module',
-    # 'FormalParameters',
-    # 'FunctionBody',
-]
-
-ECMASCRIPT_SYNTHETIC_TERMINALS = {
-    'IdentifierName': OrderedSet([
-        'Name',
-        *ECMASCRIPT_FULL_KEYWORDS,
-        *ECMASCRIPT_CONDITIONAL_KEYWORDS
-    ]),
-    'Identifier': OrderedSet([
-        'Name',
-        *ECMASCRIPT_CONDITIONAL_KEYWORDS
-    ]),
-}
+from . import load_es_grammar
 
 
 def hack_grammar(g):
@@ -112,14 +90,7 @@ def main():
 
     # Load input and analyze it.
     if from_source:
-        with open(in_filename) as f:
-            text = f.read()
-
-        grammar = parse_esgrammar(
-            text,
-            filename=args.filename,
-            goals=ECMASCRIPT_GOAL_NTS,
-            synthetic_terminals=ECMASCRIPT_SYNTHETIC_TERMINALS)
+        grammar = load_es_grammar.load_syntactic_grammar(in_filename)
         grammar = hack_grammar(grammar)
         if args.verbose:
             grammar.dump()
