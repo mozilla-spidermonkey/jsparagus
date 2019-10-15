@@ -6,8 +6,6 @@ use generated_parser::{ParseError, Result, TerminalId, Token};
 use std::convert::TryFrom;
 use std::str::Chars;
 
-// Note: Clone is used when lexing `<!--`, which requires more than one
-// character of lookahead.
 pub struct Lexer<'alloc> {
     allocator: &'alloc Bump,
 
