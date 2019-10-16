@@ -49,6 +49,53 @@ Alternatively, I believe it’s equivalent to add "[lookahead ≠ `else`]"
 at the end of the IfStatement production that doesn’t have an `else`.
 
 
+### Other ambiguities (*)
+
+1.  The lexical grammar is ambiguous: when looking at the characters `<<=`,
+    there is the question of whether to parse that as one token `<<=`, two
+    tokens (`< <=` or `<< =`), or three (`< < =`).
+
+    Of course every programming language has this, and the fix is one
+    sentence of prose in the spec:
+
+    > The source text is scanned from left to right, repeatedly taking the
+    > longest possible sequence of code points as the next input element.
+
+    This is easy enough for hand-coded lexers, and for systems that are
+    designed to use separate lexical and syntactic grammars.  (Other
+    parser generators may need help to avoid parsing `functionf(){}` as
+    a function.)
+
+2.  The above line of prose does not apply *within* input elements, in
+    components of the lexical grammar. In those cases, the same basic
+    idea ("maximum munch") is specified using lookahead restrictions at
+    the end of productions:
+
+    > *LineTerminatorSequence* ::  
+    > &nbsp; &nbsp; &lt;LF&gt;  
+    > &nbsp; &nbsp; &lt;CR&gt;[lookahead &ne; &lt;LF&gt;]  
+    > &nbsp; &nbsp; &lt;LS&gt;  
+    > &nbsp; &nbsp; &lt;PS&gt;  
+    > &nbsp; &nbsp; &lt;CR&gt;&lt;LF&gt;
+
+    The lookahead restriction prevents a CR LF sequence from being
+    parsed as two adjacent *LineTerminatorSequence*s.
+
+    This technique is used in several places, particularly in
+    [*NotEscapeSequences*](https://tc39.es/ecma262/#prod-NotEscapeSequence).
+
+3.  Annex B.1.4 extends the syntax for regular expressions, making the
+    grammar ambiguous. Again, a line of prose explains how to cope:
+
+    > These changes introduce ambiguities that are broken by the
+    > ordering of grammar productions and by contextual
+    > information. When parsing using the following grammar, each
+    > alternative is considered only if previous production alternatives
+    > do not match.
+
+For another ambiguity, see "Slashes" below.
+
+
 ### Strict mode (*)
 
 *(entangled with: lazy compilation)*
