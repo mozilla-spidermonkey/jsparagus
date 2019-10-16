@@ -467,7 +467,7 @@ class Grammar:
                     raise ValueError(
                         "invalid grammar: nonterminal names must be identifiers, not {!r}"
                         .format(nt))
-                if nt in self.variable_terminals:
+                if nt in self.variable_terminals or nt in self.synthetic_terminals:
                     raise TypeError(
                         "invalid grammar: {!r} is both a nonterminal and a variable terminal"
                         .format(nt))
@@ -600,9 +600,6 @@ class Grammar:
     def is_terminal(self, element):
         return type(element) is str
 
-    def is_variable_terminal(self, element):
-        return type(element) is str and element in self.variable_terminals
-
     def expand_set_of_terminals(self, terminals):
         """Copy a set of terminals, replacing any synthetic terminals with their representations.
 
@@ -645,7 +642,7 @@ class Grammar:
         if isinstance(e, Nt):
             return e.pretty()
         elif self.is_terminal(e):
-            if self.is_variable_terminal(e):
+            if e in self.variable_terminals or e in self.synthetic_terminals:
                 return e
             return '"' + repr(e)[1:-1] + '"'
         elif isinstance(e, Optional):
