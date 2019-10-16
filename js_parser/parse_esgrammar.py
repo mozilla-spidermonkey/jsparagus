@@ -312,7 +312,7 @@ class ESGrammarBuilder:
             return grammar.Literal(chr(int(t[2:], base=16)))
 
 
-def finish_grammar(nt_defs, goals, synthetic_terminals, single_grammar = True):
+def finish_grammar(nt_defs, goals, variable_terminals, synthetic_terminals, single_grammar = True):
     nt_grammars = {}
     for nt_name, eq, _ in nt_defs:
         if nt_name in nt_grammars:
@@ -349,13 +349,9 @@ def finish_grammar(nt_defs, goals, synthetic_terminals, single_grammar = True):
                 terminal_set.add(token)
 
     nonterminals = {}
-    variable_terminals = set()
     for nt_name, eq, rhs_list_or_lambda in nt_defs:
         if single_grammar and eq != selected_grammar:
-            if selected_grammar == ':':
-                # Is a lexical or sub-lexical construct
-                variable_terminals.add(nt_name)
-                continue
+            continue
 
         if isinstance(rhs_list_or_lambda, grammar.NtDef):
             nonterminals[nt_name] = rhs_list_or_lambda
@@ -396,4 +392,9 @@ def parse_esgrammar(
     lexer = ESGrammarLexer(parser, filename=filename)
     lexer.write(text)
     nt_defs = lexer.close()
-    return finish_grammar(nt_defs, goals=goals, synthetic_terminals=synthetic_terminals, single_grammar=single_grammar)
+    return finish_grammar(
+        nt_defs,
+        goals=goals,
+        variable_terminals=set(terminal_names) - set(synthetic_terminals),
+        synthetic_terminals=synthetic_terminals,
+        single_grammar=single_grammar)
