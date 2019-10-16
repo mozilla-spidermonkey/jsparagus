@@ -53,13 +53,9 @@ ECMASCRIPT_SYNTHETIC_TERMINALS = {
     ]),
 }
 
-# Names of lexical nonterminals that correspond to whole tokens and thus serve
-# as terminals in the syntactic grammar. The spec makes *Identifier* a
-# nonterminal in the syntactic grammar, but we treat it as a synthetic
-# terminal instead.
-ECMASCRIPT_TOKEN_NAMES = OrderedFrozenSet([
+# Lexical nonterminals that are used as terminals in the syntactic grammar.
+ECMASCRIPT_TOKEN_NAMES = [
     'BooleanLiteral',
-    'Identifier',
     'IdentifierName',
     'NoSubstitutionTemplate',
     'NullLiteral',
@@ -69,8 +65,17 @@ ECMASCRIPT_TOKEN_NAMES = OrderedFrozenSet([
     'TemplateHead',
     'TemplateMiddle',
     'TemplateTail',
-])
+]
 
+# List of all terminals, other than keywords, that our (hand-coded) lexer
+# produces.
+#
+# (What our lexer implements for IdentifierName and friends is a slight
+# variation on the spec. See `ECMASCRIPT_SYNTHETIC_TERMINALS` above.)
+TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR = ECMASCRIPT_TOKEN_NAMES + [
+    'Identifier',
+    'Name',
+]
 
 def load_syntactic_grammar(filename):
     """Load the ECMAScript syntactic grammar."""
@@ -82,6 +87,6 @@ def load_syntactic_grammar(filename):
         filename=filename,
         goals=ECMASCRIPT_SYNTACTIC_GOAL_NTS,
         synthetic_terminals=ECMASCRIPT_SYNTHETIC_TERMINALS,
-        terminal_names=ECMASCRIPT_TOKEN_NAMES)
+        terminal_names=TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR)
 
     return g
