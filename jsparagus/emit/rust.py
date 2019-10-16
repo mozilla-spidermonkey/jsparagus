@@ -311,11 +311,7 @@ class RustParserWriter:
         # Mostly duplicated from types.py. :(
         g = self.grammar
         if isinstance(e, str):
-            if e in g.variable_terminals:
-                return types.TokenType
-            else:
-                # constant terminal
-                return types.UnitType
+            return types.TokenType
         elif isinstance(e, Optional):
             return types.Type('Option', [self.element_type(e.inner)])
         elif isinstance(e, Nt):

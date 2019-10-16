@@ -216,11 +216,8 @@ def infer_types(g):
         if isinstance(e, str):
             if e in g.nonterminals:
                 return nt_types[e]
-            elif e in g.variable_terminals:
-                return TokenType
             else:
-                # constant terminal
-                return UnitType
+                return TokenType
         elif isinstance(e, grammar.Optional):
             return Type('Option', [element_type(e.inner)])
         elif isinstance(e, grammar.Literal):
