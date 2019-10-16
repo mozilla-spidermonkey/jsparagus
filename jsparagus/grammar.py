@@ -620,10 +620,6 @@ class Grammar:
         """Return a list of this grammar's goal nonterminals."""
         return [init_nt.name.goal for init_nt in self.init_nts]
 
-    def clone(self):
-        """Return a deep copy of a grammar (which must contain no functions)."""
-        return Grammar(self.nonterminals, self.goals(), self.variable_terminals, self.methods)
-
     def with_nonterminals(self, nonterminals):
         """Return a copy of self with the same attributes except different nonterminals."""
         if self.methods is not None:
