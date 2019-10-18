@@ -469,7 +469,7 @@ fn test_conditional_keywords() {
 }
 
 #[test]
-fn async_arrows() {
+fn test_async_arrows() {
     assert_parses("let f = async arg => body;");
     assert_parses("f = async (a1, a2) => {};");
     assert_parses("f = async (a1 = b + c, ...a2) => {};");
