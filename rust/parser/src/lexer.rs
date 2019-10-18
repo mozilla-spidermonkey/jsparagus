@@ -235,9 +235,86 @@ fn is_identifier_part(c: char) -> bool {
 }
 
 impl<'alloc> Lexer<'alloc> {
-    // ----------------------------------------------------------------------------
-    // 11.8.3 Numeric Literals
+    /// Scan an IdentifierName.
+    ///
+    /// ```text
+    /// IdentifierName ::
+    ///     IdentifierStart
+    ///     IdentifierName IdentifierPart
+    /// ```
+    ///
+    /// TODO: Implement *UnicodeEscapeSequence*.
+    fn identifier(
+        &mut self,
+        offset: usize,
+        mut builder: AutoCow<'alloc>,
+    ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
+        while let Some(ch) = self.peek() {
+            if !is_identifier_part(ch) {
+                break;
+            }
+            self.chars.next();
+            builder.push_matching(ch);
+        }
+        let text = builder.finish(&self);
 
+        let id = match &text as &str {
+            "as" => TerminalId::As,
+            "async" => TerminalId::Async,
+            "await" => TerminalId::Await,
+            "break" => TerminalId::Break,
+            "case" => TerminalId::Case,
+            "catch" => TerminalId::Catch,
+            "class" => TerminalId::Class,
+            "const" => TerminalId::Const,
+            "continue" => TerminalId::Continue,
+            "debugger" => TerminalId::Debugger,
+            "default" => TerminalId::Default,
+            "delete" => TerminalId::Delete,
+            "do" => TerminalId::Do,
+            "else" => TerminalId::Else,
+            "export" => TerminalId::Export,
+            "extends" => TerminalId::Extends,
+            "finally" => TerminalId::Finally,
+            "for" => TerminalId::For,
+            "from" => TerminalId::From,
+            "function" => TerminalId::Function,
+            "get" => TerminalId::Get,
+            "if" => TerminalId::If,
+            "import" => TerminalId::Import,
+            "in" => TerminalId::In,
+            "instanceof" => TerminalId::Instanceof,
+            "let" => TerminalId::Let,
+            "new" => TerminalId::New,
+            "of" => TerminalId::Of,
+            "return" => TerminalId::Return,
+            "set" => TerminalId::Set,
+            "static" => TerminalId::Static,
+            "super" => TerminalId::Super,
+            "switch" => TerminalId::Switch,
+            "target" => TerminalId::Target,
+            "this" => TerminalId::This,
+            "throw" => TerminalId::Throw,
+            "try" => TerminalId::Try,
+            "typeof" => TerminalId::Typeof,
+            "var" => TerminalId::Var,
+            "void" => TerminalId::Void,
+            "while" => TerminalId::While,
+            "with" => TerminalId::With,
+            "yield" => TerminalId::Yield,
+            "null" => TerminalId::NullLiteral,
+            "true" | "false" => TerminalId::BooleanLiteral,
+            _ => TerminalId::Name,
+        };
+
+        Ok((offset, Some(text), id))
+    }
+}
+
+// ----------------------------------------------------------------------------
+// 11.8.3 Numeric Literals
+
+impl<'alloc> Lexer<'alloc> {
     /// Advance over decimal digits in the input, returning true if any were
     /// found.
     ///
@@ -490,72 +567,6 @@ impl<'alloc> Lexer<'alloc> {
             Some(builder.finish(&self)),
             TerminalId::RegularExpressionLiteral,
         ))
-    }
-
-    fn identifier(
-        &mut self,
-        offset: usize,
-        mut builder: AutoCow<'alloc>,
-    ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
-        while let Some(ch) = self.peek() {
-            if !is_identifier_part(ch) {
-                break;
-            }
-            self.chars.next();
-            builder.push_matching(ch);
-        }
-        let text = builder.finish(&self);
-
-        let id = match &text as &str {
-            "as" => TerminalId::As,
-            "async" => TerminalId::Async,
-            "await" => TerminalId::Await,
-            "break" => TerminalId::Break,
-            "case" => TerminalId::Case,
-            "catch" => TerminalId::Catch,
-            "class" => TerminalId::Class,
-            "const" => TerminalId::Const,
-            "continue" => TerminalId::Continue,
-            "debugger" => TerminalId::Debugger,
-            "default" => TerminalId::Default,
-            "delete" => TerminalId::Delete,
-            "do" => TerminalId::Do,
-            "else" => TerminalId::Else,
-            "export" => TerminalId::Export,
-            "extends" => TerminalId::Extends,
-            "finally" => TerminalId::Finally,
-            "for" => TerminalId::For,
-            "from" => TerminalId::From,
-            "function" => TerminalId::Function,
-            "get" => TerminalId::Get,
-            "if" => TerminalId::If,
-            "import" => TerminalId::Import,
-            "in" => TerminalId::In,
-            "instanceof" => TerminalId::Instanceof,
-            "let" => TerminalId::Let,
-            "new" => TerminalId::New,
-            "of" => TerminalId::Of,
-            "return" => TerminalId::Return,
-            "set" => TerminalId::Set,
-            "static" => TerminalId::Static,
-            "super" => TerminalId::Super,
-            "switch" => TerminalId::Switch,
-            "target" => TerminalId::Target,
-            "this" => TerminalId::This,
-            "throw" => TerminalId::Throw,
-            "try" => TerminalId::Try,
-            "typeof" => TerminalId::Typeof,
-            "var" => TerminalId::Var,
-            "void" => TerminalId::Void,
-            "while" => TerminalId::While,
-            "with" => TerminalId::With,
-            "yield" => TerminalId::Yield,
-            "null" => TerminalId::NullLiteral,
-            "true" | "false" => TerminalId::BooleanLiteral,
-            _ => TerminalId::Name,
-        };
-
-        Ok((offset, Some(text), id))
     }
 
     fn advance_impl<'parser>(
