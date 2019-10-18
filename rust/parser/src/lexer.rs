@@ -680,32 +680,32 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::ExclamationMarkEqualsSignEqualsSign));
+                                return Ok((start, None, TerminalId::StrictNotEqual));
                             }
-                            _ => return Ok((start, None, TerminalId::ExclamationMarkEqualsSign)),
+                            _ => return Ok((start, None, TerminalId::LaxNotEqual)),
                         }
                     }
-                    _ => return Ok((start, None, TerminalId::ExclamationMark)),
+                    _ => return Ok((start, None, TerminalId::LogicalNot)),
                 },
 
                 '%' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::PercentSignEqualsSign));
+                        return Ok((start, None, TerminalId::RemainderAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::PercentSign)),
+                    _ => return Ok((start, None, TerminalId::Remainder)),
                 },
 
                 '&' => match self.peek() {
                     Some('&') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::AmpersandAmpersand));
+                        return Ok((start, None, TerminalId::LogicalAnd));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::AmpersandEqualsSign));
+                        return Ok((start, None, TerminalId::BitwiseAndAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::Ampersand)),
+                    _ => return Ok((start, None, TerminalId::BitwiseAnd)),
                 },
 
                 '*' => match self.peek() {
@@ -714,28 +714,28 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::AsteriskAsteriskEqualsSign));
+                                return Ok((start, None, TerminalId::ExponentiateAssign));
                             }
-                            _ => return Ok((start, None, TerminalId::AsteriskAsterisk)),
+                            _ => return Ok((start, None, TerminalId::Exponentiate)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::AsteriskEqualsSign));
+                        return Ok((start, None, TerminalId::MultiplyAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::Asterisk)),
+                    _ => return Ok((start, None, TerminalId::Star)),
                 },
 
                 '+' => match self.peek() {
                     Some('+') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::PlusSignPlusSign));
+                        return Ok((start, None, TerminalId::Increment));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::PlusSignEqualsSign));
+                        return Ok((start, None, TerminalId::AddAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::PlusSign)),
+                    _ => return Ok((start, None, TerminalId::Plus)),
                 },
 
                 '-' => match self.peek() {
@@ -749,14 +749,14 @@ impl<'alloc> Lexer<'alloc> {
                                 self.skip_single_line_comment(&mut builder, is_on_new_line);
                                 continue;
                             }
-                            _ => return Ok((start, None, TerminalId::HyphenMinusHyphenMinus)),
+                            _ => return Ok((start, None, TerminalId::Decrement)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::HyphenMinusEqualsSign));
+                        return Ok((start, None, TerminalId::SubtractAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::HyphenMinus)),
+                    _ => return Ok((start, None, TerminalId::Minus)),
                 },
 
                 '.' => match self.peek() {
@@ -765,7 +765,7 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('.') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::FullStopFullStopFullStop));
+                                return Ok((start, None, TerminalId::Ellipsis));
                             }
                             _ => return Err(ParseError::IllegalCharacter('.')),
                         }
@@ -786,7 +786,7 @@ impl<'alloc> Lexer<'alloc> {
                         // Don't have to push_matching since push_different is never called.
                         return Ok((start, Some(builder.finish(&self)), TerminalId::NumericLiteral));
                     }
-                    _ => return Ok((start, None, TerminalId::FullStop)),
+                    _ => return Ok((start, None, TerminalId::Dot)),
                 },
 
                 '/' => match self.peek() {
@@ -819,9 +819,9 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::SolidusEqualsSign));
+                                return Ok((start, None, TerminalId::DivideAssign));
                             }
-                            _ => return Ok((start, None, TerminalId::Solidus)),
+                            _ => return Ok((start, None, TerminalId::Divide)),
                         }
                     }
                 },
@@ -832,14 +832,14 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::LessThanSignLessThanSignEqualsSign));
+                                return Ok((start, None, TerminalId::LeftShiftAssign));
                             }
-                            _ => return Ok((start, None, TerminalId::LessThanSignLessThanSign)),
+                            _ => return Ok((start, None, TerminalId::LeftShift)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::LessThanSignEqualsSign));
+                        return Ok((start, None, TerminalId::LessThanOrEqualTo));
                     }
                     Some('!') => {
                         // Check for B.1.3 SingleLineHTMLOpenComment. This
@@ -855,9 +855,9 @@ impl<'alloc> Lexer<'alloc> {
                             start = self.offset();
                             continue;
                         }
-                        return Ok((start, None, TerminalId::LessThanSign));
+                        return Ok((start, None, TerminalId::LessThan));
                     }
-                    _ => return Ok((start, None, TerminalId::LessThanSign)),
+                    _ => return Ok((start, None, TerminalId::LessThan)),
                 },
 
                 '=' => match self.peek() {
@@ -866,16 +866,16 @@ impl<'alloc> Lexer<'alloc> {
                         match self.peek() {
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::EqualsSignEqualsSignEqualsSign));
+                                return Ok((start, None, TerminalId::StrictEqual));
                             }
-                            _ => return Ok((start, None, TerminalId::EqualsSignEqualsSign)),
+                            _ => return Ok((start, None, TerminalId::LaxEqual)),
                         }
                     }
                     Some('>') => {
                         self.chars.next();
                         return Ok((start, None, TerminalId::Arrow));
                     }
-                    _ => return Ok((start, None, TerminalId::EqualsSign)),
+                    _ => return Ok((start, None, TerminalId::EqualSign)),
                 },
 
                 '>' => match self.peek() {
@@ -887,56 +887,56 @@ impl<'alloc> Lexer<'alloc> {
                                 match self.peek() {
                                     Some('=') => {
                                         self.chars.next();
-                                        return Ok((start, None, TerminalId::GreaterThanSignGreaterThanSignGreaterThanSignEqualsSign));
+                                        return Ok((start, None, TerminalId::UnsignedRightShiftAssign));
                                     }
-                                    _ => return Ok((start, None, TerminalId::GreaterThanSignGreaterThanSignGreaterThanSign)),
+                                    _ => return Ok((start, None, TerminalId::UnsignedRightShift)),
                                 }
                             }
                             Some('=') => {
                                 self.chars.next();
-                                return Ok((start, None, TerminalId::GreaterThanSignGreaterThanSignEqualsSign));
+                                return Ok((start, None, TerminalId::SignedRightShiftAssign));
                             }
-                            _ => return Ok((start, None, TerminalId::GreaterThanSignGreaterThanSign)),
+                            _ => return Ok((start, None, TerminalId::SignedRightShift)),
                         }
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::GreaterThanSignEqualsSign));
+                        return Ok((start, None, TerminalId::GreaterThanOrEqualTo));
                     }
-                    _ => return Ok((start, None, TerminalId::GreaterThanSign)),
+                    _ => return Ok((start, None, TerminalId::GreaterThan)),
                 },
 
                 '^' => match self.peek() {
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::CircumflexAccentEqualsSign));
+                        return Ok((start, None, TerminalId::BitwiseXorAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::CircumflexAccent)),
+                    _ => return Ok((start, None, TerminalId::BitwiseXor)),
                 },
 
                 '|' => match self.peek() {
                     Some('|') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::VerticalLineVerticalLine));
+                        return Ok((start, None, TerminalId::LogicalOr));
                     }
                     Some('=') => {
                         self.chars.next();
-                        return Ok((start, None, TerminalId::VerticalLineEqualsSign));
+                        return Ok((start, None, TerminalId::BitwiseOrAssign));
                     }
-                    _ => return Ok((start, None, TerminalId::VerticalLine)),
+                    _ => return Ok((start, None, TerminalId::BitwiseOr)),
                 },
 
-                '(' => return Ok((start, None, TerminalId::LeftParenthesis)),
-                ')' => return Ok((start, None, TerminalId::RightParenthesis)),
+                '(' => return Ok((start, None, TerminalId::OpenParenthesis)),
+                ')' => return Ok((start, None, TerminalId::CloseParenthesis)),
                 ',' => return Ok((start, None, TerminalId::Comma)),
                 ':' => return Ok((start, None, TerminalId::Colon)),
                 ';' => return Ok((start, None, TerminalId::Semicolon)),
                 '?' => return Ok((start, None, TerminalId::QuestionMark)),
-                '[' => return Ok((start, None, TerminalId::LeftSquareBracket)),
-                ']' => return Ok((start, None, TerminalId::RightSquareBracket)),
-                '{' => return Ok((start, None, TerminalId::LeftCurlyBracket)),
-                '}' => return Ok((start, None, TerminalId::RightCurlyBracket)),
-                '~' => return Ok((start, None, TerminalId::Tilde)),
+                '[' => return Ok((start, None, TerminalId::OpenBracket)),
+                ']' => return Ok((start, None, TerminalId::CloseBracket)),
+                '{' => return Ok((start, None, TerminalId::OpenBrace)),
+                '}' => return Ok((start, None, TerminalId::CloseBrace)),
+                '~' => return Ok((start, None, TerminalId::BitwiseNot)),
 
                 // Idents
                 '$' | '_' | 'a'..='z' | 'A'..='Z' => {

@@ -160,7 +160,7 @@ impl<'alloc> Parser<'alloc> {
             ErrorCode::Asi => {
                 if t.is_on_new_line
                     || t.terminal_id == TerminalId::End
-                    || t.terminal_id == TerminalId::RightCurlyBracket
+                    || t.terminal_id == TerminalId::CloseBrace
                 {
                     // Don't actually push an ErrorToken onto the stack here. Treat the
                     // ErrorToken as having been consumed and move to the recovered
