@@ -31,6 +31,10 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    fn is_looking_at(&self, s: &str) -> bool {
+        self.chars.as_str().starts_with(s)
+    }
+
     pub fn offset(&self) -> usize {
         self.source_length - self.chars.as_str().len()
     }
@@ -841,21 +845,16 @@ impl<'alloc> Lexer<'alloc> {
                         self.chars.next();
                         return Ok((start, None, TerminalId::LessThanOrEqualTo));
                     }
-                    Some('!') => {
-                        // Check for B.1.3 SingleLineHTMLOpenComment. This
-                        // requires three characters of lookahead, because
-                        // `x<!--` has a comment but `x<!-y` does not.
+                    Some('!') if self.is_looking_at("!--") => {
+                        // B.1.3 SingleLineHTMLOpenComment. Note that the above
+                        // `is_looking_at` test peeked ahead at the next three
+                        // characters of input. This lookahead is necessary
+                        // because `x<!--` has a comment but `x<!-y` does not.
                         //
                         // TODO: Limit this to Script (not Module).
-                        let mut lookahead_iter = self.chars.clone();
-                        lookahead_iter.next();
-                        if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
-                        {
-                            self.skip_single_line_comment(&mut builder);
-                            start = self.offset();
-                            continue;
-                        }
-                        return Ok((start, None, TerminalId::LessThan));
+                        self.skip_single_line_comment(&mut builder);
+                        start = self.offset();
+                        continue;
                     }
                     _ => return Ok((start, None, TerminalId::LessThan)),
                 },
