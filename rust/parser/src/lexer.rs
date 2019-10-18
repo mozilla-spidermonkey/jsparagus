@@ -107,7 +107,7 @@ fn is_identifier_part(c: char) -> bool {
         }
     } else {
         // TODO - Adjust this to match the Unicode ID_Continue property (#23).
-        c.is_alphabetic()
+        c.is_alphabetic() || c == ZWNJ || c == ZWJ
     }
 }
 

@@ -272,6 +272,20 @@ fn test_illegal_character() {
 }
 
 #[test]
+fn test_identifier() {
+    // U+00B7 MIDDLE DOT is an IdentifierPart.
+    // assert_parses("_·_ = {_·_:'·_·'};");  // would fail
+
+    // <ZWJ> and <ZWNJ> match IdentifierPart but not IdentifierStart.
+    assert_parses("var x\u{200c};"); // <ZWNJ>
+    assert_parses("_\u{200d}();"); // <ZWJ>
+    assert_parses("_\u{200d}__();"); // <ZWJ>
+    assert_parses("_\u{200d}\u{200c}();"); // <ZWJ>
+    assert_illegal_character("var \u{200c};"); // <ZWNJ>
+    assert_illegal_character("x = \u{200d};"); // <ZWJ>
+}
+
+#[test]
 fn test_regexp() {
     assert_parses(r"/\w/");
     assert_parses("/[A-Z]/");
