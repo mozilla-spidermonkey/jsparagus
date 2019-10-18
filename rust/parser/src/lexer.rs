@@ -14,6 +14,10 @@ pub struct Lexer<'alloc> {
 
     /// Iterator over the remaining not-yet-parsed input.
     chars: Chars<'alloc>,
+
+    /// True if the current position is before the first
+    /// token of a line (or on a line with no tokens).
+    is_on_new_line: bool,
 }
 
 impl<'alloc> Lexer<'alloc> {
@@ -23,6 +27,7 @@ impl<'alloc> Lexer<'alloc> {
             allocator,
             source_length,
             chars,
+            is_on_new_line: true,
         }
     }
 
@@ -35,14 +40,15 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
-        let mut is_on_new_line = false;
-        self.advance_impl(parser, &mut is_on_new_line)
-            .map(|(offset, value, terminal_id)| Token {
-                terminal_id,
-                offset,
-                is_on_new_line,
-                value,
-            })
+        let (offset, value, terminal_id) = self.advance_impl(parser)?;
+        let is_on_new_line = self.is_on_new_line;
+        self.is_on_new_line = false;
+        Ok(Token {
+            terminal_id,
+            offset,
+            is_on_new_line,
+            value,
+        })
     }
 }
 
@@ -111,11 +117,7 @@ impl<'alloc> Lexer<'alloc> {
     /// SingleLineCommentChar ::
     ///     SourceCharacter but not LineTerminator
     /// ```
-    fn skip_single_line_comment(
-        &mut self,
-        builder: &mut AutoCow<'alloc>,
-        is_on_new_line: &mut bool,
-    ) {
+    fn skip_single_line_comment(&mut self, builder: &mut AutoCow<'alloc>) {
         while let Some(ch) = self.chars.next() {
             match ch {
                 CR | LF | LS | PS => break,
@@ -123,7 +125,7 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
         *builder = AutoCow::new(&self);
-        *is_on_new_line = true;
+        self.is_on_new_line = true;
     }
 }
 
@@ -509,7 +511,6 @@ impl<'alloc> Lexer<'alloc> {
     fn advance_impl<'parser>(
         &mut self,
         parser: &Parser<'parser>,
-        is_on_new_line: &mut bool,
     ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         let mut start = self.offset();
@@ -554,7 +555,7 @@ impl<'alloc> Lexer<'alloc> {
                 //     <LS>
                 //     <PS>
                 LF | CR | LS | PS => {
-                    *is_on_new_line = true;
+                    self.is_on_new_line = true;
                     builder = AutoCow::new(&self);
                     start = self.offset();
                     continue;
@@ -746,7 +747,7 @@ impl<'alloc> Lexer<'alloc> {
                                 // B.1.3 SingleLineHTMLCloseComment
                                 // TODO: Limit this to Script (not Module) and
                                 // at the start of a line.
-                                self.skip_single_line_comment(&mut builder, is_on_new_line);
+                                self.skip_single_line_comment(&mut builder);
                                 continue;
                             }
                             _ => return Ok((start, None, TerminalId::Decrement)),
@@ -793,7 +794,7 @@ impl<'alloc> Lexer<'alloc> {
                     Some('/') => {
                         // SingleLineComment :: `//` SingleLineCommentChars?
                         self.chars.next();
-                        self.skip_single_line_comment(&mut builder, is_on_new_line);
+                        self.skip_single_line_comment(&mut builder);
                         start = self.offset();
                         continue;
                     }
@@ -851,7 +852,7 @@ impl<'alloc> Lexer<'alloc> {
                         lookahead_iter.next();
                         if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
                         {
-                            self.skip_single_line_comment(&mut builder, is_on_new_line);
+                            self.skip_single_line_comment(&mut builder);
                             start = self.offset();
                             continue;
                         }
