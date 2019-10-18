@@ -139,28 +139,27 @@ fn test_asi_after_line_terminator() {
     assert_syntax_error("switch (value) { case 1: break case 2: console.log('2'); }");
 }
 
-// XXX TODO - uncomment passing assertions, fix bugs in asi support
-//#[test]
-//fn test_asi_suppressed() {
-//    // The specification says ASI does not happen in the production
-//    // EmptyStatement : `;`.
-//    assert_syntax_error("if (true)");
-//    assert_syntax_error("{ for (;;) }");
-//
-//    // ASI does not happen in for(;;) loops.
-//    assert_syntax_error("for ( \n ; ) {}");
-//    assert_syntax_error("for ( ; \n ) {}");
-//    assert_syntax_error("for ( \n \n ) {}");
-//    assert_syntax_error("for (var i = 0 \n i < 9;   i++) {}");
-//    assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}");
-//    assert_syntax_error("for (i = 0     \n i < 9;   i++) {}");
-//    assert_syntax_error("for (i = 0;       i < 9 \n i++) {}");
-//    assert_syntax_error("for (let i = 0 \n i < 9;   i++) {}");
-//
-//    // ASI is suppressed in the production ClassElement[Yield, Await] : `;`
-//    // to prevent an infinite loop of ASI. lol
-//    assert_syntax_error("class Fail { \n +1; }");
-//}
+#[test]
+fn test_asi_suppressed() {
+    // The specification says ASI does not happen in the production
+    // EmptyStatement : `;`.
+    // TODO - assert_syntax_error("if (true)");
+    assert_syntax_error("{ for (;;) }");
+
+    // ASI does not happen in for(;;) loops.
+    assert_syntax_error("for ( \n ; ) {}");
+    assert_syntax_error("for ( ; \n ) {}");
+    assert_syntax_error("for ( \n \n ) {}");
+    assert_syntax_error("for (var i = 0 \n i < 9;   i++) {}");
+    assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}");
+    assert_syntax_error("for (i = 0     \n i < 9;   i++) {}");
+    assert_syntax_error("for (i = 0;       i < 9 \n i++) {}");
+    assert_syntax_error("for (let i = 0 \n i < 9;   i++) {}");
+
+    // ASI is suppressed in the production ClassElement[Yield, Await] : `;`
+    // to prevent an infinite loop of ASI. lol
+    assert_syntax_error("class Fail { \n +1; }");
+}
 
 #[test]
 fn test_if_else() {
@@ -172,13 +171,12 @@ fn test_if_else() {
     assert_parses("if (x) if (y) g(); else h(); else j();");
 }
 
-// XXX TODO
-//#[test]
-//fn test_lexer_decimal() {
-//    assert_parses("0.");
-//    assert_parses(".5");
-//    assert_syntax_error(".");
-//}
+#[test]
+fn test_lexer_decimal() {
+    assert_parses("0.");
+    assert_parses(".5");
+    assert_syntax_error(".");
+}
 
 #[test]
 fn test_numbers() {
