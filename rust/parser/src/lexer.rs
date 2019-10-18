@@ -64,11 +64,41 @@ const LS: char = '\u{2028}';
 /// U+2029 PARAGRAPH SEPARATOR, abbreviated <PS>.
 const PS: char = '\u{2029}';
 
+// ----------------------------------------------------------------------------
+// 11.6 Names and Keywords
+
+/// True if `c` is a one-character *IdentifierStart*.
+/// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
+///
+/// ```ignore
+/// IdentifierStart ::
+///     UnicodeIDStart
+///     `$`
+///     `_`
+///     `\` UnicodeEscapeSequence
+///
+/// UnicodeIDStart ::
+///     > any Unicode code point with the Unicode property "ID_Start"
+/// ```
 fn is_identifier_start(c: char) -> bool {
     // TODO - Adjust this to match the Unicode ID_Start property (#23).
     c == '$' || c == '_' || c.is_alphabetic()
 }
 
+/// True if `c` is a one-character *IdentifierPart*.
+/// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
+///
+/// ```ignore
+/// IdentifierPart ::
+///     UnicodeIDContinue
+///     `$`
+///     `\` UnicodeEscapeSequence
+///     <ZWNJ>
+///     <ZWJ>
+///
+/// UnicodeIDContinue ::
+///     > any Unicode code point with the Unicode property "ID_Continue"
+/// ```
 fn is_identifier_part(c: char) -> bool {
     if (c as u32) < 128 {
         match c {
@@ -110,6 +140,20 @@ impl<'alloc> Lexer<'alloc> {
             })
     }
 
+    // ----------------------------------------------------------------------------
+    // 11.8.3 Numeric Literals
+
+    /// Advance over decimal digits in the input, returning true if any were
+    /// found.
+    ///
+    /// ```ignore
+    /// DecimalDigits ::
+    ///     DecimalDigit
+    ///     DecimalDigits DecimalDigit
+    ///
+    /// DecimalDigit :: one of
+    ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9`
+    /// ```
     fn accept_digits(&mut self) -> bool {
         let mut at_least_one = false;
         while let Some(next) = self.peek() {
@@ -146,6 +190,10 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    /// ```ignore
+    /// HexDigit :: one of
+    ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
+    /// ```
     fn hex_digit(&mut self) -> Result<'alloc, u32> {
         match self.chars.next() {
             None => Err(ParseError::UnterminatedString),
@@ -156,6 +204,10 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    // ----------------------------------------------------------------------------
+    // 11.8.4 String Literals
+
+    /// Scan an escape sequence in a string literal.
     fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<'alloc, ()> {
         match self.chars.next() {
             None => {
@@ -272,6 +324,9 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
     }
+
+    // ----------------------------------------------------------------------------
+    // 11.8.5 Regular Expression Literals
 
     fn regular_expression_backslash_sequence(
         &mut self,
@@ -417,6 +472,23 @@ impl<'alloc> Lexer<'alloc> {
         Ok((offset, Some(text), id))
     }
 
+
+    // ----------------------------------------------------------------------------
+    // 11.4 Comments
+
+    /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
+    /// if any.
+    ///
+    /// ```ignore
+    /// SingleLineComment ::
+    ///     `//` SingleLineCommentChars?
+    ///
+    /// SingleLineCommentChars ::
+    ///     SingleLineCommentChar SingleLineCommentChars?
+    ///
+    /// SingleLineCommentChar ::
+    ///     SourceCharacter but not LineTerminator
+    /// ```
     fn skip_single_line_comment(&mut self) {
         while let Some(ch) = self.chars.next() {
             match ch {
@@ -435,7 +507,16 @@ impl<'alloc> Lexer<'alloc> {
         let mut start = self.offset();
         while let Some(c) = self.chars.next() {
             match c {
-                // WhiteSpace.
+                // 11.2 White Space
+                //
+                // WhiteSpace ::
+                //     <TAB>
+                //     <VT>
+                //     <FF>
+                //     <SP>
+                //     <NBSP>
+                //     <ZWNBSP>
+                //     <USP>
                 TAB |
                 VT |
                 FF |
@@ -457,16 +538,20 @@ impl<'alloc> Lexer<'alloc> {
                     continue;
                 }
 
-                // LineTerminator
-                CR | LF | LS | PS => {
+                // LineTerminator ::
+                //     <LF>
+                //     <CR>
+                //     <LS>
+                //     <PS>
+                LF | CR | LS | PS => {
                     *saw_newline = true;
                     builder = AutoCow::new(&self);
                     start = self.offset();
                     continue;
                 }
 
-                // Numbers
                 '0'..='9' => {
+                    // 11.8.3 Numeric Literals
                     match self.peek() {
                         // DecimalLiteral
                         Some('0'..='9') if c != '0' => {
@@ -548,7 +633,7 @@ impl<'alloc> Lexer<'alloc> {
 
                     // The SourceCharacter immediately following a
                     // NumericLiteral must not be an IdentifierStart or
-                    // DecimalDigit.
+                    // DecimalDigit. (11.8.3)
                     if let Some(ch) = self.peek() {
                         if is_identifier_start(ch) || ch.is_digit(10) {
                             return Err(ParseError::IllegalCharacter(ch));
@@ -559,7 +644,6 @@ impl<'alloc> Lexer<'alloc> {
                     return Ok((start, Some(builder.finish(&self)), TerminalId::NumericLiteral));
                 }
 
-                // Strings
                 '"' | '\'' => {
                     return self.string_literal(c);
                 }
@@ -683,7 +767,7 @@ impl<'alloc> Lexer<'alloc> {
 
                         // The SourceCharacter immediately following a
                         // NumericLiteral must not be an IdentifierStart or
-                        // DecimalDigit.
+                        // DecimalDigit. (11.8.3)
                         if let Some(ch) = self.peek() {
                             if is_identifier_start(ch) || ch.is_digit(10) {
                                 return Err(ParseError::IllegalCharacter(ch));
@@ -697,17 +781,16 @@ impl<'alloc> Lexer<'alloc> {
                 },
 
                 '/' => match self.peek() {
-                    // Comments take priority over regexps
-                    // Single-line comment
                     Some('/') => {
+                        // SingleLineComment :: `//` SingleLineCommentChars?
                         self.chars.next();
                         self.skip_single_line_comment();
                         builder = AutoCow::new(&self);
                         start = self.offset();
                         continue;
                     }
-                    // Multiline comment
                     Some('*') => {
+                        // MultiLineComment :: `/*` MultiLineCommentChars `*/`
                         self.chars.next();
                         while let Some(ch) = self.chars.next() {
                             // TODO: ASI
