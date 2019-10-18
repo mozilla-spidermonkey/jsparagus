@@ -805,10 +805,15 @@ impl<'alloc> Lexer<'alloc> {
                         // MultiLineComment :: `/*` MultiLineCommentChars `*/`
                         self.chars.next();
                         while let Some(ch) = self.chars.next() {
-                            // TODO: ASI
-                            if ch == '*' && self.peek() == Some('/') {
-                                self.chars.next();
-                                break;
+                            match ch {
+                                '*' if self.peek() == Some('/') => {
+                                    self.chars.next();
+                                    break;
+                                }
+                                CR | LF | PS | LS => {
+                                    self.is_on_new_line = true;
+                                }
+                                _ => {}
                             }
                         }
                         builder = AutoCow::new(&self);

@@ -189,6 +189,11 @@ fn test_asi_after_line_terminator() {
     // <https://tc39.es/ecma262/#sec-comments>
     assert_parses("x = 1 // line break here\ny = 2");
     assert_parses("x = 1 // line break here\r\ny = 2");
+    assert_parses("x = 1 /* no line break in here */ //\ny = 2");
+    assert_parses("x = 1<!-- line break here\ny = 2");
+
+    assert_syntax_error("x = 1 /* no line break in here */ y = 2");
+    assert_parses("x = 1 /* line break \n there */y = 2");
 }
 
 #[test]
