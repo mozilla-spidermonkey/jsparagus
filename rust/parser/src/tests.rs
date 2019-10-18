@@ -77,7 +77,17 @@ fn assert_syntax_error<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     assert!(match try_parse(allocator, code) {
         Err(ParseError::SyntaxError(_)) => true,
-        _ => false,
+        Err(other) => panic!("unexpected error: {:?}", other),
+        Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
+    });
+}
+
+fn assert_illegal_character<'alloc, T: IntoChunks<'alloc>>(code: T) {
+    let allocator = &Bump::new();
+    assert!(match try_parse(allocator, code) {
+        Err(ParseError::IllegalCharacter(_)) => true,
+        Err(other) => panic!("unexpected error: {:?}", other),
+        Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
     });
 }
 
@@ -254,13 +264,12 @@ fn test_arrow() {
     // assert_syntax_error("(x, y) => {x: x, y: y}");
 }
 
-// XXX TODO
-//#[test]
-//fn test_invalid_character() {
-//    assert_syntax_error("\0");
-//    assert_syntax_error("—x;");
-//    assert_syntax_error("const ONE_THIRD = 1 ÷ 3;");
-//}
+#[test]
+fn test_illegal_character() {
+    assert_illegal_character("\0");
+    assert_illegal_character("—x;");
+    assert_illegal_character("const ONE_THIRD = 1 ÷ 3;");
+}
 
 #[test]
 fn test_regexp() {
