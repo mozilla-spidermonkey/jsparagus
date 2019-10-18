@@ -54,6 +54,14 @@ impl<'alloc> Lexer<'alloc> {
             value,
         })
     }
+
+    fn unexpected_err(&mut self) -> ParseError<'alloc> {
+        if let Some(ch) = self.peek() {
+            ParseError::IllegalCharacter(ch)
+        } else {
+            ParseError::UnexpectedEnd
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -263,14 +271,6 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
         Ok(())
-    }
-
-    fn unexpected_err(&mut self) -> ParseError<'alloc> {
-        if let Some(ch) = self.peek() {
-            ParseError::IllegalCharacter(ch)
-        } else {
-            ParseError::UnexpectedEnd
-        }
     }
 
     /// ```text
