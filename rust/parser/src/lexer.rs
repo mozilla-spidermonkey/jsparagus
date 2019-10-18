@@ -16,6 +16,54 @@ pub struct Lexer<'alloc> {
     chars: Chars<'alloc>,
 }
 
+// ----------------------------------------------------------------------------
+// 11.1 Unicode Format-Control Characters
+
+/// U+200C ZERO WIDTH NON-JOINER, abbreviated in the spec as <ZWNJ>.
+/// Specially permitted in identifiers.
+const ZWNJ: char = '\u{200c}';
+
+/// U+200D ZERO WIDTH JOINER, abbreviated as <ZWJ>.
+/// Specially permitted in identifiers.
+const ZWJ: char = '\u{200d}';
+
+/// U+FEFF ZERO WIDTH NO-BREAK SPACE, abbreviated <ZWNBSP>.
+/// Considered a whitespace character in JS.
+const ZWNBSP: char = '\u{feff}';
+
+// ----------------------------------------------------------------------------
+// 11.2 White Space
+
+/// U+0009 CHARACTER TABULATION, abbreviated <TAB>.
+const TAB: char = '\u{9}';
+
+/// U+000B VERTICAL TAB, abbreviated <VT>.
+const VT: char = '\u{b}';
+
+/// U+000C FORM FEED, abbreviated <FF>.
+const FF: char = '\u{c}';
+
+/// U+0020 SPACE, abbreviated <SP>.
+const SP: char = '\u{20}';
+
+/// U+00A0 NON-BREAKING SPACE, abbreviated <NBSP>.
+const NBSP: char = '\u{a0}';
+
+// ----------------------------------------------------------------------------
+// 11.3 Line Terminators
+
+///  U+000A LINE FEED, abbreviated in the spec as <LF>.
+const LF: char = '\u{a}';
+
+/// U+000D CARRIAGE RETURN, abbreviated in the spec as <CR>.
+const CR: char = '\u{d}';
+
+/// U+2028 LINE SEPARATOR, abbreviated <LS>.
+const LS: char = '\u{2028}';
+
+/// U+2029 PARAGRAPH SEPARATOR, abbreviated <PS>.
+const PS: char = '\u{2029}';
+
 fn is_identifier_start(c: char) -> bool {
     // TODO - Adjust this to match the Unicode ID_Start property (#23).
     c == '$' || c == '_' || c.is_alphabetic()
@@ -114,13 +162,13 @@ impl<'alloc> Lexer<'alloc> {
                 return Err(ParseError::UnterminatedString);
             }
             Some(c) => match c {
-                '\n' | '\u{2028}' | '\u{2029}' => {
+                LF | LS | PS => {
                     // LineContinuation. Ignore it.
                 }
-                '\r' => {
+                CR => {
                     // LineContinuation. Check for the sequence \r\n; otherwise
                     // ignore it.
-                    if self.peek() == Some('\n') {
+                    if self.peek() == Some(LF) {
                         self.chars.next();
                     }
                 }
@@ -132,19 +180,19 @@ impl<'alloc> Lexer<'alloc> {
                     text.push('\u{8}');
                 }
                 'f' => {
-                    text.push('\u{c}');
+                    text.push(FF);
                 }
                 'n' => {
-                    text.push('\n');
+                    text.push(LF);
                 }
                 'r' => {
-                    text.push('\r');
+                    text.push(CR);
                 }
                 't' => {
-                    text.push('\t');
+                    text.push(TAB);
                 }
                 'v' => {
-                    text.push('\u{b}');
+                    text.push(VT);
                 }
                 'x' => {
                     let mut value = self.hex_digit()?;
@@ -231,9 +279,7 @@ impl<'alloc> Lexer<'alloc> {
     ) -> Result<'alloc, ()> {
         text.push('\\');
         match self.chars.next() {
-            None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
-                Err(ParseError::UnterminatedRegExp)
-            }
+            None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => Err(ParseError::UnterminatedRegExp),
             Some(c) => {
                 text.push(c);
                 Ok(())
@@ -250,7 +296,7 @@ impl<'alloc> Lexer<'alloc> {
         let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
-                None | Some('\r') | Some('\n') | Some('\u{2028}') | Some('\u{2029}') => {
+                None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => {
                     return Err(ParseError::UnterminatedRegExp);
                 }
                 Some('/') => {
@@ -261,8 +307,7 @@ impl<'alloc> Lexer<'alloc> {
                     builder.push_matching('[');
                     loop {
                         match self.chars.next() {
-                            None | Some('\r') | Some('\n') | Some('\u{2028}')
-                            | Some('\u{2029}') => {
+                            None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => {
                                 return Err(ParseError::UnterminatedRegExp);
                             }
                             Some(']') => {
@@ -375,7 +420,7 @@ impl<'alloc> Lexer<'alloc> {
     fn skip_single_line_comment(&mut self) {
         while let Some(ch) = self.chars.next() {
             match ch {
-                '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => break,
+                CR | LF | LS | PS => break,
                 _ => continue,
             }
         }
@@ -391,17 +436,17 @@ impl<'alloc> Lexer<'alloc> {
         while let Some(c) = self.chars.next() {
             match c {
                 // WhiteSpace.
-                '\u{9}' | // <TAB>
-                '\u{b}' | // <VT>
-                '\u{c}' | // <FF>
-                '\u{20}' | // <SP>, the space character
-                '\u{a0}' | // <NBSP>
+                TAB |
+                VT |
+                FF |
+                SP |
+                NBSP |
+                ZWNBSP |
                 '\u{1680}' | // Ogham space mark (in <USP>)
                 '\u{2000}' ..= '\u{200a}' | // typesetting spaces (in <USP>)
                 '\u{202f}' | // Narrow no-break space (in <USP>)
                 '\u{205f}' | // Medium mathematical space (in <USP>)
-                '\u{3000}' | // Ideographic space (in <USP>)
-                '\u{feff}' // <ZWNBSP>
+                '\u{3000}' // Ideographic space (in <USP>)
                     => {
                     // TODO - The spec uses <USP> to stand for any character
                     // with category "Space_Separator" (Zs). New Unicode
@@ -413,7 +458,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 // LineTerminator
-                '\u{a}' | '\u{d}' | '\u{2028}' | '\u{2029}' => {
+                CR | LF | LS | PS => {
                     *saw_newline = true;
                     builder = AutoCow::new(&self);
                     start = self.offset();
