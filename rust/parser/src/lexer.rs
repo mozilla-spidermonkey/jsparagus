@@ -16,6 +16,36 @@ pub struct Lexer<'alloc> {
     chars: Chars<'alloc>,
 }
 
+impl<'alloc> Lexer<'alloc> {
+    pub fn new(allocator: &'alloc Bump, chars: Chars<'alloc>) -> Lexer<'alloc> {
+        let source_length = chars.as_str().len();
+        Lexer {
+            allocator,
+            source_length,
+            chars,
+        }
+    }
+
+    pub fn offset(&self) -> usize {
+        self.source_length - self.chars.as_str().len()
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.chars.as_str().chars().next()
+    }
+
+    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
+        let mut saw_newline = false;
+        self.advance_impl(parser, &mut saw_newline)
+            .map(|(offset, value, terminal_id)| Token {
+                terminal_id,
+                offset,
+                saw_newline,
+                value,
+            })
+    }
+}
+
 // ----------------------------------------------------------------------------
 // 11.1 Unicode Format-Control Characters
 
@@ -112,34 +142,6 @@ fn is_identifier_part(c: char) -> bool {
 }
 
 impl<'alloc> Lexer<'alloc> {
-    pub fn new(allocator: &'alloc Bump, chars: Chars<'alloc>) -> Lexer<'alloc> {
-        let source_length = chars.as_str().len();
-        Lexer {
-            allocator,
-            source_length,
-            chars,
-        }
-    }
-
-    pub fn offset(&self) -> usize {
-        self.source_length - self.chars.as_str().len()
-    }
-
-    fn peek(&self) -> Option<char> {
-        self.chars.as_str().chars().next()
-    }
-
-    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
-        let mut saw_newline = false;
-        self.advance_impl(parser, &mut saw_newline)
-            .map(|(offset, value, terminal_id)| Token {
-                terminal_id,
-                offset,
-                saw_newline,
-                value,
-            })
-    }
-
     // ----------------------------------------------------------------------------
     // 11.8.3 Numeric Literals
 
