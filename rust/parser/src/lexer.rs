@@ -326,7 +326,7 @@ impl<'alloc> Lexer<'alloc> {
     /// DecimalDigit :: one of
     ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9`
     /// ```
-    fn accept_digits(&mut self) -> bool {
+    fn decimal_digits(&mut self) -> bool {
         let mut at_least_one = false;
         while let Some(next) = self.peek() {
             match next {
@@ -340,13 +340,27 @@ impl<'alloc> Lexer<'alloc> {
         at_least_one
     }
 
+    /// Skip an ExponentPart, if present.
+    ///
+    /// ```text
+    /// ExponentPart ::
+    ///     ExponentIndicator SignedInteger
+    ///
+    /// ExponentIndicator :: one of
+    ///     `e` `E`
+    ///
+    /// SignedInteger ::
+    ///     DecimalDigits
+    ///     `+` DecimalDigits
+    ///     `-` DecimalDigits
+    /// ```
     fn optional_exponent(&mut self) -> Result<'alloc, ()> {
         if let Some('e') | Some('E') = self.peek() {
             self.chars.next().unwrap();
             if let Some('+') | Some('-') = self.peek() {
                 self.chars.next().unwrap();
             }
-            if !self.accept_digits() {
+            if !self.decimal_digits() {
                 // require at least one digit
                 return Err(self.unexpected_err());
             }
@@ -366,6 +380,172 @@ impl<'alloc> Lexer<'alloc> {
             Some(c @ 'A'..='F') => Ok(10 + (c as u32 - 'A' as u32)),
             Some(other) => Err(ParseError::IllegalCharacter(other)),
         }
+    }
+
+    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
+    /// having already consumed the first character, which is a decimal digit.
+    ///
+    /// ```text
+    /// NumericLiteral ::
+    ///     DecimalLiteral
+    ///     BinaryIntegerLiteral
+    ///     OctalIntegerLiteral
+    ///     HexIntegerLiteral
+    ///     LegacyOctalIntegerLiteral
+    /// ```
+    fn numeric_literal(&mut self, c: char) -> Result<'alloc, ()> {
+        // 11.8.3 Numeric Literals
+        match self.peek() {
+            // DecimalLiteral ::
+            //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
+            //     `.` DecimalDigits ExponentPart?
+            //     DecimalIntegerLiteral ExponentPart?
+            //
+            // DecimalIntegerLiteral ::
+            //     `0`
+            //     NonZeroDigit DecimalDigits?
+            //     NonOctalDecimalIntegerLiteral
+            //
+            // NonZeroDigit :: one of
+            //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
+            //
+            // NonOctalDecimalIntegerLiteral ::
+            //     `0` NonOctalDigit
+            //     LegacyOctalLikeDecimalIntegerLiteral NonOctalDigit
+            //     NonOctalDecimalIntegerLiteral DecimalDigit
+            //
+            // LegacyOctalLikeDecimalIntegerLiteral ::
+            //     `0` OctalDigit
+            //     LegacyOctalLikeDecimalIntegerLiteral OctalDigit
+            //
+            // NonOctalDigit :: one of
+            //     `8` `9`
+            //
+            // Shorter: every string matching /[0-9]+/ is either a
+            // DecimalIntegerLiteral or a LegacyOctalIntegerLiteral. If
+            // /0[0-7]+/ matches the whole token, it's octal; else decimal.
+            Some('0'..='9') if c != '0' => {
+                self.decimal_digits();
+                if let Some('.') = self.peek() {
+                    self.chars.next();
+                    self.decimal_digits();
+                }
+                self.optional_exponent()?;
+            }
+            Some('.') | Some('e') | Some('E') => {
+                if let Some('.') = self.peek() {
+                    self.chars.next();
+                    self.decimal_digits();
+                }
+                self.optional_exponent()?;
+            }
+
+            // BinaryIntegerLiteral ::
+            //   `0b` BinaryDigits
+            //   `0B` BinaryDigits
+            //
+            // BinaryDigits ::
+            //   BinaryDigit
+            //   BinaryDigits BinaryDigit
+            //
+            // BinaryDigit :: one of
+            //   `0` `1`
+            Some('b') | Some('B') if c == '0' => {
+                self.chars.next().unwrap();
+                let mut at_least_one = false;
+                while let Some(next) = self.peek() {
+                    match next {
+                        '0' | '1' => {
+                            at_least_one = true;
+                            self.chars.next();
+                        }
+                        _ => break,
+                    }
+                }
+                if !at_least_one {
+                    return Err(self.unexpected_err());
+                }
+            }
+
+            // OctalIntegerLiteral ::
+            //   `0o` OctalDigits
+            //   `0O` OctalDigits
+            //
+            // OctalDigits ::
+            //   OctalDigit
+            //   OctalDigits OctalDigit
+            //
+            // OctalDigit :: one of
+            //   `0` `1` `2` `3` `4` `5` `6` `7`
+            //
+            Some('o') | Some('O') if c == '0' => {
+                self.chars.next().unwrap();
+                let mut at_least_one = false;
+                while let Some(next) = self.peek() {
+                    match next {
+                        '0'..='7' => {
+                            at_least_one = true;
+                            self.chars.next();
+                        }
+                        _ => break,
+                    }
+                }
+                if !at_least_one {
+                    return Err(self.unexpected_err());
+                }
+            }
+
+            // HexIntegerLiteral ::
+            //   `0x` HexDigits
+            //   `0X` HexDigits
+            //
+            // HexDigits ::
+            //   HexDigit
+            //   HexDigits HexDigit
+            //
+            // HexDigit :: one of
+            //   `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
+            Some('x') | Some('X') if c == '0' => {
+                self.chars.next().unwrap();
+                let mut at_least_one = false;
+                while let Some(next) = self.peek() {
+                    match next {
+                        '0'..='9' | 'a'..='f' | 'A'..='F' => {
+                            at_least_one = true;
+                            self.chars.next();
+                        }
+                        _ => break,
+                    }
+                }
+                if !at_least_one {
+                    return Err(self.unexpected_err());
+                }
+            }
+
+            _ if c == '0' => {
+                // TODO: implement `strict_mode` check
+                let strict_mode = true;
+                if !strict_mode {
+                    // TODO: Distinguish between Octal and NonOctal
+                    self.decimal_digits();
+                }
+            }
+
+            _ => {
+                // One-digit DecimalIntegerLiteral.
+            }
+        }
+
+        // The SourceCharacter immediately following a
+        // NumericLiteral must not be an IdentifierStart or
+        // DecimalDigit. (11.8.3)
+        if let Some(ch) = self.peek() {
+            if is_identifier_start(ch) || ch.is_digit(10) {
+                return Err(ParseError::IllegalCharacter(ch));
+            }
+        }
+
+        Ok(())
     }
 
     // ----------------------------------------------------------------------------
@@ -623,97 +803,14 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '0'..='9' => {
-                    // 11.8.3 Numeric Literals
-                    match self.peek() {
-                        // DecimalLiteral
-                        Some('0'..='9') if c != '0' => {
-                            self.accept_digits();
-                            if let Some('.') = self.peek() {
-                                self.chars.next();
-                                self.accept_digits();
-                            }
-                            self.optional_exponent()?;
-                        }
-                        Some('.') | Some('e') | Some('E') => {
-                            if let Some('.') = self.peek() {
-                                self.chars.next();
-                                self.accept_digits();
-                            }
-                            self.optional_exponent()?;
-                        }
-                        // BinaryIntegerLiteral
-                        Some('b') | Some('B') if c == '0' => {
-                            self.chars.next().unwrap();
-                            let mut at_least_one = false;
-                            while let Some(next) = self.peek() {
-                                match next {
-                                    '0' | '1' => {
-                                        at_least_one = true;
-                                        self.chars.next();
-                                    }
-                                    _ => break,
-                                }
-                            }
-                            if !at_least_one {
-                                return Err(self.unexpected_err());
-                            }
-                        }
-                        // OctalIntegerLiteral
-                        Some('o') | Some('O') if c == '0' => {
-                            self.chars.next().unwrap();
-                            let mut at_least_one = false;
-                            while let Some(next) = self.peek() {
-                                match next {
-                                    '0'..='7' => {
-                                        at_least_one = true;
-                                        self.chars.next();
-                                    }
-                                    _ => break,
-                                }
-                            }
-                            if !at_least_one {
-                                return Err(self.unexpected_err());
-                            }
-                        }
-                        // HexIntegerLiteral
-                        Some('x') | Some('X') if c == '0' => {
-                            self.chars.next().unwrap();
-                            let mut at_least_one = false;
-                            while let Some(next) = self.peek() {
-                                match next {
-                                    '0'..='9' | 'a'..='f' | 'A'..='F' => {
-                                        at_least_one = true;
-                                        self.chars.next();
-                                    }
-                                    _ => break,
-                                }
-                            }
-                            if !at_least_one {
-                                return Err(self.unexpected_err());
-                            }
-                        }
-                        // `0`
-                        _ => {
-                            // TODO: implement `strict_mode` check
-                            let strict_mode = true;
-                            if !strict_mode {
-                                // TODO: Distinguish between Octal and NonOctal
-                                self.accept_digits();
-                            }
-                        }
-                    }
-
-                    // The SourceCharacter immediately following a
-                    // NumericLiteral must not be an IdentifierStart or
-                    // DecimalDigit. (11.8.3)
-                    if let Some(ch) = self.peek() {
-                        if is_identifier_start(ch) || ch.is_digit(10) {
-                            return Err(ParseError::IllegalCharacter(ch));
-                        }
-                    }
+                    self.numeric_literal(c)?;
 
                     // Don't have to push_matching since push_different is never called.
-                    return Ok((start, Some(builder.finish(&self)), TerminalId::NumericLiteral));
+                    return Ok((
+                        start,
+                        Some(builder.finish(&self)),
+                        TerminalId::NumericLiteral,
+                    ));
                 }
 
                 '"' | '\'' => {
@@ -832,7 +929,7 @@ impl<'alloc> Lexer<'alloc> {
                         }
                     }
                     Some('0'..='9') => {
-                        self.accept_digits();
+                        self.decimal_digits();
                         self.optional_exponent()?;
 
                         // The SourceCharacter immediately following a
