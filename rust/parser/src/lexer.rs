@@ -379,11 +379,10 @@ impl<'alloc> Lexer<'alloc> {
 
     fn regular_expression_literal(
         &mut self,
+        builder: &mut AutoCow<'alloc>,
     ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
         let offset = self.offset();
 
-        // TODO: First `/` isn't included
-        let mut builder = AutoCow::new(&self);
         loop {
             match self.chars.next() {
                 None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => {
@@ -814,7 +813,8 @@ impl<'alloc> Lexer<'alloc> {
                     }
                     _ => {
                         if parser.can_accept_terminal(TerminalId::RegularExpressionLiteral) {
-                            return self.regular_expression_literal();
+                            builder.push_matching('/');
+                            return self.regular_expression_literal(&mut builder);
                         }
                         match self.peek() {
                             Some('=') => {
@@ -994,8 +994,8 @@ impl<'alloc> AutoCow<'alloc> {
         self.value.as_mut().unwrap()
     }
 
-    fn finish(self, lexer: &Lexer<'alloc>) -> &'alloc str {
-        match self.value {
+    fn finish(&mut self, lexer: &Lexer<'alloc>) -> &'alloc str {
+        match self.value.take() {
             Some(arena_string) => arena_string.into_bump_str(),
             None => &self.start[..self.start.len() - lexer.chars.as_str().len()],
         }

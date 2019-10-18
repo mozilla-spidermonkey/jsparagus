@@ -30,14 +30,15 @@ pub struct Token<'a> {
     /// `terminal_id`.
     ///
     /// For names and keyword tokens, this is just the token as it appears in
-    /// the source. Same goes for *BooleanLiteral* and *NumericLiteral* tokens.
+    /// the source. Same goes for *BooleanLiteral*, *NumericLiteral*, and
+    /// *RegularExpressionLiteral* tokens.
     ///
     /// For a string literal, the string characters, after decoding
     /// *EscapeSequence*s and removing *LineContinuation*s (the SV of the
     /// literal, in standardese).
     ///
-    /// For all other tokens (including template literal parts and regular
-    /// expression literals), the content is unspecified for now. TODO.
+    /// For all other tokens (including template literal parts), the content is
+    /// unspecified for now. TODO.
     pub value: Option<&'a str>,
 }
 
