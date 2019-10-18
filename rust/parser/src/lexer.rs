@@ -847,8 +847,8 @@ impl<'alloc> Lexer<'alloc> {
                         // `x<!--` has a comment but `x<!-y` does not.
                         //
                         // TODO: Limit this to Script (not Module).
-                        self.chars.next();
                         let mut lookahead_iter = self.chars.clone();
+                        lookahead_iter.next();
                         if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
                         {
                             self.skip_single_line_comment(&mut builder, is_on_new_line);

@@ -340,6 +340,8 @@ fn test_incomplete_comments() {
     // assert_syntax_error("/* hello world *");
 
     assert_same_tokens("x<!--y;", "x");
+    assert_same_tokens("x<!-y;", "x < ! - y ;");
+    assert_same_tokens("x<!y", "x < ! y");
 
     assert_parses(&vec!["/* hello\n", " world */"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);
