@@ -105,6 +105,42 @@ fn assert_incomplete<'alloc, T: IntoChunks<'alloc>>(code: T) {
     assert_eq!(result.unwrap_err(), ParseError::UnexpectedEnd);
 }
 
+// Assert that `left` and `right`, when parsed as ES Modules, consist of the
+// same sequence of tokens (although possibly at different offsets).
+fn assert_same_tokens<'alloc>(left: &str, right: &str) {
+    let allocator = &Bump::new();
+    let mut left_lexer = Lexer::new(allocator, left.chars());
+    let mut right_lexer = Lexer::new(allocator, right.chars());
+
+    let mut parser = Parser::new(
+        AstBuilder { allocator },
+        generated_parser::START_STATE_MODULE,
+    );
+
+    loop {
+        let left_token = left_lexer.next(&parser).expect("error parsing left string");
+        let right_token = right_lexer
+            .next(&parser)
+            .expect("error parsing right string");
+        assert_eq!(
+            left_token.terminal_id, right_token.terminal_id,
+            "at offset {} in {:?} / {} in {:?}",
+            left_token.offset, left, right_token.offset, right,
+        );
+        assert_eq!(
+            left_token.value, right_token.value,
+            "at offsets {} / {}",
+            left_token.offset, right_token.offset
+        );
+
+        if left_token.terminal_id == TerminalId::End {
+            break;
+        }
+        parser.write_token(&left_token).unwrap();
+    }
+    parser.close(left_lexer.offset()).unwrap();
+}
+
 fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     let buf = chunks_to_string(code);
@@ -302,6 +338,9 @@ fn test_incomplete_comments() {
     // assert_syntax_error("/*");
     // assert_syntax_error("/* hello world");
     // assert_syntax_error("/* hello world *");
+
+    assert_same_tokens("x<!--y;", "x");
+
     assert_parses(&vec!["/* hello\n", " world */"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie\n ok();"]);
