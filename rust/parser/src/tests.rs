@@ -183,6 +183,12 @@ fn test_asi_after_line_terminator() {
          }",
     );
     assert_syntax_error("switch (value) { case 1: break case 2: console.log('2'); }");
+
+    // "[T]he presence or absence of single-line comments does not affect the
+    // process of automatic semicolon insertion[...]."
+    // <https://tc39.es/ecma262/#sec-comments>
+    assert_parses("x = 1 // line break here\ny = 2");
+    assert_parses("x = 1 // line break here\r\ny = 2");
 }
 
 #[test]
