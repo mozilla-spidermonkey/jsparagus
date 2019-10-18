@@ -1,10 +1,14 @@
 mod demo;
 
-use jemallocator::Jemalloc;
 use std::env;
 
-#[global_allocator]
-static ALLOC: Jemalloc = Jemalloc;
+// jemalloc is temporarily disabled due to a known upstream bug (macOS crashes
+// in release builds): <https://github.com/gnzlbg/jemallocator/issues/136>
+//
+// use jemallocator::Jemalloc;
+//
+// #[global_allocator]
+// static ALLOC: Jemalloc = Jemalloc;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
