@@ -78,6 +78,7 @@ TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR = ECMASCRIPT_TOKEN_NAMES + [
     'Name',
 ]
 
+
 def load_syntactic_grammar(filename):
     """Load the ECMAScript syntactic grammar."""
     with open(filename) as f:

@@ -1,8 +1,6 @@
 """Parse a grammar written in ECMArkup."""
 
 import os
-import re
-import unicodedata
 from jsparagus import parse_pgen, gen, grammar, types
 from jsparagus.lexer import LexicalGrammar
 from jsparagus.ordered import OrderedFrozenSet
@@ -242,7 +240,7 @@ class ESGrammarBuilder:
         # return ('-', nt, exclusion)
 
     def but_not_one_of(self, nt, exclusion_list):
-        exclusion_list = [ exclusion for _, exclusion in exclusion_list]
+        exclusion_list = [exclusion for _, exclusion in exclusion_list]
         return grammar.Exclude(nt, exclusion_list)
         # return ('-', nt, exclusion_list)
 
@@ -256,7 +254,7 @@ class ESGrammarBuilder:
 
     def nonterminal_apply(self, name, args):
         if name in self.terminal_names:
-            raise ValueError("parameters applied to nonterminal {!r}".format(nt))
+            raise ValueError("parameters applied to terminal {!r}".format(name))
         if len(set(k for k, expr in args)) != len(args):
             raise ValueError("parameter passed multiple times")
         return grammar.Nt(name, tuple(args))
@@ -290,7 +288,6 @@ class ESGrammarBuilder:
 
     def la_not_in_nonterminal(self, nt):
         return grammar.LookaheadRule(OrderedFrozenSet([nt]), False)
-        #return ('?!', nt)
 
     def la_not_in_set(self, lookahead_exclusions):
         if all(len(excl) == 1 for excl in lookahead_exclusions):
@@ -312,7 +309,7 @@ class ESGrammarBuilder:
             return grammar.Literal(chr(int(t[2:], base=16)))
 
 
-def finish_grammar(nt_defs, goals, variable_terminals, synthetic_terminals, single_grammar = True):
+def finish_grammar(nt_defs, goals, variable_terminals, synthetic_terminals, single_grammar=True):
     nt_grammars = {}
     for nt_name, eq, _ in nt_defs:
         if nt_name in nt_grammars:

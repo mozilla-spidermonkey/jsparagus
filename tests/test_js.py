@@ -177,7 +177,6 @@ class ESTestCase(unittest.TestCase):
             }
         """)
 
-
         self.assert_parses("var let = [new Date];")    # let as identifier
         self.assert_parses("let v = let;")             # let as keyword, then identifier
         # Next line would fail because the multitoken `let [` lookahead isn't implemented yet.
@@ -193,7 +192,7 @@ class ESTestCase(unittest.TestCase):
         self.assert_parses("async: { break async; }")
         self.assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };")
         self.assert_parses("for (async of => {};;) {}")
-        #self.assert_parses("for (async of []) {}")  # would fail
+        # self.assert_parses("for (async of []) {}")  # would fail
 
 
 if __name__ == '__main__':

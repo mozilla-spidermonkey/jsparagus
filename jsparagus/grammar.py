@@ -903,11 +903,11 @@ def lookahead_intersect(a, b):
         else:
             return LookaheadRule(a.set | b.set, False)
 
+
 # Optional elements. These are expanded out before states are calculated,
 # so the core of the algorithm never sees them.
 Exclude = collections.namedtuple("Exclude", "inner exclusion_list")
 Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."""
-
 
 
 class ErrorSymbol:

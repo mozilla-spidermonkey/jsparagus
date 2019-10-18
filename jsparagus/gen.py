@@ -1205,7 +1205,7 @@ class State:
                                for t in nt_start_sets[e]):
                         return
                 else:
-                    assert e ==  ErrorToken
+                    assert e == ErrorToken
 
                 next_item = context.make_lr_item(
                     item.prod_index,
