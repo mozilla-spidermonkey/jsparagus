@@ -111,7 +111,7 @@ impl<'alloc> Lexer<'alloc> {
     /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
     /// if any.
     ///
-    /// ```ignore
+    /// ```text
     /// SingleLineComment ::
     ///     `//` SingleLineCommentChars?
     ///
@@ -139,7 +139,7 @@ impl<'alloc> Lexer<'alloc> {
 /// True if `c` is a one-character *IdentifierStart*.
 /// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
 ///
-/// ```ignore
+/// ```text
 /// IdentifierStart ::
 ///     UnicodeIDStart
 ///     `$`
@@ -157,7 +157,7 @@ fn is_identifier_start(c: char) -> bool {
 /// True if `c` is a one-character *IdentifierPart*.
 /// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
 ///
-/// ```ignore
+/// ```text
 /// IdentifierPart ::
 ///     UnicodeIDContinue
 ///     `$`
@@ -187,7 +187,7 @@ impl<'alloc> Lexer<'alloc> {
     /// Advance over decimal digits in the input, returning true if any were
     /// found.
     ///
-    /// ```ignore
+    /// ```text
     /// DecimalDigits ::
     ///     DecimalDigit
     ///     DecimalDigits DecimalDigit
@@ -231,7 +231,7 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
-    /// ```ignore
+    /// ```text
     /// HexDigit :: one of
     ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
     /// ```
