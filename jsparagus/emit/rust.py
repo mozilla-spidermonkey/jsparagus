@@ -47,7 +47,6 @@ class RustParserWriter:
     def emit(self):
         self.header()
         self.terminal_id()
-        self.token()
         self.actions()
         self.error_codes()
         self.check_camel_case()
@@ -71,6 +70,7 @@ class RustParserWriter:
         self.write(0, "use crate::ast_builder::AstBuilder;")
         self.write(0, "use crate::stack_value_generated::{StackValue, TryIntoStack};")
         self.write(0, "use crate::error::Result;")
+        self.write(0, "use crate::token::Token;")
         self.write(0, "")
         self.write(0, "const ERROR: i64 = {};", hex(ERROR))
         self.write(0, "")
@@ -102,38 +102,6 @@ class RustParserWriter:
         for i, t in enumerate(self.terminals):
             name = self.terminal_name(t)
             self.write(1, "{} = {}, // {}", name, i, repr(t))
-        self.write(0, "}")
-        self.write(0, "")
-
-    def token(self):
-        self.write(0, "#[derive(Clone, Debug, PartialEq)]")
-        self.write(0, "pub struct Token<'a> {")
-        self.write(1, "pub terminal_id: TerminalId,")
-        self.write(1, "pub offset: usize,")
-        self.write(1, "pub is_on_new_line: bool,")
-        self.write(1, "pub value: Option<&'a str>,")
-        self.write(0, "}")
-        self.write(0, "")
-
-        self.write(0, "impl Token<'_> {")
-        self.write(1, "pub fn basic_token(terminal_id: TerminalId, offset: usize) -> Self {")
-        self.write(2, "Self {")
-        self.write(3, "terminal_id,")
-        self.write(3, "offset,")
-        self.write(3, "is_on_new_line: false,")
-        self.write(3, "value: None,")
-        self.write(2, "}")
-        self.write(1, "}")
-        self.write(0, "")
-
-        self.write(1, "pub fn into_static(self) -> Token<'static> {")
-        self.write(2, "Token {")
-        self.write(3, "terminal_id: self.terminal_id,")
-        self.write(3, "offset: self.offset,")
-        self.write(3, "is_on_new_line: self.is_on_new_line,")
-        self.write(3, "value: None,")  # drop the value, which has limited lifetime
-        self.write(2, "}")
-        self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
 

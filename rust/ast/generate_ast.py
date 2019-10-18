@@ -177,7 +177,7 @@ def stack_value(ast):
             write_impl(f, *args)
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
-        write(0, "use crate::Token;")
+        write(0, "use crate::token::Token;")
         write(0, "use ast::arena;")
         write(0, "use ast::types::*;")
         write(0, "use std::convert::Infallible;")

@@ -1,6 +1,6 @@
 // WARNING: This file is auto-generated.
 
-use crate::Token;
+use crate::token::Token;
 use ast::arena;
 use ast::types::*;
 use std::convert::Infallible;

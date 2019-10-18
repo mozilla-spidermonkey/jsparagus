@@ -3,6 +3,7 @@
 use crate::ast_builder::AstBuilder;
 use crate::error::Result;
 use crate::stack_value_generated::{StackValue, TryIntoStack};
+use crate::token::Token;
 use ast::{
     arena::{Box, Vec},
     types::*,
@@ -129,34 +130,6 @@ pub enum TerminalId {
     Null = 114,                                                   // 'null'
     True = 115,                                                   // 'true'
     False = 116,                                                  // 'false'
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Token<'a> {
-    pub terminal_id: TerminalId,
-    pub offset: usize,
-    pub is_on_new_line: bool,
-    pub value: Option<&'a str>,
-}
-
-impl Token<'_> {
-    pub fn basic_token(terminal_id: TerminalId, offset: usize) -> Self {
-        Self {
-            terminal_id,
-            offset,
-            is_on_new_line: false,
-            value: None,
-        }
-    }
-
-    pub fn into_static(self) -> Token<'static> {
-        Token {
-            terminal_id: self.terminal_id,
-            offset: self.offset,
-            is_on_new_line: self.is_on_new_line,
-            value: None,
-        }
-    }
 }
 
 #[rustfmt::skip]
