@@ -1,6 +1,7 @@
 """ Functions for loading the ECMAScript lexical and syntactic grammars. """
 
 from jsparagus.ordered import OrderedSet, OrderedFrozenSet
+from jsparagus import gen
 from .lexer import ECMASCRIPT_FULL_KEYWORDS, ECMASCRIPT_CONDITIONAL_KEYWORDS
 from .parse_esgrammar import parse_esgrammar
 
