@@ -339,15 +339,23 @@ fn test_regexp() {
 }
 
 #[test]
+fn test_html_comments() {
+    assert_same_tokens("x<!--y;", "x");
+    assert_same_tokens("x<!-y;", "x < ! - y ;");
+    assert_same_tokens("x<!y", "x < ! y");
+
+    assert_same_tokens("--> hello world\nok", "ok");
+    assert_same_tokens("/* ignore */ --> also ignore\nok", "ok");
+    assert_same_tokens("/* ignore *//**/--> also ignore\nok", "ok");
+    assert_same_tokens("x-->y\nz", "x -- > y\nz");
+}
+
+#[test]
 fn test_incomplete_comments() {
     // XXX TODO
     // assert_syntax_error("/*");
     // assert_syntax_error("/* hello world");
     // assert_syntax_error("/* hello world *");
-
-    assert_same_tokens("x<!--y;", "x");
-    assert_same_tokens("x<!-y;", "x < ! - y ;");
-    assert_same_tokens("x<!y", "x < ! y");
 
     assert_parses(&vec!["/* hello\n", " world */"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);

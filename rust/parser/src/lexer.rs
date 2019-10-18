@@ -743,10 +743,9 @@ impl<'alloc> Lexer<'alloc> {
                     Some('-') => {
                         self.chars.next();
                         match self.peek() {
-                            Some('>') => {
+                            Some('>') if self.is_on_new_line => {
                                 // B.1.3 SingleLineHTMLCloseComment
-                                // TODO: Limit this to Script (not Module) and
-                                // at the start of a line.
+                                // TODO: Limit this to Script (not Module).
                                 self.skip_single_line_comment(&mut builder);
                                 continue;
                             }
