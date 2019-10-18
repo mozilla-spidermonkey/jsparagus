@@ -114,6 +114,10 @@ const PS: char = '\u{2029}';
 
 // ----------------------------------------------------------------------------
 // 11.4 Comments
+//
+// Comment::
+//     MultiLineComment
+//     SingleLineComment
 
 impl<'alloc> Lexer<'alloc> {
     /// Skip a *MultiLineComment*.
