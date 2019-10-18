@@ -111,13 +111,19 @@ impl<'alloc> Lexer<'alloc> {
     /// SingleLineCommentChar ::
     ///     SourceCharacter but not LineTerminator
     /// ```
-    fn skip_single_line_comment(&mut self) {
+    fn skip_single_line_comment(
+        &mut self,
+        builder: &mut AutoCow<'alloc>,
+        is_on_new_line: &mut bool,
+    ) {
         while let Some(ch) = self.chars.next() {
             match ch {
                 CR | LF | LS | PS => break,
                 _ => continue,
             }
         }
+        *builder = AutoCow::new(&self);
+        *is_on_new_line = true;
     }
 }
 
@@ -741,8 +747,7 @@ impl<'alloc> Lexer<'alloc> {
                                 // B.1.3 SingleLineHTMLCloseComment
                                 // TODO: Limit this to Script (not Module) and
                                 // at the start of a line.
-                                self.skip_single_line_comment();
-                                builder = AutoCow::new(&self);
+                                self.skip_single_line_comment(&mut builder, is_on_new_line);
                                 continue;
                             }
                             _ => return Ok((start, None, TerminalId::HyphenMinusHyphenMinus)),
@@ -789,8 +794,7 @@ impl<'alloc> Lexer<'alloc> {
                     Some('/') => {
                         // SingleLineComment :: `//` SingleLineCommentChars?
                         self.chars.next();
-                        self.skip_single_line_comment();
-                        builder = AutoCow::new(&self);
+                        self.skip_single_line_comment(&mut builder, is_on_new_line);
                         start = self.offset();
                         continue;
                     }
@@ -847,8 +851,7 @@ impl<'alloc> Lexer<'alloc> {
                         let mut lookahead_iter = self.chars.clone();
                         if lookahead_iter.next() == Some('-') && lookahead_iter.next() == Some('-')
                         {
-                            self.skip_single_line_comment();
-                            builder = AutoCow::new(&self);
+                            self.skip_single_line_comment(&mut builder, is_on_new_line);
                             start = self.offset();
                             continue;
                         }
