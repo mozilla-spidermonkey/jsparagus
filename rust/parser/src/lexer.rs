@@ -95,6 +95,33 @@ const LS: char = '\u{2028}';
 const PS: char = '\u{2029}';
 
 // ----------------------------------------------------------------------------
+// 11.4 Comments
+
+impl<'alloc> Lexer<'alloc> {
+    /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
+    /// if any.
+    ///
+    /// ```ignore
+    /// SingleLineComment ::
+    ///     `//` SingleLineCommentChars?
+    ///
+    /// SingleLineCommentChars ::
+    ///     SingleLineCommentChar SingleLineCommentChars?
+    ///
+    /// SingleLineCommentChar ::
+    ///     SourceCharacter but not LineTerminator
+    /// ```
+    fn skip_single_line_comment(&mut self) {
+        while let Some(ch) = self.chars.next() {
+            match ch {
+                CR | LF | LS | PS => break,
+                _ => continue,
+            }
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
 // 11.6 Names and Keywords
 
 /// True if `c` is a one-character *IdentifierStart*.
@@ -474,32 +501,6 @@ impl<'alloc> Lexer<'alloc> {
         Ok((offset, Some(text), id))
     }
 
-
-    // ----------------------------------------------------------------------------
-    // 11.4 Comments
-
-    /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
-    /// if any.
-    ///
-    /// ```ignore
-    /// SingleLineComment ::
-    ///     `//` SingleLineCommentChars?
-    ///
-    /// SingleLineCommentChars ::
-    ///     SingleLineCommentChar SingleLineCommentChars?
-    ///
-    /// SingleLineCommentChar ::
-    ///     SourceCharacter but not LineTerminator
-    /// ```
-    fn skip_single_line_comment(&mut self) {
-        while let Some(ch) = self.chars.next() {
-            match ch {
-                CR | LF | LS | PS => break,
-                _ => continue,
-            }
-        }
-    }
-
     fn advance_impl<'parser>(
         &mut self,
         parser: &Parser<'parser>,
@@ -540,6 +541,8 @@ impl<'alloc> Lexer<'alloc> {
                     continue;
                 }
 
+                // 11.3 Line Terminators
+                //
                 // LineTerminator ::
                 //     <LF>
                 //     <CR>
