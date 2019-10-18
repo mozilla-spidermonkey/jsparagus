@@ -108,6 +108,48 @@ const PS: char = '\u{2029}';
 // 11.4 Comments
 
 impl<'alloc> Lexer<'alloc> {
+    /// Skip a *MultiLineComment*.
+    ///
+    /// ```text
+    /// MultiLineComment ::
+    ///     `/*` MultiLineCommentChars? `*/`
+    ///
+    /// MultiLineCommentChars ::
+    ///     MultiLineNotAsteriskChar MultiLineCommentChars?
+    ///     `*` PostAsteriskCommentChars?
+    ///
+    /// PostAsteriskCommentChars ::
+    ///     MultiLineNotForwardSlashOrAsteriskChar MultiLineCommentChars?
+    ///     `*` PostAsteriskCommentChars?
+    ///
+    /// MultiLineNotAsteriskChar ::
+    ///     SourceCharacter but not `*`
+    ///
+    /// MultiLineNotForwardSlashOrAsteriskChar ::
+    ///     SourceCharacter but not one of `/` or `*`
+    /// ```
+    ///
+    /// (B.1.3 splits MultiLineComment into two nonterminals: MultiLineComment
+    /// and SingleLineDelimitedComment. The point of that is to help specify
+    /// that a SingleLineHTMLCloseComment must occur at the start of a line. We
+    /// use `is_on_new_line` for that.)
+    ///
+    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) {
+        while let Some(ch) = self.chars.next() {
+            match ch {
+                '*' if self.peek() == Some('/') => {
+                    self.chars.next();
+                    *builder = AutoCow::new(&self);
+                    return;
+                }
+                CR | LF | PS | LS => {
+                    self.is_on_new_line = true;
+                }
+                _ => {}
+            }
+        }
+    }
+
     /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
     /// if any.
     ///
@@ -802,21 +844,8 @@ impl<'alloc> Lexer<'alloc> {
                         continue;
                     }
                     Some('*') => {
-                        // MultiLineComment :: `/*` MultiLineCommentChars `*/`
                         self.chars.next();
-                        while let Some(ch) = self.chars.next() {
-                            match ch {
-                                '*' if self.peek() == Some('/') => {
-                                    self.chars.next();
-                                    break;
-                                }
-                                CR | LF | PS | LS => {
-                                    self.is_on_new_line = true;
-                                }
-                                _ => {}
-                            }
-                        }
-                        builder = AutoCow::new(&self);
+                        self.skip_multi_line_comment(&mut builder);
                         start = self.offset();
                         continue;
                     }

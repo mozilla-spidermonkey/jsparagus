@@ -339,6 +339,7 @@ fn test_regexp() {
     assert_parses("/[//]/");
     assert_parses("/a*a/");
     assert_parses("/**//x*/");
+    assert_same_tokens("/**//x*/", "/x*/");
     assert_parses("{} /x/");
     assert_parses("of / 2");
 }
