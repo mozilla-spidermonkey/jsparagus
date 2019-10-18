@@ -35,12 +35,12 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
-        let mut saw_newline = false;
-        self.advance_impl(parser, &mut saw_newline)
+        let mut is_on_new_line = false;
+        self.advance_impl(parser, &mut is_on_new_line)
             .map(|(offset, value, terminal_id)| Token {
                 terminal_id,
                 offset,
-                saw_newline,
+                is_on_new_line,
                 value,
             })
     }
@@ -504,7 +504,7 @@ impl<'alloc> Lexer<'alloc> {
     fn advance_impl<'parser>(
         &mut self,
         parser: &Parser<'parser>,
-        saw_newline: &mut bool,
+        is_on_new_line: &mut bool,
     ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         let mut start = self.offset();
@@ -549,7 +549,7 @@ impl<'alloc> Lexer<'alloc> {
                 //     <LS>
                 //     <PS>
                 LF | CR | LS | PS => {
-                    *saw_newline = true;
+                    *is_on_new_line = true;
                     builder = AutoCow::new(&self);
                     start = self.offset();
                     continue;

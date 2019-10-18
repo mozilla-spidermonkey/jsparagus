@@ -158,7 +158,7 @@ impl<'alloc> Parser<'alloc> {
     ) -> Result<'alloc, ()> {
         match error_code {
             ErrorCode::Asi => {
-                if t.saw_newline
+                if t.is_on_new_line
                     || t.terminal_id == TerminalId::End
                     || t.terminal_id == TerminalId::RightCurlyBracket
                 {

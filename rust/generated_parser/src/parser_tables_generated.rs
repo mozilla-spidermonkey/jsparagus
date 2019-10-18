@@ -135,7 +135,7 @@ pub enum TerminalId {
 pub struct Token<'a> {
     pub terminal_id: TerminalId,
     pub offset: usize,
-    pub saw_newline: bool,
+    pub is_on_new_line: bool,
     pub value: Option<&'a str>,
 }
 
@@ -144,7 +144,7 @@ impl Token<'_> {
         Self {
             terminal_id,
             offset,
-            saw_newline: false,
+            is_on_new_line: false,
             value: None,
         }
     }
@@ -153,7 +153,7 @@ impl Token<'_> {
         Token {
             terminal_id: self.terminal_id,
             offset: self.offset,
-            saw_newline: self.saw_newline,
+            is_on_new_line: self.is_on_new_line,
             value: None,
         }
     }
