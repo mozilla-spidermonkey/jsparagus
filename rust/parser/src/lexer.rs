@@ -356,9 +356,9 @@ impl<'alloc> Lexer<'alloc> {
     /// ```
     fn optional_exponent(&mut self) -> Result<'alloc, ()> {
         if let Some('e') | Some('E') = self.peek() {
-            self.chars.next().unwrap();
+            self.chars.next();
             if let Some('+') | Some('-') = self.peek() {
-                self.chars.next().unwrap();
+                self.chars.next();
             }
             if !self.decimal_digits() {
                 // require at least one digit
@@ -406,7 +406,7 @@ impl<'alloc> Lexer<'alloc> {
             // BinaryDigit :: one of
             //     `0` `1`
             Some('b') | Some('B') => {
-                self.chars.next().unwrap();
+                self.chars.next();
                 let mut at_least_one = false;
                 while let Some('0'..='1') = self.peek() {
                     at_least_one = true;
@@ -429,7 +429,7 @@ impl<'alloc> Lexer<'alloc> {
             //     `0` `1` `2` `3` `4` `5` `6` `7`
             //
             Some('o') | Some('O') => {
-                self.chars.next().unwrap();
+                self.chars.next();
                 let mut at_least_one = false;
                 while let Some('0'..='7') = self.peek() {
                     at_least_one = true;
