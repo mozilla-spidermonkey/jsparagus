@@ -468,11 +468,38 @@ impl<'alloc> Lexer<'alloc> {
 
             _ => {
                 // This is almost always the token `0` in practice.
+                //
+                // In nonstrict code, as a legacy feature, other numbers
+                // starting with `0` are allowed. If /0[0-7]+/ matches, it's a
+                // LegacyOctalIntegerLiteral; but if we see an `8` or `9` in
+                // the number, it's decimal. Decimal numbers can have a decimal
+                // point and/or ExponentPart; octals can't.
+                //
+                // Neither is allowed with a BigIntLiteralSuffix `n`.
+                //
+                // LegacyOctalIntegerLiteral ::
+                //     `0` OctalDigit
+                //     LegacyOctalIntegerLiteral OctalDigit
+                //
+                // NonOctalDecimalIntegerLiteral ::
+                //     `0` NonOctalDigit
+                //     LegacyOctalLikeDecimalIntegerLiteral NonOctalDigit
+                //     NonOctalDecimalIntegerLiteral DecimalDigit
+                //
+                // LegacyOctalLikeDecimalIntegerLiteral ::
+                //     `0` OctalDigit
+                //     LegacyOctalLikeDecimalIntegerLiteral OctalDigit
+                //
+                // NonOctalDigit :: one of
+                //     `8` `9`
+                //
 
                 // TODO: implement `strict_mode` check
                 let strict_mode = true;
                 if !strict_mode {
-                    // TODO: Distinguish between Octal and NonOctal
+                    // TODO: Distinguish between Octal and NonOctalDecimal.
+                    // TODO: Support NonOctalDecimal followed by a decimal
+                    //       point and/or ExponentPart.
                     self.decimal_digits();
                 }
             }
@@ -483,6 +510,14 @@ impl<'alloc> Lexer<'alloc> {
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
     /// having already consumed the first character, which is a decimal digit.
+    ///
+    /// This can also be called after having scanned input matching /0[0-7]*/
+    /// when the next digit is `8` or `9` (that is, we belatedly realize this
+    /// is a DecimalLiteral, after first trying to scan it as a
+    /// LegacyOctalIntegerLiteral). TODO - `numeric_literal_starting_with_zero`
+    /// isn't actually doing this yet, so we fail to parse literals like
+    /// `091.1`.
+    ///
     fn decimal_literal(&mut self) -> Result<'alloc, ()> {
         // DecimalLiteral ::
         //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
