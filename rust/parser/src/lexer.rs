@@ -567,6 +567,10 @@ impl<'alloc> Lexer<'alloc> {
             Some(c) => match c {
                 LF | LS | PS => {
                     // LineContinuation. Ignore it.
+                    //
+                    // Don't set is_on_new_line because this LineContinuation
+                    // has no bearing on whether the current string literal was
+                    // the first token on the line where it started.
                 }
                 CR => {
                     // LineContinuation. Check for the sequence \r\n; otherwise
