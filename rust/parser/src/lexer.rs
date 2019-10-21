@@ -408,14 +408,9 @@ impl<'alloc> Lexer<'alloc> {
             Some('b') | Some('B') => {
                 self.chars.next().unwrap();
                 let mut at_least_one = false;
-                while let Some(next) = self.peek() {
-                    match next {
-                        '0' | '1' => {
-                            at_least_one = true;
-                            self.chars.next();
-                        }
-                        _ => break,
-                    }
+                while let Some('0'..='1') = self.peek() {
+                    at_least_one = true;
+                    self.chars.next();
                 }
                 if !at_least_one {
                     return Err(self.unexpected_err());
@@ -436,14 +431,9 @@ impl<'alloc> Lexer<'alloc> {
             Some('o') | Some('O') => {
                 self.chars.next().unwrap();
                 let mut at_least_one = false;
-                while let Some(next) = self.peek() {
-                    match next {
-                        '0'..='7' => {
-                            at_least_one = true;
-                            self.chars.next();
-                        }
-                        _ => break,
-                    }
+                while let Some('0'..='7') = self.peek() {
+                    at_least_one = true;
+                    self.chars.next();
                 }
                 if !at_least_one {
                     return Err(self.unexpected_err());
@@ -463,14 +453,9 @@ impl<'alloc> Lexer<'alloc> {
             Some('x') | Some('X') => {
                 self.chars.next();
                 let mut at_least_one = false;
-                while let Some(next) = self.peek() {
-                    match next {
-                        '0'..='9' | 'a'..='f' | 'A'..='F' => {
-                            at_least_one = true;
-                            self.chars.next();
-                        }
-                        _ => break,
-                    }
+                while let Some('0'..='9') | Some('a'..='f') | Some('A'..='F') = self.peek() {
+                    at_least_one = true;
+                    self.chars.next();
                 }
                 if !at_least_one {
                     return Err(self.unexpected_err());
