@@ -441,12 +441,12 @@ impl<'alloc> Lexer<'alloc> {
             }
 
             // BinaryIntegerLiteral ::
-            //   `0b` BinaryDigits
-            //   `0B` BinaryDigits
+            //     `0b` BinaryDigits
+            //     `0B` BinaryDigits
             //
             // BinaryDigits ::
-            //   BinaryDigit
-            //   BinaryDigits BinaryDigit
+            //     BinaryDigit
+            //     BinaryDigits BinaryDigit
             //
             // BinaryDigit :: one of
             //   `0` `1`
@@ -468,15 +468,15 @@ impl<'alloc> Lexer<'alloc> {
             }
 
             // OctalIntegerLiteral ::
-            //   `0o` OctalDigits
-            //   `0O` OctalDigits
+            //     `0o` OctalDigits
+            //     `0O` OctalDigits
             //
             // OctalDigits ::
-            //   OctalDigit
-            //   OctalDigits OctalDigit
+            //     OctalDigit
+            //     OctalDigits OctalDigit
             //
             // OctalDigit :: one of
-            //   `0` `1` `2` `3` `4` `5` `6` `7`
+            //     `0` `1` `2` `3` `4` `5` `6` `7`
             //
             Some('o') | Some('O') if c == '0' => {
                 self.chars.next().unwrap();
@@ -496,12 +496,12 @@ impl<'alloc> Lexer<'alloc> {
             }
 
             // HexIntegerLiteral ::
-            //   `0x` HexDigits
-            //   `0X` HexDigits
+            //     `0x` HexDigits
+            //     `0X` HexDigits
             //
             // HexDigits ::
-            //   HexDigit
-            //   HexDigits HexDigit
+            //     HexDigit
+            //     HexDigits HexDigit
             //
             // HexDigit :: one of
             //   `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
