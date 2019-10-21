@@ -383,7 +383,7 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
-    /// having already consumed the first character, which is a decimal digit.
+    /// having already consumed the first character, which was `0`.
     ///
     /// ```text
     /// NumericLiteral ::
@@ -393,53 +393,8 @@ impl<'alloc> Lexer<'alloc> {
     ///     HexIntegerLiteral
     ///     LegacyOctalIntegerLiteral
     /// ```
-    fn numeric_literal(&mut self, c: char) -> Result<'alloc, ()> {
-        // 11.8.3 Numeric Literals
+    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, ()> {
         match self.peek() {
-            // DecimalLiteral ::
-            //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
-            //     `.` DecimalDigits ExponentPart?
-            //     DecimalIntegerLiteral ExponentPart?
-            //
-            // DecimalIntegerLiteral ::
-            //     `0`
-            //     NonZeroDigit DecimalDigits?
-            //     NonOctalDecimalIntegerLiteral
-            //
-            // NonZeroDigit :: one of
-            //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
-            //
-            // NonOctalDecimalIntegerLiteral ::
-            //     `0` NonOctalDigit
-            //     LegacyOctalLikeDecimalIntegerLiteral NonOctalDigit
-            //     NonOctalDecimalIntegerLiteral DecimalDigit
-            //
-            // LegacyOctalLikeDecimalIntegerLiteral ::
-            //     `0` OctalDigit
-            //     LegacyOctalLikeDecimalIntegerLiteral OctalDigit
-            //
-            // NonOctalDigit :: one of
-            //     `8` `9`
-            //
-            // Shorter: every string matching /[0-9]+/ is either a
-            // DecimalIntegerLiteral or a LegacyOctalIntegerLiteral. If
-            // /0[0-7]+/ matches the whole token, it's octal; else decimal.
-            Some('0'..='9') if c != '0' => {
-                self.decimal_digits();
-                if let Some('.') = self.peek() {
-                    self.chars.next();
-                    self.decimal_digits();
-                }
-                self.optional_exponent()?;
-            }
-            Some('.') | Some('e') | Some('E') => {
-                if let Some('.') = self.peek() {
-                    self.chars.next();
-                    self.decimal_digits();
-                }
-                self.optional_exponent()?;
-            }
-
             // BinaryIntegerLiteral ::
             //     `0b` BinaryDigits
             //     `0B` BinaryDigits
@@ -449,8 +404,8 @@ impl<'alloc> Lexer<'alloc> {
             //     BinaryDigits BinaryDigit
             //
             // BinaryDigit :: one of
-            //   `0` `1`
-            Some('b') | Some('B') if c == '0' => {
+            //     `0` `1`
+            Some('b') | Some('B') => {
                 self.chars.next().unwrap();
                 let mut at_least_one = false;
                 while let Some(next) = self.peek() {
@@ -478,7 +433,7 @@ impl<'alloc> Lexer<'alloc> {
             // OctalDigit :: one of
             //     `0` `1` `2` `3` `4` `5` `6` `7`
             //
-            Some('o') | Some('O') if c == '0' => {
+            Some('o') | Some('O') => {
                 self.chars.next().unwrap();
                 let mut at_least_one = false;
                 while let Some(next) = self.peek() {
@@ -504,9 +459,9 @@ impl<'alloc> Lexer<'alloc> {
             //     HexDigits HexDigit
             //
             // HexDigit :: one of
-            //   `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
-            Some('x') | Some('X') if c == '0' => {
-                self.chars.next().unwrap();
+            //     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
+            Some('x') | Some('X') => {
+                self.chars.next();
                 let mut at_least_one = false;
                 while let Some(next) = self.peek() {
                     match next {
@@ -522,7 +477,13 @@ impl<'alloc> Lexer<'alloc> {
                 }
             }
 
-            _ if c == '0' => {
+            Some('.') | Some('e') | Some('E') => {
+                return self.decimal_literal();
+            }
+
+            _ => {
+                // This is almost always the token `0` in practice.
+
                 // TODO: implement `strict_mode` check
                 let strict_mode = true;
                 if !strict_mode {
@@ -530,12 +491,38 @@ impl<'alloc> Lexer<'alloc> {
                     self.decimal_digits();
                 }
             }
-
-            _ => {
-                // One-digit DecimalIntegerLiteral.
-            }
         }
 
+        self.check_after_numeric_literal()
+    }
+
+    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
+    /// having already consumed the first character, which is a decimal digit.
+    fn decimal_literal(&mut self) -> Result<'alloc, ()> {
+        // DecimalLiteral ::
+        //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
+        //     `.` DecimalDigits ExponentPart?
+        //     DecimalIntegerLiteral ExponentPart?
+        //
+        // DecimalIntegerLiteral ::
+        //     `0`   #see `numeric_literal_starting_with_zero`
+        //     NonZeroDigit DecimalDigits?
+        //     NonOctalDecimalIntegerLiteral  #see `numeric_literal_
+        //                                    #     starting_with_zero`
+        //
+        // NonZeroDigit :: one of
+        //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
+
+        self.decimal_digits();
+        if self.peek() == Some('.') {
+            self.chars.next();
+            self.decimal_digits();
+        }
+        self.optional_exponent()?;
+        self.check_after_numeric_literal()
+    }
+
+    fn check_after_numeric_literal(&self) -> Result<'alloc, ()> {
         // The SourceCharacter immediately following a
         // NumericLiteral must not be an IdentifierStart or
         // DecimalDigit. (11.8.3)
@@ -802,8 +789,19 @@ impl<'alloc> Lexer<'alloc> {
                     continue;
                 }
 
-                '0'..='9' => {
-                    self.numeric_literal(c)?;
+                '0' => {
+                    self.numeric_literal_starting_with_zero()?;
+
+                    // Don't have to push_matching since push_different is never called.
+                    return Ok((
+                        start,
+                        Some(builder.finish(&self)),
+                        TerminalId::NumericLiteral,
+                    ));
+                }
+
+                '1'..='9' => {
+                    self.decimal_literal()?;
 
                     // Don't have to push_matching since push_different is never called.
                     return Ok((
