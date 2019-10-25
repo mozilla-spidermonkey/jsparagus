@@ -49,7 +49,10 @@ Alternatively, I believe it’s equivalent to add "[lookahead ≠ `else`]"
 at the end of the IfStatement production that doesn’t have an `else`.
 
 
-### Other ambiguities (*)
+### Other ambiguities and informal parts of the spec (*)
+
+Not all of the spec is as formal as it seems at first. Most of the stuff
+in this section is easy to deal with, but #4 is special.
 
 1.  The lexical grammar is ambiguous: when looking at the characters `<<=`,
     there is the question of whether to parse that as one token `<<=`, two
@@ -92,6 +95,22 @@ at the end of the IfStatement production that doesn’t have an `else`.
     > information. When parsing using the following grammar, each
     > alternative is considered only if previous production alternatives
     > do not match.
+
+4.  Annex B.1.2 extends the syntax of string literals to allow legacy
+    octal escape sequences, like `\033`. It says:
+
+    > The syntax and semantics of 11.8.4 is extended as follows except
+    > that this extension is not allowed for strict mode code:
+
+    ...followed by a new definition of *EscapeSequence*.
+
+    So there are two sets of productions for *EscapeSequence*, and an
+    implementation is required to implement both and dynamically switch
+    between them.
+
+    This means that `function f() { "\033"; "use strict"; }` is a
+    SyntaxError, even though the octal escape is scanned before we know
+    we're in strict mode.
 
 For another ambiguity, see "Slashes" below.
 
