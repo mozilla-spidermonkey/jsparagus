@@ -848,6 +848,79 @@ impl<'alloc> Lexer<'alloc> {
         ))
     }
 
+    // ------------------------------------------------------------------------
+    // 11.8.6 Template Literal Lexical Components
+
+    /// Parse a template literal component token, having already consumed the
+    /// starting `` ` `` or `}` character. On success, the `id` of the returned
+    /// `Token` is `subst` (if the token ends with `${`) or `tail` (if the
+    /// token ends with `` ` ``).
+    ///
+    /// ```text
+    /// NoSubstitutionTemplate ::
+    ///   ``` TemplateCharacters? ```
+    ///
+    /// TemplateHead ::
+    ///   ``` TemplateCharacters? `${`
+    ///
+    /// TemplateMiddle ::
+    ///   `}` TemplateCharacters? `${`
+    ///
+    /// TemplateTail ::
+    ///   `}` TemplateCharacters? ```
+    ///
+    /// TemplateCharacters ::
+    ///   TemplateCharacter TemplateCharacters?
+    /// ```
+    fn template_part(
+        &mut self,
+        start: usize,
+        subst: TerminalId,
+        tail: TerminalId,
+    ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)>
+    {
+        let mut builder = AutoCow::new(&self);
+        while let Some(ch) = self.chars.next() {
+            // TemplateCharacter ::
+            //   `$` [lookahead != `{` ]
+            //   `\` EscapeSequence
+            //   `\` NotEscapeSequence
+            //   LineContinuation
+            //   LineTerminatorSequence
+            //   SourceCharacter but not one of ``` or `\` or `$` or LineTerminator
+            //
+            // NotEscapeSequence ::
+            //   `0` DecimalDigit
+            //   DecimalDigit but not `0`
+            //   `x` [lookahead <! HexDigit]
+            //   `x` HexDigit [lookahead <! HexDigit]
+            //   `u` [lookahead <! HexDigit] [lookahead != `{`]
+            //   `u` HexDigit [lookahead <! HexDigit]
+            //   `u` HexDigit HexDigit [lookahead <! HexDigit]
+            //   `u` HexDigit HexDigit HexDigit [lookahead <! HexDigit]
+            //   `u` `{` [lookahead <! HexDigit]
+            //   `u` `{` NotCodePoint [lookahead <! HexDigit]
+            //   `u` `{` CodePoint [lookahead <! HexDigit] [lookahead != `}`]
+            //
+            // NotCodePoint ::
+            //   HexDigits [> but only if MV of |HexDigits| > 0x10FFFF ]
+            //
+            // CodePoint ::
+            //   HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
+            if ch == '$' && self.peek() == Some('{') {
+                self.chars.next();
+                return Ok((start, None, subst));
+            }
+            if ch == '`' {
+                return Ok((start, None, tail));
+            }
+            // TODO: Support escape sequences.
+            builder.push_matching(ch);
+        }
+        return Ok((start, Some(builder.finish(&self)), TerminalId::StringLiteral));
+    }
+
+
     fn advance_impl<'parser>(
         &mut self,
         parser: &Parser<'parser>,
@@ -928,19 +1001,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '`' => {
-                    let mut builder = AutoCow::new(&self);
-                    while let Some(ch) = self.chars.next() {
-                        if ch == '$' && self.peek() == Some('{') {
-                            self.chars.next();
-                            return Ok((start, None, TerminalId::TemplateHead));
-                        }
-                        if ch == '`' {
-                            return Ok((start, None, TerminalId::NoSubstitutionTemplate));
-                        }
-                        // TODO: Support escape sequences.
-                        builder.push_matching(ch);
-                    }
-                    return Ok((start, Some(builder.finish(&self)), TerminalId::StringLiteral));
+                    return self.template_part(start, TerminalId::TemplateHead, TerminalId::NoSubstitutionTemplate);
                 }
 
                 '!' => match self.peek() {
@@ -1086,6 +1147,13 @@ impl<'alloc> Lexer<'alloc> {
                     }
                 },
 
+                '}' => {
+                    if parser.can_accept_terminal(TerminalId::TemplateMiddle) {
+                        return self.template_part(start, TerminalId::TemplateMiddle, TerminalId::TemplateTail);
+                    }
+                    return Ok((start, None, TerminalId::CloseBrace));
+                }
+
                 '<' => match self.peek() {
                     Some('<') => {
                         self.chars.next();
@@ -1190,7 +1258,6 @@ impl<'alloc> Lexer<'alloc> {
                 '[' => return Ok((start, None, TerminalId::OpenBracket)),
                 ']' => return Ok((start, None, TerminalId::CloseBracket)),
                 '{' => return Ok((start, None, TerminalId::OpenBrace)),
-                '}' => return Ok((start, None, TerminalId::CloseBrace)),
                 '~' => return Ok((start, None, TerminalId::BitwiseNot)),
 
                 // Idents
