@@ -115,6 +115,23 @@ in this section is easy to deal with, but #4 is special.
 For another ambiguity, see "Slashes" below.
 
 
+### Legacy octal literals (*)
+
+This is more funny than difficult.
+
+In a browser, in non-strict code, every sequence of decimal digits (not
+followed by an identifier character) is a *NumericLiteral* token.
+
+If it starts with `0`, with more digits after, then it's a legacy Annex
+B.1.1 literal. If the token contains an `8` or a `9`, it's a decimal
+number. Otherwise, hilariously, it's octal.
+
+```
+js> [067, 068, 069, 070]
+[55, 68, 69, 56]
+```
+
+
 ### Strict mode (*)
 
 *(entangled with: lazy compilation)*
