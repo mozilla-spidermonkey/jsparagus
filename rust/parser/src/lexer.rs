@@ -311,10 +311,10 @@ impl<'alloc> Lexer<'alloc> {
     }
 }
 
-// ----------------------------------------------------------------------------
-// 11.8.3 Numeric Literals
-
 impl<'alloc> Lexer<'alloc> {
+    // ------------------------------------------------------------------------
+    // 11.8.3 Numeric Literals
+
     /// Advance over decimal digits in the input, returning true if any were
     /// found.
     ///
@@ -555,10 +555,30 @@ impl<'alloc> Lexer<'alloc> {
         Ok(())
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // 11.8.4 String Literals
 
-    /// Scan an escape sequence in a string literal.
+    /// Scan an LineContinuation or EscapeSequence in a string literal, having
+    /// already consumed the initial backslash character.
+    ///
+    /// ```text
+    /// LineContinuation ::
+    ///     `\` LineTerminatorSequence
+    ///
+    /// EscapeSequence ::
+    ///     CharacterEscapeSequence
+    ///     LegacyOctalEscapeSequence
+    ///     HexEscapeSequence
+    ///     UnicodeEscapeSequence
+    ///
+    /// CharacterEscapeSequence ::
+    ///     SingleEscapeCharacter
+    ///     NonEscapeCharacter
+    ///
+    /// SingleEscapeCharacter :: one of
+    ///     `'` `"` `\` `b` `f` `n` `r` `t` `v`
+    ///
+    /// ```
     fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<'alloc, ()> {
         match self.chars.next() {
             None => {
@@ -602,6 +622,8 @@ impl<'alloc> Lexer<'alloc> {
                     text.push(VT);
                 }
                 'x' => {
+                    // HexEscapeSequence ::
+                    //     `x` HexDigit HexDigit
                     let mut value = self.hex_digit()?;
                     value = (value << 4) | self.hex_digit()?;
                     match char::try_from(value) {
@@ -614,6 +636,16 @@ impl<'alloc> Lexer<'alloc> {
                     }
                 }
                 'u' => {
+                    // UnicodeEscapeSequence ::
+                    //     `u` Hex4Digits
+                    //     `u{` CodePoint `}`
+                    //
+                    // Hex4Digits ::
+                    //     HexDigit HexDigit HexDigit HexDigit
+                    //
+                    // CodePoint ::
+                    //     HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
+
                     let mut value = 0;
                     for _ in 0..4 {
                         value = (value << 4) | self.hex_digit()?;
@@ -628,6 +660,26 @@ impl<'alloc> Lexer<'alloc> {
                     }
                 }
                 '0' => {
+                    // In strict mode code and in template literals, the
+                    // relevant production is
+                    //
+                    //     EscapeSequence ::
+                    //         `0` [lookahead <! DecimalDigit]
+                    //
+                    // In non-strict StringLiterals, legacy octal escape
+
+                    // LegacyOctalEscapeSequence ::
+                    //     OctalDigit [lookahead <! OctalDigit]
+                    //     ZeroToThree OctalDigit [lookahead <! OctalDigit]
+                    //     FourToSeven OctalDigit
+                    //     ZeroToThree OctalDigit OctalDigit
+                    //
+                    // ZeroToThree :: one of
+                    //     `0` `1` `2` `3`
+                    //
+                    // FourToSeven :: one of
+                    //     `4` `5` `6` `7`
+
                     if let Some('0'..='9') = self.peek() {
                         return Err(ParseError::InvalidEscapeSequence);
                     }
@@ -644,9 +696,37 @@ impl<'alloc> Lexer<'alloc> {
         Ok(())
     }
 
+    /// Scan a string literal, having already consumed the starting quote
+    /// character `delimiter`.
+    ///
+    /// ```text
+    /// StringLiteral ::
+    ///     `"` DoubleStringCharacters? `"`
+    ///     `'` SingleStringCharacters? `'`
+    ///
+    /// DoubleStringCharacters ::
+    ///     DoubleStringCharacter DoubleStringCharacters?
+    ///
+    /// SingleStringCharacters ::
+    ///     SingleStringCharacter SingleStringCharacters?
+    ///
+    /// DoubleStringCharacter ::
+    ///     SourceCharacter but not one of `"` or `\` or LineTerminator
+    ///     <LS>
+    ///     <PS>
+    ///     `\` EscapeSequence
+    ///     LineContinuation
+    ///
+    /// SingleStringCharacter ::
+    ///     SourceCharacter but not one of `'` or `\` or LineTerminator
+    ///     <LS>
+    ///     <PS>
+    ///     `\` EscapeSequence
+    ///     LineContinuation
+    /// ```
     fn string_literal(
         &mut self,
-        stop: char,
+        delimiter: char,
     ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
         let offset = self.offset() - 1;
         let mut builder = AutoCow::new(&self);
@@ -657,7 +737,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 Some(c @ '"') | Some(c @ '\'') => {
-                    if c == stop {
+                    if c == delimiter {
                         return Ok((
                             offset,
                             Some(builder.finish(&self)),
@@ -674,13 +754,21 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 Some(other) => {
+                    // NonEscapeCharacter ::
+                    //     SourceCharacter but not one of EscapeCharacter or LineTerminator
+                    //
+                    // EscapeCharacter ::
+                    //     SingleEscapeCharacter
+                    //     DecimalDigit
+                    //     `x`
+                    //     `u`
                     builder.push_matching(other);
                 }
             }
         }
     }
 
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // 11.8.5 Regular Expression Literals
 
     fn regular_expression_backslash_sequence(
