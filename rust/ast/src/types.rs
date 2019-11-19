@@ -2,7 +2,7 @@
 
 use crate::arena;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Void {}
 
 #[derive(Debug, PartialEq)]
@@ -31,14 +31,14 @@ pub struct Label<'alloc> {
     pub value: &'alloc str,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum VariableDeclarationKind {
     Var,
     Let,
     Const,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum CompoundAssignmentOperator {
     Add,
     Sub,
@@ -54,7 +54,7 @@ pub enum CompoundAssignmentOperator {
     And,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum BinaryOperator {
     Equals,
     NotEquals,
@@ -84,7 +84,7 @@ pub enum BinaryOperator {
     BitwiseAnd,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum UnaryOperator {
     Plus,
     Minus,
@@ -95,7 +95,7 @@ pub enum UnaryOperator {
     Delete,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum UpdateOperator {
     Increment,
     Decrement,

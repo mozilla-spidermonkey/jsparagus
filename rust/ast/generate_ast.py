@@ -483,8 +483,15 @@ class Enum(AggregateTypeDecl):
             else:
                 yield var
 
+    def is_c_like_enum(self):
+        """True if this enum is "C-like", having only unit-like variants."""
+        return all(ty is None for ty in self.variants.values())
+
     def write_rust_type_decl(self, ast, write):
-        write(0, "#[derive(Debug, PartialEq)]")
+        if self.is_c_like_enum():
+            write(0, "#[derive(Debug, PartialEq, Clone, Copy)]")
+        else:
+            write(0, "#[derive(Debug, PartialEq)]")
         lifetime_params = self.lifetime_params()
         write(0, "pub enum {}{} {{", self.name, lifetime_params)
         for variant_name, ty in self.variants.items():
