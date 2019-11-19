@@ -435,7 +435,6 @@ BitwiseORExpression[In, Yield, Await] :
   BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]
     => binary_expr(bitwise_or_op(), $0, $2)
 
-
 @returns Expression
 LogicalANDExpression[In, Yield, Await] :
   BitwiseORExpression[?In, ?Yield, ?Await]
@@ -450,12 +449,30 @@ LogicalORExpression[In, Yield, Await] :
   LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]
     => binary_expr(logical_or_op(), $0, $2)
 
+@returns Expression
+ShortCircuitExpression[In, Yield, Await] :
+  LogicalORExpression[?In, ?Yield, ?Await]
+    => $0
+  CoalesceExpression[?In, ?Yield, ?Await]
+    => $0
+
+@returns Expression
+CoalesceExpression[In, Yield, Await] :
+  CoalesceExpressionHead[?In, ?Yield, ?Await] `??` BitwiseORExpression[?In, ?Yield, ?Await]
+    => binary_expr(coalesce_op(), $0, $2)
+
+@returns Expression
+CoalesceExpressionHead[In, Yield, Await] :
+  CoalesceExpression[?In, ?Yield, ?Await]
+    => $0
+  BitwiseORExpression[?In, ?Yield, ?Await]
+    => $0
 
 @returns Expression
 ConditionalExpression[In, Yield, Await] :
-  LogicalORExpression[?In, ?Yield, ?Await]
+  ShortCircuitExpression[?In, ?Yield, ?Await]
     => $0
-  LogicalORExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]
+  ShortCircuitExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]
     => conditional_expr($0, $2, $4)
 
 

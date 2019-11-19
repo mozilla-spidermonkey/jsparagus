@@ -252,6 +252,7 @@ impl AstEmitter {
             BinaryOperator::BitwiseOr => Opcode::BitOr,
             BinaryOperator::BitwiseXor => Opcode::BitXor,
             BinaryOperator::BitwiseAnd => Opcode::BitAnd,
+            BinaryOperator::Coalesce => unimplemented!(),
             BinaryOperator::LogicalOr => unimplemented!(),
             BinaryOperator::LogicalAnd => unimplemented!(),
             BinaryOperator::Comma => {

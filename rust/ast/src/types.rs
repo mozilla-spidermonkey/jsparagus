@@ -76,6 +76,7 @@ pub enum BinaryOperator {
     Mod,
     Pow,
     Comma,
+    Coalesce,
     LogicalOr,
     LogicalAnd,
     BitwiseOr,

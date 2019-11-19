@@ -1274,6 +1274,9 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn comma_op(&self) -> BinaryOperator {
         BinaryOperator::Comma
     }
+    pub fn coalesce_op(&self) -> BinaryOperator {
+        BinaryOperator::Coalesce
+    }
     pub fn logical_or_op(&self) -> BinaryOperator {
         BinaryOperator::LogicalOr
     }

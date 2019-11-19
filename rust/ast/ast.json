@@ -66,6 +66,7 @@
     "Mod": null,
     "Pow": null,
     "Comma": null,
+    "Coalesce": null,
     "LogicalOr": null,
     "LogicalAnd": null,
     "BitwiseOr": null,

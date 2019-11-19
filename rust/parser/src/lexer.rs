@@ -877,8 +877,7 @@ impl<'alloc> Lexer<'alloc> {
         start: usize,
         subst: TerminalId,
         tail: TerminalId,
-    ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)>
-    {
+    ) -> Result<'alloc, (usize, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         while let Some(ch) = self.chars.next() {
             // TemplateCharacter ::
@@ -917,9 +916,12 @@ impl<'alloc> Lexer<'alloc> {
             // TODO: Support escape sequences.
             builder.push_matching(ch);
         }
-        return Ok((start, Some(builder.finish(&self)), TerminalId::StringLiteral));
+        return Ok((
+            start,
+            Some(builder.finish(&self)),
+            TerminalId::StringLiteral,
+        ));
     }
-
 
     fn advance_impl<'parser>(
         &mut self,
@@ -1249,12 +1251,19 @@ impl<'alloc> Lexer<'alloc> {
                     _ => return Ok((start, None, TerminalId::BitwiseOr)),
                 },
 
+                '?' => match self.peek() {
+                    Some('?') => {
+                        self.chars.next();
+                        return Ok((start, None, TerminalId::Coalesce));
+                    }
+                    _ => return Ok((start, None, TerminalId::QuestionMark)),
+                }
+
                 '(' => return Ok((start, None, TerminalId::OpenParenthesis)),
                 ')' => return Ok((start, None, TerminalId::CloseParenthesis)),
                 ',' => return Ok((start, None, TerminalId::Comma)),
                 ':' => return Ok((start, None, TerminalId::Colon)),
                 ';' => return Ok((start, None, TerminalId::Semicolon)),
-                '?' => return Ok((start, None, TerminalId::QuestionMark)),
                 '[' => return Ok((start, None, TerminalId::OpenBracket)),
                 ']' => return Ok((start, None, TerminalId::CloseBracket)),
                 '{' => return Ok((start, None, TerminalId::OpenBrace)),

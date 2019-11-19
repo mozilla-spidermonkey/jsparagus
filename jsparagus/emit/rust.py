@@ -42,6 +42,7 @@ TERMINAL_NAMES = {
     '.': 'Dot',
     '**': 'Exponentiate',
     '?': 'QuestionMark',
+    '??': 'Coalesce',
     '*': 'Star',
     '/': 'Divide',
     '%': 'Remainder',

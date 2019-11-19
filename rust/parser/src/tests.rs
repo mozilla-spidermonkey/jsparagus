@@ -544,3 +544,9 @@ fn test_async_arrows() {
     assert_error_eq("foo(a, b) => {}", ParseError::ArrowHeadInvalid);
     assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
 }
+
+#[test]
+fn test_coalesce() {
+    assert_parses("let f = options.prop ?? 0;");
+    assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
+}
