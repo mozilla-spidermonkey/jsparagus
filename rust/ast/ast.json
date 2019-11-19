@@ -103,7 +103,9 @@
   },
   "Statement": {
     "_type": "enum",
-    "BlockStatement": "BlockStatement",
+    "BlockStatement": {
+      "block": "Block"
+    },
     "BreakStatement": "BreakStatement",
     "ContinueStatement": "ContinueStatement",
     "DebuggerStatement": null,
@@ -571,10 +573,6 @@
   "AwaitExpression": {
     "_type": "struct",
     "expression": "Box<Expression>"
-  },
-  "BlockStatement": {
-    "_type": "struct",
-    "block": "Block"
   },
   "BreakStatement": {
     "_type": "struct",

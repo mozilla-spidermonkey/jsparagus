@@ -1598,9 +1598,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         block: arena::Box<'alloc, Block<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::BlockStatement(BlockStatement {
+        self.alloc(Statement::BlockStatement {
             block: block.unbox(),
-        }))
+        })
     }
 
     // Block : `{` StatementList? `}`

@@ -35,7 +35,7 @@ impl AstEmitter {
     fn emit_statement(&mut self, ast: &Statement) {
         match ast {
             Statement::ClassDeclaration(_) => unimplemented!(),
-            Statement::BlockStatement(ast) => self.emit_block_statement(ast),
+            Statement::BlockStatement { block: _ } => unimplemented!(),
             Statement::BreakStatement(_) => unimplemented!(),
             Statement::ContinueStatement(_) => unimplemented!(),
             Statement::DebuggerStatement => unimplemented!(),
@@ -61,10 +61,6 @@ impl AstEmitter {
             Statement::WithStatement(_) => unimplemented!(),
             Statement::FunctionDeclaration(_) => unimplemented!(),
         }
-    }
-
-    fn emit_block_statement(&mut self, _ast: &BlockStatement) {
-        println!("TODO: emit_block");
     }
 
     fn emit_variable_declaration(&mut self, ast: &VariableDeclaration) {
