@@ -462,7 +462,11 @@ class Enum(AggregateTypeDecl):
         AggregateTypeDecl.__init__(self)
 
         def parse_maybe_type(ty):
-            return None if ty is None else parse_type(ty)
+            if ty is None:
+                return None
+            if isinstance(ty, dict):
+                return {name: parse_type(field_ty) for name, field_ty in ty.items()}
+            return parse_type(ty)
 
         self.name = name
         self.variants = {
@@ -473,7 +477,11 @@ class Enum(AggregateTypeDecl):
         self.has_lifetime = None
 
     def field_types(self):
-        return iter(self.variants.values())
+        for var in self.variants.values():
+            if isinstance(var, dict):
+                yield from var.values()
+            else:
+                yield var
 
     def write_rust_type_decl(self, ast, write):
         write(0, "#[derive(Debug, PartialEq)]")
@@ -482,6 +490,11 @@ class Enum(AggregateTypeDecl):
         for variant_name, ty in self.variants.items():
             if ty is None:
                 write(1, "{},", variant_name)
+            elif isinstance(ty, dict):
+                write(1, "{} {{", variant_name)
+                for field_name, field_ty in ty.items():
+                    write(2, "{}: {},", field_name, field_ty.to_rust_type(ast))
+                write(1, "},")
             else:
                 write(1, "{}({}),", variant_name, ty.to_rust_type(ast))
         write(0, "}")
@@ -489,27 +502,64 @@ class Enum(AggregateTypeDecl):
 
     def write_rust_pass_method_body(self, write, emit_call):
         write(2, "match ast {")
-        for field_name, field_type in self.variants.items():
-            if field_type is None:
-                write(3, "{}::{} => (),", self.name, field_name)
+        for variant_name, variant_type in self.variants.items():
+            if variant_type is None:
+                write(3, "{}::{} => (),", self.name, variant_name)
+            elif isinstance(variant_type, dict):
+                write(3, "{}::{} {{ {} }} => {{", self.name, variant_name, ', '.join(variant_type.keys()))
+                for field_name, field_ty in variant_type.items():
+                    emit_call(4, field_ty, field_name)
+                write(3, "}")
             else:
-                write(3, "{}::{}(ast) => {{", self.name, field_name)
-                emit_call(4, field_type, "ast")
+                write(3, "{}::{}(ast) => {{", self.name, variant_name)
+                emit_call(4, variant_type, "ast")
                 write(3, "}")
         write(2, "}")
 
     def write_postfix_pass_method(
             self, ast, write, to_method_name, to_postfix_type, append_postfix_pass):
-        pass
+        for variant_name, variant_ty in self.variants.items():
+            if isinstance(variant_ty, dict):
+                write(1, "fn {}(", to_method_name(variant_name))
+                write(2, "&self,")
+                for field, field_ty in variant_ty.items():
+                    postfix_type = to_postfix_type(field_ty)
+                    if postfix_type is None:
+                        postfix_type = "&mut {}".format(field_ty.to_rust_type(ast))
+                    elif isinstance(postfix_type, Type):
+                        postfix_type = postfix_type.to_rust_type(ast)
+                    write(2, "{}: {},", field, postfix_type)
+                write(1, ") -> Self::Value {")
+                write(2, "let mut result = Self::Value::default();")
+                for field, field_ty in variant_ty.items():
+                    append_postfix_pass(2, field_ty, field)
+                write(2, "result")
+                write(1, "}")
+                write(0, "")
+
 
     def write_postfix_pass_visitor_method_body(
             self, write, to_method_name, call_postfix_visitor):
         write(2, "match ast {")
-        for name, ty in self.variants.items():
+        for variant_name, ty in self.variants.items():
             if ty is None:
-                write(3, "{}::{} => T::Value::default(),", self.name, name)
+                write(3, "{}::{} => T::Value::default(),", self.name, variant_name)
+            elif isinstance(ty, dict):
+                write(3, "{}::{} {{ {} }} => {{", self.name, variant_name, ", ".join(ty.keys()))
+
+                index = 0
+                for field_name, field_ty in ty.items():
+                    res = call_postfix_visitor(field_ty, "({})".format(field_name))
+                    if res is None:
+                        res = field_name
+                    write(4, "let a{} = {};", index, res)
+                    index += 1
+                write(4, "self.pass.{}({})", to_method_name(variant_name),
+                      ", ".join("a{}".format(i) for i in range(index)))
+
+                write(3, "}")
             else:
-                write(3, "{}::{}(ast) => {},", self.name, name, call_postfix_visitor(ty, "ast"))
+                write(3, "{}::{}(ast) => {},", self.name, variant_name, call_postfix_visitor(ty, "ast"))
         write(2, "}")
 
 
