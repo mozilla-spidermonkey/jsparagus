@@ -2095,9 +2095,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         label: Option<arena::Box<'alloc, Label<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ContinueStatement(ContinueStatement {
+        self.alloc(Statement::ContinueStatement {
             label: label.map(|boxed| boxed.unbox()),
-        }))
+        })
     }
 
     // BreakStatement : `break` `;`
@@ -2106,9 +2106,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         label: Option<arena::Box<'alloc, Label<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::BreakStatement(BreakStatement {
+        self.alloc(Statement::BreakStatement {
             label: label.map(|boxed| boxed.unbox()),
-        }))
+        })
     }
 
     // ReturnStatement : `return` `;`

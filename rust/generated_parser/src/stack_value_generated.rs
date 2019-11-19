@@ -37,7 +37,6 @@ pub enum StackValue<'alloc> {
     BindingPropertyProperty(arena::Box<'alloc, BindingPropertyProperty<'alloc>>),
     BindingWithDefault(arena::Box<'alloc, BindingWithDefault<'alloc>>),
     Block(arena::Box<'alloc, Block<'alloc>>),
-    BreakStatement(arena::Box<'alloc, BreakStatement<'alloc>>),
     CallExpression(arena::Box<'alloc, CallExpression<'alloc>>),
     CatchClause(arena::Box<'alloc, CatchClause<'alloc>>),
     ClassDeclaration(arena::Box<'alloc, ClassDeclaration<'alloc>>),
@@ -49,7 +48,6 @@ pub enum StackValue<'alloc> {
     ComputedMemberExpression(arena::Box<'alloc, ComputedMemberExpression<'alloc>>),
     ComputedPropertyName(arena::Box<'alloc, ComputedPropertyName<'alloc>>),
     ConditionalExpression(arena::Box<'alloc, ConditionalExpression<'alloc>>),
-    ContinueStatement(arena::Box<'alloc, ContinueStatement<'alloc>>),
     CoverParenthesized(arena::Box<'alloc, CoverParenthesized<'alloc>>),
     DataProperty(arena::Box<'alloc, DataProperty<'alloc>>),
     Directive(arena::Box<'alloc, Directive<'alloc>>),
@@ -435,15 +433,6 @@ impl<'alloc> StackValueItem<'alloc> for Block<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for BreakStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::BreakStatement(v) => v,
-            _ => panic!("StackValue expected BreakStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for CallExpression<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -548,15 +537,6 @@ impl<'alloc> StackValueItem<'alloc> for ConditionalExpression<'alloc> {
         match sv {
             StackValue::ConditionalExpression(v) => v,
             _ => panic!("StackValue expected ConditionalExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for ContinueStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ContinueStatement(v) => v,
-            _ => panic!("StackValue expected ContinueStatement, got {:?}", sv),
         }
     }
 }
@@ -1614,13 +1594,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Block<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BreakStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::BreakStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CallExpression<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1695,13 +1668,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ConditionalExpression<'
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::ConditionalExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ContinueStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ContinueStatement(self))
     }
 }
 

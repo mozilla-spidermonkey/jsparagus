@@ -35,9 +35,9 @@ impl AstEmitter {
     fn emit_statement(&mut self, ast: &Statement) {
         match ast {
             Statement::ClassDeclaration(_) => unimplemented!(),
-            Statement::BlockStatement { block: _ } => unimplemented!(),
-            Statement::BreakStatement(_) => unimplemented!(),
-            Statement::ContinueStatement(_) => unimplemented!(),
+            Statement::BlockStatement { .. } => unimplemented!(),
+            Statement::BreakStatement { .. } => unimplemented!(),
+            Statement::ContinueStatement { .. } => unimplemented!(),
             Statement::DebuggerStatement => unimplemented!(),
             Statement::DoWhileStatement(_) => unimplemented!(),
             Statement::EmptyStatement => (),

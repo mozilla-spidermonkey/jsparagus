@@ -119,8 +119,8 @@ pub enum Program<'alloc> {
 #[derive(Debug, PartialEq)]
 pub enum Statement<'alloc> {
     BlockStatement { block: Block<'alloc> },
-    BreakStatement(BreakStatement<'alloc>),
-    ContinueStatement(ContinueStatement<'alloc>),
+    BreakStatement { label: Option<Label<'alloc>> },
+    ContinueStatement { label: Option<Label<'alloc>> },
     DebuggerStatement,
     DoWhileStatement(DoWhileStatement<'alloc>),
     EmptyStatement,
@@ -668,16 +668,6 @@ pub struct YieldGeneratorExpression<'alloc> {
 #[derive(Debug, PartialEq)]
 pub struct AwaitExpression<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct BreakStatement<'alloc> {
-    pub label: Option<Label<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ContinueStatement<'alloc> {
-    pub label: Option<Label<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]

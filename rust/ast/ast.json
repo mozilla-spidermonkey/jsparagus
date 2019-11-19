@@ -106,8 +106,12 @@
     "BlockStatement": {
       "block": "Block"
     },
-    "BreakStatement": "BreakStatement",
-    "ContinueStatement": "ContinueStatement",
+    "BreakStatement": {
+      "label": "Option<Label>"
+    },
+    "ContinueStatement": {
+      "label": "Option<Label>"
+    },
     "DebuggerStatement": null,
     "DoWhileStatement": "DoWhileStatement",
     "EmptyStatement": null,
@@ -573,14 +577,6 @@
   "AwaitExpression": {
     "_type": "struct",
     "expression": "Box<Expression>"
-  },
-  "BreakStatement": {
-    "_type": "struct",
-    "label": "Option<Label>"
-  },
-  "ContinueStatement": {
-    "_type": "struct",
-    "label": "Option<Label>"
   },
   "DoWhileStatement": {
     "_type": "struct",

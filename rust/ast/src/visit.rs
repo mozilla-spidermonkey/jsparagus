@@ -132,11 +132,15 @@ pub trait Pass<'alloc> {
             Statement::BlockStatement { block } => {
                 self.visit_block(block);
             }
-            Statement::BreakStatement(ast) => {
-                self.visit_break_statement(ast);
+            Statement::BreakStatement { label } => {
+                if let Some(item) = label {
+                    self.visit_label(item);
+                }
             }
-            Statement::ContinueStatement(ast) => {
-                self.visit_continue_statement(ast);
+            Statement::ContinueStatement { label } => {
+                if let Some(item) = label {
+                    self.visit_label(item);
+                }
             }
             Statement::DebuggerStatement => (),
             Statement::DoWhileStatement(ast) => {
@@ -916,18 +920,6 @@ pub trait Pass<'alloc> {
         self.visit_expression(&mut ast.expression);
     }
 
-    fn visit_break_statement(&mut self, ast: &mut BreakStatement<'alloc>) {
-        if let Some(item) = &mut ast.label {
-            self.visit_label(item);
-        }
-    }
-
-    fn visit_continue_statement(&mut self, ast: &mut ContinueStatement<'alloc>) {
-        if let Some(item) = &mut ast.label {
-            self.visit_label(item);
-        }
-    }
-
     fn visit_do_while_statement(&mut self, ast: &mut DoWhileStatement<'alloc>) {
         self.visit_statement(&mut ast.block);
         self.visit_expression(&mut ast.test);
@@ -1188,6 +1180,22 @@ pub trait PostfixPass<'alloc> {
     fn visit_block_statement(&self, block: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(block);
+        result
+    }
+
+    fn visit_break_statement(&self, label: Option<Self::Value>) -> Self::Value {
+        let mut result = Self::Value::default();
+        if let Some(item) = label {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_continue_statement(&self, label: Option<Self::Value>) -> Self::Value {
+        let mut result = Self::Value::default();
+        if let Some(item) = label {
+            result.append(item);
+        }
         result
     }
 
@@ -1777,22 +1785,6 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_break_statement(&self, label: Option<Self::Value>) -> Self::Value {
-        let mut result = Self::Value::default();
-        if let Some(item) = label {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_continue_statement(&self, label: Option<Self::Value>) -> Self::Value {
-        let mut result = Self::Value::default();
-        if let Some(item) = label {
-            result.append(item);
-        }
-        result
-    }
-
     fn visit_do_while_statement(&self, block: Self::Value, test: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(block);
@@ -2227,8 +2219,14 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 let a0 = self.visit_block((block));
                 self.pass.visit_block_statement(a0)
             }
-            Statement::BreakStatement(ast) => self.visit_break_statement(ast),
-            Statement::ContinueStatement(ast) => self.visit_continue_statement(ast),
+            Statement::BreakStatement { label } => {
+                let a0 = (label).as_mut().map(|item| self.visit_label(item));
+                self.pass.visit_break_statement(a0)
+            }
+            Statement::ContinueStatement { label } => {
+                let a0 = (label).as_mut().map(|item| self.visit_label(item));
+                self.pass.visit_continue_statement(a0)
+            }
             Statement::DebuggerStatement => T::Value::default(),
             Statement::DoWhileStatement(ast) => self.visit_do_while_statement(ast),
             Statement::EmptyStatement => T::Value::default(),
@@ -3078,16 +3076,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
     pub fn visit_await_expression(&mut self, ast: &mut AwaitExpression<'alloc>) -> T::Value {
         let a0 = self.visit_expression((&mut ast.expression));
         self.pass.visit_await_expression(a0)
-    }
-
-    pub fn visit_break_statement(&mut self, ast: &mut BreakStatement<'alloc>) -> T::Value {
-        let a0 = (&mut ast.label).as_mut().map(|item| self.visit_label(item));
-        self.pass.visit_break_statement(a0)
-    }
-
-    pub fn visit_continue_statement(&mut self, ast: &mut ContinueStatement<'alloc>) -> T::Value {
-        let a0 = (&mut ast.label).as_mut().map(|item| self.visit_label(item));
-        self.pass.visit_continue_statement(a0)
     }
 
     pub fn visit_do_while_statement(&mut self, ast: &mut DoWhileStatement<'alloc>) -> T::Value {
