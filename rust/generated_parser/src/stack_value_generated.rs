@@ -51,7 +51,6 @@ pub enum StackValue<'alloc> {
     CoverParenthesized(arena::Box<'alloc, CoverParenthesized<'alloc>>),
     DataProperty(arena::Box<'alloc, DataProperty<'alloc>>),
     Directive(arena::Box<'alloc, Directive<'alloc>>),
-    DoWhileStatement(arena::Box<'alloc, DoWhileStatement<'alloc>>),
     Export(arena::Box<'alloc, Export<'alloc>>),
     ExportAllFrom(arena::Box<'alloc, ExportAllFrom<'alloc>>),
     ExportDeclaration(arena::Box<'alloc, ExportDeclaration<'alloc>>),
@@ -62,9 +61,6 @@ pub enum StackValue<'alloc> {
     ExportLocals(arena::Box<'alloc, ExportLocals<'alloc>>),
     Expression(arena::Box<'alloc, Expression<'alloc>>),
     ExpressionOrSuper(arena::Box<'alloc, ExpressionOrSuper<'alloc>>),
-    ForInStatement(arena::Box<'alloc, ForInStatement<'alloc>>),
-    ForOfStatement(arena::Box<'alloc, ForOfStatement<'alloc>>),
-    ForStatement(arena::Box<'alloc, ForStatement<'alloc>>),
     FormalParameters(arena::Box<'alloc, FormalParameters<'alloc>>),
     Function(arena::Box<'alloc, Function<'alloc>>),
     FunctionBody(arena::Box<'alloc, FunctionBody<'alloc>>),
@@ -72,14 +68,12 @@ pub enum StackValue<'alloc> {
     Identifier(arena::Box<'alloc, Identifier<'alloc>>),
     IdentifierExpression(arena::Box<'alloc, IdentifierExpression<'alloc>>),
     IdentifierName(arena::Box<'alloc, IdentifierName<'alloc>>),
-    IfStatement(arena::Box<'alloc, IfStatement<'alloc>>),
     Import(arena::Box<'alloc, Import<'alloc>>),
     ImportCallExpression(arena::Box<'alloc, ImportCallExpression<'alloc>>),
     ImportDeclaration(arena::Box<'alloc, ImportDeclaration<'alloc>>),
     ImportNamespace(arena::Box<'alloc, ImportNamespace<'alloc>>),
     ImportSpecifier(arena::Box<'alloc, ImportSpecifier<'alloc>>),
     Label(arena::Box<'alloc, Label<'alloc>>),
-    LabeledStatement(arena::Box<'alloc, LabeledStatement<'alloc>>),
     LiteralBooleanExpression(arena::Box<'alloc, LiteralBooleanExpression>),
     LiteralNumericExpression(arena::Box<'alloc, LiteralNumericExpression>),
     LiteralRegExpExpression(arena::Box<'alloc, LiteralRegExpExpression<'alloc>>),
@@ -99,7 +93,6 @@ pub enum StackValue<'alloc> {
     Parameter(arena::Box<'alloc, Parameter<'alloc>>),
     Program(arena::Box<'alloc, Program<'alloc>>),
     PropertyName(arena::Box<'alloc, PropertyName<'alloc>>),
-    ReturnStatement(arena::Box<'alloc, ReturnStatement<'alloc>>),
     Script(arena::Box<'alloc, Script<'alloc>>),
     Setter(arena::Box<'alloc, Setter<'alloc>>),
     ShorthandProperty(arena::Box<'alloc, ShorthandProperty<'alloc>>),
@@ -110,15 +103,10 @@ pub enum StackValue<'alloc> {
     StaticPropertyName(arena::Box<'alloc, StaticPropertyName<'alloc>>),
     SwitchCase(arena::Box<'alloc, SwitchCase<'alloc>>),
     SwitchDefault(arena::Box<'alloc, SwitchDefault<'alloc>>),
-    SwitchStatement(arena::Box<'alloc, SwitchStatement<'alloc>>),
-    SwitchStatementWithDefault(arena::Box<'alloc, SwitchStatementWithDefault<'alloc>>),
     TemplateElement(arena::Box<'alloc, TemplateElement<'alloc>>),
     TemplateExpression(arena::Box<'alloc, TemplateExpression<'alloc>>),
     TemplateExpressionElement(arena::Box<'alloc, TemplateExpressionElement<'alloc>>),
-    ThrowStatement(arena::Box<'alloc, ThrowStatement<'alloc>>),
     Token(arena::Box<'alloc, Token<'alloc>>),
-    TryCatchStatement(arena::Box<'alloc, TryCatchStatement<'alloc>>),
-    TryFinallyStatement(arena::Box<'alloc, TryFinallyStatement<'alloc>>),
     UnaryExpression(arena::Box<'alloc, UnaryExpression<'alloc>>),
     UnaryOperator(arena::Box<'alloc, UnaryOperator>),
     UpdateExpression(arena::Box<'alloc, UpdateExpression<'alloc>>),
@@ -141,8 +129,6 @@ pub enum StackValue<'alloc> {
     VecSwitchCase(arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>),
     VecVariableDeclarator(arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>),
     Void(arena::Box<'alloc, Void>),
-    WhileStatement(arena::Box<'alloc, WhileStatement<'alloc>>),
-    WithStatement(arena::Box<'alloc, WithStatement<'alloc>>),
     YieldExpression(arena::Box<'alloc, YieldExpression<'alloc>>),
     YieldGeneratorExpression(arena::Box<'alloc, YieldGeneratorExpression<'alloc>>),
 }
@@ -568,15 +554,6 @@ impl<'alloc> StackValueItem<'alloc> for Directive<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for DoWhileStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::DoWhileStatement(v) => v,
-            _ => panic!("StackValue expected DoWhileStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for Export<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -667,33 +644,6 @@ impl<'alloc> StackValueItem<'alloc> for ExpressionOrSuper<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for ForInStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ForInStatement(v) => v,
-            _ => panic!("StackValue expected ForInStatement, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for ForOfStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ForOfStatement(v) => v,
-            _ => panic!("StackValue expected ForOfStatement, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for ForStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ForStatement(v) => v,
-            _ => panic!("StackValue expected ForStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for FormalParameters<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -757,15 +707,6 @@ impl<'alloc> StackValueItem<'alloc> for IdentifierName<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for IfStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::IfStatement(v) => v,
-            _ => panic!("StackValue expected IfStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for Import<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -816,15 +757,6 @@ impl<'alloc> StackValueItem<'alloc> for Label<'alloc> {
         match sv {
             StackValue::Label(v) => v,
             _ => panic!("StackValue expected Label, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for LabeledStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::LabeledStatement(v) => v,
-            _ => panic!("StackValue expected LabeledStatement, got {:?}", sv),
         }
     }
 }
@@ -1000,15 +932,6 @@ impl<'alloc> StackValueItem<'alloc> for PropertyName<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for ReturnStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ReturnStatement(v) => v,
-            _ => panic!("StackValue expected ReturnStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for Script<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -1102,27 +1025,6 @@ impl<'alloc> StackValueItem<'alloc> for SwitchDefault<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for SwitchStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::SwitchStatement(v) => v,
-            _ => panic!("StackValue expected SwitchStatement, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for SwitchStatementWithDefault<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::SwitchStatementWithDefault(v) => v,
-            _ => panic!(
-                "StackValue expected SwitchStatementWithDefault, got {:?}",
-                sv
-            ),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for TemplateElement<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -1153,38 +1055,11 @@ impl<'alloc> StackValueItem<'alloc> for TemplateExpressionElement<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for ThrowStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ThrowStatement(v) => v,
-            _ => panic!("StackValue expected ThrowStatement, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for Token<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
             StackValue::Token(v) => v,
             _ => panic!("StackValue expected Token, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for TryCatchStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::TryCatchStatement(v) => v,
-            _ => panic!("StackValue expected TryCatchStatement, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for TryFinallyStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::TryFinallyStatement(v) => v,
-            _ => panic!("StackValue expected TryFinallyStatement, got {:?}", sv),
         }
     }
 }
@@ -1356,24 +1231,6 @@ impl<'alloc> StackValueItem<'alloc> for Void {
         match sv {
             StackValue::Void(v) => v,
             _ => panic!("StackValue expected Void, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for WhileStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::WhileStatement(v) => v,
-            _ => panic!("StackValue expected WhileStatement, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for WithStatement<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::WithStatement(v) => v,
-            _ => panic!("StackValue expected WithStatement, got {:?}", sv),
         }
     }
 }
@@ -1692,13 +1549,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Directive<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, DoWhileStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::DoWhileStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Export<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1769,27 +1619,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ExpressionOrSuper<'allo
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForInStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ForInStatement(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForOfStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ForOfStatement(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ForStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ForStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, FormalParameters<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1839,13 +1668,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, IdentifierName<'alloc>>
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, IfStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::IfStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Import<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1885,13 +1707,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Label<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Label(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LabeledStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::LabeledStatement(self))
     }
 }
 
@@ -2028,13 +1843,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, PropertyName<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ReturnStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ReturnStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Script<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -2105,20 +1913,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchDefault<'alloc>> 
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::SwitchStatement(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, SwitchStatementWithDefault<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::SwitchStatementWithDefault(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TemplateElement<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -2140,31 +1934,10 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TemplateExpressionEleme
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ThrowStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ThrowStatement(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Token<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Token(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TryCatchStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::TryCatchStatement(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, TryFinallyStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::TryFinallyStatement(self))
     }
 }
 
@@ -2301,20 +2074,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Void> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Void(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, WhileStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::WhileStatement(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, WithStatement<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::WithStatement(self))
     }
 }
 

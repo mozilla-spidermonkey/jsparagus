@@ -118,27 +118,81 @@ pub enum Program<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub enum Statement<'alloc> {
-    BlockStatement { block: Block<'alloc> },
-    BreakStatement { label: Option<Label<'alloc>> },
-    ContinueStatement { label: Option<Label<'alloc>> },
+    BlockStatement {
+        block: Block<'alloc>,
+    },
+    BreakStatement {
+        label: Option<Label<'alloc>>,
+    },
+    ContinueStatement {
+        label: Option<Label<'alloc>>,
+    },
     DebuggerStatement,
-    DoWhileStatement(DoWhileStatement<'alloc>),
+    DoWhileStatement {
+        block: arena::Box<'alloc, Statement<'alloc>>,
+        test: arena::Box<'alloc, Expression<'alloc>>,
+    },
     EmptyStatement,
     ExpressionStatement(arena::Box<'alloc, Expression<'alloc>>),
-    ForInStatement(ForInStatement<'alloc>),
-    ForOfStatement(ForOfStatement<'alloc>),
-    ForStatement(ForStatement<'alloc>),
-    IfStatement(IfStatement<'alloc>),
-    LabeledStatement(LabeledStatement<'alloc>),
-    ReturnStatement(ReturnStatement<'alloc>),
-    SwitchStatement(SwitchStatement<'alloc>),
-    SwitchStatementWithDefault(SwitchStatementWithDefault<'alloc>),
-    ThrowStatement(ThrowStatement<'alloc>),
-    TryCatchStatement(TryCatchStatement<'alloc>),
-    TryFinallyStatement(TryFinallyStatement<'alloc>),
+    ForInStatement {
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    },
+    ForOfStatement {
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    },
+    ForStatement {
+        init: Option<VariableDeclarationOrExpression<'alloc>>,
+        test: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        update: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    },
+    IfStatement {
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        consequent: arena::Box<'alloc, Statement<'alloc>>,
+        alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
+    },
+    LabeledStatement {
+        label: Label<'alloc>,
+        body: arena::Box<'alloc, Statement<'alloc>>,
+    },
+    ReturnStatement {
+        expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    },
+    SwitchStatement {
+        discriminant: arena::Box<'alloc, Expression<'alloc>>,
+        cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
+    },
+    SwitchStatementWithDefault {
+        discriminant: arena::Box<'alloc, Expression<'alloc>>,
+        pre_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
+        default_case: SwitchDefault<'alloc>,
+        post_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
+    },
+    ThrowStatement {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    TryCatchStatement {
+        body: Block<'alloc>,
+        catch_clause: CatchClause<'alloc>,
+    },
+    TryFinallyStatement {
+        body: Block<'alloc>,
+        catch_clause: Option<CatchClause<'alloc>>,
+        finalizer: Block<'alloc>,
+    },
+    WhileStatement {
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        block: arena::Box<'alloc, Statement<'alloc>>,
+    },
+    WithStatement {
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        body: arena::Box<'alloc, Statement<'alloc>>,
+    },
     VariableDeclarationStatement(VariableDeclaration<'alloc>),
-    WhileStatement(WhileStatement<'alloc>),
-    WithStatement(WithStatement<'alloc>),
     FunctionDeclaration(Function<'alloc>),
     ClassDeclaration(ClassDeclaration<'alloc>),
 }
@@ -671,105 +725,15 @@ pub struct AwaitExpression<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct DoWhileStatement<'alloc> {
-    pub block: arena::Box<'alloc, Statement<'alloc>>,
-    pub test: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
 pub enum VariableDeclarationOrAssignmentTarget<'alloc> {
     VariableDeclaration(VariableDeclaration<'alloc>),
     AssignmentTarget(AssignmentTarget<'alloc>),
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ForInStatement<'alloc> {
-    pub left: VariableDeclarationOrAssignmentTarget<'alloc>,
-    pub right: arena::Box<'alloc, Expression<'alloc>>,
-    pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ForOfStatement<'alloc> {
-    pub left: VariableDeclarationOrAssignmentTarget<'alloc>,
-    pub right: arena::Box<'alloc, Expression<'alloc>>,
-    pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
 pub enum VariableDeclarationOrExpression<'alloc> {
     VariableDeclaration(VariableDeclaration<'alloc>),
     Expression(arena::Box<'alloc, Expression<'alloc>>),
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ForStatement<'alloc> {
-    pub init: Option<VariableDeclarationOrExpression<'alloc>>,
-    pub test: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    pub update: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct IfStatement<'alloc> {
-    pub test: arena::Box<'alloc, Expression<'alloc>>,
-    pub consequent: arena::Box<'alloc, Statement<'alloc>>,
-    pub alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LabeledStatement<'alloc> {
-    pub label: Label<'alloc>,
-    pub body: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ReturnStatement<'alloc> {
-    pub expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SwitchStatement<'alloc> {
-    pub discriminant: arena::Box<'alloc, Expression<'alloc>>,
-    pub cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SwitchStatementWithDefault<'alloc> {
-    pub discriminant: arena::Box<'alloc, Expression<'alloc>>,
-    pub pre_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-    pub default_case: SwitchDefault<'alloc>,
-    pub post_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ThrowStatement<'alloc> {
-    pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct TryCatchStatement<'alloc> {
-    pub body: Block<'alloc>,
-    pub catch_clause: CatchClause<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct TryFinallyStatement<'alloc> {
-    pub body: Block<'alloc>,
-    pub catch_clause: Option<CatchClause<'alloc>>,
-    pub finalizer: Block<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct WhileStatement<'alloc> {
-    pub test: arena::Box<'alloc, Expression<'alloc>>,
-    pub block: arena::Box<'alloc, Statement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct WithStatement<'alloc> {
-    pub object: arena::Box<'alloc, Expression<'alloc>>,
-    pub body: arena::Box<'alloc, Statement<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]

@@ -143,54 +143,113 @@ pub trait Pass<'alloc> {
                 }
             }
             Statement::DebuggerStatement => (),
-            Statement::DoWhileStatement(ast) => {
-                self.visit_do_while_statement(ast);
+            Statement::DoWhileStatement { block, test } => {
+                self.visit_statement(block);
+                self.visit_expression(test);
             }
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
                 self.visit_expression(ast);
             }
-            Statement::ForInStatement(ast) => {
-                self.visit_for_in_statement(ast);
+            Statement::ForInStatement { left, right, block } => {
+                self.visit_variable_declaration_or_assignment_target(left);
+                self.visit_expression(right);
+                self.visit_statement(block);
             }
-            Statement::ForOfStatement(ast) => {
-                self.visit_for_of_statement(ast);
+            Statement::ForOfStatement { left, right, block } => {
+                self.visit_variable_declaration_or_assignment_target(left);
+                self.visit_expression(right);
+                self.visit_statement(block);
             }
-            Statement::ForStatement(ast) => {
-                self.visit_for_statement(ast);
+            Statement::ForStatement {
+                init,
+                test,
+                update,
+                block,
+            } => {
+                if let Some(item) = init {
+                    self.visit_variable_declaration_or_expression(item);
+                }
+                if let Some(item) = test {
+                    self.visit_expression(item);
+                }
+                if let Some(item) = update {
+                    self.visit_expression(item);
+                }
+                self.visit_statement(block);
             }
-            Statement::IfStatement(ast) => {
-                self.visit_if_statement(ast);
+            Statement::IfStatement {
+                test,
+                consequent,
+                alternate,
+            } => {
+                self.visit_expression(test);
+                self.visit_statement(consequent);
+                if let Some(item) = alternate {
+                    self.visit_statement(item);
+                }
             }
-            Statement::LabeledStatement(ast) => {
-                self.visit_labeled_statement(ast);
+            Statement::LabeledStatement { label, body } => {
+                self.visit_label(label);
+                self.visit_statement(body);
             }
-            Statement::ReturnStatement(ast) => {
-                self.visit_return_statement(ast);
+            Statement::ReturnStatement { expression } => {
+                if let Some(item) = expression {
+                    self.visit_expression(item);
+                }
             }
-            Statement::SwitchStatement(ast) => {
-                self.visit_switch_statement(ast);
+            Statement::SwitchStatement {
+                discriminant,
+                cases,
+            } => {
+                self.visit_expression(discriminant);
+                for item in cases {
+                    self.visit_switch_case(item);
+                }
             }
-            Statement::SwitchStatementWithDefault(ast) => {
-                self.visit_switch_statement_with_default(ast);
+            Statement::SwitchStatementWithDefault {
+                discriminant,
+                pre_default_cases,
+                default_case,
+                post_default_cases,
+            } => {
+                self.visit_expression(discriminant);
+                for item in pre_default_cases {
+                    self.visit_switch_case(item);
+                }
+                self.visit_switch_default(default_case);
+                for item in post_default_cases {
+                    self.visit_switch_case(item);
+                }
             }
-            Statement::ThrowStatement(ast) => {
-                self.visit_throw_statement(ast);
+            Statement::ThrowStatement { expression } => {
+                self.visit_expression(expression);
             }
-            Statement::TryCatchStatement(ast) => {
-                self.visit_try_catch_statement(ast);
+            Statement::TryCatchStatement { body, catch_clause } => {
+                self.visit_block(body);
+                self.visit_catch_clause(catch_clause);
             }
-            Statement::TryFinallyStatement(ast) => {
-                self.visit_try_finally_statement(ast);
+            Statement::TryFinallyStatement {
+                body,
+                catch_clause,
+                finalizer,
+            } => {
+                self.visit_block(body);
+                if let Some(item) = catch_clause {
+                    self.visit_catch_clause(item);
+                }
+                self.visit_block(finalizer);
+            }
+            Statement::WhileStatement { test, block } => {
+                self.visit_expression(test);
+                self.visit_statement(block);
+            }
+            Statement::WithStatement { object, body } => {
+                self.visit_expression(object);
+                self.visit_statement(body);
             }
             Statement::VariableDeclarationStatement(ast) => {
                 self.visit_variable_declaration(ast);
-            }
-            Statement::WhileStatement(ast) => {
-                self.visit_while_statement(ast);
-            }
-            Statement::WithStatement(ast) => {
-                self.visit_with_statement(ast);
             }
             Statement::FunctionDeclaration(ast) => {
                 self.visit_function(ast);
@@ -920,11 +979,6 @@ pub trait Pass<'alloc> {
         self.visit_expression(&mut ast.expression);
     }
 
-    fn visit_do_while_statement(&mut self, ast: &mut DoWhileStatement<'alloc>) {
-        self.visit_statement(&mut ast.block);
-        self.visit_expression(&mut ast.test);
-    }
-
     fn visit_variable_declaration_or_assignment_target(
         &mut self,
         ast: &mut VariableDeclarationOrAssignmentTarget<'alloc>,
@@ -939,18 +993,6 @@ pub trait Pass<'alloc> {
         }
     }
 
-    fn visit_for_in_statement(&mut self, ast: &mut ForInStatement<'alloc>) {
-        self.visit_variable_declaration_or_assignment_target(&mut ast.left);
-        self.visit_expression(&mut ast.right);
-        self.visit_statement(&mut ast.block);
-    }
-
-    fn visit_for_of_statement(&mut self, ast: &mut ForOfStatement<'alloc>) {
-        self.visit_variable_declaration_or_assignment_target(&mut ast.left);
-        self.visit_expression(&mut ast.right);
-        self.visit_statement(&mut ast.block);
-    }
-
     fn visit_variable_declaration_or_expression(
         &mut self,
         ast: &mut VariableDeclarationOrExpression<'alloc>,
@@ -963,86 +1005,6 @@ pub trait Pass<'alloc> {
                 self.visit_expression(ast);
             }
         }
-    }
-
-    fn visit_for_statement(&mut self, ast: &mut ForStatement<'alloc>) {
-        if let Some(item) = &mut ast.init {
-            self.visit_variable_declaration_or_expression(item);
-        }
-        if let Some(item) = &mut ast.test {
-            self.visit_expression(item);
-        }
-        if let Some(item) = &mut ast.update {
-            self.visit_expression(item);
-        }
-        self.visit_statement(&mut ast.block);
-    }
-
-    fn visit_if_statement(&mut self, ast: &mut IfStatement<'alloc>) {
-        self.visit_expression(&mut ast.test);
-        self.visit_statement(&mut ast.consequent);
-        if let Some(item) = &mut ast.alternate {
-            self.visit_statement(item);
-        }
-    }
-
-    fn visit_labeled_statement(&mut self, ast: &mut LabeledStatement<'alloc>) {
-        self.visit_label(&mut ast.label);
-        self.visit_statement(&mut ast.body);
-    }
-
-    fn visit_return_statement(&mut self, ast: &mut ReturnStatement<'alloc>) {
-        if let Some(item) = &mut ast.expression {
-            self.visit_expression(item);
-        }
-    }
-
-    fn visit_switch_statement(&mut self, ast: &mut SwitchStatement<'alloc>) {
-        self.visit_expression(&mut ast.discriminant);
-        for item in &mut ast.cases {
-            self.visit_switch_case(item);
-        }
-    }
-
-    fn visit_switch_statement_with_default(
-        &mut self,
-        ast: &mut SwitchStatementWithDefault<'alloc>,
-    ) {
-        self.visit_expression(&mut ast.discriminant);
-        for item in &mut ast.pre_default_cases {
-            self.visit_switch_case(item);
-        }
-        self.visit_switch_default(&mut ast.default_case);
-        for item in &mut ast.post_default_cases {
-            self.visit_switch_case(item);
-        }
-    }
-
-    fn visit_throw_statement(&mut self, ast: &mut ThrowStatement<'alloc>) {
-        self.visit_expression(&mut ast.expression);
-    }
-
-    fn visit_try_catch_statement(&mut self, ast: &mut TryCatchStatement<'alloc>) {
-        self.visit_block(&mut ast.body);
-        self.visit_catch_clause(&mut ast.catch_clause);
-    }
-
-    fn visit_try_finally_statement(&mut self, ast: &mut TryFinallyStatement<'alloc>) {
-        self.visit_block(&mut ast.body);
-        if let Some(item) = &mut ast.catch_clause {
-            self.visit_catch_clause(item);
-        }
-        self.visit_block(&mut ast.finalizer);
-    }
-
-    fn visit_while_statement(&mut self, ast: &mut WhileStatement<'alloc>) {
-        self.visit_expression(&mut ast.test);
-        self.visit_statement(&mut ast.block);
-    }
-
-    fn visit_with_statement(&mut self, ast: &mut WithStatement<'alloc>) {
-        self.visit_expression(&mut ast.object);
-        self.visit_statement(&mut ast.body);
     }
 
     fn visit_block(&mut self, ast: &mut Block<'alloc>) {
@@ -1196,6 +1158,168 @@ pub trait PostfixPass<'alloc> {
         if let Some(item) = label {
             result.append(item);
         }
+        result
+    }
+
+    fn visit_do_while_statement(&self, block: Self::Value, test: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(block);
+        result.append(test);
+        result
+    }
+
+    fn visit_for_in_statement(
+        &self,
+        left: Self::Value,
+        right: Self::Value,
+        block: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(left);
+        result.append(right);
+        result.append(block);
+        result
+    }
+
+    fn visit_for_of_statement(
+        &self,
+        left: Self::Value,
+        right: Self::Value,
+        block: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(left);
+        result.append(right);
+        result.append(block);
+        result
+    }
+
+    fn visit_for_statement(
+        &self,
+        init: Option<Self::Value>,
+        test: Option<Self::Value>,
+        update: Option<Self::Value>,
+        block: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        if let Some(item) = init {
+            result.append(item);
+        }
+        if let Some(item) = test {
+            result.append(item);
+        }
+        if let Some(item) = update {
+            result.append(item);
+        }
+        result.append(block);
+        result
+    }
+
+    fn visit_if_statement(
+        &self,
+        test: Self::Value,
+        consequent: Self::Value,
+        alternate: Option<Self::Value>,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(test);
+        result.append(consequent);
+        if let Some(item) = alternate {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_labeled_statement(&self, label: Self::Value, body: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(label);
+        result.append(body);
+        result
+    }
+
+    fn visit_return_statement(&self, expression: Option<Self::Value>) -> Self::Value {
+        let mut result = Self::Value::default();
+        if let Some(item) = expression {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_switch_statement(
+        &self,
+        discriminant: Self::Value,
+        cases: arena::Vec<'alloc, Self::Value>,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(discriminant);
+        for item in cases {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_switch_statement_with_default(
+        &self,
+        discriminant: Self::Value,
+        pre_default_cases: arena::Vec<'alloc, Self::Value>,
+        default_case: Self::Value,
+        post_default_cases: arena::Vec<'alloc, Self::Value>,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(discriminant);
+        for item in pre_default_cases {
+            result.append(item);
+        }
+        result.append(default_case);
+        for item in post_default_cases {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_throw_statement(&self, expression: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(expression);
+        result
+    }
+
+    fn visit_try_catch_statement(
+        &self,
+        body: Self::Value,
+        catch_clause: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(body);
+        result.append(catch_clause);
+        result
+    }
+
+    fn visit_try_finally_statement(
+        &self,
+        body: Self::Value,
+        catch_clause: Option<Self::Value>,
+        finalizer: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(body);
+        if let Some(item) = catch_clause {
+            result.append(item);
+        }
+        result.append(finalizer);
+        result
+    }
+
+    fn visit_while_statement(&self, test: Self::Value, block: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(test);
+        result.append(block);
+        result
+    }
+
+    fn visit_with_statement(&self, object: Self::Value, body: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(object);
+        result.append(body);
         result
     }
 
@@ -1785,168 +1909,6 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_do_while_statement(&self, block: Self::Value, test: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(block);
-        result.append(test);
-        result
-    }
-
-    fn visit_for_in_statement(
-        &self,
-        left: Self::Value,
-        right: Self::Value,
-        block: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(left);
-        result.append(right);
-        result.append(block);
-        result
-    }
-
-    fn visit_for_of_statement(
-        &self,
-        left: Self::Value,
-        right: Self::Value,
-        block: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(left);
-        result.append(right);
-        result.append(block);
-        result
-    }
-
-    fn visit_for_statement(
-        &self,
-        init: Option<Self::Value>,
-        test: Option<Self::Value>,
-        update: Option<Self::Value>,
-        block: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        if let Some(item) = init {
-            result.append(item);
-        }
-        if let Some(item) = test {
-            result.append(item);
-        }
-        if let Some(item) = update {
-            result.append(item);
-        }
-        result.append(block);
-        result
-    }
-
-    fn visit_if_statement(
-        &self,
-        test: Self::Value,
-        consequent: Self::Value,
-        alternate: Option<Self::Value>,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(test);
-        result.append(consequent);
-        if let Some(item) = alternate {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_labeled_statement(&self, label: Self::Value, body: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(label);
-        result.append(body);
-        result
-    }
-
-    fn visit_return_statement(&self, expression: Option<Self::Value>) -> Self::Value {
-        let mut result = Self::Value::default();
-        if let Some(item) = expression {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_switch_statement(
-        &self,
-        discriminant: Self::Value,
-        cases: arena::Vec<'alloc, Self::Value>,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(discriminant);
-        for item in cases {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_switch_statement_with_default(
-        &self,
-        discriminant: Self::Value,
-        pre_default_cases: arena::Vec<'alloc, Self::Value>,
-        default_case: Self::Value,
-        post_default_cases: arena::Vec<'alloc, Self::Value>,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(discriminant);
-        for item in pre_default_cases {
-            result.append(item);
-        }
-        result.append(default_case);
-        for item in post_default_cases {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_throw_statement(&self, expression: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(expression);
-        result
-    }
-
-    fn visit_try_catch_statement(
-        &self,
-        body: Self::Value,
-        catch_clause: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(body);
-        result.append(catch_clause);
-        result
-    }
-
-    fn visit_try_finally_statement(
-        &self,
-        body: Self::Value,
-        catch_clause: Option<Self::Value>,
-        finalizer: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(body);
-        if let Some(item) = catch_clause {
-            result.append(item);
-        }
-        result.append(finalizer);
-        result
-    }
-
-    fn visit_while_statement(&self, test: Self::Value, block: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(test);
-        result.append(block);
-        result
-    }
-
-    fn visit_with_statement(&self, object: Self::Value, body: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(object);
-        result.append(body);
-        result
-    }
-
     fn visit_block(
         &self,
         statements: arena::Vec<'alloc, Self::Value>,
@@ -2228,25 +2190,130 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 self.pass.visit_continue_statement(a0)
             }
             Statement::DebuggerStatement => T::Value::default(),
-            Statement::DoWhileStatement(ast) => self.visit_do_while_statement(ast),
+            Statement::DoWhileStatement { block, test } => {
+                let a0 = self.visit_statement((block));
+                let a1 = self.visit_expression((test));
+                self.pass.visit_do_while_statement(a0, a1)
+            }
             Statement::EmptyStatement => T::Value::default(),
             Statement::ExpressionStatement(ast) => self.visit_expression(ast),
-            Statement::ForInStatement(ast) => self.visit_for_in_statement(ast),
-            Statement::ForOfStatement(ast) => self.visit_for_of_statement(ast),
-            Statement::ForStatement(ast) => self.visit_for_statement(ast),
-            Statement::IfStatement(ast) => self.visit_if_statement(ast),
-            Statement::LabeledStatement(ast) => self.visit_labeled_statement(ast),
-            Statement::ReturnStatement(ast) => self.visit_return_statement(ast),
-            Statement::SwitchStatement(ast) => self.visit_switch_statement(ast),
-            Statement::SwitchStatementWithDefault(ast) => {
-                self.visit_switch_statement_with_default(ast)
+            Statement::ForInStatement { left, right, block } => {
+                let a0 = self.visit_variable_declaration_or_assignment_target((left));
+                let a1 = self.visit_expression((right));
+                let a2 = self.visit_statement((block));
+                self.pass.visit_for_in_statement(a0, a1, a2)
             }
-            Statement::ThrowStatement(ast) => self.visit_throw_statement(ast),
-            Statement::TryCatchStatement(ast) => self.visit_try_catch_statement(ast),
-            Statement::TryFinallyStatement(ast) => self.visit_try_finally_statement(ast),
+            Statement::ForOfStatement { left, right, block } => {
+                let a0 = self.visit_variable_declaration_or_assignment_target((left));
+                let a1 = self.visit_expression((right));
+                let a2 = self.visit_statement((block));
+                self.pass.visit_for_of_statement(a0, a1, a2)
+            }
+            Statement::ForStatement {
+                init,
+                test,
+                update,
+                block,
+            } => {
+                let a0 = (init)
+                    .as_mut()
+                    .map(|item| self.visit_variable_declaration_or_expression(item));
+                let a1 = (test).as_mut().map(|item| self.visit_expression(item));
+                let a2 = (update).as_mut().map(|item| self.visit_expression(item));
+                let a3 = self.visit_statement((block));
+                self.pass.visit_for_statement(a0, a1, a2, a3)
+            }
+            Statement::IfStatement {
+                test,
+                consequent,
+                alternate,
+            } => {
+                let a0 = self.visit_expression((test));
+                let a1 = self.visit_statement((consequent));
+                let a2 = (alternate).as_mut().map(|item| self.visit_statement(item));
+                self.pass.visit_if_statement(a0, a1, a2)
+            }
+            Statement::LabeledStatement { label, body } => {
+                let a0 = self.visit_label((label));
+                let a1 = self.visit_statement((body));
+                self.pass.visit_labeled_statement(a0, a1)
+            }
+            Statement::ReturnStatement { expression } => {
+                let a0 = (expression)
+                    .as_mut()
+                    .map(|item| self.visit_expression(item));
+                self.pass.visit_return_statement(a0)
+            }
+            Statement::SwitchStatement {
+                discriminant,
+                cases,
+            } => {
+                let a0 = self.visit_expression((discriminant));
+                let a1 = {
+                    let allocator: &bumpalo::Bump = self.allocator;
+                    arena::map_vec((cases), |item| self.visit_switch_case(item), allocator)
+                };
+                self.pass.visit_switch_statement(a0, a1)
+            }
+            Statement::SwitchStatementWithDefault {
+                discriminant,
+                pre_default_cases,
+                default_case,
+                post_default_cases,
+            } => {
+                let a0 = self.visit_expression((discriminant));
+                let a1 = {
+                    let allocator: &bumpalo::Bump = self.allocator;
+                    arena::map_vec(
+                        (pre_default_cases),
+                        |item| self.visit_switch_case(item),
+                        allocator,
+                    )
+                };
+                let a2 = self.visit_switch_default((default_case));
+                let a3 = {
+                    let allocator: &bumpalo::Bump = self.allocator;
+                    arena::map_vec(
+                        (post_default_cases),
+                        |item| self.visit_switch_case(item),
+                        allocator,
+                    )
+                };
+                self.pass
+                    .visit_switch_statement_with_default(a0, a1, a2, a3)
+            }
+            Statement::ThrowStatement { expression } => {
+                let a0 = self.visit_expression((expression));
+                self.pass.visit_throw_statement(a0)
+            }
+            Statement::TryCatchStatement { body, catch_clause } => {
+                let a0 = self.visit_block((body));
+                let a1 = self.visit_catch_clause((catch_clause));
+                self.pass.visit_try_catch_statement(a0, a1)
+            }
+            Statement::TryFinallyStatement {
+                body,
+                catch_clause,
+                finalizer,
+            } => {
+                let a0 = self.visit_block((body));
+                let a1 = (catch_clause)
+                    .as_mut()
+                    .map(|item| self.visit_catch_clause(item));
+                let a2 = self.visit_block((finalizer));
+                self.pass.visit_try_finally_statement(a0, a1, a2)
+            }
+            Statement::WhileStatement { test, block } => {
+                let a0 = self.visit_expression((test));
+                let a1 = self.visit_statement((block));
+                self.pass.visit_while_statement(a0, a1)
+            }
+            Statement::WithStatement { object, body } => {
+                let a0 = self.visit_expression((object));
+                let a1 = self.visit_statement((body));
+                self.pass.visit_with_statement(a0, a1)
+            }
             Statement::VariableDeclarationStatement(ast) => self.visit_variable_declaration(ast),
-            Statement::WhileStatement(ast) => self.visit_while_statement(ast),
-            Statement::WithStatement(ast) => self.visit_with_statement(ast),
             Statement::FunctionDeclaration(ast) => self.visit_function(ast),
             Statement::ClassDeclaration(ast) => self.visit_class_declaration(ast),
         }
@@ -3078,12 +3145,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         self.pass.visit_await_expression(a0)
     }
 
-    pub fn visit_do_while_statement(&mut self, ast: &mut DoWhileStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_statement((&mut ast.block));
-        let a1 = self.visit_expression((&mut ast.test));
-        self.pass.visit_do_while_statement(a0, a1)
-    }
-
     pub fn visit_variable_declaration_or_assignment_target(
         &mut self,
         ast: &mut VariableDeclarationOrAssignmentTarget<'alloc>,
@@ -3098,20 +3159,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         }
     }
 
-    pub fn visit_for_in_statement(&mut self, ast: &mut ForInStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_variable_declaration_or_assignment_target((&mut ast.left));
-        let a1 = self.visit_expression((&mut ast.right));
-        let a2 = self.visit_statement((&mut ast.block));
-        self.pass.visit_for_in_statement(a0, a1, a2)
-    }
-
-    pub fn visit_for_of_statement(&mut self, ast: &mut ForOfStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_variable_declaration_or_assignment_target((&mut ast.left));
-        let a1 = self.visit_expression((&mut ast.right));
-        let a2 = self.visit_statement((&mut ast.block));
-        self.pass.visit_for_of_statement(a0, a1, a2)
-    }
-
     pub fn visit_variable_declaration_or_expression(
         &mut self,
         ast: &mut VariableDeclarationOrExpression<'alloc>,
@@ -3122,116 +3169,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             }
             VariableDeclarationOrExpression::Expression(ast) => self.visit_expression(ast),
         }
-    }
-
-    pub fn visit_for_statement(&mut self, ast: &mut ForStatement<'alloc>) -> T::Value {
-        let a0 = (&mut ast.init)
-            .as_mut()
-            .map(|item| self.visit_variable_declaration_or_expression(item));
-        let a1 = (&mut ast.test)
-            .as_mut()
-            .map(|item| self.visit_expression(item));
-        let a2 = (&mut ast.update)
-            .as_mut()
-            .map(|item| self.visit_expression(item));
-        let a3 = self.visit_statement((&mut ast.block));
-        self.pass.visit_for_statement(a0, a1, a2, a3)
-    }
-
-    pub fn visit_if_statement(&mut self, ast: &mut IfStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.test));
-        let a1 = self.visit_statement((&mut ast.consequent));
-        let a2 = (&mut ast.alternate)
-            .as_mut()
-            .map(|item| self.visit_statement(item));
-        self.pass.visit_if_statement(a0, a1, a2)
-    }
-
-    pub fn visit_labeled_statement(&mut self, ast: &mut LabeledStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_label((&mut ast.label));
-        let a1 = self.visit_statement((&mut ast.body));
-        self.pass.visit_labeled_statement(a0, a1)
-    }
-
-    pub fn visit_return_statement(&mut self, ast: &mut ReturnStatement<'alloc>) -> T::Value {
-        let a0 = (&mut ast.expression)
-            .as_mut()
-            .map(|item| self.visit_expression(item));
-        self.pass.visit_return_statement(a0)
-    }
-
-    pub fn visit_switch_statement(&mut self, ast: &mut SwitchStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.discriminant));
-        let a1 = {
-            let allocator: &bumpalo::Bump = self.allocator;
-            arena::map_vec(
-                (&mut ast.cases),
-                |item| self.visit_switch_case(item),
-                allocator,
-            )
-        };
-        self.pass.visit_switch_statement(a0, a1)
-    }
-
-    pub fn visit_switch_statement_with_default(
-        &mut self,
-        ast: &mut SwitchStatementWithDefault<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.discriminant));
-        let a1 = {
-            let allocator: &bumpalo::Bump = self.allocator;
-            arena::map_vec(
-                (&mut ast.pre_default_cases),
-                |item| self.visit_switch_case(item),
-                allocator,
-            )
-        };
-        let a2 = self.visit_switch_default((&mut ast.default_case));
-        let a3 = {
-            let allocator: &bumpalo::Bump = self.allocator;
-            arena::map_vec(
-                (&mut ast.post_default_cases),
-                |item| self.visit_switch_case(item),
-                allocator,
-            )
-        };
-        self.pass
-            .visit_switch_statement_with_default(a0, a1, a2, a3)
-    }
-
-    pub fn visit_throw_statement(&mut self, ast: &mut ThrowStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.expression));
-        self.pass.visit_throw_statement(a0)
-    }
-
-    pub fn visit_try_catch_statement(&mut self, ast: &mut TryCatchStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_block((&mut ast.body));
-        let a1 = self.visit_catch_clause((&mut ast.catch_clause));
-        self.pass.visit_try_catch_statement(a0, a1)
-    }
-
-    pub fn visit_try_finally_statement(
-        &mut self,
-        ast: &mut TryFinallyStatement<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_block((&mut ast.body));
-        let a1 = (&mut ast.catch_clause)
-            .as_mut()
-            .map(|item| self.visit_catch_clause(item));
-        let a2 = self.visit_block((&mut ast.finalizer));
-        self.pass.visit_try_finally_statement(a0, a1, a2)
-    }
-
-    pub fn visit_while_statement(&mut self, ast: &mut WhileStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.test));
-        let a1 = self.visit_statement((&mut ast.block));
-        self.pass.visit_while_statement(a0, a1)
-    }
-
-    pub fn visit_with_statement(&mut self, ast: &mut WithStatement<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.object));
-        let a1 = self.visit_statement((&mut ast.body));
-        self.pass.visit_with_statement(a0, a1)
     }
 
     pub fn visit_block(&mut self, ast: &mut Block<'alloc>) -> T::Value {

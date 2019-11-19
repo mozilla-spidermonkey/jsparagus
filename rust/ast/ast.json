@@ -113,23 +113,71 @@
       "label": "Option<Label>"
     },
     "DebuggerStatement": null,
-    "DoWhileStatement": "DoWhileStatement",
+    "DoWhileStatement": {
+      "block": "Box<Statement>",
+      "test": "Box<Expression>"
+    },
     "EmptyStatement": null,
     "ExpressionStatement": "Box<Expression>",
-    "ForInStatement": "ForInStatement",
-    "ForOfStatement": "ForOfStatement",
-    "ForStatement": "ForStatement",
-    "IfStatement": "IfStatement",
-    "LabeledStatement": "LabeledStatement",
-    "ReturnStatement": "ReturnStatement",
-    "SwitchStatement": "SwitchStatement",
-    "SwitchStatementWithDefault": "SwitchStatementWithDefault",
-    "ThrowStatement": "ThrowStatement",
-    "TryCatchStatement": "TryCatchStatement",
-    "TryFinallyStatement": "TryFinallyStatement",
+    "ForInStatement": {
+      "left": "VariableDeclarationOrAssignmentTarget",
+      "right": "Box<Expression>",
+      "block": "Box<Statement>"
+    },
+    "ForOfStatement": {
+      "left": "VariableDeclarationOrAssignmentTarget",
+      "right": "Box<Expression>",
+      "block": "Box<Statement>"
+    },
+    "ForStatement": {
+      "init": "Option<VariableDeclarationOrExpression>",
+      "test": "Option<Box<Expression>>",
+      "update": "Option<Box<Expression>>",
+      "block": "Box<Statement>"
+    },
+    "IfStatement": {
+      "test": "Box<Expression>",
+      "consequent": "Box<Statement>",
+      "alternate": "Option<Box<Statement>>"
+    },
+    "LabeledStatement": {
+      "label": "Label",
+      "body": "Box<Statement>"
+    },
+    "ReturnStatement": {
+      "expression": "Option<Box<Expression>>"
+    },
+    "SwitchStatement": {
+      "discriminant": "Box<Expression>",
+      "cases": "Vec<SwitchCase>"
+    },
+    "SwitchStatementWithDefault": {
+      "discriminant": "Box<Expression>",
+      "pre_default_cases": "Vec<SwitchCase>",
+      "default_case": "SwitchDefault",
+      "post_default_cases": "Vec<SwitchCase>"
+    },
+    "ThrowStatement": {
+      "expression": "Box<Expression>"
+    },
+    "TryCatchStatement": {
+      "body": "Block",
+      "catch_clause": "CatchClause"
+    },
+    "TryFinallyStatement": {
+      "body": "Block",
+      "catch_clause": "Option<CatchClause>",
+      "finalizer": "Block"
+    },
+    "WhileStatement": {
+      "test": "Box<Expression>",
+      "block": "Box<Statement>"
+    },
+    "WithStatement": {
+      "object": "Box<Expression>",
+      "body": "Box<Statement>"
+    },
     "VariableDeclarationStatement": "VariableDeclaration",
-    "WhileStatement": "WhileStatement",
-    "WithStatement": "WithStatement",
     "FunctionDeclaration": "Function",
     "ClassDeclaration": "ClassDeclaration"
   },
@@ -578,91 +626,15 @@
     "_type": "struct",
     "expression": "Box<Expression>"
   },
-  "DoWhileStatement": {
-    "_type": "struct",
-    "block": "Box<Statement>",
-    "test": "Box<Expression>"
-  },
   "VariableDeclarationOrAssignmentTarget": {
     "_type": "enum",
     "VariableDeclaration": "VariableDeclaration",
     "AssignmentTarget": "AssignmentTarget"
   },
-  "ForInStatement": {
-    "_type": "struct",
-    "left": "VariableDeclarationOrAssignmentTarget",
-    "right": "Box<Expression>",
-    "block": "Box<Statement>"
-  },
-  "ForOfStatement": {
-    "_type": "struct",
-    "left": "VariableDeclarationOrAssignmentTarget",
-    "right": "Box<Expression>",
-    "block": "Box<Statement>"
-  },
   "VariableDeclarationOrExpression": {
     "_type": "enum",
     "VariableDeclaration": "VariableDeclaration",
     "Expression": "Box<Expression>"
-  },
-  "ForStatement": {
-    "_type": "struct",
-    "init": "Option<VariableDeclarationOrExpression>",
-    "test": "Option<Box<Expression>>",
-    "update": "Option<Box<Expression>>",
-    "block": "Box<Statement>"
-  },
-  "IfStatement": {
-    "_type": "struct",
-    "test": "Box<Expression>",
-    "consequent": "Box<Statement>",
-    "alternate": "Option<Box<Statement>>"
-  },
-  "LabeledStatement": {
-    "_type": "struct",
-    "label": "Label",
-    "body": "Box<Statement>"
-  },
-  "ReturnStatement": {
-    "_type": "struct",
-    "expression": "Option<Box<Expression>>"
-  },
-  "SwitchStatement": {
-    "_type": "struct",
-    "discriminant": "Box<Expression>",
-    "cases": "Vec<SwitchCase>"
-  },
-  "SwitchStatementWithDefault": {
-    "_type": "struct",
-    "discriminant": "Box<Expression>",
-    "pre_default_cases": "Vec<SwitchCase>",
-    "default_case": "SwitchDefault",
-    "post_default_cases": "Vec<SwitchCase>"
-  },
-  "ThrowStatement": {
-    "_type": "struct",
-    "expression": "Box<Expression>"
-  },
-  "TryCatchStatement": {
-    "_type": "struct",
-    "body": "Block",
-    "catch_clause": "CatchClause"
-  },
-  "TryFinallyStatement": {
-    "_type": "struct",
-    "body": "Block",
-    "catch_clause": "Option<CatchClause>",
-    "finalizer": "Block"
-  },
-  "WhileStatement": {
-    "_type": "struct",
-    "test": "Box<Expression>",
-    "block": "Box<Statement>"
-  },
-  "WithStatement": {
-    "_type": "struct",
-    "object": "Box<Expression>",
-    "body": "Box<Statement>"
   },
   "Block": {
     "_type": "struct",

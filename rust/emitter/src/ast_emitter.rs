@@ -4,7 +4,7 @@
 
 use super::emitter::{EmitResult, Emitter};
 use super::opcode::Opcode;
-use ast::types::*;
+use ast::{arena, types::*};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> EmitResult {
@@ -39,26 +39,26 @@ impl AstEmitter {
             Statement::BreakStatement { .. } => unimplemented!(),
             Statement::ContinueStatement { .. } => unimplemented!(),
             Statement::DebuggerStatement => unimplemented!(),
-            Statement::DoWhileStatement(_) => unimplemented!(),
+            Statement::DoWhileStatement { .. } => unimplemented!(),
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast);
                 self.emit.set_rval();
             }
-            Statement::ForInStatement(_) => unimplemented!(),
-            Statement::ForOfStatement(_) => unimplemented!(),
-            Statement::ForStatement(_) => unimplemented!(),
-            Statement::IfStatement(_) => unimplemented!(),
-            Statement::LabeledStatement(_) => unimplemented!(),
-            Statement::ReturnStatement(ast) => self.emit_return_statement(ast),
-            Statement::SwitchStatement(_) => unimplemented!(),
-            Statement::SwitchStatementWithDefault(_) => unimplemented!(),
-            Statement::ThrowStatement(_) => unimplemented!(),
-            Statement::TryCatchStatement(_) => unimplemented!(),
-            Statement::TryFinallyStatement(_) => unimplemented!(),
+            Statement::ForInStatement { .. } => unimplemented!(),
+            Statement::ForOfStatement { .. } => unimplemented!(),
+            Statement::ForStatement { .. } => unimplemented!(),
+            Statement::IfStatement { .. } => unimplemented!(),
+            Statement::LabeledStatement { .. } => unimplemented!(),
+            Statement::ReturnStatement { expression } => self.emit_return_statement(expression),
+            Statement::SwitchStatement { .. } => unimplemented!(),
+            Statement::SwitchStatementWithDefault { .. } => unimplemented!(),
+            Statement::ThrowStatement { .. } => unimplemented!(),
+            Statement::TryCatchStatement { .. } => unimplemented!(),
+            Statement::TryFinallyStatement { .. } => unimplemented!(),
             Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast),
-            Statement::WhileStatement(_) => unimplemented!(),
-            Statement::WithStatement(_) => unimplemented!(),
+            Statement::WhileStatement { .. } => unimplemented!(),
+            Statement::WithStatement { .. } => unimplemented!(),
             Statement::FunctionDeclaration(_) => unimplemented!(),
         }
     }
@@ -88,8 +88,8 @@ impl AstEmitter {
         }
     }
 
-    fn emit_return_statement(&mut self, ast: &ReturnStatement) {
-        match &ast.expression {
+    fn emit_return_statement(&mut self, expression: &Option<arena::Box<Expression>>) {
+        match expression {
             Some(ast) => self.emit_expression(ast),
             None => self.emit.undefined(),
         }

@@ -1916,11 +1916,11 @@ impl<'alloc> AstBuilder<'alloc> {
         consequent: arena::Box<'alloc, Statement<'alloc>>,
         alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::IfStatement(IfStatement {
+        self.alloc(Statement::IfStatement {
             test,
             consequent,
             alternate,
-        }))
+        })
     }
 
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
@@ -1929,10 +1929,7 @@ impl<'alloc> AstBuilder<'alloc> {
         block: arena::Box<'alloc, Statement<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::DoWhileStatement(DoWhileStatement {
-            block,
-            test,
-        }))
+        self.alloc(Statement::DoWhileStatement { block, test })
     }
 
     // IterationStatement : `while` `(` Expression `)` Statement
@@ -1941,7 +1938,7 @@ impl<'alloc> AstBuilder<'alloc> {
         test: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::WhileStatement(WhileStatement { test, block }))
+        self.alloc(Statement::WhileStatement { test, block })
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
@@ -1954,12 +1951,12 @@ impl<'alloc> AstBuilder<'alloc> {
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ForStatement(ForStatement {
+        self.alloc(Statement::ForStatement {
             init,
             test,
             update,
             block,
-        }))
+        })
     }
 
     pub fn for_expression(
@@ -1995,11 +1992,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ForInStatement(ForInStatement {
-            left,
-            right,
-            block,
-        }))
+        self.alloc(Statement::ForInStatement { left, right, block })
     }
 
     pub fn for_in_or_of_var_declaration(
@@ -2040,11 +2033,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ForOfStatement(ForOfStatement {
-            left,
-            right,
-            block,
-        }))
+        self.alloc(Statement::ForOfStatement { left, right, block })
     }
 
     // IterationStatement : `for` `await` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
@@ -2117,7 +2106,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ReturnStatement(ReturnStatement { expression }))
+        self.alloc(Statement::ReturnStatement { expression })
     }
 
     // WithStatement : `with` `(` Expression `)` Statement
@@ -2126,21 +2115,21 @@ impl<'alloc> AstBuilder<'alloc> {
         object: arena::Box<'alloc, Expression<'alloc>>,
         body: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::WithStatement(WithStatement { object, body }))
+        self.alloc(Statement::WithStatement { object, body })
     }
 
     // SwitchStatement : `switch` `(` Expression `)` CaseBlock
     pub fn switch_statement(
         &self,
-        discriminant: arena::Box<'alloc, Expression<'alloc>>,
+        discriminant_expr: arena::Box<'alloc, Expression<'alloc>>,
         mut cases: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
         match &mut *cases {
-            Statement::SwitchStatement(stmt) => {
-                stmt.discriminant = discriminant;
+            Statement::SwitchStatement { discriminant, .. } => {
+                *discriminant = discriminant_expr;
             }
-            Statement::SwitchStatementWithDefault(stmt) => {
-                stmt.discriminant = discriminant;
+            Statement::SwitchStatementWithDefault { discriminant, .. } => {
+                *discriminant = discriminant_expr;
             }
             _ => {
                 // The grammar ensures that the parser always passes a valid
@@ -2156,13 +2145,13 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         cases: Option<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::SwitchStatement(SwitchStatement {
+        self.alloc(Statement::SwitchStatement {
             discriminant: self.alloc(Expression::LiteralNullExpression),
             cases: match cases {
                 None => self.new_vec(),
                 Some(boxed) => boxed.unbox(),
             },
-        }))
+        })
     }
 
     // CaseBlock : `{` CaseClauses DefaultClause CaseClauses `}`
@@ -2172,20 +2161,18 @@ impl<'alloc> AstBuilder<'alloc> {
         default_case: arena::Box<'alloc, SwitchDefault<'alloc>>,
         post_default_cases: Option<arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::SwitchStatementWithDefault(
-            SwitchStatementWithDefault {
-                discriminant: self.alloc(Expression::LiteralNullExpression),
-                pre_default_cases: match pre_default_cases {
-                    None => self.new_vec(),
-                    Some(boxed) => boxed.unbox(),
-                },
-                default_case: default_case.unbox(),
-                post_default_cases: match post_default_cases {
-                    None => self.new_vec(),
-                    Some(boxed) => boxed.unbox(),
-                },
+        self.alloc(Statement::SwitchStatementWithDefault {
+            discriminant: self.alloc(Expression::LiteralNullExpression),
+            pre_default_cases: match pre_default_cases {
+                None => self.new_vec(),
+                Some(boxed) => boxed.unbox(),
             },
-        ))
+            default_case: default_case.unbox(),
+            post_default_cases: match post_default_cases {
+                None => self.new_vec(),
+                Some(boxed) => boxed.unbox(),
+            },
+        })
     }
 
     // CaseClauses : CaseClause
@@ -2244,10 +2231,10 @@ impl<'alloc> AstBuilder<'alloc> {
         label: arena::Box<'alloc, Label<'alloc>>,
         body: arena::Box<'alloc, Statement<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::LabeledStatement(LabeledStatement {
+        self.alloc(Statement::LabeledStatement {
             label: label.unbox(),
             body,
-        }))
+        })
     }
 
     // ThrowStatement : `throw` Expression `;`
@@ -2255,7 +2242,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::ThrowStatement(ThrowStatement { expression }))
+        self.alloc(Statement::ThrowStatement { expression })
     }
 
     // TryStatement : `try` Block Catch
@@ -2268,19 +2255,15 @@ impl<'alloc> AstBuilder<'alloc> {
         finally_block: Option<arena::Box<'alloc, Block<'alloc>>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
         match (catch_clause, finally_block) {
-            (Some(catch_clause), None) => {
-                self.alloc(Statement::TryCatchStatement(TryCatchStatement {
-                    body: body.unbox(),
-                    catch_clause: catch_clause.unbox(),
-                }))
-            }
-            (catch_clause, Some(finally_block)) => {
-                self.alloc(Statement::TryFinallyStatement(TryFinallyStatement {
-                    body: body.unbox(),
-                    catch_clause: catch_clause.map(|boxed| boxed.unbox()),
-                    finalizer: finally_block.unbox(),
-                }))
-            }
+            (Some(catch_clause), None) => self.alloc(Statement::TryCatchStatement {
+                body: body.unbox(),
+                catch_clause: catch_clause.unbox(),
+            }),
+            (catch_clause, Some(finally_block)) => self.alloc(Statement::TryFinallyStatement {
+                body: body.unbox(),
+                catch_clause: catch_clause.map(|boxed| boxed.unbox()),
+                finalizer: finally_block.unbox(),
+            }),
             _ => {
                 // The grammar won't accept a bare try-block, so the parser always
                 // a catch clause, a finally block, or both.
