@@ -35,6 +35,11 @@ pub struct EmitResult {
     pub strings: Vec<String>,
 }
 
+/// The error of bytecode-compilation.
+pub enum EmitError {
+    Unimplemented(String),
+}
+
 impl Emitter {
     pub fn new() -> Self {
         Self {
@@ -365,8 +370,9 @@ impl Emitter {
         self.emit_with_offset(Opcode::And, offset);
     }
 
-    pub fn table_switch(&mut self, _len: i32, _low: i32, _high: i32, _first_resume_index: u24) {
-        unimplemented!();
+    pub fn table_switch(&mut self, _len: i32, _low: i32, _high: i32, _first_resume_index: u24)
+                        -> Result<(), EmitError> {
+        Err(EmitError::Unimplemented("TODO: table_switch".to_string()))
     }
 
     pub fn strict_eq(&mut self) {
