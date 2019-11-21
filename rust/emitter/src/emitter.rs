@@ -36,6 +36,7 @@ pub struct EmitResult {
 }
 
 /// The error of bytecode-compilation.
+#[derive(Clone, Debug)]
 pub enum EmitError {
     Unimplemented(String),
 }
