@@ -13,9 +13,7 @@ pub enum StackValue<'alloc> {
     ArrayBinding(arena::Box<'alloc, ArrayBinding<'alloc>>),
     ArrayExpression(arena::Box<'alloc, ArrayExpression<'alloc>>),
     ArrayExpressionElement(arena::Box<'alloc, ArrayExpressionElement<'alloc>>),
-    ArrowExpression(arena::Box<'alloc, ArrowExpression<'alloc>>),
     ArrowExpressionBody(arena::Box<'alloc, ArrowExpressionBody<'alloc>>),
-    AssignmentExpression(arena::Box<'alloc, AssignmentExpression<'alloc>>),
     AssignmentTarget(arena::Box<'alloc, AssignmentTarget<'alloc>>),
     AssignmentTargetIdentifier(arena::Box<'alloc, AssignmentTargetIdentifier<'alloc>>),
     AssignmentTargetMaybeDefault(arena::Box<'alloc, AssignmentTargetMaybeDefault<'alloc>>),
@@ -26,8 +24,6 @@ pub enum StackValue<'alloc> {
     ),
     AssignmentTargetPropertyProperty(arena::Box<'alloc, AssignmentTargetPropertyProperty<'alloc>>),
     AssignmentTargetWithDefault(arena::Box<'alloc, AssignmentTargetWithDefault<'alloc>>),
-    AwaitExpression(arena::Box<'alloc, AwaitExpression<'alloc>>),
-    BinaryExpression(arena::Box<'alloc, BinaryExpression<'alloc>>),
     BinaryOperator(arena::Box<'alloc, BinaryOperator>),
     Binding(arena::Box<'alloc, Binding<'alloc>>),
     BindingIdentifier(arena::Box<'alloc, BindingIdentifier<'alloc>>),
@@ -37,17 +33,14 @@ pub enum StackValue<'alloc> {
     BindingPropertyProperty(arena::Box<'alloc, BindingPropertyProperty<'alloc>>),
     BindingWithDefault(arena::Box<'alloc, BindingWithDefault<'alloc>>),
     Block(arena::Box<'alloc, Block<'alloc>>),
-    CallExpression(arena::Box<'alloc, CallExpression<'alloc>>),
     CatchClause(arena::Box<'alloc, CatchClause<'alloc>>),
     ClassDeclaration(arena::Box<'alloc, ClassDeclaration<'alloc>>),
     ClassElement(arena::Box<'alloc, ClassElement<'alloc>>),
     ClassExpression(arena::Box<'alloc, ClassExpression<'alloc>>),
-    CompoundAssignmentExpression(arena::Box<'alloc, CompoundAssignmentExpression<'alloc>>),
     CompoundAssignmentOperator(arena::Box<'alloc, CompoundAssignmentOperator>),
     ComputedMemberAssignmentTarget(arena::Box<'alloc, ComputedMemberAssignmentTarget<'alloc>>),
     ComputedMemberExpression(arena::Box<'alloc, ComputedMemberExpression<'alloc>>),
     ComputedPropertyName(arena::Box<'alloc, ComputedPropertyName<'alloc>>),
-    ConditionalExpression(arena::Box<'alloc, ConditionalExpression<'alloc>>),
     CoverParenthesized(arena::Box<'alloc, CoverParenthesized<'alloc>>),
     DataProperty(arena::Box<'alloc, DataProperty<'alloc>>),
     Directive(arena::Box<'alloc, Directive<'alloc>>),
@@ -69,15 +62,10 @@ pub enum StackValue<'alloc> {
     IdentifierExpression(arena::Box<'alloc, IdentifierExpression<'alloc>>),
     IdentifierName(arena::Box<'alloc, IdentifierName<'alloc>>),
     Import(arena::Box<'alloc, Import<'alloc>>),
-    ImportCallExpression(arena::Box<'alloc, ImportCallExpression<'alloc>>),
     ImportDeclaration(arena::Box<'alloc, ImportDeclaration<'alloc>>),
     ImportNamespace(arena::Box<'alloc, ImportNamespace<'alloc>>),
     ImportSpecifier(arena::Box<'alloc, ImportSpecifier<'alloc>>),
     Label(arena::Box<'alloc, Label<'alloc>>),
-    LiteralBooleanExpression(arena::Box<'alloc, LiteralBooleanExpression>),
-    LiteralNumericExpression(arena::Box<'alloc, LiteralNumericExpression>),
-    LiteralRegExpExpression(arena::Box<'alloc, LiteralRegExpExpression<'alloc>>),
-    LiteralStringExpression(arena::Box<'alloc, LiteralStringExpression<'alloc>>),
     MemberAssignmentTarget(arena::Box<'alloc, MemberAssignmentTarget<'alloc>>),
     MemberExpression(arena::Box<'alloc, MemberExpression<'alloc>>),
     Method(arena::Box<'alloc, Method<'alloc>>),
@@ -85,7 +73,6 @@ pub enum StackValue<'alloc> {
     Module(arena::Box<'alloc, Module<'alloc>>),
     ModuleItems(arena::Box<'alloc, ModuleItems<'alloc>>),
     NamedObjectProperty(arena::Box<'alloc, NamedObjectProperty<'alloc>>),
-    NewExpression(arena::Box<'alloc, NewExpression<'alloc>>),
     ObjectAssignmentTarget(arena::Box<'alloc, ObjectAssignmentTarget<'alloc>>),
     ObjectBinding(arena::Box<'alloc, ObjectBinding<'alloc>>),
     ObjectExpression(arena::Box<'alloc, ObjectExpression<'alloc>>),
@@ -107,9 +94,7 @@ pub enum StackValue<'alloc> {
     TemplateExpression(arena::Box<'alloc, TemplateExpression<'alloc>>),
     TemplateExpressionElement(arena::Box<'alloc, TemplateExpressionElement<'alloc>>),
     Token(arena::Box<'alloc, Token<'alloc>>),
-    UnaryExpression(arena::Box<'alloc, UnaryExpression<'alloc>>),
     UnaryOperator(arena::Box<'alloc, UnaryOperator>),
-    UpdateExpression(arena::Box<'alloc, UpdateExpression<'alloc>>),
     UpdateOperator(arena::Box<'alloc, UpdateOperator>),
     VariableDeclaration(arena::Box<'alloc, VariableDeclaration<'alloc>>),
     VariableDeclarationKind(arena::Box<'alloc, VariableDeclarationKind>),
@@ -129,8 +114,6 @@ pub enum StackValue<'alloc> {
     VecSwitchCase(arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>),
     VecVariableDeclarator(arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>),
     Void(arena::Box<'alloc, Void>),
-    YieldExpression(arena::Box<'alloc, YieldExpression<'alloc>>),
-    YieldGeneratorExpression(arena::Box<'alloc, YieldGeneratorExpression<'alloc>>),
 }
 
 impl<'alloc> StackValue<'alloc> {
@@ -203,29 +186,11 @@ impl<'alloc> StackValueItem<'alloc> for ArrayExpressionElement<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for ArrowExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ArrowExpression(v) => v,
-            _ => panic!("StackValue expected ArrowExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for ArrowExpressionBody<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
             StackValue::ArrowExpressionBody(v) => v,
             _ => panic!("StackValue expected ArrowExpressionBody, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for AssignmentExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::AssignmentExpression(v) => v,
-            _ => panic!("StackValue expected AssignmentExpression, got {:?}", sv),
         }
     }
 }
@@ -317,24 +282,6 @@ impl<'alloc> StackValueItem<'alloc> for AssignmentTargetWithDefault<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for AwaitExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::AwaitExpression(v) => v,
-            _ => panic!("StackValue expected AwaitExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for BinaryExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::BinaryExpression(v) => v,
-            _ => panic!("StackValue expected BinaryExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for BinaryOperator {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -419,15 +366,6 @@ impl<'alloc> StackValueItem<'alloc> for Block<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for CallExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::CallExpression(v) => v,
-            _ => panic!("StackValue expected CallExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for CatchClause<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -460,18 +398,6 @@ impl<'alloc> StackValueItem<'alloc> for ClassExpression<'alloc> {
         match sv {
             StackValue::ClassExpression(v) => v,
             _ => panic!("StackValue expected ClassExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for CompoundAssignmentExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::CompoundAssignmentExpression(v) => v,
-            _ => panic!(
-                "StackValue expected CompoundAssignmentExpression, got {:?}",
-                sv
-            ),
         }
     }
 }
@@ -514,15 +440,6 @@ impl<'alloc> StackValueItem<'alloc> for ComputedPropertyName<'alloc> {
         match sv {
             StackValue::ComputedPropertyName(v) => v,
             _ => panic!("StackValue expected ComputedPropertyName, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for ConditionalExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ConditionalExpression(v) => v,
-            _ => panic!("StackValue expected ConditionalExpression, got {:?}", sv),
         }
     }
 }
@@ -716,15 +633,6 @@ impl<'alloc> StackValueItem<'alloc> for Import<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for ImportCallExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::ImportCallExpression(v) => v,
-            _ => panic!("StackValue expected ImportCallExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for ImportDeclaration<'alloc> {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
@@ -757,42 +665,6 @@ impl<'alloc> StackValueItem<'alloc> for Label<'alloc> {
         match sv {
             StackValue::Label(v) => v,
             _ => panic!("StackValue expected Label, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for LiteralBooleanExpression {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::LiteralBooleanExpression(v) => v,
-            _ => panic!("StackValue expected LiteralBooleanExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for LiteralNumericExpression {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::LiteralNumericExpression(v) => v,
-            _ => panic!("StackValue expected LiteralNumericExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for LiteralRegExpExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::LiteralRegExpExpression(v) => v,
-            _ => panic!("StackValue expected LiteralRegExpExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for LiteralStringExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::LiteralStringExpression(v) => v,
-            _ => panic!("StackValue expected LiteralStringExpression, got {:?}", sv),
         }
     }
 }
@@ -856,15 +728,6 @@ impl<'alloc> StackValueItem<'alloc> for NamedObjectProperty<'alloc> {
         match sv {
             StackValue::NamedObjectProperty(v) => v,
             _ => panic!("StackValue expected NamedObjectProperty, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for NewExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::NewExpression(v) => v,
-            _ => panic!("StackValue expected NewExpression, got {:?}", sv),
         }
     }
 }
@@ -1064,29 +927,11 @@ impl<'alloc> StackValueItem<'alloc> for Token<'alloc> {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for UnaryExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::UnaryExpression(v) => v,
-            _ => panic!("StackValue expected UnaryExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> StackValueItem<'alloc> for UnaryOperator {
     fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
         match sv {
             StackValue::UnaryOperator(v) => v,
             _ => panic!("StackValue expected UnaryOperator, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for UpdateExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::UpdateExpression(v) => v,
-            _ => panic!("StackValue expected UpdateExpression, got {:?}", sv),
         }
     }
 }
@@ -1235,24 +1080,6 @@ impl<'alloc> StackValueItem<'alloc> for Void {
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for YieldExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::YieldExpression(v) => v,
-            _ => panic!("StackValue expected YieldExpression, got {:?}", sv),
-        }
-    }
-}
-
-impl<'alloc> StackValueItem<'alloc> for YieldGeneratorExpression<'alloc> {
-    fn to_ast(sv: StackValue<'alloc>) -> arena::Box<'alloc, Self> {
-        match sv {
-            StackValue::YieldGeneratorExpression(v) => v,
-            _ => panic!("StackValue expected YieldGeneratorExpression, got {:?}", sv),
-        }
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Argument<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1295,24 +1122,10 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrayExpressionElement<
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrowExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ArrowExpression(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ArrowExpressionBody<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::ArrowExpressionBody(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::AssignmentExpression(self))
     }
 }
 
@@ -1371,20 +1184,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AssignmentTargetWithDef
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::AssignmentTargetWithDefault(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, AwaitExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::AwaitExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, BinaryExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::BinaryExpression(self))
     }
 }
 
@@ -1451,13 +1250,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Block<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CallExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::CallExpression(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CatchClause<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1486,13 +1278,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassExpression<'alloc>
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CompoundAssignmentExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::CompoundAssignmentExpression(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CompoundAssignmentOperator> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1518,13 +1303,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ComputedPropertyName<'a
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::ComputedPropertyName(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ConditionalExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ConditionalExpression(self))
     }
 }
 
@@ -1675,13 +1453,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Import<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportCallExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::ImportCallExpression(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ImportDeclaration<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1707,34 +1478,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Label<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Label(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralBooleanExpression> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::LiteralBooleanExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralNumericExpression> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::LiteralNumericExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralRegExpExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::LiteralRegExpExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, LiteralStringExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::LiteralStringExpression(self))
     }
 }
 
@@ -1784,13 +1527,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, NamedObjectProperty<'al
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::NamedObjectProperty(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, NewExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::NewExpression(self))
     }
 }
 
@@ -1941,24 +1677,10 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Token<'alloc>> {
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UnaryExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::UnaryExpression(self))
-    }
-}
-
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UnaryOperator> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::UnaryOperator(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, UpdateExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::UpdateExpression(self))
     }
 }
 
@@ -2074,20 +1796,6 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Void> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Void(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, YieldExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::YieldExpression(self))
-    }
-}
-
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, YieldGeneratorExpression<'alloc>> {
-    type Error = Infallible;
-    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
-        Ok(StackValue::YieldGeneratorExpression(self))
     }
 }
 

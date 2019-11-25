@@ -185,32 +185,85 @@
     "_type": "enum",
     "MemberExpression": "MemberExpression",
     "ClassExpression": "ClassExpression",
-    "LiteralBooleanExpression": "LiteralBooleanExpression",
+    "LiteralBooleanExpression": {
+      "value": "bool"
+    },
     "LiteralInfinityExpression": null,
     "LiteralNullExpression": null,
-    "LiteralNumericExpression": "LiteralNumericExpression",
-    "LiteralRegExpExpression": "LiteralRegExpExpression",
-    "LiteralStringExpression": "LiteralStringExpression",
+    "LiteralNumericExpression": {
+      "value": "f64"
+    },
+    "LiteralRegExpExpression": {
+      "pattern": "String",
+      "global": "bool",
+      "ignore_case": "bool",
+      "multi_line": "bool",
+      "sticky": "bool",
+      "unicode": "bool"
+    },
+    "LiteralStringExpression": {
+      "value": "String"
+    },
     "ArrayExpression": "ArrayExpression",
-    "ArrowExpression": "ArrowExpression",
-    "AssignmentExpression": "AssignmentExpression",
-    "BinaryExpression": "BinaryExpression",
-    "CallExpression": "CallExpression",
-    "CompoundAssignmentExpression": "CompoundAssignmentExpression",
-    "ConditionalExpression": "ConditionalExpression",
+    "ArrowExpression": {
+      "is_async": "bool",
+      "params": "FormalParameters",
+      "body": "ArrowExpressionBody"
+    },
+    "AssignmentExpression": {
+      "binding": "AssignmentTarget",
+      "expression": "Box<Expression>"
+    },
+    "BinaryExpression": {
+      "operator": "BinaryOperator",
+      "left": "Box<Expression>",
+      "right": "Box<Expression>"
+    },
+    "CallExpression": {
+      "callee": "ExpressionOrSuper",
+      "arguments": "Arguments"
+    },
+    "CompoundAssignmentExpression": {
+      "operator": "CompoundAssignmentOperator",
+      "binding": "SimpleAssignmentTarget",
+      "expression": "Box<Expression>"
+    },
+    "ConditionalExpression": {
+      "test": "Box<Expression>",
+      "consequent": "Box<Expression>",
+      "alternate": "Box<Expression>"
+    },
     "FunctionExpression": "Function",
     "IdentifierExpression": "IdentifierExpression",
-    "NewExpression": "NewExpression",
+    "NewExpression": {
+      "callee": "Box<Expression>",
+      "arguments": "Arguments"
+    },
     "NewTargetExpression": null,
     "ObjectExpression": "ObjectExpression",
-    "UnaryExpression": "UnaryExpression",
+    "UnaryExpression": {
+      "operator": "UnaryOperator",
+      "operand": "Box<Expression>"
+    },
     "TemplateExpression": "TemplateExpression",
     "ThisExpression": null,
-    "UpdateExpression": "UpdateExpression",
-    "YieldExpression": "YieldExpression",
-    "YieldGeneratorExpression": "YieldGeneratorExpression",
-    "AwaitExpression": "AwaitExpression",
-    "ImportCallExpression": "ImportCallExpression"
+    "UpdateExpression": {
+      "is_prefix": "bool",
+      "operator": "UpdateOperator",
+      "operand": "SimpleAssignmentTarget"
+    },
+    "YieldExpression": {
+      "expression": "Option<Box<Expression>>"
+    },
+    "YieldGeneratorExpression": {
+      "expression": "Box<Expression>"
+    },
+    "AwaitExpression": {
+      "expression": "Box<Expression>"
+    },
+    "ImportCallExpression": {
+      "argument": "Box<Expression>"
+    }
   },
   "MemberExpression": {
     "_type": "enum",
@@ -496,27 +549,6 @@
     "_type": "struct",
     "value": "String"
   },
-  "LiteralBooleanExpression": {
-    "_type": "struct",
-    "value": "bool"
-  },
-  "LiteralNumericExpression": {
-    "_type": "struct",
-    "value": "f64"
-  },
-  "LiteralRegExpExpression": {
-    "_type": "struct",
-    "pattern": "String",
-    "global": "bool",
-    "ignore_case": "bool",
-    "multi_line": "bool",
-    "sticky": "bool",
-    "unicode": "bool"
-  },
-  "LiteralStringExpression": {
-    "_type": "struct",
-    "value": "String"
-  },
   "ArrayExpressionElement": {
     "_type": "enum",
     "SpreadElement": "Box<Expression>",
@@ -532,66 +564,18 @@
     "FunctionBody": "FunctionBody",
     "Expression": "Box<Expression>"
   },
-  "ArrowExpression": {
-    "_type": "struct",
-    "is_async": "bool",
-    "params": "FormalParameters",
-    "body": "ArrowExpressionBody"
-  },
-  "AssignmentExpression": {
-    "_type": "struct",
-    "binding": "AssignmentTarget",
-    "expression": "Box<Expression>"
-  },
-  "BinaryExpression": {
-    "_type": "struct",
-    "operator": "BinaryOperator",
-    "left": "Box<Expression>",
-    "right": "Box<Expression>"
-  },
-  "ImportCallExpression": {
-    "_type": "struct",
-    "argument": "Box<Expression>"
-  },
-  "CallExpression": {
-    "_type": "struct",
-    "callee": "ExpressionOrSuper",
-    "arguments": "Arguments"
-  },
-  "CompoundAssignmentExpression": {
-    "_type": "struct",
-    "operator": "CompoundAssignmentOperator",
-    "binding": "SimpleAssignmentTarget",
-    "expression": "Box<Expression>"
-  },
   "ComputedMemberExpression": {
     "_type": "struct",
     "object": "ExpressionOrSuper",
     "expression": "Box<Expression>"
   },
-  "ConditionalExpression": {
-    "_type": "struct",
-    "test": "Box<Expression>",
-    "consequent": "Box<Expression>",
-    "alternate": "Box<Expression>"
-  },
   "IdentifierExpression": {
     "_type": "struct",
     "name": "Identifier"
   },
-  "NewExpression": {
-    "_type": "struct",
-    "callee": "Box<Expression>",
-    "arguments": "Arguments"
-  },
   "ObjectExpression": {
     "_type": "struct",
     "properties": "Vec<Box<ObjectProperty>>"
-  },
-  "UnaryExpression": {
-    "_type": "struct",
-    "operator": "UnaryOperator",
-    "operand": "Box<Expression>"
   },
   "StaticMemberExpression": {
     "_type": "struct",
@@ -607,24 +591,6 @@
     "_type": "struct",
     "tag": "Option<Box<Expression>>",
     "elements": "Vec<TemplateExpressionElement>"
-  },
-  "UpdateExpression": {
-    "_type": "struct",
-    "is_prefix": "bool",
-    "operator": "UpdateOperator",
-    "operand": "SimpleAssignmentTarget"
-  },
-  "YieldExpression": {
-    "_type": "struct",
-    "expression": "Option<Box<Expression>>"
-  },
-  "YieldGeneratorExpression": {
-    "_type": "struct",
-    "expression": "Box<Expression>"
-  },
-  "AwaitExpression": {
-    "_type": "struct",
-    "expression": "Box<Expression>"
   },
   "VariableDeclarationOrAssignmentTarget": {
     "_type": "enum",

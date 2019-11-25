@@ -201,32 +201,85 @@ pub enum Statement<'alloc> {
 pub enum Expression<'alloc> {
     MemberExpression(MemberExpression<'alloc>),
     ClassExpression(ClassExpression<'alloc>),
-    LiteralBooleanExpression(LiteralBooleanExpression),
+    LiteralBooleanExpression {
+        value: bool,
+    },
     LiteralInfinityExpression,
     LiteralNullExpression,
-    LiteralNumericExpression(LiteralNumericExpression),
-    LiteralRegExpExpression(LiteralRegExpExpression<'alloc>),
-    LiteralStringExpression(LiteralStringExpression<'alloc>),
+    LiteralNumericExpression {
+        value: f64,
+    },
+    LiteralRegExpExpression {
+        pattern: &'alloc str,
+        global: bool,
+        ignore_case: bool,
+        multi_line: bool,
+        sticky: bool,
+        unicode: bool,
+    },
+    LiteralStringExpression {
+        value: &'alloc str,
+    },
     ArrayExpression(ArrayExpression<'alloc>),
-    ArrowExpression(ArrowExpression<'alloc>),
-    AssignmentExpression(AssignmentExpression<'alloc>),
-    BinaryExpression(BinaryExpression<'alloc>),
-    CallExpression(CallExpression<'alloc>),
-    CompoundAssignmentExpression(CompoundAssignmentExpression<'alloc>),
-    ConditionalExpression(ConditionalExpression<'alloc>),
+    ArrowExpression {
+        is_async: bool,
+        params: FormalParameters<'alloc>,
+        body: ArrowExpressionBody<'alloc>,
+    },
+    AssignmentExpression {
+        binding: AssignmentTarget<'alloc>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    BinaryExpression {
+        operator: BinaryOperator,
+        left: arena::Box<'alloc, Expression<'alloc>>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    CallExpression {
+        callee: ExpressionOrSuper<'alloc>,
+        arguments: Arguments<'alloc>,
+    },
+    CompoundAssignmentExpression {
+        operator: CompoundAssignmentOperator,
+        binding: SimpleAssignmentTarget<'alloc>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    ConditionalExpression {
+        test: arena::Box<'alloc, Expression<'alloc>>,
+        consequent: arena::Box<'alloc, Expression<'alloc>>,
+        alternate: arena::Box<'alloc, Expression<'alloc>>,
+    },
     FunctionExpression(Function<'alloc>),
     IdentifierExpression(IdentifierExpression<'alloc>),
-    NewExpression(NewExpression<'alloc>),
+    NewExpression {
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+        arguments: Arguments<'alloc>,
+    },
     NewTargetExpression,
     ObjectExpression(ObjectExpression<'alloc>),
-    UnaryExpression(UnaryExpression<'alloc>),
+    UnaryExpression {
+        operator: UnaryOperator,
+        operand: arena::Box<'alloc, Expression<'alloc>>,
+    },
     TemplateExpression(TemplateExpression<'alloc>),
     ThisExpression,
-    UpdateExpression(UpdateExpression<'alloc>),
-    YieldExpression(YieldExpression<'alloc>),
-    YieldGeneratorExpression(YieldGeneratorExpression<'alloc>),
-    AwaitExpression(AwaitExpression<'alloc>),
-    ImportCallExpression(ImportCallExpression<'alloc>),
+    UpdateExpression {
+        is_prefix: bool,
+        operator: UpdateOperator,
+        operand: SimpleAssignmentTarget<'alloc>,
+    },
+    YieldExpression {
+        expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    },
+    YieldGeneratorExpression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    AwaitExpression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+    },
+    ImportCallExpression {
+        argument: arena::Box<'alloc, Expression<'alloc>>,
+    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -569,31 +622,6 @@ pub struct StaticPropertyName<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct LiteralBooleanExpression {
-    pub value: bool,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LiteralNumericExpression {
-    pub value: f64,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LiteralRegExpExpression<'alloc> {
-    pub pattern: &'alloc str,
-    pub global: bool,
-    pub ignore_case: bool,
-    pub multi_line: bool,
-    pub sticky: bool,
-    pub unicode: bool,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LiteralStringExpression<'alloc> {
-    pub value: &'alloc str,
-}
-
-#[derive(Debug, PartialEq)]
 pub enum ArrayExpressionElement<'alloc> {
     SpreadElement(arena::Box<'alloc, Expression<'alloc>>),
     Expression(arena::Box<'alloc, Expression<'alloc>>),
@@ -612,54 +640,9 @@ pub enum ArrowExpressionBody<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ArrowExpression<'alloc> {
-    pub is_async: bool,
-    pub params: FormalParameters<'alloc>,
-    pub body: ArrowExpressionBody<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct AssignmentExpression<'alloc> {
-    pub binding: AssignmentTarget<'alloc>,
-    pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct BinaryExpression<'alloc> {
-    pub operator: BinaryOperator,
-    pub left: arena::Box<'alloc, Expression<'alloc>>,
-    pub right: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ImportCallExpression<'alloc> {
-    pub argument: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct CallExpression<'alloc> {
-    pub callee: ExpressionOrSuper<'alloc>,
-    pub arguments: Arguments<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct CompoundAssignmentExpression<'alloc> {
-    pub operator: CompoundAssignmentOperator,
-    pub binding: SimpleAssignmentTarget<'alloc>,
-    pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
 pub struct ComputedMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ConditionalExpression<'alloc> {
-    pub test: arena::Box<'alloc, Expression<'alloc>>,
-    pub consequent: arena::Box<'alloc, Expression<'alloc>>,
-    pub alternate: arena::Box<'alloc, Expression<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -668,20 +651,8 @@ pub struct IdentifierExpression<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct NewExpression<'alloc> {
-    pub callee: arena::Box<'alloc, Expression<'alloc>>,
-    pub arguments: Arguments<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
 pub struct ObjectExpression<'alloc> {
     pub properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct UnaryExpression<'alloc> {
-    pub operator: UnaryOperator,
-    pub operand: arena::Box<'alloc, Expression<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -700,28 +671,6 @@ pub enum TemplateExpressionElement<'alloc> {
 pub struct TemplateExpression<'alloc> {
     pub tag: Option<arena::Box<'alloc, Expression<'alloc>>>,
     pub elements: arena::Vec<'alloc, TemplateExpressionElement<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct UpdateExpression<'alloc> {
-    pub is_prefix: bool,
-    pub operator: UpdateOperator,
-    pub operand: SimpleAssignmentTarget<'alloc>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct YieldExpression<'alloc> {
-    pub expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct YieldGeneratorExpression<'alloc> {
-    pub expression: arena::Box<'alloc, Expression<'alloc>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct AwaitExpression<'alloc> {
-    pub expression: arena::Box<'alloc, Expression<'alloc>>,
 }
 
 #[derive(Debug, PartialEq)]

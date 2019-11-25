@@ -111,16 +111,14 @@ impl<'alloc> AstBuilder<'alloc> {
         let multi_line: bool = false;
         let sticky: bool = false;
         let unicode: bool = false;
-        self.alloc(Expression::LiteralRegExpExpression(
-            LiteralRegExpExpression {
-                pattern,
-                global,
-                ignore_case,
-                multi_line,
-                sticky,
-                unicode,
-            },
-        ))
+        self.alloc(Expression::LiteralRegExpExpression {
+            pattern,
+            global,
+            ignore_case,
+            multi_line,
+            sticky,
+            unicode,
+        })
     }
 
     // PrimaryExpression : TemplateLiteral
@@ -468,10 +466,10 @@ impl<'alloc> AstBuilder<'alloc> {
         expression: Expression<'alloc>,
     ) -> Result<'alloc, Parameter<'alloc>> {
         match expression {
-            Expression::AssignmentExpression(AssignmentExpression {
+            Expression::AssignmentExpression {
                 binding,
                 expression,
-            }) => Ok(Parameter::BindingWithDefault(BindingWithDefault {
+            } => Ok(Parameter::BindingWithDefault(BindingWithDefault {
                 binding: self.assignment_target_to_binding(binding)?,
                 init: expression,
             })),
@@ -498,11 +496,11 @@ impl<'alloc> AstBuilder<'alloc> {
         //     ArrowFormalParameters[Yield, Await]:
         //         `(` UniqueFormalParameters[?Yield, ?Await] `)`
         match expression.unbox() {
-            Expression::BinaryExpression(BinaryExpression {
+            Expression::BinaryExpression {
                 operator: BinaryOperator::Comma,
                 left,
                 right,
-            }) => {
+            } => {
                 let mut parameters = self.expression_to_parameter_list(left)?;
                 self.push(
                     &mut parameters,
@@ -569,9 +567,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let s = token.unbox().value.unwrap();
         assert!(s == "true" || s == "false");
 
-        self.alloc(Expression::LiteralBooleanExpression(
-            LiteralBooleanExpression { value: s == "true" },
-        ))
+        self.alloc(Expression::LiteralBooleanExpression { value: s == "true" })
     }
 
     fn numeric_literal_value(token: arena::Box<'alloc, Token<'alloc>>) -> f64 {
@@ -586,11 +582,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::LiteralNumericExpression(
-            LiteralNumericExpression {
-                value: Self::numeric_literal_value(token),
-            },
-        ))
+        self.alloc(Expression::LiteralNumericExpression {
+            value: Self::numeric_literal_value(token),
+        })
     }
 
     // Literal : StringLiteral
@@ -598,11 +592,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::LiteralStringExpression(
-            LiteralStringExpression {
-                value: token.value.unwrap(),
-            },
-        ))
+        self.alloc(Expression::LiteralStringExpression {
+            value: token.value.unwrap(),
+        })
     }
 
     // ArrayLiteral : `[` Elision? `]`
@@ -975,10 +967,10 @@ impl<'alloc> AstBuilder<'alloc> {
         callee: arena::Box<'alloc, Expression<'alloc>>,
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::NewExpression(NewExpression {
+        self.alloc(Expression::NewExpression {
             callee,
             arguments: arguments.unbox(),
-        }))
+        })
     }
 
     // SuperProperty : `super` `[` Expression `]`
@@ -1017,12 +1009,12 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         callee: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::NewExpression(NewExpression {
+        self.alloc(Expression::NewExpression {
             callee,
             arguments: Arguments {
                 args: self.new_vec(),
             },
-        }))
+        })
     }
 
     // CallExpression : CallExpression Arguments
@@ -1033,10 +1025,10 @@ impl<'alloc> AstBuilder<'alloc> {
         callee: arena::Box<'alloc, Expression<'alloc>>,
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::CallExpression(CallExpression {
+        self.alloc(Expression::CallExpression {
             callee: ExpressionOrSuper::Expression(callee),
             arguments: arguments.unbox(),
-        }))
+        })
     }
 
     // SuperCall : `super` Arguments
@@ -1044,10 +1036,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::CallExpression(CallExpression {
+        self.alloc(Expression::CallExpression {
             callee: ExpressionOrSuper::Super,
             arguments: arguments.unbox(),
-        }))
+        })
     }
 
     // ImportCall : `import` `(` AssignmentExpression `)`
@@ -1055,9 +1047,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         argument: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::ImportCallExpression(ImportCallExpression {
-            argument,
-        }))
+        self.alloc(Expression::ImportCallExpression { argument })
     }
 
     // Arguments : `(` `)`
@@ -1094,11 +1084,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+        Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: false,
             operator: UpdateOperator::Increment,
             operand: self.expression_to_simple_assignment_target(operand)?,
-        })))
+        }))
     }
 
     // UpdateExpression : LeftHandSideExpression `--`
@@ -1106,11 +1096,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+        Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: false,
             operator: UpdateOperator::Decrement,
             operand: self.expression_to_simple_assignment_target(operand)?,
-        })))
+        }))
     }
 
     // UpdateExpression : `++` UnaryExpression
@@ -1118,11 +1108,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+        Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: true,
             operator: UpdateOperator::Increment,
             operand: self.expression_to_simple_assignment_target(operand)?,
-        })))
+        }))
     }
 
     // UpdateExpression : `--` UnaryExpression
@@ -1130,11 +1120,11 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
-        Ok(self.alloc(Expression::UpdateExpression(UpdateExpression {
+        Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: true,
             operator: UpdateOperator::Decrement,
             operand: self.expression_to_simple_assignment_target(operand)?,
-        })))
+        }))
     }
 
     // UnaryExpression : `delete` UnaryExpression
@@ -1142,10 +1132,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::Delete,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `void` UnaryExpression
@@ -1153,10 +1143,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::Void,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `typeof` UnaryExpression
@@ -1164,10 +1154,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::Typeof,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `+` UnaryExpression
@@ -1175,10 +1165,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::Plus,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `-` UnaryExpression
@@ -1186,10 +1176,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::Minus,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `~` UnaryExpression
@@ -1197,10 +1187,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::BitwiseNot,
             operand,
-        }))
+        })
     }
 
     // UnaryExpression : `!` UnaryExpression
@@ -1208,10 +1198,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::UnaryExpression(UnaryExpression {
+        self.alloc(Expression::UnaryExpression {
             operator: UnaryOperator::LogicalNot,
             operand,
-        }))
+        })
     }
 
     pub fn equals_op(&self) -> BinaryOperator {
@@ -1337,11 +1327,11 @@ impl<'alloc> AstBuilder<'alloc> {
         left: arena::Box<'alloc, Expression<'alloc>>,
         right: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::BinaryExpression(BinaryExpression {
+        self.alloc(Expression::BinaryExpression {
             operator,
             left,
             right,
-        }))
+        })
     }
 
     // ConditionalExpression : LogicalORExpression `?` AssignmentExpression `:` AssignmentExpression
@@ -1351,11 +1341,11 @@ impl<'alloc> AstBuilder<'alloc> {
         consequent: arena::Box<'alloc, Expression<'alloc>>,
         alternate: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::ConditionalExpression(ConditionalExpression {
+        self.alloc(Expression::ConditionalExpression {
             test,
             consequent,
             alternate,
-        }))
+        })
     }
 
     /// Refine an *ArrayLiteral* into an *ArrayAssignmentPattern*.
@@ -1442,10 +1432,10 @@ impl<'alloc> AstBuilder<'alloc> {
         expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, AssignmentTargetMaybeDefault<'alloc>> {
         Ok(match expression.unbox() {
-            Expression::AssignmentExpression(AssignmentExpression {
+            Expression::AssignmentExpression {
                 binding,
                 expression,
-            }) => AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(
+            } => AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(
                 AssignmentTargetWithDefault {
                     binding,
                     init: expression,
@@ -1524,12 +1514,10 @@ impl<'alloc> AstBuilder<'alloc> {
         value: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
         let target = self.expression_to_assignment_target(left_hand_side)?;
-        Ok(
-            self.alloc(Expression::AssignmentExpression(AssignmentExpression {
-                binding: target,
-                expression: value,
-            })),
-        )
+        Ok(self.alloc(Expression::AssignmentExpression {
+            binding: target,
+            expression: value,
+        }))
     }
 
     pub fn add_assign_op(&self) -> CompoundAssignmentOperator {
@@ -1584,13 +1572,11 @@ impl<'alloc> AstBuilder<'alloc> {
         value: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
         let target = self.expression_to_simple_assignment_target(left_hand_side)?;
-        Ok(self.alloc(Expression::CompoundAssignmentExpression(
-            CompoundAssignmentExpression {
-                operator: operator.unbox(),
-                binding: target,
-                expression: value,
-            },
-        )))
+        Ok(self.alloc(Expression::CompoundAssignmentExpression {
+            operator: operator.unbox(),
+            binding: target,
+            expression: value,
+        }))
     }
 
     // BlockStatement : Block
@@ -2447,11 +2433,11 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, ArrowExpressionBody<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::ArrowExpression(ArrowExpression {
+        self.alloc(Expression::ArrowExpression {
             is_async: false,
             params: params.unbox(),
             body: body.unbox(),
-        }))
+        })
     }
 
     // ArrowParameters : BindingIdentifier
@@ -2561,9 +2547,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: Option<arena::Box<'alloc, Expression<'alloc>>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::YieldExpression(YieldExpression {
+        self.alloc(Expression::YieldExpression {
             expression: operand,
-        }))
+        })
     }
 
     // YieldExpression : `yield` `*` AssignmentExpression
@@ -2571,11 +2557,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::YieldGeneratorExpression(
-            YieldGeneratorExpression {
-                expression: operand,
-            },
-        ))
+        self.alloc(Expression::YieldGeneratorExpression {
+            expression: operand,
+        })
     }
 
     // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => AsyncGeneratorMethod($0, $1, $2, $3, $4, $5, $6, $7, $8)
@@ -2700,9 +2684,9 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         operand: arena::Box<'alloc, Expression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::AwaitExpression(AwaitExpression {
+        self.alloc(Expression::AwaitExpression {
             expression: operand,
-        }))
+        })
     }
 
     // AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody
@@ -2712,11 +2696,11 @@ impl<'alloc> AstBuilder<'alloc> {
         params: arena::Box<'alloc, FormalParameters<'alloc>>,
         body: arena::Box<'alloc, ArrowExpressionBody<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::ArrowExpression(ArrowExpression {
+        self.alloc(Expression::ArrowExpression {
             is_async: true,
             params: params.unbox(),
             body: body.unbox(),
-        }))
+        })
     }
 
     // AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody
@@ -2727,10 +2711,10 @@ impl<'alloc> AstBuilder<'alloc> {
         call_expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, FormalParameters<'alloc>>> {
         match call_expression.unbox() {
-            Expression::CallExpression(CallExpression {
+            Expression::CallExpression {
                 callee: ce,
                 arguments,
-            }) => {
+            } => {
                 // Check that `callee` is `async`.
                 match ce {
                     ExpressionOrSuper::Expression(callee) => match callee.unbox() {
@@ -2770,10 +2754,10 @@ impl<'alloc> AstBuilder<'alloc> {
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         // TODO
-        self.alloc(Expression::CallExpression(CallExpression {
+        self.alloc(Expression::CallExpression {
             callee: ExpressionOrSuper::Expression(self.alloc(callee.unbox())),
             arguments: arguments.unbox(),
-        }))
+        })
     }
 
     // Script : ScriptBody?

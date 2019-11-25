@@ -4,7 +4,7 @@ mod emitter;
 mod lower;
 mod opcode;
 
-pub use crate::emitter::{EmitResult, EmitError};
+pub use crate::emitter::{EmitError, EmitResult};
 pub use dis::dis;
 
 pub fn emit(ast: &mut ast::types::Program) -> Result<EmitResult, EmitError> {

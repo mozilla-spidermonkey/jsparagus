@@ -268,40 +268,67 @@ pub trait Pass<'alloc> {
             Expression::ClassExpression(ast) => {
                 self.visit_class_expression(ast);
             }
-            Expression::LiteralBooleanExpression(ast) => {
-                self.visit_literal_boolean_expression(ast);
-            }
+            Expression::LiteralBooleanExpression { value } => {}
             Expression::LiteralInfinityExpression => (),
             Expression::LiteralNullExpression => (),
-            Expression::LiteralNumericExpression(ast) => {
-                self.visit_literal_numeric_expression(ast);
-            }
-            Expression::LiteralRegExpExpression(ast) => {
-                self.visit_literal_reg_exp_expression(ast);
-            }
-            Expression::LiteralStringExpression(ast) => {
-                self.visit_literal_string_expression(ast);
-            }
+            Expression::LiteralNumericExpression { value } => {}
+            Expression::LiteralRegExpExpression {
+                pattern,
+                global,
+                ignore_case,
+                multi_line,
+                sticky,
+                unicode,
+            } => {}
+            Expression::LiteralStringExpression { value } => {}
             Expression::ArrayExpression(ast) => {
                 self.visit_array_expression(ast);
             }
-            Expression::ArrowExpression(ast) => {
-                self.visit_arrow_expression(ast);
+            Expression::ArrowExpression {
+                is_async,
+                params,
+                body,
+            } => {
+                self.visit_formal_parameters(params);
+                self.visit_arrow_expression_body(body);
             }
-            Expression::AssignmentExpression(ast) => {
-                self.visit_assignment_expression(ast);
+            Expression::AssignmentExpression {
+                binding,
+                expression,
+            } => {
+                self.visit_assignment_target(binding);
+                self.visit_expression(expression);
             }
-            Expression::BinaryExpression(ast) => {
-                self.visit_binary_expression(ast);
+            Expression::BinaryExpression {
+                operator,
+                left,
+                right,
+            } => {
+                self.visit_binary_operator(operator);
+                self.visit_expression(left);
+                self.visit_expression(right);
             }
-            Expression::CallExpression(ast) => {
-                self.visit_call_expression(ast);
+            Expression::CallExpression { callee, arguments } => {
+                self.visit_expression_or_super(callee);
+                self.visit_arguments(arguments);
             }
-            Expression::CompoundAssignmentExpression(ast) => {
-                self.visit_compound_assignment_expression(ast);
+            Expression::CompoundAssignmentExpression {
+                operator,
+                binding,
+                expression,
+            } => {
+                self.visit_compound_assignment_operator(operator);
+                self.visit_simple_assignment_target(binding);
+                self.visit_expression(expression);
             }
-            Expression::ConditionalExpression(ast) => {
-                self.visit_conditional_expression(ast);
+            Expression::ConditionalExpression {
+                test,
+                consequent,
+                alternate,
+            } => {
+                self.visit_expression(test);
+                self.visit_expression(consequent);
+                self.visit_expression(alternate);
             }
             Expression::FunctionExpression(ast) => {
                 self.visit_function(ast);
@@ -309,34 +336,43 @@ pub trait Pass<'alloc> {
             Expression::IdentifierExpression(ast) => {
                 self.visit_identifier_expression(ast);
             }
-            Expression::NewExpression(ast) => {
-                self.visit_new_expression(ast);
+            Expression::NewExpression { callee, arguments } => {
+                self.visit_expression(callee);
+                self.visit_arguments(arguments);
             }
             Expression::NewTargetExpression => (),
             Expression::ObjectExpression(ast) => {
                 self.visit_object_expression(ast);
             }
-            Expression::UnaryExpression(ast) => {
-                self.visit_unary_expression(ast);
+            Expression::UnaryExpression { operator, operand } => {
+                self.visit_unary_operator(operator);
+                self.visit_expression(operand);
             }
             Expression::TemplateExpression(ast) => {
                 self.visit_template_expression(ast);
             }
             Expression::ThisExpression => (),
-            Expression::UpdateExpression(ast) => {
-                self.visit_update_expression(ast);
+            Expression::UpdateExpression {
+                is_prefix,
+                operator,
+                operand,
+            } => {
+                self.visit_update_operator(operator);
+                self.visit_simple_assignment_target(operand);
             }
-            Expression::YieldExpression(ast) => {
-                self.visit_yield_expression(ast);
+            Expression::YieldExpression { expression } => {
+                if let Some(item) = expression {
+                    self.visit_expression(item);
+                }
             }
-            Expression::YieldGeneratorExpression(ast) => {
-                self.visit_yield_generator_expression(ast);
+            Expression::YieldGeneratorExpression { expression } => {
+                self.visit_expression(expression);
             }
-            Expression::AwaitExpression(ast) => {
-                self.visit_await_expression(ast);
+            Expression::AwaitExpression { expression } => {
+                self.visit_expression(expression);
             }
-            Expression::ImportCallExpression(ast) => {
-                self.visit_import_call_expression(ast);
+            Expression::ImportCallExpression { argument } => {
+                self.visit_expression(argument);
             }
         }
     }
@@ -833,14 +869,6 @@ pub trait Pass<'alloc> {
 
     fn visit_static_property_name(&mut self, ast: &mut StaticPropertyName<'alloc>) {}
 
-    fn visit_literal_boolean_expression(&mut self, ast: &mut LiteralBooleanExpression) {}
-
-    fn visit_literal_numeric_expression(&mut self, ast: &mut LiteralNumericExpression) {}
-
-    fn visit_literal_reg_exp_expression(&mut self, ast: &mut LiteralRegExpExpression<'alloc>) {}
-
-    fn visit_literal_string_expression(&mut self, ast: &mut LiteralStringExpression<'alloc>) {}
-
     fn visit_array_expression_element(&mut self, ast: &mut ArrayExpressionElement<'alloc>) {
         match ast {
             ArrayExpressionElement::SpreadElement(ast) => {
@@ -870,69 +898,19 @@ pub trait Pass<'alloc> {
         }
     }
 
-    fn visit_arrow_expression(&mut self, ast: &mut ArrowExpression<'alloc>) {
-        self.visit_formal_parameters(&mut ast.params);
-        self.visit_arrow_expression_body(&mut ast.body);
-    }
-
-    fn visit_assignment_expression(&mut self, ast: &mut AssignmentExpression<'alloc>) {
-        self.visit_assignment_target(&mut ast.binding);
-        self.visit_expression(&mut ast.expression);
-    }
-
-    fn visit_binary_expression(&mut self, ast: &mut BinaryExpression<'alloc>) {
-        self.visit_binary_operator(&mut ast.operator);
-        self.visit_expression(&mut ast.left);
-        self.visit_expression(&mut ast.right);
-    }
-
-    fn visit_import_call_expression(&mut self, ast: &mut ImportCallExpression<'alloc>) {
-        self.visit_expression(&mut ast.argument);
-    }
-
-    fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) {
-        self.visit_expression_or_super(&mut ast.callee);
-        self.visit_arguments(&mut ast.arguments);
-    }
-
-    fn visit_compound_assignment_expression(
-        &mut self,
-        ast: &mut CompoundAssignmentExpression<'alloc>,
-    ) {
-        self.visit_compound_assignment_operator(&mut ast.operator);
-        self.visit_simple_assignment_target(&mut ast.binding);
-        self.visit_expression(&mut ast.expression);
-    }
-
     fn visit_computed_member_expression(&mut self, ast: &mut ComputedMemberExpression<'alloc>) {
         self.visit_expression_or_super(&mut ast.object);
         self.visit_expression(&mut ast.expression);
-    }
-
-    fn visit_conditional_expression(&mut self, ast: &mut ConditionalExpression<'alloc>) {
-        self.visit_expression(&mut ast.test);
-        self.visit_expression(&mut ast.consequent);
-        self.visit_expression(&mut ast.alternate);
     }
 
     fn visit_identifier_expression(&mut self, ast: &mut IdentifierExpression<'alloc>) {
         self.visit_identifier(&mut ast.name);
     }
 
-    fn visit_new_expression(&mut self, ast: &mut NewExpression<'alloc>) {
-        self.visit_expression(&mut ast.callee);
-        self.visit_arguments(&mut ast.arguments);
-    }
-
     fn visit_object_expression(&mut self, ast: &mut ObjectExpression<'alloc>) {
         for item in &mut ast.properties {
             self.visit_object_property(item);
         }
-    }
-
-    fn visit_unary_expression(&mut self, ast: &mut UnaryExpression<'alloc>) {
-        self.visit_unary_operator(&mut ast.operator);
-        self.visit_expression(&mut ast.operand);
     }
 
     fn visit_static_member_expression(&mut self, ast: &mut StaticMemberExpression<'alloc>) {
@@ -958,25 +936,6 @@ pub trait Pass<'alloc> {
         for item in &mut ast.elements {
             self.visit_template_expression_element(item);
         }
-    }
-
-    fn visit_update_expression(&mut self, ast: &mut UpdateExpression<'alloc>) {
-        self.visit_update_operator(&mut ast.operator);
-        self.visit_simple_assignment_target(&mut ast.operand);
-    }
-
-    fn visit_yield_expression(&mut self, ast: &mut YieldExpression<'alloc>) {
-        if let Some(item) = &mut ast.expression {
-            self.visit_expression(item);
-        }
-    }
-
-    fn visit_yield_generator_expression(&mut self, ast: &mut YieldGeneratorExpression<'alloc>) {
-        self.visit_expression(&mut ast.expression);
-    }
-
-    fn visit_await_expression(&mut self, ast: &mut AwaitExpression<'alloc>) {
-        self.visit_expression(&mut ast.expression);
     }
 
     fn visit_variable_declaration_or_assignment_target(
@@ -1320,6 +1279,155 @@ pub trait PostfixPass<'alloc> {
         let mut result = Self::Value::default();
         result.append(object);
         result.append(body);
+        result
+    }
+
+    fn visit_literal_boolean_expression(&self, value: &mut bool) -> Self::Value {
+        let mut result = Self::Value::default();
+        result
+    }
+
+    fn visit_literal_numeric_expression(&self, value: &mut f64) -> Self::Value {
+        let mut result = Self::Value::default();
+        result
+    }
+
+    fn visit_literal_reg_exp_expression(
+        &self,
+        pattern: &mut &'alloc str,
+        global: &mut bool,
+        ignore_case: &mut bool,
+        multi_line: &mut bool,
+        sticky: &mut bool,
+        unicode: &mut bool,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result
+    }
+
+    fn visit_literal_string_expression(&self, value: &mut &'alloc str) -> Self::Value {
+        let mut result = Self::Value::default();
+        result
+    }
+
+    fn visit_arrow_expression(
+        &self,
+        is_async: &mut bool,
+        params: Self::Value,
+        body: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(params);
+        result.append(body);
+        result
+    }
+
+    fn visit_assignment_expression(
+        &self,
+        binding: Self::Value,
+        expression: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(binding);
+        result.append(expression);
+        result
+    }
+
+    fn visit_binary_expression(
+        &self,
+        operator: Self::Value,
+        left: Self::Value,
+        right: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(operator);
+        result.append(left);
+        result.append(right);
+        result
+    }
+
+    fn visit_call_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(callee);
+        result.append(arguments);
+        result
+    }
+
+    fn visit_compound_assignment_expression(
+        &self,
+        operator: Self::Value,
+        binding: Self::Value,
+        expression: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(operator);
+        result.append(binding);
+        result.append(expression);
+        result
+    }
+
+    fn visit_conditional_expression(
+        &self,
+        test: Self::Value,
+        consequent: Self::Value,
+        alternate: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(test);
+        result.append(consequent);
+        result.append(alternate);
+        result
+    }
+
+    fn visit_new_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(callee);
+        result.append(arguments);
+        result
+    }
+
+    fn visit_unary_expression(&self, operator: Self::Value, operand: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(operator);
+        result.append(operand);
+        result
+    }
+
+    fn visit_update_expression(
+        &self,
+        is_prefix: &mut bool,
+        operator: Self::Value,
+        operand: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(operator);
+        result.append(operand);
+        result
+    }
+
+    fn visit_yield_expression(&self, expression: Option<Self::Value>) -> Self::Value {
+        let mut result = Self::Value::default();
+        if let Some(item) = expression {
+            result.append(item);
+        }
+        result
+    }
+
+    fn visit_yield_generator_expression(&self, expression: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(expression);
+        result
+    }
+
+    fn visit_await_expression(&self, expression: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(expression);
+        result
+    }
+
+    fn visit_import_call_expression(&self, argument: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(argument);
         result
     }
 
@@ -1701,101 +1809,11 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_literal_boolean_expression(&self, value: &mut bool) -> Self::Value {
-        let mut result = Self::Value::default();
-        result
-    }
-
-    fn visit_literal_numeric_expression(&self, value: &mut f64) -> Self::Value {
-        let mut result = Self::Value::default();
-        result
-    }
-
-    fn visit_literal_reg_exp_expression(
-        &self,
-        pattern: &mut &'alloc str,
-        global: &mut bool,
-        ignore_case: &mut bool,
-        multi_line: &mut bool,
-        sticky: &mut bool,
-        unicode: &mut bool,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result
-    }
-
-    fn visit_literal_string_expression(&self, value: &mut &'alloc str) -> Self::Value {
-        let mut result = Self::Value::default();
-        result
-    }
-
     fn visit_array_expression(&self, elements: arena::Vec<'alloc, Self::Value>) -> Self::Value {
         let mut result = Self::Value::default();
         for item in elements {
             result.append(item);
         }
-        result
-    }
-
-    fn visit_arrow_expression(
-        &self,
-        is_async: &mut bool,
-        params: Self::Value,
-        body: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(params);
-        result.append(body);
-        result
-    }
-
-    fn visit_assignment_expression(
-        &self,
-        binding: Self::Value,
-        expression: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(binding);
-        result.append(expression);
-        result
-    }
-
-    fn visit_binary_expression(
-        &self,
-        operator: Self::Value,
-        left: Self::Value,
-        right: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(operator);
-        result.append(left);
-        result.append(right);
-        result
-    }
-
-    fn visit_import_call_expression(&self, argument: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(argument);
-        result
-    }
-
-    fn visit_call_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(callee);
-        result.append(arguments);
-        result
-    }
-
-    fn visit_compound_assignment_expression(
-        &self,
-        operator: Self::Value,
-        binding: Self::Value,
-        expression: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(operator);
-        result.append(binding);
-        result.append(expression);
         result
     }
 
@@ -1810,29 +1828,9 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_conditional_expression(
-        &self,
-        test: Self::Value,
-        consequent: Self::Value,
-        alternate: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(test);
-        result.append(consequent);
-        result.append(alternate);
-        result
-    }
-
     fn visit_identifier_expression(&self, name: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(name);
-        result
-    }
-
-    fn visit_new_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(callee);
-        result.append(arguments);
         result
     }
 
@@ -1841,13 +1839,6 @@ pub trait PostfixPass<'alloc> {
         for item in properties {
             result.append(item);
         }
-        result
-    }
-
-    fn visit_unary_expression(&self, operator: Self::Value, operand: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(operator);
-        result.append(operand);
         result
     }
 
@@ -1874,38 +1865,6 @@ pub trait PostfixPass<'alloc> {
         for item in elements {
             result.append(item);
         }
-        result
-    }
-
-    fn visit_update_expression(
-        &self,
-        is_prefix: &mut bool,
-        operator: Self::Value,
-        operand: Self::Value,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(operator);
-        result.append(operand);
-        result
-    }
-
-    fn visit_yield_expression(&self, expression: Option<Self::Value>) -> Self::Value {
-        let mut result = Self::Value::default();
-        if let Some(item) = expression {
-            result.append(item);
-        }
-        result
-    }
-
-    fn visit_yield_generator_expression(&self, expression: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(expression);
-        result
-    }
-
-    fn visit_await_expression(&self, expression: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(expression);
         result
     }
 
@@ -2323,34 +2282,135 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         match ast {
             Expression::MemberExpression(ast) => self.visit_member_expression(ast),
             Expression::ClassExpression(ast) => self.visit_class_expression(ast),
-            Expression::LiteralBooleanExpression(ast) => self.visit_literal_boolean_expression(ast),
+            Expression::LiteralBooleanExpression { value } => {
+                let a0 = value;
+                self.pass.visit_literal_boolean_expression(a0)
+            }
             Expression::LiteralInfinityExpression => T::Value::default(),
             Expression::LiteralNullExpression => T::Value::default(),
-            Expression::LiteralNumericExpression(ast) => self.visit_literal_numeric_expression(ast),
-            Expression::LiteralRegExpExpression(ast) => self.visit_literal_reg_exp_expression(ast),
-            Expression::LiteralStringExpression(ast) => self.visit_literal_string_expression(ast),
-            Expression::ArrayExpression(ast) => self.visit_array_expression(ast),
-            Expression::ArrowExpression(ast) => self.visit_arrow_expression(ast),
-            Expression::AssignmentExpression(ast) => self.visit_assignment_expression(ast),
-            Expression::BinaryExpression(ast) => self.visit_binary_expression(ast),
-            Expression::CallExpression(ast) => self.visit_call_expression(ast),
-            Expression::CompoundAssignmentExpression(ast) => {
-                self.visit_compound_assignment_expression(ast)
+            Expression::LiteralNumericExpression { value } => {
+                let a0 = value;
+                self.pass.visit_literal_numeric_expression(a0)
             }
-            Expression::ConditionalExpression(ast) => self.visit_conditional_expression(ast),
+            Expression::LiteralRegExpExpression {
+                pattern,
+                global,
+                ignore_case,
+                multi_line,
+                sticky,
+                unicode,
+            } => {
+                let a0 = pattern;
+                let a1 = global;
+                let a2 = ignore_case;
+                let a3 = multi_line;
+                let a4 = sticky;
+                let a5 = unicode;
+                self.pass
+                    .visit_literal_reg_exp_expression(a0, a1, a2, a3, a4, a5)
+            }
+            Expression::LiteralStringExpression { value } => {
+                let a0 = value;
+                self.pass.visit_literal_string_expression(a0)
+            }
+            Expression::ArrayExpression(ast) => self.visit_array_expression(ast),
+            Expression::ArrowExpression {
+                is_async,
+                params,
+                body,
+            } => {
+                let a0 = is_async;
+                let a1 = self.visit_formal_parameters((params));
+                let a2 = self.visit_arrow_expression_body((body));
+                self.pass.visit_arrow_expression(a0, a1, a2)
+            }
+            Expression::AssignmentExpression {
+                binding,
+                expression,
+            } => {
+                let a0 = self.visit_assignment_target((binding));
+                let a1 = self.visit_expression((expression));
+                self.pass.visit_assignment_expression(a0, a1)
+            }
+            Expression::BinaryExpression {
+                operator,
+                left,
+                right,
+            } => {
+                let a0 = self.visit_binary_operator((operator));
+                let a1 = self.visit_expression((left));
+                let a2 = self.visit_expression((right));
+                self.pass.visit_binary_expression(a0, a1, a2)
+            }
+            Expression::CallExpression { callee, arguments } => {
+                let a0 = self.visit_expression_or_super((callee));
+                let a1 = self.visit_arguments((arguments));
+                self.pass.visit_call_expression(a0, a1)
+            }
+            Expression::CompoundAssignmentExpression {
+                operator,
+                binding,
+                expression,
+            } => {
+                let a0 = self.visit_compound_assignment_operator((operator));
+                let a1 = self.visit_simple_assignment_target((binding));
+                let a2 = self.visit_expression((expression));
+                self.pass.visit_compound_assignment_expression(a0, a1, a2)
+            }
+            Expression::ConditionalExpression {
+                test,
+                consequent,
+                alternate,
+            } => {
+                let a0 = self.visit_expression((test));
+                let a1 = self.visit_expression((consequent));
+                let a2 = self.visit_expression((alternate));
+                self.pass.visit_conditional_expression(a0, a1, a2)
+            }
             Expression::FunctionExpression(ast) => self.visit_function(ast),
             Expression::IdentifierExpression(ast) => self.visit_identifier_expression(ast),
-            Expression::NewExpression(ast) => self.visit_new_expression(ast),
+            Expression::NewExpression { callee, arguments } => {
+                let a0 = self.visit_expression((callee));
+                let a1 = self.visit_arguments((arguments));
+                self.pass.visit_new_expression(a0, a1)
+            }
             Expression::NewTargetExpression => T::Value::default(),
             Expression::ObjectExpression(ast) => self.visit_object_expression(ast),
-            Expression::UnaryExpression(ast) => self.visit_unary_expression(ast),
+            Expression::UnaryExpression { operator, operand } => {
+                let a0 = self.visit_unary_operator((operator));
+                let a1 = self.visit_expression((operand));
+                self.pass.visit_unary_expression(a0, a1)
+            }
             Expression::TemplateExpression(ast) => self.visit_template_expression(ast),
             Expression::ThisExpression => T::Value::default(),
-            Expression::UpdateExpression(ast) => self.visit_update_expression(ast),
-            Expression::YieldExpression(ast) => self.visit_yield_expression(ast),
-            Expression::YieldGeneratorExpression(ast) => self.visit_yield_generator_expression(ast),
-            Expression::AwaitExpression(ast) => self.visit_await_expression(ast),
-            Expression::ImportCallExpression(ast) => self.visit_import_call_expression(ast),
+            Expression::UpdateExpression {
+                is_prefix,
+                operator,
+                operand,
+            } => {
+                let a0 = is_prefix;
+                let a1 = self.visit_update_operator((operator));
+                let a2 = self.visit_simple_assignment_target((operand));
+                self.pass.visit_update_expression(a0, a1, a2)
+            }
+            Expression::YieldExpression { expression } => {
+                let a0 = (expression)
+                    .as_mut()
+                    .map(|item| self.visit_expression(item));
+                self.pass.visit_yield_expression(a0)
+            }
+            Expression::YieldGeneratorExpression { expression } => {
+                let a0 = self.visit_expression((expression));
+                self.pass.visit_yield_generator_expression(a0)
+            }
+            Expression::AwaitExpression { expression } => {
+                let a0 = self.visit_expression((expression));
+                self.pass.visit_await_expression(a0)
+            }
+            Expression::ImportCallExpression { argument } => {
+                let a0 = self.visit_expression((argument));
+                self.pass.visit_import_call_expression(a0)
+            }
         }
     }
 
@@ -2915,44 +2975,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         self.pass.visit_static_property_name(a0)
     }
 
-    pub fn visit_literal_boolean_expression(
-        &mut self,
-        ast: &mut LiteralBooleanExpression,
-    ) -> T::Value {
-        let a0 = &mut ast.value;
-        self.pass.visit_literal_boolean_expression(a0)
-    }
-
-    pub fn visit_literal_numeric_expression(
-        &mut self,
-        ast: &mut LiteralNumericExpression,
-    ) -> T::Value {
-        let a0 = &mut ast.value;
-        self.pass.visit_literal_numeric_expression(a0)
-    }
-
-    pub fn visit_literal_reg_exp_expression(
-        &mut self,
-        ast: &mut LiteralRegExpExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = &mut ast.pattern;
-        let a1 = &mut ast.global;
-        let a2 = &mut ast.ignore_case;
-        let a3 = &mut ast.multi_line;
-        let a4 = &mut ast.sticky;
-        let a5 = &mut ast.unicode;
-        self.pass
-            .visit_literal_reg_exp_expression(a0, a1, a2, a3, a4, a5)
-    }
-
-    pub fn visit_literal_string_expression(
-        &mut self,
-        ast: &mut LiteralStringExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = &mut ast.value;
-        self.pass.visit_literal_string_expression(a0)
-    }
-
     pub fn visit_array_expression_element(
         &mut self,
         ast: &mut ArrayExpressionElement<'alloc>,
@@ -2986,53 +3008,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         }
     }
 
-    pub fn visit_arrow_expression(&mut self, ast: &mut ArrowExpression<'alloc>) -> T::Value {
-        let a0 = &mut ast.is_async;
-        let a1 = self.visit_formal_parameters((&mut ast.params));
-        let a2 = self.visit_arrow_expression_body((&mut ast.body));
-        self.pass.visit_arrow_expression(a0, a1, a2)
-    }
-
-    pub fn visit_assignment_expression(
-        &mut self,
-        ast: &mut AssignmentExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_assignment_target((&mut ast.binding));
-        let a1 = self.visit_expression((&mut ast.expression));
-        self.pass.visit_assignment_expression(a0, a1)
-    }
-
-    pub fn visit_binary_expression(&mut self, ast: &mut BinaryExpression<'alloc>) -> T::Value {
-        let a0 = self.visit_binary_operator((&mut ast.operator));
-        let a1 = self.visit_expression((&mut ast.left));
-        let a2 = self.visit_expression((&mut ast.right));
-        self.pass.visit_binary_expression(a0, a1, a2)
-    }
-
-    pub fn visit_import_call_expression(
-        &mut self,
-        ast: &mut ImportCallExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.argument));
-        self.pass.visit_import_call_expression(a0)
-    }
-
-    pub fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) -> T::Value {
-        let a0 = self.visit_expression_or_super((&mut ast.callee));
-        let a1 = self.visit_arguments((&mut ast.arguments));
-        self.pass.visit_call_expression(a0, a1)
-    }
-
-    pub fn visit_compound_assignment_expression(
-        &mut self,
-        ast: &mut CompoundAssignmentExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_compound_assignment_operator((&mut ast.operator));
-        let a1 = self.visit_simple_assignment_target((&mut ast.binding));
-        let a2 = self.visit_expression((&mut ast.expression));
-        self.pass.visit_compound_assignment_expression(a0, a1, a2)
-    }
-
     pub fn visit_computed_member_expression(
         &mut self,
         ast: &mut ComputedMemberExpression<'alloc>,
@@ -3042,28 +3017,12 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         self.pass.visit_computed_member_expression(a0, a1)
     }
 
-    pub fn visit_conditional_expression(
-        &mut self,
-        ast: &mut ConditionalExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.test));
-        let a1 = self.visit_expression((&mut ast.consequent));
-        let a2 = self.visit_expression((&mut ast.alternate));
-        self.pass.visit_conditional_expression(a0, a1, a2)
-    }
-
     pub fn visit_identifier_expression(
         &mut self,
         ast: &mut IdentifierExpression<'alloc>,
     ) -> T::Value {
         let a0 = self.visit_identifier((&mut ast.name));
         self.pass.visit_identifier_expression(a0)
-    }
-
-    pub fn visit_new_expression(&mut self, ast: &mut NewExpression<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.callee));
-        let a1 = self.visit_arguments((&mut ast.arguments));
-        self.pass.visit_new_expression(a0, a1)
     }
 
     pub fn visit_object_expression(&mut self, ast: &mut ObjectExpression<'alloc>) -> T::Value {
@@ -3076,12 +3035,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             )
         };
         self.pass.visit_object_expression(a0)
-    }
-
-    pub fn visit_unary_expression(&mut self, ast: &mut UnaryExpression<'alloc>) -> T::Value {
-        let a0 = self.visit_unary_operator((&mut ast.operator));
-        let a1 = self.visit_expression((&mut ast.operand));
-        self.pass.visit_unary_expression(a0, a1)
     }
 
     pub fn visit_static_member_expression(
@@ -3116,33 +3069,6 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             )
         };
         self.pass.visit_template_expression(a0, a1)
-    }
-
-    pub fn visit_update_expression(&mut self, ast: &mut UpdateExpression<'alloc>) -> T::Value {
-        let a0 = &mut ast.is_prefix;
-        let a1 = self.visit_update_operator((&mut ast.operator));
-        let a2 = self.visit_simple_assignment_target((&mut ast.operand));
-        self.pass.visit_update_expression(a0, a1, a2)
-    }
-
-    pub fn visit_yield_expression(&mut self, ast: &mut YieldExpression<'alloc>) -> T::Value {
-        let a0 = (&mut ast.expression)
-            .as_mut()
-            .map(|item| self.visit_expression(item));
-        self.pass.visit_yield_expression(a0)
-    }
-
-    pub fn visit_yield_generator_expression(
-        &mut self,
-        ast: &mut YieldGeneratorExpression<'alloc>,
-    ) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.expression));
-        self.pass.visit_yield_generator_expression(a0)
-    }
-
-    pub fn visit_await_expression(&mut self, ast: &mut AwaitExpression<'alloc>) -> T::Value {
-        let a0 = self.visit_expression((&mut ast.expression));
-        self.pass.visit_await_expression(a0)
     }
 
     pub fn visit_variable_declaration_or_assignment_target(

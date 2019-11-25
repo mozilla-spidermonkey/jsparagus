@@ -410,7 +410,7 @@ fn test_awkward_chunks() {
             in allocator;
             Statement::ExpressionStatement(arena::alloc(
                 allocator,
-                Expression::CompoundAssignmentExpression(CompoundAssignmentExpression {
+                Expression::CompoundAssignmentExpression {
                     operator: CompoundAssignmentOperator::Div,
                     binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier {
@@ -419,11 +419,9 @@ fn test_awkward_chunks() {
                     ),
                     expression: arena::alloc(
                         allocator,
-                        Expression::LiteralNumericExpression(
-                            LiteralNumericExpression { value: 2.0 },
-                        ),
+                        Expression::LiteralNumericExpression { value: 2.0 },
                     ),
-                }),
+                },
             ))
         ],
     };

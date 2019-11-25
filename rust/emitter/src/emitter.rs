@@ -371,8 +371,13 @@ impl Emitter {
         self.emit_with_offset(Opcode::And, offset);
     }
 
-    pub fn table_switch(&mut self, _len: i32, _low: i32, _high: i32, _first_resume_index: u24)
-                        -> Result<(), EmitError> {
+    pub fn table_switch(
+        &mut self,
+        _len: i32,
+        _low: i32,
+        _high: i32,
+        _first_resume_index: u24,
+    ) -> Result<(), EmitError> {
         Err(EmitError::Unimplemented("TODO: table_switch".to_string()))
     }
 
