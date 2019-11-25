@@ -16,8 +16,14 @@ fn main() {
             }
             Ok(script) => {
                 let mut program = ast::types::Program::Script(script.unbox());
-                let result = emitter::emit(&mut program);
-                println!("{}", emitter::dis(&result.bytecode));
+                match emitter::emit(&mut program) {
+                    Err(err) => {
+                        eprintln!("error: {}", err);
+                    }
+                    Ok(emit_result) => {
+                        println!("{}", emitter::dis(&emit_result.bytecode));
+                    }
+                }
             }
         }
     }

@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 use super::opcode::Opcode;
+use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ResumeKind {
@@ -39,6 +40,14 @@ pub struct EmitResult {
 #[derive(Clone, Debug)]
 pub enum EmitError {
     Unimplemented(String),
+}
+
+impl fmt::Display for EmitError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            EmitError::Unimplemented(message) => write!(f, "not implemented: {}", message),
+        }
+    }
 }
 
 impl Emitter {
