@@ -15,7 +15,7 @@ pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
     match ast {
         Program::Script(script) => emitter.emit_script(script)?,
         _ => {
-            return Err(EmitError::Unimplemented("TODO: modules".to_string()));
+            return Err(EmitError::NotImplemented("TODO: modules"));
         }
     }
 
@@ -39,30 +39,22 @@ impl AstEmitter {
     fn emit_statement(&mut self, ast: &Statement) -> Result<(), EmitError> {
         match ast {
             Statement::ClassDeclaration(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ClassDeclaration".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ClassDeclaration"));
             }
             Statement::BlockStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: BlockStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: BlockStatement"));
             }
             Statement::BreakStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: BreakStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: BreakStatement"));
             }
             Statement::ContinueStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ContinueStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
             }
             Statement::DebuggerStatement => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: DebuggerStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
             Statement::DoWhileStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: DoWhileStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: DoWhileStatement"));
             }
             Statement::EmptyStatement => (),
             Statement::ExpressionStatement(ast) => {
@@ -70,59 +62,49 @@ impl AstEmitter {
                 self.emit.set_rval();
             }
             Statement::ForInStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: ForInStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: ForInStatement"));
             }
             Statement::ForOfStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: ForOfStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: ForOfStatement"));
             }
             Statement::ForStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: ForStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: ForStatement"));
             }
             Statement::IfStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: IfStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: IfStatement"));
             }
             Statement::LabeledStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: LabeledStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
             }
             Statement::ReturnStatement { expression } => {
                 self.emit_return_statement(expression)?;
             }
             Statement::SwitchStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: SwitchStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: SwitchStatement"));
             }
             Statement::SwitchStatementWithDefault { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: SwitchStatementWithDefault".to_string(),
+                return Err(EmitError::NotImplemented(
+                    "TODO: SwitchStatementWithDefault",
                 ));
             }
             Statement::ThrowStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: ThrowStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: ThrowStatement"));
             }
             Statement::TryCatchStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: TryCatchStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: TryCatchStatement"));
             }
             Statement::TryFinallyStatement { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: TryFinallyStatement".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: TryFinallyStatement"));
             }
             Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast)?,
             Statement::WhileStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: WhileStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: WhileStatement"));
             }
             Statement::WithStatement { .. } => {
-                return Err(EmitError::Unimplemented("TODO: WithStatement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: WithStatement"));
             }
             Statement::FunctionDeclaration(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: FunctionDeclaration".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: FunctionDeclaration"));
             }
         };
 
@@ -138,7 +120,7 @@ impl AstEmitter {
         for declarator in &ast.declarators {
             let _ = match &declarator.binding {
                 Binding::BindingPattern(_) => {
-                    return Err(EmitError::Unimplemented("TODO: BindingPattern".to_string()));
+                    return Err(EmitError::NotImplemented("TODO: BindingPattern"));
                 }
                 Binding::BindingIdentifier(ident) => &ident.name.value,
             };
@@ -173,7 +155,7 @@ impl AstEmitter {
     }
 
     fn emit_this(&mut self) -> Result<(), EmitError> {
-        Err(EmitError::Unimplemented("TODO: this".to_string()))
+        Err(EmitError::NotImplemented("TODO: this"))
     }
 
     fn emit_expression(&mut self, ast: &Expression) -> Result<(), EmitError> {
@@ -225,9 +207,7 @@ impl AstEmitter {
             }
 
             Expression::ClassExpression(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ClassExpressionr".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ClassExpression"));
             }
 
             Expression::LiteralBooleanExpression { value } => {
@@ -247,9 +227,7 @@ impl AstEmitter {
             }
 
             Expression::LiteralRegExpExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: LiteralRegExpExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: LiteralRegExpExpression"));
             }
 
             Expression::LiteralStringExpression { value } => {
@@ -257,21 +235,15 @@ impl AstEmitter {
             }
 
             Expression::ArrayExpression(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ArrayExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ArrayExpression"));
             }
 
             Expression::ArrowExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ArrowExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ArrowExpression"));
             }
 
             Expression::AssignmentExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: AssignmentExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
             }
 
             Expression::BinaryExpression {
@@ -287,21 +259,17 @@ impl AstEmitter {
             }
 
             Expression::CompoundAssignmentExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: CompoundAssignmentExpression".to_string(),
+                return Err(EmitError::NotImplemented(
+                    "TODO: CompoundAssignmentExpression",
                 ));
             }
 
             Expression::ConditionalExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ConditionalExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ConditionalExpression"));
             }
 
             Expression::FunctionExpression(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: FunctionExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: FunctionExpression"));
             }
 
             Expression::IdentifierExpression(ast) => {
@@ -309,19 +277,15 @@ impl AstEmitter {
             }
 
             Expression::NewExpression { .. } => {
-                return Err(EmitError::Unimplemented("TODO: NewExpression".to_string()));
+                return Err(EmitError::NotImplemented("TODO: NewExpression"));
             }
 
             Expression::NewTargetExpression => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: NewTargetExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: NewTargetExpression"));
             }
 
             Expression::ObjectExpression(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ObjectExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ObjectExpression"));
             }
 
             Expression::UnaryExpression { operator, operand } => {
@@ -332,10 +296,10 @@ impl AstEmitter {
                     UnaryOperator::BitwiseNot => Opcode::BitNot,
                     UnaryOperator::Void => Opcode::Void,
                     UnaryOperator::Typeof => {
-                        return Err(EmitError::Unimplemented("TODO: Typeof".to_string()));
+                        return Err(EmitError::NotImplemented("TODO: Typeof"));
                     }
                     UnaryOperator::Delete => {
-                        return Err(EmitError::Unimplemented("TODO: Delete".to_string()));
+                        return Err(EmitError::NotImplemented("TODO: Delete"));
                     }
                 };
                 self.emit_expression(operand)?;
@@ -343,9 +307,7 @@ impl AstEmitter {
             }
 
             Expression::TemplateExpression(_) => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: TemplateExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: TemplateExpression"));
             }
 
             Expression::ThisExpression => {
@@ -353,33 +315,23 @@ impl AstEmitter {
             }
 
             Expression::UpdateExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: UpdateExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: UpdateExpression"));
             }
 
             Expression::YieldExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: YieldExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: YieldExpression"));
             }
 
             Expression::YieldGeneratorExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: YieldGeneratorExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: YieldGeneratorExpression"));
             }
 
             Expression::AwaitExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: AwaitExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: AwaitExpression"));
             }
 
             Expression::ImportCallExpression { .. } => {
-                return Err(EmitError::Unimplemented(
-                    "TODO: ImportCallExpression".to_string(),
-                ));
+                return Err(EmitError::NotImplemented("TODO: ImportCallExpression"));
             }
         }
 
@@ -416,13 +368,13 @@ impl AstEmitter {
             BinaryOperator::BitwiseXor => Opcode::BitXor,
             BinaryOperator::BitwiseAnd => Opcode::BitAnd,
             BinaryOperator::Coalesce => {
-                return Err(EmitError::Unimplemented("TODO: Coalescer".to_string()));
+                return Err(EmitError::NotImplemented("TODO: Coalescer"));
             }
             BinaryOperator::LogicalOr => {
-                return Err(EmitError::Unimplemented("TODO: LogicalOr".to_string()));
+                return Err(EmitError::NotImplemented("TODO: LogicalOr"));
             }
             BinaryOperator::LogicalAnd => {
-                return Err(EmitError::Unimplemented("TODO: LogicalAndr".to_string()));
+                return Err(EmitError::NotImplemented("TODO: LogicalAndr"));
             }
             BinaryOperator::Comma => {
                 self.emit_expression(left)?;
@@ -467,7 +419,7 @@ impl AstEmitter {
         match callee {
             ExpressionOrSuper::Expression(ast) => self.emit_expression(ast)?,
             ExpressionOrSuper::Super => {
-                return Err(EmitError::Unimplemented("TODO: Super".to_string()));
+                return Err(EmitError::NotImplemented("TODO: Super"));
             }
         }
 
@@ -491,7 +443,7 @@ impl AstEmitter {
         match ast {
             Argument::Expression(ast) => self.emit_expression(ast)?,
             Argument::SpreadElement(_) => {
-                return Err(EmitError::Unimplemented("TODO: SpreadElement".to_string()));
+                return Err(EmitError::NotImplemented("TODO: SpreadElement"));
             }
         }
 
