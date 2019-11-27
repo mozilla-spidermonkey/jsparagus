@@ -7730,7 +7730,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration(Some(x1), x2),
+                handler.import_declaration(Some(x1), x2)?,
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
@@ -7740,7 +7740,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration(Some(x1), x2),
+                handler.import_declaration(Some(x1), x2)?,
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
@@ -7750,7 +7750,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration(None, x1),
+                handler.import_declaration(None, x1)?,
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
@@ -7759,7 +7759,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_declaration(None, x1),
+                handler.import_declaration(None, x1)?,
             )?);
             Ok(NonterminalId::ImportDeclaration)
         }
@@ -7769,7 +7769,7 @@ pub fn reduce<'alloc>(
             let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2)?)?);
             Ok(NonterminalId::ExportDeclaration)
         }
         37 => {
@@ -7777,7 +7777,7 @@ pub fn reduce<'alloc>(
             let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_all_from(x2)?)?);
             Ok(NonterminalId::ExportDeclaration)
         }
         38 => {
@@ -7787,7 +7787,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_set_from(x1, x2),
+                handler.export_set_from(x1, x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7797,7 +7797,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_set_from(x1, x2),
+                handler.export_set_from(x1, x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7806,21 +7806,21 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1)?)?);
             Ok(NonterminalId::ExportDeclaration)
         }
         41 => {
             // ExportDeclaration ::= "export" ExportClause ErrorSymbol(asi) => export_set($1)
             let x1: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_set(x1)?)?);
             Ok(NonterminalId::ExportDeclaration)
         }
         42 => {
             // ExportDeclaration ::= "export" VariableStatement => export_vars($1)
             let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.export_vars(x1))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_vars(x1)?)?);
             Ok(NonterminalId::ExportDeclaration)
         }
         43 => {
@@ -7828,7 +7828,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_declaration(x1),
+                handler.export_declaration(x1)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7838,7 +7838,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_default_hoistable(x2),
+                handler.export_default_hoistable(x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7848,7 +7848,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_default_class(x2),
+                handler.export_default_class(x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7859,7 +7859,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_default_value(x2),
+                handler.export_default_value(x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -7869,7 +7869,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_default_value(x2),
+                handler.export_default_value(x2)?,
             )?);
             Ok(NonterminalId::ExportDeclaration)
         }
@@ -8200,7 +8200,7 @@ pub fn reduce<'alloc>(
                 Some(x0),
                 None,
                 None,
-            ))?);
+            )?)?);
             Ok(NonterminalId::ImportClause)
         }
         87 => {
@@ -8210,7 +8210,7 @@ pub fn reduce<'alloc>(
                 None,
                 Some(x0),
                 None,
-            ))?);
+            )?)?);
             Ok(NonterminalId::ImportClause)
         }
         88 => {
@@ -8220,7 +8220,7 @@ pub fn reduce<'alloc>(
                 None,
                 None,
                 Some(x0),
-            ))?);
+            )?)?);
             Ok(NonterminalId::ImportClause)
         }
         89 => {
@@ -8232,7 +8232,7 @@ pub fn reduce<'alloc>(
                 Some(x0),
                 Some(x2),
                 None,
-            ))?);
+            )?)?);
             Ok(NonterminalId::ImportClause)
         }
         90 => {
@@ -8244,7 +8244,7 @@ pub fn reduce<'alloc>(
                 Some(x0),
                 None,
                 Some(x2),
-            ))?);
+            )?)?);
             Ok(NonterminalId::ImportClause)
         }
         91 => {
@@ -8257,14 +8257,14 @@ pub fn reduce<'alloc>(
         92 => {
             // ModuleSpecifier ::= StringLiteral => module_specifier($0)
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.module_specifier(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.module_specifier(x0)?)?);
             Ok(NonterminalId::ModuleSpecifier)
         }
         93 => {
             // ExportClause ::= "{" "}" => exports_list_empty()
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.exports_list_empty())?);
+            stack.push(TryIntoStack::try_into_stack(handler.exports_list_empty()?)?);
             Ok(NonterminalId::ExportClause)
         }
         94 => {
@@ -9299,14 +9299,16 @@ pub fn reduce<'alloc>(
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.name_space_import(x2))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.name_space_import(x2)?,
+            )?);
             Ok(NonterminalId::NameSpaceImport)
         }
         178 => {
             // NamedImports ::= "{" "}" => imports_list_empty()
             stack.pop();
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.imports_list_empty())?);
+            stack.push(TryIntoStack::try_into_stack(handler.imports_list_empty()?)?);
             Ok(NonterminalId::NamedImports)
         }
         179 => {
@@ -9330,7 +9332,7 @@ pub fn reduce<'alloc>(
             // ExportsList ::= ExportSpecifier => exports_list_append(exports_list_empty(), $0)
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.exports_list_append(handler.exports_list_empty(), x0),
+                handler.exports_list_append(handler.exports_list_empty()?, x0)?,
             )?);
             Ok(NonterminalId::ExportsList)
         }
@@ -9340,7 +9342,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.exports_list_append(x0, x2),
+                handler.exports_list_append(x0, x2)?,
             )?);
             Ok(NonterminalId::ExportsList)
         }
@@ -10337,7 +10339,7 @@ pub fn reduce<'alloc>(
             // ImportsList ::= ImportSpecifier => imports_list_append(imports_list_empty(), $0)
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.imports_list_append(handler.imports_list_empty(), x0),
+                handler.imports_list_append(handler.imports_list_empty()?, x0)?,
             )?);
             Ok(NonterminalId::ImportsList)
         }
@@ -10347,14 +10349,14 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.imports_list_append(x0, x2),
+                handler.imports_list_append(x0, x2)?,
             )?);
             Ok(NonterminalId::ImportsList)
         }
         277 => {
             // ExportSpecifier ::= IdentifierName => export_specifier($0)
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.export_specifier(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.export_specifier(x0)?)?);
             Ok(NonterminalId::ExportSpecifier)
         }
         278 => {
@@ -10363,7 +10365,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.export_specifier_renaming(x0, x2),
+                handler.export_specifier_renaming(x0, x2)?,
             )?);
             Ok(NonterminalId::ExportSpecifier)
         }
@@ -10702,7 +10704,7 @@ pub fn reduce<'alloc>(
         325 => {
             // ImportSpecifier ::= ImportedBinding => import_specifier($0)
             let x0: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast();
-            stack.push(TryIntoStack::try_into_stack(handler.import_specifier(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.import_specifier(x0)?)?);
             Ok(NonterminalId::ImportSpecifier)
         }
         326 => {
@@ -10711,7 +10713,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.import_specifier_renaming(x0, x2),
+                handler.import_specifier_renaming(x0, x2)?,
             )?);
             Ok(NonterminalId::ImportSpecifier)
         }
@@ -11351,7 +11353,7 @@ pub fn reduce<'alloc>(
             // PrimaryExpression ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_parenthesized_expression($0)
             let x0: Box<'alloc, CoverParenthesized> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.uncover_parenthesized_expression(x0),
+                handler.uncover_parenthesized_expression(x0)?,
             )?);
             Ok(NonterminalId::PrimaryExpression)
         }
@@ -11424,7 +11426,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.substitution_template(x0, x1, x2),
+                handler.substitution_template(x0, x1, x2)?,
             )?);
             Ok(NonterminalId::SubstitutionTemplate)
         }
@@ -12371,7 +12373,7 @@ pub fn reduce<'alloc>(
             // TemplateSpans ::= TemplateTail => template_spans(None, $0)
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_spans(None, x0),
+                handler.template_spans(None, x0)?,
             )?);
             Ok(NonterminalId::TemplateSpans)
         }
@@ -12380,7 +12382,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_spans(Some(x0), x1),
+                handler.template_spans(Some(x0), x1)?,
             )?);
             Ok(NonterminalId::TemplateSpans)
         }
@@ -12804,7 +12806,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_middle_list_single(x0, x1),
+                handler.template_middle_list_single(x0, x1)?,
             )?);
             Ok(NonterminalId::TemplateMiddleList)
         }
@@ -12814,7 +12816,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast();
             let x0: Box<'alloc, Void> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.template_middle_list_append(x0, x1, x2),
+                handler.template_middle_list_append(x0, x1, x2)?,
             )?);
             Ok(NonterminalId::TemplateMiddleList)
         }
@@ -13087,7 +13089,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast();
             let x0: Box<'alloc, Identifier> = stack.pop().unwrap().to_ast();
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_initialized_name(x0, x1),
+                handler.cover_initialized_name(x0, x1)?,
             )?);
             Ok(NonterminalId::CoverInitializedName)
         }

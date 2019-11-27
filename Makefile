@@ -36,6 +36,7 @@ $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
 
 $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
+	(cd rust && cargo fmt -- $(subst rust/,,$(RS_TABLES_OUT)))
 
 # This isn't part of the `all` target because it relies on a file that might
 # not be there -- it lives in a different git respository.
