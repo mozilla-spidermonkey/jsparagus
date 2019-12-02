@@ -39,13 +39,13 @@ pub struct EmitResult {
 /// The error of bytecode-compilation.
 #[derive(Clone, Debug)]
 pub enum EmitError {
-    Unimplemented(String),
+    NotImplemented(&'static str),
 }
 
 impl fmt::Display for EmitError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            EmitError::Unimplemented(message) => write!(f, "not implemented: {}", message),
+            EmitError::NotImplemented(message) => write!(f, "not implemented: {}", message),
         }
     }
 }
@@ -387,7 +387,7 @@ impl Emitter {
         _high: i32,
         _first_resume_index: u24,
     ) -> Result<(), EmitError> {
-        Err(EmitError::Unimplemented("TODO: table_switch".to_string()))
+        Err(EmitError::NotImplemented("TODO: table_switch"))
     }
 
     pub fn strict_eq(&mut self) {
