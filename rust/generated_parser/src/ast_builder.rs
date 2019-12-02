@@ -133,16 +133,16 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn uncover_parenthesized_expression(
         &self,
         parenthesized: arena::Box<'alloc, CoverParenthesized<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
         match parenthesized.unbox() {
             CoverParenthesized::Expression(expression) => {
                 // TODO - does this need to rewalk the expression to look for
                 // invalid ObjectPattern or ArrayPattern syntax?
-                expression
+                Ok(expression)
             }
-            CoverParenthesized::Parameters(_parameters) => {
-                unimplemented!("parenthesized expression with `...` should be a syntax error");
-            }
+            CoverParenthesized::Parameters(_parameters) => Err(ParseError::NotImplemented(
+                "parenthesized expression with `...` should be a syntax error",
+            )),
         }
     }
 
@@ -847,11 +847,13 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _name: arena::Box<'alloc, Identifier<'alloc>>,
         _initializer: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, ObjectProperty<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>> {
         // Awkward. This needs to be stored somehow until we reach an enclosing
         // context where it can be reinterpreted as a default value in an
         // object destructuring assignment pattern.
-        unimplemented!("default initializers in object patterns");
+        Err(ParseError::NotImplemented(
+            "default initializers in object patterns",
+        ))
     }
 
     // TemplateLiteral : NoSubstitutionTemplate
@@ -875,8 +877,8 @@ impl<'alloc> AstBuilder<'alloc> {
         _head: arena::Box<'alloc, Token<'alloc>>,
         _expression: arena::Box<'alloc, Expression<'alloc>>,
         _spans: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, TemplateExpression<'alloc>> {
-        unimplemented!("template strings");
+    ) -> Result<'alloc, arena::Box<'alloc, TemplateExpression<'alloc>>> {
+        Err(ParseError::NotImplemented("template strings"))
     }
 
     // TemplateSpans : TemplateTail
@@ -885,8 +887,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _middle_list: Option<arena::Box<'alloc, Void>>,
         _tail: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("template strings");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("template strings"))
     }
 
     // TemplateMiddleList : TemplateMiddle Expression
@@ -894,8 +896,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _middle: arena::Box<'alloc, Token<'alloc>>,
         _expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("template strings");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("template strings"))
     }
 
     // TemplateMiddleList : TemplateMiddleList TemplateMiddle Expression
@@ -904,8 +906,8 @@ impl<'alloc> AstBuilder<'alloc> {
         _middle_list: arena::Box<'alloc, Void>,
         _middle: arena::Box<'alloc, Token<'alloc>>,
         _expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("template strings");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("template strings"))
     }
 
     // MemberExpression : MemberExpression `[` Expression `]`
@@ -1354,17 +1356,16 @@ impl<'alloc> AstBuilder<'alloc> {
         mut elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
     ) -> Result<'alloc, ArrayAssignmentTarget<'alloc>> {
         let spread = self.pop_trailing_spread_element(&mut elements);
-        let elements = self.collect_vec_from_results(elements.into_iter().map(|element| {
-            Ok(match element {
-                ArrayExpressionElement::SpreadElement(_) => {
-                    unimplemented!("rest destructuring in array pattern");
-                }
-                ArrayExpressionElement::Expression(expression) => {
-                    Some(self.expression_to_assignment_target_maybe_default(expression)?)
-                }
-                ArrayExpressionElement::Elision => None,
-            })
-        }))?;
+        let elements =
+            self.collect_vec_from_results(elements.into_iter().map(|element| match element {
+                ArrayExpressionElement::SpreadElement(_) => Err(ParseError::NotImplemented(
+                    "rest destructuring in array pattern",
+                )),
+                ArrayExpressionElement::Expression(expression) => Ok(Some(
+                    self.expression_to_assignment_target_maybe_default(expression)?,
+                )),
+                ArrayExpressionElement::Elision => Ok(None),
+            }))?;
         let rest: Option<Result<'alloc, arena::Box<'alloc, AssignmentTarget<'alloc>>>> =
             spread.map(|expr| Ok(self.alloc(self.expression_to_assignment_target(expr)?)));
         let rest = rest.transpose()?;
@@ -2818,8 +2819,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _import_clause: Option<arena::Box<'alloc, Void>>,
         _module_specifier: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ImportClause : ImportedDefaultBinding
@@ -2832,21 +2833,21 @@ impl<'alloc> AstBuilder<'alloc> {
         _default_binding: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
         _name_space_import: Option<arena::Box<'alloc, Void>>,
         _named_imports: Option<arena::Box<'alloc, Void>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // NameSpaceImport : `*` `as` ImportedBinding
     pub fn name_space_import(
         &self,
         _name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // NamedImports : `{` `}`
-    pub fn imports_list_empty(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    pub fn imports_list_empty(&self) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ImportsList : ImportSpecifier
@@ -2855,16 +2856,16 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _list: arena::Box<'alloc, Void>,
         _item: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ImportSpecifier : ImportedBinding
     pub fn import_specifier(
         &self,
         _name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ImportSpecifier : IdentifierName `as` ImportedBinding
@@ -2872,24 +2873,24 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _original_name: arena::Box<'alloc, Token<'alloc>>,
         _local_name: arena::Box<'alloc, BindingIdentifier<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ModuleSpecifier : StringLiteral
     pub fn module_specifier(
         &self,
         _token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Token<'alloc>> {
-        unimplemented!("import");
+    ) -> Result<'alloc, arena::Box<'alloc, Token<'alloc>>> {
+        Err(ParseError::NotImplemented("import"))
     }
 
     // ExportDeclaration : `export` `*` FromClause `;`
     pub fn export_all_from(
         &self,
         _module_specifier: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` ExportClause FromClause `;`
@@ -2897,58 +2898,61 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _export_clause: arena::Box<'alloc, Void>,
         _module_specifier: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` ExportClause `;`
-    pub fn export_set(&self, _export_clause: arena::Box<'alloc, Void>) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    pub fn export_set(
+        &self,
+        _export_clause: arena::Box<'alloc, Void>,
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` VariableStatement
     pub fn export_vars(
         &self,
         _statement: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` Declaration
     pub fn export_declaration(
         &self,
         _declaration: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` `default` HoistableDeclaration
     pub fn export_default_hoistable(
         &self,
         _declaration: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` `default` ClassDeclaration
     pub fn export_default_class(
         &self,
         _class_declaration: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportDeclaration : `export` `default` [lookahead <! {`function`, `async`, `class`}] AssignmentExpression `;`
     pub fn export_default_value(
         &self,
         _expression: arena::Box<'alloc, Expression<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportClause : `{` `}`
-    pub fn exports_list_empty(&self) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    pub fn exports_list_empty(&self) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportsList : ExportSpecifier
@@ -2957,16 +2961,16 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _list: arena::Box<'alloc, Void>,
         _export_specifier: arena::Box<'alloc, Void>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportSpecifier : IdentifierName
     pub fn export_specifier(
         &self,
         _identifier: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 
     // ExportSpecifier : IdentifierName `as` IdentifierName
@@ -2974,7 +2978,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         _local_name: arena::Box<'alloc, Token<'alloc>>,
         _exported_name: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Void> {
-        unimplemented!("export");
+    ) -> Result<'alloc, arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("export"))
     }
 }
