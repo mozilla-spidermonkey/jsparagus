@@ -455,7 +455,7 @@ class RustParserWriter:
                             if is_discarding_reduction:
                                 self.write(3, "let x{} = stack.pop().unwrap();", index)
                             else:
-                                self.write(3, "let x{}: {} = stack.pop().unwrap().to_ast();", index, rust_ty)
+                                self.write(3, "let x{}: {} = stack.pop().unwrap().to_ast()?;", index, rust_ty)
                         else:
                             self.write(3, "stack.pop();", index)
 
