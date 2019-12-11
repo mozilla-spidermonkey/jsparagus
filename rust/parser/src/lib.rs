@@ -23,14 +23,14 @@ pub fn parse_script<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     source: &'alloc str,
 ) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
-    Ok(parse(allocator, source, START_STATE_SCRIPT)?.to_ast())
+    Ok(parse(allocator, source, START_STATE_SCRIPT)?.to_ast()?)
 }
 
 pub fn parse_module<'alloc>(
     allocator: &'alloc bumpalo::Bump,
     source: &'alloc str,
 ) -> Result<'alloc, arena::Box<'alloc, Module<'alloc>>> {
-    Ok(parse(allocator, source, START_STATE_MODULE)?.to_ast())
+    Ok(parse(allocator, source, START_STATE_MODULE)?.to_ast()?)
 }
 
 fn parse<'alloc>(

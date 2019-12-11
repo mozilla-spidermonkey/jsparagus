@@ -1,3 +1,4 @@
+use crate::stack_value_generated::AstError;
 use crate::Token;
 use std::{convert::Infallible, error::Error, fmt, io};
 
@@ -18,6 +19,7 @@ pub enum ParseError<'alloc> {
     UnexpectedEnd,
     InvalidAssignmentTarget,
     InvalidParameter,
+    AstError(String),
 
     // Destructuring errors
     ArrayPatternWithNonFinalRest,
@@ -45,6 +47,7 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
             ParseError::InvalidAssignmentTarget => format!("invalid left-hand side of assignment"),
             ParseError::InvalidParameter => format!("invalid parameter"),
+            ParseError::AstError(ast_error) => format!("{}", ast_error),
             ParseError::ArrayPatternWithNonFinalRest => {
                 format!("array patterns can have a rest element (`...x`) only at the end")
             }
@@ -89,6 +92,12 @@ impl<'alloc> From<io::Error> for ParseError<'alloc> {
 impl<'alloc> From<Infallible> for ParseError<'alloc> {
     fn from(err: Infallible) -> ParseError<'alloc> {
         match err {}
+    }
+}
+
+impl<'alloc> From<AstError> for ParseError<'alloc> {
+    fn from(err: AstError) -> ParseError<'alloc> {
+        ParseError::AstError(err)
     }
 }
 
