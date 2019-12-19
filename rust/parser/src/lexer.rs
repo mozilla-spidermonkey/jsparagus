@@ -914,13 +914,14 @@ impl<'alloc> Lexer<'alloc> {
                 return Ok((start, None, tail));
             }
             // TODO: Support escape sequences.
-            builder.push_matching(ch);
+            if ch == '\\' {
+                let text = builder.get_mut_string(&self);
+                self.escape_sequence(text)?;
+            } else {
+                builder.push_matching(ch);
+            }
         }
-        return Ok((
-            start,
-            Some(builder.finish(&self)),
-            TerminalId::StringLiteral,
-        ));
+        Err(ParseError::UnterminatedString)
     }
 
     fn advance_impl<'parser>(
