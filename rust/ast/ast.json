@@ -656,7 +656,9 @@
   },
   "CoverParenthesized": {
     "_type": "enum",
-    "Expression": "Box<Expression>",
+    "Expression": {
+      "expression": "Box<Expression>"
+    },
     "Parameters": "Box<FormalParameters>"
   }
 }

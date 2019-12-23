@@ -1,6 +1,6 @@
 PY_OUT = js_parser/parser_tables.py
 RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
-RS_AST_OUT = rust/ast/src/types.rs rust/ast/src/visit.rs rust/generated_parser/src/stack_value_generated.rs
+RS_AST_OUT = rust/ast/src/types.rs rust/ast/src/visit.rs rust/ast/src/source_location_accessor.rs rust/generated_parser/src/stack_value_generated.rs
 PYTHON = python3
 
 all: $(PY_OUT) $(RS_AST_OUT) $(RS_TABLES_OUT)

@@ -1,8 +1,9 @@
 // WARNING: This file is auto-generated.
 
 use crate::arena;
+use crate::source_location::SourceLocation;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum Void {}
 
 #[derive(Debug, PartialEq)]
@@ -14,91 +15,95 @@ pub enum Argument<'alloc> {
 #[derive(Debug, PartialEq)]
 pub struct Arguments<'alloc> {
     pub args: arena::Vec<'alloc, Argument<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Identifier<'alloc> {
     pub value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct IdentifierName<'alloc> {
     pub value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Label<'alloc> {
     pub value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum VariableDeclarationKind {
-    Var,
-    Let,
-    Const,
+    Var(SourceLocation),
+    Let(SourceLocation),
+    Const(SourceLocation),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum CompoundAssignmentOperator {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Pow,
-    LeftShift,
-    RightShift,
-    RightShiftExt,
-    Or,
-    Xor,
-    And,
+    Add(SourceLocation),
+    Sub(SourceLocation),
+    Mul(SourceLocation),
+    Div(SourceLocation),
+    Mod(SourceLocation),
+    Pow(SourceLocation),
+    LeftShift(SourceLocation),
+    RightShift(SourceLocation),
+    RightShiftExt(SourceLocation),
+    Or(SourceLocation),
+    Xor(SourceLocation),
+    And(SourceLocation),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum BinaryOperator {
-    Equals,
-    NotEquals,
-    StrictEquals,
-    StrictNotEquals,
-    LessThan,
-    LessThanOrEqual,
-    GreaterThan,
-    GreaterThanOrEqual,
-    In,
-    Instanceof,
-    LeftShift,
-    RightShift,
-    RightShiftExt,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Pow,
-    Comma,
-    Coalesce,
-    LogicalOr,
-    LogicalAnd,
-    BitwiseOr,
-    BitwiseXor,
-    BitwiseAnd,
+    Equals(SourceLocation),
+    NotEquals(SourceLocation),
+    StrictEquals(SourceLocation),
+    StrictNotEquals(SourceLocation),
+    LessThan(SourceLocation),
+    LessThanOrEqual(SourceLocation),
+    GreaterThan(SourceLocation),
+    GreaterThanOrEqual(SourceLocation),
+    In(SourceLocation),
+    Instanceof(SourceLocation),
+    LeftShift(SourceLocation),
+    RightShift(SourceLocation),
+    RightShiftExt(SourceLocation),
+    Add(SourceLocation),
+    Sub(SourceLocation),
+    Mul(SourceLocation),
+    Div(SourceLocation),
+    Mod(SourceLocation),
+    Pow(SourceLocation),
+    Comma(SourceLocation),
+    Coalesce(SourceLocation),
+    LogicalOr(SourceLocation),
+    LogicalAnd(SourceLocation),
+    BitwiseOr(SourceLocation),
+    BitwiseXor(SourceLocation),
+    BitwiseAnd(SourceLocation),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOperator {
-    Plus,
-    Minus,
-    LogicalNot,
-    BitwiseNot,
-    Typeof,
-    Void,
-    Delete,
+    Plus(SourceLocation),
+    Minus(SourceLocation),
+    LogicalNot(SourceLocation),
+    BitwiseNot(SourceLocation),
+    Typeof(SourceLocation),
+    Void(SourceLocation),
+    Delete(SourceLocation),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum UpdateOperator {
-    Increment,
-    Decrement,
+    Increment(SourceLocation),
+    Decrement(SourceLocation),
 }
 
 #[derive(Debug, PartialEq)]
@@ -108,6 +113,7 @@ pub struct Function<'alloc> {
     pub is_generator: bool,
     pub params: FormalParameters<'alloc>,
     pub body: FunctionBody<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -120,77 +126,94 @@ pub enum Program<'alloc> {
 pub enum Statement<'alloc> {
     BlockStatement {
         block: Block<'alloc>,
+        loc: SourceLocation,
     },
     BreakStatement {
         label: Option<Label<'alloc>>,
+        loc: SourceLocation,
     },
     ContinueStatement {
         label: Option<Label<'alloc>>,
+        loc: SourceLocation,
     },
-    DebuggerStatement,
+    DebuggerStatement(SourceLocation),
     DoWhileStatement {
         block: arena::Box<'alloc, Statement<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
-    EmptyStatement,
+    EmptyStatement(SourceLocation),
     ExpressionStatement(arena::Box<'alloc, Expression<'alloc>>),
     ForInStatement {
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     ForOfStatement {
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     ForStatement {
         init: Option<VariableDeclarationOrExpression<'alloc>>,
         test: Option<arena::Box<'alloc, Expression<'alloc>>>,
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     IfStatement {
         test: arena::Box<'alloc, Expression<'alloc>>,
         consequent: arena::Box<'alloc, Statement<'alloc>>,
         alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
+        loc: SourceLocation,
     },
     LabeledStatement {
         label: Label<'alloc>,
         body: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     ReturnStatement {
         expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        loc: SourceLocation,
     },
     SwitchStatement {
         discriminant: arena::Box<'alloc, Expression<'alloc>>,
         cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
+        loc: SourceLocation,
     },
     SwitchStatementWithDefault {
         discriminant: arena::Box<'alloc, Expression<'alloc>>,
         pre_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
         default_case: SwitchDefault<'alloc>,
         post_default_cases: arena::Vec<'alloc, SwitchCase<'alloc>>,
+        loc: SourceLocation,
     },
     ThrowStatement {
         expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     TryCatchStatement {
         body: Block<'alloc>,
         catch_clause: CatchClause<'alloc>,
+        loc: SourceLocation,
     },
     TryFinallyStatement {
         body: Block<'alloc>,
         catch_clause: Option<CatchClause<'alloc>>,
         finalizer: Block<'alloc>,
+        loc: SourceLocation,
     },
     WhileStatement {
         test: arena::Box<'alloc, Expression<'alloc>>,
         block: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     WithStatement {
         object: arena::Box<'alloc, Expression<'alloc>>,
         body: arena::Box<'alloc, Statement<'alloc>>,
+        loc: SourceLocation,
     },
     VariableDeclarationStatement(VariableDeclaration<'alloc>),
     FunctionDeclaration(Function<'alloc>),
@@ -203,11 +226,13 @@ pub enum Expression<'alloc> {
     ClassExpression(ClassExpression<'alloc>),
     LiteralBooleanExpression {
         value: bool,
+        loc: SourceLocation,
     },
-    LiteralInfinityExpression,
-    LiteralNullExpression,
+    LiteralInfinityExpression(SourceLocation),
+    LiteralNullExpression(SourceLocation),
     LiteralNumericExpression {
         value: f64,
+        loc: SourceLocation,
     },
     LiteralRegExpExpression {
         pattern: &'alloc str,
@@ -216,69 +241,84 @@ pub enum Expression<'alloc> {
         multi_line: bool,
         sticky: bool,
         unicode: bool,
+        loc: SourceLocation,
     },
     LiteralStringExpression {
         value: &'alloc str,
+        loc: SourceLocation,
     },
     ArrayExpression(ArrayExpression<'alloc>),
     ArrowExpression {
         is_async: bool,
         params: FormalParameters<'alloc>,
         body: ArrowExpressionBody<'alloc>,
+        loc: SourceLocation,
     },
     AssignmentExpression {
         binding: AssignmentTarget<'alloc>,
         expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     BinaryExpression {
         operator: BinaryOperator,
         left: arena::Box<'alloc, Expression<'alloc>>,
         right: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     CallExpression {
         callee: ExpressionOrSuper<'alloc>,
         arguments: Arguments<'alloc>,
+        loc: SourceLocation,
     },
     CompoundAssignmentExpression {
         operator: CompoundAssignmentOperator,
         binding: SimpleAssignmentTarget<'alloc>,
         expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     ConditionalExpression {
         test: arena::Box<'alloc, Expression<'alloc>>,
         consequent: arena::Box<'alloc, Expression<'alloc>>,
         alternate: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     FunctionExpression(Function<'alloc>),
     IdentifierExpression(IdentifierExpression<'alloc>),
     NewExpression {
         callee: arena::Box<'alloc, Expression<'alloc>>,
         arguments: Arguments<'alloc>,
+        loc: SourceLocation,
     },
-    NewTargetExpression,
+    NewTargetExpression(SourceLocation),
     ObjectExpression(ObjectExpression<'alloc>),
     UnaryExpression {
         operator: UnaryOperator,
         operand: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     TemplateExpression(TemplateExpression<'alloc>),
-    ThisExpression,
+    ThisExpression(SourceLocation),
     UpdateExpression {
         is_prefix: bool,
         operator: UpdateOperator,
         operand: SimpleAssignmentTarget<'alloc>,
+        loc: SourceLocation,
     },
     YieldExpression {
         expression: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        loc: SourceLocation,
     },
     YieldGeneratorExpression {
         expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     AwaitExpression {
         expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
     ImportCallExpression {
         argument: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
     },
 }
 
@@ -375,22 +415,25 @@ pub enum Parameter<'alloc> {
 pub struct BindingWithDefault<'alloc> {
     pub binding: Binding<'alloc>,
     pub init: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct BindingIdentifier<'alloc> {
     pub name: Identifier<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetIdentifier<'alloc> {
     pub name: Identifier<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum ExpressionOrSuper<'alloc> {
     Expression(arena::Box<'alloc, Expression<'alloc>>),
-    Super,
+    Super(SourceLocation),
 }
 
 #[derive(Debug, PartialEq)]
@@ -403,24 +446,28 @@ pub enum MemberAssignmentTarget<'alloc> {
 pub struct ComputedMemberAssignmentTarget<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberAssignmentTarget<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub property: IdentifierName<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ArrayBinding<'alloc> {
     pub elements: arena::Vec<'alloc, Option<Parameter<'alloc>>>,
     pub rest: Option<arena::Box<'alloc, Binding<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ObjectBinding<'alloc> {
     pub properties: arena::Vec<'alloc, BindingProperty<'alloc>>,
     pub rest: Option<arena::Box<'alloc, BindingIdentifier<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -433,18 +480,21 @@ pub enum BindingProperty<'alloc> {
 pub struct BindingPropertyIdentifier<'alloc> {
     pub binding: BindingIdentifier<'alloc>,
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct BindingPropertyProperty<'alloc> {
     pub name: PropertyName<'alloc>,
     pub binding: Parameter<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetWithDefault<'alloc> {
     pub binding: AssignmentTarget<'alloc>,
     pub init: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -457,12 +507,14 @@ pub enum AssignmentTargetMaybeDefault<'alloc> {
 pub struct ArrayAssignmentTarget<'alloc> {
     pub elements: arena::Vec<'alloc, Option<AssignmentTargetMaybeDefault<'alloc>>>,
     pub rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ObjectAssignmentTarget<'alloc> {
     pub properties: arena::Vec<'alloc, AssignmentTargetProperty<'alloc>>,
     pub rest: Option<arena::Box<'alloc, AssignmentTarget<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -475,12 +527,14 @@ pub enum AssignmentTargetProperty<'alloc> {
 pub struct AssignmentTargetPropertyIdentifier<'alloc> {
     pub binding: AssignmentTargetIdentifier<'alloc>,
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct AssignmentTargetPropertyProperty<'alloc> {
     pub name: PropertyName<'alloc>,
     pub binding: AssignmentTargetMaybeDefault<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -488,6 +542,7 @@ pub struct ClassExpression<'alloc> {
     pub name: Option<BindingIdentifier<'alloc>>,
     pub super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
     pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -495,12 +550,14 @@ pub struct ClassDeclaration<'alloc> {
     pub name: BindingIdentifier<'alloc>,
     pub super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
     pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ClassElement<'alloc> {
     pub is_static: bool,
     pub method: MethodDefinition<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -514,6 +571,7 @@ pub enum ModuleItems<'alloc> {
 pub struct Module<'alloc> {
     pub directives: arena::Vec<'alloc, Directive<'alloc>>,
     pub items: arena::Vec<'alloc, ModuleItems<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -521,6 +579,7 @@ pub struct Import<'alloc> {
     pub module_specifier: &'alloc str,
     pub default_binding: Option<BindingIdentifier<'alloc>>,
     pub named_imports: arena::Vec<'alloc, ImportSpecifier<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -528,28 +587,33 @@ pub struct ImportNamespace<'alloc> {
     pub module_specifier: &'alloc str,
     pub default_binding: Option<BindingIdentifier<'alloc>>,
     pub namespace_binding: BindingIdentifier<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ImportSpecifier<'alloc> {
     pub name: Option<IdentifierName<'alloc>>,
     pub binding: BindingIdentifier<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ExportAllFrom<'alloc> {
     pub module_specifier: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ExportFrom<'alloc> {
     pub named_exports: arena::Vec<'alloc, ExportFromSpecifier<'alloc>>,
     pub module_specifier: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ExportLocals<'alloc> {
     pub named_exports: arena::Vec<'alloc, ExportLocalSpecifier<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -570,12 +634,14 @@ pub enum ExportDefault<'alloc> {
 pub struct ExportFromSpecifier<'alloc> {
     pub name: IdentifierName<'alloc>,
     pub exported_name: Option<IdentifierName<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ExportLocalSpecifier<'alloc> {
     pub name: IdentifierExpression<'alloc>,
     pub exported_name: Option<IdentifierName<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -585,12 +651,14 @@ pub struct Method<'alloc> {
     pub is_generator: bool,
     pub params: FormalParameters<'alloc>,
     pub body: FunctionBody<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Getter<'alloc> {
     pub property_name: PropertyName<'alloc>,
     pub body: FunctionBody<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -598,39 +666,45 @@ pub struct Setter<'alloc> {
     pub property_name: PropertyName<'alloc>,
     pub param: Parameter<'alloc>,
     pub body: FunctionBody<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct DataProperty<'alloc> {
     pub property_name: PropertyName<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ShorthandProperty<'alloc> {
     pub name: IdentifierExpression<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ComputedPropertyName<'alloc> {
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct StaticPropertyName<'alloc> {
     pub value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum ArrayExpressionElement<'alloc> {
     SpreadElement(arena::Box<'alloc, Expression<'alloc>>),
     Expression(arena::Box<'alloc, Expression<'alloc>>),
-    Elision,
+    Elision(SourceLocation),
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ArrayExpression<'alloc> {
     pub elements: arena::Vec<'alloc, ArrayExpressionElement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -643,22 +717,26 @@ pub enum ArrowExpressionBody<'alloc> {
 pub struct ComputedMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub expression: arena::Box<'alloc, Expression<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct IdentifierExpression<'alloc> {
     pub name: Identifier<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ObjectExpression<'alloc> {
     pub properties: arena::Vec<'alloc, arena::Box<'alloc, ObjectProperty<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct StaticMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub property: IdentifierName<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -671,6 +749,7 @@ pub enum TemplateExpressionElement<'alloc> {
 pub struct TemplateExpression<'alloc> {
     pub tag: Option<arena::Box<'alloc, Expression<'alloc>>>,
     pub elements: arena::Vec<'alloc, TemplateExpressionElement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
@@ -689,67 +768,81 @@ pub enum VariableDeclarationOrExpression<'alloc> {
 pub struct Block<'alloc> {
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
     pub declarations: Option<arena::Vec<'alloc, &'alloc str>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct CatchClause<'alloc> {
     pub binding: Option<arena::Box<'alloc, Binding<'alloc>>>,
     pub body: Block<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Directive<'alloc> {
     pub raw_value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct FormalParameters<'alloc> {
     pub items: arena::Vec<'alloc, Parameter<'alloc>>,
     pub rest: Option<Binding<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct FunctionBody<'alloc> {
     pub directives: arena::Vec<'alloc, Directive<'alloc>>,
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Script<'alloc> {
     pub directives: arena::Vec<'alloc, Directive<'alloc>>,
     pub statements: arena::Vec<'alloc, Statement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchCase<'alloc> {
     pub test: arena::Box<'alloc, Expression<'alloc>>,
     pub consequent: arena::Vec<'alloc, Statement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct SwitchDefault<'alloc> {
     pub consequent: arena::Vec<'alloc, Statement<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct TemplateElement<'alloc> {
     pub raw_value: &'alloc str,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclaration<'alloc> {
     pub kind: VariableDeclarationKind,
     pub declarators: arena::Vec<'alloc, VariableDeclarator<'alloc>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct VariableDeclarator<'alloc> {
     pub binding: Binding<'alloc>,
     pub init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum CoverParenthesized<'alloc> {
-    Expression(arena::Box<'alloc, Expression<'alloc>>),
+    Expression {
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+        loc: SourceLocation,
+    },
     Parameters(arena::Box<'alloc, FormalParameters<'alloc>>),
 }
