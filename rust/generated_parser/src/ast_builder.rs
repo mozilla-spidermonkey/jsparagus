@@ -1627,13 +1627,24 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         kind: arena::Box<'alloc, VariableDeclarationKind>,
         declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::VariableDeclarationStatement(
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        // 13.3.1.1 Static Semantics: Early Errors
+        // TODO: missing check for binding identifiers named `let`.
+        // TODO: missing check for duplicated let bindings.
+        if *kind == VariableDeclarationKind::Const {
+            for v in declarators.iter() {
+                if v.init == None {
+                   return Err(ParseError::NotImplemented("Missing initializer in a lexical binding."));
+                }
+            }
+        }
+
+        Ok(self.alloc(Statement::VariableDeclarationStatement(
             VariableDeclaration {
                 kind: kind.unbox(),
                 declarators: declarators.unbox(),
             },
-        ))
+        )))
     }
 
     // ForLexicalDeclaration : LetOrConst BindingList `;`
@@ -1641,13 +1652,24 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         kind: arena::Box<'alloc, VariableDeclarationKind>,
         declarators: arena::Box<'alloc, arena::Vec<'alloc, VariableDeclarator<'alloc>>>,
-    ) -> arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>> {
-        self.alloc(VariableDeclarationOrExpression::VariableDeclaration(
+    ) -> Result<'alloc, arena::Box<'alloc, VariableDeclarationOrExpression<'alloc>>> {
+        // 13.3.1.1 Static Semantics: Early Errors
+        // TODO: missing check for binding identifiers named `let`.
+        // TODO: missing check for duplicated let bindings.
+        if *kind == VariableDeclarationKind::Const {
+            for v in declarators.iter() {
+                if v.init == None {
+                   return Err(ParseError::NotImplemented("Missing initializer in a lexical binding."));
+                }
+            }
+        }
+
+        Ok(self.alloc(VariableDeclarationOrExpression::VariableDeclaration(
             VariableDeclaration {
                 kind: kind.unbox(),
                 declarators: declarators.unbox(),
             },
-        ))
+        )))
     }
 
     // LetOrConst : `let`
