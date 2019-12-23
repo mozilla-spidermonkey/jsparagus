@@ -146,13 +146,13 @@ impl<'alloc> Lexer<'alloc> {
     /// that a SingleLineHTMLCloseComment must occur at the start of a line. We
     /// use `is_on_new_line` for that.)
     ///
-    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) {
+    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) -> Result<'alloc, ()> {
         while let Some(ch) = self.chars.next() {
             match ch {
                 '*' if self.peek() == Some('/') => {
                     self.chars.next();
                     *builder = AutoCow::new(&self);
-                    return;
+                    return Ok(());
                 }
                 CR | LF | PS | LS => {
                     self.is_on_new_line = true;
@@ -160,6 +160,7 @@ impl<'alloc> Lexer<'alloc> {
                 _ => {}
             }
         }
+        Err(ParseError::UnterminatedMultiLineComment)
     }
 
     /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
@@ -785,6 +786,7 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    // See 12.2.8 and 11.8.5 sections.
     fn regular_expression_literal(
         &mut self,
         builder: &mut AutoCow<'alloc>,
@@ -831,19 +833,45 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
         builder.push_matching('/');
+        let mut flag_text = AutoCow::new(&self);
         while let Some(ch) = self.peek() {
             match ch {
                 '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
                     self.chars.next();
                     builder.push_matching(ch);
+                    flag_text.push_matching(ch);
                 }
                 _ => break,
             }
         }
 
+        // 12.2.8.2.1 Assert literal is a RegularExpressionLiteral.
+        let literal = builder.finish(&self);
+
+        // 12.2.8.2.2 Check that only gimsuy flags are mentioned at most once.
+        let gimsuy_mask : u32 = ['g', 'i', 'm', 's', 'u', 'y'].into_iter()
+            .map(|x| 1 << ((*x as u8) - ('a' as u8))).sum();
+        let mut flag_text_set : u32 = 0;
+        for ch in flag_text.finish(&self).chars() {
+            if !ch.is_ascii_lowercase() {
+                return Err(ParseError::NotImplemented("Unexpected flag in regular expression literal"));
+            }
+            let ch_mask = 1 << ((ch as u8) - ('a' as u8));
+            if ch_mask & gimsuy_mask == 0 {
+                return Err(ParseError::NotImplemented("Unexpected flag in regular expression literal"));
+            }
+            if flag_text_set & ch_mask != 0 {
+                return Err(ParseError::NotImplemented("Flag is mentioned twice in regular expression literal"));
+            }
+            flag_text_set |= ch_mask;
+        }
+
+        // TODO: 12.2.8.2.4 and 12.2.8.2.5 Check that the body matches the
+        // grammar defined in 21.2.1.
+
         Ok((
             offset,
-            Some(builder.finish(&self)),
+            Some(literal),
             TerminalId::RegularExpressionLiteral,
         ))
     }
@@ -908,19 +936,20 @@ impl<'alloc> Lexer<'alloc> {
             //   HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
             if ch == '$' && self.peek() == Some('{') {
                 self.chars.next();
-                return Ok((start, None, subst));
+                return Ok((start, Some(builder.finish(&self)), subst));
             }
             if ch == '`' {
-                return Ok((start, None, tail));
+                return Ok((start, Some(builder.finish(&self)), tail));
             }
             // TODO: Support escape sequences.
-            builder.push_matching(ch);
+            if ch == '\\' {
+                let text = builder.get_mut_string(&self);
+                self.escape_sequence(text)?;
+            } else {
+                builder.push_matching(ch);
+            }
         }
-        return Ok((
-            start,
-            Some(builder.finish(&self)),
-            TerminalId::StringLiteral,
-        ));
+        Err(ParseError::UnterminatedString)
     }
 
     fn advance_impl<'parser>(
@@ -1130,7 +1159,7 @@ impl<'alloc> Lexer<'alloc> {
                     }
                     Some('*') => {
                         self.chars.next();
-                        self.skip_multi_line_comment(&mut builder);
+                        self.skip_multi_line_comment(&mut builder)?;
                         start = self.offset();
                         continue;
                     }
