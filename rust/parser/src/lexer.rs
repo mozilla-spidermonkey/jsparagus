@@ -909,10 +909,10 @@ impl<'alloc> Lexer<'alloc> {
             //   HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
             if ch == '$' && self.peek() == Some('{') {
                 self.chars.next();
-                return Ok((start, None, subst));
+                return Ok((start, Some(builder.finish(&self)), subst));
             }
             if ch == '`' {
-                return Ok((start, None, tail));
+                return Ok((start, Some(builder.finish(&self)), tail));
             }
             // TODO: Support escape sequences.
             if ch == '\\' {
