@@ -786,6 +786,7 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    // See 12.2.8 and 11.8.5 sections.
     fn regular_expression_literal(
         &mut self,
         builder: &mut AutoCow<'alloc>,
@@ -832,19 +833,45 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
         builder.push_matching('/');
+        let mut flag_text = AutoCow::new(&self);
         while let Some(ch) = self.peek() {
             match ch {
                 '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
                     self.chars.next();
                     builder.push_matching(ch);
+                    flag_text.push_matching(ch);
                 }
                 _ => break,
             }
         }
 
+        // 12.2.8.2.1 Assert literal is a RegularExpressionLiteral.
+        let literal = builder.finish(&self);
+
+        // 12.2.8.2.2 Check that only gimsuy flags are mentioned at most once.
+        let gimsuy_mask : u32 = ['g', 'i', 'm', 's', 'u', 'y'].into_iter()
+            .map(|x| 1 << ((*x as u8) - ('a' as u8))).sum();
+        let mut flag_text_set : u32 = 0;
+        for ch in flag_text.finish(&self).chars() {
+            if !ch.is_ascii_lowercase() {
+                return Err(ParseError::NotImplemented("Unexpected flag in regular expression literal"));
+            }
+            let ch_mask = 1 << ((ch as u8) - ('a' as u8));
+            if ch_mask & gimsuy_mask == 0 {
+                return Err(ParseError::NotImplemented("Unexpected flag in regular expression literal"));
+            }
+            if flag_text_set & ch_mask != 0 {
+                return Err(ParseError::NotImplemented("Flag is mentioned twice in regular expression literal"));
+            }
+            flag_text_set |= ch_mask;
+        }
+
+        // TODO: 12.2.8.2.4 and 12.2.8.2.5 Check that the body matches the
+        // grammar defined in 21.2.1.
+
         Ok((
             offset,
-            Some(builder.finish(&self)),
+            Some(literal),
             TerminalId::RegularExpressionLiteral,
         ))
     }
