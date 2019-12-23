@@ -146,13 +146,13 @@ impl<'alloc> Lexer<'alloc> {
     /// that a SingleLineHTMLCloseComment must occur at the start of a line. We
     /// use `is_on_new_line` for that.)
     ///
-    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) {
+    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) -> Result<'alloc, ()> {
         while let Some(ch) = self.chars.next() {
             match ch {
                 '*' if self.peek() == Some('/') => {
                     self.chars.next();
                     *builder = AutoCow::new(&self);
-                    return;
+                    return Ok(());
                 }
                 CR | LF | PS | LS => {
                     self.is_on_new_line = true;
@@ -160,6 +160,7 @@ impl<'alloc> Lexer<'alloc> {
                 _ => {}
             }
         }
+        Err(ParseError::UnterminatedMultiLineComment)
     }
 
     /// Skip a *SingleLineComment* and the following *LineTerminatorSequence*,
@@ -1131,7 +1132,7 @@ impl<'alloc> Lexer<'alloc> {
                     }
                     Some('*') => {
                         self.chars.next();
-                        self.skip_multi_line_comment(&mut builder);
+                        self.skip_multi_line_comment(&mut builder)?;
                         start = self.offset();
                         continue;
                     }

@@ -11,6 +11,7 @@ pub enum ParseError<'alloc> {
     InvalidEscapeSequence,
     UnterminatedString,
     UnterminatedRegExp,
+    UnterminatedMultiLineComment,
     LexerError,
 
     // Generic syntax errors
@@ -41,6 +42,7 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::InvalidEscapeSequence => format!("invalid escape sequence"),
             ParseError::UnterminatedString => format!("unterminated string literal"),
             ParseError::UnterminatedRegExp => format!("unterminated regexp literal"),
+            ParseError::UnterminatedMultiLineComment => format!("unterminated multiline comment"),
             ParseError::LexerError => format!("lexical error"),
             ParseError::NotImplemented(message) => format!("not implemented: {}", message),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
