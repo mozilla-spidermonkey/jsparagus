@@ -2,14 +2,14 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{EmitError, EmitResult, Emitter};
+use super::emitter::{EmitError, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
 use ast::{arena, types::*};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
     let mut emitter = AstEmitter {
-        emit: Emitter::new(),
+        emit: InstructionWriter::new(),
     };
 
     match ast {
@@ -23,7 +23,7 @@ pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
 }
 
 struct AstEmitter {
-    emit: Emitter,
+    emit: InstructionWriter,
 }
 
 impl AstEmitter {

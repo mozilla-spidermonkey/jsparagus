@@ -24,7 +24,7 @@ pub enum AsyncFunctionResolveKind {
 pub type u24 = u32;
 
 /// Low-level bytecode emitter.
-pub struct Emitter {
+pub struct InstructionWriter {
     bytecode: Vec<u8>,
     strings: Vec<String>,
 }
@@ -50,7 +50,7 @@ impl fmt::Display for EmitError {
     }
 }
 
-impl Emitter {
+impl InstructionWriter {
     pub fn new() -> Self {
         Self {
             bytecode: Vec::new(),
