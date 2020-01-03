@@ -1,4 +1,4 @@
-use crate::opcode::{Opcode, LENGTH};
+use crate::opcode::Opcode;
 use std::convert::TryFrom;
 use std::fmt::Write;
 
@@ -11,17 +11,17 @@ pub fn dis(bc: &[u8]) -> String {
             Some(byte) => match Opcode::try_from(*byte) {
                 Ok(op) => {
                     write!(&mut result, "{:?}", op).unwrap();
-                    LENGTH[op as usize] - 1
+                    op.instruction_length()
                 }
                 Err(()) => {
                     write!(&mut result, "{}", byte).unwrap();
-                    0
+                    1
                 }
             },
             None => break,
         };
 
-        for _ in 0..len {
+        for _ in 1..len {
             write!(&mut result, " {}", iter.next().unwrap()).unwrap();
         }
 
