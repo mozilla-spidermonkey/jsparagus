@@ -271,6 +271,122 @@ macro_rules! count_rows {
 
 const LIMIT: usize = using_opcode_database!(count_rows!());
 
+/// single bytecode, no immediates
+const JOF_BYTE: u32 = 0;
+
+/// unspecified uint8_t argument
+const JOF_UINT8: u32 = 1;
+
+/// unspecified uint16_t argument
+const JOF_UINT16: u32 = 2;
+
+/// unspecified uint24_t argument
+const JOF_UINT24: u32 = 3;
+
+/// unspecified uint32_t argument
+const JOF_UINT32: u32 = 4;
+
+/// int8_t literal
+const JOF_INT8: u32 = 5;
+
+/// int32_t literal
+const JOF_INT32: u32 = 6;
+
+/// int32_t jump offset
+const JOF_JUMP: u32 = 7;
+
+/// table switch
+const JOF_TABLESWITCH: u32 = 8;
+
+/// embedded ScopeCoordinate immediate
+const JOF_ENVCOORD: u32 = 9;
+
+/// uint16_t argument count
+const JOF_ARGC: u32 = 10;
+
+/// function argument index
+const JOF_QARG: u32 = 11;
+
+/// var or block-local variable
+const JOF_LOCAL: u32 = 12;
+
+/// yield, await, or gosub resume index
+const JOF_RESUMEINDEX: u32 = 13;
+
+/// uint32_t constant index
+const JOF_ATOM: u32 = 14;
+
+/// uint32_t object index
+const JOF_OBJECT: u32 = 15;
+
+/// uint32_t regexp index
+const JOF_REGEXP: u32 = 16;
+
+/// inline DoubleValue
+const JOF_DOUBLE: u32 = 17;
+
+/// uint32_t scope index
+const JOF_SCOPE: u32 = 18;
+
+/// uint32_t IC index
+const JOF_ICINDEX: u32 = 19;
+
+/// Opcode::Loophead, combines JOF_ICINDEX and JOF_UINT8
+const JOF_LOOPHEAD: u32 = 20;
+
+/// uint32_t index for BigInt value
+const JOF_BIGINT: u32 = 21;
+
+/// uint32_t atom index, sourceStart, sourceEnd
+const JOF_CLASS_CTOR: u32 = 22;
+
+/// mask for above immediate types
+const JOF_TYPEMASK: u32 = 0x001f;
+
+
+/// name operation
+const JOF_NAME: u32 = 1 << 5;
+
+/// obj.prop operation
+const JOF_PROP: u32 = 2 << 5;
+
+/// obj[index] operation
+const JOF_ELEM: u32 = 3 << 5;
+
+// /// mask for above addressing modes
+// const JOF_MODEMASK: u32 = 3 << 5;
+
+
+/// property/element/name set operation
+const JOF_PROPSET: u32 = 1 << 7;
+
+/// property/element/name init operation
+const JOF_PROPINIT: u32 = 1 << 8;
+
+/// object detection for warning-quelling
+const JOF_DETECTING: u32 = 1 << 9;
+
+/// op can only be generated in sloppy mode
+const JOF_CHECKSLOPPY: u32 = 1 << 10;
+
+/// op can only be generated in strict mode
+const JOF_CHECKSTRICT: u32 = 1 << 11;
+
+/// call, construct, or spreadcall instruction
+const JOF_INVOKE: u32 = 1 << 12;
+
+/// predicted global name
+const JOF_GNAME: u32 = 1 << 13;
+
+/// has an entry in a script's type sets
+const JOF_TYPESET: u32 = 1 << 14;
+
+/// baseline may use an IC for this op
+const JOF_IC: u32 = 1 << 15;
+
+
+
+
 impl Opcode {
     /// Return the numeric bytecode value for this opcode, as understood by the
     /// SpiderMonkey interpreter and the rest of the VM.
@@ -345,18 +461,71 @@ macro_rules! define_table {
 
 using_opcode_database!(define_table!());
 
-macro_rules! select_length {
-    ( [ $( ( $name:ident , $str:expr , $str2:expr , $length:expr , $nuses:expr , $ndefs:expr , $flags:expr ) , )* ] ) => {
-        [ $( $length , )* ]
-    }
-}
-
-static LENGTH: [u8; LIMIT] = using_opcode_database!(select_length!());
-
 impl Opcode {
     /// Length of this instruction, in bytes.
     pub fn instruction_length(self) -> usize {
-        LENGTH[self as usize] as usize
+        macro_rules! select_length {
+            ( [ $( ( $name:ident , $str:expr , $str2:expr , $length:expr , $nuses:expr , $ndefs:expr , $flags:expr ) , )* ] ) => {
+                match self {
+                    $( Opcode::$name => $length , )*
+                }
+            }
+        }
+
+        using_opcode_database!(select_length!())
+    }
+
+    /// Number of stack slots consumed by this instruction, or -1 for variadic
+    /// instructions.
+    pub fn nuses(self) -> isize {
+        macro_rules! select_nuses {
+            ( [ $( ( $name:ident , $str:expr , $str2:expr , $length:expr , $nuses:expr , $ndefs:expr , $format:expr ) , )* ] ) => {
+                match self {
+                    $( Opcode::$name => $nuses , )*
+                }
+            }
+        }
+
+        using_opcode_database!(select_nuses!())
+    }
+
+    pub fn ndefs(self) -> usize {
+        macro_rules! select_ndefs {
+            ( [ $( ( $name:ident , $str:expr , $str2:expr , $length:expr , $nuses:expr , $ndefs:expr , $format:expr ) , )* ] ) => {
+                match self {
+                    $( Opcode::$name => $ndefs , )*
+                }
+            }
+        }
+
+        using_opcode_database!(select_ndefs!())
+    }
+
+    fn format_bits(self) -> u32 {
+        macro_rules! select_format {
+            ( [ $( ( $name:ident , $str:expr , $str2:expr , $length:expr , $nuses:expr , $ndefs:expr , $format:expr ) , )* ] ) => {
+                match self {
+                    $( Opcode::$name => $format , )*
+                }
+            }
+        }
+
+        using_opcode_database!(select_format!())
+    }
+
+    pub fn has_ic_entry(self) -> bool {
+        self.format_bits() & JOF_IC != 0
+    }
+
+    pub fn has_ic_index(self) -> bool {
+        match self.format_bits() & JOF_TYPEMASK {
+            JOF_LOOPHEAD | JOF_ICINDEX => true,
+            _ => false,
+        }
+    }
+
+    pub fn has_argc(self) -> bool {
+        self.format_bits() & JOF_TYPEMASK == JOF_ARGC
     }
 }
 

@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 use super::opcode::Opcode;
+use std::convert::TryInto;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -27,6 +28,15 @@ pub type u24 = u32;
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
     strings: Vec<String>,
+
+    /// Stack depth after the instructions emitted so far.
+    stack_depth: usize,
+
+    /// Maximum stack_depth at any point in the instructions emitted so far.
+    maximum_stack_depth: usize,
+
+    /// Number of JOF_IC instructions emitted so far.
+    num_ic_entries: usize,
 }
 
 /// The output of bytecode-compiling a script or module.
@@ -34,6 +44,8 @@ pub struct InstructionWriter {
 pub struct EmitResult {
     pub bytecode: Vec<u8>,
     pub strings: Vec<String>,
+    pub maximum_stack_depth: u32,
+    pub num_ic_entries: u32,
 }
 
 /// The error of bytecode-compilation.
@@ -55,6 +67,9 @@ impl InstructionWriter {
         Self {
             bytecode: Vec::new(),
             strings: Vec::new(),
+            stack_depth: 0,
+            maximum_stack_depth: 0,
+            num_ic_entries: 0,
         }
     }
 
@@ -62,11 +77,61 @@ impl InstructionWriter {
         EmitResult {
             bytecode: self.bytecode,
             strings: self.strings,
+
+            // These values probably can't be out of range for u32, as we would
+            // have hit other limits first. Release-assert anyway.
+            maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
+            num_ic_entries: self.num_ic_entries.try_into().unwrap(),
+        }
+    }
+
+    fn write_u16(&mut self, value: u16) {
+        self.bytecode.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_u32(&mut self, value: u32) {
+        self.bytecode.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn emit_op(&mut self, opcode: Opcode) {
+        let nuses: isize = opcode.nuses();
+        assert!(nuses >= 0);
+        self.emit_op_common(opcode, nuses as usize);
+    }
+
+    fn emit_argc_op(&mut self, opcode: Opcode, argc: u16) {
+        assert!(opcode.has_argc());
+        assert_eq!(opcode.nuses(), -1);
+        self.emit_op_common(opcode, argc as usize);
+        self.write_u16(argc);
+    }
+
+    fn emit_op_common(&mut self, opcode: Opcode, nuses: usize) {
+        assert!(self.stack_depth >= nuses as usize,
+                "InstructionWriter misuse! Not enough arguments on the stack.");
+        self.stack_depth -= nuses as usize;
+
+        let ndefs = opcode.ndefs();
+        if ndefs > 0 {
+            self.stack_depth += ndefs;
+            if self.stack_depth > self.maximum_stack_depth {
+                self.maximum_stack_depth = self.stack_depth;
+            }
+        }
+
+        if opcode.has_ic_entry() {
+            self.num_ic_entries += 1;
+        }
+
+        self.bytecode.push(opcode.to_byte());
+
+        if opcode.has_ic_index() {
+            self.write_u32(self.num_ic_entries.try_into().unwrap());
         }
     }
 
     fn emit1(&mut self, opcode: Opcode) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
     }
 
     fn emit_i8(&mut self, opcode: Opcode, value: i8) {
@@ -74,39 +139,39 @@ impl InstructionWriter {
     }
 
     fn emit_u8(&mut self, opcode: Opcode, value: u8) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
         self.bytecode.push(value);
     }
 
     fn emit_u16(&mut self, opcode: Opcode, value: u16) {
-        self.bytecode.push(opcode.to_byte());
-        self.bytecode.extend_from_slice(&value.to_le_bytes());
+        self.emit_op(opcode);
+        self.write_u16(value);
     }
 
     fn emit_u24(&mut self, opcode: Opcode, value: u24) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
         let slice = value.to_le_bytes();
         assert!(slice.len() == 4 && slice[3] == 0);
         self.bytecode.extend_from_slice(&slice[0..3]);
     }
 
     fn emit_i32(&mut self, opcode: Opcode, value: i32) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
     fn emit_u32(&mut self, opcode: Opcode, value: u32) {
-        self.bytecode.push(opcode.to_byte());
-        self.bytecode.extend_from_slice(&value.to_le_bytes());
+        self.emit_op(opcode);
+        self.write_u32(value);
     }
 
     fn emit_with_name_index(&mut self, opcode: Opcode, name: &str) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
         self.emit_atom(name);
     }
 
     fn emit_aliased(&mut self, opcode: Opcode, hops: u8, slot: u24) {
-        self.bytecode.push(opcode.to_byte());
+        self.emit_op(opcode);
         self.bytecode.push(hops);
         let slice = slot.to_le_bytes();
         assert!(slice.len() == 4 && slice[3] == 0);
@@ -175,7 +240,7 @@ impl InstructionWriter {
     }
 
     pub fn double(&mut self, value: f64) {
-        self.bytecode.push(Opcode::Double.to_byte());
+        self.emit_op(Opcode::Double);
         self.bytecode
             .extend_from_slice(&value.to_bits().to_le_bytes());
     }
@@ -185,7 +250,7 @@ impl InstructionWriter {
     }
 
     pub fn string(&mut self, value: &str) {
-        self.bytecode.push(Opcode::String.to_byte());
+        self.emit_op(Opcode::String);
         self.emit_atom(value);
     }
 
@@ -208,6 +273,8 @@ impl InstructionWriter {
 
     pub fn emit_binary_op(&mut self, opcode: Opcode) {
         assert!(opcode.is_simple_binary_operator());
+        debug_assert_eq!(opcode.nuses(), 2);
+        debug_assert_eq!(opcode.ndefs(), 1);
         self.emit1(opcode);
     }
 
@@ -505,25 +572,25 @@ impl InstructionWriter {
     }
 
     pub fn call(&mut self, argc: u16) {
-        self.emit_u16(Opcode::Call, argc);
+        self.emit_argc_op(Opcode::Call, argc);
     }
 
     pub fn call_iter(&mut self) {
         // JSOP_CALLITER has an operand in bytecode, for consistency with other
         // call opcodes, but it must be 0.
-        self.emit_u16(Opcode::CallIter, 0);
+        self.emit_argc_op(Opcode::CallIter, 0);
     }
 
     pub fn fun_apply(&mut self, argc: u16) {
-        self.emit_u16(Opcode::FunApply, argc);
+        self.emit_argc_op(Opcode::FunApply, argc);
     }
 
     pub fn fun_call(&mut self, argc: u16) {
-        self.emit_u16(Opcode::FunCall, argc);
+        self.emit_argc_op(Opcode::FunCall, argc);
     }
 
     pub fn call_ignores_rv(&mut self, argc: u16) {
-        self.emit_u16(Opcode::CallIgnoresRv, argc);
+        self.emit_argc_op(Opcode::CallIgnoresRv, argc);
     }
 
     pub fn spread_call(&mut self) {
@@ -535,7 +602,7 @@ impl InstructionWriter {
     }
 
     pub fn eval(&mut self, argc: u16) {
-        self.emit_u16(Opcode::Eval, argc);
+        self.emit_argc_op(Opcode::Eval, argc);
     }
 
     pub fn spread_eval(&mut self) {
@@ -543,7 +610,7 @@ impl InstructionWriter {
     }
 
     pub fn strict_eval(&mut self, argc: u16) {
-        self.emit_u16(Opcode::StrictEval, argc);
+        self.emit_argc_op(Opcode::StrictEval, argc);
     }
 
     pub fn strict_spread_eval(&mut self) {
@@ -567,7 +634,7 @@ impl InstructionWriter {
     }
 
     pub fn new_(&mut self, argc: u16) {
-        self.emit_u16(Opcode::New, argc);
+        self.emit_argc_op(Opcode::New, argc);
     }
 
     pub fn spread_new(&mut self) {
@@ -579,7 +646,7 @@ impl InstructionWriter {
     }
 
     pub fn super_call(&mut self, argc: u16) {
-        self.emit_u16(Opcode::SuperCall, argc);
+        self.emit_argc_op(Opcode::SuperCall, argc);
     }
 
     pub fn spread_super_call(&mut self) {
@@ -598,8 +665,8 @@ impl InstructionWriter {
         self.emit_u24(Opcode::InitialYield, resume_index);
     }
 
-    pub fn after_yield(&mut self, ic_index: u32) {
-        self.emit_u32(Opcode::AfterYield, ic_index);
+    pub fn after_yield(&mut self) {
+        self.emit_op(Opcode::AfterYield);
     }
 
     pub fn final_yield_rval(&mut self) {
@@ -634,12 +701,12 @@ impl InstructionWriter {
         self.emit_u8(Opcode::Resume, kind as u8);
     }
 
-    pub fn jump_target(&mut self, ic_index: u32) {
-        self.emit_u32(Opcode::JumpTarget, ic_index);
+    pub fn jump_target(&mut self) {
+        self.emit_op(Opcode::JumpTarget);
     }
 
-    pub fn loop_head(&mut self, ic_index: u32) {
-        self.emit_u32(Opcode::LoopHead, ic_index);
+    pub fn loop_head(&mut self) {
+        self.emit_op(Opcode::LoopHead);
     }
 
     pub fn goto(&mut self, offset: i32) {
@@ -937,7 +1004,8 @@ impl InstructionWriter {
     }
 
     pub fn pop_n(&mut self, n: u16) {
-        self.emit_u16(Opcode::PopN, n);
+        self.emit_op_common(Opcode::PopN, n as usize);
+        self.write_u16(n);
     }
 
     pub fn dup(&mut self) {
