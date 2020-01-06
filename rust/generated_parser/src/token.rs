@@ -1,4 +1,5 @@
 use crate::parser_tables_generated::TerminalId;
+use ast::SourceLocation;
 
 /// An ECMAScript input token. The lexer discards input matching *WhiteSpace*,
 /// *LineTerminator*, and *Comment*. The remaining input elements are called
@@ -12,7 +13,7 @@ pub struct Token<'a> {
     pub terminal_id: TerminalId,
 
     /// Offset of this token, in bytes, within the source buffer.
-    pub offset: usize,
+    pub loc: SourceLocation,
 
     /// True if this token is the first token on a source line. This is true at
     /// the start of a script or module and after each LineTerminatorSequence.
@@ -43,10 +44,10 @@ pub struct Token<'a> {
 }
 
 impl Token<'_> {
-    pub fn basic_token(terminal_id: TerminalId, offset: usize) -> Self {
+    pub fn basic_token(terminal_id: TerminalId, loc: SourceLocation) -> Self {
         Self {
             terminal_id,
-            offset,
+            loc,
             is_on_new_line: false,
             value: None,
         }

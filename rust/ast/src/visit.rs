@@ -35,76 +35,76 @@ pub trait Pass<'alloc> {
 
     fn visit_variable_declaration_kind(&mut self, ast: &mut VariableDeclarationKind) {
         match ast {
-            VariableDeclarationKind::Var => (),
-            VariableDeclarationKind::Let => (),
-            VariableDeclarationKind::Const => (),
+            VariableDeclarationKind::Var(_) => (),
+            VariableDeclarationKind::Let(_) => (),
+            VariableDeclarationKind::Const(_) => (),
         }
     }
 
     fn visit_compound_assignment_operator(&mut self, ast: &mut CompoundAssignmentOperator) {
         match ast {
-            CompoundAssignmentOperator::Add => (),
-            CompoundAssignmentOperator::Sub => (),
-            CompoundAssignmentOperator::Mul => (),
-            CompoundAssignmentOperator::Div => (),
-            CompoundAssignmentOperator::Mod => (),
-            CompoundAssignmentOperator::Pow => (),
-            CompoundAssignmentOperator::LeftShift => (),
-            CompoundAssignmentOperator::RightShift => (),
-            CompoundAssignmentOperator::RightShiftExt => (),
-            CompoundAssignmentOperator::Or => (),
-            CompoundAssignmentOperator::Xor => (),
-            CompoundAssignmentOperator::And => (),
+            CompoundAssignmentOperator::Add(_) => (),
+            CompoundAssignmentOperator::Sub(_) => (),
+            CompoundAssignmentOperator::Mul(_) => (),
+            CompoundAssignmentOperator::Div(_) => (),
+            CompoundAssignmentOperator::Mod(_) => (),
+            CompoundAssignmentOperator::Pow(_) => (),
+            CompoundAssignmentOperator::LeftShift(_) => (),
+            CompoundAssignmentOperator::RightShift(_) => (),
+            CompoundAssignmentOperator::RightShiftExt(_) => (),
+            CompoundAssignmentOperator::Or(_) => (),
+            CompoundAssignmentOperator::Xor(_) => (),
+            CompoundAssignmentOperator::And(_) => (),
         }
     }
 
     fn visit_binary_operator(&mut self, ast: &mut BinaryOperator) {
         match ast {
-            BinaryOperator::Equals => (),
-            BinaryOperator::NotEquals => (),
-            BinaryOperator::StrictEquals => (),
-            BinaryOperator::StrictNotEquals => (),
-            BinaryOperator::LessThan => (),
-            BinaryOperator::LessThanOrEqual => (),
-            BinaryOperator::GreaterThan => (),
-            BinaryOperator::GreaterThanOrEqual => (),
-            BinaryOperator::In => (),
-            BinaryOperator::Instanceof => (),
-            BinaryOperator::LeftShift => (),
-            BinaryOperator::RightShift => (),
-            BinaryOperator::RightShiftExt => (),
-            BinaryOperator::Add => (),
-            BinaryOperator::Sub => (),
-            BinaryOperator::Mul => (),
-            BinaryOperator::Div => (),
-            BinaryOperator::Mod => (),
-            BinaryOperator::Pow => (),
-            BinaryOperator::Comma => (),
-            BinaryOperator::Coalesce => (),
-            BinaryOperator::LogicalOr => (),
-            BinaryOperator::LogicalAnd => (),
-            BinaryOperator::BitwiseOr => (),
-            BinaryOperator::BitwiseXor => (),
-            BinaryOperator::BitwiseAnd => (),
+            BinaryOperator::Equals(_) => (),
+            BinaryOperator::NotEquals(_) => (),
+            BinaryOperator::StrictEquals(_) => (),
+            BinaryOperator::StrictNotEquals(_) => (),
+            BinaryOperator::LessThan(_) => (),
+            BinaryOperator::LessThanOrEqual(_) => (),
+            BinaryOperator::GreaterThan(_) => (),
+            BinaryOperator::GreaterThanOrEqual(_) => (),
+            BinaryOperator::In(_) => (),
+            BinaryOperator::Instanceof(_) => (),
+            BinaryOperator::LeftShift(_) => (),
+            BinaryOperator::RightShift(_) => (),
+            BinaryOperator::RightShiftExt(_) => (),
+            BinaryOperator::Add(_) => (),
+            BinaryOperator::Sub(_) => (),
+            BinaryOperator::Mul(_) => (),
+            BinaryOperator::Div(_) => (),
+            BinaryOperator::Mod(_) => (),
+            BinaryOperator::Pow(_) => (),
+            BinaryOperator::Comma(_) => (),
+            BinaryOperator::Coalesce(_) => (),
+            BinaryOperator::LogicalOr(_) => (),
+            BinaryOperator::LogicalAnd(_) => (),
+            BinaryOperator::BitwiseOr(_) => (),
+            BinaryOperator::BitwiseXor(_) => (),
+            BinaryOperator::BitwiseAnd(_) => (),
         }
     }
 
     fn visit_unary_operator(&mut self, ast: &mut UnaryOperator) {
         match ast {
-            UnaryOperator::Plus => (),
-            UnaryOperator::Minus => (),
-            UnaryOperator::LogicalNot => (),
-            UnaryOperator::BitwiseNot => (),
-            UnaryOperator::Typeof => (),
-            UnaryOperator::Void => (),
-            UnaryOperator::Delete => (),
+            UnaryOperator::Plus(_) => (),
+            UnaryOperator::Minus(_) => (),
+            UnaryOperator::LogicalNot(_) => (),
+            UnaryOperator::BitwiseNot(_) => (),
+            UnaryOperator::Typeof(_) => (),
+            UnaryOperator::Void(_) => (),
+            UnaryOperator::Delete(_) => (),
         }
     }
 
     fn visit_update_operator(&mut self, ast: &mut UpdateOperator) {
         match ast {
-            UpdateOperator::Increment => (),
-            UpdateOperator::Decrement => (),
+            UpdateOperator::Increment(_) => (),
+            UpdateOperator::Decrement(_) => (),
         }
     }
 
@@ -129,34 +129,38 @@ pub trait Pass<'alloc> {
 
     fn visit_statement(&mut self, ast: &mut Statement<'alloc>) {
         match ast {
-            Statement::BlockStatement { block } => {
+            Statement::BlockStatement { block, .. } => {
                 self.visit_block(block);
             }
-            Statement::BreakStatement { label } => {
+            Statement::BreakStatement { label, .. } => {
                 if let Some(item) = label {
                     self.visit_label(item);
                 }
             }
-            Statement::ContinueStatement { label } => {
+            Statement::ContinueStatement { label, .. } => {
                 if let Some(item) = label {
                     self.visit_label(item);
                 }
             }
-            Statement::DebuggerStatement => (),
-            Statement::DoWhileStatement { block, test } => {
+            Statement::DebuggerStatement(_) => (),
+            Statement::DoWhileStatement { block, test, .. } => {
                 self.visit_statement(block);
                 self.visit_expression(test);
             }
-            Statement::EmptyStatement => (),
+            Statement::EmptyStatement(_) => (),
             Statement::ExpressionStatement(ast) => {
                 self.visit_expression(ast);
             }
-            Statement::ForInStatement { left, right, block } => {
+            Statement::ForInStatement {
+                left, right, block, ..
+            } => {
                 self.visit_variable_declaration_or_assignment_target(left);
                 self.visit_expression(right);
                 self.visit_statement(block);
             }
-            Statement::ForOfStatement { left, right, block } => {
+            Statement::ForOfStatement {
+                left, right, block, ..
+            } => {
                 self.visit_variable_declaration_or_assignment_target(left);
                 self.visit_expression(right);
                 self.visit_statement(block);
@@ -166,6 +170,7 @@ pub trait Pass<'alloc> {
                 test,
                 update,
                 block,
+                ..
             } => {
                 if let Some(item) = init {
                     self.visit_variable_declaration_or_expression(item);
@@ -182,6 +187,7 @@ pub trait Pass<'alloc> {
                 test,
                 consequent,
                 alternate,
+                ..
             } => {
                 self.visit_expression(test);
                 self.visit_statement(consequent);
@@ -189,11 +195,11 @@ pub trait Pass<'alloc> {
                     self.visit_statement(item);
                 }
             }
-            Statement::LabeledStatement { label, body } => {
+            Statement::LabeledStatement { label, body, .. } => {
                 self.visit_label(label);
                 self.visit_statement(body);
             }
-            Statement::ReturnStatement { expression } => {
+            Statement::ReturnStatement { expression, .. } => {
                 if let Some(item) = expression {
                     self.visit_expression(item);
                 }
@@ -201,6 +207,7 @@ pub trait Pass<'alloc> {
             Statement::SwitchStatement {
                 discriminant,
                 cases,
+                ..
             } => {
                 self.visit_expression(discriminant);
                 for item in cases {
@@ -212,6 +219,7 @@ pub trait Pass<'alloc> {
                 pre_default_cases,
                 default_case,
                 post_default_cases,
+                ..
             } => {
                 self.visit_expression(discriminant);
                 for item in pre_default_cases {
@@ -222,10 +230,12 @@ pub trait Pass<'alloc> {
                     self.visit_switch_case(item);
                 }
             }
-            Statement::ThrowStatement { expression } => {
+            Statement::ThrowStatement { expression, .. } => {
                 self.visit_expression(expression);
             }
-            Statement::TryCatchStatement { body, catch_clause } => {
+            Statement::TryCatchStatement {
+                body, catch_clause, ..
+            } => {
                 self.visit_block(body);
                 self.visit_catch_clause(catch_clause);
             }
@@ -233,6 +243,7 @@ pub trait Pass<'alloc> {
                 body,
                 catch_clause,
                 finalizer,
+                ..
             } => {
                 self.visit_block(body);
                 if let Some(item) = catch_clause {
@@ -240,11 +251,11 @@ pub trait Pass<'alloc> {
                 }
                 self.visit_block(finalizer);
             }
-            Statement::WhileStatement { test, block } => {
+            Statement::WhileStatement { test, block, .. } => {
                 self.visit_expression(test);
                 self.visit_statement(block);
             }
-            Statement::WithStatement { object, body } => {
+            Statement::WithStatement { object, body, .. } => {
                 self.visit_expression(object);
                 self.visit_statement(body);
             }
@@ -268,10 +279,10 @@ pub trait Pass<'alloc> {
             Expression::ClassExpression(ast) => {
                 self.visit_class_expression(ast);
             }
-            Expression::LiteralBooleanExpression { value } => {}
-            Expression::LiteralInfinityExpression => (),
-            Expression::LiteralNullExpression => (),
-            Expression::LiteralNumericExpression { value } => {}
+            Expression::LiteralBooleanExpression { value, .. } => {}
+            Expression::LiteralInfinityExpression(_) => (),
+            Expression::LiteralNullExpression(_) => (),
+            Expression::LiteralNumericExpression { value, .. } => {}
             Expression::LiteralRegExpExpression {
                 pattern,
                 global,
@@ -279,8 +290,9 @@ pub trait Pass<'alloc> {
                 multi_line,
                 sticky,
                 unicode,
+                ..
             } => {}
-            Expression::LiteralStringExpression { value } => {}
+            Expression::LiteralStringExpression { value, .. } => {}
             Expression::ArrayExpression(ast) => {
                 self.visit_array_expression(ast);
             }
@@ -288,6 +300,7 @@ pub trait Pass<'alloc> {
                 is_async,
                 params,
                 body,
+                ..
             } => {
                 self.visit_formal_parameters(params);
                 self.visit_arrow_expression_body(body);
@@ -295,6 +308,7 @@ pub trait Pass<'alloc> {
             Expression::AssignmentExpression {
                 binding,
                 expression,
+                ..
             } => {
                 self.visit_assignment_target(binding);
                 self.visit_expression(expression);
@@ -303,12 +317,15 @@ pub trait Pass<'alloc> {
                 operator,
                 left,
                 right,
+                ..
             } => {
                 self.visit_binary_operator(operator);
                 self.visit_expression(left);
                 self.visit_expression(right);
             }
-            Expression::CallExpression { callee, arguments } => {
+            Expression::CallExpression {
+                callee, arguments, ..
+            } => {
                 self.visit_expression_or_super(callee);
                 self.visit_arguments(arguments);
             }
@@ -316,6 +333,7 @@ pub trait Pass<'alloc> {
                 operator,
                 binding,
                 expression,
+                ..
             } => {
                 self.visit_compound_assignment_operator(operator);
                 self.visit_simple_assignment_target(binding);
@@ -325,6 +343,7 @@ pub trait Pass<'alloc> {
                 test,
                 consequent,
                 alternate,
+                ..
             } => {
                 self.visit_expression(test);
                 self.visit_expression(consequent);
@@ -336,42 +355,47 @@ pub trait Pass<'alloc> {
             Expression::IdentifierExpression(ast) => {
                 self.visit_identifier_expression(ast);
             }
-            Expression::NewExpression { callee, arguments } => {
+            Expression::NewExpression {
+                callee, arguments, ..
+            } => {
                 self.visit_expression(callee);
                 self.visit_arguments(arguments);
             }
-            Expression::NewTargetExpression => (),
+            Expression::NewTargetExpression(_) => (),
             Expression::ObjectExpression(ast) => {
                 self.visit_object_expression(ast);
             }
-            Expression::UnaryExpression { operator, operand } => {
+            Expression::UnaryExpression {
+                operator, operand, ..
+            } => {
                 self.visit_unary_operator(operator);
                 self.visit_expression(operand);
             }
             Expression::TemplateExpression(ast) => {
                 self.visit_template_expression(ast);
             }
-            Expression::ThisExpression => (),
+            Expression::ThisExpression(_) => (),
             Expression::UpdateExpression {
                 is_prefix,
                 operator,
                 operand,
+                ..
             } => {
                 self.visit_update_operator(operator);
                 self.visit_simple_assignment_target(operand);
             }
-            Expression::YieldExpression { expression } => {
+            Expression::YieldExpression { expression, .. } => {
                 if let Some(item) = expression {
                     self.visit_expression(item);
                 }
             }
-            Expression::YieldGeneratorExpression { expression } => {
+            Expression::YieldGeneratorExpression { expression, .. } => {
                 self.visit_expression(expression);
             }
-            Expression::AwaitExpression { expression } => {
+            Expression::AwaitExpression { expression, .. } => {
                 self.visit_expression(expression);
             }
-            Expression::ImportCallExpression { argument } => {
+            Expression::ImportCallExpression { argument, .. } => {
                 self.visit_expression(argument);
             }
         }
@@ -564,7 +588,7 @@ pub trait Pass<'alloc> {
             ExpressionOrSuper::Expression(ast) => {
                 self.visit_expression(ast);
             }
-            ExpressionOrSuper::Super => (),
+            ExpressionOrSuper::Super(_) => (),
         }
     }
 
@@ -877,7 +901,7 @@ pub trait Pass<'alloc> {
             ArrayExpressionElement::Expression(ast) => {
                 self.visit_expression(ast);
             }
-            ArrayExpressionElement::Elision => (),
+            ArrayExpressionElement::Elision(_) => (),
         }
     }
 
@@ -1042,8 +1066,8 @@ pub trait Pass<'alloc> {
 
     fn visit_cover_parenthesized(&mut self, ast: &mut CoverParenthesized<'alloc>) {
         match ast {
-            CoverParenthesized::Expression(ast) => {
-                self.visit_expression(ast);
+            CoverParenthesized::Expression { expression, .. } => {
+                self.visit_expression(expression);
             }
             CoverParenthesized::Parameters(ast) => {
                 self.visit_formal_parameters(ast);
@@ -1993,6 +2017,12 @@ pub trait PostfixPass<'alloc> {
         }
         result
     }
+
+    fn visit_expression(&self, expression: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(expression);
+        result
+    }
 }
 
 pub struct PostfixPassVisitor<'alloc, T: PostfixPass<'alloc>> {
@@ -2040,9 +2070,9 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         ast: &mut VariableDeclarationKind,
     ) -> T::Value {
         match ast {
-            VariableDeclarationKind::Var => T::Value::default(),
-            VariableDeclarationKind::Let => T::Value::default(),
-            VariableDeclarationKind::Const => T::Value::default(),
+            VariableDeclarationKind::Var(_) => T::Value::default(),
+            VariableDeclarationKind::Let(_) => T::Value::default(),
+            VariableDeclarationKind::Const(_) => T::Value::default(),
         }
     }
 
@@ -2051,68 +2081,68 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         ast: &mut CompoundAssignmentOperator,
     ) -> T::Value {
         match ast {
-            CompoundAssignmentOperator::Add => T::Value::default(),
-            CompoundAssignmentOperator::Sub => T::Value::default(),
-            CompoundAssignmentOperator::Mul => T::Value::default(),
-            CompoundAssignmentOperator::Div => T::Value::default(),
-            CompoundAssignmentOperator::Mod => T::Value::default(),
-            CompoundAssignmentOperator::Pow => T::Value::default(),
-            CompoundAssignmentOperator::LeftShift => T::Value::default(),
-            CompoundAssignmentOperator::RightShift => T::Value::default(),
-            CompoundAssignmentOperator::RightShiftExt => T::Value::default(),
-            CompoundAssignmentOperator::Or => T::Value::default(),
-            CompoundAssignmentOperator::Xor => T::Value::default(),
-            CompoundAssignmentOperator::And => T::Value::default(),
+            CompoundAssignmentOperator::Add(_) => T::Value::default(),
+            CompoundAssignmentOperator::Sub(_) => T::Value::default(),
+            CompoundAssignmentOperator::Mul(_) => T::Value::default(),
+            CompoundAssignmentOperator::Div(_) => T::Value::default(),
+            CompoundAssignmentOperator::Mod(_) => T::Value::default(),
+            CompoundAssignmentOperator::Pow(_) => T::Value::default(),
+            CompoundAssignmentOperator::LeftShift(_) => T::Value::default(),
+            CompoundAssignmentOperator::RightShift(_) => T::Value::default(),
+            CompoundAssignmentOperator::RightShiftExt(_) => T::Value::default(),
+            CompoundAssignmentOperator::Or(_) => T::Value::default(),
+            CompoundAssignmentOperator::Xor(_) => T::Value::default(),
+            CompoundAssignmentOperator::And(_) => T::Value::default(),
         }
     }
 
     pub fn visit_binary_operator(&mut self, ast: &mut BinaryOperator) -> T::Value {
         match ast {
-            BinaryOperator::Equals => T::Value::default(),
-            BinaryOperator::NotEquals => T::Value::default(),
-            BinaryOperator::StrictEquals => T::Value::default(),
-            BinaryOperator::StrictNotEquals => T::Value::default(),
-            BinaryOperator::LessThan => T::Value::default(),
-            BinaryOperator::LessThanOrEqual => T::Value::default(),
-            BinaryOperator::GreaterThan => T::Value::default(),
-            BinaryOperator::GreaterThanOrEqual => T::Value::default(),
-            BinaryOperator::In => T::Value::default(),
-            BinaryOperator::Instanceof => T::Value::default(),
-            BinaryOperator::LeftShift => T::Value::default(),
-            BinaryOperator::RightShift => T::Value::default(),
-            BinaryOperator::RightShiftExt => T::Value::default(),
-            BinaryOperator::Add => T::Value::default(),
-            BinaryOperator::Sub => T::Value::default(),
-            BinaryOperator::Mul => T::Value::default(),
-            BinaryOperator::Div => T::Value::default(),
-            BinaryOperator::Mod => T::Value::default(),
-            BinaryOperator::Pow => T::Value::default(),
-            BinaryOperator::Comma => T::Value::default(),
-            BinaryOperator::Coalesce => T::Value::default(),
-            BinaryOperator::LogicalOr => T::Value::default(),
-            BinaryOperator::LogicalAnd => T::Value::default(),
-            BinaryOperator::BitwiseOr => T::Value::default(),
-            BinaryOperator::BitwiseXor => T::Value::default(),
-            BinaryOperator::BitwiseAnd => T::Value::default(),
+            BinaryOperator::Equals(_) => T::Value::default(),
+            BinaryOperator::NotEquals(_) => T::Value::default(),
+            BinaryOperator::StrictEquals(_) => T::Value::default(),
+            BinaryOperator::StrictNotEquals(_) => T::Value::default(),
+            BinaryOperator::LessThan(_) => T::Value::default(),
+            BinaryOperator::LessThanOrEqual(_) => T::Value::default(),
+            BinaryOperator::GreaterThan(_) => T::Value::default(),
+            BinaryOperator::GreaterThanOrEqual(_) => T::Value::default(),
+            BinaryOperator::In(_) => T::Value::default(),
+            BinaryOperator::Instanceof(_) => T::Value::default(),
+            BinaryOperator::LeftShift(_) => T::Value::default(),
+            BinaryOperator::RightShift(_) => T::Value::default(),
+            BinaryOperator::RightShiftExt(_) => T::Value::default(),
+            BinaryOperator::Add(_) => T::Value::default(),
+            BinaryOperator::Sub(_) => T::Value::default(),
+            BinaryOperator::Mul(_) => T::Value::default(),
+            BinaryOperator::Div(_) => T::Value::default(),
+            BinaryOperator::Mod(_) => T::Value::default(),
+            BinaryOperator::Pow(_) => T::Value::default(),
+            BinaryOperator::Comma(_) => T::Value::default(),
+            BinaryOperator::Coalesce(_) => T::Value::default(),
+            BinaryOperator::LogicalOr(_) => T::Value::default(),
+            BinaryOperator::LogicalAnd(_) => T::Value::default(),
+            BinaryOperator::BitwiseOr(_) => T::Value::default(),
+            BinaryOperator::BitwiseXor(_) => T::Value::default(),
+            BinaryOperator::BitwiseAnd(_) => T::Value::default(),
         }
     }
 
     pub fn visit_unary_operator(&mut self, ast: &mut UnaryOperator) -> T::Value {
         match ast {
-            UnaryOperator::Plus => T::Value::default(),
-            UnaryOperator::Minus => T::Value::default(),
-            UnaryOperator::LogicalNot => T::Value::default(),
-            UnaryOperator::BitwiseNot => T::Value::default(),
-            UnaryOperator::Typeof => T::Value::default(),
-            UnaryOperator::Void => T::Value::default(),
-            UnaryOperator::Delete => T::Value::default(),
+            UnaryOperator::Plus(_) => T::Value::default(),
+            UnaryOperator::Minus(_) => T::Value::default(),
+            UnaryOperator::LogicalNot(_) => T::Value::default(),
+            UnaryOperator::BitwiseNot(_) => T::Value::default(),
+            UnaryOperator::Typeof(_) => T::Value::default(),
+            UnaryOperator::Void(_) => T::Value::default(),
+            UnaryOperator::Delete(_) => T::Value::default(),
         }
     }
 
     pub fn visit_update_operator(&mut self, ast: &mut UpdateOperator) -> T::Value {
         match ast {
-            UpdateOperator::Increment => T::Value::default(),
-            UpdateOperator::Decrement => T::Value::default(),
+            UpdateOperator::Increment(_) => T::Value::default(),
+            UpdateOperator::Decrement(_) => T::Value::default(),
         }
     }
 
@@ -2136,33 +2166,37 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
 
     pub fn visit_statement(&mut self, ast: &mut Statement<'alloc>) -> T::Value {
         match ast {
-            Statement::BlockStatement { block } => {
+            Statement::BlockStatement { block, .. } => {
                 let a0 = self.visit_block((block));
                 self.pass.visit_block_statement(a0)
             }
-            Statement::BreakStatement { label } => {
+            Statement::BreakStatement { label, .. } => {
                 let a0 = (label).as_mut().map(|item| self.visit_label(item));
                 self.pass.visit_break_statement(a0)
             }
-            Statement::ContinueStatement { label } => {
+            Statement::ContinueStatement { label, .. } => {
                 let a0 = (label).as_mut().map(|item| self.visit_label(item));
                 self.pass.visit_continue_statement(a0)
             }
-            Statement::DebuggerStatement => T::Value::default(),
-            Statement::DoWhileStatement { block, test } => {
+            Statement::DebuggerStatement(_) => T::Value::default(),
+            Statement::DoWhileStatement { block, test, .. } => {
                 let a0 = self.visit_statement((block));
                 let a1 = self.visit_expression((test));
                 self.pass.visit_do_while_statement(a0, a1)
             }
-            Statement::EmptyStatement => T::Value::default(),
+            Statement::EmptyStatement(_) => T::Value::default(),
             Statement::ExpressionStatement(ast) => self.visit_expression(ast),
-            Statement::ForInStatement { left, right, block } => {
+            Statement::ForInStatement {
+                left, right, block, ..
+            } => {
                 let a0 = self.visit_variable_declaration_or_assignment_target((left));
                 let a1 = self.visit_expression((right));
                 let a2 = self.visit_statement((block));
                 self.pass.visit_for_in_statement(a0, a1, a2)
             }
-            Statement::ForOfStatement { left, right, block } => {
+            Statement::ForOfStatement {
+                left, right, block, ..
+            } => {
                 let a0 = self.visit_variable_declaration_or_assignment_target((left));
                 let a1 = self.visit_expression((right));
                 let a2 = self.visit_statement((block));
@@ -2173,6 +2207,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 test,
                 update,
                 block,
+                ..
             } => {
                 let a0 = (init)
                     .as_mut()
@@ -2186,18 +2221,19 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 test,
                 consequent,
                 alternate,
+                ..
             } => {
                 let a0 = self.visit_expression((test));
                 let a1 = self.visit_statement((consequent));
                 let a2 = (alternate).as_mut().map(|item| self.visit_statement(item));
                 self.pass.visit_if_statement(a0, a1, a2)
             }
-            Statement::LabeledStatement { label, body } => {
+            Statement::LabeledStatement { label, body, .. } => {
                 let a0 = self.visit_label((label));
                 let a1 = self.visit_statement((body));
                 self.pass.visit_labeled_statement(a0, a1)
             }
-            Statement::ReturnStatement { expression } => {
+            Statement::ReturnStatement { expression, .. } => {
                 let a0 = (expression)
                     .as_mut()
                     .map(|item| self.visit_expression(item));
@@ -2206,6 +2242,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             Statement::SwitchStatement {
                 discriminant,
                 cases,
+                ..
             } => {
                 let a0 = self.visit_expression((discriminant));
                 let a1 = {
@@ -2219,6 +2256,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 pre_default_cases,
                 default_case,
                 post_default_cases,
+                ..
             } => {
                 let a0 = self.visit_expression((discriminant));
                 let a1 = {
@@ -2241,11 +2279,13 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 self.pass
                     .visit_switch_statement_with_default(a0, a1, a2, a3)
             }
-            Statement::ThrowStatement { expression } => {
+            Statement::ThrowStatement { expression, .. } => {
                 let a0 = self.visit_expression((expression));
                 self.pass.visit_throw_statement(a0)
             }
-            Statement::TryCatchStatement { body, catch_clause } => {
+            Statement::TryCatchStatement {
+                body, catch_clause, ..
+            } => {
                 let a0 = self.visit_block((body));
                 let a1 = self.visit_catch_clause((catch_clause));
                 self.pass.visit_try_catch_statement(a0, a1)
@@ -2254,6 +2294,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 body,
                 catch_clause,
                 finalizer,
+                ..
             } => {
                 let a0 = self.visit_block((body));
                 let a1 = (catch_clause)
@@ -2262,12 +2303,12 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 let a2 = self.visit_block((finalizer));
                 self.pass.visit_try_finally_statement(a0, a1, a2)
             }
-            Statement::WhileStatement { test, block } => {
+            Statement::WhileStatement { test, block, .. } => {
                 let a0 = self.visit_expression((test));
                 let a1 = self.visit_statement((block));
                 self.pass.visit_while_statement(a0, a1)
             }
-            Statement::WithStatement { object, body } => {
+            Statement::WithStatement { object, body, .. } => {
                 let a0 = self.visit_expression((object));
                 let a1 = self.visit_statement((body));
                 self.pass.visit_with_statement(a0, a1)
@@ -2282,13 +2323,13 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         match ast {
             Expression::MemberExpression(ast) => self.visit_member_expression(ast),
             Expression::ClassExpression(ast) => self.visit_class_expression(ast),
-            Expression::LiteralBooleanExpression { value } => {
+            Expression::LiteralBooleanExpression { value, .. } => {
                 let a0 = value;
                 self.pass.visit_literal_boolean_expression(a0)
             }
-            Expression::LiteralInfinityExpression => T::Value::default(),
-            Expression::LiteralNullExpression => T::Value::default(),
-            Expression::LiteralNumericExpression { value } => {
+            Expression::LiteralInfinityExpression(_) => T::Value::default(),
+            Expression::LiteralNullExpression(_) => T::Value::default(),
+            Expression::LiteralNumericExpression { value, .. } => {
                 let a0 = value;
                 self.pass.visit_literal_numeric_expression(a0)
             }
@@ -2299,6 +2340,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 multi_line,
                 sticky,
                 unicode,
+                ..
             } => {
                 let a0 = pattern;
                 let a1 = global;
@@ -2309,7 +2351,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 self.pass
                     .visit_literal_reg_exp_expression(a0, a1, a2, a3, a4, a5)
             }
-            Expression::LiteralStringExpression { value } => {
+            Expression::LiteralStringExpression { value, .. } => {
                 let a0 = value;
                 self.pass.visit_literal_string_expression(a0)
             }
@@ -2318,6 +2360,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 is_async,
                 params,
                 body,
+                ..
             } => {
                 let a0 = is_async;
                 let a1 = self.visit_formal_parameters((params));
@@ -2327,6 +2370,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             Expression::AssignmentExpression {
                 binding,
                 expression,
+                ..
             } => {
                 let a0 = self.visit_assignment_target((binding));
                 let a1 = self.visit_expression((expression));
@@ -2336,13 +2380,16 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 operator,
                 left,
                 right,
+                ..
             } => {
                 let a0 = self.visit_binary_operator((operator));
                 let a1 = self.visit_expression((left));
                 let a2 = self.visit_expression((right));
                 self.pass.visit_binary_expression(a0, a1, a2)
             }
-            Expression::CallExpression { callee, arguments } => {
+            Expression::CallExpression {
+                callee, arguments, ..
+            } => {
                 let a0 = self.visit_expression_or_super((callee));
                 let a1 = self.visit_arguments((arguments));
                 self.pass.visit_call_expression(a0, a1)
@@ -2351,6 +2398,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 operator,
                 binding,
                 expression,
+                ..
             } => {
                 let a0 = self.visit_compound_assignment_operator((operator));
                 let a1 = self.visit_simple_assignment_target((binding));
@@ -2361,6 +2409,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 test,
                 consequent,
                 alternate,
+                ..
             } => {
                 let a0 = self.visit_expression((test));
                 let a1 = self.visit_expression((consequent));
@@ -2369,45 +2418,50 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             }
             Expression::FunctionExpression(ast) => self.visit_function(ast),
             Expression::IdentifierExpression(ast) => self.visit_identifier_expression(ast),
-            Expression::NewExpression { callee, arguments } => {
+            Expression::NewExpression {
+                callee, arguments, ..
+            } => {
                 let a0 = self.visit_expression((callee));
                 let a1 = self.visit_arguments((arguments));
                 self.pass.visit_new_expression(a0, a1)
             }
-            Expression::NewTargetExpression => T::Value::default(),
+            Expression::NewTargetExpression(_) => T::Value::default(),
             Expression::ObjectExpression(ast) => self.visit_object_expression(ast),
-            Expression::UnaryExpression { operator, operand } => {
+            Expression::UnaryExpression {
+                operator, operand, ..
+            } => {
                 let a0 = self.visit_unary_operator((operator));
                 let a1 = self.visit_expression((operand));
                 self.pass.visit_unary_expression(a0, a1)
             }
             Expression::TemplateExpression(ast) => self.visit_template_expression(ast),
-            Expression::ThisExpression => T::Value::default(),
+            Expression::ThisExpression(_) => T::Value::default(),
             Expression::UpdateExpression {
                 is_prefix,
                 operator,
                 operand,
+                ..
             } => {
                 let a0 = is_prefix;
                 let a1 = self.visit_update_operator((operator));
                 let a2 = self.visit_simple_assignment_target((operand));
                 self.pass.visit_update_expression(a0, a1, a2)
             }
-            Expression::YieldExpression { expression } => {
+            Expression::YieldExpression { expression, .. } => {
                 let a0 = (expression)
                     .as_mut()
                     .map(|item| self.visit_expression(item));
                 self.pass.visit_yield_expression(a0)
             }
-            Expression::YieldGeneratorExpression { expression } => {
+            Expression::YieldGeneratorExpression { expression, .. } => {
                 let a0 = self.visit_expression((expression));
                 self.pass.visit_yield_generator_expression(a0)
             }
-            Expression::AwaitExpression { expression } => {
+            Expression::AwaitExpression { expression, .. } => {
                 let a0 = self.visit_expression((expression));
                 self.pass.visit_await_expression(a0)
             }
-            Expression::ImportCallExpression { argument } => {
+            Expression::ImportCallExpression { argument, .. } => {
                 let a0 = self.visit_expression((argument));
                 self.pass.visit_import_call_expression(a0)
             }
@@ -2566,7 +2620,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
     pub fn visit_expression_or_super(&mut self, ast: &mut ExpressionOrSuper<'alloc>) -> T::Value {
         match ast {
             ExpressionOrSuper::Expression(ast) => self.visit_expression(ast),
-            ExpressionOrSuper::Super => T::Value::default(),
+            ExpressionOrSuper::Super(_) => T::Value::default(),
         }
     }
 
@@ -2982,7 +3036,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         match ast {
             ArrayExpressionElement::SpreadElement(ast) => self.visit_expression(ast),
             ArrayExpressionElement::Expression(ast) => self.visit_expression(ast),
-            ArrayExpressionElement::Elision => T::Value::default(),
+            ArrayExpressionElement::Elision(_) => T::Value::default(),
         }
     }
 
@@ -3234,7 +3288,10 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
 
     pub fn visit_cover_parenthesized(&mut self, ast: &mut CoverParenthesized<'alloc>) -> T::Value {
         match ast {
-            CoverParenthesized::Expression(ast) => self.visit_expression(ast),
+            CoverParenthesized::Expression { expression, .. } => {
+                let a0 = self.visit_expression((expression));
+                self.pass.visit_expression(a0)
+            }
             CoverParenthesized::Parameters(ast) => self.visit_formal_parameters(ast),
         }
     }

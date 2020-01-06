@@ -50,13 +50,13 @@ impl AstEmitter {
             Statement::ContinueStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
             }
-            Statement::DebuggerStatement => {
+            Statement::DebuggerStatement(_) => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
             Statement::DoWhileStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DoWhileStatement"));
             }
-            Statement::EmptyStatement => (),
+            Statement::EmptyStatement(_) => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast)?;
                 self.emit.set_rval();
@@ -76,7 +76,7 @@ impl AstEmitter {
             Statement::LabeledStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
             }
-            Statement::ReturnStatement { expression } => {
+            Statement::ReturnStatement { expression, .. } => {
                 self.emit_return_statement(expression)?;
             }
             Statement::SwitchStatement { .. } => {
@@ -113,9 +113,9 @@ impl AstEmitter {
 
     fn emit_variable_declaration(&mut self, ast: &VariableDeclaration) -> Result<(), EmitError> {
         match ast.kind {
-            VariableDeclarationKind::Var => (),
-            VariableDeclarationKind::Let => (),
-            VariableDeclarationKind::Const => (),
+            VariableDeclarationKind::Var(_) => (),
+            VariableDeclarationKind::Let(_) => (),
+            VariableDeclarationKind::Const(_) => (),
         }
         for declarator in &ast.declarators {
             let _ = match &declarator.binding {
@@ -164,6 +164,7 @@ impl AstEmitter {
                 ComputedMemberExpression {
                     object: ExpressionOrSuper::Expression(object),
                     expression,
+                    ..
                 },
             )) => {
                 self.emit_expression(object)?;
@@ -173,8 +174,9 @@ impl AstEmitter {
 
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
                 ComputedMemberExpression {
-                    object: ExpressionOrSuper::Super,
+                    object: ExpressionOrSuper::Super(_),
                     expression,
+                    ..
                 },
             )) => {
                 self.emit_this()?;
@@ -188,6 +190,7 @@ impl AstEmitter {
                 StaticMemberExpression {
                     object: ExpressionOrSuper::Expression(object),
                     property,
+                    ..
                 },
             )) => {
                 self.emit_expression(object)?;
@@ -196,8 +199,9 @@ impl AstEmitter {
 
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                 StaticMemberExpression {
-                    object: ExpressionOrSuper::Super,
+                    object: ExpressionOrSuper::Super(_),
                     property,
+                    ..
                 },
             )) => {
                 self.emit_this()?;
@@ -210,19 +214,19 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: ClassExpression"));
             }
 
-            Expression::LiteralBooleanExpression { value } => {
+            Expression::LiteralBooleanExpression { value, .. } => {
                 self.emit.emit_boolean(*value);
             }
 
-            Expression::LiteralInfinityExpression => {
+            Expression::LiteralInfinityExpression(_) => {
                 self.emit.double(std::f64::INFINITY);
             }
 
-            Expression::LiteralNullExpression => {
+            Expression::LiteralNullExpression(_) => {
                 self.emit.null();
             }
 
-            Expression::LiteralNumericExpression { value } => {
+            Expression::LiteralNumericExpression { value, .. } => {
                 self.emit_numeric_expression(*value);
             }
 
@@ -230,7 +234,7 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: LiteralRegExpExpression"));
             }
 
-            Expression::LiteralStringExpression { value } => {
+            Expression::LiteralStringExpression { value, .. } => {
                 self.emit.string(value);
             }
 
@@ -250,11 +254,14 @@ impl AstEmitter {
                 operator,
                 left,
                 right,
+                ..
             } => {
-                self.emit_binary_expression(*operator, left, right)?;
+                self.emit_binary_expression(operator, left, right)?;
             }
 
-            Expression::CallExpression { callee, arguments } => {
+            Expression::CallExpression {
+                callee, arguments, ..
+            } => {
                 self.emit_call_expression(callee, arguments)?;
             }
 
@@ -280,7 +287,7 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: NewExpression"));
             }
 
-            Expression::NewTargetExpression => {
+            Expression::NewTargetExpression(_) => {
                 return Err(EmitError::NotImplemented("TODO: NewTargetExpression"));
             }
 
@@ -288,17 +295,19 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: ObjectExpression"));
             }
 
-            Expression::UnaryExpression { operator, operand } => {
+            Expression::UnaryExpression {
+                operator, operand, ..
+            } => {
                 let opcode = match operator {
-                    UnaryOperator::Plus => Opcode::Pos,
-                    UnaryOperator::Minus => Opcode::Neg,
-                    UnaryOperator::LogicalNot => Opcode::Not,
-                    UnaryOperator::BitwiseNot => Opcode::BitNot,
-                    UnaryOperator::Void => Opcode::Void,
-                    UnaryOperator::Typeof => {
+                    UnaryOperator::Plus(_) => Opcode::Pos,
+                    UnaryOperator::Minus(_) => Opcode::Neg,
+                    UnaryOperator::LogicalNot(_) => Opcode::Not,
+                    UnaryOperator::BitwiseNot(_) => Opcode::BitNot,
+                    UnaryOperator::Void(_) => Opcode::Void,
+                    UnaryOperator::Typeof(_) => {
                         return Err(EmitError::NotImplemented("TODO: Typeof"));
                     }
-                    UnaryOperator::Delete => {
+                    UnaryOperator::Delete(_) => {
                         return Err(EmitError::NotImplemented("TODO: Delete"));
                     }
                 };
@@ -310,7 +319,7 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: TemplateExpression"));
             }
 
-            Expression::ThisExpression => {
+            Expression::ThisExpression(_) => {
                 self.emit_this()?;
             }
 
@@ -340,43 +349,43 @@ impl AstEmitter {
 
     fn emit_binary_expression(
         &mut self,
-        operator: BinaryOperator,
+        operator: &BinaryOperator,
         left: &Expression,
         right: &Expression,
     ) -> Result<(), EmitError> {
         let opcode = match operator {
-            BinaryOperator::Equals => Opcode::Eq,
-            BinaryOperator::NotEquals => Opcode::Ne,
-            BinaryOperator::StrictEquals => Opcode::StrictEq,
-            BinaryOperator::StrictNotEquals => Opcode::StrictNe,
-            BinaryOperator::LessThan => Opcode::Lt,
-            BinaryOperator::LessThanOrEqual => Opcode::Le,
-            BinaryOperator::GreaterThan => Opcode::Gt,
-            BinaryOperator::GreaterThanOrEqual => Opcode::Ge,
-            BinaryOperator::In => Opcode::In,
-            BinaryOperator::Instanceof => Opcode::Instanceof,
-            BinaryOperator::LeftShift => Opcode::Lsh,
-            BinaryOperator::RightShift => Opcode::Rsh,
-            BinaryOperator::RightShiftExt => Opcode::Ursh,
-            BinaryOperator::Add => Opcode::Add,
-            BinaryOperator::Sub => Opcode::Sub,
-            BinaryOperator::Mul => Opcode::Mul,
-            BinaryOperator::Div => Opcode::Div,
-            BinaryOperator::Mod => Opcode::Mod,
-            BinaryOperator::Pow => Opcode::Pow,
-            BinaryOperator::BitwiseOr => Opcode::BitOr,
-            BinaryOperator::BitwiseXor => Opcode::BitXor,
-            BinaryOperator::BitwiseAnd => Opcode::BitAnd,
-            BinaryOperator::Coalesce => {
+            BinaryOperator::Equals(_) => Opcode::Eq,
+            BinaryOperator::NotEquals(_) => Opcode::Ne,
+            BinaryOperator::StrictEquals(_) => Opcode::StrictEq,
+            BinaryOperator::StrictNotEquals(_) => Opcode::StrictNe,
+            BinaryOperator::LessThan(_) => Opcode::Lt,
+            BinaryOperator::LessThanOrEqual(_) => Opcode::Le,
+            BinaryOperator::GreaterThan(_) => Opcode::Gt,
+            BinaryOperator::GreaterThanOrEqual(_) => Opcode::Ge,
+            BinaryOperator::In(_) => Opcode::In,
+            BinaryOperator::Instanceof(_) => Opcode::Instanceof,
+            BinaryOperator::LeftShift(_) => Opcode::Lsh,
+            BinaryOperator::RightShift(_) => Opcode::Rsh,
+            BinaryOperator::RightShiftExt(_) => Opcode::Ursh,
+            BinaryOperator::Add(_) => Opcode::Add,
+            BinaryOperator::Sub(_) => Opcode::Sub,
+            BinaryOperator::Mul(_) => Opcode::Mul,
+            BinaryOperator::Div(_) => Opcode::Div,
+            BinaryOperator::Mod(_) => Opcode::Mod,
+            BinaryOperator::Pow(_) => Opcode::Pow,
+            BinaryOperator::BitwiseOr(_) => Opcode::BitOr,
+            BinaryOperator::BitwiseXor(_) => Opcode::BitXor,
+            BinaryOperator::BitwiseAnd(_) => Opcode::BitAnd,
+            BinaryOperator::Coalesce(_) => {
                 return Err(EmitError::NotImplemented("TODO: Coalescer"));
             }
-            BinaryOperator::LogicalOr => {
+            BinaryOperator::LogicalOr(_) => {
                 return Err(EmitError::NotImplemented("TODO: LogicalOr"));
             }
-            BinaryOperator::LogicalAnd => {
+            BinaryOperator::LogicalAnd(_) => {
                 return Err(EmitError::NotImplemented("TODO: LogicalAndr"));
             }
-            BinaryOperator::Comma => {
+            BinaryOperator::Comma(_) => {
                 self.emit_expression(left)?;
                 self.emit.pop();
                 self.emit_expression(right)?;
@@ -418,7 +427,7 @@ impl AstEmitter {
         // depends on how you're using the super
         match callee {
             ExpressionOrSuper::Expression(ast) => self.emit_expression(ast)?,
-            ExpressionOrSuper::Super => {
+            ExpressionOrSuper::Super(_) => {
                 return Err(EmitError::NotImplemented("TODO: Super"));
             }
         }

@@ -7880,28 +7880,28 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BlockStatement)
         }
         49 => {
-            // VariableStatement ::= "var" VariableDeclarationList[+In] ";" => variable_statement($1)
+            // VariableStatement ::= "var" VariableDeclarationList[+In] ";" => variable_statement($0, $1)
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.variable_statement(x1),
+                handler.variable_statement(x0, x1),
             )?);
             Ok(NonterminalId::VariableStatement)
         }
         50 => {
-            // VariableStatement ::= "var" VariableDeclarationList[+In] ErrorSymbol(asi) => variable_statement($1)
+            // VariableStatement ::= "var" VariableDeclarationList[+In] ErrorSymbol(asi) => variable_statement($0, $1)
             let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.variable_statement(x1),
+                handler.variable_statement(x0, x1),
             )?);
             Ok(NonterminalId::VariableStatement)
         }
         51 => {
-            // EmptyStatement ::= ";" => empty_statement()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.empty_statement())?);
+            // EmptyStatement ::= ";" => empty_statement($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.empty_statement(x0))?);
             Ok(NonterminalId::EmptyStatement)
         }
         52 => {
@@ -7922,15 +7922,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ExpressionStatement)
         }
         54 => {
-            // IfStatement ::= "if" "(" Expression[+In] ")" Statement "else" Statement => if_statement($2, $4, Some($6))
+            // IfStatement ::= "if" "(" Expression[+In] ")" Statement "else" Statement => if_statement($0, $2, $4, Some($6))
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.if_statement(
+                x0,
                 x2,
                 x4,
                 Some(x6),
@@ -7938,14 +7939,14 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IfStatement)
         }
         55 => {
-            // IfStatement ::= "if" "(" Expression[+In] ")" Statement => if_statement($2, $4, None)
+            // IfStatement ::= "if" "(" Expression[+In] ")" Statement => if_statement($0, $2, $4, None)
             let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.if_statement(x2, x4, None),
+                handler.if_statement(x0, x2, x4, None),
             )?);
             Ok(NonterminalId::IfStatement)
         }
@@ -7958,118 +7959,122 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BreakableStatement)
         }
         58 => {
-            // ContinueStatement ::= "continue" ";" => continue_statement(None)
+            // ContinueStatement ::= "continue" ";" => continue_statement($0, None)
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.continue_statement(None),
+                handler.continue_statement(x0, None),
             )?);
             Ok(NonterminalId::ContinueStatement)
         }
         59 => {
-            // ContinueStatement ::= "continue" ErrorSymbol(asi) => continue_statement(None)
-            stack.pop();
+            // ContinueStatement ::= "continue" ErrorSymbol(asi) => continue_statement($0, None)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.continue_statement(None),
+                handler.continue_statement(x0, None),
             )?);
             Ok(NonterminalId::ContinueStatement)
         }
         60 => {
-            // ContinueStatement ::= "continue" LabelIdentifier ";" => continue_statement(Some($1))
+            // ContinueStatement ::= "continue" LabelIdentifier ";" => continue_statement($0, Some($1))
             stack.pop();
             let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.continue_statement(Some(x1)),
+                handler.continue_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::ContinueStatement)
         }
         61 => {
-            // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => continue_statement(Some($1))
+            // ContinueStatement ::= "continue" LabelIdentifier ErrorSymbol(asi) => continue_statement($0, Some($1))
             let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.continue_statement(Some(x1)),
+                handler.continue_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::ContinueStatement)
         }
         62 => {
-            // BreakStatement ::= "break" ";" => break_statement(None)
+            // BreakStatement ::= "break" ";" => break_statement($0, None)
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.break_statement(None))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.break_statement(x0, None),
+            )?);
             Ok(NonterminalId::BreakStatement)
         }
         63 => {
-            // BreakStatement ::= "break" ErrorSymbol(asi) => break_statement(None)
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.break_statement(None))?);
+            // BreakStatement ::= "break" ErrorSymbol(asi) => break_statement($0, None)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.break_statement(x0, None),
+            )?);
             Ok(NonterminalId::BreakStatement)
         }
         64 => {
-            // BreakStatement ::= "break" LabelIdentifier ";" => break_statement(Some($1))
+            // BreakStatement ::= "break" LabelIdentifier ";" => break_statement($0, Some($1))
             stack.pop();
             let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.break_statement(Some(x1)),
+                handler.break_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::BreakStatement)
         }
         65 => {
-            // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => break_statement(Some($1))
+            // BreakStatement ::= "break" LabelIdentifier ErrorSymbol(asi) => break_statement($0, Some($1))
             let x1: Box<'alloc, Label> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.break_statement(Some(x1)),
+                handler.break_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::BreakStatement)
         }
         66 => {
-            // ReturnStatement ::= "return" ";" => return_statement(None)
+            // ReturnStatement ::= "return" ";" => return_statement($0, None)
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.return_statement(None),
+                handler.return_statement(x0, None),
             )?);
             Ok(NonterminalId::ReturnStatement)
         }
         67 => {
-            // ReturnStatement ::= "return" ErrorSymbol(asi) => return_statement(None)
-            stack.pop();
+            // ReturnStatement ::= "return" ErrorSymbol(asi) => return_statement($0, None)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.return_statement(None),
+                handler.return_statement(x0, None),
             )?);
             Ok(NonterminalId::ReturnStatement)
         }
         68 => {
-            // ReturnStatement ::= "return" Expression[+In] ";" => return_statement(Some($1))
+            // ReturnStatement ::= "return" Expression[+In] ";" => return_statement($0, Some($1))
             stack.pop();
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.return_statement(Some(x1)),
+                handler.return_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::ReturnStatement)
         }
         69 => {
-            // ReturnStatement ::= "return" Expression[+In] ErrorSymbol(asi) => return_statement(Some($1))
+            // ReturnStatement ::= "return" Expression[+In] ErrorSymbol(asi) => return_statement($0, Some($1))
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.return_statement(Some(x1)),
+                handler.return_statement(x0, Some(x1)),
             )?);
             Ok(NonterminalId::ReturnStatement)
         }
         70 => {
-            // WithStatement ::= "with" "(" Expression[+In] ")" Statement => with_statement($2, $4)
+            // WithStatement ::= "with" "(" Expression[+In] ")" Statement => with_statement($0, $2, $4)
             let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.with_statement(x2, x4),
+                handler.with_statement(x0, x2, x4),
             )?);
             Ok(NonterminalId::WithStatement)
         }
@@ -8084,26 +8089,31 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LabelledStatement)
         }
         72 => {
-            // ThrowStatement ::= "throw" Expression[+In] ";" => throw_statement($1)
+            // ThrowStatement ::= "throw" Expression[+In] ";" => throw_statement($0, $1)
             stack.pop();
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.throw_statement(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.throw_statement(x0, x1),
+            )?);
             Ok(NonterminalId::ThrowStatement)
         }
         73 => {
-            // ThrowStatement ::= "throw" Expression[+In] ErrorSymbol(asi) => throw_statement($1)
+            // ThrowStatement ::= "throw" Expression[+In] ErrorSymbol(asi) => throw_statement($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.throw_statement(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.throw_statement(x0, x1),
+            )?);
             Ok(NonterminalId::ThrowStatement)
         }
         74 => {
-            // TryStatement ::= "try" Block Catch => try_statement($1, Some($2), None)
+            // TryStatement ::= "try" Block Catch => try_statement($0, $1, Some($2), None)
             let x2: Box<'alloc, CatchClause> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
+                x0,
                 x1,
                 Some(x2),
                 None,
@@ -8111,11 +8121,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::TryStatement)
         }
         75 => {
-            // TryStatement ::= "try" Block Finally => try_statement($1, None, Some($2))
+            // TryStatement ::= "try" Block Finally => try_statement($0, $1, None, Some($2))
             let x2: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
+                x0,
                 x1,
                 None,
                 Some(x2),
@@ -8123,12 +8134,13 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::TryStatement)
         }
         76 => {
-            // TryStatement ::= "try" Block Catch Finally => try_statement($1, Some($2), Some($3))
+            // TryStatement ::= "try" Block Catch Finally => try_statement($0, $1, Some($2), Some($3))
             let x3: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, CatchClause> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.try_statement(
+                x0,
                 x1,
                 Some(x2),
                 Some(x3),
@@ -8136,16 +8148,20 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::TryStatement)
         }
         77 => {
-            // DebuggerStatement ::= "debugger" ";" => debugger_statement()
+            // DebuggerStatement ::= "debugger" ";" => debugger_statement($0)
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.debugger_statement())?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.debugger_statement(x0),
+            )?);
             Ok(NonterminalId::DebuggerStatement)
         }
         78 => {
-            // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => debugger_statement()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.debugger_statement())?);
+            // DebuggerStatement ::= "debugger" ErrorSymbol(asi) => debugger_statement($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.debugger_statement(x0),
+            )?);
             Ok(NonterminalId::DebuggerStatement)
         }
         79 => {
@@ -8165,13 +8181,15 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::HoistableDeclaration)
         }
         83 => {
-            // ClassDeclaration[~Default] ::= "class" BindingIdentifier ClassTail => class_declaration(Some($1), $2)
+            // ClassDeclaration[~Default] ::= "class" BindingIdentifier ClassTail => class_declaration($0, Some($1), $2)
             let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_declaration(Some(x1), x2),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.class_declaration(
+                x0,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::ClassDeclaration)
         }
         84 => {
@@ -8301,21 +8319,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::HoistableDeclarationDefault)
         }
         100 => {
-            // ClassDeclaration[+Default] ::= "class" BindingIdentifier ClassTail => class_declaration(Some($1), $2)
+            // ClassDeclaration[+Default] ::= "class" BindingIdentifier ClassTail => class_declaration($0, Some($1), $2)
             let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_declaration(Some(x1), x2),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.class_declaration(
+                x0,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::ClassDeclarationDefault)
         }
         101 => {
-            // ClassDeclaration[+Default] ::= "class" ClassTail => class_declaration(None, $1)
+            // ClassDeclaration[+Default] ::= "class" ClassTail => class_declaration($0, None, $1)
             let x1: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.class_declaration(None, x1),
+                handler.class_declaration(x0, None, x1),
             )?);
             Ok(NonterminalId::ClassDeclarationDefault)
         }
@@ -8341,7 +8361,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.assignment_expr(x0, x2),
+                handler.assignment_expr(x0, x2)?,
             )?);
             Ok(NonterminalId::AssignmentExpressionIn)
         }
@@ -8351,23 +8371,27 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, CompoundAssignmentOperator> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.compound_assignment_expr(x0, x1, x2),
+                handler.compound_assignment_expr(x0, x1, x2)?,
             )?);
             Ok(NonterminalId::AssignmentExpressionIn)
         }
         108 => {
-            // Block ::= "{" "}" => block(None)
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.block(None))?);
+            // Block ::= "{" "}" => block($0, None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.block(x0, None, x1))?);
             Ok(NonterminalId::Block)
         }
         109 => {
-            // Block ::= "{" StatementList "}" => block(Some($1))
-            stack.pop();
+            // Block ::= "{" StatementList "}" => block($0, Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.block(Some(x1)))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.block(
+                x0,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::Block)
         }
         110 => {
@@ -8393,65 +8417,66 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ExpressionIn)
         }
         113 => {
-            // Expression[+In] ::= Expression[+In] "," AssignmentExpression[+In] => binary_expr(comma_op(), $0, $2)
+            // Expression[+In] ::= Expression[+In] "," AssignmentExpression[+In] => binary_expr(comma_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.comma_op(),
+                handler.comma_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::ExpressionIn)
         }
         114 => {
-            // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ";" => do_while_statement($1, $4)
+            // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ";" => do_while_statement($0, $1, $4, $5)
             stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.do_while_statement(x1, x4),
+                handler.do_while_statement(x0, x1, x4, x5),
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         115 => {
-            // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ErrorSymbol(do_while_asi) => do_while_statement($1, $4)
-            stack.pop();
+            // IterationStatement ::= "do" Statement "while" "(" Expression[+In] ")" ErrorSymbol(do_while_asi) => do_while_statement($0, $1, $4, $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.do_while_statement(x1, x4),
+                handler.do_while_statement(x0, x1, x4, x5),
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         116 => {
-            // IterationStatement ::= "while" "(" Expression[+In] ")" Statement => while_statement($2, $4)
+            // IterationStatement ::= "while" "(" Expression[+In] ")" Statement => while_statement($0, $2, $4)
             let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.while_statement(x2, x4),
+                handler.while_statement(x0, x2, x4),
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         117 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => for_statement(for_expression(None), None, None, $5)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" ")" Statement => for_statement($0, for_expression(None), None, None, $5)
             let x5: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(None),
                 None,
                 None,
@@ -8460,15 +8485,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         118 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" ")" Statement => for_statement(for_expression(Some($2)), None, None, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" ")" Statement => for_statement($0, for_expression(Some($2)), None, None, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(Some(x2)),
                 None,
                 None,
@@ -8477,15 +8503,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         119 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" ")" Statement => for_statement(for_expression(None), Some($3), None, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" ")" Statement => for_statement($0, for_expression(None), Some($3), None, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(None),
                 Some(x3),
                 None,
@@ -8494,7 +8521,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         120 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" ")" Statement => for_statement(for_expression(Some($2)), Some($4), None, $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" ")" Statement => for_statement($0, for_expression(Some($2)), Some($4), None, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
@@ -8502,8 +8529,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(Some(x2)),
                 Some(x4),
                 None,
@@ -8512,15 +8540,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         121 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression[+In] ")" Statement => for_statement(for_expression(None), None, Some($4), $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" ";" Expression[+In] ")" Statement => for_statement($0, for_expression(None), None, Some($4), $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(None),
                 None,
                 Some(x4),
@@ -8529,7 +8558,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         122 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" Expression[+In] ")" Statement => for_statement(for_expression(Some($2)), None, Some($5), $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" ";" Expression[+In] ")" Statement => for_statement($0, for_expression(Some($2)), None, Some($5), $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8537,8 +8566,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(Some(x2)),
                 None,
                 Some(x5),
@@ -8547,7 +8577,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         123 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(for_expression(None), Some($3), Some($5), $7)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement($0, for_expression(None), Some($3), Some($5), $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8555,8 +8585,9 @@ pub fn reduce<'alloc>(
             let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(None),
                 Some(x3),
                 Some(x5),
@@ -8565,7 +8596,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         124 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(for_expression(Some($2)), Some($4), Some($6), $8)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] Expression[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement($0, for_expression(Some($2)), Some($4), Some($6), $8)
             let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8574,8 +8605,9 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 handler.for_expression(Some(x2)),
                 Some(x4),
                 Some(x6),
@@ -8584,17 +8616,18 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         125 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" ")" Statement => for_statement(Some(for_var_declaration($3)), None, None, $7)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" ")" Statement => for_statement($0, Some(for_var_declaration($2, $3)), None, None, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             stack.pop();
             let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
-                Some(handler.for_var_declaration(x3)),
+                x0,
+                Some(handler.for_var_declaration(x2, x3)),
                 None,
                 None,
                 x7,
@@ -8602,18 +8635,19 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         126 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), None, $8)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" ")" Statement => for_statement($0, Some(for_var_declaration($2, $3)), Some($5), None, $8)
             let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
-                Some(handler.for_var_declaration(x3)),
+                x0,
+                Some(handler.for_var_declaration(x2, x3)),
                 Some(x5),
                 None,
                 x8,
@@ -8621,18 +8655,19 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         127 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" Expression[+In] ")" Statement => for_statement(Some(for_var_declaration($3)), None, Some($6), $8)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" ";" Expression[+In] ")" Statement => for_statement($0, Some(for_var_declaration($2, $3)), None, Some($6), $8)
             let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
-                Some(handler.for_var_declaration(x3)),
+                x0,
+                Some(handler.for_var_declaration(x2, x3)),
                 None,
                 Some(x6),
                 x8,
@@ -8640,7 +8675,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         128 => {
-            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement(Some(for_var_declaration($3)), Some($5), Some($7), $9)
+            // IterationStatement ::= "for" "(" "var" VariableDeclarationList[~In] ";" Expression[+In] ";" Expression[+In] ")" Statement => for_statement($0, Some(for_var_declaration($2, $3)), Some($5), Some($7), $9)
             let x9: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x7: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8648,11 +8683,12 @@ pub fn reduce<'alloc>(
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x3: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
-                Some(handler.for_var_declaration(x3)),
+                x0,
+                Some(handler.for_var_declaration(x2, x3)),
                 Some(x5),
                 Some(x7),
                 x9,
@@ -8660,14 +8696,15 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         129 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, None, $5)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" ")" Statement => for_statement($0, Some(unbox_for_lexical_declaration($2)), None, None, $5)
             let x5: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 Some(handler.unbox_for_lexical_declaration(x2)),
                 None,
                 None,
@@ -8676,15 +8713,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         130 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), None, $6)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" ")" Statement => for_statement($0, Some(unbox_for_lexical_declaration($2)), Some($3), None, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 Some(handler.unbox_for_lexical_declaration(x2)),
                 Some(x3),
                 None,
@@ -8693,15 +8731,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         131 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" Expression[+In] ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), None, Some($4), $6)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] ";" Expression[+In] ")" Statement => for_statement($0, Some(unbox_for_lexical_declaration($2)), None, Some($4), $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 Some(handler.unbox_for_lexical_declaration(x2)),
                 None,
                 Some(x4),
@@ -8710,7 +8749,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         132 => {
-            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" Expression[+In] ")" Statement => for_statement(Some(unbox_for_lexical_declaration($2)), Some($3), Some($5), $7)
+            // IterationStatement ::= "for" "(" ForLexicalDeclaration[~In] Expression[+In] ";" Expression[+In] ")" Statement => for_statement($0, Some(unbox_for_lexical_declaration($2)), Some($3), Some($5), $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8718,8 +8757,9 @@ pub fn reduce<'alloc>(
             let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, VariableDeclarationOrExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_statement(
+                x0,
                 Some(handler.unbox_for_lexical_declaration(x2)),
                 Some(x3),
                 Some(x5),
@@ -8728,15 +8768,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         133 => {
-            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression[+In] ")" Statement => for_in_statement(for_assignment_target($2), $4, $6)
+            // IterationStatement ::= "for" "(" [lookahead != 'let'] LeftHandSideExpression "in" Expression[+In] ")" Statement => for_in_statement($0, for_assignment_target($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
+                x0,
                 handler.for_assignment_target(x2)?,
                 x4,
                 x6,
@@ -8744,24 +8785,25 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         134 => {
-            // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression[+In] ")" Statement => for_in_statement(for_in_or_of_var_declaration($3), $5, $7)
+            // IterationStatement ::= "for" "(" "var" ForBinding "in" Expression[+In] ")" Statement => for_in_statement($0, for_in_or_of_var_declaration($2, $3), $5, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
-                handler.for_in_or_of_var_declaration(x3),
+                x0,
+                handler.for_in_or_of_var_declaration(x2, x3),
                 x5,
                 x7,
             ))?);
             Ok(NonterminalId::IterationStatement)
         }
         135 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression[+In] ")" Statement => for_in_statement(unbox_for_declaration($2), $4, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression[+In] ")" Statement => for_in_statement($0, unbox_for_declaration($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8769,8 +8811,9 @@ pub fn reduce<'alloc>(
             let x2: Box<'alloc, VariableDeclarationOrAssignmentTarget> =
                 stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_in_statement(
+                x0,
                 handler.unbox_for_declaration(x2),
                 x4,
                 x6,
@@ -8778,15 +8821,16 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         136 => {
-            // IterationStatement ::= "for" "(" [lookahead not in {'async', 'let'}] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_of_statement(for_assignment_target($2), $4, $6)
+            // IterationStatement ::= "for" "(" [lookahead not in {'async', 'let'}] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_of_statement($0, for_assignment_target($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
+                x0,
                 handler.for_assignment_target(x2)?,
                 x4,
                 x6,
@@ -8794,24 +8838,25 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         137 => {
-            // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_of_statement(for_in_or_of_var_declaration($3), $5, $7)
+            // IterationStatement ::= "for" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_of_statement($0, for_in_or_of_var_declaration($2, $3), $5, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
-                handler.for_in_or_of_var_declaration(x3),
+                x0,
+                handler.for_in_or_of_var_declaration(x2, x3),
                 x5,
                 x7,
             ))?);
             Ok(NonterminalId::IterationStatement)
         }
         138 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_of_statement(unbox_for_declaration($2), $4, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_of_statement($0, unbox_for_declaration($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8819,8 +8864,9 @@ pub fn reduce<'alloc>(
             let x2: Box<'alloc, VariableDeclarationOrAssignmentTarget> =
                 stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.for_of_statement(
+                x0,
                 handler.unbox_for_declaration(x2),
                 x4,
                 x6,
@@ -8828,7 +8874,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         139 => {
-            // IterationStatement ::= "for" "await" "(" [lookahead not in {'async', 'let'}] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(for_assignment_target($3), $5, $7)
+            // IterationStatement ::= "for" "await" "(" [lookahead not in {'async', 'let'}] LeftHandSideExpression "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement($0, for_assignment_target($3), $5, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8836,30 +8882,35 @@ pub fn reduce<'alloc>(
             let x3: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.for_assignment_target(x3)?, x5, x7)?,
+                handler.for_await_of_statement(x0, handler.for_assignment_target(x3)?, x5, x7)?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         140 => {
-            // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(for_in_or_of_var_declaration($4), $6, $8)
+            // IterationStatement ::= "for" "await" "(" "var" ForBinding "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement($0, for_in_or_of_var_declaration($3, $4), $6, $8)
             let x8: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x6: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.for_in_or_of_var_declaration(x4), x6, x8)?,
+                handler.for_await_of_statement(
+                    x0,
+                    handler.for_in_or_of_var_declaration(x3, x4),
+                    x6,
+                    x8,
+                )?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         141 => {
-            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement(unbox_for_declaration($3), $5, $7)
+            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement($0, unbox_for_declaration($3), $5, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -8868,21 +8919,21 @@ pub fn reduce<'alloc>(
                 stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_await_of_statement(handler.unbox_for_declaration(x3), x5, x7)?,
+                handler.for_await_of_statement(x0, handler.unbox_for_declaration(x3), x5, x7)?,
             )?);
             Ok(NonterminalId::IterationStatement)
         }
         142 => {
-            // SwitchStatement ::= "switch" "(" Expression[+In] ")" CaseBlock => switch_statement($2, $4)
+            // SwitchStatement ::= "switch" "(" Expression[+In] ")" CaseBlock => switch_statement($0, $2, $4)
             let x4: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.switch_statement(x2, x4),
+                handler.switch_statement(x0, x2, x4),
             )?);
             Ok(NonterminalId::SwitchStatement)
         }
@@ -8901,20 +8952,24 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LabelledItem)
         }
         146 => {
-            // Catch ::= "catch" "(" CatchParameter ")" Block => catch(Some($2), $4)
+            // Catch ::= "catch" "(" CatchParameter ")" Block => catch($0, Some($2), $4)
             let x4: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.catch(Some(x2), x4))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.catch(
+                x0,
+                Some(x2),
+                x4,
+            ))?);
             Ok(NonterminalId::Catch)
         }
         147 => {
-            // Catch ::= "catch" Block => catch(None, $1)
+            // Catch ::= "catch" Block => catch($0, None, $1)
             let x1: Box<'alloc, Block> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.catch(None, x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.catch(x0, None, x1))?);
             Ok(NonterminalId::Catch)
         }
         148 => {
@@ -8925,275 +8980,351 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::Finally)
         }
         149 => {
-            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" ")" "{" "}" => function_decl(function(Some($1), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" ")" "{" "}" => function_decl(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclaration)
         }
         150 => {
-            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(function(Some($1), $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(function($0, Some($1), $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclaration)
         }
         151 => {
-            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function(Some($1), empty_formal_parameters(), $5))
-            stack.pop();
+            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.function(Some(x1), handler.empty_formal_parameters(), x5),
+                handler.function(
+                    x0,
+                    Some(x1),
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::FunctionDeclaration)
         }
         152 => {
-            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(Some($1), $3, $6))
-            stack.pop();
+            // FunctionDeclaration[~Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function($0, Some($1), $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.function(Some(x1), x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.function(x0, Some(x1), x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::FunctionDeclaration)
         }
         153 => {
-            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(generator(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclaration)
         }
         154 => {
-            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(generator(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(generator($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclaration)
         }
         155 => {
-            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.generator(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.generator(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::GeneratorDeclaration)
         }
         156 => {
-            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), $4, $7))
-            stack.pop();
+            // GeneratorDeclaration[~Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.generator(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.generator(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::GeneratorDeclaration)
         }
         157 => {
-            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclaration)
         }
         158 => {
-            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclaration)
         }
         159 => {
-            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_function(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.async_function(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclaration)
         }
         160 => {
-            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), $4, $7))
-            stack.pop();
+            // AsyncFunctionDeclaration[~Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_function(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_function(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::AsyncFunctionDeclaration)
         }
         161 => {
-            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(async_generator($0, Some($3), $4, empty_formal_parameters(), $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     Some(x3),
+                    x4,
                     handler.empty_formal_parameters(),
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclaration)
         }
         162 => {
-            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_generator(Some($3), $5, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_generator($0, Some($3), $4, $5, $6, $7, function_body(function_statement_list(None)), $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     Some(x3),
+                    x4,
                     x5,
+                    x6,
+                    x7,
                     handler.function_body(handler.function_statement_list(None)),
+                    x8,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclaration)
         }
         163 => {
-            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), $7))
-            stack.pop();
+            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, Some($3), $4, empty_formal_parameters(), $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_generator(Some(x3), handler.empty_formal_parameters(), x7),
+                handler.async_generator(
+                    x0,
+                    Some(x3),
+                    x4,
+                    handler.empty_formal_parameters(),
+                    x5,
+                    x6,
+                    x7,
+                    x8,
+                ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclaration)
         }
         164 => {
-            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), $5, $8))
-            stack.pop();
+            // AsyncGeneratorDeclaration[~Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, Some($3), $4, $5, $6, $7, $8, $9))
+            let x9: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_generator(Some(x3), x5, x8)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_generator(x0, Some(x3), x4, x5, x6, x7, x8, x9),
+            ))?);
             Ok(NonterminalId::AsyncGeneratorDeclaration)
         }
         165 => {
@@ -9205,71 +9336,77 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BindingIdentifier)
         }
         166 => {
-            // BindingIdentifier ::= "yield" => binding_identifier_yield()
-            stack.pop();
+            // BindingIdentifier ::= "yield" => binding_identifier_yield($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.binding_identifier_yield(),
+                handler.binding_identifier_yield(x0),
             )?);
             Ok(NonterminalId::BindingIdentifier)
         }
         167 => {
-            // BindingIdentifier ::= "await" => binding_identifier_await()
-            stack.pop();
+            // BindingIdentifier ::= "await" => binding_identifier_await($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.binding_identifier_await(),
+                handler.binding_identifier_await(x0),
             )?);
             Ok(NonterminalId::BindingIdentifier)
         }
         168 => {
-            // ClassTail ::= "{" "}" => class_tail(None, None)
-            stack.pop();
+            // ClassTail ::= "{" "}" => class_tail(None, None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.class_tail(None, None),
+                handler.class_tail(None, None, x1),
             )?);
             Ok(NonterminalId::ClassTail)
         }
         169 => {
-            // ClassTail ::= ClassHeritage "{" "}" => class_tail(Some($0), None)
-            stack.pop();
+            // ClassTail ::= ClassHeritage "{" "}" => class_tail(Some($0), None, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_tail(Some(x0), None),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.class_tail(
+                Some(x0),
+                None,
+                x2,
+            ))?);
             Ok(NonterminalId::ClassTail)
         }
         170 => {
-            // ClassTail ::= "{" ClassBody "}" => class_tail(None, Some($1))
-            stack.pop();
+            // ClassTail ::= "{" ClassBody "}" => class_tail(None, Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_tail(None, Some(x1)),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.class_tail(
+                None,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::ClassTail)
         }
         171 => {
-            // ClassTail ::= ClassHeritage "{" ClassBody "}" => class_tail(Some($0), Some($2))
-            stack.pop();
+            // ClassTail ::= ClassHeritage "{" ClassBody "}" => class_tail(Some($0), Some($2), $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_tail(Some(x0), Some(x2)),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.class_tail(
+                Some(x0),
+                Some(x2),
+                x3,
+            ))?);
             Ok(NonterminalId::ClassTail)
         }
         172 => {
-            // LetOrConst ::= "let" => let_kind()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.let_kind())?);
+            // LetOrConst ::= "let" => let_kind($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.let_kind(x0))?);
             Ok(NonterminalId::LetOrConst)
         }
         173 => {
-            // LetOrConst ::= "const" => const_kind()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.const_kind())?);
+            // LetOrConst ::= "const" => const_kind($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.const_kind(x0))?);
             Ok(NonterminalId::LetOrConst)
         }
         174 => {
@@ -9347,531 +9484,683 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ExportsList)
         }
         183 => {
-            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" ")" "{" "}" => function_decl(function(Some($1), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" ")" "{" "}" => function_decl(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         184 => {
-            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(function(Some($1), $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(function($0, Some($1), $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         185 => {
-            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function(Some($1), empty_formal_parameters(), $5))
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_decl(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.function(Some(x1), handler.empty_formal_parameters(), x5),
+                handler.function(
+                    x0,
+                    Some(x1),
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         186 => {
-            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(Some($1), $3, $6))
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function($0, Some($1), $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.function(Some(x1), x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.function(x0, Some(x1), x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         187 => {
-            // FunctionDeclaration[+Default] ::= "function" "(" ")" "{" "}" => function_decl(function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" "(" ")" "{" "}" => function_decl(function($0, None, $1, empty_formal_parameters(), $2, $3, function_body(function_statement_list(None)), $4))
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     None,
+                    x1,
                     handler.empty_formal_parameters(),
+                    x2,
+                    x3,
                     handler.function_body(handler.function_statement_list(None)),
+                    x4,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         188 => {
-            // FunctionDeclaration[+Default] ::= "function" "(" FormalParameters ")" "{" "}" => function_decl(function(None, $2, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" "(" FormalParameters ")" "{" "}" => function_decl(function($0, None, $1, $2, $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.function(
+                    x0,
                     None,
+                    x1,
                     x2,
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         189 => {
-            // FunctionDeclaration[+Default] ::= "function" "(" ")" "{" FunctionBody "}" => function_decl(function(None, empty_formal_parameters(), $4))
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" "(" ")" "{" FunctionBody "}" => function_decl(function($0, None, $1, empty_formal_parameters(), $2, $3, $4, $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.function(None, handler.empty_formal_parameters(), x4),
+                handler.function(
+                    x0,
+                    None,
+                    x1,
+                    handler.empty_formal_parameters(),
+                    x2,
+                    x3,
+                    x4,
+                    x5,
+                ),
             ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         190 => {
-            // FunctionDeclaration[+Default] ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function(None, $2, $5))
-            stack.pop();
+            // FunctionDeclaration[+Default] ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_decl(function($0, None, $1, $2, $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.function(None, x2, x5)),
-            )?);
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.function(x0, None, x1, x2, x3, x4, x5, x6),
+            ))?);
             Ok(NonterminalId::FunctionDeclarationDefault)
         }
         191 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(generator(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         192 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(generator(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(generator($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         193 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_decl(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.generator(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.generator(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         194 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(Some($2), $4, $7))
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.generator(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.generator(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         195 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" "(" ")" "{" "}" => function_decl(generator(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // GeneratorDeclaration[+Default] ::= "function" "*" "(" ")" "{" "}" => function_decl(generator($0, None, $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     None,
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         196 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" "(" FormalParameters ")" "{" "}" => function_decl(generator(None, $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" "(" FormalParameters ")" "{" "}" => function_decl(generator($0, None, $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.generator(
+                    x0,
                     None,
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         197 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_decl(generator(None, empty_formal_parameters(), $5))
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_decl(generator($0, None, $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.generator(None, handler.empty_formal_parameters(), x5),
+                handler.generator(
+                    x0,
+                    None,
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         198 => {
-            // GeneratorDeclaration[+Default] ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator(None, $3, $6))
-            stack.pop();
+            // GeneratorDeclaration[+Default] ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_decl(generator($0, None, $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.generator(None, x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.generator(x0, None, x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::GeneratorDeclarationDefault)
         }
         199 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_decl(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         200 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_function($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         201 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_function(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.async_function(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         202 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(Some($2), $4, $7))
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_function(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_function(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         203 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" ")" "{" "}" => function_decl(async_function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" ")" "{" "}" => function_decl(async_function($0, None, $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     None,
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         204 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_decl(async_function(None, $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_decl(async_function($0, None, $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_function(
+                    x0,
                     None,
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         205 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function(None, empty_formal_parameters(), $5))
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, None, $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_function(None, handler.empty_formal_parameters(), x5),
+                handler.async_function(
+                    x0,
+                    None,
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         206 => {
-            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function(None, $3, $6))
-            stack.pop();
+            // AsyncFunctionDeclaration[+Default] ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_decl(async_function($0, None, $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_function(None, x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_function(x0, None, x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::AsyncFunctionDeclarationDefault)
         }
         207 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_decl(async_generator($0, Some($3), $4, empty_formal_parameters(), $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     Some(x3),
+                    x4,
                     handler.empty_formal_parameters(),
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         208 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_generator(Some($3), $5, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_decl(async_generator($0, Some($3), $4, $5, $6, $7, function_body(function_statement_list(None)), $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     Some(x3),
+                    x4,
                     x5,
+                    x6,
+                    x7,
                     handler.function_body(handler.function_statement_list(None)),
+                    x8,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         209 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), empty_formal_parameters(), $7))
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, Some($3), $4, empty_formal_parameters(), $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_generator(Some(x3), handler.empty_formal_parameters(), x7),
+                handler.async_generator(
+                    x0,
+                    Some(x3),
+                    x4,
+                    handler.empty_formal_parameters(),
+                    x5,
+                    x6,
+                    x7,
+                    x8,
+                ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         210 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(Some($3), $5, $8))
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, Some($3), $4, $5, $6, $7, $8, $9))
+            let x9: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_generator(Some(x3), x5, x8)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_generator(x0, Some(x3), x4, x5, x6, x7, x8, x9),
+            ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         211 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" ")" "{" "}" => function_decl(async_generator(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" ")" "{" "}" => function_decl(async_generator($0, None, $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     None,
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         212 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" FormalParameters ")" "{" "}" => function_decl(async_generator(None, $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" FormalParameters ")" "{" "}" => function_decl(async_generator($0, None, $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
                 handler.async_generator(
+                    x0,
                     None,
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         213 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(None, empty_formal_parameters(), $6))
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, None, $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_decl(
-                handler.async_generator(None, handler.empty_formal_parameters(), x6),
+                handler.async_generator(
+                    x0,
+                    None,
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         214 => {
-            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator(None, $4, $7))
-            stack.pop();
+            // AsyncGeneratorDeclaration[+Default] ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_decl(async_generator($0, None, $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_decl(handler.async_generator(None, x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_decl(
+                handler.async_generator(x0, None, x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::AsyncGeneratorDeclarationDefault)
         }
         215 => {
@@ -9891,24 +10180,28 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ConditionalExpressionIn)
         }
         217 => {
-            // YieldExpression[+In] ::= "yield" => yield_expr(None)
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(None))?);
+            // YieldExpression[+In] ::= "yield" => yield_expr($0, None)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(x0, None))?);
             Ok(NonterminalId::YieldExpressionIn)
         }
         218 => {
-            // YieldExpression[+In] ::= "yield" AssignmentExpression[+In] => yield_expr(Some($1))
+            // YieldExpression[+In] ::= "yield" AssignmentExpression[+In] => yield_expr($0, Some($1))
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(Some(x1)))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.yield_expr(x0, Some(x1)),
+            )?);
             Ok(NonterminalId::YieldExpressionIn)
         }
         219 => {
-            // YieldExpression[+In] ::= "yield" "*" AssignmentExpression[+In] => yield_star_expr($2)
+            // YieldExpression[+In] ::= "yield" "*" AssignmentExpression[+In] => yield_star_expr($0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_star_expr(x2))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.yield_star_expr(x0, x2),
+            )?);
             Ok(NonterminalId::YieldExpressionIn)
         }
         220 => {
@@ -9922,23 +10215,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ArrowFunctionIn)
         }
         221 => {
-            // AsyncArrowFunction[+In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[+In] => async_arrow_function(arrow_parameters_bare($1), $3)
+            // AsyncArrowFunction[+In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[+In] => async_arrow_function_bare($0, $1, $3)
             let x3: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_arrow_function(handler.arrow_parameters_bare(x1), x3),
+                handler.async_arrow_function_bare(x0, x1, x3),
             )?);
             Ok(NonterminalId::AsyncArrowFunctionIn)
         }
         222 => {
-            // AsyncArrowFunction[+In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[+In] => async_arrow_function(async_arrow_parameters($0), $2)
+            // AsyncArrowFunction[+In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[+In] => async_arrow_function($0, $2)
             let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_arrow_function(handler.async_arrow_parameters(x0)?, x2),
+                handler.async_arrow_function(x0, x2)?,
             )?);
             Ok(NonterminalId::AsyncArrowFunctionIn)
         }
@@ -9951,98 +10244,98 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LeftHandSideExpression)
         }
         225 => {
-            // AssignmentOperator ::= "*=" => box_assign_op(mul_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "*=" => box_assign_op(mul_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.mul_assign_op()),
+                handler.box_assign_op(handler.mul_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         226 => {
-            // AssignmentOperator ::= "/=" => box_assign_op(div_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "/=" => box_assign_op(div_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.div_assign_op()),
+                handler.box_assign_op(handler.div_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         227 => {
-            // AssignmentOperator ::= "%=" => box_assign_op(mod_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "%=" => box_assign_op(mod_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.mod_assign_op()),
+                handler.box_assign_op(handler.mod_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         228 => {
-            // AssignmentOperator ::= "+=" => box_assign_op(add_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "+=" => box_assign_op(add_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.add_assign_op()),
+                handler.box_assign_op(handler.add_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         229 => {
-            // AssignmentOperator ::= "-=" => box_assign_op(sub_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "-=" => box_assign_op(sub_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.sub_assign_op()),
+                handler.box_assign_op(handler.sub_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         230 => {
-            // AssignmentOperator ::= "<<=" => box_assign_op(left_shift_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "<<=" => box_assign_op(left_shift_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.left_shift_assign_op()),
+                handler.box_assign_op(handler.left_shift_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         231 => {
-            // AssignmentOperator ::= ">>=" => box_assign_op(right_shift_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= ">>=" => box_assign_op(right_shift_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.right_shift_assign_op()),
+                handler.box_assign_op(handler.right_shift_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         232 => {
-            // AssignmentOperator ::= ">>>=" => box_assign_op(right_shift_ext_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= ">>>=" => box_assign_op(right_shift_ext_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.right_shift_ext_assign_op()),
+                handler.box_assign_op(handler.right_shift_ext_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         233 => {
-            // AssignmentOperator ::= "&=" => box_assign_op(bitwise_and_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "&=" => box_assign_op(bitwise_and_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.bitwise_and_assign_op()),
+                handler.box_assign_op(handler.bitwise_and_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         234 => {
-            // AssignmentOperator ::= "^=" => box_assign_op(bitwise_xor_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "^=" => box_assign_op(bitwise_xor_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.bitwise_xor_assign_op()),
+                handler.box_assign_op(handler.bitwise_xor_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         235 => {
-            // AssignmentOperator ::= "|=" => box_assign_op(bitwise_or_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "|=" => box_assign_op(bitwise_or_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.bitwise_or_assign_op()),
+                handler.box_assign_op(handler.bitwise_or_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
         236 => {
-            // AssignmentOperator ::= "**=" => box_assign_op(pow_assign_op())
-            stack.pop();
+            // AssignmentOperator ::= "**=" => box_assign_op(pow_assign_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_assign_op(handler.pow_assign_op()),
+                handler.box_assign_op(handler.pow_assign_op(x0)),
             )?);
             Ok(NonterminalId::AssignmentOperator)
         }
@@ -10079,12 +10372,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::Expression)
         }
         241 => {
-            // Expression[~In] ::= Expression[~In] "," AssignmentExpression[~In] => binary_expr(comma_op(), $0, $2)
+            // Expression[~In] ::= Expression[~In] "," AssignmentExpression[~In] => binary_expr(comma_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.comma_op(),
+                handler.comma_op(x1),
                 x0,
                 x2,
             ))?);
@@ -10140,61 +10433,63 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ForDeclaration)
         }
         248 => {
-            // CaseBlock ::= "{" "}" => case_block(None)
+            // CaseBlock ::= "{" "}" => case_block(None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.case_block(None))?);
+            stack.push(TryIntoStack::try_into_stack(handler.case_block(None, x1))?);
             Ok(NonterminalId::CaseBlock)
         }
         249 => {
-            // CaseBlock ::= "{" CaseClauses "}" => case_block(Some($1))
-            stack.pop();
+            // CaseBlock ::= "{" CaseClauses "}" => case_block(Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.case_block(Some(x1)))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.case_block(Some(x1), x2),
+            )?);
             Ok(NonterminalId::CaseBlock)
         }
         250 => {
-            // CaseBlock ::= "{" DefaultClause "}" => case_block_with_default(None, $1, None)
-            stack.pop();
+            // CaseBlock ::= "{" DefaultClause "}" => case_block_with_default(None, $1, None, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.case_block_with_default(None, x1, None),
+                handler.case_block_with_default(None, x1, None, x2),
             )?);
             Ok(NonterminalId::CaseBlock)
         }
         251 => {
-            // CaseBlock ::= "{" CaseClauses DefaultClause "}" => case_block_with_default(Some($1), $2, None)
-            stack.pop();
+            // CaseBlock ::= "{" CaseClauses DefaultClause "}" => case_block_with_default(Some($1), $2, None, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.case_block_with_default(Some(x1), x2, None),
+                handler.case_block_with_default(Some(x1), x2, None, x3),
             )?);
             Ok(NonterminalId::CaseBlock)
         }
         252 => {
-            // CaseBlock ::= "{" DefaultClause CaseClauses "}" => case_block_with_default(None, $1, Some($2))
-            stack.pop();
+            // CaseBlock ::= "{" DefaultClause CaseClauses "}" => case_block_with_default(None, $1, Some($2), $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.case_block_with_default(None, x1, Some(x2)),
+                handler.case_block_with_default(None, x1, Some(x2), x3),
             )?);
             Ok(NonterminalId::CaseBlock)
         }
         253 => {
-            // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => case_block_with_default(Some($1), $2, Some($3))
-            stack.pop();
+            // CaseBlock ::= "{" CaseClauses DefaultClause CaseClauses "}" => case_block_with_default(Some($1), $2, Some($3), $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, SwitchDefault> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, SwitchCase>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.case_block_with_default(Some(x1), x2, Some(x3)),
+                handler.case_block_with_default(Some(x1), x2, Some(x3), x4),
             )?);
             Ok(NonterminalId::CaseBlock)
         }
@@ -10389,7 +10684,7 @@ pub fn reduce<'alloc>(
             // ArrowParameters ::= CoverParenthesizedExpressionAndArrowParameterList => uncover_arrow_parameters($0)
             let x0: Box<'alloc, CoverParenthesized> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.uncover_arrow_parameters(x0),
+                handler.uncover_arrow_parameters(x0)?,
             )?);
             Ok(NonterminalId::ArrowParameters)
         }
@@ -10402,21 +10697,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ConciseBodyIn)
         }
         284 => {
-            // ConciseBody[+In] ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
+            // ConciseBody[+In] ::= "{" "}" => concise_body_block($0, function_body(function_statement_list(None)), $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.concise_body_block(
+                x0,
                 handler.function_body(handler.function_statement_list(None)),
+                x1,
             ))?);
             Ok(NonterminalId::ConciseBodyIn)
         }
         285 => {
-            // ConciseBody[+In] ::= "{" FunctionBody "}" => concise_body_block($1)
-            stack.pop();
+            // ConciseBody[+In] ::= "{" FunctionBody "}" => concise_body_block($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.concise_body_block(x1),
+                handler.concise_body_block(x0, x1, x2),
             )?);
             Ok(NonterminalId::ConciseBodyIn)
         }
@@ -10433,21 +10730,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::AsyncConciseBodyIn)
         }
         288 => {
-            // AsyncConciseBody[+In] ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
+            // AsyncConciseBody[+In] ::= "{" "}" => concise_body_block($0, function_body(function_statement_list(None)), $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.concise_body_block(
+                x0,
                 handler.function_body(handler.function_statement_list(None)),
+                x1,
             ))?);
             Ok(NonterminalId::AsyncConciseBodyIn)
         }
         289 => {
-            // AsyncConciseBody[+In] ::= "{" AsyncFunctionBody "}" => concise_body_block($1)
-            stack.pop();
+            // AsyncConciseBody[+In] ::= "{" AsyncFunctionBody "}" => concise_body_block($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.concise_body_block(x1),
+                handler.concise_body_block(x0, x1, x2),
             )?);
             Ok(NonterminalId::AsyncConciseBodyIn)
         }
@@ -10463,11 +10762,11 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::NewExpression)
         }
         292 => {
-            // NewExpression ::= "new" NewExpression => new_expr_without_arguments($1)
+            // NewExpression ::= "new" NewExpression => new_expr_without_arguments($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.new_expr_without_arguments(x1),
+                handler.new_expr_without_arguments(x0, x1),
             )?);
             Ok(NonterminalId::NewExpression)
         }
@@ -10491,13 +10790,13 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::CallExpression)
         }
         297 => {
-            // CallExpression ::= CallExpression "[" Expression[+In] "]" => computed_member_expr($0, $2)
-            stack.pop();
+            // CallExpression ::= CallExpression "[" Expression[+In] "]" => computed_member_expr($0, $2, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.computed_member_expr(x0, x2),
+                handler.computed_member_expr(x0, x2, x3),
             )?);
             Ok(NonterminalId::CallExpression)
         }
@@ -10557,7 +10856,7 @@ pub fn reduce<'alloc>(
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.assignment_expr(x0, x2),
+                handler.assignment_expr(x0, x2)?,
             )?);
             Ok(NonterminalId::AssignmentExpression)
         }
@@ -10567,7 +10866,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, CompoundAssignmentOperator> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.compound_assignment_expr(x0, x1, x2),
+                handler.compound_assignment_expr(x0, x1, x2)?,
             )?);
             Ok(NonterminalId::AssignmentExpression)
         }
@@ -10635,20 +10934,24 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::CaseClauses)
         }
         316 => {
-            // DefaultClause ::= "default" ":" => default_clause(None)
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.default_clause(None))?);
+            // DefaultClause ::= "default" ":" => default_clause($0, $1, None)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.default_clause(x0, x1, None),
+            )?);
             Ok(NonterminalId::DefaultClause)
         }
         317 => {
-            // DefaultClause ::= "default" ":" StatementList => default_clause(Some($2))
+            // DefaultClause ::= "default" ":" StatementList => default_clause($0, $1, Some($2))
             let x2: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.default_clause(Some(x2)),
-            )?);
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.default_clause(
+                x0,
+                x1,
+                Some(x2),
+            ))?);
             Ok(NonterminalId::DefaultClause)
         }
         318 => {
@@ -10722,112 +11025,128 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LogicalOrExpressionIn)
         }
         328 => {
-            // LogicalORExpression[+In] ::= LogicalORExpression[+In] "||" LogicalANDExpression[+In] => binary_expr(logical_or_op(), $0, $2)
+            // LogicalORExpression[+In] ::= LogicalORExpression[+In] "||" LogicalANDExpression[+In] => binary_expr(logical_or_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.logical_or_op(),
+                handler.logical_or_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::LogicalOrExpressionIn)
         }
         329 => {
-            // CoalesceExpression[+In] ::= CoalesceExpressionHead[+In] "??" BitwiseORExpression[+In] => binary_expr(coalesce_op(), $0, $2)
+            // CoalesceExpression[+In] ::= CoalesceExpressionHead[+In] "??" BitwiseORExpression[+In] => binary_expr(coalesce_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.coalesce_op(),
+                handler.coalesce_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::CoalesceExpressionIn)
         }
         330 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] ")" => cover_parenthesized_expression($1)
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] ")" => cover_parenthesized_expression($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_parenthesized_expression(x1),
+                handler.cover_parenthesized_expression(x0, x1, x2),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         331 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), None)
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," ")" => cover_arrow_parameter_list($0, expression_to_parameter_list($1), None, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_arrow_parameter_list(handler.expression_to_parameter_list(x1)?, None),
+                handler.cover_arrow_parameter_list(
+                    x0,
+                    handler.expression_to_parameter_list(x1)?,
+                    None,
+                    x3,
+                ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         332 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => cover_arrow_parameter_list(empty_parameter_list(), None)
-            stack.pop();
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" ")" => cover_arrow_parameter_list($0, empty_parameter_list(), None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_arrow_parameter_list(handler.empty_parameter_list(), None),
+                handler.cover_arrow_parameter_list(x0, handler.empty_parameter_list(), None, x1),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         333 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => cover_arrow_parameter_list(empty_parameter_list(), Some(binding_identifier_to_binding($2)))
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingIdentifier ")" => cover_arrow_parameter_list($0, empty_parameter_list(), Some(binding_identifier_to_binding($2)), $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
+                    x0,
                     handler.empty_parameter_list(),
                     Some(handler.binding_identifier_to_binding(x2)),
+                    x3,
                 ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         334 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list(empty_parameter_list(), Some($2))
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" "..." BindingPattern ")" => cover_arrow_parameter_list($0, empty_parameter_list(), Some($2), $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.cover_arrow_parameter_list(handler.empty_parameter_list(), Some(x2)),
+                handler.cover_arrow_parameter_list(
+                    x0,
+                    handler.empty_parameter_list(),
+                    Some(x2),
+                    x3,
+                ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         335 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingIdentifier ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)))
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingIdentifier ")" => cover_arrow_parameter_list($0, expression_to_parameter_list($1), Some(binding_identifier_to_binding($4)), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
+                    x0,
                     handler.expression_to_parameter_list(x1)?,
                     Some(handler.binding_identifier_to_binding(x4)),
+                    x5,
                 ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
         }
         336 => {
-            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingPattern ")" => cover_arrow_parameter_list(expression_to_parameter_list($1), Some($4))
-            stack.pop();
+            // CoverParenthesizedExpressionAndArrowParameterList ::= "(" Expression[+In] "," "..." BindingPattern ")" => cover_arrow_parameter_list($0, expression_to_parameter_list($1), Some($4), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.cover_arrow_parameter_list(
+                    x0,
                     handler.expression_to_parameter_list(x1)?,
                     Some(x4),
+                    x5,
                 ),
             )?);
             Ok(NonterminalId::CoverParenthesizedExpressionAndArrowParameterList)
@@ -10837,13 +11156,13 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::MemberExpression)
         }
         338 => {
-            // MemberExpression ::= MemberExpression "[" Expression[+In] "]" => computed_member_expr($0, $2)
-            stack.pop();
+            // MemberExpression ::= MemberExpression "[" Expression[+In] "]" => computed_member_expr($0, $2, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.computed_member_expr(x0, x2),
+                handler.computed_member_expr(x0, x2, x3),
             )?);
             Ok(NonterminalId::MemberExpression)
         }
@@ -10875,53 +11194,57 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::MemberExpression)
         }
         343 => {
-            // MemberExpression ::= "new" MemberExpression Arguments => new_expr_with_arguments($1, $2)
+            // MemberExpression ::= "new" MemberExpression Arguments => new_expr_with_arguments($0, $1, $2)
             let x2: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.new_expr_with_arguments(x1, x2),
+                handler.new_expr_with_arguments(x0, x1, x2),
             )?);
             Ok(NonterminalId::MemberExpression)
         }
         344 => {
-            // Arguments ::= "(" ")" => arguments_empty()
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.arguments_empty())?);
+            // Arguments ::= "(" ")" => arguments_empty($0, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.arguments_empty(x0, x1),
+            )?);
             Ok(NonterminalId::Arguments)
         }
         345 => {
-            // Arguments ::= "(" ArgumentList ")" => $1
-            stack.pop();
-            let x1 = stack.pop().unwrap();
-            stack.pop();
-            stack.push(x1);
+            // Arguments ::= "(" ArgumentList ")" => arguments($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.arguments(x0, x1, x2))?);
             Ok(NonterminalId::Arguments)
         }
         346 => {
-            // Arguments ::= "(" ArgumentList "," ")" => $1
+            // Arguments ::= "(" ArgumentList "," ")" => arguments($0, $1, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            let x1 = stack.pop().unwrap();
-            stack.pop();
-            stack.push(x1);
+            let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.arguments(x0, x1, x3))?);
             Ok(NonterminalId::Arguments)
         }
         347 => {
-            // SuperCall ::= "super" Arguments => super_call($1)
+            // SuperCall ::= "super" Arguments => super_call($0, $1)
             let x1: Box<'alloc, Arguments> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.super_call(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.super_call(x0, x1))?);
             Ok(NonterminalId::SuperCall)
         }
         348 => {
-            // ImportCall ::= "import" "(" AssignmentExpression[+In] ")" => import_call($2)
-            stack.pop();
+            // ImportCall ::= "import" "(" AssignmentExpression[+In] ")" => import_call($0, $2, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.import_call(x2))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.import_call(x0, x2, x3),
+            )?);
             Ok(NonterminalId::ImportCall)
         }
         349 => {
@@ -10935,156 +11258,181 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::TemplateLiteral)
         }
         351 => {
-            // ObjectBindingPattern ::= "{" "}" => object_binding_pattern(binding_property_list_empty(), None)
-            stack.pop();
-            stack.pop();
+            // ObjectBindingPattern ::= "{" "}" => object_binding_pattern($0, binding_property_list_empty(), None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_binding_pattern(handler.binding_property_list_empty(), None),
+                handler.object_binding_pattern(x0, handler.binding_property_list_empty(), None, x1),
             )?);
             Ok(NonterminalId::ObjectBindingPattern)
         }
         352 => {
-            // ObjectBindingPattern ::= "{" BindingRestProperty "}" => object_binding_pattern(binding_property_list_empty(), Some($1))
-            stack.pop();
+            // ObjectBindingPattern ::= "{" BindingRestProperty "}" => object_binding_pattern($0, binding_property_list_empty(), Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_binding_pattern(handler.binding_property_list_empty(), Some(x1)),
+                handler.object_binding_pattern(
+                    x0,
+                    handler.binding_property_list_empty(),
+                    Some(x1),
+                    x2,
+                ),
             )?);
             Ok(NonterminalId::ObjectBindingPattern)
         }
         353 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "}" => object_binding_pattern($1, None)
-            stack.pop();
+            // ObjectBindingPattern ::= "{" BindingPropertyList "}" => object_binding_pattern($0, $1, None, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_binding_pattern(x1, None),
+                handler.object_binding_pattern(x0, x1, None, x2),
             )?);
             Ok(NonterminalId::ObjectBindingPattern)
         }
         354 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => object_binding_pattern($1, None)
-            stack.pop();
+            // ObjectBindingPattern ::= "{" BindingPropertyList "," "}" => object_binding_pattern($0, $1, None, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_binding_pattern(x1, None),
+                handler.object_binding_pattern(x0, x1, None, x3),
             )?);
             Ok(NonterminalId::ObjectBindingPattern)
         }
         355 => {
-            // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => object_binding_pattern($1, Some($3))
-            stack.pop();
+            // ObjectBindingPattern ::= "{" BindingPropertyList "," BindingRestProperty "}" => object_binding_pattern($0, $1, Some($3), $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, BindingProperty>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_binding_pattern(x1, Some(x3)),
+                handler.object_binding_pattern(x0, x1, Some(x3), x4),
             )?);
             Ok(NonterminalId::ObjectBindingPattern)
         }
         356 => {
-            // ArrayBindingPattern ::= "[" "]" => array_binding_pattern(binding_element_list_empty(), None, None)
-            stack.pop();
-            stack.pop();
+            // ArrayBindingPattern ::= "[" "]" => array_binding_pattern($0, binding_element_list_empty(), None, None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(handler.binding_element_list_empty(), None, None),
+                handler.array_binding_pattern(
+                    x0,
+                    handler.binding_element_list_empty(),
+                    None,
+                    None,
+                    x1,
+                ),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         357 => {
-            // ArrayBindingPattern ::= "[" Elision "]" => array_binding_pattern(binding_element_list_empty(), Some($1), None)
-            stack.pop();
+            // ArrayBindingPattern ::= "[" Elision "]" => array_binding_pattern($0, binding_element_list_empty(), Some($1), None, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(handler.binding_element_list_empty(), Some(x1), None),
+                handler.array_binding_pattern(
+                    x0,
+                    handler.binding_element_list_empty(),
+                    Some(x1),
+                    None,
+                    x2,
+                ),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         358 => {
-            // ArrayBindingPattern ::= "[" BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), None, Some($1))
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingRestElement "]" => array_binding_pattern($0, binding_element_list_empty(), None, Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(handler.binding_element_list_empty(), None, Some(x1)),
+                handler.array_binding_pattern(
+                    x0,
+                    handler.binding_element_list_empty(),
+                    None,
+                    Some(x1),
+                    x2,
+                ),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         359 => {
-            // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => array_binding_pattern(binding_element_list_empty(), Some($1), Some($2))
-            stack.pop();
+            // ArrayBindingPattern ::= "[" Elision BindingRestElement "]" => array_binding_pattern($0, binding_element_list_empty(), Some($1), Some($2), $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.array_binding_pattern(
+                    x0,
                     handler.binding_element_list_empty(),
                     Some(x1),
                     Some(x2),
+                    x3,
                 ),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         360 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "]" => array_binding_pattern($1, None, None)
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingElementList "]" => array_binding_pattern($0, $1, None, None, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(x1, None, None),
+                handler.array_binding_pattern(x0, x1, None, None, x2),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         361 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," "]" => array_binding_pattern($1, None, None)
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingElementList "," "]" => array_binding_pattern($0, $1, None, None, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(x1, None, None),
+                handler.array_binding_pattern(x0, x1, None, None, x3),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         362 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => array_binding_pattern($1, Some($3), None)
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingElementList "," Elision "]" => array_binding_pattern($0, $1, Some($3), None, $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(x1, Some(x3), None),
+                handler.array_binding_pattern(x0, x1, Some(x3), None, x4),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         363 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => array_binding_pattern($1, None, Some($3))
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingElementList "," BindingRestElement "]" => array_binding_pattern($0, $1, None, Some($3), $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(x1, None, Some(x3)),
+                handler.array_binding_pattern(x0, x1, None, Some(x3), x4),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
         364 => {
-            // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => array_binding_pattern($1, Some($3), Some($4))
-            stack.pop();
+            // ArrayBindingPattern ::= "[" BindingElementList "," Elision BindingRestElement "]" => array_binding_pattern($0, $1, Some($3), Some($4), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, Binding> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, Vec<'alloc, Option<Parameter>>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_binding_pattern(x1, Some(x3), Some(x4)),
+                handler.array_binding_pattern(x0, x1, Some(x3), Some(x4), x5),
             )?);
             Ok(NonterminalId::ArrayBindingPattern)
         }
@@ -11105,24 +11453,28 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ConditionalExpression)
         }
         367 => {
-            // YieldExpression[~In] ::= "yield" => yield_expr(None)
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(None))?);
+            // YieldExpression[~In] ::= "yield" => yield_expr($0, None)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(x0, None))?);
             Ok(NonterminalId::YieldExpression)
         }
         368 => {
-            // YieldExpression[~In] ::= "yield" AssignmentExpression[~In] => yield_expr(Some($1))
+            // YieldExpression[~In] ::= "yield" AssignmentExpression[~In] => yield_expr($0, Some($1))
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_expr(Some(x1)))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.yield_expr(x0, Some(x1)),
+            )?);
             Ok(NonterminalId::YieldExpression)
         }
         369 => {
-            // YieldExpression[~In] ::= "yield" "*" AssignmentExpression[~In] => yield_star_expr($2)
+            // YieldExpression[~In] ::= "yield" "*" AssignmentExpression[~In] => yield_star_expr($0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.yield_star_expr(x2))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.yield_star_expr(x0, x2),
+            )?);
             Ok(NonterminalId::YieldExpression)
         }
         370 => {
@@ -11136,23 +11488,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ArrowFunction)
         }
         371 => {
-            // AsyncArrowFunction[~In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[~In] => async_arrow_function(arrow_parameters_bare($1), $3)
+            // AsyncArrowFunction[~In] ::= "async" AsyncArrowBindingIdentifier "=>" AsyncConciseBody[~In] => async_arrow_function_bare($0, $1, $3)
             let x3: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_arrow_function(handler.arrow_parameters_bare(x1), x3),
+                handler.async_arrow_function_bare(x0, x1, x3),
             )?);
             Ok(NonterminalId::AsyncArrowFunction)
         }
         372 => {
-            // AsyncArrowFunction[~In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[~In] => async_arrow_function(async_arrow_parameters($0), $2)
+            // AsyncArrowFunction[~In] ::= CoverCallExpressionAndAsyncArrowHead "=>" AsyncConciseBody[~In] => async_arrow_function($0, $2)
             let x2: Box<'alloc, ArrowExpressionBody> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_arrow_function(handler.async_arrow_parameters(x0)?, x2),
+                handler.async_arrow_function(x0, x2)?,
             )?);
             Ok(NonterminalId::AsyncArrowFunction)
         }
@@ -11192,22 +11544,27 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LexicalBinding)
         }
         377 => {
-            // CaseClause ::= "case" Expression[+In] ":" => case_clause($1, None)
-            stack.pop();
+            // CaseClause ::= "case" Expression[+In] ":" => case_clause($0, $1, $2, None)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.case_clause(x1, None))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.case_clause(x0, x1, x2, None),
+            )?);
             Ok(NonterminalId::CaseClause)
         }
         378 => {
-            // CaseClause ::= "case" Expression[+In] ":" StatementList => case_clause($1, Some($3))
+            // CaseClause ::= "case" Expression[+In] ":" StatementList => case_clause($0, $1, $2, Some($3))
             let x3: Box<'alloc, Vec<'alloc, Statement>> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.case_clause(x1, Some(x3)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.case_clause(
+                x0,
+                x1,
+                x2,
+                Some(x3),
+            ))?);
             Ok(NonterminalId::CaseClause)
         }
         379 => {
@@ -11237,11 +11594,11 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ClassElement)
         }
         383 => {
-            // ClassElement ::= "static" MethodDefinition => class_element_static($1)
+            // ClassElement ::= "static" MethodDefinition => class_element_static($0, $1)
             let x1: Box<'alloc, MethodDefinition> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.class_element_static(x1),
+                handler.class_element_static(x0, x1),
             )?);
             Ok(NonterminalId::ClassElement)
         }
@@ -11256,12 +11613,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LogicalAndExpressionIn)
         }
         386 => {
-            // LogicalANDExpression[+In] ::= LogicalANDExpression[+In] "&&" BitwiseORExpression[+In] => binary_expr(logical_and_op(), $0, $2)
+            // LogicalANDExpression[+In] ::= LogicalANDExpression[+In] "&&" BitwiseORExpression[+In] => binary_expr(logical_and_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.logical_and_op(),
+                handler.logical_and_op(x1),
                 x0,
                 x2,
             ))?);
@@ -11280,21 +11637,21 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseOrExpressionIn)
         }
         390 => {
-            // BitwiseORExpression[+In] ::= BitwiseORExpression[+In] "|" BitwiseXORExpression[+In] => binary_expr(bitwise_or_op(), $0, $2)
+            // BitwiseORExpression[+In] ::= BitwiseORExpression[+In] "|" BitwiseXORExpression[+In] => binary_expr(bitwise_or_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_or_op(),
+                handler.bitwise_or_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::BitwiseOrExpressionIn)
         }
         391 => {
-            // PrimaryExpression ::= "this" => this_expr()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.this_expr())?);
+            // PrimaryExpression ::= "this" => this_expr($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.this_expr(x0))?);
             Ok(NonterminalId::PrimaryExpression)
         }
         392 => {
@@ -11358,23 +11715,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::PrimaryExpression)
         }
         404 => {
-            // SuperProperty ::= "super" "[" Expression[+In] "]" => super_property_computed($2)
-            stack.pop();
+            // SuperProperty ::= "super" "[" Expression[+In] "]" => super_property_computed($0, $2, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.super_property_computed(x2),
+                handler.super_property_computed(x0, x2, x3),
             )?);
             Ok(NonterminalId::SuperProperty)
         }
         405 => {
-            // SuperProperty ::= "super" "." IdentifierName => super_property_static($2)
+            // SuperProperty ::= "super" "." IdentifierName => super_property_static($0, $2)
             let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.super_property_static(x2),
+                handler.super_property_static(x0, x2),
             )?);
             Ok(NonterminalId::SuperProperty)
         }
@@ -11383,19 +11740,17 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::MetaProperty)
         }
         407 => {
-            // ArgumentList ::= AssignmentExpression[+In] => arguments_append(arguments_empty(), $0)
+            // ArgumentList ::= AssignmentExpression[+In] => arguments_single($0)
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(
-                handler.arguments_append(handler.arguments_empty(), x0),
-            )?);
+            stack.push(TryIntoStack::try_into_stack(handler.arguments_single(x0))?);
             Ok(NonterminalId::ArgumentList)
         }
         408 => {
-            // ArgumentList ::= "..." AssignmentExpression[+In] => arguments_append_spread(arguments_empty(), $1)
+            // ArgumentList ::= "..." AssignmentExpression[+In] => arguments_spread_single($1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(
-                handler.arguments_append_spread(handler.arguments_empty(), x1),
+                handler.arguments_spread_single(x1),
             )?);
             Ok(NonterminalId::ArgumentList)
         }
@@ -11456,16 +11811,18 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BindingPropertyList)
         }
         415 => {
-            // Elision ::= "," => elision_single()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.elision_single())?);
+            // Elision ::= "," => elision_single($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.elision_single(x0))?);
             Ok(NonterminalId::Elision)
         }
         416 => {
-            // Elision ::= Elision "," => elision_append($0)
-            stack.pop();
+            // Elision ::= Elision "," => elision_append($0, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(handler.elision_append(x0))?);
+            stack.push(TryIntoStack::try_into_stack(
+                handler.elision_append(x0, x1),
+            )?);
             Ok(NonterminalId::Elision)
         }
         417 => {
@@ -11499,21 +11856,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ConciseBody)
         }
         422 => {
-            // ConciseBody[~In] ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
+            // ConciseBody[~In] ::= "{" "}" => concise_body_block($0, function_body(function_statement_list(None)), $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.concise_body_block(
+                x0,
                 handler.function_body(handler.function_statement_list(None)),
+                x1,
             ))?);
             Ok(NonterminalId::ConciseBody)
         }
         423 => {
-            // ConciseBody[~In] ::= "{" FunctionBody "}" => concise_body_block($1)
-            stack.pop();
+            // ConciseBody[~In] ::= "{" FunctionBody "}" => concise_body_block($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.concise_body_block(x1),
+                handler.concise_body_block(x0, x1, x2),
             )?);
             Ok(NonterminalId::ConciseBody)
         }
@@ -11526,21 +11885,23 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::AsyncConciseBody)
         }
         425 => {
-            // AsyncConciseBody[~In] ::= "{" "}" => concise_body_block(function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
+            // AsyncConciseBody[~In] ::= "{" "}" => concise_body_block($0, function_body(function_statement_list(None)), $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.concise_body_block(
+                x0,
                 handler.function_body(handler.function_statement_list(None)),
+                x1,
             ))?);
             Ok(NonterminalId::AsyncConciseBody)
         }
         426 => {
-            // AsyncConciseBody[~In] ::= "{" AsyncFunctionBody "}" => concise_body_block($1)
-            stack.pop();
+            // AsyncConciseBody[~In] ::= "{" AsyncFunctionBody "}" => concise_body_block($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.concise_body_block(x1),
+                handler.concise_body_block(x0, x1, x2),
             )?);
             Ok(NonterminalId::AsyncConciseBody)
         }
@@ -11566,60 +11927,72 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BindingElement)
         }
         430 => {
-            // MethodDefinition ::= PropertyName "(" ")" "{" "}" => method_definition($0, unique_formal_parameters(empty_formal_parameters()), function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // MethodDefinition ::= PropertyName "(" ")" "{" "}" => method_definition($0, $1, unique_formal_parameters(empty_formal_parameters()), $2, $3, function_body(function_statement_list(None)), $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.method_definition(
                 x0,
+                x1,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
-                handler.function_body(handler.function_statement_list(None)),
-            ))?);
-            Ok(NonterminalId::MethodDefinition)
-        }
-        431 => {
-            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" "}" => method_definition($0, $2, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(handler.method_definition(
-                x0,
                 x2,
+                x3,
                 handler.function_body(handler.function_statement_list(None)),
-            ))?);
-            Ok(NonterminalId::MethodDefinition)
-        }
-        432 => {
-            // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => method_definition($0, unique_formal_parameters(empty_formal_parameters()), $4)
-            stack.pop();
-            let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(handler.method_definition(
-                x0,
-                handler.unique_formal_parameters(handler.empty_formal_parameters()),
                 x4,
             ))?);
             Ok(NonterminalId::MethodDefinition)
         }
-        433 => {
-            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => method_definition($0, $2, $5)
-            stack.pop();
-            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+        431 => {
+            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" "}" => method_definition($0, $1, $2, $3, $4, function_body(function_statement_list(None)), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.method_definition(
+                x0,
+                x1,
+                x2,
+                x3,
+                x4,
+                handler.function_body(handler.function_statement_list(None)),
+                x5,
+            ))?);
+            Ok(NonterminalId::MethodDefinition)
+        }
+        432 => {
+            // MethodDefinition ::= PropertyName "(" ")" "{" FunctionBody "}" => method_definition($0, $1, unique_formal_parameters(empty_formal_parameters()), $2, $3, $4, $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.method_definition(
+                x0,
+                x1,
+                handler.unique_formal_parameters(handler.empty_formal_parameters()),
+                x2,
+                x3,
+                x4,
+                x5,
+            ))?);
+            Ok(NonterminalId::MethodDefinition)
+        }
+        433 => {
+            // MethodDefinition ::= PropertyName "(" UniqueFormalParameters ")" "{" FunctionBody "}" => method_definition($0, $1, $2, $3, $4, $5, $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.method_definition(x0, x2, x5),
+                handler.method_definition(x0, x1, x2, x3, x4, x5, x6),
             )?);
             Ok(NonterminalId::MethodDefinition)
         }
@@ -11636,58 +12009,70 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::MethodDefinition)
         }
         437 => {
-            // MethodDefinition ::= "get" PropertyName "(" ")" "{" "}" => getter($1, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
+            // MethodDefinition ::= "get" PropertyName "(" ")" "{" "}" => getter($0, $1, $4, function_body(function_statement_list(None)), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.getter(
+                x0,
                 x1,
+                x4,
                 handler.function_body(handler.function_statement_list(None)),
+                x5,
             ))?);
             Ok(NonterminalId::MethodDefinition)
         }
         438 => {
-            // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => getter($1, $5)
-            stack.pop();
+            // MethodDefinition ::= "get" PropertyName "(" ")" "{" FunctionBody "}" => getter($0, $1, $4, $5, $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.getter(x1, x5))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.getter(x0, x1, x4, x5, x6),
+            )?);
             Ok(NonterminalId::MethodDefinition)
         }
         439 => {
-            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" "}" => setter($1, $3, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" "}" => setter($0, $1, $2, $3, $4, $5, function_body(function_statement_list(None)), $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.setter(
+                x0,
                 x1,
+                x2,
                 x3,
+                x4,
+                x5,
                 handler.function_body(handler.function_statement_list(None)),
+                x6,
             ))?);
             Ok(NonterminalId::MethodDefinition)
         }
         440 => {
-            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => setter($1, $3, $6)
-            stack.pop();
+            // MethodDefinition ::= "set" PropertyName "(" PropertySetParameterList ")" "{" FunctionBody "}" => setter($0, $1, $2, $3, $4, $5, $6, $7)
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, Parameter> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.setter(x1, x3, x6))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.setter(x0, x1, x2, x3, x4, x5, x6, x7),
+            )?);
             Ok(NonterminalId::MethodDefinition)
         }
         441 => {
@@ -11695,12 +12080,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseXorExpressionIn)
         }
         442 => {
-            // BitwiseXORExpression[+In] ::= BitwiseXORExpression[+In] "^" BitwiseANDExpression[+In] => binary_expr(bitwise_xor_op(), $0, $2)
+            // BitwiseXORExpression[+In] ::= BitwiseXORExpression[+In] "^" BitwiseANDExpression[+In] => binary_expr(bitwise_xor_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_xor_op(),
+                handler.bitwise_xor_op(x1),
                 x0,
                 x2,
             ))?);
@@ -11715,9 +12100,9 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IdentifierReference)
         }
         444 => {
-            // Literal ::= NullLiteral => null_literal()
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.null_literal())?);
+            // Literal ::= NullLiteral => null_literal($0)
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.null_literal(x0))?);
             Ok(NonterminalId::Literal)
         }
         445 => {
@@ -11739,634 +12124,798 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::Literal)
         }
         448 => {
-            // ArrayLiteral ::= "[" "]" => array_literal_empty(None)
-            stack.pop();
-            stack.pop();
+            // ArrayLiteral ::= "[" "]" => array_literal_empty($0, None, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_literal_empty(None),
+                handler.array_literal_empty(x0, None, x1),
             )?);
             Ok(NonterminalId::ArrayLiteral)
         }
         449 => {
-            // ArrayLiteral ::= "[" Elision "]" => array_literal_empty(Some($1))
-            stack.pop();
+            // ArrayLiteral ::= "[" Elision "]" => array_literal_empty($0, Some($1), $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.array_literal_empty(Some(x1)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.array_literal_empty(
+                x0,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::ArrayLiteral)
         }
         450 => {
-            // ArrayLiteral ::= "[" ElementList "]" => array_literal($1)
-            stack.pop();
+            // ArrayLiteral ::= "[" ElementList "]" => array_literal($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.array_literal(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.array_literal(x0, x1, x2),
+            )?);
             Ok(NonterminalId::ArrayLiteral)
         }
         451 => {
-            // ArrayLiteral ::= "[" ElementList "," "]" => array_literal_with_trailing_elision($1, None)
-            stack.pop();
+            // ArrayLiteral ::= "[" ElementList "," "]" => array_literal_with_trailing_elision($0, $1, None, $3)
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_literal_with_trailing_elision(x1, None),
+                handler.array_literal_with_trailing_elision(x0, x1, None, x3),
             )?);
             Ok(NonterminalId::ArrayLiteral)
         }
         452 => {
-            // ArrayLiteral ::= "[" ElementList "," Elision "]" => array_literal_with_trailing_elision($1, Some($3))
-            stack.pop();
+            // ArrayLiteral ::= "[" ElementList "," Elision "]" => array_literal_with_trailing_elision($0, $1, Some($3), $4)
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x1: Box<'alloc, ArrayExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.array_literal_with_trailing_elision(x1, Some(x3)),
+                handler.array_literal_with_trailing_elision(x0, x1, Some(x3), x4),
             )?);
             Ok(NonterminalId::ArrayLiteral)
         }
         453 => {
-            // ObjectLiteral ::= "{" "}" => object_literal_empty()
-            stack.pop();
-            stack.pop();
+            // ObjectLiteral ::= "{" "}" => object_literal_empty($0, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.object_literal_empty(),
+                handler.object_literal_empty(x0, x1),
             )?);
             Ok(NonterminalId::ObjectLiteral)
         }
         454 => {
-            // ObjectLiteral ::= "{" PropertyDefinitionList "}" => object_literal($1)
-            stack.pop();
+            // ObjectLiteral ::= "{" PropertyDefinitionList "}" => object_literal($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ObjectExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.object_literal(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.object_literal(x0, x1, x2),
+            )?);
             Ok(NonterminalId::ObjectLiteral)
         }
         455 => {
-            // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => object_literal($1)
+            // ObjectLiteral ::= "{" PropertyDefinitionList "," "}" => object_literal($0, $1, $2)
             stack.pop();
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, ObjectExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.object_literal(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.object_literal(x0, x1, x2),
+            )?);
             Ok(NonterminalId::ObjectLiteral)
         }
         456 => {
-            // FunctionExpression ::= "function" "(" ")" "{" "}" => function_expr(function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionExpression ::= "function" "(" ")" "{" "}" => function_expr(function($0, None, $1, empty_formal_parameters(), $2, $3, function_body(function_statement_list(None)), $4))
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
+                    x0,
                     None,
+                    x1,
                     handler.empty_formal_parameters(),
+                    x2,
+                    x3,
                     handler.function_body(handler.function_statement_list(None)),
+                    x4,
                 ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         457 => {
-            // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" "}" => function_expr(function(Some($1), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" "}" => function_expr(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         458 => {
-            // FunctionExpression ::= "function" "(" FormalParameters ")" "{" "}" => function_expr(function(None, $2, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionExpression ::= "function" "(" FormalParameters ")" "{" "}" => function_expr(function($0, None, $1, $2, $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
+                    x0,
                     None,
+                    x1,
                     x2,
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         459 => {
-            // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(function(Some($1), $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(function($0, Some($1), $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.function(
+                    x0,
                     Some(x1),
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         460 => {
-            // FunctionExpression ::= "function" "(" ")" "{" FunctionBody "}" => function_expr(function(None, empty_formal_parameters(), $4))
-            stack.pop();
+            // FunctionExpression ::= "function" "(" ")" "{" FunctionBody "}" => function_expr(function($0, None, $1, empty_formal_parameters(), $2, $3, $4, $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.function(None, handler.empty_formal_parameters(), x4),
+                handler.function(
+                    x0,
+                    None,
+                    x1,
+                    handler.empty_formal_parameters(),
+                    x2,
+                    x3,
+                    x4,
+                    x5,
+                ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         461 => {
-            // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_expr(function(Some($1), empty_formal_parameters(), $5))
-            stack.pop();
+            // FunctionExpression ::= "function" BindingIdentifier "(" ")" "{" FunctionBody "}" => function_expr(function($0, Some($1), $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.function(Some(x1), handler.empty_formal_parameters(), x5),
+                handler.function(
+                    x0,
+                    Some(x1),
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         462 => {
-            // FunctionExpression ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function(None, $2, $5))
-            stack.pop();
+            // FunctionExpression ::= "function" "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function($0, None, $1, $2, $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.function(None, x2, x5)),
-            )?);
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.function(x0, None, x1, x2, x3, x4, x5, x6),
+            ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         463 => {
-            // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function(Some($1), $3, $6))
-            stack.pop();
+            // FunctionExpression ::= "function" BindingIdentifier "(" FormalParameters ")" "{" FunctionBody "}" => function_expr(function($0, Some($1), $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.function(Some(x1), x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.function(x0, Some(x1), x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::FunctionExpression)
         }
         464 => {
-            // ClassExpression ::= "class" ClassTail => class_expression(None, $1)
+            // ClassExpression ::= "class" ClassTail => class_expression($0, None, $1)
             let x1: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.class_expression(None, x1),
+                handler.class_expression(x0, None, x1),
             )?);
             Ok(NonterminalId::ClassExpression)
         }
         465 => {
-            // ClassExpression ::= "class" BindingIdentifier ClassTail => class_expression(Some($1), $2)
+            // ClassExpression ::= "class" BindingIdentifier ClassTail => class_expression($0, Some($1), $2)
             let x2: Box<'alloc, ClassExpression> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.class_expression(Some(x1), x2),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.class_expression(
+                x0,
+                Some(x1),
+                x2,
+            ))?);
             Ok(NonterminalId::ClassExpression)
         }
         466 => {
-            // GeneratorExpression ::= "function" "*" "(" ")" "{" "}" => function_expr(generator(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // GeneratorExpression ::= "function" "*" "(" ")" "{" "}" => function_expr(generator($0, None, $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.generator(
+                    x0,
                     None,
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         467 => {
-            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_expr(generator(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" "}" => function_expr(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         468 => {
-            // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" "}" => function_expr(generator(None, $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" "}" => function_expr(generator($0, None, $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.generator(
+                    x0,
                     None,
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         469 => {
-            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(generator(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(generator($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.generator(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         470 => {
-            // GeneratorExpression ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_expr(generator(None, empty_formal_parameters(), $5))
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" "(" ")" "{" GeneratorBody "}" => function_expr(generator($0, None, $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.generator(None, handler.empty_formal_parameters(), x5),
+                handler.generator(
+                    x0,
+                    None,
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         471 => {
-            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_expr(generator(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" ")" "{" GeneratorBody "}" => function_expr(generator($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.generator(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.generator(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         472 => {
-            // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator(None, $3, $6))
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator($0, None, $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.generator(None, x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.generator(x0, None, x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         473 => {
-            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator(Some($2), $4, $7))
-            stack.pop();
+            // GeneratorExpression ::= "function" "*" BindingIdentifier "(" FormalParameters ")" "{" GeneratorBody "}" => function_expr(generator($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.generator(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.generator(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::GeneratorExpression)
         }
         474 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" "}" => function_expr(async_function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" "}" => function_expr(async_function($0, None, $2, empty_formal_parameters(), $3, $4, function_body(function_statement_list(None)), $5))
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     None,
+                    x2,
                     handler.empty_formal_parameters(),
+                    x3,
+                    x4,
                     handler.function_body(handler.function_statement_list(None)),
+                    x5,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         475 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_expr(async_function(None, $3, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" "}" => function_expr(async_function($0, None, $2, $3, $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     None,
+                    x2,
                     x3,
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         476 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function(None, empty_formal_parameters(), $5))
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function($0, None, $2, empty_formal_parameters(), $3, $4, $5, $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.async_function(None, handler.empty_formal_parameters(), x5),
+                handler.async_function(
+                    x0,
+                    None,
+                    x2,
+                    handler.empty_formal_parameters(),
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         477 => {
-            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function(None, $3, $6))
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function($0, None, $2, $3, $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.async_function(None, x3, x6)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.async_function(x0, None, x2, x3, x4, x5, x6, x7),
+            ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         478 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function(Some($2), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         479 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function(Some($2), $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function($0, Some($2), $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     Some(x2),
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         480 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function(Some($2), empty_formal_parameters(), $6))
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" ")" "{" AsyncFunctionBody "}" => function_expr(async_function($0, Some($2), $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.async_function(Some(x2), handler.empty_formal_parameters(), x6),
+                handler.async_function(
+                    x0,
+                    Some(x2),
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         481 => {
-            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function(Some($2), $4, $7))
-            stack.pop();
+            // AsyncFunctionExpression ::= "async" "function" BindingIdentifier "(" FormalParameters ")" "{" AsyncFunctionBody "}" => function_expr(async_function($0, Some($2), $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.async_function(Some(x2), x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.async_function(x0, Some(x2), x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::AsyncFunctionExpression)
         }
         482 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" "}" => function_expr(async_function(None, empty_formal_parameters(), function_body(function_statement_list(None))))
+            // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" "}" => function_expr(async_function($0, None, $3, empty_formal_parameters(), $4, $5, function_body(function_statement_list(None)), $6))
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     None,
+                    x3,
                     handler.empty_formal_parameters(),
+                    x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
+                    x6,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         483 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function(Some($3), empty_formal_parameters(), function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" "}" => function_expr(async_function($0, Some($3), $4, empty_formal_parameters(), $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     Some(x3),
+                    x4,
                     handler.empty_formal_parameters(),
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         484 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" "}" => function_expr(async_function(None, $4, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" "}" => function_expr(async_function($0, None, $3, $4, $5, $6, function_body(function_statement_list(None)), $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     None,
+                    x3,
                     x4,
+                    x5,
+                    x6,
                     handler.function_body(handler.function_statement_list(None)),
+                    x7,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         485 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function(Some($3), $5, function_body(function_statement_list(None))))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" "}" => function_expr(async_function($0, Some($3), $4, $5, $6, $7, function_body(function_statement_list(None)), $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
                 handler.async_function(
+                    x0,
                     Some(x3),
+                    x4,
                     x5,
+                    x6,
+                    x7,
                     handler.function_body(handler.function_statement_list(None)),
+                    x8,
                 ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         486 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(None, empty_formal_parameters(), $6))
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function($0, None, $3, empty_formal_parameters(), $4, $5, $6, $7))
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.async_function(None, handler.empty_formal_parameters(), x6),
+                handler.async_function(
+                    x0,
+                    None,
+                    x3,
+                    handler.empty_formal_parameters(),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         487 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(Some($3), empty_formal_parameters(), $7))
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" ")" "{" AsyncGeneratorBody "}" => function_expr(async_function($0, Some($3), $4, empty_formal_parameters(), $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.function_expr(
-                handler.async_function(Some(x3), handler.empty_formal_parameters(), x7),
+                handler.async_function(
+                    x0,
+                    Some(x3),
+                    x4,
+                    handler.empty_formal_parameters(),
+                    x5,
+                    x6,
+                    x7,
+                    x8,
+                ),
             ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         488 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(None, $4, $7))
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function($0, None, $3, $4, $5, $6, $7, $8))
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.async_function(None, x4, x7)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.async_function(x0, None, x3, x4, x5, x6, x7, x8),
+            ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         489 => {
-            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function(Some($3), $5, $8))
-            stack.pop();
+            // AsyncGeneratorExpression ::= "async" "function" "*" BindingIdentifier "(" FormalParameters ")" "{" AsyncGeneratorBody "}" => function_expr(async_function($0, Some($3), $4, $5, $6, $7, $8, $9))
+            let x9: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x8: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, BindingIdentifier> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.function_expr(handler.async_function(Some(x3), x5, x8)),
-            )?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.function_expr(
+                handler.async_function(x0, Some(x3), x4, x5, x6, x7, x8, x9),
+            ))?);
             Ok(NonterminalId::AsyncGeneratorExpression)
         }
         490 => {
-            // NewTarget ::= "new" "." "target" => new_target_expr()
+            // NewTarget ::= "new" "." "target" => new_target_expr($0, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.new_target_expr())?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.new_target_expr(x0, x2),
+            )?);
             Ok(NonterminalId::NewTarget)
         }
         491 => {
@@ -12426,24 +12975,24 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LogicalOrExpression)
         }
         498 => {
-            // LogicalORExpression[~In] ::= LogicalORExpression[~In] "||" LogicalANDExpression[~In] => binary_expr(logical_or_op(), $0, $2)
+            // LogicalORExpression[~In] ::= LogicalORExpression[~In] "||" LogicalANDExpression[~In] => binary_expr(logical_or_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.logical_or_op(),
+                handler.logical_or_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::LogicalOrExpression)
         }
         499 => {
-            // CoalesceExpression[~In] ::= CoalesceExpressionHead[~In] "??" BitwiseORExpression[~In] => binary_expr(coalesce_op(), $0, $2)
+            // CoalesceExpression[~In] ::= CoalesceExpressionHead[~In] "??" BitwiseORExpression[~In] => binary_expr(coalesce_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.coalesce_op(),
+                handler.coalesce_op(x1),
                 x0,
                 x2,
             ))?);
@@ -12490,198 +13039,243 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::UniqueFormalParameters)
         }
         506 => {
-            // GeneratorMethod ::= "*" PropertyName "(" ")" "{" "}" => generator_method($1, unique_formal_parameters(empty_formal_parameters()), function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorMethod ::= "*" PropertyName "(" ")" "{" "}" => generator_method($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, function_body(function_statement_list(None)), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
+                x0,
                 x1,
+                x2,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
+                x3,
+                x4,
                 handler.function_body(handler.function_statement_list(None)),
+                x5,
             ))?);
             Ok(NonterminalId::GeneratorMethod)
         }
         507 => {
-            // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" "}" => generator_method($1, $3, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" "}" => generator_method($0, $1, $2, $3, $4, $5, function_body(function_statement_list(None)), $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
+                x0,
                 x1,
+                x2,
                 x3,
+                x4,
+                x5,
                 handler.function_body(handler.function_statement_list(None)),
+                x6,
             ))?);
             Ok(NonterminalId::GeneratorMethod)
         }
         508 => {
-            // GeneratorMethod ::= "*" PropertyName "(" ")" "{" GeneratorBody "}" => generator_method($1, unique_formal_parameters(empty_formal_parameters()), $5)
-            stack.pop();
+            // GeneratorMethod ::= "*" PropertyName "(" ")" "{" GeneratorBody "}" => generator_method($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, $5, $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.generator_method(
+                x0,
                 x1,
+                x2,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
+                x3,
+                x4,
                 x5,
+                x6,
             ))?);
             Ok(NonterminalId::GeneratorMethod)
         }
         509 => {
-            // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}" => generator_method($1, $3, $6)
-            stack.pop();
+            // GeneratorMethod ::= "*" PropertyName "(" UniqueFormalParameters ")" "{" GeneratorBody "}" => generator_method($0, $1, $2, $3, $4, $5, $6, $7)
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.generator_method(x1, x3, x6),
+                handler.generator_method(x0, x1, x2, x3, x4, x5, x6, x7),
             )?);
             Ok(NonterminalId::GeneratorMethod)
         }
         510 => {
-            // AsyncMethod ::= "async" PropertyName "(" ")" "{" "}" => async_method($1, unique_formal_parameters(empty_formal_parameters()), function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncMethod ::= "async" PropertyName "(" ")" "{" "}" => async_method($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, function_body(function_statement_list(None)), $5)
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.async_method(
+                x0,
                 x1,
+                x2,
                 handler.unique_formal_parameters(handler.empty_formal_parameters()),
-                handler.function_body(handler.function_statement_list(None)),
-            ))?);
-            Ok(NonterminalId::AsyncMethod)
-        }
-        511 => {
-            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" "}" => async_method($1, $3, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.async_method(
-                x1,
                 x3,
+                x4,
                 handler.function_body(handler.function_statement_list(None)),
-            ))?);
-            Ok(NonterminalId::AsyncMethod)
-        }
-        512 => {
-            // AsyncMethod ::= "async" PropertyName "(" ")" "{" AsyncFunctionBody "}" => async_method($1, unique_formal_parameters(empty_formal_parameters()), $5)
-            stack.pop();
-            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.async_method(
-                x1,
-                handler.unique_formal_parameters(handler.empty_formal_parameters()),
                 x5,
             ))?);
             Ok(NonterminalId::AsyncMethod)
         }
-        513 => {
-            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => async_method($1, $3, $6)
-            stack.pop();
-            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+        511 => {
+            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" "}" => async_method($0, $1, $2, $3, $4, $5, function_body(function_statement_list(None)), $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.async_method(
+                x0,
+                x1,
+                x2,
+                x3,
+                x4,
+                x5,
+                handler.function_body(handler.function_statement_list(None)),
+                x6,
+            ))?);
+            Ok(NonterminalId::AsyncMethod)
+        }
+        512 => {
+            // AsyncMethod ::= "async" PropertyName "(" ")" "{" AsyncFunctionBody "}" => async_method($0, $1, $2, unique_formal_parameters(empty_formal_parameters()), $3, $4, $5, $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.async_method(
+                x0,
+                x1,
+                x2,
+                handler.unique_formal_parameters(handler.empty_formal_parameters()),
+                x3,
+                x4,
+                x5,
+                x6,
+            ))?);
+            Ok(NonterminalId::AsyncMethod)
+        }
+        513 => {
+            // AsyncMethod ::= "async" PropertyName "(" UniqueFormalParameters ")" "{" AsyncFunctionBody "}" => async_method($0, $1, $2, $3, $4, $5, $6, $7)
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_method(x1, x3, x6),
+                handler.async_method(x0, x1, x2, x3, x4, x5, x6, x7),
             )?);
             Ok(NonterminalId::AsyncMethod)
         }
         514 => {
-            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" "}" => async_generator_method($2, unique_formal_parameters(empty_formal_parameters()), function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            stack.pop();
+            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" "}" => async_generator_method($0, $2, $3, unique_formal_parameters(empty_formal_parameters()), $4, $5, function_body(function_statement_list(None)), $6)
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.async_generator_method(
+                    x0,
                     x2,
+                    x3,
                     handler.unique_formal_parameters(handler.empty_formal_parameters()),
-                    handler.function_body(handler.function_statement_list(None)),
-                ),
-            )?);
-            Ok(NonterminalId::AsyncGeneratorMethod)
-        }
-        515 => {
-            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" "}" => async_generator_method($2, $4, function_body(function_statement_list(None)))
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.async_generator_method(
-                    x2,
                     x4,
+                    x5,
                     handler.function_body(handler.function_statement_list(None)),
-                ),
-            )?);
-            Ok(NonterminalId::AsyncGeneratorMethod)
-        }
-        516 => {
-            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody "}" => async_generator_method($2, unique_formal_parameters(empty_formal_parameters()), $6)
-            stack.pop();
-            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.pop();
-            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(
-                handler.async_generator_method(
-                    x2,
-                    handler.unique_formal_parameters(handler.empty_formal_parameters()),
                     x6,
                 ),
             )?);
             Ok(NonterminalId::AsyncGeneratorMethod)
         }
-        517 => {
-            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => async_generator_method($2, $4, $7)
-            stack.pop();
-            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.pop();
+        515 => {
+            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" "}" => async_generator_method($0, $2, $3, $4, $5, $6, function_body(function_statement_list(None)), $7)
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
             stack.pop();
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.async_generator_method(x2, x4, x7),
+                handler.async_generator_method(
+                    x0,
+                    x2,
+                    x3,
+                    x4,
+                    x5,
+                    x6,
+                    handler.function_body(handler.function_statement_list(None)),
+                    x7,
+                ),
+            )?);
+            Ok(NonterminalId::AsyncGeneratorMethod)
+        }
+        516 => {
+            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" ")" "{" AsyncGeneratorBody "}" => async_generator_method($0, $2, $3, unique_formal_parameters(empty_formal_parameters()), $4, $5, $6, $7)
+            let x7: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.async_generator_method(
+                    x0,
+                    x2,
+                    x3,
+                    handler.unique_formal_parameters(handler.empty_formal_parameters()),
+                    x4,
+                    x5,
+                    x6,
+                    x7,
+                ),
+            )?);
+            Ok(NonterminalId::AsyncGeneratorMethod)
+        }
+        517 => {
+            // AsyncGeneratorMethod ::= "async" "*" PropertyName "(" UniqueFormalParameters ")" "{" AsyncGeneratorBody "}" => async_generator_method($0, $2, $3, $4, $5, $6, $7, $8)
+            let x8: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x7: Box<'alloc, FunctionBody> = stack.pop().unwrap().to_ast()?;
+            let x6: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x5: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x4: Box<'alloc, FormalParameters> = stack.pop().unwrap().to_ast()?;
+            let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, PropertyName> = stack.pop().unwrap().to_ast()?;
+            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.async_generator_method(x0, x2, x3, x4, x5, x6, x7, x8),
             )?);
             Ok(NonterminalId::AsyncGeneratorMethod)
         }
@@ -12694,12 +13288,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseAndExpressionIn)
         }
         520 => {
-            // BitwiseANDExpression[+In] ::= BitwiseANDExpression[+In] "&" EqualityExpression[+In] => binary_expr(bitwise_and_op(), $0, $2)
+            // BitwiseANDExpression[+In] ::= BitwiseANDExpression[+In] "&" EqualityExpression[+In] => binary_expr(bitwise_and_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_and_op(),
+                handler.bitwise_and_op(x1),
                 x0,
                 x2,
             ))?);
@@ -12825,12 +13419,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LogicalAndExpression)
         }
         534 => {
-            // LogicalANDExpression[~In] ::= LogicalANDExpression[~In] "&&" BitwiseORExpression[~In] => binary_expr(logical_and_op(), $0, $2)
+            // LogicalANDExpression[~In] ::= LogicalANDExpression[~In] "&&" BitwiseORExpression[~In] => binary_expr(logical_and_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.logical_and_op(),
+                handler.logical_and_op(x1),
                 x0,
                 x2,
             ))?);
@@ -12849,12 +13443,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseOrExpression)
         }
         538 => {
-            // BitwiseORExpression[~In] ::= BitwiseORExpression[~In] "|" BitwiseXORExpression[~In] => binary_expr(bitwise_or_op(), $0, $2)
+            // BitwiseORExpression[~In] ::= BitwiseORExpression[~In] "|" BitwiseXORExpression[~In] => binary_expr(bitwise_or_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_or_op(),
+                handler.bitwise_or_op(x1),
                 x0,
                 x2,
             ))?);
@@ -12885,12 +13479,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::LiteralPropertyName)
         }
         542 => {
-            // ComputedPropertyName ::= "[" AssignmentExpression[+In] "]" => computed_property_name($1)
-            stack.pop();
+            // ComputedPropertyName ::= "[" AssignmentExpression[+In] "]" => computed_property_name($0, $1, $2)
+            let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.computed_property_name(x1),
+                handler.computed_property_name(x0, x1, x2),
             )?);
             Ok(NonterminalId::ComputedPropertyName)
         }
@@ -12899,48 +13493,48 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::EqualityExpressionIn)
         }
         544 => {
-            // EqualityExpression[+In] ::= EqualityExpression[+In] "==" RelationalExpression[+In] => binary_expr(equals_op(), $0, $2)
+            // EqualityExpression[+In] ::= EqualityExpression[+In] "==" RelationalExpression[+In] => binary_expr(equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.equals_op(),
+                handler.equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpressionIn)
         }
         545 => {
-            // EqualityExpression[+In] ::= EqualityExpression[+In] "!=" RelationalExpression[+In] => binary_expr(not_equals_op(), $0, $2)
+            // EqualityExpression[+In] ::= EqualityExpression[+In] "!=" RelationalExpression[+In] => binary_expr(not_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.not_equals_op(),
+                handler.not_equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpressionIn)
         }
         546 => {
-            // EqualityExpression[+In] ::= EqualityExpression[+In] "===" RelationalExpression[+In] => binary_expr(strict_equals_op(), $0, $2)
+            // EqualityExpression[+In] ::= EqualityExpression[+In] "===" RelationalExpression[+In] => binary_expr(strict_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.strict_equals_op(),
+                handler.strict_equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpressionIn)
         }
         547 => {
-            // EqualityExpression[+In] ::= EqualityExpression[+In] "!==" RelationalExpression[+In] => binary_expr(strict_not_equals_op(), $0, $2)
+            // EqualityExpression[+In] ::= EqualityExpression[+In] "!==" RelationalExpression[+In] => binary_expr(strict_not_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.strict_not_equals_op(),
+                handler.strict_not_equals_op(x1),
                 x0,
                 x2,
             ))?);
@@ -12997,12 +13591,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseXorExpression)
         }
         555 => {
-            // BitwiseXORExpression[~In] ::= BitwiseXORExpression[~In] "^" BitwiseANDExpression[~In] => binary_expr(bitwise_xor_op(), $0, $2)
+            // BitwiseXORExpression[~In] ::= BitwiseXORExpression[~In] "^" BitwiseANDExpression[~In] => binary_expr(bitwise_xor_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_xor_op(),
+                handler.bitwise_xor_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13013,72 +13607,72 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::RelationalExpressionIn)
         }
         557 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] "<" ShiftExpression => binary_expr(less_than_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] "<" ShiftExpression => binary_expr(less_than_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.less_than_op(),
+                handler.less_than_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpressionIn)
         }
         558 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] ">" ShiftExpression => binary_expr(greater_than_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] ">" ShiftExpression => binary_expr(greater_than_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.greater_than_op(),
+                handler.greater_than_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpressionIn)
         }
         559 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.less_than_or_equal_op(),
+                handler.less_than_or_equal_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpressionIn)
         }
         560 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.greater_than_or_equal_op(),
+                handler.greater_than_or_equal_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpressionIn)
         }
         561 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] "instanceof" ShiftExpression => binary_expr(instanceof_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] "instanceof" ShiftExpression => binary_expr(instanceof_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.instanceof_op(),
+                handler.instanceof_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpressionIn)
         }
         562 => {
-            // RelationalExpression[+In] ::= RelationalExpression[+In] "in" ShiftExpression => binary_expr(in_op(), $0, $2)
+            // RelationalExpression[+In] ::= RelationalExpression[+In] "in" ShiftExpression => binary_expr(in_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.in_op(),
+                handler.in_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13098,12 +13692,12 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::BitwiseAndExpression)
         }
         565 => {
-            // BitwiseANDExpression[~In] ::= BitwiseANDExpression[~In] "&" EqualityExpression[~In] => binary_expr(bitwise_and_op(), $0, $2)
+            // BitwiseANDExpression[~In] ::= BitwiseANDExpression[~In] "&" EqualityExpression[~In] => binary_expr(bitwise_and_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.bitwise_and_op(),
+                handler.bitwise_and_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13114,36 +13708,36 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ShiftExpression)
         }
         567 => {
-            // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => binary_expr(left_shift_op(), $0, $2)
+            // ShiftExpression ::= ShiftExpression "<<" AdditiveExpression => binary_expr(left_shift_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.left_shift_op(),
+                handler.left_shift_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::ShiftExpression)
         }
         568 => {
-            // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => binary_expr(right_shift_op(), $0, $2)
+            // ShiftExpression ::= ShiftExpression ">>" AdditiveExpression => binary_expr(right_shift_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.right_shift_op(),
+                handler.right_shift_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::ShiftExpression)
         }
         569 => {
-            // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => binary_expr(right_shift_ext_op(), $0, $2)
+            // ShiftExpression ::= ShiftExpression ">>>" AdditiveExpression => binary_expr(right_shift_ext_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.right_shift_ext_op(),
+                handler.right_shift_ext_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13154,48 +13748,48 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::EqualityExpression)
         }
         571 => {
-            // EqualityExpression[~In] ::= EqualityExpression[~In] "==" RelationalExpression[~In] => binary_expr(equals_op(), $0, $2)
+            // EqualityExpression[~In] ::= EqualityExpression[~In] "==" RelationalExpression[~In] => binary_expr(equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.equals_op(),
+                handler.equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpression)
         }
         572 => {
-            // EqualityExpression[~In] ::= EqualityExpression[~In] "!=" RelationalExpression[~In] => binary_expr(not_equals_op(), $0, $2)
+            // EqualityExpression[~In] ::= EqualityExpression[~In] "!=" RelationalExpression[~In] => binary_expr(not_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.not_equals_op(),
+                handler.not_equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpression)
         }
         573 => {
-            // EqualityExpression[~In] ::= EqualityExpression[~In] "===" RelationalExpression[~In] => binary_expr(strict_equals_op(), $0, $2)
+            // EqualityExpression[~In] ::= EqualityExpression[~In] "===" RelationalExpression[~In] => binary_expr(strict_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.strict_equals_op(),
+                handler.strict_equals_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::EqualityExpression)
         }
         574 => {
-            // EqualityExpression[~In] ::= EqualityExpression[~In] "!==" RelationalExpression[~In] => binary_expr(strict_not_equals_op(), $0, $2)
+            // EqualityExpression[~In] ::= EqualityExpression[~In] "!==" RelationalExpression[~In] => binary_expr(strict_not_equals_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.strict_not_equals_op(),
+                handler.strict_not_equals_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13206,24 +13800,24 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::AdditiveExpression)
         }
         576 => {
-            // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => binary_expr(add_op(), $0, $2)
+            // AdditiveExpression ::= AdditiveExpression "+" MultiplicativeExpression => binary_expr(add_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.add_op(),
+                handler.add_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::AdditiveExpression)
         }
         577 => {
-            // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => binary_expr(sub_op(), $0, $2)
+            // AdditiveExpression ::= AdditiveExpression "-" MultiplicativeExpression => binary_expr(sub_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.sub_op(),
+                handler.sub_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13234,60 +13828,60 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::RelationalExpression)
         }
         579 => {
-            // RelationalExpression[~In] ::= RelationalExpression[~In] "<" ShiftExpression => binary_expr(less_than_op(), $0, $2)
+            // RelationalExpression[~In] ::= RelationalExpression[~In] "<" ShiftExpression => binary_expr(less_than_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.less_than_op(),
+                handler.less_than_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpression)
         }
         580 => {
-            // RelationalExpression[~In] ::= RelationalExpression[~In] ">" ShiftExpression => binary_expr(greater_than_op(), $0, $2)
+            // RelationalExpression[~In] ::= RelationalExpression[~In] ">" ShiftExpression => binary_expr(greater_than_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.greater_than_op(),
+                handler.greater_than_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpression)
         }
         581 => {
-            // RelationalExpression[~In] ::= RelationalExpression[~In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op(), $0, $2)
+            // RelationalExpression[~In] ::= RelationalExpression[~In] "<=" ShiftExpression => binary_expr(less_than_or_equal_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.less_than_or_equal_op(),
+                handler.less_than_or_equal_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpression)
         }
         582 => {
-            // RelationalExpression[~In] ::= RelationalExpression[~In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op(), $0, $2)
+            // RelationalExpression[~In] ::= RelationalExpression[~In] ">=" ShiftExpression => binary_expr(greater_than_or_equal_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.greater_than_or_equal_op(),
+                handler.greater_than_or_equal_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::RelationalExpression)
         }
         583 => {
-            // RelationalExpression[~In] ::= RelationalExpression[~In] "instanceof" ShiftExpression => binary_expr(instanceof_op(), $0, $2)
+            // RelationalExpression[~In] ::= RelationalExpression[~In] "instanceof" ShiftExpression => binary_expr(instanceof_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.instanceof_op(),
+                handler.instanceof_op(x1),
                 x0,
                 x2,
             ))?);
@@ -13312,38 +13906,38 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::ExponentiationExpression)
         }
         587 => {
-            // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => binary_expr(pow_op(), $0, $2)
+            // ExponentiationExpression ::= UpdateExpression "**" ExponentiationExpression => binary_expr(pow_op($1), $0, $2)
             let x2: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.binary_expr(
-                handler.pow_op(),
+                handler.pow_op(x1),
                 x0,
                 x2,
             ))?);
             Ok(NonterminalId::ExponentiationExpression)
         }
         588 => {
-            // MultiplicativeOperator ::= "*" => box_op(mul_op())
-            stack.pop();
+            // MultiplicativeOperator ::= "*" => box_op(mul_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_op(handler.mul_op()),
+                handler.box_op(handler.mul_op(x0)),
             )?);
             Ok(NonterminalId::MultiplicativeOperator)
         }
         589 => {
-            // MultiplicativeOperator ::= "/" => box_op(div_op())
-            stack.pop();
+            // MultiplicativeOperator ::= "/" => box_op(div_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_op(handler.div_op()),
+                handler.box_op(handler.div_op(x0)),
             )?);
             Ok(NonterminalId::MultiplicativeOperator)
         }
         590 => {
-            // MultiplicativeOperator ::= "%" => box_op(mod_op())
-            stack.pop();
+            // MultiplicativeOperator ::= "%" => box_op(mod_op($0))
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.box_op(handler.mod_op()),
+                handler.box_op(handler.mod_op(x0)),
             )?);
             Ok(NonterminalId::MultiplicativeOperator)
         }
@@ -13352,52 +13946,60 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::UnaryExpression)
         }
         592 => {
-            // UnaryExpression ::= "delete" UnaryExpression => delete_expr($1)
+            // UnaryExpression ::= "delete" UnaryExpression => delete_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.delete_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.delete_expr(x0, x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         593 => {
-            // UnaryExpression ::= "void" UnaryExpression => void_expr($1)
+            // UnaryExpression ::= "void" UnaryExpression => void_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.void_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.void_expr(x0, x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         594 => {
-            // UnaryExpression ::= "typeof" UnaryExpression => typeof_expr($1)
+            // UnaryExpression ::= "typeof" UnaryExpression => typeof_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.typeof_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.typeof_expr(x0, x1))?);
             Ok(NonterminalId::UnaryExpression)
         }
         595 => {
-            // UnaryExpression ::= "+" UnaryExpression => unary_plus_expr($1)
+            // UnaryExpression ::= "+" UnaryExpression => unary_plus_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.unary_plus_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.unary_plus_expr(x0, x1),
+            )?);
             Ok(NonterminalId::UnaryExpression)
         }
         596 => {
-            // UnaryExpression ::= "-" UnaryExpression => unary_minus_expr($1)
+            // UnaryExpression ::= "-" UnaryExpression => unary_minus_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.unary_minus_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.unary_minus_expr(x0, x1),
+            )?);
             Ok(NonterminalId::UnaryExpression)
         }
         597 => {
-            // UnaryExpression ::= "~" UnaryExpression => bitwise_not_expr($1)
+            // UnaryExpression ::= "~" UnaryExpression => bitwise_not_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.bitwise_not_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.bitwise_not_expr(x0, x1),
+            )?);
             Ok(NonterminalId::UnaryExpression)
         }
         598 => {
-            // UnaryExpression ::= "!" UnaryExpression => logical_not_expr($1)
+            // UnaryExpression ::= "!" UnaryExpression => logical_not_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.logical_not_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(
+                handler.logical_not_expr(x0, x1),
+            )?);
             Ok(NonterminalId::UnaryExpression)
         }
         599 => {
@@ -13409,46 +14011,46 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::UpdateExpression)
         }
         601 => {
-            // UpdateExpression ::= LeftHandSideExpression "++" => post_increment_expr($0)
-            stack.pop();
+            // UpdateExpression ::= LeftHandSideExpression "++" => post_increment_expr($0, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.post_increment_expr(x0)?,
+                handler.post_increment_expr(x0, x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
         602 => {
-            // UpdateExpression ::= LeftHandSideExpression "--" => post_decrement_expr($0)
-            stack.pop();
+            // UpdateExpression ::= LeftHandSideExpression "--" => post_decrement_expr($0, $1)
+            let x1: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.post_decrement_expr(x0)?,
+                handler.post_decrement_expr(x0, x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
         603 => {
-            // UpdateExpression ::= "++" UnaryExpression => pre_decrement_expr($1)
+            // UpdateExpression ::= "++" UnaryExpression => pre_decrement_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.pre_decrement_expr(x1)?,
+                handler.pre_decrement_expr(x0, x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
         604 => {
-            // UpdateExpression ::= "--" UnaryExpression => pre_decrement_expr($1)
+            // UpdateExpression ::= "--" UnaryExpression => pre_decrement_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.pre_decrement_expr(x1)?,
+                handler.pre_decrement_expr(x0, x1)?,
             )?);
             Ok(NonterminalId::UpdateExpression)
         }
         605 => {
-            // AwaitExpression ::= "await" UnaryExpression => await_expr($1)
+            // AwaitExpression ::= "await" UnaryExpression => await_expr($0, $1)
             let x1: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
-            stack.pop();
-            stack.push(TryIntoStack::try_into_stack(handler.await_expr(x1))?);
+            let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
+            stack.push(TryIntoStack::try_into_stack(handler.await_expr(x0, x1))?);
             Ok(NonterminalId::AwaitExpression)
         }
         _ => panic!("no such production: {}", prod),

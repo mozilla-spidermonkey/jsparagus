@@ -1,3 +1,4 @@
+use ast::SourceLocation;
 use generated_parser::{
     reduce, AstBuilder, ErrorCode, ParseError, Result, StackValue, TerminalId, Token, TABLES,
 };
@@ -116,7 +117,8 @@ impl<'alloc> Parser<'alloc> {
                 return Ok(self.node_stack.pop().unwrap());
             } else {
                 assert!(action.is_error());
-                self.try_error_handling(&Token::basic_token(TerminalId::End, position))?;
+                let loc = SourceLocation::new(position, position);
+                self.try_error_handling(&Token::basic_token(TerminalId::End, loc))?;
             }
         }
     }

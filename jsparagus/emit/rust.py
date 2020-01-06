@@ -71,9 +71,9 @@ TERMINAL_NAMES = {
 # information about output methods.
 FALLIBLE_METHOD_NAMES = {
     'array_expression_to_array_assignment_target',
-    'assignment_expression',
-    'async_arrow_parameters',
-    'compound_assignment_expression',
+    'async_arrow_function',
+    'assignment_expr',
+    'compound_assignment_expr',
     'cover_initialized_name',
     'cover_initialized_name',
     'export_all_from',
@@ -109,6 +109,7 @@ FALLIBLE_METHOD_NAMES = {
     'template_middle_list_single',
     'template_spans',
     'uncover_parenthesized_expression',
+    'uncover_arrow_parameters',
 }
 
 
