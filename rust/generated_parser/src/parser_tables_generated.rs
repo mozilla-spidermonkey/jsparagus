@@ -8198,7 +8198,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.lexical_declaration(x0, x1),
+                handler.lexical_declaration(x0, x1)?,
             )?);
             Ok(NonterminalId::LexicalDeclarationIn)
         }
@@ -8207,7 +8207,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.lexical_declaration(x0, x1),
+                handler.lexical_declaration(x0, x1)?,
             )?);
             Ok(NonterminalId::LexicalDeclarationIn)
         }
@@ -10407,7 +10407,7 @@ pub fn reduce<'alloc>(
             let x1: Box<'alloc, Vec<'alloc, VariableDeclarator>> = stack.pop().unwrap().to_ast()?;
             let x0: Box<'alloc, VariableDeclarationKind> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.for_lexical_declaration(x0, x1),
+                handler.for_lexical_declaration(x0, x1)?,
             )?);
             Ok(NonterminalId::ForLexicalDeclaration)
         }

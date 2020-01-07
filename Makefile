@@ -1,4 +1,6 @@
 PY_OUT = js_parser/parser_tables.py
+HANDLER_FILE = rust/generated_parser/src/ast_builder.rs
+HANDLER_INFO_OUT = jsparagus/emit/collect_handler_info/info.json
 RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
 RS_AST_OUT = rust/ast/src/types.rs rust/ast/src/visit.rs rust/ast/src/source_location_accessor.rs rust/generated_parser/src/stack_value_generated.rs
 PYTHON = python3
@@ -30,12 +32,15 @@ $(DUMP_FILE): $(SOURCE_FILES)
 $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
 
+$(HANDLER_INFO_OUT): jsparagus/emit/collect_handler_info/src/main.rs $(HANDLER_FILE)
+	(cd jsparagus/emit/collect_handler_info/; cargo run --bin collect_handler_info ../../../$(HANDLER_FILE) > $(subst jsparagus/emit/collect_handler_info/,,$(HANDLER_INFO_OUT)))
+
 $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
 	(cd rust/ast && $(PYTHON) generate_ast.py)
 	(cd rust && cargo fmt -- $(subst rust/,,$(RS_AST_OUT)))
 
-$(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE)
-	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
+$(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE) $(HANDLER_INFO_OUT)
+	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE) $(HANDLER_INFO_OUT)
 	(cd rust && cargo fmt -- $(subst rust/,,$(RS_TABLES_OUT)))
 
 # This isn't part of the `all` target because it relies on a file that might

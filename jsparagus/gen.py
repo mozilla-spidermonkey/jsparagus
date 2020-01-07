@@ -1470,7 +1470,7 @@ def generate_parser_states(grammar, *, verbose=False, progress=False):
     return analyze_states(context, prods, verbose=verbose, progress=progress)
 
 
-def generate_parser(out, source, *, verbose=False, progress=False, target='python'):
+def generate_parser(out, source, *, verbose=False, progress=False, target='python', handler_info=None):
     assert target in ('python', 'rust')
 
     if isinstance(source, Grammar):
@@ -1482,7 +1482,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
         raise TypeError("unrecognized source: {!r}".format(source))
 
     if target == 'rust':
-        emit.write_rust_parser(out, parser_states)
+        emit.write_rust_parser(out, parser_states, handler_info)
     else:
         emit.write_python_parser(out, parser_states)
 

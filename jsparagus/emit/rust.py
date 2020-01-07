@@ -1,5 +1,6 @@
 """Emit code and parser tables in Rust."""
 
+import json
 import re
 import unicodedata
 
@@ -66,56 +67,10 @@ TERMINAL_NAMES = {
     '...': 'Ellipsis',
 }
 
-# List of output method names that are fallible and must therefore be called
-# with a trailing `?`. A bad hack which we need to fix by having more type
-# information about output methods.
-FALLIBLE_METHOD_NAMES = {
-    'array_expression_to_array_assignment_target',
-    'async_arrow_function',
-    'assignment_expr',
-    'compound_assignment_expr',
-    'cover_initialized_name',
-    'cover_initialized_name',
-    'export_all_from',
-    'export_declaration',
-    'export_default_class',
-    'export_default_hoistable',
-    'export_default_value',
-    'export_set',
-    'export_set_from',
-    'export_specifier',
-    'export_specifier_renaming',
-    'export_vars',
-    'exports_list_append',
-    'exports_list_empty',
-    'expression_to_parameter_list',
-    'for_assignment_target',
-    'for_await_of_statement',
-    'import_clause',
-    'import_declaration',
-    'import_specifier',
-    'import_specifier_renaming',
-    'imports_list_append',
-    'imports_list_empty',
-    'module_specifier',
-    'name_space_import',
-    'post_decrement_expr',
-    'post_increment_expr',
-    'pre_decrement_expr',
-    'pre_increment_expr',
-    'substitution_template',
-    'substitution_template',
-    'template_middle_list_append',
-    'template_middle_list_single',
-    'template_spans',
-    'uncover_parenthesized_expression',
-    'uncover_arrow_parameters',
-}
-
-
 class RustParserWriter:
-    def __init__(self, out, parser_states):
+    def __init__(self, out, parser_states, fallible_methods):
         self.out = out
+        self.fallible_methods = fallible_methods
         self.grammar = parser_states.grammar
         self.prods = parser_states.prods
         self.states = parser_states.states
@@ -433,7 +388,7 @@ class RustParserWriter:
                         # currently so poor, we don't have enough information
                         # to know if this method can fail or not, and Rust
                         # requires us to know that.
-                        if method_name in FALLIBLE_METHOD_NAMES:
+                        if method_name in self.fallible_methods:
                             call += "?"
                         return call
                     elif isinstance(expr, Some):
@@ -524,5 +479,8 @@ class RustParserWriter:
             self.write(0, "")
 
 
-def write_rust_parser(out, parser_states):
-    RustParserWriter(out, parser_states).emit()
+def write_rust_parser(out, parser_states, handler_info):
+    with open(handler_info, "r") as json_file:
+        handler_info_json = json.load(json_file)
+
+    RustParserWriter(out, parser_states, handler_info_json["fallible-methods"]).emit()
