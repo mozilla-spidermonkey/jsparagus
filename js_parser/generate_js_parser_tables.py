@@ -59,6 +59,9 @@ def main():
         'filename', metavar='FILE', nargs='?', default=default_filename,
         help=".esgrammar (or .jsparagus_dump) input file")
     parser.add_argument(
+        'handler_info', metavar='HANDLER_INFO', nargs='?',
+        help="JSON file that contains information about handler")
+    parser.add_argument(
         '-o', '--output', metavar='FILE', default='/dev/stdout',
         help="output filename for parser tables")
     parser.add_argument(
@@ -106,7 +109,8 @@ def main():
             with open(out_filename, 'w') as f:
                 jsparagus.gen.generate_parser(f, states,
                                               target=target,
-                                              verbose=args.verbose)
+                                              verbose=args.verbose,
+                                              handler_info=args.handler_info)
         else:
             assert target == 'dump'
             states.save(out_filename)

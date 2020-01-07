@@ -5,3 +5,5 @@ venv/
 *.pyc
 example_pgen.rs
 js_parser/parser_tables.py
+jsparagus/emit/collect_handler_info/info.json
+jsparagus/emit/collect_handler_info/target
