@@ -847,8 +847,8 @@ impl InstructionWriter {
         self.emit1(Opcode::CheckThis);
     }
 
-    pub fn bind_gname(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::BindGname, name);
+    pub fn bind_g_name(&mut self, name: &str) {
+        self.emit_with_name_index(Opcode::BindGName, name);
     }
 
     pub fn bind_name(&mut self, name: &str) {
@@ -859,8 +859,8 @@ impl InstructionWriter {
         self.emit_with_name_index(Opcode::GetName, name);
     }
 
-    pub fn get_gname(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetGname, name);
+    pub fn get_g_name(&mut self, name: &str) {
+        self.emit_with_name_index(Opcode::GetGName, name);
     }
 
     pub fn get_arg(&mut self, arg_no: u16) {
@@ -903,12 +903,12 @@ impl InstructionWriter {
         self.emit_with_name_index(Opcode::StrictSetName, name);
     }
 
-    pub fn set_gname(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetGname, name);
+    pub fn set_g_name(&mut self, name: &str) {
+        self.emit_with_name_index(Opcode::SetGName, name);
     }
 
-    pub fn strict_set_gname(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictSetGname, name);
+    pub fn strict_set_g_name(&mut self, name: &str) {
+        self.emit_with_name_index(Opcode::StrictSetGName, name);
     }
 
     pub fn set_arg(&mut self, arg_no: u16) {

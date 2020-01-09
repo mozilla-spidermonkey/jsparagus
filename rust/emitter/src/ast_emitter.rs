@@ -415,7 +415,7 @@ impl AstEmitter {
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
         let name = &ast.name.value;
-        self.emit.get_gname(name);
+        self.emit.get_g_name(name);
     }
 
     fn emit_call_expression(
