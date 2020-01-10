@@ -38,72 +38,72 @@ pub struct Label<'alloc> {
 
 #[derive(Debug, PartialEq)]
 pub enum VariableDeclarationKind {
-    Var(SourceLocation),
-    Let(SourceLocation),
-    Const(SourceLocation),
+    Var { loc: SourceLocation },
+    Let { loc: SourceLocation },
+    Const { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum CompoundAssignmentOperator {
-    Add(SourceLocation),
-    Sub(SourceLocation),
-    Mul(SourceLocation),
-    Div(SourceLocation),
-    Mod(SourceLocation),
-    Pow(SourceLocation),
-    LeftShift(SourceLocation),
-    RightShift(SourceLocation),
-    RightShiftExt(SourceLocation),
-    Or(SourceLocation),
-    Xor(SourceLocation),
-    And(SourceLocation),
+    Add { loc: SourceLocation },
+    Sub { loc: SourceLocation },
+    Mul { loc: SourceLocation },
+    Div { loc: SourceLocation },
+    Mod { loc: SourceLocation },
+    Pow { loc: SourceLocation },
+    LeftShift { loc: SourceLocation },
+    RightShift { loc: SourceLocation },
+    RightShiftExt { loc: SourceLocation },
+    Or { loc: SourceLocation },
+    Xor { loc: SourceLocation },
+    And { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum BinaryOperator {
-    Equals(SourceLocation),
-    NotEquals(SourceLocation),
-    StrictEquals(SourceLocation),
-    StrictNotEquals(SourceLocation),
-    LessThan(SourceLocation),
-    LessThanOrEqual(SourceLocation),
-    GreaterThan(SourceLocation),
-    GreaterThanOrEqual(SourceLocation),
-    In(SourceLocation),
-    Instanceof(SourceLocation),
-    LeftShift(SourceLocation),
-    RightShift(SourceLocation),
-    RightShiftExt(SourceLocation),
-    Add(SourceLocation),
-    Sub(SourceLocation),
-    Mul(SourceLocation),
-    Div(SourceLocation),
-    Mod(SourceLocation),
-    Pow(SourceLocation),
-    Comma(SourceLocation),
-    Coalesce(SourceLocation),
-    LogicalOr(SourceLocation),
-    LogicalAnd(SourceLocation),
-    BitwiseOr(SourceLocation),
-    BitwiseXor(SourceLocation),
-    BitwiseAnd(SourceLocation),
+    Equals { loc: SourceLocation },
+    NotEquals { loc: SourceLocation },
+    StrictEquals { loc: SourceLocation },
+    StrictNotEquals { loc: SourceLocation },
+    LessThan { loc: SourceLocation },
+    LessThanOrEqual { loc: SourceLocation },
+    GreaterThan { loc: SourceLocation },
+    GreaterThanOrEqual { loc: SourceLocation },
+    In { loc: SourceLocation },
+    Instanceof { loc: SourceLocation },
+    LeftShift { loc: SourceLocation },
+    RightShift { loc: SourceLocation },
+    RightShiftExt { loc: SourceLocation },
+    Add { loc: SourceLocation },
+    Sub { loc: SourceLocation },
+    Mul { loc: SourceLocation },
+    Div { loc: SourceLocation },
+    Mod { loc: SourceLocation },
+    Pow { loc: SourceLocation },
+    Comma { loc: SourceLocation },
+    Coalesce { loc: SourceLocation },
+    LogicalOr { loc: SourceLocation },
+    LogicalAnd { loc: SourceLocation },
+    BitwiseOr { loc: SourceLocation },
+    BitwiseXor { loc: SourceLocation },
+    BitwiseAnd { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum UnaryOperator {
-    Plus(SourceLocation),
-    Minus(SourceLocation),
-    LogicalNot(SourceLocation),
-    BitwiseNot(SourceLocation),
-    Typeof(SourceLocation),
-    Void(SourceLocation),
-    Delete(SourceLocation),
+    Plus { loc: SourceLocation },
+    Minus { loc: SourceLocation },
+    LogicalNot { loc: SourceLocation },
+    BitwiseNot { loc: SourceLocation },
+    Typeof { loc: SourceLocation },
+    Void { loc: SourceLocation },
+    Delete { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
 pub enum UpdateOperator {
-    Increment(SourceLocation),
-    Decrement(SourceLocation),
+    Increment { loc: SourceLocation },
+    Decrement { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
@@ -136,13 +136,17 @@ pub enum Statement<'alloc> {
         label: Option<Label<'alloc>>,
         loc: SourceLocation,
     },
-    DebuggerStatement(SourceLocation),
+    DebuggerStatement {
+        loc: SourceLocation,
+    },
     DoWhileStatement {
         block: arena::Box<'alloc, Statement<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
         loc: SourceLocation,
     },
-    EmptyStatement(SourceLocation),
+    EmptyStatement {
+        loc: SourceLocation,
+    },
     ExpressionStatement(arena::Box<'alloc, Expression<'alloc>>),
     ForInStatement {
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
@@ -228,8 +232,12 @@ pub enum Expression<'alloc> {
         value: bool,
         loc: SourceLocation,
     },
-    LiteralInfinityExpression(SourceLocation),
-    LiteralNullExpression(SourceLocation),
+    LiteralInfinityExpression {
+        loc: SourceLocation,
+    },
+    LiteralNullExpression {
+        loc: SourceLocation,
+    },
     LiteralNumericExpression {
         value: f64,
         loc: SourceLocation,
@@ -289,7 +297,9 @@ pub enum Expression<'alloc> {
         arguments: Arguments<'alloc>,
         loc: SourceLocation,
     },
-    NewTargetExpression(SourceLocation),
+    NewTargetExpression {
+        loc: SourceLocation,
+    },
     ObjectExpression(ObjectExpression<'alloc>),
     UnaryExpression {
         operator: UnaryOperator,
@@ -297,7 +307,9 @@ pub enum Expression<'alloc> {
         loc: SourceLocation,
     },
     TemplateExpression(TemplateExpression<'alloc>),
-    ThisExpression(SourceLocation),
+    ThisExpression {
+        loc: SourceLocation,
+    },
     UpdateExpression {
         is_prefix: bool,
         operator: UpdateOperator,
@@ -433,7 +445,7 @@ pub struct AssignmentTargetIdentifier<'alloc> {
 #[derive(Debug, PartialEq)]
 pub enum ExpressionOrSuper<'alloc> {
     Expression(arena::Box<'alloc, Expression<'alloc>>),
-    Super(SourceLocation),
+    Super { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]
@@ -698,7 +710,7 @@ pub struct StaticPropertyName<'alloc> {
 pub enum ArrayExpressionElement<'alloc> {
     SpreadElement(arena::Box<'alloc, Expression<'alloc>>),
     Expression(arena::Box<'alloc, Expression<'alloc>>),
-    Elision(SourceLocation),
+    Elision { loc: SourceLocation },
 }
 
 #[derive(Debug, PartialEq)]

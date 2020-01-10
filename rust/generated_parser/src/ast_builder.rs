@@ -111,7 +111,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let loc = token.loc;
-        self.alloc(Expression::ThisExpression(loc))
+        self.alloc(Expression::ThisExpression { loc })
     }
 
     // PrimaryExpression : IdentifierReference
@@ -462,7 +462,7 @@ impl<'alloc> AstBuilder<'alloc> {
                 ArrayExpressionElement::SpreadElement(_expr) =>
                     // ([...a, b]) => {}
                     Err(ParseError::ArrayPatternWithNonFinalRest),
-                ArrayExpressionElement::Elision(_) => Ok(None),
+                ArrayExpressionElement::Elision { .. } => Ok(None),
             }))
     }
 
@@ -558,7 +558,7 @@ impl<'alloc> AstBuilder<'alloc> {
         //         `(` UniqueFormalParameters[?Yield, ?Await] `)`
         match expression.unbox() {
             Expression::BinaryExpression {
-                operator: BinaryOperator::Comma(_),
+                operator: BinaryOperator::Comma { .. },
                 left,
                 right,
                 ..
@@ -626,7 +626,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let loc = token.loc;
-        self.alloc(Expression::LiteralNullExpression(loc))
+        self.alloc(Expression::LiteralNullExpression { loc })
     }
 
     // Literal : BooleanLiteral
@@ -803,7 +803,7 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
         let loc = token.loc;
         self.alloc(ArrayExpression {
-            elements: self.new_vec_single(ArrayExpressionElement::Elision(loc)),
+            elements: self.new_vec_single(ArrayExpressionElement::Elision { loc }),
             // This will be overwritten once the enclosing array gets parsed.
             loc: SourceLocation::default(),
         })
@@ -816,7 +816,7 @@ impl<'alloc> AstBuilder<'alloc> {
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, ArrayExpression<'alloc>> {
         let loc = token.loc;
-        self.push(&mut array.elements, ArrayExpressionElement::Elision(loc));
+        self.push(&mut array.elements, ArrayExpressionElement::Elision { loc });
         array
     }
 
@@ -1130,7 +1130,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let super_loc = super_token.loc;
         self.alloc(Expression::MemberExpression(
             MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
-                object: ExpressionOrSuper::Super(super_loc),
+                object: ExpressionOrSuper::Super { loc: super_loc },
                 expression: expression,
                 loc: SourceLocation::from_parts(super_loc, close_token.loc),
             }),
@@ -1147,7 +1147,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let identifier_loc = identifier_token.loc;
         self.alloc(Expression::MemberExpression(
             MemberExpression::StaticMemberExpression(StaticMemberExpression {
-                object: ExpressionOrSuper::Super(super_loc),
+                object: ExpressionOrSuper::Super { loc: super_loc },
                 property: self.identifier_name(identifier_token),
                 loc: SourceLocation::from_parts(super_loc, identifier_loc),
             }),
@@ -1160,10 +1160,9 @@ impl<'alloc> AstBuilder<'alloc> {
         new_token: arena::Box<'alloc, Token<'alloc>>,
         target_token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        return self.alloc(Expression::NewTargetExpression(SourceLocation::from_parts(
-            new_token.loc,
-            target_token.loc,
-        )));
+        return self.alloc(Expression::NewTargetExpression {
+            loc: SourceLocation::from_parts(new_token.loc, target_token.loc),
+        });
     }
 
     // NewExpression : `new` NewExpression
@@ -1209,7 +1208,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let super_loc = super_token.loc;
         let arguments_loc = arguments.loc;
         self.alloc(Expression::CallExpression {
-            callee: ExpressionOrSuper::Super(super_loc),
+            callee: ExpressionOrSuper::Super { loc: super_loc },
             arguments: arguments.unbox(),
             loc: SourceLocation::from_parts(super_loc, arguments_loc),
         })
@@ -1306,7 +1305,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let operand_loc = operand.get_loc();
         Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: false,
-            operator: UpdateOperator::Increment(operator_token.loc),
+            operator: UpdateOperator::Increment {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operand_loc, operator_token.loc),
         }))
@@ -1322,7 +1323,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let operand_loc = operand.get_loc();
         Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: false,
-            operator: UpdateOperator::Decrement(operator_token.loc),
+            operator: UpdateOperator::Decrement {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operand_loc, operator_token.loc),
         }))
@@ -1338,7 +1341,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let operand_loc = operand.get_loc();
         Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: true,
-            operator: UpdateOperator::Increment(operator_token.loc),
+            operator: UpdateOperator::Increment {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         }))
@@ -1354,7 +1359,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let operand_loc = operand.get_loc();
         Ok(self.alloc(Expression::UpdateExpression {
             is_prefix: true,
-            operator: UpdateOperator::Decrement(operator_token.loc),
+            operator: UpdateOperator::Decrement {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         }))
@@ -1368,7 +1375,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::Delete(operator_token.loc),
+            operator: UnaryOperator::Delete {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1382,7 +1391,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::Void(operator_token.loc),
+            operator: UnaryOperator::Void {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1396,7 +1407,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::Typeof(operator_token.loc),
+            operator: UnaryOperator::Typeof {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1410,7 +1423,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::Plus(operator_token.loc),
+            operator: UnaryOperator::Plus {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1424,7 +1439,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::Minus(operator_token.loc),
+            operator: UnaryOperator::Minus {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1438,7 +1455,9 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::BitwiseNot(operator_token.loc),
+            operator: UnaryOperator::BitwiseNot {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
@@ -1452,95 +1471,97 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let operand_loc = operand.get_loc();
         self.alloc(Expression::UnaryExpression {
-            operator: UnaryOperator::LogicalNot(operator_token.loc),
+            operator: UnaryOperator::LogicalNot {
+                loc: operator_token.loc,
+            },
             operand,
             loc: SourceLocation::from_parts(operator_token.loc, operand_loc),
         })
     }
 
     pub fn equals_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Equals(token.loc)
+        BinaryOperator::Equals { loc: token.loc }
     }
     pub fn not_equals_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::NotEquals(token.loc)
+        BinaryOperator::NotEquals { loc: token.loc }
     }
     pub fn strict_equals_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::StrictEquals(token.loc)
+        BinaryOperator::StrictEquals { loc: token.loc }
     }
     pub fn strict_not_equals_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::StrictNotEquals(token.loc)
+        BinaryOperator::StrictNotEquals { loc: token.loc }
     }
     pub fn less_than_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::LessThan(token.loc)
+        BinaryOperator::LessThan { loc: token.loc }
     }
     pub fn less_than_or_equal_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> BinaryOperator {
-        BinaryOperator::LessThanOrEqual(token.loc)
+        BinaryOperator::LessThanOrEqual { loc: token.loc }
     }
     pub fn greater_than_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::GreaterThan(token.loc)
+        BinaryOperator::GreaterThan { loc: token.loc }
     }
     pub fn greater_than_or_equal_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> BinaryOperator {
-        BinaryOperator::GreaterThanOrEqual(token.loc)
+        BinaryOperator::GreaterThanOrEqual { loc: token.loc }
     }
     pub fn in_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::In(token.loc)
+        BinaryOperator::In { loc: token.loc }
     }
     pub fn instanceof_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Instanceof(token.loc)
+        BinaryOperator::Instanceof { loc: token.loc }
     }
     pub fn left_shift_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::LeftShift(token.loc)
+        BinaryOperator::LeftShift { loc: token.loc }
     }
     pub fn right_shift_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::RightShift(token.loc)
+        BinaryOperator::RightShift { loc: token.loc }
     }
     pub fn right_shift_ext_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::RightShiftExt(token.loc)
+        BinaryOperator::RightShiftExt { loc: token.loc }
     }
     pub fn add_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Add(token.loc)
+        BinaryOperator::Add { loc: token.loc }
     }
     pub fn sub_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Sub(token.loc)
+        BinaryOperator::Sub { loc: token.loc }
     }
     pub fn mul_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Mul(token.loc)
+        BinaryOperator::Mul { loc: token.loc }
     }
     pub fn div_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Div(token.loc)
+        BinaryOperator::Div { loc: token.loc }
     }
     pub fn mod_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Mod(token.loc)
+        BinaryOperator::Mod { loc: token.loc }
     }
     pub fn pow_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Pow(token.loc)
+        BinaryOperator::Pow { loc: token.loc }
     }
     pub fn comma_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Comma(token.loc)
+        BinaryOperator::Comma { loc: token.loc }
     }
     pub fn coalesce_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::Coalesce(token.loc)
+        BinaryOperator::Coalesce { loc: token.loc }
     }
     pub fn logical_or_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::LogicalOr(token.loc)
+        BinaryOperator::LogicalOr { loc: token.loc }
     }
     pub fn logical_and_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::LogicalAnd(token.loc)
+        BinaryOperator::LogicalAnd { loc: token.loc }
     }
     pub fn bitwise_or_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::BitwiseOr(token.loc)
+        BinaryOperator::BitwiseOr { loc: token.loc }
     }
     pub fn bitwise_xor_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::BitwiseXor(token.loc)
+        BinaryOperator::BitwiseXor { loc: token.loc }
     }
     pub fn bitwise_and_op(&self, token: arena::Box<'alloc, Token<'alloc>>) -> BinaryOperator {
-        BinaryOperator::BitwiseAnd(token.loc)
+        BinaryOperator::BitwiseAnd { loc: token.loc }
     }
 
     // Due to limitations of the current parser generator,
@@ -1629,7 +1650,7 @@ impl<'alloc> AstBuilder<'alloc> {
                 ArrayExpressionElement::Expression(expression) => Ok(Some(
                     self.expression_to_assignment_target_maybe_default(expression)?,
                 )),
-                ArrayExpressionElement::Elision(_) => Ok(None),
+                ArrayExpressionElement::Elision { .. } => Ok(None),
             }))?;
         let rest: Option<Result<'alloc, arena::Box<'alloc, AssignmentTarget<'alloc>>>> =
             spread.map(|expr| Ok(self.alloc(self.expression_to_assignment_target(expr)?)));
@@ -1825,73 +1846,73 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Add(token.loc)
+        CompoundAssignmentOperator::Add { loc: token.loc }
     }
     pub fn sub_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Sub(token.loc)
+        CompoundAssignmentOperator::Sub { loc: token.loc }
     }
     pub fn mul_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Mul(token.loc)
+        CompoundAssignmentOperator::Mul { loc: token.loc }
     }
     pub fn div_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Div(token.loc)
+        CompoundAssignmentOperator::Div { loc: token.loc }
     }
     pub fn mod_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Mod(token.loc)
+        CompoundAssignmentOperator::Mod { loc: token.loc }
     }
     pub fn pow_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Pow(token.loc)
+        CompoundAssignmentOperator::Pow { loc: token.loc }
     }
     pub fn left_shift_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::LeftShift(token.loc)
+        CompoundAssignmentOperator::LeftShift { loc: token.loc }
     }
     pub fn right_shift_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::RightShift(token.loc)
+        CompoundAssignmentOperator::RightShift { loc: token.loc }
     }
     pub fn right_shift_ext_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::RightShiftExt(token.loc)
+        CompoundAssignmentOperator::RightShiftExt { loc: token.loc }
     }
     pub fn bitwise_or_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Or(token.loc)
+        CompoundAssignmentOperator::Or { loc: token.loc }
     }
     pub fn bitwise_xor_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::Xor(token.loc)
+        CompoundAssignmentOperator::Xor { loc: token.loc }
     }
     pub fn bitwise_and_assign_op(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> CompoundAssignmentOperator {
-        CompoundAssignmentOperator::And(token.loc)
+        CompoundAssignmentOperator::And { loc: token.loc }
     }
 
     pub fn box_assign_op(
@@ -1975,7 +1996,7 @@ impl<'alloc> AstBuilder<'alloc> {
         // 13.3.1.1 Static Semantics: Early Errors
         // TODO: missing check for binding identifiers named `let`.
         // TODO: missing check for duplicated let bindings.
-        if let VariableDeclarationKind::Const(_) = *kind {
+        if let VariableDeclarationKind::Const { .. } = *kind {
             for v in declarators.iter() {
                 if v.init == None {
                     return Err(ParseError::NotImplemented(
@@ -2008,7 +2029,7 @@ impl<'alloc> AstBuilder<'alloc> {
         // 13.3.1.1 Static Semantics: Early Errors
         // TODO: missing check for binding identifiers named `let`.
         // TODO: missing check for duplicated let bindings.
-        if let VariableDeclarationKind::Const(_) = *kind {
+        if let VariableDeclarationKind::Const { .. } = *kind {
             for v in declarators.iter() {
                 if v.init == None {
                     return Err(ParseError::NotImplemented(
@@ -2039,7 +2060,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, VariableDeclarationKind> {
-        self.alloc(VariableDeclarationKind::Let(token.loc))
+        self.alloc(VariableDeclarationKind::Let { loc: token.loc })
     }
 
     // LetOrConst : `const`
@@ -2047,7 +2068,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, VariableDeclarationKind> {
-        self.alloc(VariableDeclarationKind::Const(token.loc))
+        self.alloc(VariableDeclarationKind::Const { loc: token.loc })
     }
 
     // VariableStatement : `var` VariableDeclarationList `;`
@@ -2063,7 +2084,7 @@ impl<'alloc> AstBuilder<'alloc> {
             .get_loc();
         self.alloc(Statement::VariableDeclarationStatement(
             VariableDeclaration {
-                kind: VariableDeclarationKind::Var(var_loc),
+                kind: VariableDeclarationKind::Var { loc: var_loc },
                 declarators: declarators.unbox(),
                 loc: SourceLocation::from_parts(var_loc, declarator_loc),
             },
@@ -2315,7 +2336,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::EmptyStatement(token.loc))
+        self.alloc(Statement::EmptyStatement { loc: token.loc })
     }
 
     // ExpressionStatement : [lookahead not in {'{', 'function', 'async', 'class', 'let'}] Expression `;`
@@ -2417,7 +2438,7 @@ impl<'alloc> AstBuilder<'alloc> {
             .expect("There should be at least one declarator")
             .get_loc();
         VariableDeclarationOrExpression::VariableDeclaration(VariableDeclaration {
-            kind: VariableDeclarationKind::Var(var_loc),
+            kind: VariableDeclarationKind::Var { loc: var_loc },
             declarators: declarators.unbox(),
             loc: SourceLocation::from_parts(var_loc, declarator_loc),
         })
@@ -2457,7 +2478,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let var_loc = var_token.loc;
         let binding_loc = binding.get_loc();
         VariableDeclarationOrAssignmentTarget::VariableDeclaration(VariableDeclaration {
-            kind: VariableDeclarationKind::Var(var_loc),
+            kind: VariableDeclarationKind::Var { loc: var_loc },
             declarators: self.new_vec_single(VariableDeclarator {
                 binding: binding.unbox(),
                 init: None,
@@ -2653,7 +2674,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.alloc(Statement::SwitchStatement {
             // This will be overwritten once the enclosing switch statement
             // gets parsed.
-            discriminant: self.alloc(Expression::LiteralNullExpression(SourceLocation::default())),
+            discriminant: self.alloc(Expression::LiteralNullExpression {
+                loc: SourceLocation::default(),
+            }),
             cases: match cases {
                 None => self.new_vec(),
                 Some(boxed) => boxed.unbox(),
@@ -2675,7 +2698,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.alloc(Statement::SwitchStatementWithDefault {
             // This will be overwritten once the enclosing switch statement
             // gets parsed.
-            discriminant: self.alloc(Expression::LiteralNullExpression(SourceLocation::default())),
+            discriminant: self.alloc(Expression::LiteralNullExpression {
+                loc: SourceLocation::default(),
+            }),
             pre_default_cases: match pre_default_cases {
                 None => self.new_vec(),
                 Some(boxed) => boxed.unbox(),
@@ -2849,7 +2874,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::DebuggerStatement(token.loc))
+        self.alloc(Statement::DebuggerStatement { loc: token.loc })
     }
 
     pub fn function_decl(&self, f: Function<'alloc>) -> arena::Box<'alloc, Statement<'alloc>> {
@@ -3483,7 +3508,7 @@ impl<'alloc> AstBuilder<'alloc> {
                         }
                     },
 
-                    ExpressionOrSuper::Super(_) => {
+                    ExpressionOrSuper::Super { .. } => {
                         // Can't happen: `super()` doesn't match
                         // CoverCallExpressionAndAsyncArrowHead.
                         return Err(ParseError::ArrowHeadInvalid);

@@ -348,7 +348,6 @@ const JOF_CODE_OFFSET: u32 = 23;
 /// mask for above immediate types
 const JOF_TYPEMASK: u32 = 0x001f;
 
-
 /// name operation
 const JOF_NAME: u32 = 1 << 5;
 
@@ -360,7 +359,6 @@ const JOF_ELEM: u32 = 3 << 5;
 
 // /// mask for above addressing modes
 // const JOF_MODEMASK: u32 = 3 << 5;
-
 
 /// property/element/name set operation
 const JOF_PROPSET: u32 = 1 << 7;
@@ -388,9 +386,6 @@ const JOF_TYPESET: u32 = 1 << 14;
 
 /// baseline may use an IC for this op
 const JOF_IC: u32 = 1 << 15;
-
-
-
 
 impl Opcode {
     /// Return the numeric bytecode value for this opcode, as understood by the

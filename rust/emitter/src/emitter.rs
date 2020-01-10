@@ -107,8 +107,10 @@ impl InstructionWriter {
     }
 
     fn emit_op_common(&mut self, opcode: Opcode, nuses: usize) {
-        assert!(self.stack_depth >= nuses as usize,
-                "InstructionWriter misuse! Not enough arguments on the stack.");
+        assert!(
+            self.stack_depth >= nuses as usize,
+            "InstructionWriter misuse! Not enough arguments on the stack."
+        );
         self.stack_depth -= nuses as usize;
 
         let ndefs = opcode.ndefs();
@@ -393,7 +395,7 @@ impl InstructionWriter {
     pub fn call_prop(&mut self, name: &str) {
         self.emit_with_name_index(Opcode::CallProp, name);
     }
-    
+
     pub fn get_elem(&mut self) {
         self.emit1(Opcode::GetElem);
     }
