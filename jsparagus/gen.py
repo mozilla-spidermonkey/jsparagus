@@ -1490,8 +1490,9 @@ class StateAndTransitions:
         "Returns True if the state transitions are inconsistent."
         if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
             return True
-        else len(self.epsilon) > 1:
-            return True
+        elif len(self.epsilon) > 1:
+            if any([ not k.is_unordered_condition() for k, s in self.epsilon ]):
+                return True
         return False
 
     def edges(self):
@@ -1504,26 +1505,24 @@ class StateAndTransitions:
 
 class Action:
     __slots__ = [
-        "kind",    # String which describe the type of this action.
         "read",    # Set of trait names which are consumed by this action.
         "write",   # Set of trait names which are mutated by this action.
-        "data",    # Extra data needed to represent the content of this action.
     ]
 
-    def __init__(self, kind, read, write, data):
-        self.kind = kind
+    def __init__(self, read, write):
+        assert isinstance(read, list)
+        assert isinstance(write, list)
         self.read = read
         self.write = write
-        self.data = data
+
+    def is_unordered_condition(self):
+        "Unordered condition, which accept or not to reach the next state."
+        return False
 
     def __eq__(self, other):
-        if self.kind != other.kind:
-            return False
         if sorted(self.read) != sorted(other.read):
             return False
         if sorted(self.write) != sorted(other.write):
-            return False
-        if self.data != other.data:
             return False
         return True
 
@@ -1532,89 +1531,78 @@ class Action:
             [self.kind] + self.read + self.write + [ repr(self.data) ]
         ))
 
-    def is_reduce(self):
-        return self.kind == "Reduce"
-    def is_lookahead(self):
-        return self.kind == "Lookpathd"
-    def is_filter_flag(self):
-        return self.kind == "FilterFlag"
-    def is_push_flag(self):
-        return self.kind == "PushFlag"
-    def is_pop_flag(self):
-        return self.kind == "PopFlag"
-    def is_call_method(self):
-        return self.kind == "CallMethod"
-    def is_sequence(self):
-        return self.kind == "Sequence"
+class Reduce(Action):
+    """Define a reduce operation which pops N elements of he stack and pushes one
+    non-terminal. The replay attribute of a reduce action corresponds to the
+    number of stack elements which would have to be popped and pushed again
+    using the parser table after reducing this operation. """
+    __slots__ = 'nt', 'replay', 'popped'
+    def __init__(self, nt, pop):
+        super().__init__([], ["nt_" + nt])
+        self.nt = nt    # Non-terminal which is reduced
+        self.pop = pop  # Number of stack elements which should be replayed.
+        self.replay = 0 # Number of popped elements to match the production.
 
-    @staticmethod
-    def reduce(nt, popped):
-        """Define a reduce operation which pops N elements of he stack and pushes one
-        non-terminal. The replay attribute of a reduce action corresponds to the
-        number of stack elements which would have to be popped and pushed again
-        using the parser table after reducing this operation. """
-        return __init__("Reduce", [], ["nt_"+nt], {
-            'nt': nt,         # Non-terminal which is reduced
-            'replay': 0,      # Number of stack elements which should be replayed.
-            'popped': popped, # Number of popped elements to match the production.
-        })
+class Lookahead(Action):
+    """Define a Lookahead assertion which is meant to either accept or reject
+    sequences of terminal/non-terminals sequences."""
+    __slots__ = 'sequences', 'accept'
+    def __init__(self, sequences, accept):
+        super().__init__([], [])
+        self.sequences = sequences,
+        self.accept = accept
+    def is_unordered_condition(self):
+        return True
 
-    @staticmethod
-    def lookahead(sequences, accept):
-        """Define a Lookahead assertion which is meant to either accept or reject
-        sequences of terminal/non-terminals sequences."""
-        return __init__("Lookahead", [], [], {
-            'sequences': sequences,
-            'accept': accept
-        })
+class FilterStack(Action):
+    """Check whether the stack contains a given state at the given offset. This is
+    used for checking the context of a rule without loosing the sharing of LR0
+    parse table. """
+    __slots__ = 'state', 'offset'
+    def __init__(self, state, offset):
+        super().__init__([], [])
+        self.state = state,
+        self.offset = offset
+    def is_unordered_condition(self):
+        return True
 
-    @staticmethod
-    def filter_flag(flag, accept):
-        """Define a new action which check g has th[ e for e in e expected value. If so
-        the Error state. """
-        return __init__("FilterFlag", ["flag_"+flag], [], {
-            'flag': flag,
-            'accept': accept
-        })
+class FilterFlag(Action):
+    """Define a new action which check g has th[ e for e in e expected value. If so
+    the Error state. """
+    __slots__ = 'flag', 'accept'
+    def __init__(self, flag, accept):
+        super().__init__(["flag_" + flag], [])
+        self.flag = flag,
+        self.accept = accept
+    def is_unordered_condition(self):
+        return True
 
-    @staticmethod
-    def push_flag(flag, value):
-        """Define an action which pushes a flag as set or unset on the flag bit
-        stack. """
-        return __init__("PushFlag", [], ["flag_"+flag], {
-            'flag': flag,
-            'value': True
-        })
+class PushFlag(Action):
+    """Define an action which pushes a flag as set or unset on the flag bit stack."""
+    __slots__ = 'flag', 'value'
+    def __init__(self, flag, value):
+        super().__init__([], ["flag_" + flag])
+        self.flag = flag,
+        self.value = value
 
-    @staticmethod
-    def pop_flag(flag):
-        """Define an action which pops a flag from the flag bit stack."""
-        return __init__("PopFlag", ["flag_"+flag], ["flag_"+flag], {
-            'flag': flag
-        })
+class PopFlag(Action):
+    """Define an action which pops a flag from the flag bit stack."""
+    __slots__ = ['flag']
+    def __init__(self, flag):
+        super().__init__(["flag_" + flag], ["flag_" + flag])
+        self.flag = flag,
 
-    @staticmethod
-    def call_method(method, alias_read, alias_write, read_len):
-        """Define a call method operation which reads N elements of he stack and pushpathne
-        non-terminal. The replay attribute of a reduce action correspond to the
-        number of stack elements which would have to be popped and pushed again
-        using the parser table after reducing this operation. """
-        assert isinstance(alias_read, list)
-        assert isinstance(alias_write, list)
-        return __init__("CallMethod", alias_read, alias_write, {
-            'method': method,     # Method and argument to be read for calling it.
-            'offset': 0,          # Offset to add to each argument offset.
-            'read_len': read_len, # Range of numbers which can be read.
-        })
-
-    @staticmethd
-    def sequence(actions):
-        """Define a list of actions to be executed. This is used as a mean to reduce
-        the number of epsilon transitions and therefore the number of states when we
-        have consecutives non-inconsistent actions to be executed."""
-        read = list(set([alias for a in actions for alias in a.read]))
-        write = list(set([alias for a in actions for alias in a.write]))
-        return __init__("Sequence", read, write, { 'actions': actions })
+class FunCall(Action):
+    """Define a call method operation which reads N elements of he stack and
+    pushpathne non-terminal. The replay attribute of a reduce action correspond
+    to the number of stack elements which would have to be popped and pushed
+    again using the parser table after reducing this operation. """
+    __slots__ = 'method', 'offset', 'read_len'
+    def __init__(self, method, alias_read, alias_write, read_len):
+        super().__init__(alias_read, alias_write)
+        self.method = method     # Method and argument to be read for calling it.
+        self.offset = 0          # Offset to add to each argument offset.
+        self.read_len = read_len # Range of numbers which can be read.
 
 def on_stack(grammar, term):
     """Returns whether an element of a production is consuming stack space or
@@ -1689,15 +1677,14 @@ class LR0Generator:
             # Add the reduce operation as a state transition in the generated
             # automaton. (TODO: this supposed that the canonical form did not
             # move the reduce action to be part of the production)
-            popped = len([e for e in prod.rhs if on_stack(self.grammar.grammar, e)])
-            term = Action.reduce(prod.nt, popped)
+            pop = len([e for e in prod.rhs if on_stack(self.grammar.grammar, e)])
+            term = Reduce(prod.nt, pop)
         else:
             # No edges after the reduce operation.
             return
 
         if isinstance(term, LookaheadRule):
-            term = Action.lookahead(term.setpathtive)
-
+            term = Lookahead(term.set, term.positive)
 
         # Add terminals, non-terminals and lookahead actions, as transitions to
         # the next LR Item.
