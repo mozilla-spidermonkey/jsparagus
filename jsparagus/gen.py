@@ -1867,6 +1867,96 @@ class ParseTable:
                         todo.append(shifted + [to])
         consume(visit_table(), progress)
 
+    # To fix inconsistencies of the grammar, we have to traverse the grammar
+    # both forward by using the lookahead and backward by using the parser's
+    # emulated stack recovered from reduce actions.
+    #
+    # To do so we define the notion of abstract parser state (APS), which is a
+    # tuple which represent the known state of the parser, as:
+    #   (stack, shift, lookahead, actions)
+    #
+    #   stack: This is the stack at the location where we started
+    #          investigating. Which means that the last element of the stack
+    #          would be the location where we started.
+    #
+    #   shift: This is the stack computed after the traversal of edges. It is
+    #          reduced each time a reduce action is encountered, and the rest
+    #          of the production content is added back to the stack, as newly
+    #          acquired context. The last element is the last state reached
+    #          through the sequence of lookahead and actions.
+    #
+    #   lookahead: This is the list of terminals encountered while pushing
+    #          edges through the list of terminals.
+    #
+    #   actions: This is the list of actions that would be executed as we push
+    #          edges.
+    class APSTree:
+        pass
+
+    def next_aps(self, aps):
+        st, sh, la, ac = aps
+        future = []
+        state = self.states[sh[-1]]
+        for term, to in state.edges():
+            if isinstance(term, Action):
+                if isinstance(term, Reduce):
+                    for prod in self.reduce_paths[term.nt]:
+                        head = self.states[prod[0]]
+                        to = head.nonterminals[term.nt]
+
+                        # reduce_paths contains the chains of state shifted to
+                        # the parser stack in order to reduce the nonterminal.
+                        # When reducing, the stack is resetted to head, and the
+                        # nonterminal `term.nt` is pushed, to resume in the
+                        # state `to`.
+                        if sh[-len(prod):] != prod[-len(sh):]:
+                            # If the reduced production does not match the
+                            # shifted state, then this reduction does not
+                            # apply.
+                            continue
+                        new_st = prod[:max(len(prod) - len(sh), 0)] + st
+                        new_sh = sh[:-len(prod)] + [prod[0], to]
+                        future.append((new_st, new_sh, la, ac + [term]))
+                else:
+                    # Actions replace the shifted state by a new one.
+                    future.append((st, sh[:-1] + [to], la, ac + [term]))
+            elif not isinstance(term, Nt):
+                # terminals are added to the lookahead, and the previous
+                # shifted state remains on the emulated parser stack.
+                future.append((st, sh + [to], la + [term], ac))
+
+    def is_interesting_aps(self, aps):
+        """We reduced/shifted more than once using the same kind of transitions.
+        Do not consider this loop as an interesting case, as it will loop
+        indefinitely."""
+        st, sh, _, _ = aps
+        if len(st) != 1 + len(set(zip(st, st[1:]))):
+            return False
+        if len(sh) != 1 + len(set(zip(sh, sh[1:]))):
+            return False
+        return True
+
+    def ambiguous_aps(self, aps1, aps2):
+        "Returns True if 2 APS might match each others."
+        st1, _, la1, ac1 = aps1
+        st2, _, la2, ac2 = aps2
+
+        if ac1[0] == ac2[0]:
+            return False
+        if la1[-len(la2):] != la2[-len(la1):]:
+            return False
+        if st1[-len(st2):] != st2[-len(st1):]:
+            return False
+        return True
+
+    def build_consistent_tree(self, s):
+        assert self.states[s].is_inconsistent()
+        aps = ([s], [s], [], [])
+        aps_list = self.next_aps(aps)
+        # Question: How to avoid the exponential?
+
+
+
 def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
     grammar = CanonicalGrammar(grammar)
