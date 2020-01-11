@@ -1712,7 +1712,160 @@ class LR0Generator:
                     followed_by = [],
                 ), followed_by)
 
+class ParseTable:
+    """The parser can be represented as a matrix of state transitions where on one
+    side we have the current state, and on the other we have the expected
+    terminal, non-terminal or epsilon transition.
 
+            a   b   c   A   B   C   #1   #2   #3
+          +---+---+---+---+---+---+----+----+----+
+      s1  |   |   |   |   |   |   |    |    |    |
+      s2  |   |   |   |   |   |   |    |    |    |
+      s3  |   |   |   |   |   |   |    |    |    |
+       .  |   |   |   |   |   |   |    |    |    |
+       .  |   |   |   |   |   |   |    |    |    |
+       .  |   |   |   |   |   |   |    |    |    |
+      s67 |   |   |   |   |   |   |    |    |    |
+      s68 |   |   |   |   |   |   |    |    |    |
+      s69 |   |   |   |   |   |   |    |    |    |
+          +---+---+---+---+---+---+----+----+----+
+
+    The terminals `a` are the token which are read from the input. The
+    non-terminals `A` are the token which are pushed by the reduce actions of
+    the epsilon transitions. The epsilon transitions `#1` are the actions which
+    have to be executed as code by the parser.
+
+    A parse table is inconsistent if there is any state which has an epsilon
+    transitions and terminals/non-terminals transitions (shift-reduce
+    conflict), or a state with more than one epsilon transitions (reduce-reduce
+    conflict). This is equivalent to having a non deterministic state machine.
+
+    """
+
+    __slots__ = [
+        # Map of actions identifier to the corresponding object.
+        "actions",
+        # Map of state identifier to the corresponding object.
+        "states",
+        # List of states which are the entry point of the state machine.
+        "goals",
+        # List of terminals.
+        "terminals",
+        # List of non-terminals.
+        "nonterminals",
+        # Map non-terminals to the sequences of states used to produce these
+        # non-terminals.
+        "reduce_paths",
+    ]
+
+    def __init__(self, grammar, verbose = False, progress = False):
+        self.actions = []
+        self.states = []
+        self.goals = []
+        self.terminals = []
+        self.nonterminals = []
+        self.reduce_paths = {}
+        self.create_lr0_table(grammar, verbose, progress)
+        self.compute_reduce_paths(verbose, progress)
+
+    def is_inconsistent(self):
+        "Returns True if the grammar contains any inconsistent state."
+        for s in self.states:
+            if s.is_inconsistent():
+                return True
+        return False
+
+    def new_state(self):
+        "Create a new state with a given index."
+        index = len(self.states)
+        state = StateAndTransitions(index)
+        self.states.append(state)
+        return state
+
+    def create_lr0_table(self, grammar, verbose, progress):
+        if verbose:
+            print("Create LR(0) parse table.")
+        assert isinstance(grammar, CanonicalGrammar)
+        assert isinstance(grammar.grammar, Grammar)
+
+        goals = self.grammar.grammar.goals()
+        goals = [ nt, self.new_state() for nt in goals ]
+
+        # Ensure that identical set of LR ITems will map to the same state.
+        lr0_cache = {}
+        # Temporarily record tuples of (LR0Generator, StateAndTransition)
+        # objects used for visiting the grammar.
+        todo = collections.deque()
+        # Record the starting goals in the todo list.
+        for nt, s in goals:
+            it = LR0Generator.start(grammar, nt)
+            s.locations = it.lr_items
+            lr0_cache[it] = s
+            todo.append((it, s))
+
+        # Iterate the grammar with sets of LR Items abstracted by the
+        # LR0Generator, and create new states in the parse table as long as new
+        # sets of LR Items are discovered.
+        def visit_grammar():
+            while todo:
+                yield # progress bar.
+                # TODO: Compare stack / queue, for the traversal of the states.
+                s_it, s = todo.popleft()
+                for k, sk_it in s_it.next():
+                    if sk_it in lr0_cache:
+                        sk = state in lr0_cache[sk_it]
+                    else:
+                        sk = self.new_state()
+                        sk.locations = sk_it.lr_items
+                        lr0_cache[it] = sk
+                        todo.append((sk_it, sk))
+
+                    # Add the edge from s to sk with k.
+                    if isinstance(k, Action):
+                        s.epsilon.append((k, sk))
+                    elif isinstance(k, Nt):
+                        s.nonterminals[k] = sk
+                    else:
+                        s.terminals[k] = sk
+        consume(visit_grammar(), progress)
+
+    def compute_reduce_paths(self, verbose, progress):
+        """Reduce actions are currently ending with bogus states which are unreachable.
+        However, for solving inconsistencies, we might need more lookahead
+        terms to disambiguate state machine.
+
+        This function computes the list of states to which a reduce function
+        might jump back to after being executed."""
+        if verbose:
+            print("Compute reduce paths.")
+
+        todo = collections.deque()
+        for s in self.goals:
+            todo.append([s])
+
+        def visit_table():
+            while todo:
+                yield # progress bar.
+                # TODO: Compare stack / queue, for the traversal of the states.
+                shifted = todo.popleft()
+                state = self.states[shifted[-1]]
+                for term, to in state.edges():
+                    if to in shifted:
+                        # We already traversed this state before.
+                        continue
+                    if isinstance(term, Action):
+                        if isinstance(term, Reduce):
+                            assert term.replay == 0
+                            # NOTE: the first state is the state before
+                            # shifting the first terminals/non-terminals of the
+                            # Nt production.
+                            incoming = shifted[-1 - term.pop:]
+                            self.reduce_paths[term.nt].add(incoming)
+                        else:
+                            todo.append(shifted[:-1] + [to])
+                    else:
+                        todo.append(shifted + [to])
+        consume(visit_table(), progress)
 
 def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
