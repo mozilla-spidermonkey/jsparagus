@@ -30,6 +30,7 @@ import collections
 import io
 import pickle
 import sys
+import itertools
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
@@ -1767,6 +1768,7 @@ class ParseTable:
         self.reduce_paths = {}
         self.create_lr0_table(grammar, verbose, progress)
         self.compute_reduce_paths(verbose, progress)
+        self.fix_inconsistent_table(verbose, progress)
 
     def is_inconsistent(self):
         "Returns True if the grammar contains any inconsistent state."
@@ -1890,12 +1892,32 @@ class ParseTable:
     #
     #   actions: This is the list of actions that would be executed as we push
     #          edges.
-    class APSTree:
-        pass
 
-    def next_aps(self, aps):
+    def next_lookahead_aps(self, aps, st_min, la_min, accept, reject):
+        """From a starting state, this function looks from a starting state to reach
+        the minimal number of lookahead requested (la_min), while ignoring loops in
+        under the minimal number of stack elements of the parser.
+
+        This functions returns 2 lists which are used to resumed the execution
+        when one is looking at increasing either the lookahead minimum or the
+        stack minimum.
+
+        The first list corresponds to all elements where which have to be
+        investigated which are satisfying the requirements of the minimal
+        lookahead, and the second list is the list of elements which are not
+        interesting because they are including stack state loops.
+
+        """
         st, sh, la, ac = aps
-        future = []
+        # TODO: This condition is not suffiscient if there is no more
+        # lookahead, in which case we have to fallback on a condition on the
+        # stack depth.
+        if len(la) >= la_min:
+            accept.append(aps)
+            return
+        if not is_interesting_aps(aps, st_min, la_min):
+            reject.append(aps)
+            return
         state = self.states[sh[-1]]
         for term, to in state.edges():
             if isinstance(term, Action):
@@ -1916,45 +1938,151 @@ class ParseTable:
                             continue
                         new_st = prod[:max(len(prod) - len(sh), 0)] + st
                         new_sh = sh[:-len(prod)] + [prod[0], to]
-                        future.append((new_st, new_sh, la, ac + [term]))
+                        new_aps = (new_st, new_sh, la, ac + [term])
+                        self.next_lookahead_aps(new_aps, start_aps, accept, reject)
                 else:
-                    # Actions replace the shifted state by a new one.
-                    future.append((st, sh[:-1] + [to], la, ac + [term]))
+                    # Actions replace the latest shifted state by a new one.
+                    new_aps = (st, sh[:-1] + [to], la, ac + [term])
+                    self.next_lookahead_aps(new_aps, start_aps, accept, reject)
             elif not isinstance(term, Nt):
                 # terminals are added to the lookahead, and the previous
                 # shifted state remains on the emulated parser stack.
-                future.append((st, sh + [to], la + [term], ac))
+                new_aps = (st, sh + [to], la + [term], ac)
+                self.next_lookahead_aps(new_aps, start_aps, accept, reject)
+        return
 
-    def is_interesting_aps(self, aps):
+    def is_interesting_aps(self, aps, st_min, la_min):
         """We reduced/shifted more than once using the same kind of transitions.
         Do not consider this loop as an interesting case, as it will loop
         indefinitely."""
-        st, sh, _, _ = aps
-        if len(st) != 1 + len(set(zip(st, st[1:]))):
-            return False
-        if len(sh) != 1 + len(set(zip(sh, sh[1:]))):
+        st, _, la, _ = aps
+        # Reject right recursions when attempting to increase the lookahead.
+        if len(st) <= st_min:
+            return True
+        st = st[:len(st) - st_min]
+        if len(st) >= 1 and len(st) != 1 + len(set(zip(st, st[1:]))):
             return False
         return True
 
     def ambiguous_aps(self, aps1, aps2):
         "Returns True if 2 APS might match each others."
+        # NOTE: unused
         st1, _, la1, ac1 = aps1
         st2, _, la2, ac2 = aps2
 
         if ac1[0] == ac2[0]:
             return False
-        if la1[-len(la2):] != la2[-len(la1):]:
+        if la1[:len(la2)] != la2[:len(la1)]:
             return False
         if st1[-len(st2):] != st2[-len(st1):]:
             return False
         return True
 
-    def build_consistent_tree(self, s):
+    def is_aps_prefix(self, aps_prefix, aps_query):
+        # NOTE: unused
+        st1, sh1, la1, _ = aps_prefix
+        st2, sh2, la2, _ = aps_query
+
+        if la1 != la2[:len(la1)]:
+            return False
+        if st1 != st2[-len(st1):]:
+            return False
+        return True
+
+    def ambiguous_aps_list(self, aps_list):
+        # NOTE: This function assumes that the aps_list are already sorted by
+        # lookahead and lookbehind patterns.
+        act_list = [ a[0] for _, _, _, a in aps_list ]
+        if len(set(act_list)) > 1:
+            return True
+        return False
+
+    def build_lookaround_table(self, s):
+        """Given an inconsistent state, which has either a shift-reduce conflict or a
+        reduce-reduce conflict. Progressively increase the context necessary to
+        disambiguate the inconsistent state.
+
+        This function returns a dictionary which keys are tuple of the sequence
+        of testable parser stack, and list of lookahead tokens to be
+        considered. The values associated to these keys are the APS (abstract
+        parser state) which would be useful to trace the history of the
+        modifications back to the original state machine.
+        """
         assert self.states[s].is_inconsistent()
         aps = ([s], [s], [], [])
-        aps_list = self.next_aps(aps)
-        # Question: How to avoid the exponential?
+        # This loop progressively increase the context around the inconsistent
+        # state, and attempt to build a tree of lookahead and stack context to
+        # discriminated between the inconsistencies. When successfully done,
+        # the function returns with the decision tree, which would later be
+        # converted to a state machine.
+        context = 0
+        lookaround = {}
+        conflict = [aps]
+        resolved = []
+        while True:
+            context += 1
+            accepted = []
+            rejected = []
+            for aps in conflict:
+                self.next_lookahead_aps(aps, context, context, accepted, rejected)
 
+            # check what is the minimal set of stack depth that we can check
+            # against. NOTE: we increase the lookahead requirement, but this
+            # does not garantee that we would have any reduce state to increase
+            # the known stack depth.
+            st_min = min(context, *[len(st) for st, _, _, _ in accepted ])
+            assert st_min >= 1
+            lookaround_test = defaultdict(lambda [])
+            for aps in accepted:
+                st, _, la, _ = aps
+                lookaround_test[(tuple(st[:-st_min]), tuple(la))].append(aps)
+            ambiguous = False
+            accepted = []
+            for k, aps_list in lookaround_test:
+                if self.ambiguous_aps_list(aps_list):
+                    ambiguous = True
+                    conflict.extend(aps_list)
+                else:
+                    lookaround[k] = aps_list
+                    resolved.extend(aps_list)
+
+            if not ambiguous:
+                return lookaround
+
+            # Insert rules which got rejected as non-interesting for LR(n), and
+            # consider them for LR(n+1) as we might accept larger left-right
+            # recursion cases due to the extra lookahead.
+            conflict.extend(rejected)
+
+    def fix_inconsistent_state(self, s, lookaround):
+        """We manage to build a non-ambiguous lookaround table for the inconsistent
+        state. Our goal is now to convert the lookaround table in a decision tree."""
+        # TODO
+        return
+
+    def fix_inconsistent_table(self, verbose, progress):
+        """The parse table might be inconsistent. We fix the parse table by looking
+        around the inconsistent states for more context. Either by looking at the
+        potential stack state which might lead to the inconsistent state, or by
+        increasing the lookahead."""
+        if verbose:
+            print("Fix parse table incosistencies.")
+
+        todo = collections.deque()
+        for s in self.goals:
+            todo.append([s])
+
+        def visit_table():
+            while todo:
+                yield # progress bar.
+                # TODO: Compare stack / queue, for the traversal of the states.
+                shifted = todo.popleft()
+                state = self.states[shifted[-1]]
+                if state.is_inconsistent():
+                    lookaround = self.build_lookaround_table()
+                    self.fix_inconsistent_state(s, lookaround)
+
+        consume(visit_table(), progress)
 
 
 def generate_parser_states(grammar, *, verbose=False, progress=False):
