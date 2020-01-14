@@ -31,6 +31,7 @@ import io
 import pickle
 import sys
 import itertools
+import math
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
@@ -1449,6 +1450,7 @@ class ParserStates:
 
 
 class CanonicalGrammar:
+    __slots__ = "prods", "prods_with_indexes_by_nt", "grammar"
     def __init__(self, grammar, old = False):
         assert isinstance(grammar, Grammar)
 
@@ -1459,7 +1461,7 @@ class CanonicalGrammar:
         grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
             grammar)
         self.prods = prods
-        self.prods_with_indexes_nt = prods_with_indexes_by_nt
+        self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
 
         self.grammar = remove_empty_productions(grammar)
 
@@ -1489,6 +1491,11 @@ class StateAndTransitions:
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
+        # TODO: We could easily allow having a state with non-terminal
+        # transition and other epslon transitions, as the non-terminal shift
+        # transitions are a form of condition based on the fact that a
+        # non-terminal, produced by a reduce action is consumed by the
+        # automaton.
         if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
             return True
         elif len(self.epsilon) > 1:
@@ -1497,12 +1504,22 @@ class StateAndTransitions:
         return False
 
     def edges(self):
-        for k, s in self.terminals:
+        for k, s in self.terminals.items():
             yield (k, s)
-        for k, s in self.nonterminals:
+        for k, s in self.nonterminals.items():
             yield (k, s)
         for k, s in self.epsilon:
             yield (k, s)
+
+    def __str__(self):
+        conflict = ""
+        if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
+            conflict = " (shift-reduce)"
+        elif len(self.epsilon) > 1:
+            if any([ not k.is_unordered_condition() for k, s in self.epsilon ]):
+                conflict = " (reduce-reduce)"
+        return "{}{}:\n{}".format(self.index, conflict, "\n".join([
+            "\t{} --> {}".format(k, s) for k, s in self.edges()]))
 
 class Action:
     __slots__ = [
@@ -1532,9 +1549,9 @@ class Action:
                 return False
         return True
 
-    def __hash__(self, other):
+    def __hash__(self):
         return hash(tuple(
-            [self.__class__, self.kind, "rd"] + self.read + ["wr"] + self.write +
+            [self.__class__, "rd"] + self.read + ["wr"] + self.write +
             [repr(getattr(self, s)) for s in self.__slots__]
         ))
 
@@ -1543,12 +1560,14 @@ class Reduce(Action):
     non-terminal. The replay attribute of a reduce action corresponds to the
     number of stack elements which would have to be popped and pushed again
     using the parser table after reducing this operation. """
-    __slots__ = 'nt', 'replay', 'popped'
+    __slots__ = 'nt', 'replay', 'pop'
     def __init__(self, nt, pop, replay = 0):
-        super().__init__([], ["nt_" + nt])
+        super().__init__([], ["nt_" + nt.name])
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
         self.replay = replay # Number of popped elements to match the production.
+    def __str__(self):
+        return "Reduce({}, {}, {})".format(self.nt, self.pop, self.replay)
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
@@ -1560,6 +1579,8 @@ class Lookahead(Action):
         self.accept = accept
     def is_unordered_condition(self):
         return True
+    def __str__(self):
+        return "Lookahead({}, {})".format(self.sequence, self.accept)
 
 class FilterStack(Action):
     """Check whether the stack contains a given state at the given offset. This is
@@ -1571,7 +1592,10 @@ class FilterStack(Action):
         self.state = state,
         self.offset = offset
     def is_unordered_condition(self):
+        # TODO: It is not unordered!
         return True
+    def __str__(self):
+        return "FilterStack({}, {})".format(self.state, self.offset)
 
 class FilterFlag(Action):
     """Define a new action which check g has th[ e for e in e expected value. If so
@@ -1582,7 +1606,10 @@ class FilterFlag(Action):
         self.flag = flag,
         self.accept = accept
     def is_unordered_condition(self):
+        # TODO: It is not unordered!
         return True
+    def __str__(self):
+        return "FilterFlag({}, {})".format(self.flag, self.accept)
 
 class PushFlag(Action):
     """Define an action which pushes a flag as set or unset on the flag bit stack."""
@@ -1591,13 +1618,17 @@ class PushFlag(Action):
         super().__init__([], ["flag_" + flag])
         self.flag = flag,
         self.value = value
+    def __str__(self):
+        return "PushFlag({}, {})".format(self.flag, self.value)
 
 class PopFlag(Action):
     """Define an action which pops a flag from the flag bit stack."""
     __slots__ = ['flag']
     def __init__(self, flag):
         super().__init__(["flag_" + flag], ["flag_" + flag])
-        self.flag = flag,
+        self.flag = flag
+    def __str__(self):
+        return "PopFlag({})".format(self.flag)
 
 class FunCall(Action):
     """Define a call method operation which reads N elements of he stack and
@@ -1610,6 +1641,8 @@ class FunCall(Action):
         self.method = method     # Method and argument to be read for calling it.
         self.offset = offset     # Offset to add to each argument offset.
         self.read_len = read_len # Range of numbers which can be read.
+    def __str__(self):
+        return "FunCall({}, {}, {})".format(self.method, self.offset, self.read_len)
 
 def on_stack(grammar, term):
     """Returns whether an element of a production is consuming stack space or
@@ -1642,21 +1675,28 @@ class LR0Generator:
     def __eq__(self, other):
         return self.key == other.key
 
-    def __hash__(self, other):
+    def __hash__(self):
         return self._hash
+
+    def __str__(self):
+        s = ""
+        for lr_item in self.lr_items:
+            s += self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item)
+            s += "\n"
+        return s
 
     @staticmethod
     def start(grammar, nt):
         assert isinstance(grammar, CanonicalGrammar)
         assert isinstance(grammar.grammar, Grammar)
         lr_items = []
-        for prod in grammar.prods_with_indexes_by_nt[nt]:
-            assert isinstance(prod, Production)
+        for prod_index, _ in grammar.prods_with_indexes_by_nt[nt]:
+            assert isinstance(prod_index, int)
             lr_items.append(LRItem(
-                prod_index = prod.index,
+                prod_index = prod_index,
                 offset = 0,
-                lookahead = [],
-                followed_by = [],
+                lookahead = None,
+                followed_by = tuple(),
             ))
         return LR0Generator(grammar, lr_items)
 
@@ -1664,18 +1704,18 @@ class LR0Generator:
         """Returns the dictionary which maps the state transitions with the next
         LR0Generators. This can be used to generate the states and the
         transitions between the states of an LR0 parse table."""
-        followed_by = defaultdict(lambda [])
+        followed_by = collections.defaultdict(lambda: [])
         for lr_item in self.lr_items:
-            self.next_item(lr_item, followed_by)
+            self.item_transitions(lr_item, followed_by)
 
-        for k, lr_items in followed_by:
-            followed_by[k] = LR0Generator(grammar, lr_items)
+        for k, lr_items in followed_by.items():
+            followed_by[k] = LR0Generator(self.grammar, lr_items)
         return followed_by
 
     def item_transitions(self, lr_item, followed_by):
         """Given one LR Item, register all the transitions and LR Items reachables
         through these transitions."""
-        prod = self.grammar.prod[lr_item.prod_index]
+        prod = self.grammar.prods[lr_item.prod_index]
 
         # Read the term located at the offset in the production.
         if len(prod.rhs) > lr_item.offset:
@@ -1699,8 +1739,8 @@ class LR0Generator:
         followed_by[term].append(LRItem(
             prod_index = lr_item.prod_index,
             offset = lr_item.offset + 1,
-            lookahead = [],
-            followed_by = [],
+            lookahead = None,
+            followed_by = tuple(),
         ))
 
         # If the term is a non-terminal, then recursively add transitions from
@@ -1710,14 +1750,39 @@ class LR0Generator:
         # Only do it once per non-terminal to avoid infinite recursion on
         # left-recursive grammars.
         if isinstance(term, Nt) and new_transition:
-            for prod in self.grammar.prods_with_indexes_by_nt[term]:
-                assert isinstance(prod, Production)
-                self.next_item(LRItem(
-                    prod_index = prod.index,
+            for prod_index, _ in self.grammar.prods_with_indexes_by_nt[term]:
+                assert isinstance(prod_index, int)
+                self.item_transitions(LRItem(
+                    prod_index = prod_index,
                     offset = 0,
-                    lookahead = [],
-                    followed_by = [],
+                    lookahead = None,
+                    followed_by = tuple(),
                 ), followed_by)
+
+# To fix inconsistencies of the grammar, we have to traverse the grammar both
+# forward by using the lookahead and backward by using the parser's emulated
+# stack recovered from reduce actions.
+#
+# To do so we define the notion of abstract parser state (APS), which is a
+# tuple which represent the known state of the parser, as:
+#   (stack, shift, lookahead, actions)
+#
+#   stack: This is the stack at the location where we started investigating.
+#          Which means that the last element of the stack would be the location
+#          where we started.
+#
+#   shift: This is the stack computed after the traversal of edges. It is
+#          reduced each time a reduce action is encountered, and the rest of
+#          the production content is added back to the stack, as newly acquired
+#          context. The last element is the last state reached through the
+#          sequence of lookahead and actions.
+#
+#   lookahead: This is the list of terminals encountered while pushing edges
+#          through the list of terminals.
+#
+#   actions: This is the list of actions that would be executed as we push
+#          edges.
+APS = collections.namedtuple("APS", "stack shift lookahead actions")
 
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
@@ -1769,8 +1834,8 @@ class ParseTable:
         self.actions = []
         self.states = []
         self.goals = []
-        self.terminals = []
-        self.nonterminals = []
+        self.terminals = grammar.grammar.terminals
+        self.nonterminals = list(grammar.grammar.nonterminals.keys())
         self.reduce_paths = {}
         self.create_lr0_table(grammar, verbose, progress)
         self.compute_reduce_paths(verbose, progress)
@@ -1791,13 +1856,14 @@ class ParseTable:
         return state
 
     def create_lr0_table(self, grammar, verbose, progress):
-        if verbose:
+        if verbose or progress:
             print("Create LR(0) parse table.")
         assert isinstance(grammar, CanonicalGrammar)
         assert isinstance(grammar.grammar, Grammar)
 
-        goals = self.grammar.grammar.goals()
-        goals = [ nt, self.new_state() for nt in goals ]
+        goals = grammar.grammar.goals()
+        goals = [ (nt, self.new_state()) for nt in goals ]
+        self.goals = []
 
         # Ensure that identical set of LR ITems will map to the same state.
         lr0_cache = {}
@@ -1810,6 +1876,7 @@ class ParseTable:
             s.locations = it.lr_items
             lr0_cache[it] = s
             todo.append((it, s))
+            self.goals.append(s.index)
 
         # Iterate the grammar with sets of LR Items abstracted by the
         # LR0Generator, and create new states in the parse table as long as new
@@ -1819,22 +1886,24 @@ class ParseTable:
                 yield # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s_it, s = todo.popleft()
-                for k, sk_it in s_it.next():
+                if verbose:
+                    print("\nVisiting:\n{}".format(s_it))
+                for k, sk_it in s_it.transitions().items():
                     if sk_it in lr0_cache:
-                        sk = state in lr0_cache[sk_it]
+                        sk = lr0_cache[sk_it]
                     else:
                         sk = self.new_state()
                         sk.locations = sk_it.lr_items
-                        lr0_cache[it] = sk
+                        lr0_cache[sk_it] = sk
                         todo.append((sk_it, sk))
 
                     # Add the edge from s to sk with k.
                     if isinstance(k, Action):
-                        s.epsilon.append((k, sk))
+                        s.epsilon.append((k, sk.index))
                     elif isinstance(k, Nt):
-                        s.nonterminals[k] = sk
+                        s.nonterminals[k] = sk.index
                     else:
-                        s.terminals[k] = sk
+                        s.terminals[k] = sk.index
         consume(visit_grammar(), progress)
 
     def compute_reduce_paths(self, verbose, progress):
@@ -1844,18 +1913,24 @@ class ParseTable:
 
         This function computes the list of states to which a reduce function
         might jump back to after being executed."""
-        if verbose:
+        if verbose or progress:
             print("Compute reduce paths.")
 
-        todo = collections.deque()
+        todo = []
         for s in self.goals:
+            assert isinstance(s, int)
             todo.append([s])
+
+        # initialiaze the reduce_paths to empty sets of word sequences to be
+        # reduced.
+        for nt in self.nonterminals:
+            self.reduce_paths[nt] = set()
 
         def visit_table():
             while todo:
                 yield # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
-                shifted = todo.popleft()
+                shifted = todo.pop()
                 state = self.states[shifted[-1]]
                 for term, to in state.edges():
                     if to in shifted:
@@ -1867,37 +1942,16 @@ class ParseTable:
                             # NOTE: the first state is the state before
                             # shifting the first terminals/non-terminals of the
                             # Nt production.
-                            incoming = shifted[-1 - term.pop:]
-                            self.reduce_paths[term.nt].add(incoming)
+                            incoming = tuple(shifted[-1 - term.pop:])
+                            if incoming not in self.reduce_paths[term.nt]:
+                                self.reduce_paths[term.nt].add(tuple(incoming))
+                            if verbose:
+                                print("\nReduce {} as {}.".format(repr(incoming), term.nt.name))
                         else:
                             todo.append(shifted[:-1] + [to])
                     else:
                         todo.append(shifted + [to])
         consume(visit_table(), progress)
-
-    # To fix inconsistencies of the grammar, we have to traverse the grammar
-    # both forward by using the lookahead and backward by using the parser's
-    # emulated stack recovered from reduce actions.
-    #
-    # To do so we define the notion of abstract parser state (APS), which is a
-    # tuple which represent the known state of the parser, as:
-    #   (stack, shift, lookahead, actions)
-    #
-    #   stack: This is the stack at the location where we started
-    #          investigating. Which means that the last element of the stack
-    #          would be the location where we started.
-    #
-    #   shift: This is the stack computed after the traversal of edges. It is
-    #          reduced each time a reduce action is encountered, and the rest
-    #          of the production content is added back to the stack, as newly
-    #          acquired context. The last element is the last state reached
-    #          through the sequence of lookahead and actions.
-    #
-    #   lookahead: This is the list of terminals encountered while pushing
-    #          edges through the list of terminals.
-    #
-    #   actions: This is the list of actions that would be executed as we push
-    #          edges.
 
     def next_lookahead_aps(self, aps, st_min, la_min, accept, reject):
         """From a starting state, this function looks from a starting state to reach
@@ -1921,7 +1975,7 @@ class ParseTable:
         if len(la) >= la_min:
             accept.append(aps)
             return
-        if not is_interesting_aps(aps, st_min, la_min):
+        if not self.is_interesting_aps(aps, st_min, la_min):
             reject.append(aps)
             return
         state = self.states[sh[-1]]
@@ -1929,6 +1983,7 @@ class ParseTable:
             if isinstance(term, Action):
                 if isinstance(term, Reduce):
                     for prod in self.reduce_paths[term.nt]:
+                        prod = list(prod)
                         head = self.states[prod[0]]
                         to = head.nonterminals[term.nt]
 
@@ -1944,28 +1999,27 @@ class ParseTable:
                             continue
                         new_st = prod[:max(len(prod) - len(sh), 0)] + st
                         new_sh = sh[:-len(prod)] + [prod[0], to]
-                        new_aps = (new_st, new_sh, la, ac + [term])
-                        self.next_lookahead_aps(new_aps, start_aps, accept, reject)
+                        new_aps = APS(new_st, new_sh, la, ac + [term])
+                        self.next_lookahead_aps(new_aps, st_min, la_min, accept, reject)
                 else:
                     # Actions replace the latest shifted state by a new one.
-                    new_aps = (st, sh[:-1] + [to], la, ac + [term])
-                    self.next_lookahead_aps(new_aps, start_aps, accept, reject)
+                    new_aps = APS(st, sh[:-1] + [to], la, ac + [term])
+                    self.next_lookahead_aps(new_aps, st_min, la_min, accept, reject)
             elif not isinstance(term, Nt):
                 # terminals are added to the lookahead, and the previous
                 # shifted state remains on the emulated parser stack.
-                new_aps = (st, sh + [to], la + [term], ac + [None])
-                self.next_lookahead_aps(new_aps, start_aps, accept, reject)
+                new_aps = APS(st, sh + [to], la + [term], ac + [None])
+                self.next_lookahead_aps(new_aps, st_min, la_min, accept, reject)
         return
 
     def is_interesting_aps(self, aps, st_min, la_min):
         """We reduced/shifted more than once using the same kind of transitions.
         Do not consider this loop as an interesting case, as it will loop
         indefinitely."""
-        st, _, la, _ = aps
         # Reject right recursions when attempting to increase the lookahead.
-        if len(st) <= st_min:
+        if len(aps.stack) <= st_min:
             return True
-        st = st[:len(st) - st_min]
+        st = aps.stack[:len(aps.stack) - st_min]
         if len(st) >= 1 and len(st) != 1 + len(set(zip(st, st[1:]))):
             return False
         return True
@@ -1973,32 +2027,26 @@ class ParseTable:
     def ambiguous_aps(self, aps1, aps2):
         "Returns True if 2 APS might match each others."
         # NOTE: unused
-        st1, _, la1, ac1 = aps1
-        st2, _, la2, ac2 = aps2
-
-        if ac1[0] == ac2[0]:
+        if aps1.actions[0] == aps2.actions[0]:
             return False
-        if la1[:len(la2)] != la2[:len(la1)]:
+        if aps1.lookahead[:len(aps2.lookahead)] != aps2.lookahead[:len(aps1.lookahead)]:
             return False
-        if st1[-len(st2):] != st2[-len(st1):]:
+        if aps1.stack[-len(aps2.stack):] != aps2.stack[-len(aps1.stack):]:
             return False
         return True
 
     def is_aps_prefix(self, aps_prefix, aps_query):
         # NOTE: unused
-        st1, sh1, la1, _ = aps_prefix
-        st2, sh2, la2, _ = aps_query
-
-        if la1 != la2[:len(la1)]:
+        if aps1.lookahead != aps2.lookahead[:len(aps1.lookahead)]:
             return False
-        if st1 != st2[-len(st1):]:
+        if aps1.stack != aps2.stack[-len(aps2.stack):]:
             return False
         return True
 
     def ambiguous_aps_list(self, aps_list):
         # NOTE: This function assumes that the aps_list are already sorted by
         # lookahead and lookbehind patterns.
-        act_list = [ a[0] for _, _, _, a in aps_list ]
+        act_list = [ aps.actions[0] for aps in aps_list ]
         if len(set(act_list)) > 1:
             return True
         return False
@@ -2015,7 +2063,7 @@ class ParseTable:
         modifications back to the original state machine.
         """
         assert self.states[s].is_inconsistent()
-        aps = ([s], [s], [], [])
+        aps = APS([s], [s], [], [])
         # This loop progressively increase the context around the inconsistent
         # state, and attempt to build a tree of lookahead and stack context to
         # discriminated between the inconsistencies. When successfully done,
@@ -2038,15 +2086,14 @@ class ParseTable:
             # against. NOTE: we increase the lookahead requirement, but this
             # does not garantee that we would have any reduce state to increase
             # the known stack depth.
-            depth = min(st_min, *[len(st) for st, _, _, _ in accepted ])
+            depth = min(st_min, *[len(aps.stack) for aps in accepted ])
             assert depth >= 1
-            lookaround_test = defaultdict(lambda [])
+            lookaround_test = collections.defaultdict(lambda: [])
             for aps in accepted:
-                st, _, la, _ = aps
-                lookaround_test[(tuple(st[:-depth]), tuple(la))].append(aps)
+                lookaround_test[(tuple(aps.stack[:-depth]), tuple(aps.lookahead))].append(aps)
             ambiguous = False
             accepted = []
-            for k, aps_list in lookaround_test:
+            for k, aps_list in lookaround_test.items():
                 if self.ambiguous_aps_list(aps_list):
                     ambiguous = True
                     conflict.extend(aps_list)
@@ -2062,7 +2109,7 @@ class ParseTable:
             # recursion cases due to the extra lookahead.
             conflict.extend(rejected)
 
-    def get_discriminants(self, lookaround):
+    def get_discriminant(self, lookaround, num_A):
         # The best condition is the one which has the minimal entropy.
         #
         # The entropy H of a condition C, which has N successors and A actions
@@ -2099,24 +2146,27 @@ class ParseTable:
         #
         #   C = 0 -> {A1, A2} and C = 1 -> {A1, A2}, the entropy should be less
         #   than 1, if we have more than 2 actions possibles.
-        hits = defaultdict(lambda defaultdict(lambda set()))
-        common_depth = min([len(k) for k, _ in lookaround ])
-        num_A = len(set([ aps_list[0][3][0] for _, aps_list in lookaround ]))
-        for k, aps_list in lookaround:
+        assert isinstance(lookaround, dict)
+        hits = collections.defaultdict(lambda: collections.defaultdict(lambda: set()))
+        common_depth = min([len(behind) for behind, _ in lookaround.keys() ])
+        common_la = min([len(ahead) for _, ahead in lookaround.keys() ])
+        assert num_A > 1 or not "All actions are identical."
+        for k, aps_list in lookaround.items():
             behind, ahead = k
-            action = aps_list[0][3][0]
-            hits[1][ahead[0]].append(action)
+            action = aps_list[0].actions[0]
+            if common_la >= 1:
+                hits[1][ahead[0]].add(action)
             behind = behind[len(behind) - common_depth:]
             for i, s in enumerate(behind, 1 - common_depth):
-                hits[i][s].append(action)
+                hits[i][s].add(action)
 
         # Compute entropy of each condition.
         entropy = {}
-        for i, key_actions in hits:
+        for i, key_actions in hits.items():
             entropy[i] = 0.0
             rest = 1.0
             num_N = len(key_actions) + 1.0
-            for k, actions in key_actions:
+            for k, actions in key_actions.items():
                 prob = (len(actions) - 1.0) / (num_N * (num_A - 1.0))
                 assert 0.0 <= prob and prob <= 1.0
                 if prob > 0.0:
@@ -2127,21 +2177,25 @@ class ParseTable:
                 entropy[i] += - rest * math.log(rest)
             entropy[i] = entropy[i] / math.log(num_N)
 
-        min_entropy = min([ e for i, e in entropy ])
-        selected = [ i for i, e in entropy if e == min_entropy ][0]
+        min_entropy = min(entropy.values())
+        selected = [ i for i, e in entropy.items() if e == min_entropy ][0]
         return selected
 
-    def build_discriminant_tree(self, lookaround):
+    def build_decision_tree(self, lookaround):
         # The lookaround table is not ordered, this function is used to order
         # the discriminant such that we can build a tree of transitions and
         # state to replace the inconsistent state.
-        if len(lookaround) == 1:
-            aps_list = lookaround.values()[0]
+        assert isinstance(lookaround, dict)
+        num_A = len(set([ aps_list[0].actions[0] for aps_list in lookaround.values() ]))
+        assert num_A >= 1 or not "There is at least one action."
+        if num_A == 1:
+            aps_list = list(lookaround.values())[0]
             assert isinstance(aps_list, list)
             return aps_list
-        discriminant = self.get_discriminant(lookaround)
-        table = defaultdict(lambda {})
-        for k, aps_list in lookaround:
+        assert len(lookaround) > 1 and num_A > 1
+        discriminant = self.get_discriminant(lookaround, num_A)
+        table = collections.defaultdict(lambda: {})
+        for k, aps_list in lookaround.items():
             behind, ahead = k
             if discriminant == 1:
                 # Discriminant is the look-ahead terminal.
@@ -2150,15 +2204,15 @@ class ParseTable:
                 table[(discriminant, terminal)][k] = aps_list
             else:
                 # Discriminant is the stack depth check.
-                depth = -1 - discriminant
-                stack_state = behind[depth]
+                depth = discriminant
+                stack_state = behind[-1 - depth]
                 table[(depth, stack_state)][k] = aps_list
-        tree = {}
-        for cond, lookaround in table:
-            tree[cond] = self.build_discriminant_tree(lookaround)
+        tree = dict()
+        for cond, lookaround in table.items():
+            tree[cond] = self.build_decision_tree(lookaround)
         return tree
 
-    def fix_inconsistent_state(self, s, lookaround):
+    def fix_inconsistent_state(self, s, decision_tree, depth = 0):
         """We manage to build a non-ambiguous lookaround table for the inconsistent
         state. Our goal is now to convert the lookaround table in a decision tree."""
 
@@ -2174,6 +2228,18 @@ class ParseTable:
         #
         # For shift-reduce issues, we can add more look-ahead tokens to figure
         # out which statement we are reducing.
+        raise ValueError(42)
+        if isinstance(decision_tree, list):
+            # We reached a leaf of the decision tree, at this point, we should
+            # be able to execute the action that we delayed until now.
+            pass
+        else:
+            # We reached a tree node, which contains as key all the terminals
+            # or states number which are expected to be checked, in case of a
+            # terminal, we convert these to shift operations, and in case of a
+            # stack depth, we convert it to an unordered epsilon condition.
+            assert isinstance(decision_tree, dict)
+            pass
         return
 
     def fix_inconsistent_table(self, verbose, progress):
@@ -2181,22 +2247,28 @@ class ParseTable:
         around the inconsistent states for more context. Either by looking at the
         potential stack state which might lead to the inconsistent state, or by
         increasing the lookahead."""
-        if verbose:
+        if verbose or progress:
             print("Fix parse table incosistencies.")
 
         todo = collections.deque()
-        for s in self.goals:
-            todo.append([s])
+        for state in self.states:
+            if state.is_inconsistent():
+                todo.append(state.index)
+
+        if verbose:
+            print("  Found {} inconsistent states.".format(len(todo)))
 
         def visit_table():
             while todo:
                 yield # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
-                shifted = todo.popleft()
-                state = self.states[shifted[-1]]
-                if state.is_inconsistent():
-                    lookaround = self.build_lookaround_table()
-                    self.fix_inconsistent_state(s, lookaround)
+                s = todo.popleft()
+                assert self.states[s].is_inconsistent()
+                if verbose:
+                    print("\nFixing state {}".format(self.states[s]))
+                lookaround = self.build_lookaround_table(s)
+                decision_tree = self.build_decision_tree(lookaround)
+                self.fix_inconsistent_state(s, decision_tree)
 
         consume(visit_table(), progress)
 
@@ -2204,6 +2276,8 @@ class ParseTable:
 def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
     grammar = CanonicalGrammar(grammar)
+    parse_table = ParseTable(grammar, verbose, progress)
+    raise ValueError(51)
 
     # Now the grammar is in its final form. Compute information about it that
     # we can cache and use during the main part of the algorithm below.
@@ -2221,6 +2295,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
     assert target in ('python', 'rust')
 
     if isinstance(source, Grammar):
+        grammar = CanonicalGrammar(source)
         parser_states = generate_parser_states(
             source, verbose=verbose, progress=progress)
     elif isinstance(source, ParserStates):
@@ -2237,7 +2312,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
 def compile(grammar):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
-    generate_parser(out, grammar)
+    generate_parser(out, grammar, verbose=True, progress=True)
     scope = {}
     # print(out.getvalue())
     exec(out.getvalue(), scope)
