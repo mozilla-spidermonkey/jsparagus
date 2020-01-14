@@ -2062,7 +2062,7 @@ class ParseTable:
             # recursion cases due to the extra lookahead.
             conflict.extend(rejected)
 
-    def get_discriminants(lookaround):
+    def get_discriminants(self, lookaround):
         # The best condition is the one which has the minimal entropy.
         #
         # The entropy H of a condition C, which has N successors and A actions
@@ -2129,23 +2129,44 @@ class ParseTable:
 
         min_entropy = min([ e for i, e in entropy ])
         selected = [ i for i, e in entropy if e == min_entropy ][0]
+        return selected
 
+    def build_discriminant_tree(self, lookaround):
+        # The lookaround table is not ordered, this function is used to order
+        # the discriminant such that we can build a tree of transitions and
+        # state to replace the inconsistent state.
+        if len(lookaround) == 1:
+            aps_list = lookaround.values()[0]
+            assert isinstance(aps_list, list)
+            return aps_list
+        discriminant = self.get_discriminant(lookaround)
+        table = defaultdict(lambda {})
+        for k, aps_list in lookaround:
+            behind, ahead = k
+            if discriminant == 1:
+                # Discriminant is the look-ahead terminal.
+                terminal = ahead[0]
+                k = behind, ahead[1:]
+                table[(discriminant, terminal)][k] = aps_list
+            else:
+                # Discriminant is the stack depth check.
+                depth = -1 - discriminant
+                stack_state = behind[depth]
+                table[(depth, stack_state)][k] = aps_list
+        tree = {}
+        for cond, lookaround in table:
+            tree[cond] = self.build_discriminant_tree(lookaround)
+        return tree
 
     def fix_inconsistent_state(self, s, lookaround):
         """We manage to build a non-ambiguous lookaround table for the inconsistent
         state. Our goal is now to convert the lookaround table in a decision tree."""
 
-        # Ideally we would want to discriminate the cases based on the
-        # frequencies of which they are used, and order the discriminant based
-        # on their ability to split the group the fastest. However, we can
-        # always check for look-behind cases, and only check for the first
-        # terminal expected.
-        #
-        # NOTE: in case of right-recursive grammars, we have to add a push &
-        # pop flag to filter the origin. The original idea is to split the
-        # graph based on the origin, which increases the parse table size. In
-        # the worse case, adding a push action would result in the duplication
-        # of all the states, but this remains unlikely.
+        # In case of right-recursive grammars, we have to add a push & pop flag
+        # to filter the origin. The original idea is to split the graph based
+        # on the origin, which increases the parse table size. In the worse
+        # case, adding a push action would result in the duplication of all the
+        # states, but this remains unlikely.
         #
         # For left-recursive grammars, we can add a context check which look-up
         # within the stack of the parser in which state we are, and how to
