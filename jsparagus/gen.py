@@ -1521,15 +1521,21 @@ class Action:
         return False
 
     def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
         if sorted(self.read) != sorted(other.read):
             return False
         if sorted(self.write) != sorted(other.write):
             return False
+        for s in self.__slots__:
+            if getattr(self, s) != getattr(other, s):
+                return False
         return True
 
     def __hash__(self, other):
         return hash(tuple(
-            [self.kind] + self.read + self.write + [ repr(self.data) ]
+            [self.__class__, self.kind, "rd"] + self.read + ["wr"] + self.write +
+            [repr(getattr(self, s)) for s in self.__slots__]
         ))
 
 class Reduce(Action):
@@ -1538,11 +1544,11 @@ class Reduce(Action):
     number of stack elements which would have to be popped and pushed again
     using the parser table after reducing this operation. """
     __slots__ = 'nt', 'replay', 'popped'
-    def __init__(self, nt, pop):
+    def __init__(self, nt, pop, replay = 0):
         super().__init__([], ["nt_" + nt])
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
-        self.replay = 0 # Number of popped elements to match the production.
+        self.replay = replay # Number of popped elements to match the production.
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
@@ -1599,10 +1605,10 @@ class FunCall(Action):
     to the number of stack elements which would have to be popped and pushed
     again using the parser table after reducing this operation. """
     __slots__ = 'method', 'offset', 'read_len'
-    def __init__(self, method, alias_read, alias_write, read_len):
+    def __init__(self, method, alias_read, alias_write, read_len, offset = 0):
         super().__init__(alias_read, alias_write)
         self.method = method     # Method and argument to be read for calling it.
-        self.offset = 0          # Offset to add to each argument offset.
+        self.offset = offset     # Offset to add to each argument offset.
         self.read_len = read_len # Range of numbers which can be read.
 
 def on_stack(grammar, term):
