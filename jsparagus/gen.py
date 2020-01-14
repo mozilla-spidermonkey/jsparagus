@@ -1953,7 +1953,7 @@ class ParseTable:
             elif not isinstance(term, Nt):
                 # terminals are added to the lookahead, and the previous
                 # shifted state remains on the emulated parser stack.
-                new_aps = (st, sh + [to], la + [term], ac)
+                new_aps = (st, sh + [to], la + [term], ac + [None])
                 self.next_lookahead_aps(new_aps, start_aps, accept, reject)
         return
 
@@ -2021,27 +2021,29 @@ class ParseTable:
         # discriminated between the inconsistencies. When successfully done,
         # the function returns with the decision tree, which would later be
         # converted to a state machine.
-        context = 0
+        la_min = 0
+        st_min = 0
         lookaround = {}
         conflict = [aps]
         resolved = []
         while True:
-            context += 1
+            la_min += 1
+            st_min += 1
             accepted = []
             rejected = []
             for aps in conflict:
-                self.next_lookahead_aps(aps, context, context, accepted, rejected)
+                self.next_lookahead_aps(aps, st_min, la_min, accepted, rejected)
 
             # check what is the minimal set of stack depth that we can check
             # against. NOTE: we increase the lookahead requirement, but this
             # does not garantee that we would have any reduce state to increase
             # the known stack depth.
-            st_min = min(context, *[len(st) for st, _, _, _ in accepted ])
-            assert st_min >= 1
+            depth = min(st_min, *[len(st) for st, _, _, _ in accepted ])
+            assert depth >= 1
             lookaround_test = defaultdict(lambda [])
             for aps in accepted:
                 st, _, la, _ = aps
-                lookaround_test[(tuple(st[:-st_min]), tuple(la))].append(aps)
+                lookaround_test[(tuple(st[:-depth]), tuple(la))].append(aps)
             ambiguous = False
             accepted = []
             for k, aps_list in lookaround_test:
