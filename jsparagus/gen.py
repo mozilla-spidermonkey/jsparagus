@@ -2054,10 +2054,97 @@ class ParseTable:
             # recursion cases due to the extra lookahead.
             conflict.extend(rejected)
 
+    def get_discriminants(lookaround):
+        # The best condition is the one which has the minimal entropy.
+        #
+        # The entropy H of a condition C, which has N successors and A actions
+        # possible, is the entropy based on an arbritary "probability" P. P is
+        # defined such that, if the condition C successfully discriminate
+        # between all the actions, then the entropy should be 0. Otherwise, if
+        # the condition C does not hint towards one solution, the entropy
+        # should be 1.
+        #
+        # To fit our expectations, we define the probability P(C = n) as
+        # follow: (#A(C = n) - 1) / N * (A - 1) where #A(C = n) is number of
+        # actions possible for the successor n. We use (A - 1), such that if
+        # there is a unique action, then this condition would have a 0 entropy.
+        # We use 1/N as the apriori likelyhood of each condition to be
+        # realized.
+        #
+        # As, the sum of all P(C = n) must be equal to 1, we add an extra fake
+        # successor (included in N) which would be composed of all the actions
+        # which are not a potential result of the previous conditions.
+        #
+        #   P(C = N) = 1 - sum(P(C = n) for n in [1..N-1])
+        #
+        #   H = -sum(P(C = n) log(P(C = n)) for n in [1..N]) / log(N)
+        #
+        # Examples:
+        #
+        #   C = 0 -> {A1} and C = 1 -> {A2}, the entropy should be 0.
+        #
+        #   C = 0 -> {A1, A2} and C = 1 -> {A1, A2}, the entropy should be 1,
+        #   if we only have 2 actions possibles.
+        #
+        #   C = 0 -> {A1, A2} and C = 1 -> {A1}, the entropy should be less
+        #   than 1, if we have 2 actions possibles.
+        #
+        #   C = 0 -> {A1, A2} and C = 1 -> {A1, A2}, the entropy should be less
+        #   than 1, if we have more than 2 actions possibles.
+        hits = defaultdict(lambda defaultdict(lambda set()))
+        common_depth = min([len(k) for k, _ in lookaround ])
+        num_A = len(set([ aps_list[0][3][0] for _, aps_list in lookaround ]))
+        for k, aps_list in lookaround:
+            behind, ahead = k
+            action = aps_list[0][3][0]
+            hits[1][ahead[0]].append(action)
+            behind = behind[len(behind) - common_depth:]
+            for i, s in enumerate(behind, 1 - common_depth):
+                hits[i][s].append(action)
+
+        # Compute entropy of each condition.
+        entropy = {}
+        for i, key_actions in hits:
+            entropy[i] = 0.0
+            rest = 1.0
+            num_N = len(key_actions) + 1.0
+            for k, actions in key_actions:
+                prob = (len(actions) - 1.0) / (num_N * (num_A - 1.0))
+                assert 0.0 <= prob and prob <= 1.0
+                if prob > 0.0:
+                    entropy[i] += - prob * math.log(prob)
+                rest -= prob
+            assert 0.0 <= rest and rest <= 1.0
+            if rest > 0.0:
+                entropy[i] += - rest * math.log(rest)
+            entropy[i] = entropy[i] / math.log(num_N)
+
+        min_entropy = min([ e for i, e in entropy ])
+        selected = [ i for i, e in entropy if e == min_entropy ][0]
+
+
     def fix_inconsistent_state(self, s, lookaround):
         """We manage to build a non-ambiguous lookaround table for the inconsistent
         state. Our goal is now to convert the lookaround table in a decision tree."""
-        # TODO
+
+        # Ideally we would want to discriminate the cases based on the
+        # frequencies of which they are used, and order the discriminant based
+        # on their ability to split the group the fastest. However, we can
+        # always check for look-behind cases, and only check for the first
+        # terminal expected.
+        #
+        # NOTE: in case of right-recursive grammars, we have to add a push &
+        # pop flag to filter the origin. The original idea is to split the
+        # graph based on the origin, which increases the parse table size. In
+        # the worse case, adding a push action would result in the duplication
+        # of all the states, but this remains unlikely.
+        #
+        # For left-recursive grammars, we can add a context check which look-up
+        # within the stack of the parser in which state we are, and how to
+        # discriminate.
+        #
+        # For shift-reduce issues, we can add more look-ahead tokens to figure
+        # out which statement we are reducing.
         return
 
     def fix_inconsistent_table(self, verbose, progress):
