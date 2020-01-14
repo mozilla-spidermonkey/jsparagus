@@ -152,7 +152,7 @@ class ESTestCase(unittest.TestCase):
                ('expression_statement',
                 ('compound_assignment_expr',
                  ('identifier_expr', ('identifier_reference', 'x')),
-                 ('box_assign_op', ('div_assign_op',)),
+                 ('box_assign_op', ('div_assign_op', '/=')),
                  ('numeric_literal', '2')))))))
 
     def test_can_close(self):
