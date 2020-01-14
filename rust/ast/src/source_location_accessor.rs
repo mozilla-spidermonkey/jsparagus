@@ -75,7 +75,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ArrayExpressionElement<'alloc> {
         match self {
             ArrayExpressionElement::SpreadElement(content) => content.set_loc(start, end),
             ArrayExpressionElement::Expression(content) => content.set_loc(start, end),
-            ArrayExpressionElement::Elision(mut loc) => {
+            ArrayExpressionElement::Elision { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -86,7 +86,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ArrayExpressionElement<'alloc> {
         match self {
             ArrayExpressionElement::SpreadElement(content) => content.get_loc(),
             ArrayExpressionElement::Expression(content) => content.get_loc(),
-            ArrayExpressionElement::Elision(loc) => *loc,
+            ArrayExpressionElement::Elision { loc } => *loc,
         }
     }
 }
@@ -228,107 +228,107 @@ impl<'alloc> SourceLocationAccessor<'alloc> for AssignmentTargetWithDefault<'all
 impl<'alloc> SourceLocationAccessor<'alloc> for BinaryOperator {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
-            BinaryOperator::Equals(mut loc) => {
+            BinaryOperator::Equals { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::NotEquals(mut loc) => {
+            BinaryOperator::NotEquals { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::StrictEquals(mut loc) => {
+            BinaryOperator::StrictEquals { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::StrictNotEquals(mut loc) => {
+            BinaryOperator::StrictNotEquals { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::LessThan(mut loc) => {
+            BinaryOperator::LessThan { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::LessThanOrEqual(mut loc) => {
+            BinaryOperator::LessThanOrEqual { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::GreaterThan(mut loc) => {
+            BinaryOperator::GreaterThan { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::GreaterThanOrEqual(mut loc) => {
+            BinaryOperator::GreaterThanOrEqual { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::In(mut loc) => {
+            BinaryOperator::In { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Instanceof(mut loc) => {
+            BinaryOperator::Instanceof { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::LeftShift(mut loc) => {
+            BinaryOperator::LeftShift { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::RightShift(mut loc) => {
+            BinaryOperator::RightShift { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::RightShiftExt(mut loc) => {
+            BinaryOperator::RightShiftExt { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Add(mut loc) => {
+            BinaryOperator::Add { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Sub(mut loc) => {
+            BinaryOperator::Sub { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Mul(mut loc) => {
+            BinaryOperator::Mul { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Div(mut loc) => {
+            BinaryOperator::Div { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Mod(mut loc) => {
+            BinaryOperator::Mod { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Pow(mut loc) => {
+            BinaryOperator::Pow { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Comma(mut loc) => {
+            BinaryOperator::Comma { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::Coalesce(mut loc) => {
+            BinaryOperator::Coalesce { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::LogicalOr(mut loc) => {
+            BinaryOperator::LogicalOr { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::LogicalAnd(mut loc) => {
+            BinaryOperator::LogicalAnd { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::BitwiseOr(mut loc) => {
+            BinaryOperator::BitwiseOr { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::BitwiseXor(mut loc) => {
+            BinaryOperator::BitwiseXor { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            BinaryOperator::BitwiseAnd(mut loc) => {
+            BinaryOperator::BitwiseAnd { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -337,32 +337,32 @@ impl<'alloc> SourceLocationAccessor<'alloc> for BinaryOperator {
 
     fn get_loc(&self) -> SourceLocation {
         match self {
-            BinaryOperator::Equals(loc) => *loc,
-            BinaryOperator::NotEquals(loc) => *loc,
-            BinaryOperator::StrictEquals(loc) => *loc,
-            BinaryOperator::StrictNotEquals(loc) => *loc,
-            BinaryOperator::LessThan(loc) => *loc,
-            BinaryOperator::LessThanOrEqual(loc) => *loc,
-            BinaryOperator::GreaterThan(loc) => *loc,
-            BinaryOperator::GreaterThanOrEqual(loc) => *loc,
-            BinaryOperator::In(loc) => *loc,
-            BinaryOperator::Instanceof(loc) => *loc,
-            BinaryOperator::LeftShift(loc) => *loc,
-            BinaryOperator::RightShift(loc) => *loc,
-            BinaryOperator::RightShiftExt(loc) => *loc,
-            BinaryOperator::Add(loc) => *loc,
-            BinaryOperator::Sub(loc) => *loc,
-            BinaryOperator::Mul(loc) => *loc,
-            BinaryOperator::Div(loc) => *loc,
-            BinaryOperator::Mod(loc) => *loc,
-            BinaryOperator::Pow(loc) => *loc,
-            BinaryOperator::Comma(loc) => *loc,
-            BinaryOperator::Coalesce(loc) => *loc,
-            BinaryOperator::LogicalOr(loc) => *loc,
-            BinaryOperator::LogicalAnd(loc) => *loc,
-            BinaryOperator::BitwiseOr(loc) => *loc,
-            BinaryOperator::BitwiseXor(loc) => *loc,
-            BinaryOperator::BitwiseAnd(loc) => *loc,
+            BinaryOperator::Equals { loc } => *loc,
+            BinaryOperator::NotEquals { loc } => *loc,
+            BinaryOperator::StrictEquals { loc } => *loc,
+            BinaryOperator::StrictNotEquals { loc } => *loc,
+            BinaryOperator::LessThan { loc } => *loc,
+            BinaryOperator::LessThanOrEqual { loc } => *loc,
+            BinaryOperator::GreaterThan { loc } => *loc,
+            BinaryOperator::GreaterThanOrEqual { loc } => *loc,
+            BinaryOperator::In { loc } => *loc,
+            BinaryOperator::Instanceof { loc } => *loc,
+            BinaryOperator::LeftShift { loc } => *loc,
+            BinaryOperator::RightShift { loc } => *loc,
+            BinaryOperator::RightShiftExt { loc } => *loc,
+            BinaryOperator::Add { loc } => *loc,
+            BinaryOperator::Sub { loc } => *loc,
+            BinaryOperator::Mul { loc } => *loc,
+            BinaryOperator::Div { loc } => *loc,
+            BinaryOperator::Mod { loc } => *loc,
+            BinaryOperator::Pow { loc } => *loc,
+            BinaryOperator::Comma { loc } => *loc,
+            BinaryOperator::Coalesce { loc } => *loc,
+            BinaryOperator::LogicalOr { loc } => *loc,
+            BinaryOperator::LogicalAnd { loc } => *loc,
+            BinaryOperator::BitwiseOr { loc } => *loc,
+            BinaryOperator::BitwiseXor { loc } => *loc,
+            BinaryOperator::BitwiseAnd { loc } => *loc,
         }
     }
 }
@@ -517,51 +517,51 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ClassExpression<'alloc> {
 impl<'alloc> SourceLocationAccessor<'alloc> for CompoundAssignmentOperator {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
-            CompoundAssignmentOperator::Add(mut loc) => {
+            CompoundAssignmentOperator::Add { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Sub(mut loc) => {
+            CompoundAssignmentOperator::Sub { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Mul(mut loc) => {
+            CompoundAssignmentOperator::Mul { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Div(mut loc) => {
+            CompoundAssignmentOperator::Div { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Mod(mut loc) => {
+            CompoundAssignmentOperator::Mod { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Pow(mut loc) => {
+            CompoundAssignmentOperator::Pow { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::LeftShift(mut loc) => {
+            CompoundAssignmentOperator::LeftShift { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::RightShift(mut loc) => {
+            CompoundAssignmentOperator::RightShift { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::RightShiftExt(mut loc) => {
+            CompoundAssignmentOperator::RightShiftExt { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Or(mut loc) => {
+            CompoundAssignmentOperator::Or { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::Xor(mut loc) => {
+            CompoundAssignmentOperator::Xor { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            CompoundAssignmentOperator::And(mut loc) => {
+            CompoundAssignmentOperator::And { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -570,18 +570,18 @@ impl<'alloc> SourceLocationAccessor<'alloc> for CompoundAssignmentOperator {
 
     fn get_loc(&self) -> SourceLocation {
         match self {
-            CompoundAssignmentOperator::Add(loc) => *loc,
-            CompoundAssignmentOperator::Sub(loc) => *loc,
-            CompoundAssignmentOperator::Mul(loc) => *loc,
-            CompoundAssignmentOperator::Div(loc) => *loc,
-            CompoundAssignmentOperator::Mod(loc) => *loc,
-            CompoundAssignmentOperator::Pow(loc) => *loc,
-            CompoundAssignmentOperator::LeftShift(loc) => *loc,
-            CompoundAssignmentOperator::RightShift(loc) => *loc,
-            CompoundAssignmentOperator::RightShiftExt(loc) => *loc,
-            CompoundAssignmentOperator::Or(loc) => *loc,
-            CompoundAssignmentOperator::Xor(loc) => *loc,
-            CompoundAssignmentOperator::And(loc) => *loc,
+            CompoundAssignmentOperator::Add { loc } => *loc,
+            CompoundAssignmentOperator::Sub { loc } => *loc,
+            CompoundAssignmentOperator::Mul { loc } => *loc,
+            CompoundAssignmentOperator::Div { loc } => *loc,
+            CompoundAssignmentOperator::Mod { loc } => *loc,
+            CompoundAssignmentOperator::Pow { loc } => *loc,
+            CompoundAssignmentOperator::LeftShift { loc } => *loc,
+            CompoundAssignmentOperator::RightShift { loc } => *loc,
+            CompoundAssignmentOperator::RightShiftExt { loc } => *loc,
+            CompoundAssignmentOperator::Or { loc } => *loc,
+            CompoundAssignmentOperator::Xor { loc } => *loc,
+            CompoundAssignmentOperator::And { loc } => *loc,
         }
     }
 }
@@ -782,11 +782,11 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Expression::LiteralInfinityExpression(mut loc) => {
+            Expression::LiteralInfinityExpression { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Expression::LiteralNullExpression(mut loc) => {
+            Expression::LiteralNullExpression { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -833,7 +833,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Expression::NewTargetExpression(mut loc) => {
+            Expression::NewTargetExpression { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -843,7 +843,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
                 loc.end = end.end;
             }
             Expression::TemplateExpression(content) => content.set_loc(start, end),
-            Expression::ThisExpression(mut loc) => {
+            Expression::ThisExpression { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -875,8 +875,8 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
             Expression::MemberExpression(content) => content.get_loc(),
             Expression::ClassExpression(content) => content.get_loc(),
             Expression::LiteralBooleanExpression { loc, .. } => *loc,
-            Expression::LiteralInfinityExpression(loc) => *loc,
-            Expression::LiteralNullExpression(loc) => *loc,
+            Expression::LiteralInfinityExpression { loc } => *loc,
+            Expression::LiteralNullExpression { loc } => *loc,
             Expression::LiteralNumericExpression { loc, .. } => *loc,
             Expression::LiteralRegExpExpression { loc, .. } => *loc,
             Expression::LiteralStringExpression { loc, .. } => *loc,
@@ -890,11 +890,11 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
             Expression::FunctionExpression(content) => content.get_loc(),
             Expression::IdentifierExpression(content) => content.get_loc(),
             Expression::NewExpression { loc, .. } => *loc,
-            Expression::NewTargetExpression(loc) => *loc,
+            Expression::NewTargetExpression { loc } => *loc,
             Expression::ObjectExpression(content) => content.get_loc(),
             Expression::UnaryExpression { loc, .. } => *loc,
             Expression::TemplateExpression(content) => content.get_loc(),
-            Expression::ThisExpression(loc) => *loc,
+            Expression::ThisExpression { loc } => *loc,
             Expression::UpdateExpression { loc, .. } => *loc,
             Expression::YieldExpression { loc, .. } => *loc,
             Expression::YieldGeneratorExpression { loc, .. } => *loc,
@@ -908,7 +908,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ExpressionOrSuper<'alloc> {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
             ExpressionOrSuper::Expression(content) => content.set_loc(start, end),
-            ExpressionOrSuper::Super(mut loc) => {
+            ExpressionOrSuper::Super { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -918,7 +918,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ExpressionOrSuper<'alloc> {
     fn get_loc(&self) -> SourceLocation {
         match self {
             ExpressionOrSuper::Expression(content) => content.get_loc(),
-            ExpressionOrSuper::Super(loc) => *loc,
+            ExpressionOrSuper::Super { loc } => *loc,
         }
     }
 }
@@ -1335,7 +1335,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Statement<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Statement::DebuggerStatement(mut loc) => {
+            Statement::DebuggerStatement { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -1343,7 +1343,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Statement<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Statement::EmptyStatement(mut loc) => {
+            Statement::EmptyStatement { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -1411,9 +1411,9 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Statement<'alloc> {
             Statement::BlockStatement { loc, .. } => *loc,
             Statement::BreakStatement { loc, .. } => *loc,
             Statement::ContinueStatement { loc, .. } => *loc,
-            Statement::DebuggerStatement(loc) => *loc,
+            Statement::DebuggerStatement { loc } => *loc,
             Statement::DoWhileStatement { loc, .. } => *loc,
-            Statement::EmptyStatement(loc) => *loc,
+            Statement::EmptyStatement { loc } => *loc,
             Statement::ExpressionStatement(content) => content.get_loc(),
             Statement::ForInStatement { loc, .. } => *loc,
             Statement::ForOfStatement { loc, .. } => *loc,
@@ -1531,31 +1531,31 @@ impl<'alloc> SourceLocationAccessor<'alloc> for TemplateExpressionElement<'alloc
 impl<'alloc> SourceLocationAccessor<'alloc> for UnaryOperator {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
-            UnaryOperator::Plus(mut loc) => {
+            UnaryOperator::Plus { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::Minus(mut loc) => {
+            UnaryOperator::Minus { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::LogicalNot(mut loc) => {
+            UnaryOperator::LogicalNot { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::BitwiseNot(mut loc) => {
+            UnaryOperator::BitwiseNot { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::Typeof(mut loc) => {
+            UnaryOperator::Typeof { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::Void(mut loc) => {
+            UnaryOperator::Void { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UnaryOperator::Delete(mut loc) => {
+            UnaryOperator::Delete { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -1564,13 +1564,13 @@ impl<'alloc> SourceLocationAccessor<'alloc> for UnaryOperator {
 
     fn get_loc(&self) -> SourceLocation {
         match self {
-            UnaryOperator::Plus(loc) => *loc,
-            UnaryOperator::Minus(loc) => *loc,
-            UnaryOperator::LogicalNot(loc) => *loc,
-            UnaryOperator::BitwiseNot(loc) => *loc,
-            UnaryOperator::Typeof(loc) => *loc,
-            UnaryOperator::Void(loc) => *loc,
-            UnaryOperator::Delete(loc) => *loc,
+            UnaryOperator::Plus { loc } => *loc,
+            UnaryOperator::Minus { loc } => *loc,
+            UnaryOperator::LogicalNot { loc } => *loc,
+            UnaryOperator::BitwiseNot { loc } => *loc,
+            UnaryOperator::Typeof { loc } => *loc,
+            UnaryOperator::Void { loc } => *loc,
+            UnaryOperator::Delete { loc } => *loc,
         }
     }
 }
@@ -1578,11 +1578,11 @@ impl<'alloc> SourceLocationAccessor<'alloc> for UnaryOperator {
 impl<'alloc> SourceLocationAccessor<'alloc> for UpdateOperator {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
-            UpdateOperator::Increment(mut loc) => {
+            UpdateOperator::Increment { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            UpdateOperator::Decrement(mut loc) => {
+            UpdateOperator::Decrement { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -1591,8 +1591,8 @@ impl<'alloc> SourceLocationAccessor<'alloc> for UpdateOperator {
 
     fn get_loc(&self) -> SourceLocation {
         match self {
-            UpdateOperator::Increment(loc) => *loc,
-            UpdateOperator::Decrement(loc) => *loc,
+            UpdateOperator::Increment { loc } => *loc,
+            UpdateOperator::Decrement { loc } => *loc,
         }
     }
 }
@@ -1611,15 +1611,15 @@ impl<'alloc> SourceLocationAccessor<'alloc> for VariableDeclaration<'alloc> {
 impl<'alloc> SourceLocationAccessor<'alloc> for VariableDeclarationKind {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         match self {
-            VariableDeclarationKind::Var(mut loc) => {
+            VariableDeclarationKind::Var { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            VariableDeclarationKind::Let(mut loc) => {
+            VariableDeclarationKind::Let { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            VariableDeclarationKind::Const(mut loc) => {
+            VariableDeclarationKind::Const { mut loc } => {
                 loc.start = start.start;
                 loc.end = end.end;
             }
@@ -1628,9 +1628,9 @@ impl<'alloc> SourceLocationAccessor<'alloc> for VariableDeclarationKind {
 
     fn get_loc(&self) -> SourceLocation {
         match self {
-            VariableDeclarationKind::Var(loc) => *loc,
-            VariableDeclarationKind::Let(loc) => *loc,
-            VariableDeclarationKind::Const(loc) => *loc,
+            VariableDeclarationKind::Var { loc } => *loc,
+            VariableDeclarationKind::Let { loc } => *loc,
+            VariableDeclarationKind::Const { loc } => *loc,
         }
     }
 }

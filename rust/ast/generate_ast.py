@@ -284,7 +284,7 @@ def loc_trait(ast):
                 write(2, "match self {")
                 for variant_name, variant_ty in decl.variants.items():
                     if variant_ty is None:
-                        write(3, "{}::{}(mut loc) => {{", ty.name, variant_name)
+                        write(3, "{}::{} {{ mut loc }} => {{", ty.name, variant_name)
                         write(4, "loc.start = start.start;")
                         write(4, "loc.end = end.end;")
                         write(3, "}}", ty.name, variant_name)
@@ -304,7 +304,7 @@ def loc_trait(ast):
                 write(2, "match self {")
                 for variant_name, variant_ty in decl.variants.items():
                     if variant_ty is None:
-                        write(3, "{}::{}(loc) => {{", ty.name, variant_name)
+                        write(3, "{}::{} {{ loc }} => {{", ty.name, variant_name)
                         write(4, "*loc")
                         write(3, "}}", ty.name, variant_name)
                     elif isinstance(variant_ty, dict):
@@ -591,17 +591,15 @@ class Enum(AggregateTypeDecl):
             else:
                 yield var
 
-    def is_c_like_enum(self):
-        """True if this enum is "C-like", having only unit-like variants."""
-        return all(ty is None for ty in self.variants.values())
-
     def write_rust_type_decl(self, ast, write):
         write(0, "#[derive(Debug, PartialEq)]")
         lifetime_params = self.lifetime_params()
         write(0, "pub enum {}{} {{", self.name, lifetime_params)
         for variant_name, ty in self.variants.items():
             if ty is None:
-                write(1, "{}(SourceLocation),", variant_name)
+                write(1, "{} {{", variant_name)
+                write(2, "loc: SourceLocation,")
+                write(1, "},")
             elif isinstance(ty, dict):
                 write(1, "{} {{", variant_name)
                 for field_name, field_ty in ty.items():
@@ -617,7 +615,7 @@ class Enum(AggregateTypeDecl):
         write(2, "match ast {")
         for variant_name, variant_type in self.variants.items():
             if variant_type is None:
-                write(3, "{}::{}(_) => (),", self.name, variant_name)
+                write(3, "{}::{} {{ .. }} => (),", self.name, variant_name)
             elif isinstance(variant_type, dict):
                 write(3, "{}::{} {{ {}, .. }} => {{", self.name, variant_name, ', '.join(variant_type.keys()))
                 for field_name, field_ty in variant_type.items():
@@ -656,7 +654,7 @@ class Enum(AggregateTypeDecl):
         write(2, "match ast {")
         for variant_name, ty in self.variants.items():
             if ty is None:
-                write(3, "{}::{}(_) => T::Value::default(),", self.name, variant_name)
+                write(3, "{}::{} {{ .. }} => T::Value::default(),", self.name, variant_name)
             elif isinstance(ty, dict):
                 write(3, "{}::{} {{ {}, .. }} => {{", self.name, variant_name, ", ".join(ty.keys()))
 
