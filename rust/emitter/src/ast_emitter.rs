@@ -96,7 +96,11 @@ impl AstEmitter {
             Statement::TryFinallyStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: TryFinallyStatement"));
             }
-            Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast)?,
+            Statement::VariableDeclarationStatement(_ast) => {
+                return Err(EmitError::NotImplemented(
+                    "TODO: VariableDeclarationStatement",
+                ));
+            }
             Statement::WhileStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WhileStatement"));
             }
@@ -107,35 +111,6 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: FunctionDeclaration"));
             }
         };
-
-        Ok(())
-    }
-
-    fn emit_variable_declaration(&mut self, ast: &VariableDeclaration) -> Result<(), EmitError> {
-        match ast.kind {
-            VariableDeclarationKind::Var { .. } => (),
-            VariableDeclarationKind::Let { .. } => (),
-            VariableDeclarationKind::Const { .. } => (),
-        }
-        for declarator in &ast.declarators {
-            let _ = match &declarator.binding {
-                Binding::BindingPattern(_) => {
-                    return Err(EmitError::NotImplemented("TODO: BindingPattern"));
-                }
-                Binding::BindingIdentifier(ident) => &ident.name.value,
-            };
-            // TODO
-            self.emit.uninitialized();
-            self.emit.init_lexical(0);
-            self.emit.pop();
-
-            if let Some(init) = &declarator.init {
-                self.emit_expression(&*init)?;
-            }
-
-            self.emit.init_lexical(0);
-            self.emit.pop();
-        }
 
         Ok(())
     }
