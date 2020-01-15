@@ -663,6 +663,18 @@ impl<'alloc> AstBuilder<'alloc> {
         })
     }
 
+    // Literal : NumericLiteral
+    //
+    // where NumericLiteral is either:
+    //   * DecimalBigIntegerLiteral
+    //   * NonDecimalIntegerLiteralBigIntLiteralSuffix
+    pub fn bigint_literal(
+        &self,
+        _token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Err(ParseError::NotImplemented("BigInt"))
+    }
+
     // Literal : StringLiteral
     pub fn string_literal(
         &self,
@@ -958,6 +970,18 @@ impl<'alloc> AstBuilder<'alloc> {
             value: self.alloc_str(&format!("{:?}", Self::numeric_literal_value(token))),
             loc,
         }))
+    }
+
+    // LiteralPropertyName : NumericLiteral
+    //
+    // where NumericLiteral is either:
+    //   * DecimalBigIntegerLiteral
+    //   * NonDecimalIntegerLiteralBigIntLiteralSuffix
+    pub fn property_name_bigint(
+        &self,
+        _token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, PropertyName<'alloc>>> {
+        Err(ParseError::NotImplemented("BigInt"))
     }
 
     // ComputedPropertyName : `[` AssignmentExpression `]`

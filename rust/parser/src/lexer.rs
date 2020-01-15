@@ -313,6 +313,11 @@ impl<'alloc> Lexer<'alloc> {
     }
 }
 
+enum NumericType {
+    Normal,
+    BigInt,
+}
+
 impl<'alloc> Lexer<'alloc> {
     // ------------------------------------------------------------------------
     // 11.8.3 Numeric Literals
@@ -390,12 +395,23 @@ impl<'alloc> Lexer<'alloc> {
     /// ```text
     /// NumericLiteral ::
     ///     DecimalLiteral
+    ///     DecimalBigIntegerLiteral
+    ///     NonDecimalIntegerLiteral
+    ///     NonDecimalIntegerLiteral BigIntLiteralSuffix
+    ///
+    /// DecimalBigIntegerLiteral::
+    ///     `0` BigIntLiteralSuffix
+    ///     NonZeroDigit DecimalDigits_opt BigIntLiteralSuffix
+    ///
+    /// NonDecimalIntegerLiteral::
     ///     BinaryIntegerLiteral
     ///     OctalIntegerLiteral
     ///     HexIntegerLiteral
-    ///     LegacyOctalIntegerLiteral
+    ///
+    /// BigIntLiteralSuffix::
+    ///     `n`
     /// ```
-    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, ()> {
+    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, NumericType> {
         match self.peek() {
             // BinaryIntegerLiteral ::
             //     `0b` BinaryDigits
@@ -416,6 +432,11 @@ impl<'alloc> Lexer<'alloc> {
                 }
                 if !at_least_one {
                     return Err(self.unexpected_err());
+                }
+                if let Some('n') = self.peek() {
+                    self.chars.next();
+                    self.check_after_numeric_literal()?;
+                    return Ok(NumericType::BigInt);
                 }
             }
 
@@ -440,6 +461,11 @@ impl<'alloc> Lexer<'alloc> {
                 if !at_least_one {
                     return Err(self.unexpected_err());
                 }
+                if let Some('n') = self.peek() {
+                    self.chars.next();
+                    self.check_after_numeric_literal()?;
+                    return Ok(NumericType::BigInt);
+                }
             }
 
             // HexIntegerLiteral ::
@@ -462,10 +488,21 @@ impl<'alloc> Lexer<'alloc> {
                 if !at_least_one {
                     return Err(self.unexpected_err());
                 }
+                if let Some('n') = self.peek() {
+                    self.chars.next();
+                    self.check_after_numeric_literal()?;
+                    return Ok(NumericType::BigInt);
+                }
             }
 
             Some('.') | Some('e') | Some('E') => {
                 return self.decimal_literal();
+            }
+
+            Some('n') => {
+                self.chars.next();
+                self.check_after_numeric_literal()?;
+                return Ok(NumericType::BigInt);
             }
 
             _ => {
@@ -507,7 +544,8 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
 
-        self.check_after_numeric_literal()
+        self.check_after_numeric_literal()?;
+        Ok(NumericType::Normal)
     }
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
@@ -520,7 +558,7 @@ impl<'alloc> Lexer<'alloc> {
     /// isn't actually doing this yet, so we fail to parse literals like
     /// `091.1`.
     ///
-    fn decimal_literal(&mut self) -> Result<'alloc, ()> {
+    fn decimal_literal(&mut self) -> Result<'alloc, NumericType> {
         // DecimalLiteral ::
         //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
         //     `.` DecimalDigits ExponentPart?
@@ -536,12 +574,21 @@ impl<'alloc> Lexer<'alloc> {
         //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
 
         self.decimal_digits();
-        if self.peek() == Some('.') {
-            self.chars.next();
-            self.decimal_digits();
+        match self.peek() {
+            Some('.') => {
+                self.chars.next();
+                self.decimal_digits();
+            }
+            Some('n') => {
+                self.chars.next();
+                self.check_after_numeric_literal()?;
+                return Ok(NumericType::BigInt);
+            }
+            _ => {}
         }
         self.optional_exponent()?;
-        self.check_after_numeric_literal()
+        self.check_after_numeric_literal()?;
+        Ok(NumericType::Normal)
     }
 
     fn check_after_numeric_literal(&self) -> Result<'alloc, ()> {
@@ -1023,25 +1070,43 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '0' => {
-                    self.numeric_literal_starting_with_zero()?;
-
-                    // Don't have to push_matching since push_different is never called.
-                    return Ok((
-                        SourceLocation::new(start, self.offset()),
-                        Some(builder.finish(&self)),
-                        TerminalId::NumericLiteral,
-                    ));
+                    match self.numeric_literal_starting_with_zero()? {
+                        NumericType::Normal => {
+                            // Don't have to push_matching since push_different is never called.
+                            return Ok((
+                                SourceLocation::new(start, self.offset()),
+                                Some(builder.finish(&self)),
+                                TerminalId::NumericLiteral,
+                            ));
+                        }
+                        NumericType::BigInt => {
+                            return Ok((
+                                SourceLocation::new(start, self.offset()),
+                                Some(builder.finish_without_push(&self)),
+                                TerminalId::BigIntLiteral,
+                            ));
+                        }
+                    }
                 }
 
                 '1'..='9' => {
-                    self.decimal_literal()?;
-
-                    // Don't have to push_matching since push_different is never called.
-                    return Ok((
-                        SourceLocation::new(start, self.offset()),
-                        Some(builder.finish(&self)),
-                        TerminalId::NumericLiteral,
-                    ));
+                    match self.decimal_literal()? {
+                        NumericType::Normal => {
+                            // Don't have to push_matching since push_different is never called.
+                            return Ok((
+                                SourceLocation::new(start, self.offset()),
+                                Some(builder.finish(&self)),
+                                TerminalId::NumericLiteral,
+                            ));
+                        }
+                        NumericType::BigInt => {
+                            return Ok((
+                                SourceLocation::new(start, self.offset()),
+                                Some(builder.finish_without_push(&self)),
+                                TerminalId::BigIntLiteral,
+                            ));
+                        }
+                    }
                 }
 
                 '"' | '\'' => {

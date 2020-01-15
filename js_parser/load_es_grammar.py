@@ -61,6 +61,7 @@ ECMASCRIPT_TOKEN_NAMES = [
     'NoSubstitutionTemplate',
     'NullLiteral',
     'NumericLiteral',
+    'BigIntLiteral',
     'RegularExpressionLiteral',
     'StringLiteral',
     'TemplateHead',

@@ -72,6 +72,8 @@ Literal :
     => boolean_literal($0)
   NumericLiteral
     => numeric_literal($0)
+  BigIntLiteral
+    => bigint_literal($0)
   StringLiteral
     => string_literal($0)
 
@@ -153,6 +155,8 @@ LiteralPropertyName :
     => property_name_string($0)
   NumericLiteral
     => property_name_numeric($0)
+  BigIntLiteral
+    => property_name_bigint($0)
 
 @returns PropertyName
 ComputedPropertyName[Yield, Await] :
