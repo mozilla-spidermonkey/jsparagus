@@ -1820,6 +1820,12 @@ impl<'alloc> AstBuilder<'alloc> {
                 ),
             ),
 
+            Expression::CallExpression { .. } => {
+                return Err(ParseError::NotImplemented(
+                    "Assignment to CallExpression is allowed for non-strict mode.",
+                ));
+            }
+
             _ => {
                 return Err(ParseError::InvalidAssignmentTarget);
             }
