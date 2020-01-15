@@ -402,14 +402,14 @@ impl AstEmitter {
         // depends on how you're using the super
         match callee {
             ExpressionOrSuper::Expression(expr) => match &**expr {
-                Expression::IdentifierExpression(
-                    IdentifierExpression { name, .. },
-                ) => {
+                Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
                     self.emit_expression(expr)?;
                     self.emit.g_implicit_this(name.value);
                 }
                 _ => {
-                    return Err(EmitError::NotImplemented("TODO: Call (only global functions are supported)"));
+                    return Err(EmitError::NotImplemented(
+                        "TODO: Call (only global functions are supported)",
+                    ));
                 }
             },
             _ => {

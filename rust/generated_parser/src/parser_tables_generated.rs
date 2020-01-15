@@ -12127,7 +12127,7 @@ pub fn reduce<'alloc>(
         446 => {
             // Literal ::= NumericLiteral => numeric_literal($0)
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
-            stack.push(TryIntoStack::try_into_stack(handler.numeric_literal(x0))?);
+            stack.push(TryIntoStack::try_into_stack(handler.numeric_literal(x0)?)?);
             Ok(NonterminalId::Literal)
         }
         447 => {
@@ -13493,7 +13493,7 @@ pub fn reduce<'alloc>(
             // LiteralPropertyName ::= NumericLiteral => property_name_numeric($0)
             let x0: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
-                handler.property_name_numeric(x0),
+                handler.property_name_numeric(x0)?,
             )?);
             Ok(NonterminalId::LiteralPropertyName)
         }

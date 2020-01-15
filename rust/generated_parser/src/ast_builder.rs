@@ -644,23 +644,24 @@ impl<'alloc> AstBuilder<'alloc> {
         })
     }
 
-    fn numeric_literal_value(token: arena::Box<'alloc, Token<'alloc>>) -> f64 {
+    fn numeric_literal_value(token: arena::Box<'alloc, Token<'alloc>>) -> Result<'alloc, f64> {
         let s = token.unbox().value.unwrap();
 
         // BUG: Not all syntax is supported yet.
-        s.parse::<f64>().unwrap_or(std::f64::NAN)
+        s.parse::<f64>()
+            .map_err(|_| ParseError::NotImplemented("Cannot parse numeric literal"))
     }
 
     // Literal : NumericLiteral
     pub fn numeric_literal(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
         let loc = token.loc;
-        self.alloc(Expression::LiteralNumericExpression {
-            value: Self::numeric_literal_value(token),
+        Ok(self.alloc(Expression::LiteralNumericExpression {
+            value: Self::numeric_literal_value(token)?,
             loc,
-        })
+        }))
     }
 
     // Literal : NumericLiteral
@@ -964,12 +965,14 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn property_name_numeric(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, PropertyName<'alloc>>> {
         let loc = token.loc;
-        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: self.alloc_str(&format!("{:?}", Self::numeric_literal_value(token))),
-            loc,
-        }))
+        Ok(
+            self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+                value: self.alloc_str(&format!("{:?}", Self::numeric_literal_value(token)?)),
+                loc,
+            })),
+        )
     }
 
     // LiteralPropertyName : NumericLiteral
