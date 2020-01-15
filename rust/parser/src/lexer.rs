@@ -742,7 +742,7 @@ impl<'alloc> Lexer<'alloc> {
                     if c == delimiter {
                         return Ok((
                             SourceLocation::new(offset, self.offset()),
-                            Some(builder.finish(&self)),
+                            Some(builder.finish_without_push(&self)),
                             TerminalId::StringLiteral,
                         ));
                     } else {
@@ -947,14 +947,14 @@ impl<'alloc> Lexer<'alloc> {
                 self.chars.next();
                 return Ok((
                     SourceLocation::new(start, self.offset()),
-                    Some(builder.finish(&self)),
+                    Some(builder.finish_without_push(&self)),
                     subst,
                 ));
             }
             if ch == '`' {
                 return Ok((
                     SourceLocation::new(start, self.offset()),
-                    Some(builder.finish(&self)),
+                    Some(builder.finish_without_push(&self)),
                     tail,
                 ));
             }
@@ -1379,6 +1379,14 @@ impl<'alloc> AutoCow<'alloc> {
         match self.value.take() {
             Some(arena_string) => arena_string.into_bump_str(),
             None => &self.start[..self.start.len() - lexer.chars.as_str().len()],
+        }
+    }
+
+    // Just like finish, but without pushing current char.
+    fn finish_without_push(&mut self, lexer: &Lexer<'alloc>) -> &'alloc str {
+        match self.value.take() {
+            Some(arena_string) => arena_string.into_bump_str(),
+            None => &self.start[..self.start.len() - lexer.chars.as_str().len() - 1],
         }
     }
 }
