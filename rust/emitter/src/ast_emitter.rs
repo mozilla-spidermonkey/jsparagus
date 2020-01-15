@@ -401,13 +401,21 @@ impl AstEmitter {
         // Don't do super handling in an emit_expresion_or_super because the bytecode heavily
         // depends on how you're using the super
         match callee {
-            ExpressionOrSuper::Expression(ast) => self.emit_expression(ast)?,
-            ExpressionOrSuper::Super { .. } => {
+            ExpressionOrSuper::Expression(expr) => match &**expr {
+                Expression::IdentifierExpression(
+                    IdentifierExpression { name, .. },
+                ) => {
+                    self.emit_expression(expr)?;
+                    self.emit.g_implicit_this(name.value);
+                }
+                _ => {
+                    return Err(EmitError::NotImplemented("TODO: Call (only global functions are supported)"));
+                }
+            },
+            _ => {
                 return Err(EmitError::NotImplemented("TODO: Super"));
             }
         }
-
-        self.emit.g_implicit_this("asdf");
 
         self.emit_arguments(arguments)?;
         self.emit.call(arguments.args.len() as u16);
