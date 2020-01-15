@@ -181,12 +181,16 @@ Then you can:
 
 *   To see your parser run, `make jsdemo` (or `python -m js_parser.try_it`).
 
-*   The rust version of the JS parser can be generated using:
+*   To see the rust project in action do the following steps.
 
+    First generate the parser:
     ```sh
     python3 -m js_parser.generate_js_parser_tables --progress -o js_parser/parser_generated.jsparagus_dump
     python3 -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o rust/parser/src/parser_generated.rs
-    cd rust/parser
+    ```
+    Then build all the rust crates and run the `driver` crate which let's you test the JS parser and bytecode emitter:
+    ```
+    cd rust
     cargo run
     ```
 
