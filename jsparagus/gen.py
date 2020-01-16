@@ -1480,6 +1480,8 @@ class StateAndTransitions:
         "nonterminals", # Non-terminals map.
         "epsilon",      # List of epsilon transitions with associated actions.
         "locations",    # Ordered set of LRItems (grammar position).
+        "backedges",    # List of back edges and whether these are expected to
+                        # be on the parser stack or not.
     ]
 
     def __init__(self, index):
@@ -1488,6 +1490,7 @@ class StateAndTransitions:
         self.nonterminals = {}
         self.epsilon = []
         self.locations = None
+        self.backedges = set()
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
@@ -1533,9 +1536,38 @@ class Action:
         self.read = read
         self.write = write
 
-    def is_unordered_condition(self):
+    def is_condition(self):
         "Unordered condition, which accept or not to reach the next state."
         return False
+    def update_stack(self):
+        "Change the parser stack, and resume at a different location. If this function
+        is defined, then the function resume_with should be implemented."
+        return False
+    def reduce_with(self):
+        "Returns the non-terminal with which this action is reducing with."
+        assert self.update_stack()
+        raise TypeError("Action::reduce_to not implemented.")
+    def shifted_action(self, shifted_terms):
+        "Returns the same action shifted by a given amount."
+        return self
+
+    def maybe_add(self, other):
+        """Implement the fact of concatenating actions into a new action which can have
+        a single state instead of multiple states which are following each others."""
+        actions = []
+        if isinstance(self, Seq):
+            actions.extend(list(self.actions))
+        else:
+            actions.append(self)
+        if isinstance(other, Seq):
+            actions.extend(list(other.actions))
+        else:
+            actions.append(other)
+        if any([a.is_condition() for a in actions]):
+            return None
+        if any([a.update_stack() for a in actions[:-1]]):
+            return None
+        return Seq(actions)
 
     def __eq__(self, other):
         if self.__class__ != other.__class__:
@@ -1565,54 +1597,61 @@ class Reduce(Action):
         super().__init__([], ["nt_" + nt.name])
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
-        self.replay = replay # Number of popped elements to match the production.
+        self.replay = replay # List of terms to shift back
     def __str__(self):
         return "Reduce({}, {}, {})".format(self.nt, self.pop, self.replay)
+    def update_stack(self):
+        return True
+    def reduce_with(self):
+        return self
+    def shifted_action(self, shifted_terms):
+        return Reduce(self.nt, self.pop, replay = self.replay + len(shifted_terms))
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
     sequences of terminal/non-terminals sequences."""
     __slots__ = 'sequences', 'accept'
     def __init__(self, sequences, accept):
+        assert isinstance(accept, bool)
         super().__init__([], [])
         self.sequences = sequences,
         self.accept = accept
-    def is_unordered_condition(self):
+    def is_condition(self):
         return True
     def __str__(self):
-        return "Lookahead({}, {})".format(self.sequence, self.accept)
-
-class FilterStack(Action):
-    """Check whether the stack contains a given state at the given offset. This is
-    used for checking the context of a rule without loosing the sharing of LR0
-    parse table. """
-    __slots__ = 'state', 'offset'
-    def __init__(self, state, offset):
-        super().__init__([], [])
-        self.state = state,
-        self.offset = offset
-    def is_unordered_condition(self):
-        # TODO: It is not unordered!
-        return True
-    def __str__(self):
-        return "FilterStack({}, {})".format(self.state, self.offset)
+        return "Lookahead({}, {})".format(self.sequences, self.accept)
+    def shifted_action(self, shifted_terms):
+        shift = len(shifted_terms)
+        new_seqs = []
+        match = False
+        for seq in self.sequences:
+            if shifted_terms[:len(seq)] = seq[:shift]:
+                if seq[shift:] == []:
+                    return self.accept
+                new_seqs.append(seq[shift:])
+        if new_seqs == []:
+            return not self.accept
+        return Lookahead(new_seqs, accept)
 
 class FilterFlag(Action):
-    """Define a new action which check g has th[ e for e in e expected value. If so
-    the Error state. """
+    """Define a filter which check for one value of the flag, and continue to the
+    next state if the top of the flag stack matches the expected value."""
     __slots__ = 'flag', 'accept'
     def __init__(self, flag, accept):
         super().__init__(["flag_" + flag], [])
         self.flag = flag,
         self.accept = accept
-    def is_unordered_condition(self):
-        # TODO: It is not unordered!
+    def is_condition(self):
         return True
     def __str__(self):
         return "FilterFlag({}, {})".format(self.flag, self.accept)
 
 class PushFlag(Action):
-    """Define an action which pushes a flag as set or unset on the flag bit stack."""
+    """Define an action which pushes a value on a stack dedicated to the flag. This
+    other stack correspond to another parse stack which live next to the
+    default state machine and is popped by PopFlag, as-if this was another
+    reduce action. This is particularly useful to raise the parse table from a
+    LR(0) to an LR(k) without needing as much state duplications."""
     __slots__ = 'flag', 'value'
     def __init__(self, flag, value):
         super().__init__([], ["flag_" + flag])
@@ -1643,6 +1682,32 @@ class FunCall(Action):
         self.read_len = read_len # Range of numbers which can be read.
     def __str__(self):
         return "FunCall({}, {}, {})".format(self.method, self.offset, self.read_len)
+    def shifted_action(self, shifted_terms):
+        shift = len(shifted_terms)
+        return FunCall(self.method, self.read, self.write, self.read_len, offset = self.offset + shift)
+
+class Seq(Action):
+    """Aggregate multiple actions in one statement. Note, that the aggregated
+    actions should not contain any condition or action which are mutating the
+    state. Only the last action aggregated can update the parser stack"""
+    __slots__ = 'actions'
+    def __init__(self, actions):
+        assert isinstance(actions, list)
+        read = [ rd for a in actions for rd in a.read ]
+        write = [ wr for a in actions for wr in a.write ]
+        super().__init__(read, write)
+        self.actions = tuple(actions)   # Ordered list of actions to execute.
+        assert all([not a.is_condition() for a in actions])
+        assert all([not a.update_stack() for a in actions[:-1]])
+    def __str__(self):
+        return "Seq({})".format(repr(self.actions))
+    def update_stack(self):
+        return self.actions[-1].update_stack()
+    def reduce_with(self):
+        return self.actions[-1].reduce_with()
+    def shifted_action(self, shift = 1):
+        actions = list(map(lambda a: a.shifted_action(shift), self.actions))
+        return Seq(actions)
 
 def on_stack(grammar, term):
     """Returns whether an element of a production is consuming stack space or
@@ -1783,6 +1848,29 @@ class LR0Generator:
 #   actions: This is the list of actions that would be executed as we push
 #          edges.
 APS = collections.namedtuple("APS", "stack shift lookahead actions")
+
+# A Lane table is a structure used to represent the conflicting and add context
+# surrounding these conflicting states.
+#
+class LaneTable:
+    __slots__ = "table", "actions", "states", "successors"
+
+    def __init__(self, table, start_state):
+        self.table = table
+        self.states = [start_state]
+        # List of actions to be executed.
+        self.actions = []
+        self.successors = {} # Map states with their list of successors.
+
+    def increase_lookahead(self):
+        for s in self.states:
+            for term, to in self.table.states[s].edges():
+                if isinstance(term, Action):
+                    # Add the action to the list of actions to be executed, if
+                    # it matches the expectation.
+                    pass
+                elif not isinstance(term, Nt):
+                    pass
 
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
@@ -1937,21 +2025,156 @@ class ParseTable:
                         # We already traversed this state before.
                         continue
                     if isinstance(term, Action):
-                        if isinstance(term, Reduce):
-                            assert term.replay == 0
+                        to.backedges.add((state.index, term, False))
+                        if term.update_stack():
+                            nt = term.reduce_with()
                             # NOTE: the first state is the state before
                             # shifting the first terminals/non-terminals of the
                             # Nt production.
                             incoming = tuple(shifted[-1 - term.pop:])
-                            if incoming not in self.reduce_paths[term.nt]:
-                                self.reduce_paths[term.nt].add(tuple(incoming))
+                            if incoming not in self.reduce_paths[nt]:
+                                self.reduce_paths[nt].add(tuple(incoming))
                             if verbose:
-                                print("\nReduce {} as {}.".format(repr(incoming), term.nt.name))
+                                print("\nReduce {} as {}.".format(repr(incoming), nt.name))
                         else:
                             todo.append(shifted[:-1] + [to])
                     else:
+                        to.backedges.add((state.index, term, True))
                         todo.append(shifted + [to])
         consume(visit_table(), progress)
+
+    def shifted_path_to(self, state, n):
+        "Compute all paths with n shifted terms, ending with state."
+        if n == 0:
+            return [[(state, None, True)]]
+        paths = []
+        for s, term, stacked in self.states[state].backedges:
+            s_n = n
+            if stacked:
+                s_n = n - 1
+            for path in self.shifted_path_to(s, s_n):
+                paths.append(path + [(state, term, stacked)])
+        return paths
+
+    def reduce_path(self, state, action):
+        "Compute all paths which might be reduced by a given action."
+        assert action.update_stack()
+        action = action.reduce_with()
+        assert isinstance(action, Reduce)
+        depth = action.pop + action.replay
+        for path in self.shifted_path_to(state, depth):
+            sh_path = [ s for s, _, _ in path ]
+            head = self.states[sh_path[0]]
+            assert action.nt in head.nonterminals
+            to = head.nonterminals[action.nt]
+            yield sh_path, path, to
+
+    def aps_shift_with_epsilon(self, aps, shifted_terms):
+        if shifted_terms == []:
+            return [aps]
+        term = shifted_terms[0]
+        rest = shifted_terms[1:]
+        st, sh, la, ac = aps
+        state = self.states[sh[-1]]
+        next_list = []
+        if term in state.terminals:
+            to = state.terminals[term]
+            new_aps = APS(st, sh + [to], la + [term], ac + [term])
+            res = self.aps_shift_with_epsilon(new_aps, rest)
+            next_list.extend(res)
+        elif term in state.nonterminals:
+            to = state.nonterminals[term]
+            new_aps = APS(st, sh + [to], la + [term], ac + [term])
+            res = self.aps_shift_with_epsilon(new_aps, rest)
+            next_list.extend(res)
+        elif term is None:
+            for term, to in itertools.chains(state.terminals, state.nonterminals):
+                new_aps = APS(st, sh + [to], la + [term], ac + [term])
+                res = self.aps_shift_with_epsilon(new_aps, rest)
+                next_list.extend(res)
+
+        for a, to in state.epsilon:
+            if isinstance(term, Action) and a != term:
+                continue
+            if a.update_stack():
+                for sh_path, path, to in self.reduce_path(state, a):
+                    # reduce_paths contains the chains of state shifted,
+                    # including epsilon transitions, in order to reduce the
+                    # nonterminal. When reducing, the stack is resetted to
+                    # head, and the nonterminal `term.nt` is pushed, to resume
+                    # in the state `to`.
+                    if sh[-len(sh_path):] != sh_path[-len(sh):]:
+                        # If the reduced production does not match the
+                        # shifted state, then this reduction does not
+                        # apply.
+                        continue
+                    new_st = sh_path[:max(len(sh_path) - len(sh), 0)] + st
+                    new_sh = sh[:-len(sh_path)] + [sh_path[0], to]
+                    new_aps = APS(new_st, new_sh, la, ac + [term])
+                    # When reducing, we replay terms which got previously
+                    # pushed on the stack as our lookahead. These terms are
+                    # computed here such that we can traverse the graph from
+                    # `to` state, using the replayed terms.
+                    replay = [ t for _, t, on_stack for path if on_stack ]
+                    replay = [max(len(replay) - a.replay, 0):]
+                    new_la = la[:max(len(la) - a.replay, 0)]
+                    new_aps = APS(new_st, new_sh, new_la, ac + [term])
+                    res = self.aps_shift_with_epsilon(new_aps, replay + rest)
+                    next_list.extend(res)
+            else:
+                new_aps = APS(st, sh + [to], la, ac + [term])
+                res = self.aps_shift_with_epsilon(new_aps, rest)
+                next_list.extend(res)
+
+    def lanes(self, state, lookahead = 1):
+        "Compute the lanes from the amount of lookahead available. Only consider
+        context when reduce states are encountered."
+        start = APS([s], [s], [], [])
+        lookahead = list(map(lambda x: None, range(lookahead)))
+        return self.aps_shift_with_epsilon(start, lookahead)
+
+    # Lane Table algorithms will look for lookahead, and then context. This is
+    # done by traversing the graph until there is at least some context. The
+    # table is a matrix of State x Actions -> LookAhead
+    #
+    # Question: Why does this work on shift reduce?
+    #
+    # When traversing the graph, we register the current inconsistent state in
+    # the table.
+    #
+    #          A1        A2        A3         Successors
+    #   S10    {"c"}     {"d"}     {"d"}        {S11, S12}
+    #
+    # The table is filled with the lookahead available even after reducing a
+    # state. When a state is reduced, then the lane table should be completed
+    # with the path which can be seen.
+    #
+    # If A1 is a reduce action, then we add back whatever past may exist to
+    # resolve A1.
+    def compute_lane_table(self, s):
+        # The number of resolution corresponds to the number of actions, plus
+        # one for shifted tokens.
+        actions = set()
+        for k, to in self.states[s].edges():
+            if isinstance(k, Action):
+                actions.add(k)
+            elif not isinstance(k, Nt):
+                actions.add(k)
+
+        Lane = collections.namedtuple("Lane", "state actions successors")
+        def fill_lane_table(head, tail):
+            for term, to in self.states[tail].edges():
+                if isinstance(term, Action):
+                    if isinstance(term, Reduce):
+                        for prod in self.reduce_paths[term.nt]:
+                            prod = list(prod)
+                            head = self.states[prod[0]]
+                            to = head.nonterminals[term.nt]
+                            fill_lane_table(head, tail)
+
+                elif not isinstance(term, Nt):
+                    lane_table.add( (s, None, term) )
+
 
     def next_lookahead_aps(self, aps, st_min, la_min, accept, reject):
         """From a starting state, this function looks from a starting state to reach
@@ -2212,7 +2435,7 @@ class ParseTable:
             tree[cond] = self.build_decision_tree(lookaround)
         return tree
 
-    def fix_inconsistent_state(self, s, decision_tree, depth = 0):
+    def fix_inconsistent_state_old(self, s, decision_tree, depth = 0):
         """We manage to build a non-ambiguous lookaround table for the inconsistent
         state. Our goal is now to convert the lookaround table in a decision tree."""
 
@@ -2241,6 +2464,96 @@ class ParseTable:
             assert isinstance(decision_tree, dict)
             pass
         return
+
+    def fix_inconsistent_state(self, s, todo):
+        # Fix inconsistent states works one state at a time. The goal is to
+        # achieve the same method as the Lane Tracer, but instead of building a
+        # table to then mutate the parse state, we mutate the parse state
+        # directly.
+        #
+        # This strategy is simpler, and should be able to reproduce the same
+        # graph mutations as seen with Lane Table algorithm. One of the problem
+        # with the Lane Table algorithm is that it assume reduce operations,
+        # and as such it does not apply simply to epsilon transitions which are
+        # used as conditions on the parse table.
+        #
+        # By using push-flag and filter-flag actions, we are capable to
+        # decompose the Lane Table transformation of the parse table into
+        # multiple steps which are working one step at a time, and with less
+        # table state duplication.
+
+        state = self.states[s]
+        if not state.is_inconsistent():
+            return
+
+        all_reduce = all([ a.update_stack() for a, _ in state.epsilon ])
+        any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
+        aps_lanes = self.lanes(s, 1)
+        if all_reduce and not any_shift:
+            # NOTE: we could apply this strategy even when we have some shift
+            # operations, but this would imply that we should get rid of the
+            # newly introduced flags by completely duplicating the state
+            # machine. The reason being that this strategy introduce filtering
+            # actions which are also ambiguous, and the only way to get rid of
+            # these is by folding these actions with the matching pop action.
+            #
+            # Find the all lanes reducing to each reduce action.
+            lanes = defaultdict(lambda: list()) # Action -> Lanes
+            state_actions = defaultdict(lambda: set()) # Action -> States
+            for aps in aps_lanes:
+                action = aps.actions[0]
+                assert action.update_stack()
+                lanes[action].append(aps.stack)
+                for st in aps.stack:
+                    state_actions[st].add(action)
+
+            # Find lane heads. Lane heads are supposed to be the first state
+            # which belong to the reduced production. However, for our case, we
+            # consider lane heads as the first state which resolve uniquely to
+            # one reduce action.
+            lanes_head = defaultdict(lambda: [])
+            rejected_states = defaultdict(lambda: set())
+            for aps in aps_lanes:
+                action = aps.actions[0]
+                if not any(len(state_actions[s]) == 1 for s in aps.stack):
+                    # TODO: Should we assert that all the states of this lane
+                    # are covered by the accepted lanes with a lane head.
+                    for s in aps.stack:
+                        rejected_states[action].add(s)
+                    continue
+                # TODO: strip the lane head front until we have only one lane
+                # head in each lane.
+                lanes_head[action].append(aps.stack)
+
+            # For disjoint lane heads, create a new flag, and push it after
+            # each lane head, pop it before all the reduce of the same
+            # non-terminal, and filter it to remove conflicts.
+            #
+            # TODO: For the moment do not even try, and just fail.
+            # For non-disjoint lane heads, shift the equivalent non-terminals
+            # (or create one to represent the ambiguous state?) and move both
+            # edges after the reduced non-terminal.
+            return
+
+        else:
+            assert any_shift
+            # Find the list of terminals following each actions (even reduce
+            # actions).
+            #
+            # For each terminal, associate a set of state and actions which
+            # would have to be executed.
+            #
+            # For each elements of the set of state and actions, create a new
+            # state which merges all the combinations.
+            #
+            # For each action:
+            #   Create a new state with only the corresponding action as a successor.
+            #   For each lookahead:
+            #     If it exists in the current state, copy the target state content to the action's state.
+            #   If any lookahead overlapped, add the state to the todo list.
+            #
+            # TODO: How do we prevent loops?
+
 
     def fix_inconsistent_table(self, verbose, progress):
         """The parse table might be inconsistent. We fix the parse table by looking
