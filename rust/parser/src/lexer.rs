@@ -798,7 +798,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 Some('\\') => {
-                    let text = builder.get_mut_string(&self);
+                    let text = builder.get_mut_string_without_current_ascii_char(&self);
                     self.escape_sequence(text)?;
                 }
 
@@ -861,7 +861,7 @@ impl<'alloc> Lexer<'alloc> {
                                 break;
                             }
                             Some('\\') => {
-                                let text = builder.get_mut_string(&self);
+                                let text = builder.get_mut_string_without_current_ascii_char(&self);
                                 self.regular_expression_backslash_sequence(text)?;
                             }
                             Some(ch) => {
@@ -872,7 +872,7 @@ impl<'alloc> Lexer<'alloc> {
                     builder.push_matching(']');
                 }
                 Some('\\') => {
-                    let text = builder.get_mut_string(&self);
+                    let text = builder.get_mut_string_without_current_ascii_char(&self);
                     self.regular_expression_backslash_sequence(text)?;
                 }
                 Some(ch) => {
@@ -1007,7 +1007,7 @@ impl<'alloc> Lexer<'alloc> {
             }
             // TODO: Support escape sequences.
             if ch == '\\' {
-                let text = builder.get_mut_string(&self);
+                let text = builder.get_mut_string_without_current_ascii_char(&self);
                 self.escape_sequence(text)?;
             } else {
                 builder.push_matching(ch);
@@ -1423,17 +1423,15 @@ impl<'alloc> AutoCow<'alloc> {
         }
     }
 
-    // Push a char that does not match lexer.chars.next() (for example, string escapes)
-    #[allow(dead_code)]
-    fn push_different(&mut self, lexer: &Lexer<'alloc>, c: char) {
-        self.get_mut_string(lexer).push(c);
-    }
-
-    // Force allocation of a String and return the reference to it
-    fn get_mut_string<'b>(&'b mut self, lexer: &'_ Lexer<'alloc>) -> &'b mut String<'alloc> {
+    // Force allocation of a String, excluding the current ASCII character,
+    // and return the reference to it
+    fn get_mut_string_without_current_ascii_char<'b>(
+        &'b mut self,
+        lexer: &'_ Lexer<'alloc>,
+    ) -> &'b mut String<'alloc> {
         if self.value.is_none() {
             self.value = Some(String::from_str_in(
-                &self.start[..self.start.len() - lexer.chars.as_str().len()],
+                &self.start[..self.start.len() - lexer.chars.as_str().len() - 1],
                 lexer.allocator,
             ));
         }
