@@ -534,13 +534,16 @@ impl<'alloc> Lexer<'alloc> {
                 //
 
                 // TODO: implement `strict_mode` check
-                let strict_mode = true;
-                if !strict_mode {
-                    // TODO: Distinguish between Octal and NonOctalDecimal.
-                    // TODO: Support NonOctalDecimal followed by a decimal
-                    //       point and/or ExponentPart.
-                    self.decimal_digits();
-                }
+                // let strict_mode = true;
+                // if !strict_mode {
+                //     // TODO: Distinguish between Octal and NonOctalDecimal.
+                //     // TODO: Support NonOctalDecimal followed by a decimal
+                //     //       point and/or ExponentPart.
+                //     self.decimal_digits();
+                // }
+                return Err(ParseError::NotImplemented(
+                    "LegacyOctalIntegerLiteral",
+                ));
             }
         }
 
