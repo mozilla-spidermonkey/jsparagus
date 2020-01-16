@@ -193,7 +193,6 @@ impl<'alloc> Lexer<'alloc> {
 // 11.6 Names and Keywords
 
 /// True if `c` is a one-character *IdentifierStart*.
-/// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
 ///
 /// ```text
 /// IdentifierStart ::
@@ -211,7 +210,6 @@ fn is_identifier_start(c: char) -> bool {
 }
 
 /// True if `c` is a one-character *IdentifierPart*.
-/// (TODO: Handle *UnicodeEscapeSequence* elsewhere.)
 ///
 /// ```text
 /// IdentifierPart ::
@@ -244,8 +242,6 @@ impl<'alloc> Lexer<'alloc> {
     ///     IdentifierStart
     ///     IdentifierName IdentifierPart
     /// ```
-    ///
-    /// TODO: Implement *UnicodeEscapeSequence*.
     fn identifier(
         &mut self,
         offset: usize,
@@ -253,6 +249,19 @@ impl<'alloc> Lexer<'alloc> {
     ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
+                if ch == '\\' {
+                    self.chars.next();
+                    builder.force_allocation_without_current_ascii_char(&self);
+
+                    let value = self.unicode_escape_sequence_after_backslash()?;
+                    if !is_identifier_part(value) {
+                        return Err(ParseError::InvalidEscapeSequence);
+                    }
+
+                    builder.push_different(value);
+                    continue;
+                }
+
                 break;
             }
             self.chars.next();
@@ -310,6 +319,43 @@ impl<'alloc> Lexer<'alloc> {
         };
 
         Ok((SourceLocation::new(offset, self.offset()), Some(text), id))
+    }
+
+    /// ```text
+    /// UnicodeEscapeSequence::
+    /// `u` Hex4Digits
+    /// `u{` CodePoint `}`
+    /// ```
+    fn unicode_escape_sequence_after_backslash(&mut self) -> Result<'alloc, char> {
+        match self.chars.next() {
+            Some('u') => {}
+            _ => {
+                return Err(ParseError::InvalidEscapeSequence);
+            }
+        }
+        self.unicode_escape_sequence_after_backslash_and_u()
+    }
+
+    fn unicode_escape_sequence_after_backslash_and_u(&mut self) -> Result<'alloc, char> {
+        let value = match self.peek() {
+            Some('{') => {
+                self.chars.next();
+
+                let value = self.code_point()?;
+                match self.chars.next() {
+                    Some('}') => {}
+                    _ => {
+                        return Err(ParseError::InvalidEscapeSequence);
+                    }
+                }
+                value
+            }
+            _ => {
+                self.hex_4_digits()?
+            }
+        };
+
+        Ok(value)
     }
 }
 
@@ -403,12 +449,58 @@ impl<'alloc> Lexer<'alloc> {
     /// ```
     fn hex_digit(&mut self) -> Result<'alloc, u32> {
         match self.chars.next() {
-            None => Err(ParseError::UnterminatedString),
+            None => Err(ParseError::InvalidEscapeSequence),
             Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
             Some(c @ 'a'..='f') => Ok(10 + (c as u32 - 'a' as u32)),
             Some(c @ 'A'..='F') => Ok(10 + (c as u32 - 'A' as u32)),
             Some(other) => Err(ParseError::IllegalCharacter(other)),
         }
+    }
+
+    /// ```text
+    /// Hex4Digits ::
+    ///     HexDigit HexDigit HexDigit HexDigit
+    /// ```
+    fn hex_4_digits(&mut self) -> Result<'alloc, char> {
+        let mut value = 0;
+        for _ in 0..4 {
+            value = (value << 4) | self.hex_digit()?;
+        }
+        char::try_from(value)
+            .map_err(|_| ParseError::InvalidEscapeSequence)
+    }
+
+
+    /// ```text
+    /// CodePoint ::
+    ///     HexDigits but only if MV of HexDigits ≤ 0x10FFFF
+    ///
+    /// HexDigits ::
+    ///    HexDigit
+    ///    HexDigits HexDigit
+    /// ```
+    fn code_point(&mut self) -> Result<'alloc, char> {
+        let mut value = self.hex_digit()?;
+
+        loop {
+            let next = match self.peek() {
+                None => {
+                    return Err(ParseError::InvalidEscapeSequence);
+                }
+                Some(c @ '0'..='9') => c as u32 - '0' as u32,
+                Some(c @ 'a'..='f') => 10 + (c as u32 - 'a' as u32),
+                Some(c @ 'A'..='F') => 10 + (c as u32 - 'A' as u32),
+                Some(_) => break
+            };
+            self.chars.next();
+            value = (value << 4) | next;
+            if value > 0x10FFFF {
+                return Err(ParseError::InvalidEscapeSequence);
+            }
+        }
+
+        char::try_from(value)
+            .map_err(|_| ParseError::InvalidEscapeSequence)
     }
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
@@ -765,28 +857,8 @@ impl<'alloc> Lexer<'alloc> {
                     }
                 }
                 'u' => {
-                    // UnicodeEscapeSequence ::
-                    //     `u` Hex4Digits
-                    //     `u{` CodePoint `}`
-                    //
-                    // Hex4Digits ::
-                    //     HexDigit HexDigit HexDigit HexDigit
-                    //
-                    // CodePoint ::
-                    //     HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
-
-                    let mut value = 0;
-                    for _ in 0..4 {
-                        value = (value << 4) | self.hex_digit()?;
-                    }
-                    match char::try_from(value) {
-                        Err(_) => {
-                            return Err(ParseError::InvalidEscapeSequence);
-                        }
-                        Ok(c) => {
-                            text.push(c);
-                        }
-                    }
+                    let c = self.unicode_escape_sequence_after_backslash_and_u()?;
+                    text.push(c);
                 }
                 '0' => {
                     // In strict mode code and in template literals, the
@@ -1468,6 +1540,17 @@ impl<'alloc> Lexer<'alloc> {
                         builder.push_matching(other);
                         return self.identifier(start, builder);
                     }
+                    if other == '\\' {
+                        builder.force_allocation_without_current_ascii_char(&self);
+
+                        let value = self.unicode_escape_sequence_after_backslash()?;
+                        if !is_identifier_start(value) {
+                            return Err(ParseError::IllegalCharacter(value));
+                        }
+                        builder.push_different(value);
+
+                        return self.identifier(start, builder);
+                    }
                     return Err(ParseError::IllegalCharacter(other));
                 }
             }
@@ -1500,19 +1583,34 @@ impl<'alloc> AutoCow<'alloc> {
         }
     }
 
+    // Push a different character than lexer.chars.next().
+    // force_allocation_without_current_ascii_char must be called before this.
+    fn push_different(&mut self, c: char) {
+        debug_assert!(self.value.is_some());
+        self.value.as_mut().unwrap().push(c)
+    }
+
     // Force allocation of a String, excluding the current ASCII character,
     // and return the reference to it
     fn get_mut_string_without_current_ascii_char<'b>(
         &'b mut self,
         lexer: &'_ Lexer<'alloc>,
     ) -> &'b mut String<'alloc> {
-        if self.value.is_none() {
-            self.value = Some(String::from_str_in(
-                &self.start[..self.start.len() - lexer.chars.as_str().len() - 1],
-                lexer.allocator,
-            ));
-        }
+        self.force_allocation_without_current_ascii_char(lexer);
         self.value.as_mut().unwrap()
+    }
+
+    // Force allocation of a String, excluding the current ASCII character.
+    fn force_allocation_without_current_ascii_char(&mut self,
+                                                   lexer: &'_ Lexer<'alloc>) {
+        if self.value.is_some() {
+            return
+        }
+
+        self.value = Some(String::from_str_in(
+            &self.start[..self.start.len() - lexer.chars.as_str().len() - 1],
+            lexer.allocator,
+        ));
     }
 
     fn finish(&mut self, lexer: &Lexer<'alloc>) -> &'alloc str {
