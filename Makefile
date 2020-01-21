@@ -5,7 +5,7 @@ RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
 RS_AST_OUT = rust/ast/src/types.rs rust/ast/src/visit.rs rust/ast/src/source_location_accessor.rs rust/generated_parser/src/stack_value_generated.rs
 PYTHON = python3
 
-all: $(PY_OUT) $(RS_AST_OUT) $(RS_TABLES_OUT)
+all: $(PY_OUT) rust
 
 ECMA262_SPEC_HTML = ../tc39/ecma262/spec.html
 STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
@@ -48,6 +48,9 @@ $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE) $(HANDLER_INFO_OUT)
 $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
+rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
+	cd rust && cargo build
+
 check: all
 	./test.sh
 	cd rust && cargo fmt && cargo test
@@ -55,4 +58,4 @@ check: all
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
 
-.PHONY: all check jsdemo
+.PHONY: all check jsdemo rust
