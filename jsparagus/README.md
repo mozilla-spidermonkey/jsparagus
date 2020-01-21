@@ -10,7 +10,7 @@ jsparagus generates parsers only; it's "bring your own lexer".
 
 Parser generators are complicated. Here's how this works.
 
-1.  **Input.** Jsparagus can load **grammar files** that describe languages.
+1.  **Input.** jsparagus can load **grammar files** that describe languages.
     It's designed, in particular, to handle
     [this `.esgrammar` file that describes JavaScript](https://github.com/jorendorff/jsparagus/blob/master/js_parser/es-simplified.esgrammar),
     but it can handle a variety of languages.
@@ -20,11 +20,26 @@ Parser generators are complicated. Here's how this works.
     To understand what a grammar is, see the comments in
     [grammar.py](https://github.com/jorendorff/jsparagus/blob/master/jsparagus/grammar.py).
 
-2.  **LALR.** Jsparagus runs the LALR parser generator algorithm (a standard algorithm)
-    to generate parser tables.
-    See [gen.py](https://github.com/jorendorff/jsparagus/blob/master/jsparagus/gen.py).
+2.  **LALR.** jsparagus runs the
+    [LALR](https://en.wikipedia.org/wiki/LALR_parser) parser generator
+    algorithm to generate parser tables. See
+    [gen.py](https://github.com/jorendorff/jsparagus/blob/master/jsparagus/gen.py).
     This code also rejects invalid or ambiguous grammars and so on.
-    There are some comments, but some background in parser theory would help.
+
+    There are a few comments in gen.py, but they assume a pretty solid
+    background understanding of parser theory. If you're starting from
+    scratch, check out:
+
+    *   [Crafting
+        Interpreters](http://craftinginterpreters.com/contents.html); or
+
+    *   [Stanford’s CS1 Compilers](https://lagunita.stanford.edu/courses/Engineering/Compilers/Fall2014/about),
+        an excellent, challenging, free course with exercises.
+
+    *   [The Dragon
+        Book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools)
+        by Aho et al. Often hard to follow, but it contains a
+        complete description of LR and LALR.
 
     jsparagus has a few special features geared toward being able to parse
     JavaScript, which [has an idiosyncratic syntax](https://github.com/mozilla-spidermonkey/jsparagus/blob/master/js-quirks.md#js-syntactic-quirks).
