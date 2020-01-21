@@ -350,9 +350,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
                 value
             }
-            _ => {
-                self.hex_4_digits()?
-            }
+            _ => self.hex_4_digits()?,
         };
 
         Ok(value)
@@ -466,10 +464,8 @@ impl<'alloc> Lexer<'alloc> {
         for _ in 0..4 {
             value = (value << 4) | self.hex_digit()?;
         }
-        char::try_from(value)
-            .map_err(|_| ParseError::InvalidEscapeSequence)
+        char::try_from(value).map_err(|_| ParseError::InvalidEscapeSequence)
     }
-
 
     /// ```text
     /// CodePoint ::
@@ -490,7 +486,7 @@ impl<'alloc> Lexer<'alloc> {
                 Some(c @ '0'..='9') => c as u32 - '0' as u32,
                 Some(c @ 'a'..='f') => 10 + (c as u32 - 'a' as u32),
                 Some(c @ 'A'..='F') => 10 + (c as u32 - 'A' as u32),
-                Some(_) => break
+                Some(_) => break,
             };
             self.chars.next();
             value = (value << 4) | next;
@@ -499,8 +495,7 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
 
-        char::try_from(value)
-            .map_err(|_| ParseError::InvalidEscapeSequence)
+        char::try_from(value).map_err(|_| ParseError::InvalidEscapeSequence)
     }
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
@@ -707,9 +702,7 @@ impl<'alloc> Lexer<'alloc> {
                 //     //       point and/or ExponentPart.
                 //     self.decimal_digits()?;
                 // }
-                return Err(ParseError::NotImplemented(
-                    "LegacyOctalIntegerLiteral",
-                ));
+                return Err(ParseError::NotImplemented("LegacyOctalIntegerLiteral"));
             }
         }
 
@@ -1601,10 +1594,9 @@ impl<'alloc> AutoCow<'alloc> {
     }
 
     // Force allocation of a String, excluding the current ASCII character.
-    fn force_allocation_without_current_ascii_char(&mut self,
-                                                   lexer: &'_ Lexer<'alloc>) {
+    fn force_allocation_without_current_ascii_char(&mut self, lexer: &'_ Lexer<'alloc>) {
         if self.value.is_some() {
-            return
+            return;
         }
 
         self.value = Some(String::from_str_in(
