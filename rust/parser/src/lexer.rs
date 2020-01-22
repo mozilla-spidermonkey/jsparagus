@@ -246,18 +246,23 @@ fn is_identifier_part(c: char) -> bool {
 }
 
 impl<'alloc> Lexer<'alloc> {
-    /// Scan an IdentifierName.
+    /// Scan the rest of an IdentifierName, having already parsed the initial
+    /// IdentifierStart and stored it in `builder`.
+    ///
+    /// On success, this returns `Ok((has_escapes, str))`, where `has_escapes`
+    /// is true if the identifier contained any UnicodeEscapeSequences, and
+    /// `str` is the un-escaped IdentifierName, including the IdentifierStart,
+    /// on success.
     ///
     /// ```text
     /// IdentifierName ::
     ///     IdentifierStart
     ///     IdentifierName IdentifierPart
     /// ```
-    fn identifier(
+    fn identifier_name_tail(
         &mut self,
-        offset: usize,
         mut builder: AutoCow<'alloc>,
-    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (bool, &'alloc str)> {
         while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
                 if ch == '\\' {
@@ -279,7 +284,24 @@ impl<'alloc> Lexer<'alloc> {
             builder.push_matching(ch);
         }
         let has_different = builder.has_different();
-        let text = builder.finish(&self);
+        Ok((has_different, builder.finish(&self)))
+    }
+
+    /// Finish scanning an *IdentifierName* or keyword, having already scanned
+    /// the *IdentifierStart* and pushed it to `builder`.
+    ///
+    /// `start` is the offset of the *IdentifierStart*.
+    ///
+    /// The lexer doesn't know the syntactic context, so it always identifies
+    /// possible keywords. It's up to the parser to understand that, for
+    /// example, `TerminalId::If` is not a keyword when it's used as a property
+    /// or method name.
+    fn identifier_tail(
+        &mut self,
+        start: usize,
+        builder: AutoCow<'alloc>,
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
+        let (has_different, text) = self.identifier_name_tail(builder)?;
 
         // https://tc39.es/ecma262/#sec-keywords-and-reserved-words
         //
@@ -343,13 +365,13 @@ impl<'alloc> Lexer<'alloc> {
             }
         };
 
-        Ok((SourceLocation::new(offset, self.offset()), Some(text), id))
+        Ok((SourceLocation::new(start, self.offset()), Some(text), id))
     }
 
     /// ```text
     /// UnicodeEscapeSequence::
-    /// `u` Hex4Digits
-    /// `u{` CodePoint `}`
+    ///     `u` Hex4Digits
+    ///     `u{` CodePoint `}`
     /// ```
     fn unicode_escape_sequence_after_backslash(&mut self) -> Result<'alloc, char> {
         match self.chars.next() {
@@ -1552,25 +1574,27 @@ impl<'alloc> Lexer<'alloc> {
                 // Idents
                 '$' | '_' | 'a'..='z' | 'A'..='Z' => {
                     builder.push_matching(c);
-                    return self.identifier(start, builder);
+                    return self.identifier_tail(start, builder);
+                }
+
+                '\\' => {
+                    builder.force_allocation_without_current_ascii_char(&self);
+
+                    let value = self.unicode_escape_sequence_after_backslash()?;
+                    if !is_identifier_start(value) {
+                        return Err(ParseError::IllegalCharacter(value));
+                    }
+                    builder.push_different(value);
+
+                    return self.identifier_tail(start, builder);
+                }
+
+                other if is_identifier_start(other) => {
+                    builder.push_matching(other);
+                    return self.identifier_tail(start, builder);
                 }
 
                 other => {
-                    if is_identifier_start(other) {
-                        builder.push_matching(other);
-                        return self.identifier(start, builder);
-                    }
-                    if other == '\\' {
-                        builder.force_allocation_without_current_ascii_char(&self);
-
-                        let value = self.unicode_escape_sequence_after_backslash()?;
-                        if !is_identifier_start(value) {
-                            return Err(ParseError::IllegalCharacter(value));
-                        }
-                        builder.push_different(value);
-
-                        return self.identifier(start, builder);
-                    }
                     return Err(ParseError::IllegalCharacter(other));
                 }
             }
