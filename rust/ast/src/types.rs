@@ -31,6 +31,12 @@ pub struct IdentifierName<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct PrivateIdentifier<'alloc> {
+    pub value: &'alloc str,
+    pub loc: SourceLocation,
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Label<'alloc> {
     pub value: &'alloc str,
     pub loc: SourceLocation,
@@ -338,12 +344,20 @@ pub enum Expression<'alloc> {
 pub enum MemberExpression<'alloc> {
     ComputedMemberExpression(ComputedMemberExpression<'alloc>),
     StaticMemberExpression(StaticMemberExpression<'alloc>),
+    PrivateFieldExpression(PrivateFieldExpression<'alloc>),
 }
 
 #[derive(Debug, PartialEq)]
 pub enum PropertyName<'alloc> {
     ComputedPropertyName(ComputedPropertyName<'alloc>),
     StaticPropertyName(StaticPropertyName<'alloc>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ClassElementName<'alloc> {
+    ComputedPropertyName(ComputedPropertyName<'alloc>),
+    StaticPropertyName(StaticPropertyName<'alloc>),
+    PrivateFieldName(PrivateIdentifier<'alloc>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -566,10 +580,17 @@ pub struct ClassDeclaration<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ClassElement<'alloc> {
-    pub is_static: bool,
-    pub method: MethodDefinition<'alloc>,
-    pub loc: SourceLocation,
+pub enum ClassElement<'alloc> {
+    MethodDefinition {
+        is_static: bool,
+        method: MethodDefinition<'alloc>,
+        loc: SourceLocation,
+    },
+    FieldDefinition {
+        name: ClassElementName<'alloc>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        loc: SourceLocation,
+    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -748,6 +769,13 @@ pub struct ObjectExpression<'alloc> {
 pub struct StaticMemberExpression<'alloc> {
     pub object: ExpressionOrSuper<'alloc>,
     pub property: IdentifierName<'alloc>,
+    pub loc: SourceLocation,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PrivateFieldExpression<'alloc> {
+    pub object: arena::Box<'alloc, Expression<'alloc>>,
+    pub field: PrivateIdentifier<'alloc>,
     pub loc: SourceLocation,
 }
 

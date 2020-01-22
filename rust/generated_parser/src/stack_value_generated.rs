@@ -39,6 +39,7 @@ pub enum StackValue<'alloc> {
     CatchClause(arena::Box<'alloc, CatchClause<'alloc>>),
     ClassDeclaration(arena::Box<'alloc, ClassDeclaration<'alloc>>),
     ClassElement(arena::Box<'alloc, ClassElement<'alloc>>),
+    ClassElementName(arena::Box<'alloc, ClassElementName<'alloc>>),
     ClassExpression(arena::Box<'alloc, ClassExpression<'alloc>>),
     CompoundAssignmentOperator(arena::Box<'alloc, CompoundAssignmentOperator>),
     ComputedMemberAssignmentTarget(arena::Box<'alloc, ComputedMemberAssignmentTarget<'alloc>>),
@@ -81,6 +82,8 @@ pub enum StackValue<'alloc> {
     ObjectExpression(arena::Box<'alloc, ObjectExpression<'alloc>>),
     ObjectProperty(arena::Box<'alloc, ObjectProperty<'alloc>>),
     Parameter(arena::Box<'alloc, Parameter<'alloc>>),
+    PrivateFieldExpression(arena::Box<'alloc, PrivateFieldExpression<'alloc>>),
+    PrivateIdentifier(arena::Box<'alloc, PrivateIdentifier<'alloc>>),
     Program(arena::Box<'alloc, Program<'alloc>>),
     PropertyName(arena::Box<'alloc, PropertyName<'alloc>>),
     Script(arena::Box<'alloc, Script<'alloc>>),
@@ -424,6 +427,18 @@ impl<'alloc> StackValueItem<'alloc> for ClassElement<'alloc> {
         match sv {
             StackValue::ClassElement(v) => Ok(v),
             _ => Err(format!("StackValue expected ClassElement, got {:?}", sv)),
+        }
+    }
+}
+
+impl<'alloc> StackValueItem<'alloc> for ClassElementName<'alloc> {
+    fn to_ast(sv: StackValue<'alloc>) -> AstResult<'alloc, Self> {
+        match sv {
+            StackValue::ClassElementName(v) => Ok(v),
+            _ => Err(format!(
+                "StackValue expected ClassElementName, got {:?}",
+                sv
+            )),
         }
     }
 }
@@ -856,6 +871,30 @@ impl<'alloc> StackValueItem<'alloc> for Parameter<'alloc> {
         match sv {
             StackValue::Parameter(v) => Ok(v),
             _ => Err(format!("StackValue expected Parameter, got {:?}", sv)),
+        }
+    }
+}
+
+impl<'alloc> StackValueItem<'alloc> for PrivateFieldExpression<'alloc> {
+    fn to_ast(sv: StackValue<'alloc>) -> AstResult<'alloc, Self> {
+        match sv {
+            StackValue::PrivateFieldExpression(v) => Ok(v),
+            _ => Err(format!(
+                "StackValue expected PrivateFieldExpression, got {:?}",
+                sv
+            )),
+        }
+    }
+}
+
+impl<'alloc> StackValueItem<'alloc> for PrivateIdentifier<'alloc> {
+    fn to_ast(sv: StackValue<'alloc>) -> AstResult<'alloc, Self> {
+        match sv {
+            StackValue::PrivateIdentifier(v) => Ok(v),
+            _ => Err(format!(
+                "StackValue expected PrivateIdentifier, got {:?}",
+                sv
+            )),
         }
     }
 }
@@ -1395,6 +1434,13 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassElement<'alloc>> {
     }
 }
 
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassElementName<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::ClassElementName(self))
+    }
+}
+
 impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, ClassExpression<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
@@ -1686,6 +1732,20 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Parameter<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Parameter(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, PrivateFieldExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::PrivateFieldExpression(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, PrivateIdentifier<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::PrivateIdentifier(self))
     }
 }
 

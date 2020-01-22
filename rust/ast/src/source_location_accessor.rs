@@ -494,12 +494,41 @@ impl<'alloc> SourceLocationAccessor<'alloc> for ClassDeclaration<'alloc> {
 
 impl<'alloc> SourceLocationAccessor<'alloc> for ClassElement<'alloc> {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
-        self.loc.start = start.start;
-        self.loc.end = end.end;
+        match self {
+            ClassElement::MethodDefinition { mut loc, .. } => {
+                loc.start = start.start;
+                loc.end = end.end;
+            }
+            ClassElement::FieldDefinition { mut loc, .. } => {
+                loc.start = start.start;
+                loc.end = end.end;
+            }
+        }
     }
 
     fn get_loc(&self) -> SourceLocation {
-        self.loc
+        match self {
+            ClassElement::MethodDefinition { loc, .. } => *loc,
+            ClassElement::FieldDefinition { loc, .. } => *loc,
+        }
+    }
+}
+
+impl<'alloc> SourceLocationAccessor<'alloc> for ClassElementName<'alloc> {
+    fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
+        match self {
+            ClassElementName::ComputedPropertyName(content) => content.set_loc(start, end),
+            ClassElementName::StaticPropertyName(content) => content.set_loc(start, end),
+            ClassElementName::PrivateFieldName(content) => content.set_loc(start, end),
+        }
+    }
+
+    fn get_loc(&self) -> SourceLocation {
+        match self {
+            ClassElementName::ComputedPropertyName(content) => content.get_loc(),
+            ClassElementName::StaticPropertyName(content) => content.get_loc(),
+            ClassElementName::PrivateFieldName(content) => content.get_loc(),
+        }
     }
 }
 
@@ -1085,6 +1114,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for MemberExpression<'alloc> {
         match self {
             MemberExpression::ComputedMemberExpression(content) => content.set_loc(start, end),
             MemberExpression::StaticMemberExpression(content) => content.set_loc(start, end),
+            MemberExpression::PrivateFieldExpression(content) => content.set_loc(start, end),
         }
     }
 
@@ -1092,6 +1122,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for MemberExpression<'alloc> {
         match self {
             MemberExpression::ComputedMemberExpression(content) => content.get_loc(),
             MemberExpression::StaticMemberExpression(content) => content.get_loc(),
+            MemberExpression::PrivateFieldExpression(content) => content.get_loc(),
         }
     }
 }
@@ -1234,6 +1265,28 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Parameter<'alloc> {
             Parameter::Binding(content) => content.get_loc(),
             Parameter::BindingWithDefault(content) => content.get_loc(),
         }
+    }
+}
+
+impl<'alloc> SourceLocationAccessor<'alloc> for PrivateFieldExpression<'alloc> {
+    fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
+        self.loc.start = start.start;
+        self.loc.end = end.end;
+    }
+
+    fn get_loc(&self) -> SourceLocation {
+        self.loc
+    }
+}
+
+impl<'alloc> SourceLocationAccessor<'alloc> for PrivateIdentifier<'alloc> {
+    fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
+        self.loc.start = start.start;
+        self.loc.end = end.end;
+    }
+
+    fn get_loc(&self) -> SourceLocation {
+        self.loc
     }
 }
 

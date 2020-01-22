@@ -19,6 +19,10 @@
     "_type": "struct",
     "value": "String"
   },
+  "PrivateIdentifier": {
+    "_type": "struct",
+    "value": "String"
+  },
   "Label": {
     "_type": "struct",
     "value": "String"
@@ -268,12 +272,19 @@
   "MemberExpression": {
     "_type": "enum",
     "ComputedMemberExpression": "ComputedMemberExpression",
-    "StaticMemberExpression": "StaticMemberExpression"
+    "StaticMemberExpression": "StaticMemberExpression",
+    "PrivateFieldExpression": "PrivateFieldExpression"
   },
   "PropertyName": {
     "_type": "enum",
     "ComputedPropertyName": "ComputedPropertyName",
     "StaticPropertyName": "StaticPropertyName"
+  },
+  "ClassElementName": {
+    "_type": "enum",
+    "ComputedPropertyName": "ComputedPropertyName",
+    "StaticPropertyName": "StaticPropertyName",
+    "PrivateFieldName": "PrivateIdentifier"
   },
   "ObjectProperty": {
     "_type": "enum",
@@ -446,9 +457,15 @@
     "elements": "Vec<Box<ClassElement>>"
   },
   "ClassElement": {
-    "_type": "struct",
-    "is_static": "bool",
-    "method": "MethodDefinition"
+    "_type": "enum",
+    "MethodDefinition": {
+      "is_static": "bool",
+      "method": "MethodDefinition"
+    },
+    "FieldDefinition": {
+      "name": "ClassElementName",
+      "init": "Option<Box<Expression>>"
+    }
   },
   "ModuleItems": {
     "_type": "enum",
@@ -581,6 +598,11 @@
     "_type": "struct",
     "object": "ExpressionOrSuper",
     "property": "IdentifierName"
+  },
+  "PrivateFieldExpression": {
+    "_type": "struct",
+    "object": "Box<Expression>",
+    "field": "PrivateIdentifier"
   },
   "TemplateExpressionElement": {
     "_type": "enum",

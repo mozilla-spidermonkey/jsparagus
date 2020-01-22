@@ -185,6 +185,12 @@ impl AstEmitter {
                 self.emit.get_prop_super(&property.value);
             }
 
+            Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
+                PrivateFieldExpression { .. },
+            )) => {
+                return Err(EmitError::NotImplemented("PrivateFieldExpression"));
+            }
+
             Expression::ClassExpression(_) => {
                 return Err(EmitError::NotImplemented("TODO: ClassExpression"));
             }
