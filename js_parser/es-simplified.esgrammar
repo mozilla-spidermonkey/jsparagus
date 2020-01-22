@@ -1144,19 +1144,19 @@ ClassHeritage[Yield, Await] :
   `extends` LeftHandSideExpression[?Yield, ?Await]
     => $1
 
-@returns Vec<ClassElement>
+@returns Vec<Box<ClassElement>>
 ClassBody[Yield, Await] :
   ClassElementList[?Yield, ?Await]
     => $0
 
-@returns Vec<ClassElement>
+@returns Vec<Box<ClassElement>>
 ClassElementList[Yield, Await] :
   ClassElement[?Yield, ?Await]
     => $0
   ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]
     => class_element_list_append($0, $1)
 
-@returns Vec<ClassElement>
+@returns Vec<Box<ClassElement>>
 ClassElement[Yield, Await] :
   MethodDefinition[?Yield, ?Await]
     => class_element($0)

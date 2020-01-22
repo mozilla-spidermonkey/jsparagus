@@ -437,13 +437,13 @@
     "_type": "struct",
     "name": "Option<BindingIdentifier>",
     "super_": "Option<Box<Expression>>",
-    "elements": "Vec<ClassElement>"
+    "elements": "Vec<Box<ClassElement>>"
   },
   "ClassDeclaration": {
     "_type": "struct",
     "name": "BindingIdentifier",
     "super_": "Option<Box<Expression>>",
-    "elements": "Vec<ClassElement>"
+    "elements": "Vec<Box<ClassElement>>"
   },
   "ClassElement": {
     "_type": "struct",

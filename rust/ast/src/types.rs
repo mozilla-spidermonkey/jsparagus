@@ -553,7 +553,7 @@ pub struct AssignmentTargetPropertyProperty<'alloc> {
 pub struct ClassExpression<'alloc> {
     pub name: Option<BindingIdentifier<'alloc>>,
     pub super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
+    pub elements: arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>,
     pub loc: SourceLocation,
 }
 
@@ -561,7 +561,7 @@ pub struct ClassExpression<'alloc> {
 pub struct ClassDeclaration<'alloc> {
     pub name: BindingIdentifier<'alloc>,
     pub super_: Option<arena::Box<'alloc, Expression<'alloc>>>,
-    pub elements: arena::Vec<'alloc, ClassElement<'alloc>>,
+    pub elements: arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>,
     pub loc: SourceLocation,
 }
 

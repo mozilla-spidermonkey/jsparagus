@@ -111,7 +111,9 @@ pub enum StackValue<'alloc> {
         arena::Box<'alloc, arena::Vec<'alloc, ArrayExpressionElement<'alloc>>>,
     ),
     VecBindingProperty(arena::Box<'alloc, arena::Vec<'alloc, BindingProperty<'alloc>>>),
-    VecClassElement(arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>),
+    VecClassElement(
+        arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>>,
+    ),
     VecOption(arena::Box<'alloc, arena::Vec<'alloc, Option<Parameter<'alloc>>>>),
     VecStatement(arena::Box<'alloc, arena::Vec<'alloc, Statement<'alloc>>>),
     VecSwitchCase(arena::Box<'alloc, arena::Vec<'alloc, SwitchCase<'alloc>>>),
@@ -1137,12 +1139,14 @@ impl<'alloc> StackValueItem<'alloc> for arena::Vec<'alloc, BindingProperty<'allo
     }
 }
 
-impl<'alloc> StackValueItem<'alloc> for arena::Vec<'alloc, ClassElement<'alloc>> {
+impl<'alloc> StackValueItem<'alloc>
+    for arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>
+{
     fn to_ast(sv: StackValue<'alloc>) -> AstResult<'alloc, Self> {
         match sv {
             StackValue::VecClassElement(v) => Ok(v),
             _ => Err(format!(
-                "StackValue expected Vec<ClassElement>, got {:?}",
+                "StackValue expected Vec<Box<ClassElement>>, got {:?}",
                 sv
             )),
         }
@@ -1873,7 +1877,9 @@ impl<'alloc> TryIntoStack<'alloc>
     }
 }
 
-impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+impl<'alloc> TryIntoStack<'alloc>
+    for arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>>
+{
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::VecClassElement(self))
