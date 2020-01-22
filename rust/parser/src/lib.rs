@@ -68,6 +68,7 @@ pub fn read_script_interactively<'alloc>(
     TABLES.check();
 
     let mut parser = Parser::new(AstBuilder { allocator }, START_STATE_SCRIPT);
+    let mut byte_total = 0;
 
     print!("{}", prompt);
     loop {
@@ -78,7 +79,8 @@ pub fn read_script_interactively<'alloc>(
         }
         let line_str: &'alloc str = arena::alloc_str(allocator, &line);
 
-        let mut tokens = Lexer::new(allocator, line_str.chars());
+        let mut tokens = Lexer::with_offset(allocator, line_str.chars(), byte_total);
+        byte_total += line_str.len();
         loop {
             let t = tokens.next(&parser)?;
             if t.terminal_id == TerminalId::End {
