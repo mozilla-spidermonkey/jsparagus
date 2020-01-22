@@ -455,6 +455,16 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
+    fn code_point_to_char(value: u32) -> Result<'alloc, char> {
+        if 0xd800 <= value && value <= 0xdfff {
+            Err(ParseError::NotImplemented(
+                "unicode escape sequences (surrogates)",
+            ))
+        } else {
+            char::try_from(value).map_err(|_| ParseError::InvalidEscapeSequence)
+        }
+    }
+
     /// ```text
     /// Hex4Digits ::
     ///     HexDigit HexDigit HexDigit HexDigit
@@ -464,7 +474,7 @@ impl<'alloc> Lexer<'alloc> {
         for _ in 0..4 {
             value = (value << 4) | self.hex_digit()?;
         }
-        char::try_from(value).map_err(|_| ParseError::InvalidEscapeSequence)
+        Self::code_point_to_char(value)
     }
 
     /// ```text
@@ -495,7 +505,7 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
 
-        char::try_from(value).map_err(|_| ParseError::InvalidEscapeSequence)
+        Self::code_point_to_char(value)
     }
 
     /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
