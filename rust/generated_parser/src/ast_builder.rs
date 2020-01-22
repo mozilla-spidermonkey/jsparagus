@@ -3380,7 +3380,9 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn class_tail(
         &self,
         heritage: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        body: Option<arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>>,
+        body: Option<
+            arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>>,
+        >,
         body_close_token: arena::Box<'alloc, Token<'alloc>>,
     ) -> arena::Box<'alloc, ClassExpression<'alloc>> {
         self.alloc(ClassExpression {
@@ -3399,9 +3401,12 @@ impl<'alloc> AstBuilder<'alloc> {
     // ClassElementList : ClassElementList ClassElement
     pub fn class_element_list_append(
         &self,
-        mut list: arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>,
-        mut element: arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>>,
-    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+        mut list: arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>>,
+        mut element: arena::Box<
+            'alloc,
+            arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>,
+        >,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         self.append(&mut list, &mut element);
         list
     }
@@ -3410,13 +3415,21 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn class_element(
         &self,
         method: arena::Box<'alloc, MethodDefinition<'alloc>>,
-    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         let loc = method.get_loc();
-        self.alloc(self.new_vec_single(ClassElement {
+        self.class_element_to_vec(self.alloc(ClassElement {
             is_static: false,
             method: method.unbox(),
             loc,
         }))
+    }
+
+    // ClassElement : FieldDefinition `;`
+    pub fn class_element_to_vec(
+        &self,
+        element: arena::Box<'alloc, ClassElement<'alloc>>,
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
+        self.alloc(self.new_vec_single(element))
     }
 
     // ClassElement : `static` MethodDefinition
@@ -3424,19 +3437,19 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         static_token: arena::Box<'alloc, Token<'alloc>>,
         method: arena::Box<'alloc, MethodDefinition<'alloc>>,
-    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         let method_loc = method.get_loc();
-        self.alloc(self.new_vec_single(ClassElement {
+        self.alloc(self.new_vec_single(self.alloc(ClassElement {
             is_static: true,
             method: method.unbox(),
             loc: SourceLocation::from_parts(static_token.loc, method_loc),
-        }))
+        })))
     }
 
     // ClassElement : `;`
     pub fn class_element_empty(
         &self,
-    ) -> arena::Box<'alloc, arena::Vec<'alloc, ClassElement<'alloc>>> {
+    ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         self.alloc(self.new_vec())
     }
 

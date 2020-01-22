@@ -148,7 +148,7 @@ EXTRA_STACK_VALUE_TYPE_NAMES = [
     "Vec<Statement>",
     "Vec<VariableDeclarator>",
     "Vec<ArrayExpressionElement>",
-    "Vec<ClassElement>",
+    "Vec<Box<ClassElement>>",
     "Vec<BindingProperty>",
     "Vec<Option<Parameter>>",
 ]

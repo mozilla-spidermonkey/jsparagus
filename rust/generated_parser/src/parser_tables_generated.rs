@@ -9388,7 +9388,7 @@ pub fn reduce<'alloc>(
         170 => {
             // ClassTail ::= "{" ClassBody "}" => class_tail(None, Some($1), $2)
             let x2: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
-            let x1: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Vec<'alloc, Box<ClassElement>>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             stack.push(TryIntoStack::try_into_stack(handler.class_tail(
                 None,
@@ -9400,7 +9400,7 @@ pub fn reduce<'alloc>(
         171 => {
             // ClassTail ::= ClassHeritage "{" ClassBody "}" => class_tail(Some($0), Some($2), $3)
             let x3: Box<'alloc, Token<'alloc>> = stack.pop().unwrap().to_ast()?;
-            let x2: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
+            let x2: Box<'alloc, Vec<'alloc, Box<ClassElement>>> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x0: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(handler.class_tail(
@@ -11010,8 +11010,8 @@ pub fn reduce<'alloc>(
         }
         324 => {
             // ClassElementList ::= ClassElementList ClassElement => class_element_list_append($0, $1)
-            let x1: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
-            let x0: Box<'alloc, Vec<'alloc, ClassElement>> = stack.pop().unwrap().to_ast()?;
+            let x1: Box<'alloc, Vec<'alloc, Box<ClassElement>>> = stack.pop().unwrap().to_ast()?;
+            let x0: Box<'alloc, Vec<'alloc, Box<ClassElement>>> = stack.pop().unwrap().to_ast()?;
             stack.push(TryIntoStack::try_into_stack(
                 handler.class_element_list_append(x0, x1),
             )?);
