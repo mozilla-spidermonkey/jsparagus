@@ -1,16 +1,15 @@
 //! Functions to exercise the parser from the command line.
 
-use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use ast::{self, types::Program};
+use ast::{self, types::{Program, Script}};
 use bumpalo::Bump;
-use emitter::emit;
-use parser::parse_script;
+use emitter;
+use parser::{ParseError, parse_script};
 
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
@@ -104,38 +103,34 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
     }
 }
 
-fn run(buffer: &str) {
-    let allocator = &Bump::new();
-    let parse_result = parse_script(allocator, buffer);
-    match parse_result {
-        Ok(ast) => {
-            let mut script = Program::Script(ast.unbox());
-            let emit_result = emit(&mut script);
-            // FIXME - json support removed for now
-            // if let Ok(script_json) = ast::json::to_string_pretty(&script) {
-            //     println!("{}", script_json);
-            // } else {
-            println!("{:#?}", script);
-            // }
-            println!("{:#?}", emit_result);
+fn handle_script<'alloc>(script: Script<'alloc>) {
+    println!("{:#?}", script);
+    let mut program = Program::Script(script);
+    match emitter::emit(&mut program) {
+        Err(err) => {
+            eprintln!("error: {}", err);
         }
-        Err(err) => println!("{}", err.message()),
-    }
-}
-
-fn get_input(prompt: &str) -> Result<String, Box<dyn Error>> {
-    print!("{}", prompt);
-    io::stdout().flush()?;
-    let mut input = String::new();
-    if let 0 = io::stdin().read_line(&mut input)? {
-        Err("EOF".into())
-    } else {
-        Ok(input.trim().to_string())
+        Ok(emit_result) => {
+            println!("\n{:#?}", emit_result);
+            println!("\n{}", emitter::dis(&emit_result.bytecode));
+        }
     }
 }
 
 pub fn read_print_loop() {
-    while let Ok(buffer) = get_input("> ") {
-        run(&buffer);
+    loop {
+        let allocator = &Bump::new();
+        match parser::read_script_interactively(allocator, "js> ", "..> ") {
+            Err(ParseError::UnexpectedEnd) => {
+                println!();
+                break;
+            }
+            Err(err) => {
+                eprintln!("error: {}", err);
+            }
+            Ok(script) => {
+                handle_script(script.unbox());
+            }
+        }
     }
 }
