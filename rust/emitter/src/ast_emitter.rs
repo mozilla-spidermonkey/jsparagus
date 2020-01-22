@@ -2,9 +2,10 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{EmitError, EmitResult, InstructionWriter};
+use super::emitter::{EmitError, EmitResult, InstructionWriter, BytecodeOffset};
 use super::opcode::Opcode;
 use ast::{arena, types::*};
+
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
@@ -351,15 +352,14 @@ impl AstEmitter {
             BinaryOperator::BitwiseOr { .. } => Opcode::BitOr,
             BinaryOperator::BitwiseXor { .. } => Opcode::BitXor,
             BinaryOperator::BitwiseAnd { .. } => Opcode::BitAnd,
-            BinaryOperator::Coalesce { .. } => {
-                return Err(EmitError::NotImplemented("TODO: Coalescer"));
+
+            BinaryOperator::Coalesce { .. }
+            | BinaryOperator::LogicalOr { .. }
+            | BinaryOperator::LogicalAnd { .. } => {
+                self.emit_short_circuit(operator, left, right)?;
+                return Ok(());
             }
-            BinaryOperator::LogicalOr { .. } => {
-                return Err(EmitError::NotImplemented("TODO: LogicalOr"));
-            }
-            BinaryOperator::LogicalAnd { .. } => {
-                return Err(EmitError::NotImplemented("TODO: LogicalAndr"));
-            }
+
             BinaryOperator::Comma { .. } => {
                 self.emit_expression(left)?;
                 self.emit.pop();
@@ -372,6 +372,60 @@ impl AstEmitter {
         self.emit_expression(right)?;
         self.emit.emit_binary_op(opcode);
         Ok(())
+    }
+
+    fn emit_short_circuit(
+        &mut self,
+        operator: &BinaryOperator,
+        left: &Expression,
+        right: &Expression,
+    ) -> Result<(), EmitError> {
+        self.emit_expression(left)?;
+        let mut jumplist: Vec<BytecodeOffset> = Vec::with_capacity(1);
+        self.emit_jump(operator, &mut jumplist)?;
+        self.emit.pop();
+        self.emit_expression(right)?;
+        self.emit_jump_target(jumplist);
+        return Ok(());
+    }
+
+    fn emit_jump(
+        &mut self,
+        operator: &BinaryOperator,
+        jumplist: &mut Vec<BytecodeOffset>
+    ) -> Result<(), EmitError> {
+        let offset: BytecodeOffset = self.emit.bytecode_offset();
+        jumplist.push(offset);
+
+        // in the c++ bytecode emitter, the jumplist is emitted
+        // and four bytes are used in order to save memory. We are not using that
+        // here, so instead we are using a placeholder offset set to 0, which will
+        // be updated later in patch_jump_target.
+        let placeholder_offset: i32 = 0;
+        match operator {
+            BinaryOperator::Coalesce { .. } => {
+                self.emit.coalesce(placeholder_offset);
+            }
+            BinaryOperator::LogicalOr { .. } => {
+                self.emit.or(placeholder_offset);
+            }
+            BinaryOperator::LogicalAnd { .. } => {
+                self.emit.and(placeholder_offset);
+            }
+            _ => {
+                panic!("unrecognized operator used in jump")
+            }
+        }
+
+        return Ok(());
+    }
+
+    fn emit_jump_target(
+        &mut self,
+        jumplist: Vec<BytecodeOffset>
+    ) {
+        self.emit.patch_jump_target(jumplist);
+        self.emit.jump_target();
     }
 
     fn emit_numeric_expression(&mut self, value: f64) {

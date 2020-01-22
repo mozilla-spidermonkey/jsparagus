@@ -8,6 +8,7 @@
 use super::opcode::Opcode;
 use std::convert::TryInto;
 use std::fmt;
+use byteorder::{ByteOrder, LittleEndian};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ResumeKind {
@@ -23,6 +24,12 @@ pub enum AsyncFunctionResolveKind {
 
 #[allow(non_camel_case_types)]
 pub type u24 = u32;
+
+/// For tracking bytecode offsets in jumps
+#[derive(PartialEq, Debug)]
+pub struct BytecodeOffset {
+    pub offset: usize
+}
 
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
@@ -705,6 +712,19 @@ impl InstructionWriter {
 
     pub fn jump_target(&mut self) {
         self.emit_op(Opcode::JumpTarget);
+    }
+
+    pub fn bytecode_offset(&mut self) -> BytecodeOffset {
+        BytecodeOffset { offset: self.bytecode.len() }
+    }
+
+    pub fn patch_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
+        let target = self.bytecode_offset();
+        for jump in jumplist {
+            let new_target = (target.offset - jump.offset) as i32;
+            let index = jump.offset + 1;
+            LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
+        }
     }
 
     pub fn loop_head(&mut self) {
