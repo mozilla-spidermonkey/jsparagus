@@ -287,6 +287,41 @@ impl<'alloc> Lexer<'alloc> {
         Ok((has_different, builder.finish(&self)))
     }
 
+    fn identifier_name(&mut self, mut builder: AutoCow<'alloc>) -> Result<'alloc, &'alloc str> {
+        match self.chars.next() {
+            None => {
+                return Err(ParseError::UnexpectedEnd);
+            }
+            Some(c) => {
+                match c {
+                    '$' | '_' | 'a'..='z' | 'A'..='Z' => {
+                        builder.push_matching(c);
+                    }
+
+                    '\\' => {
+                        builder.force_allocation_without_current_ascii_char(&self);
+
+                        let value = self.unicode_escape_sequence_after_backslash()?;
+                        if !is_identifier_start(value) {
+                            return Err(ParseError::IllegalCharacter(value));
+                        }
+                        builder.push_different(value);
+                    }
+
+                    other if is_identifier_start(other) => {
+                        builder.push_matching(other);
+                    }
+
+                    other => {
+                        return Err(ParseError::IllegalCharacter(other));
+                    }
+                }
+                self.identifier_name_tail(builder)
+                    .map(|(_has_escapes, name)| name)
+            },
+        }
+    }
+
     /// Finish scanning an *IdentifierName* or keyword, having already scanned
     /// the *IdentifierStart* and pushed it to `builder`.
     ///
@@ -366,6 +401,23 @@ impl<'alloc> Lexer<'alloc> {
         };
 
         Ok((SourceLocation::new(start, self.offset()), Some(text), id))
+    }
+
+    /// ```text
+    /// PrivateIdentifier::
+    ///     `#` IdentifierName
+    /// ```
+    fn private_identifier(
+        &mut self,
+        start: usize,
+        builder: AutoCow<'alloc>,
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
+        let name = self.identifier_name(builder)?;
+        Ok((
+            SourceLocation::new(start, self.offset()),
+            Some(name),
+            TerminalId::PrivateIdentifier,
+        ))
     }
 
     /// ```text
@@ -1587,6 +1639,11 @@ impl<'alloc> Lexer<'alloc> {
                     builder.push_different(value);
 
                     return self.identifier_tail(start, builder);
+                }
+
+                '#' => {
+                    builder.push_matching(c);
+                    return self.private_identifier(start, builder);
                 }
 
                 other if is_identifier_start(other) => {
