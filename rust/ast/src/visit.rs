@@ -31,6 +31,8 @@ pub trait Pass<'alloc> {
 
     fn visit_identifier_name(&mut self, ast: &mut IdentifierName<'alloc>) {}
 
+    fn visit_private_identifier(&mut self, ast: &mut PrivateIdentifier<'alloc>) {}
+
     fn visit_label(&mut self, ast: &mut Label<'alloc>) {}
 
     fn visit_variable_declaration_kind(&mut self, ast: &mut VariableDeclarationKind) {
@@ -409,6 +411,9 @@ pub trait Pass<'alloc> {
             MemberExpression::StaticMemberExpression(ast) => {
                 self.visit_static_member_expression(ast);
             }
+            MemberExpression::PrivateFieldExpression(ast) => {
+                self.visit_private_field_expression(ast);
+            }
         }
     }
 
@@ -419,6 +424,20 @@ pub trait Pass<'alloc> {
             }
             PropertyName::StaticPropertyName(ast) => {
                 self.visit_static_property_name(ast);
+            }
+        }
+    }
+
+    fn visit_class_element_name(&mut self, ast: &mut ClassElementName<'alloc>) {
+        match ast {
+            ClassElementName::ComputedPropertyName(ast) => {
+                self.visit_computed_property_name(ast);
+            }
+            ClassElementName::StaticPropertyName(ast) => {
+                self.visit_static_property_name(ast);
+            }
+            ClassElementName::PrivateFieldName(ast) => {
+                self.visit_private_identifier(ast);
             }
         }
     }
@@ -756,7 +775,19 @@ pub trait Pass<'alloc> {
     }
 
     fn visit_class_element(&mut self, ast: &mut ClassElement<'alloc>) {
-        self.visit_method_definition(&mut ast.method);
+        match ast {
+            ClassElement::MethodDefinition {
+                is_static, method, ..
+            } => {
+                self.visit_method_definition(method);
+            }
+            ClassElement::FieldDefinition { name, init, .. } => {
+                self.visit_class_element_name(name);
+                if let Some(item) = init {
+                    self.visit_expression(item);
+                }
+            }
+        }
     }
 
     fn visit_module_items(&mut self, ast: &mut ModuleItems<'alloc>) {
@@ -942,6 +973,11 @@ pub trait Pass<'alloc> {
         self.visit_identifier_name(&mut ast.property);
     }
 
+    fn visit_private_field_expression(&mut self, ast: &mut PrivateFieldExpression<'alloc>) {
+        self.visit_expression(&mut ast.object);
+        self.visit_private_identifier(&mut ast.field);
+    }
+
     fn visit_template_expression_element(&mut self, ast: &mut TemplateExpressionElement<'alloc>) {
         match ast {
             TemplateExpressionElement::Expression(ast) => {
@@ -1096,6 +1132,11 @@ pub trait PostfixPass<'alloc> {
     }
 
     fn visit_identifier_name(&self, value: &mut &'alloc str) -> Self::Value {
+        let mut result = Self::Value::default();
+        result
+    }
+
+    fn visit_private_identifier(&self, value: &mut &'alloc str) -> Self::Value {
         let mut result = Self::Value::default();
         result
     }
@@ -1655,9 +1696,18 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_class_element(&self, is_static: &mut bool, method: Self::Value) -> Self::Value {
+    fn visit_method_definition(&self, is_static: &mut bool, method: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(method);
+        result
+    }
+
+    fn visit_field_definition(&self, name: Self::Value, init: Option<Self::Value>) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(name);
+        if let Some(item) = init {
+            result.append(item);
+        }
         result
     }
 
@@ -1877,6 +1927,17 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
+    fn visit_private_field_expression(
+        &self,
+        object: Self::Value,
+        field: Self::Value,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(object);
+        result.append(field);
+        result
+    }
+
     fn visit_template_expression(
         &self,
         tag: Option<Self::Value>,
@@ -2058,6 +2119,11 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
     pub fn visit_identifier_name(&mut self, ast: &mut IdentifierName<'alloc>) -> T::Value {
         let a0 = &mut ast.value;
         self.pass.visit_identifier_name(a0)
+    }
+
+    pub fn visit_private_identifier(&mut self, ast: &mut PrivateIdentifier<'alloc>) -> T::Value {
+        let a0 = &mut ast.value;
+        self.pass.visit_private_identifier(a0)
     }
 
     pub fn visit_label(&mut self, ast: &mut Label<'alloc>) -> T::Value {
@@ -2476,6 +2542,9 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             MemberExpression::StaticMemberExpression(ast) => {
                 self.visit_static_member_expression(ast)
             }
+            MemberExpression::PrivateFieldExpression(ast) => {
+                self.visit_private_field_expression(ast)
+            }
         }
     }
 
@@ -2483,6 +2552,14 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         match ast {
             PropertyName::ComputedPropertyName(ast) => self.visit_computed_property_name(ast),
             PropertyName::StaticPropertyName(ast) => self.visit_static_property_name(ast),
+        }
+    }
+
+    pub fn visit_class_element_name(&mut self, ast: &mut ClassElementName<'alloc>) -> T::Value {
+        match ast {
+            ClassElementName::ComputedPropertyName(ast) => self.visit_computed_property_name(ast),
+            ClassElementName::StaticPropertyName(ast) => self.visit_static_property_name(ast),
+            ClassElementName::PrivateFieldName(ast) => self.visit_private_identifier(ast),
         }
     }
 
@@ -2849,9 +2926,20 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
     }
 
     pub fn visit_class_element(&mut self, ast: &mut ClassElement<'alloc>) -> T::Value {
-        let a0 = &mut ast.is_static;
-        let a1 = self.visit_method_definition((&mut ast.method));
-        self.pass.visit_class_element(a0, a1)
+        match ast {
+            ClassElement::MethodDefinition {
+                is_static, method, ..
+            } => {
+                let a0 = is_static;
+                let a1 = self.visit_method_definition((method));
+                self.pass.visit_method_definition(a0, a1)
+            }
+            ClassElement::FieldDefinition { name, init, .. } => {
+                let a0 = self.visit_class_element_name((name));
+                let a1 = (init).as_mut().map(|item| self.visit_expression(item));
+                self.pass.visit_field_definition(a0, a1)
+            }
+        }
     }
 
     pub fn visit_module_items(&mut self, ast: &mut ModuleItems<'alloc>) -> T::Value {
@@ -3098,6 +3186,15 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         let a0 = self.visit_expression_or_super((&mut ast.object));
         let a1 = self.visit_identifier_name((&mut ast.property));
         self.pass.visit_static_member_expression(a0, a1)
+    }
+
+    pub fn visit_private_field_expression(
+        &mut self,
+        ast: &mut PrivateFieldExpression<'alloc>,
+    ) -> T::Value {
+        let a0 = self.visit_expression((&mut ast.object));
+        let a1 = self.visit_private_identifier((&mut ast.field));
+        self.pass.visit_private_field_expression(a0, a1)
     }
 
     pub fn visit_template_expression_element(

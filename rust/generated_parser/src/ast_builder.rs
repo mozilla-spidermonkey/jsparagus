@@ -1103,6 +1103,16 @@ impl<'alloc> AstBuilder<'alloc> {
         }
     }
 
+    fn private_identifier(
+        &self,
+        token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> PrivateIdentifier<'alloc> {
+        PrivateIdentifier {
+            value: token.value.unwrap(),
+            loc: token.loc,
+        }
+    }
+
     // MemberExpression : MemberExpression `.` IdentifierName
     // CallExpression : CallExpression `.` IdentifierName
     pub fn static_member_expr(
@@ -1145,6 +1155,23 @@ impl<'alloc> AstBuilder<'alloc> {
             arguments: arguments.unbox(),
             loc: SourceLocation::from_parts(new_token.loc, arguments_loc),
         })
+    }
+
+    // MemberExpression : MemberExpression `.` PrivateIdentifier
+    pub fn private_field_expr(
+        &self,
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        private_identifier: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let object_loc = object.get_loc();
+        let field_loc = private_identifier.loc;
+        self.alloc(Expression::MemberExpression(
+            MemberExpression::PrivateFieldExpression(PrivateFieldExpression {
+                object,
+                field: self.private_identifier(private_identifier),
+                loc: SourceLocation::from_parts(object_loc, field_loc),
+            }),
+        ))
     }
 
     // SuperProperty : `super` `[` Expression `]`
@@ -3411,13 +3438,52 @@ impl<'alloc> AstBuilder<'alloc> {
         list
     }
 
+    // FieldDefinition : ClassElementName Initializer?
+    pub fn class_field_definition(
+        &self,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
+    ) -> arena::Box<'alloc, ClassElement<'alloc>> {
+        let name_loc = name.get_loc();
+        let loc = match &init {
+            None => name_loc,
+            Some(expr) => SourceLocation::from_parts(name_loc, expr.get_loc()),
+        };
+        self.alloc(ClassElement::FieldDefinition {
+            name: name.unbox(),
+            init,
+            loc,
+        })
+    }
+
+    // ClassElementName : PropertyName
+    pub fn property_name_to_class_element_name(
+        &self,
+        name: arena::Box<'alloc, PropertyName<'alloc>>,
+    ) -> arena::Box<'alloc, ClassElementName<'alloc>> {
+        self.alloc(match name.unbox() {
+            PropertyName::ComputedPropertyName(cpn) => ClassElementName::ComputedPropertyName(cpn),
+            PropertyName::StaticPropertyName(spn) => ClassElementName::StaticPropertyName(spn),
+        })
+    }
+
+    // ClassElementName : PrivateIdentifier
+    pub fn class_element_name_private(
+        &self,
+        private_identifier: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, ClassElementName<'alloc>> {
+        self.alloc(ClassElementName::PrivateFieldName(
+            self.private_identifier(private_identifier),
+        ))
+    }
+
     // ClassElement : MethodDefinition
     pub fn class_element(
         &self,
         method: arena::Box<'alloc, MethodDefinition<'alloc>>,
     ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         let loc = method.get_loc();
-        self.class_element_to_vec(self.alloc(ClassElement {
+        self.class_element_to_vec(self.alloc(ClassElement::MethodDefinition {
             is_static: false,
             method: method.unbox(),
             loc,
@@ -3439,11 +3505,13 @@ impl<'alloc> AstBuilder<'alloc> {
         method: arena::Box<'alloc, MethodDefinition<'alloc>>,
     ) -> arena::Box<'alloc, arena::Vec<'alloc, arena::Box<'alloc, ClassElement<'alloc>>>> {
         let method_loc = method.get_loc();
-        self.alloc(self.new_vec_single(self.alloc(ClassElement {
-            is_static: true,
-            method: method.unbox(),
-            loc: SourceLocation::from_parts(static_token.loc, method_loc),
-        })))
+        self.alloc(
+            self.new_vec_single(self.alloc(ClassElement::MethodDefinition {
+                is_static: true,
+                method: method.unbox(),
+                loc: SourceLocation::from_parts(static_token.loc, method_loc),
+            })),
+        )
     }
 
     // ClassElement : `;`

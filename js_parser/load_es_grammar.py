@@ -58,6 +58,7 @@ ECMASCRIPT_SYNTHETIC_TERMINALS = {
 ECMASCRIPT_TOKEN_NAMES = [
     'BooleanLiteral',
     'IdentifierName',
+    'PrivateIdentifier',
     'NoSubstitutionTemplate',
     'NullLiteral',
     'NumericLiteral',
