@@ -1,6 +1,7 @@
 use crate::DeclarationKind;
 use crate::ParseError;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 pub type Name<'alloc> = &'alloc str;
 
@@ -38,6 +39,227 @@ pub trait VarEarlyErrorsContext<'alloc> {
 
 pub trait ParameterEarlyErrorsContext<'alloc> {
     fn declare(&mut self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc>;
+}
+
+// ===========================================================================
+// Identifiers
+// https://tc39.es/ecma262/#sec-identifiers
+// ===========================================================================
+
+#[derive(Debug, PartialEq)]
+pub struct IdentifierEarlyErrorsContext<'alloc> {
+    phantom: PhantomData<&'alloc ()>,
+}
+
+impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
+    pub fn new() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+
+    fn is_strict(&self) -> Result<bool, ParseError<'alloc>> {
+        Err(ParseError::NotImplemented(
+            "strict-mode-only early error is not yet supported",
+        ))
+    }
+
+    // Not used due to NotImplemented before the callsite.
+    /*
+    fn is_module(&self) -> Result<bool, ParseError<'alloc>> {
+        Err(ParseError::NotImplemented(
+            "module-only early error is not yet supported",
+        ))
+    }
+     */
+
+    pub fn check_binding_identifier(
+        &self,
+        name: Name<'alloc>,
+        offset: usize,
+    ) -> EarlyErrorsResult<'alloc> {
+        match name {
+            "arguments" | "eval" => {
+                // Static Semantics: Early Errors
+                // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
+                //
+                // BindingIdentifier : Identifier
+                //
+                // * It is a Syntax Error if the code matched by this
+                //   production is contained in strict mode code and the
+                //   StringValue of Identifier is "arguments" or "eval".
+                if self.is_strict()? {
+                    return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                }
+
+                Ok(())
+            }
+            "yield" => {
+                // BindingIdentifier : yield
+                //
+                // * It is a Syntax Error if this production has a [Yield]
+                //   parameter.
+                Err(ParseError::NotImplemented("[Yield] parameter"))
+
+                // self.check_yield_common()
+            }
+            "await" => {
+                // BindingIdentifier : await
+                //
+                // * It is a Syntax Error if this production has an [Await]
+                //   parameter.
+                Err(ParseError::NotImplemented("[Await] parameter"))
+
+                // self.check_await_common()
+            }
+            _ => self.check_identifier(name, offset),
+        }
+    }
+
+    pub fn check_label_identifier(
+        &self,
+        name: Name<'alloc>,
+        offset: usize,
+    ) -> EarlyErrorsResult<'alloc> {
+        match name {
+            "yield" => self.check_yield_common(offset),
+            "await" => self.check_await_common(offset),
+            _ => self.check_identifier(name, offset),
+        }
+    }
+
+    pub fn check_identifier_reference(
+        &self,
+        name: Name<'alloc>,
+        offset: usize,
+    ) -> EarlyErrorsResult<'alloc> {
+        match name {
+            "yield" => self.check_yield_common(offset),
+            "await" => self.check_await_common(offset),
+            _ => self.check_identifier(name, offset),
+        }
+    }
+
+    fn check_yield_common(&self, _offset: usize) -> EarlyErrorsResult<'alloc> {
+        // Static Semantics: Early Errors
+        // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
+        //
+        // IdentifierReference[Yield, Await] : Identifier
+        //
+        // BindingIdentifier[Yield, Await] : Identifier
+        //
+        // LabelIdentifier[Yield, Await] : Identifier
+        //
+        // * It is a Syntax Error if this production has a [Yield] parameter
+        //   and StringValue of Identifier is "yield".
+        return Err(ParseError::NotImplemented("[Yield] parameter"));
+
+        // IdentifierReference : yield
+        //
+        // BindingIdentifier : yield
+        //
+        // LabelIdentifier : yield
+        //
+        // * It is a Syntax Error if the code matched by this production is
+        //   contained in strict mode code.
+        //
+        // and
+        //
+        // Identifier : IdentifierName but not ReservedWord
+        //
+        // * It is a Syntax Error if this phrase is contained in strict mode
+        //   code and the StringValue of IdentifierName is: "implements",
+        //   "interface", "let", "package", "private", "protected", "public",
+        //   "static", or "yield".
+        //
+        // if self.is_strict()? {
+        //     return Err(ParseError::InvalidIdentifier(
+        //         name.clone(),
+        //         offset,
+        //     ));
+        // }
+        //
+        // Ok(())
+    }
+
+    fn check_await_common(&self, _offset: usize) -> EarlyErrorsResult<'alloc> {
+        // Static Semantics: Early Errors
+        // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
+        //
+        // IdentifierReference[Yield, Await] : Identifier
+        //
+        // BindingIdentifier[Yield, Await] : Identifier
+        //
+        // LabelIdentifier[Yield, Await] : Identifier
+        //
+        // * It is a Syntax Error if this production has an [Await] parameter
+        //   and StringValue of Identifier is "await".
+        return Err(ParseError::NotImplemented("[Await] parameter"));
+
+        // IdentifierReference : await
+        //
+        // BindingIdentifier : await
+        //
+        // LabelIdentifier : await
+        //
+        // * It is a Syntax Error if the goal symbol of the syntactic
+        //   grammar is Module.
+        //
+        // and
+        //
+        // Identifier : IdentifierName but not ReservedWord
+        //
+        // * It is a Syntax Error if the goal symbol of the syntactic grammar
+        //   is Module and the StringValue of IdentifierName is "await".
+        //
+        // if self.is_module()? {
+        //     return Err(ParseError::InvalidIdentifier(
+        //         name.clone(),
+        //         offset,
+        //     ));
+        // }
+        //
+        // Ok(())
+    }
+
+    fn check_identifier(&self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc> {
+        match name {
+            "implements" | "interface" | "let" | "package" | "private" | "protected" | "public"
+            | "static" => {
+                // Static Semantics: Early Errors
+                // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
+                //
+                // Identifier : IdentifierName but not ReservedWord
+                //
+                // * It is a Syntax Error if this phrase is contained in strict
+                //   mode code and the StringValue of IdentifierName is:
+                //   "implements", "interface", "let", "package", "private",
+                //   "protected", "public", "static", or "yield".
+                //
+                // NOTE: "yield" case is handled in `check_yield_common`.
+                if self.is_strict()? {
+                    return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                }
+            }
+
+            "break" | "case" | "catch" | "class" | "const" | "continue" | "debugger"
+            | "default" | "delete" | "do" | "else" | "enum" | "export" | "extends" | "false"
+            | "finally" | "for" | "function" | "if" | "import" | "in" | "instanceof" | "new"
+            | "null" | "return" | "super" | "switch" | "this" | "throw" | "true" | "try"
+            | "typeof" | "var" | "void" | "while" | "with" => {
+                // Identifier : IdentifierName but not ReservedWord
+                //
+                // * It is a Syntax Error if StringValue of IdentifierName is
+                //   the same String value as the StringValue of any
+                //   ReservedWord except for yield or await.
+                return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+            }
+
+            _ => {}
+        }
+
+        Ok(())
+    }
 }
 
 // ===========================================================================
