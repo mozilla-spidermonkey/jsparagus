@@ -45,6 +45,7 @@ ECMASCRIPT_SYNTACTIC_GOAL_NTS = [
 ECMASCRIPT_SYNTHETIC_TERMINALS = {
     'IdentifierName': OrderedSet([
         'Name',
+        'EscapedReservedWord',
         *ECMASCRIPT_FULL_KEYWORDS,
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
     ]),
@@ -77,6 +78,7 @@ ECMASCRIPT_TOKEN_NAMES = [
 TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR = ECMASCRIPT_TOKEN_NAMES + [
     'Identifier',
     'Name',
+    'EscapedReservedWord',
 ]
 
 

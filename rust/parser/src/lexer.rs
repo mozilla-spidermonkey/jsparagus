@@ -283,11 +283,16 @@ impl<'alloc> Lexer<'alloc> {
         // SourceCharacter elements. A code point in a keyword cannot be
         // expressed by a `\` UnicodeEscapeSequence.
         let id = if has_different {
-            // Always return `Name`.
-            //
-            // Error check against reserved word should be handled in the
-            // consumer.
-            TerminalId::Name
+            match &text as &str {
+                "await" | "break" | "case" | "catch" | "class" | "const" | "continue"
+                | "debugger" | "default" | "delete" | "do" | "else" | "enum" | "export"
+                | "extends" | "false" | "finally" | "for" | "function" | "if" | "import" | "in"
+                | "instanceof" | "new" | "null" | "return" | "super" | "switch" | "this"
+                | "throw" | "true" | "try" | "typeof" | "var" | "void" | "while" | "with"
+                | "yield" => TerminalId::EscapedReservedWord,
+                // NOTE: Conditional keywords can contain escape sequence.
+                _ => TerminalId::Name,
+            }
         } else {
             match &text as &str {
                 "as" => TerminalId::As,
