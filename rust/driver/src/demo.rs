@@ -116,6 +116,9 @@ fn handle_script<'alloc>(script: Script<'alloc>) {
         Ok(emit_result) => {
             println!("\n{:#?}", emit_result);
             println!("\n{}", emitter::dis(&emit_result.bytecode));
+
+            let eval_result = interpreter::evaluate(&emit_result);
+            println!("{:?}", eval_result);
         }
     }
 }

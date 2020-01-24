@@ -2,7 +2,7 @@ mod ast_emitter;
 mod dis;
 mod emitter;
 mod lower;
-mod opcode;
+pub mod opcode;
 
 pub use crate::emitter::{EmitError, EmitResult};
 pub use dis::dis;
