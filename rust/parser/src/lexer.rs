@@ -1652,6 +1652,17 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '#' => {
+                    if start == 0 {
+                        // https://tc39.es/proposal-hashbang/out.html
+                        // HashbangComment ::
+                        //     `#!` SingleLineCommentChars?
+                        if let Some('!') = self.peek() {
+                            self.skip_single_line_comment(&mut builder);
+                            start = self.offset();
+                            continue;
+                        }
+                    }
+
                     builder.push_matching(c);
                     return self.private_identifier(start, builder);
                 }
