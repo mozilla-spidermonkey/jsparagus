@@ -9131,7 +9131,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         135 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression[+In] ")" Statement => for_in_statement($0, unbox_for_declaration($2), $4, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "in" Expression[+In] ")" Statement => for_in_statement_lexical($0, unbox_for_declaration($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -9148,8 +9148,8 @@ pub fn reduce<'alloc>(
                 };
                 let a2 = x4;
                 let a3 = x6;
-                handler.for_in_statement(a0, a1, a2, a3)
-            })?);
+                handler.for_in_statement_lexical(a0, a1, a2, a3)
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         136 => {
@@ -9197,7 +9197,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         138 => {
-            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_of_statement($0, unbox_for_declaration($2), $4, $6)
+            // IterationStatement ::= "for" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_of_statement_lexical($0, unbox_for_declaration($2), $4, $6)
             let x6: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x4: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -9214,8 +9214,8 @@ pub fn reduce<'alloc>(
                 };
                 let a2 = x4;
                 let a3 = x6;
-                handler.for_of_statement(a0, a1, a2, a3)
-            })?);
+                handler.for_of_statement_lexical(a0, a1, a2, a3)
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         139 => {
@@ -9265,7 +9265,7 @@ pub fn reduce<'alloc>(
             Ok(NonterminalId::IterationStatement)
         }
         141 => {
-            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement($0, unbox_for_declaration($3), $5, $7)
+            // IterationStatement ::= "for" "await" "(" ForDeclaration "of" AssignmentExpression[+In] ")" Statement => for_await_of_statement_lexical($0, unbox_for_declaration($3), $5, $7)
             let x7: Box<'alloc, Statement> = stack.pop().unwrap().to_ast()?;
             stack.pop();
             let x5: Box<'alloc, Expression> = stack.pop().unwrap().to_ast()?;
@@ -9283,7 +9283,7 @@ pub fn reduce<'alloc>(
                 };
                 let a2 = x5;
                 let a3 = x7;
-                handler.for_await_of_statement(a0, a1, a2, a3)
+                handler.for_await_of_statement_lexical(a0, a1, a2, a3)
             }?)?);
             Ok(NonterminalId::IterationStatement)
         }
