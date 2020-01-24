@@ -267,55 +267,69 @@ impl<'alloc> Lexer<'alloc> {
             self.chars.next();
             builder.push_matching(ch);
         }
+        let has_different = builder.has_different();
         let text = builder.finish(&self);
 
-        let id = match &text as &str {
-            "as" => TerminalId::As,
-            "async" => TerminalId::Async,
-            "await" => TerminalId::Await,
-            "break" => TerminalId::Break,
-            "case" => TerminalId::Case,
-            "catch" => TerminalId::Catch,
-            "class" => TerminalId::Class,
-            "const" => TerminalId::Const,
-            "continue" => TerminalId::Continue,
-            "debugger" => TerminalId::Debugger,
-            "default" => TerminalId::Default,
-            "delete" => TerminalId::Delete,
-            "do" => TerminalId::Do,
-            "else" => TerminalId::Else,
-            "export" => TerminalId::Export,
-            "extends" => TerminalId::Extends,
-            "finally" => TerminalId::Finally,
-            "for" => TerminalId::For,
-            "from" => TerminalId::From,
-            "function" => TerminalId::Function,
-            "get" => TerminalId::Get,
-            "if" => TerminalId::If,
-            "import" => TerminalId::Import,
-            "in" => TerminalId::In,
-            "instanceof" => TerminalId::Instanceof,
-            "let" => TerminalId::Let,
-            "new" => TerminalId::New,
-            "of" => TerminalId::Of,
-            "return" => TerminalId::Return,
-            "set" => TerminalId::Set,
-            "static" => TerminalId::Static,
-            "super" => TerminalId::Super,
-            "switch" => TerminalId::Switch,
-            "target" => TerminalId::Target,
-            "this" => TerminalId::This,
-            "throw" => TerminalId::Throw,
-            "try" => TerminalId::Try,
-            "typeof" => TerminalId::Typeof,
-            "var" => TerminalId::Var,
-            "void" => TerminalId::Void,
-            "while" => TerminalId::While,
-            "with" => TerminalId::With,
-            "yield" => TerminalId::Yield,
-            "null" => TerminalId::NullLiteral,
-            "true" | "false" => TerminalId::BooleanLiteral,
-            _ => TerminalId::Name,
+        // https://tc39.es/ecma262/#sec-keywords-and-reserved-words
+        //
+        // keywords in the grammar match literal sequences of specific
+        // SourceCharacter elements. A code point in a keyword cannot be
+        // expressed by a `\` UnicodeEscapeSequence.
+        let id = if has_different {
+            // Always return `Name`.
+            //
+            // Error check against reserved word should be handled in the
+            // consumer.
+            TerminalId::Name
+        } else {
+            match &text as &str {
+                "as" => TerminalId::As,
+                "async" => TerminalId::Async,
+                "await" => TerminalId::Await,
+                "break" => TerminalId::Break,
+                "case" => TerminalId::Case,
+                "catch" => TerminalId::Catch,
+                "class" => TerminalId::Class,
+                "const" => TerminalId::Const,
+                "continue" => TerminalId::Continue,
+                "debugger" => TerminalId::Debugger,
+                "default" => TerminalId::Default,
+                "delete" => TerminalId::Delete,
+                "do" => TerminalId::Do,
+                "else" => TerminalId::Else,
+                "export" => TerminalId::Export,
+                "extends" => TerminalId::Extends,
+                "finally" => TerminalId::Finally,
+                "for" => TerminalId::For,
+                "from" => TerminalId::From,
+                "function" => TerminalId::Function,
+                "get" => TerminalId::Get,
+                "if" => TerminalId::If,
+                "import" => TerminalId::Import,
+                "in" => TerminalId::In,
+                "instanceof" => TerminalId::Instanceof,
+                "let" => TerminalId::Let,
+                "new" => TerminalId::New,
+                "of" => TerminalId::Of,
+                "return" => TerminalId::Return,
+                "set" => TerminalId::Set,
+                "static" => TerminalId::Static,
+                "super" => TerminalId::Super,
+                "switch" => TerminalId::Switch,
+                "target" => TerminalId::Target,
+                "this" => TerminalId::This,
+                "throw" => TerminalId::Throw,
+                "try" => TerminalId::Try,
+                "typeof" => TerminalId::Typeof,
+                "var" => TerminalId::Var,
+                "void" => TerminalId::Void,
+                "while" => TerminalId::While,
+                "with" => TerminalId::With,
+                "yield" => TerminalId::Yield,
+                "null" => TerminalId::NullLiteral,
+                "true" | "false" => TerminalId::BooleanLiteral,
+                _ => TerminalId::Name,
+            }
         };
 
         Ok((SourceLocation::new(offset, self.offset()), Some(text), id))
@@ -1605,6 +1619,12 @@ impl<'alloc> AutoCow<'alloc> {
             &self.start[..self.start.len() - lexer.chars.as_str().len() - 1],
             lexer.allocator,
         ));
+    }
+
+    // Check if the string contains a different character, such as an escape
+    // sequence
+    fn has_different(&self) -> bool {
+        self.value.is_some()
     }
 
     fn finish(&mut self, lexer: &Lexer<'alloc>) -> &'alloc str {
