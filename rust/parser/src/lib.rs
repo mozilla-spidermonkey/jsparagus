@@ -18,6 +18,7 @@ use generated_parser::{
 };
 pub use generated_parser::{ParseError, Result};
 use lexer::Lexer;
+use std::io::{self, Write};
 
 pub fn parse_script<'alloc>(
     allocator: &'alloc bumpalo::Bump,
