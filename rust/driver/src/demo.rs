@@ -6,10 +6,13 @@ use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use ast::{self, types::{Program, Script}};
+use ast::{
+    self,
+    types::{Program, Script},
+};
 use bumpalo::Bump;
 use emitter;
-use parser::{ParseError, parse_script};
+use parser::{parse_script, ParseError};
 
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
