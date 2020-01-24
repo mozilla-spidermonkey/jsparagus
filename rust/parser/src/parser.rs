@@ -76,7 +76,7 @@ impl<'alloc> Parser<'alloc> {
         let mut action = self.action(t);
         while action.is_reduce() {
             let prod_index = action.reduce_prod_index();
-            let nt = reduce(&self.handler, prod_index, &mut self.node_stack)?;
+            let nt = reduce(&mut self.handler, prod_index, &mut self.node_stack)?;
             debug_assert!((nt as usize) < tables.goto_width);
             debug_assert!(self.state_stack.len() >= self.node_stack.len());
             self.state_stack.truncate(self.node_stack.len());

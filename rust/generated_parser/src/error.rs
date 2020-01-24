@@ -1,4 +1,5 @@
 use crate::stack_value_generated::AstError;
+use crate::DeclarationKind;
 use crate::Token;
 use std::{convert::Infallible, error::Error, fmt, io};
 
@@ -32,6 +33,10 @@ pub enum ParseError<'alloc> {
     // 14.8 Async arrow function definitions
     ArrowHeadInvalid,
     ArrowParametersWithNonFinalRest,
+
+    DuplicateBinding(&'alloc str, DeclarationKind, usize, DeclarationKind, usize),
+    DuplicateExport(&'alloc str, usize, usize),
+    MissingExport(&'alloc str, usize),
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -68,6 +73,20 @@ impl<'alloc> ParseError<'alloc> {
             ),
             ParseError::ArrowParametersWithNonFinalRest => format!(
                 "arrow function parameters can have a rest element (`...x`) only at the end"
+            ),
+            ParseError::DuplicateBinding(name, kind1, _, kind2, _) => format!(
+                "redeclaration of {} '{}' with {}",
+                kind1.to_str(),
+                name,
+                kind2.to_str(),
+            ),
+            ParseError::DuplicateExport(name, _, _) => format!(
+                "duplicate export name '{}'",
+                name,
+            ),
+            ParseError::MissingExport(name, _) => format!(
+                "local binding for export '{}' not found",
+                name,
             ),
         }
     }

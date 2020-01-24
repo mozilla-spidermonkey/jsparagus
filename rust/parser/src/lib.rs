@@ -43,7 +43,7 @@ fn parse<'alloc>(
 
     TABLES.check();
 
-    let mut parser = Parser::new(AstBuilder { allocator }, start_state);
+    let mut parser = Parser::new(AstBuilder::new(allocator), start_state);
 
     loop {
         let t = tokens.next(&parser)?;
@@ -68,7 +68,7 @@ pub fn read_script_interactively<'alloc>(
 ) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
     TABLES.check();
 
-    let mut parser = Parser::new(AstBuilder { allocator }, START_STATE_SCRIPT);
+    let mut parser = Parser::new(AstBuilder::new(allocator), START_STATE_SCRIPT);
     let mut byte_total = 0;
 
     print!("{}", prompt);

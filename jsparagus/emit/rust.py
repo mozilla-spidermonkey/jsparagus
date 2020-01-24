@@ -331,7 +331,7 @@ class RustParserWriter:
         # Note use of std::vec::Vec below: we have imported `arena::Vec` in this module,
         # since every other data structure mentioned in this file lives in the arena.
         self.write(0, "pub fn reduce<'alloc>(")
-        self.write(1, "handler: &AstBuilder<'alloc>,")
+        self.write(1, "handler: &mut AstBuilder<'alloc>,")
         self.write(1, "prod: usize,")
         self.write(1, "stack: &mut std::vec::Vec<StackValue<'alloc>>,")
         self.write(0, ") -> Result<'alloc, NonterminalId> {")
@@ -377,12 +377,20 @@ class RustParserWriter:
                         method_type = self.grammar.methods[expr.method]
                         method_name = self.method_name_to_rust(expr.method)
                         assert len(method_type.argument_types) == len(expr.args)
-                        args = ', '.join(
-                            compile_reduce_expr(arg)
-                            for ty, arg in zip(method_type.argument_types,
-                                               expr.args)
-                            if ty != types.UnitType)
-                        call = "handler.{}({})".format(method_name, args)
+
+                        # Given arguments can contain any mutable call,
+                        # store them in local variable first.
+                        arg_defs = ''
+                        args = ''
+                        i = 0
+                        for ty, arg in zip(method_type.argument_types,
+                                           expr.args):
+                            if ty != types.UnitType:
+                                arg_defs += 'let a{} = {};'.format(i, compile_reduce_expr(arg))
+                                args += 'a{},'.format(i)
+                                i += 1
+                        call = "{{ {} handler.{}({}) }}".format(
+                            arg_defs, method_name, args)
 
                         # Extremely bad hack. In Rust, since type inference is
                         # currently so poor, we don't have enough information
