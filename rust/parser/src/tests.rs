@@ -3,7 +3,7 @@ use std::iter;
 use crate::lexer::Lexer;
 use crate::parse_script;
 use crate::parser::Parser;
-use ast::{arena, types::*};
+use ast::{arena, source_location::SourceLocation, types::*};
 use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
 
@@ -125,12 +125,12 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
         assert_eq!(
             left_token.terminal_id, right_token.terminal_id,
             "at offset {} in {:?} / {} in {:?}",
-            left_token.offset, left, right_token.offset, right,
+            left_token.loc.start, left, right_token.loc.start, right,
         );
         assert_eq!(
             left_token.value, right_token.value,
             "at offsets {} / {}",
-            left_token.offset, right_token.offset
+            left_token.loc.start, right_token.loc.start
         );
 
         if left_token.terminal_id == TerminalId::End {
@@ -411,19 +411,30 @@ fn test_awkward_chunks() {
             Statement::ExpressionStatement(arena::alloc(
                 allocator,
                 Expression::CompoundAssignmentExpression {
-                    operator: CompoundAssignmentOperator::Div,
+                    operator: CompoundAssignmentOperator::Div {
+                        loc: SourceLocation::new(1, 3),
+                    },
                     binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier {
-                            name: Identifier { value: "x" },
+                            name: Identifier {
+                                value: "x",
+                                loc: SourceLocation::new(0, 1),
+                            },
+                            loc: SourceLocation::new(0, 1),
                         },
                     ),
                     expression: arena::alloc(
                         allocator,
-                        Expression::LiteralNumericExpression { value: 2.0 },
+                        Expression::LiteralNumericExpression {
+                            value: 2.0,
+                            loc: SourceLocation::new(3, 4),
+                        },
                     ),
+                    loc: SourceLocation::new(0, 4),
                 },
             ))
         ],
+        loc: SourceLocation::new(0, 4),
     };
     assert_eq!(format!("{:?}", actual), format!("{:?}", expected));
 }
