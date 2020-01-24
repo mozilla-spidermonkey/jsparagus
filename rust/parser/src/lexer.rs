@@ -314,7 +314,7 @@ impl<'alloc> Lexer<'alloc> {
                 }
                 self.identifier_name_tail(builder)
                     .map(|(_has_escapes, name)| name)
-            },
+            }
         }
     }
 

@@ -122,7 +122,7 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
     let mut right_lexer = Lexer::new(allocator, right.chars());
 
     let mut parser = Parser::new(
-        AstBuilder { allocator },
+        AstBuilder::new(allocator),
         generated_parser::START_STATE_MODULE,
     );
 
@@ -155,7 +155,7 @@ fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let buf = chunks_to_string(code);
     let mut lexer = Lexer::new(allocator, buf.chars());
     let mut parser = Parser::new(
-        AstBuilder { allocator },
+        AstBuilder::new(allocator),
         generated_parser::START_STATE_SCRIPT,
     );
     loop {

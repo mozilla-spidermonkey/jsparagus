@@ -822,7 +822,7 @@ IterationStatement[Yield, Await, Return] :
   `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
     => for_statement($0, Some(for_var_declaration($2, $3)), $5, $7, $9)
   `for` `(` ForLexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
-    => for_statement($0, Some(unbox_for_lexical_declaration($2)), $3, $5, $7)
+    => for_statement_lexical($0, unbox_for_lexical_declaration($2), $3, $5, $7)
   `for` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_in_statement($0, for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
@@ -893,9 +893,9 @@ SwitchStatement[Yield, Await, Return] :
 @returns Statement
 CaseBlock[Yield, Await, Return] :
   `{` CaseClauses[?Yield, ?Await, ?Return]? `}`
-    => case_block($1, $2)
+    => case_block($0, $1, $2)
   `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
-    => case_block_with_default($1, $2, $3, $4)
+    => case_block_with_default($0, $1, $2, $3, $4)
 
 @returns Vec<SwitchCase>
 CaseClauses[Yield, Await, Return] :
@@ -944,10 +944,15 @@ TryStatement[Yield, Await, Return] :
 
 @returns CatchClause
 Catch[Yield, Await, Return] :
-  `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]
-    => catch($0, Some($2), $4)
+  `catch` `(` CatchParameter[?Yield, ?Await] `)` CatchBlock[?Yield, ?Await, ?Return]
+    => catch($0, $2, $4)
   `catch` Block[?Yield, ?Await, ?Return]
-    => catch($0, None, $1)
+    => catch_no_param($0, $1)
+
+@returns Block
+CatchBlock[Yield, Await, Return] :
+  `{` StatementList[?Yield, ?Await, ?Return]? `}`
+    => catch_block($0, $1, $2)
 
 @returns Block
 Finally[Yield, Await, Return] :
