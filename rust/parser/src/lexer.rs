@@ -881,7 +881,7 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     // ------------------------------------------------------------------------
-    // 11.8.4 String Literals
+    // 11.8.4 String Literals (as extended by B.1.2)
 
     /// Scan an LineContinuation or EscapeSequence in a string literal, having
     /// already consumed the initial backslash character.
@@ -892,7 +892,8 @@ impl<'alloc> Lexer<'alloc> {
     ///
     /// EscapeSequence ::
     ///     CharacterEscapeSequence
-    ///     LegacyOctalEscapeSequence
+    ///     (in strict mode code) `0` [lookahead ∉ DecimalDigit]
+    ///     (in non-strict code) LegacyOctalEscapeSequence
     ///     HexEscapeSequence
     ///     UnicodeEscapeSequence
     ///
@@ -903,6 +904,17 @@ impl<'alloc> Lexer<'alloc> {
     /// SingleEscapeCharacter :: one of
     ///     `'` `"` `\` `b` `f` `n` `r` `t` `v`
     ///
+    /// LegacyOctalEscapeSequence ::
+    ///     OctalDigit [lookahead ∉ OctalDigit]
+    ///     ZeroToThree OctalDigit [lookahead ∉ OctalDigit]
+    ///     FourToSeven OctalDigit
+    ///     ZeroToThree OctalDigit OctalDigit
+    ///
+    /// ZeroToThree :: one of
+    ///     `0` `1` `2` `3`
+    ///
+    /// FourToSeven :: one of
+    ///     `4` `5` `6` `7`
     /// ```
     fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<'alloc, ()> {
         match self.chars.next() {
@@ -917,6 +929,7 @@ impl<'alloc> Lexer<'alloc> {
                     // has no bearing on whether the current string literal was
                     // the first token on the line where it started.
                 }
+
                 CR => {
                     // LineContinuation. Check for the sequence \r\n; otherwise
                     // ignore it.
@@ -928,24 +941,31 @@ impl<'alloc> Lexer<'alloc> {
                 '\'' | '"' | '\\' => {
                     text.push(c);
                 }
+
                 'b' => {
                     text.push('\u{8}');
                 }
+
                 'f' => {
                     text.push(FF);
                 }
+
                 'n' => {
                     text.push(LF);
                 }
+
                 'r' => {
                     text.push(CR);
                 }
+
                 't' => {
                     text.push(TAB);
                 }
+
                 'v' => {
                     text.push(VT);
                 }
+
                 'x' => {
                     // HexEscapeSequence ::
                     //     `x` HexDigit HexDigit
@@ -960,10 +980,12 @@ impl<'alloc> Lexer<'alloc> {
                         }
                     }
                 }
+
                 'u' => {
                     let c = self.unicode_escape_sequence_after_backslash_and_u()?;
                     text.push(c);
                 }
+
                 '0' => {
                     // In strict mode code and in template literals, the
                     // relevant production is
@@ -971,29 +993,29 @@ impl<'alloc> Lexer<'alloc> {
                     //     EscapeSequence ::
                     //         `0` [lookahead <! DecimalDigit]
                     //
-                    // In non-strict StringLiterals, legacy octal escape
-
-                    // LegacyOctalEscapeSequence ::
-                    //     OctalDigit [lookahead <! OctalDigit]
-                    //     ZeroToThree OctalDigit [lookahead <! OctalDigit]
-                    //     FourToSeven OctalDigit
-                    //     ZeroToThree OctalDigit OctalDigit
-                    //
-                    // ZeroToThree :: one of
-                    //     `0` `1` `2` `3`
-                    //
-                    // FourToSeven :: one of
-                    //     `4` `5` `6` `7`
-
-                    if let Some('0'..='9') = self.peek() {
-                        return Err(ParseError::InvalidEscapeSequence);
+                    // In non-strict StringLiterals, `\0` begins a
+                    // LegacyOctalEscapeSequence which may contain more digits.
+                    match self.peek() {
+                        Some('0'..='7') => {
+                            return Err(ParseError::NotImplemented(
+                                "legacy octal escape sequence in string",
+                            ));
+                        }
+                        _ => {}
                     }
                     text.push('\0');
                 }
-                '1'..='9' => {
-                    return Err(ParseError::InvalidEscapeSequence);
+
+                '1'..='7' => {
+                    return Err(ParseError::NotImplemented(
+                        "legacy octal escape sequence in string",
+                    ));
                 }
+
                 other => {
+                    // "\8" and "\9" are invalid per spec, but SpiderMonkey and
+                    // V8 accept them, and JSC accepts them in non-strict mode.
+                    // "\8" is "8" and "\9" is "9".
                     text.push(other);
                 }
             },
