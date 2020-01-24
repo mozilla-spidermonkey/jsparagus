@@ -2782,6 +2782,14 @@ impl<'alloc> AstBuilder<'alloc> {
         kind: arena::Box<'alloc, VariableDeclarationKind>,
         binding: arena::Box<'alloc, Binding<'alloc>>,
     ) -> arena::Box<'alloc, VariableDeclarationOrAssignmentTarget<'alloc>> {
+        let binding_kind = match &*kind {
+            VariableDeclarationKind::Let { .. } => BindingKind::Let,
+            VariableDeclarationKind::Const { .. } => BindingKind::Const,
+            _ => panic!("unexpected VariableDeclarationKind"),
+        };
+
+        self.mark_binding_kind(kind.get_loc().start, None, binding_kind);
+
         let kind_loc = kind.get_loc();
         let binding_loc = binding.get_loc();
         self.alloc(VariableDeclarationOrAssignmentTarget::VariableDeclaration(

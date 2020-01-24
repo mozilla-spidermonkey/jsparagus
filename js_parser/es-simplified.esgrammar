@@ -828,19 +828,19 @@ IterationStatement[Yield, Await, Return] :
   `for` `(` `var` ForBinding[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_in_statement($0, for_in_or_of_var_declaration($2, $3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
-    => for_in_statement($0, unbox_for_declaration($2), $4, $6)
+    => for_in_statement_lexical($0, unbox_for_declaration($2), $4, $6)
   `for` `(` [lookahead <! {`async`, `let`} ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_of_statement($0, for_assignment_target($2), $4, $6)
   `for` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_of_statement($0, for_in_or_of_var_declaration($2, $3), $5, $7)
   `for` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
-    => for_of_statement($0, unbox_for_declaration($2), $4, $6)
+    => for_of_statement_lexical($0, unbox_for_declaration($2), $4, $6)
   [+Await] `for` `await` `(` [lookahead <! {`async`, `let`} ] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_await_of_statement($0, for_assignment_target($3), $5, $7)
   [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
     => for_await_of_statement($0, for_in_or_of_var_declaration($3, $4), $6, $8)
   [+Await] `for` `await` `(` ForDeclaration[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
-    => for_await_of_statement($0, unbox_for_declaration($3), $5, $7)
+    => for_await_of_statement_lexical($0, unbox_for_declaration($3), $5, $7)
 
 @returns VariableDeclarationOrAssignmentTarget
 ForDeclaration[Yield, Await] :
