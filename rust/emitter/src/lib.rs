@@ -52,13 +52,13 @@ mod tests {
         assert_eq!(
             bytecode("dis()"),
             vec![
-                Opcode::GetGname as u8,
+                Opcode::GetGName as u8,
                 0,
                 0,
                 0,
                 0,
                 Opcode::GImplicitThis as u8,
-                1,
+                0,
                 0,
                 0,
                 0,
