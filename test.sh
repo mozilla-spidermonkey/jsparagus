@@ -12,7 +12,7 @@ verbosely() {
 
 wtf() {
     exitcode="$?"
-    if [ $(which python | cut -b -4) == "/usr" ]; then
+    if [ $(which python3 | cut -b -4) == "/usr" ]; then
         echo >&2
         echo "WARNING: venv is not activated. See README.md." >&2
     fi
@@ -26,6 +26,6 @@ warn_update() {
     exit $exitcode
 }
 
-verbosely python -m tests.test || wtf
-verbosely python -m tests.test_js
-verbosely python -m tests.test_parse_pgen || warn_update
+verbosely python3 -m tests.test || wtf
+verbosely python3 -m tests.test_js
+verbosely python3 -m tests.test_parse_pgen || warn_update
