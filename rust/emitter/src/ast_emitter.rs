@@ -4,7 +4,7 @@
 
 use super::emitter::{BytecodeOffset, EmitError, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
-use ast::{arena, types::*};
+use ast::types::*;
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
@@ -76,8 +76,8 @@ impl AstEmitter {
             Statement::LabeledStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
             }
-            Statement::ReturnStatement { expression, .. } => {
-                self.emit_return_statement(expression)?;
+            Statement::ReturnStatement { .. } => {
+                return Err(EmitError::NotImplemented("TODO: ReturnStatement"));
             }
             Statement::SwitchStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: SwitchStatement"));
@@ -111,20 +111,6 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: FunctionDeclaration"));
             }
         };
-
-        Ok(())
-    }
-
-    fn emit_return_statement(
-        &mut self,
-        expression: &Option<arena::Box<Expression>>,
-    ) -> Result<(), EmitError> {
-        match expression {
-            Some(ast) => self.emit_expression(ast)?,
-            None => self.emit.undefined(),
-        }
-        self.emit.set_rval();
-        self.emit.ret_rval();
 
         Ok(())
     }
