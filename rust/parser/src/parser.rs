@@ -1,8 +1,8 @@
-use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
     reduce, AstBuilder, ErrorCode, ParseError, Result, StackValue, TerminalId, Token, TABLES,
 };
+use crate::simulator::Simulator;
 
 const ACCEPT: i64 = -0x7fff_ffff_ffff_ffff;
 const ERROR: i64 = ACCEPT - 1;
@@ -188,9 +188,7 @@ impl<'alloc> Parser<'alloc> {
 
     pub fn can_accept_terminal(&self, t: TerminalId) -> bool {
         let bogus_loc = SourceLocation::new(0, 0);
-        self.simulator()
-            .write_token(&Token::basic_token(t, bogus_loc))
-            .is_ok()
+        self.simulator().write_token(&Token::basic_token(t, bogus_loc)).is_ok()
     }
 
     /// Return true if self.close() would succeed.

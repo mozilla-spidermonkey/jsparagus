@@ -29,11 +29,7 @@ impl<'alloc> Lexer<'alloc> {
     /// Create a lexer for a part of a JS script or module. `offset` is the
     /// total length of all previous parts, in bytes; source locations for
     /// tokens created by the new lexer start counting from this number.
-    pub fn with_offset(
-        allocator: &'alloc Bump,
-        chars: Chars<'alloc>,
-        offset: usize,
-    ) -> Lexer<'alloc> {
+    pub fn with_offset(allocator: &'alloc Bump, chars: Chars<'alloc>, offset: usize) -> Lexer<'alloc> {
         let source_length = offset + chars.as_str().len();
         Lexer {
             allocator,

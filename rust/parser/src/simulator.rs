@@ -4,9 +4,11 @@
 //! This is basically a copy of the parser.rs source code with calls to
 //! generated_parser::reduce, and stack bookkeeping, omitted.
 
-use crate::parser::{Action, Parser};
 use ast::SourceLocation;
-use generated_parser::{ErrorCode, Result, TerminalId, Token, TABLES};
+use generated_parser::{
+    ErrorCode, Result, TerminalId, Token, TABLES,
+};
+use crate::parser::{Action, Parser};
 
 pub struct Simulator<'parser> {
     sp: usize,
