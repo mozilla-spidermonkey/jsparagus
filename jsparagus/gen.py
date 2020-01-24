@@ -1466,6 +1466,17 @@ class CanonicalGrammar:
         self.grammar = remove_empty_productions(grammar)
 
 
+# An edge in a Parse table is a tuple of a source state and the term followed
+# to exit this state. The destination is not saved here as it can easily be
+# inferred by looking it up in the parse table.
+#
+#   state: Index of the state from which this directed edge is coming from.
+#
+#   term: Edge transition value, this can be a terminal, non-terminal or an
+#       action to be executed on an epsilon transition.
+Edge = collections.namedtuple("Edge", "src term")
+StackedEdge = collections.namedtuple("Edge", "src term on_stack")
+
 class StateAndTransitions:
     """This is one state of the parse table, which has transitions based on
     terminals (text), non-terminals (grammar rules) and epsilon (reduce).
@@ -1846,7 +1857,9 @@ class LR0Generator:
 #          through the list of terminals.
 #
 #   actions: This is the list of actions that would be executed as we push
-#          edges.
+#          edges. Maybe we should rename this history. This is a list of edges
+#          taken, which helps tracking which state got visited since we
+#          started.
 APS = collections.namedtuple("APS", "stack shift lookahead actions")
 
 # A Lane table is a structure used to represent the conflicting and add context
@@ -1913,9 +1926,6 @@ class ParseTable:
         "terminals",
         # List of non-terminals.
         "nonterminals",
-        # Map non-terminals to the sequences of states used to produce these
-        # non-terminals.
-        "reduce_paths",
     ]
 
     def __init__(self, grammar, verbose = False, progress = False):
@@ -1924,9 +1934,7 @@ class ParseTable:
         self.goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
-        self.reduce_paths = {}
         self.create_lr0_table(grammar, verbose, progress)
-        self.compute_reduce_paths(verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
 
     def is_inconsistent(self):
@@ -1942,6 +1950,17 @@ class ParseTable:
         state = StateAndTransitions(index)
         self.states.append(state)
         return state
+
+    def add_edge(src, term, dest):
+        assert isinstance(src, StateAndTransitions)
+        assert isinstance(dest, int) and dest < len(self.states)
+        if isinstance(term, Action):
+            src.epsilon.append((term, dest))
+        elif isinstance(term, Nt):
+            src.nonterminals[term] = dest
+        else:
+            src.terminals[term] = dest
+        self.states[dest].backedges.add(Edge(src.index, term))
 
     def create_lr0_table(self, grammar, verbose, progress):
         if verbose or progress:
@@ -1986,74 +2005,22 @@ class ParseTable:
                         todo.append((sk_it, sk))
 
                     # Add the edge from s to sk with k.
-                    if isinstance(k, Action):
-                        s.epsilon.append((k, sk.index))
-                    elif isinstance(k, Nt):
-                        s.nonterminals[k] = sk.index
-                    else:
-                        s.terminals[k] = sk.index
+                    self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
 
-    def compute_reduce_paths(self, verbose, progress):
-        """Reduce actions are currently ending with bogus states which are unreachable.
-        However, for solving inconsistencies, we might need more lookahead
-        terms to disambiguate state machine.
-
-        This function computes the list of states to which a reduce function
-        might jump back to after being executed."""
-        if verbose or progress:
-            print("Compute reduce paths.")
-
-        todo = []
-        for s in self.goals:
-            assert isinstance(s, int)
-            todo.append([s])
-
-        # initialiaze the reduce_paths to empty sets of word sequences to be
-        # reduced.
-        for nt in self.nonterminals:
-            self.reduce_paths[nt] = set()
-
-        def visit_table():
-            while todo:
-                yield # progress bar.
-                # TODO: Compare stack / queue, for the traversal of the states.
-                shifted = todo.pop()
-                state = self.states[shifted[-1]]
-                for term, to in state.edges():
-                    if to in shifted:
-                        # We already traversed this state before.
-                        continue
-                    if isinstance(term, Action):
-                        to.backedges.add((state.index, term, False))
-                        if term.update_stack():
-                            nt = term.reduce_with()
-                            # NOTE: the first state is the state before
-                            # shifting the first terminals/non-terminals of the
-                            # Nt production.
-                            incoming = tuple(shifted[-1 - term.pop:])
-                            if incoming not in self.reduce_paths[nt]:
-                                self.reduce_paths[nt].add(tuple(incoming))
-                            if verbose:
-                                print("\nReduce {} as {}.".format(repr(incoming), nt.name))
-                        else:
-                            todo.append(shifted[:-1] + [to])
-                    else:
-                        to.backedges.add((state.index, term, True))
-                        todo.append(shifted + [to])
-        consume(visit_table(), progress)
-
-    def shifted_path_to(self, state, n):
+    def shifted_path_to(self, state, n, stacked = True):
         "Compute all paths with n shifted terms, ending with state."
         if n == 0:
-            return [[(state, None, True)]]
+            return [[]]
         paths = []
-        for s, term, stacked in self.states[state].backedges:
-            s_n = n
-            if stacked:
-                s_n = n - 1
-            for path in self.shifted_path_to(s, s_n):
-                paths.append(path + [(state, term, stacked)])
+        for edge in self.states[state].backedges:
+            s_n = n - 1
+            stacked = True
+            if isinstance(edge.term, Action):
+                s_n = n
+                stacked = False
+            for path in self.shifted_path_to(edge.src, s_n, stacked):
+                paths.append(path + [StackedEdge(edge.src, edge.term, stacked)])
         return paths
 
     def reduce_path(self, state, action):
@@ -2063,38 +2030,41 @@ class ParseTable:
         assert isinstance(action, Reduce)
         depth = action.pop + action.replay
         for path in self.shifted_path_to(state, depth):
-            sh_path = [ s for s, _, _ in path ]
+            sh_path = [ edge.src for edge in path ] + [ state ]
             head = self.states[sh_path[0]]
             assert action.nt in head.nonterminals
             to = head.nonterminals[action.nt]
             yield sh_path, path, to
 
-    def aps_shift_with_epsilon(self, aps, shifted_terms):
-        if shifted_terms == []:
+    def aps_shift_with_epsilon(self, aps, pred, shifted, replay):
+        """Push an APS based on the lookahead or actions to be executed, the `pred` and
+        `shifted` functions are used as a way to control the recursion."""
+        if pred(aps):
             return [aps]
-        term = shifted_terms[0]
-        rest = shifted_terms[1:]
+        term, replay, any_action = shifted(aps, replay)
         st, sh, la, ac = aps
         state = self.states[sh[-1]]
         next_list = []
         if term in state.terminals:
             to = state.terminals[term]
             new_aps = APS(st, sh + [to], la + [term], ac + [term])
-            res = self.aps_shift_with_epsilon(new_aps, rest)
+            res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
             next_list.extend(res)
         elif term in state.nonterminals:
             to = state.nonterminals[term]
             new_aps = APS(st, sh + [to], la + [term], ac + [term])
-            res = self.aps_shift_with_epsilon(new_aps, rest)
+            res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
             next_list.extend(res)
         elif term is None:
             for term, to in itertools.chains(state.terminals, state.nonterminals):
                 new_aps = APS(st, sh + [to], la + [term], ac + [term])
-                res = self.aps_shift_with_epsilon(new_aps, rest)
+                res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
                 next_list.extend(res)
 
+        if any_action and term != None:
+            replay = [term] + replay
         for a, to in state.epsilon:
-            if isinstance(term, Action) and a != term:
+            if not any_action and a != term:
                 continue
             if a.update_stack():
                 for sh_path, path, to in self.reduce_path(state, a):
@@ -2115,23 +2085,43 @@ class ParseTable:
                     # pushed on the stack as our lookahead. These terms are
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
-                    replay = [ t for _, t, on_stack for path if on_stack ]
-                    replay = [max(len(replay) - a.replay, 0):]
+                    new_replay = [ t for _, t, on_stack for path if on_stack ]
+                    new_replay = la[max(len(replay) - a.replay, 0):]
                     new_la = la[:max(len(la) - a.replay, 0)]
                     new_aps = APS(new_st, new_sh, new_la, ac + [term])
-                    res = self.aps_shift_with_epsilon(new_aps, replay + rest)
+                    new_replay = new_replay + replay
+                    res = self.aps_shift_with_epsilon(new_aps, pred, shifted, new_replay)
                     next_list.extend(res)
             else:
                 new_aps = APS(st, sh + [to], la, ac + [term])
-                res = self.aps_shift_with_epsilon(new_aps, rest)
+                res = self.aps_shift_with_epsilon(new_aps, pred, shifted)
                 next_list.extend(res)
 
-    def lanes(self, state, lookahead = 1):
+    def lanes(self, state):
         "Compute the lanes from the amount of lookahead available. Only consider
         context when reduce states are encountered."
         start = APS([s], [s], [], [])
-        lookahead = list(map(lambda x: None, range(lookahead)))
-        return self.aps_shift_with_epsilon(start, lookahead)
+        def stop_lane_when(aps):
+            # Check if there is any edge which got already visited. While this
+            # does not cover all the space of possible vocabulary which can be
+            # matched, this cover all the space of lookahead tokens which can
+            # be accepted, as well as all te space of previous states which can
+            # be used to reach the current state. (TODO: verify this
+            # hypothesis)
+            if len(aps.shifted) != 1 + len(set(zip(aps.shifted, aps.shifted[1:]))):
+                return True
+            if len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:]))):
+                return True
+            if self.states[aps.shifted[-1]].epsilon != []:
+                return False
+            if len(aps.lookahead) <= 1:
+                return False
+            return True
+        def lookahead(aps, replay):
+            if replay == []:
+                return None, [], True
+            return replay[0], replay[1:], True
+        return self.aps_shift_with_epsilon(start, stop_lane_when, lookahead, [])
 
     # Lane Table algorithms will look for lookahead, and then context. This is
     # done by traversing the graph until there is at least some context. The
@@ -2488,7 +2478,7 @@ class ParseTable:
 
         all_reduce = all([ a.update_stack() for a, _ in state.epsilon ])
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
-        aps_lanes = self.lanes(s, 1)
+        aps_lanes = self.lanes(s)
         if all_reduce and not any_shift:
             # NOTE: we could apply this strategy even when we have some shift
             # operations, but this would imply that we should get rid of the
@@ -2499,35 +2489,58 @@ class ParseTable:
             #
             # Find the all lanes reducing to each reduce action.
             lanes = defaultdict(lambda: list()) # Action -> Lanes
-            state_actions = defaultdict(lambda: set()) # Action -> States
+            state_actions = defaultdict(lambda: set()) # State -> set(Actions)
+            known_edges = defaultdict(lambda: set()) # Action -> set(Edges)
+            edges_actions = defaultdict(lambda: set()) # Edge -> set(Actions)
             for aps in aps_lanes:
                 action = aps.actions[0]
                 assert action.update_stack()
+                assert aps.stack[-1] == s
                 lanes[action].append(aps.stack)
                 for st in aps.stack:
                     state_actions[st].add(action)
+                for edge in zip(aps.stack, aps.stack[1:]):
+                    edges_actions[edge].add(action)
+                known_edges[action].union(set(zip(aps.stack, aps.stack[1:])))
 
             # Find lane heads. Lane heads are supposed to be the first state
             # which belong to the reduced production. However, for our case, we
             # consider lane heads as the first state which resolve uniquely to
             # one reduce action.
-            lanes_head = defaultdict(lambda: [])
+            lanes_with_head = defaultdict(lambda: [])
             rejected_states = defaultdict(lambda: set())
             for aps in aps_lanes:
                 action = aps.actions[0]
-                if not any(len(state_actions[s]) == 1 for s in aps.stack):
+                unique = [len(state_actions[s]) == 1 for s in aps.stack]
+                if not any(unique):
                     # TODO: Should we assert that all the states of this lane
                     # are covered by the accepted lanes with a lane head.
                     for s in aps.stack:
                         rejected_states[action].add(s)
                     continue
+                # Keep only a single non-ambiguous head.
+                # TODO: shouldn't we keep the head which lead to the reduce state only?
+                head = [ i for i, u in enumerate(unique) if u ][-1]
+                lane = aps.stack[head:]
+
+                # Replay exactly the path recorded by the APS in order to find
+                # the reduce action which gave us this lane head.
+                start = APS([s], [s], [], [])
+                rest = list(aps.actions)
+                def stop_if(aps):
+                    return rest == []:
+                def lookahead(aps, replay):
+                    return rest[0], [], False
+                reducer = self.aps_shift_with_epsilon(start, stop_if, lookahead, [])
+
                 # TODO: strip the lane head front until we have only one lane
                 # head in each lane.
-                lanes_head[action].append(aps.stack)
+                lanes_with_head[action].append(lane)
 
             # For disjoint lane heads, create a new flag, and push it after
-            # each lane head, pop it before all the reduce of the same
-            # non-terminal, and filter it to remove conflicts.
+            # each lane head, pop it before all the reduce action which are
+            # reducing to the lane head. Then a filter in front of the
+            # inconsistent reduce action to remove conflicts.
             #
             # TODO: For the moment do not even try, and just fail.
             # For non-disjoint lane heads, shift the equivalent non-terminals
