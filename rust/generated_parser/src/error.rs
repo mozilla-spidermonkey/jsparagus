@@ -21,6 +21,7 @@ pub enum ParseError<'alloc> {
     UnexpectedEnd,
     InvalidAssignmentTarget,
     InvalidParameter,
+    InvalidIdentifier(&'alloc str, usize),
     AstError(String),
 
     // Destructuring errors
@@ -59,6 +60,9 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
             ParseError::InvalidAssignmentTarget => format!("invalid left-hand side of assignment"),
             ParseError::InvalidParameter => format!("invalid parameter"),
+            ParseError::InvalidIdentifier(name, _) => {
+                format!("invalid identifier {}", name)
+            }
             ParseError::AstError(ast_error) => format!("{}", ast_error),
             ParseError::ArrayPatternWithNonFinalRest => {
                 format!("array patterns can have a rest element (`...x`) only at the end")

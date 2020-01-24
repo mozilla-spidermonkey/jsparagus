@@ -9535,7 +9535,7 @@ pub fn reduce<'alloc>(
             stack.push(TryIntoStack::try_into_stack({
                 let a0 = x0;
                 handler.label_identifier(a0)
-            })?);
+            }?)?);
             Ok(NonterminalId::LabelIdentifier)
         }
         152 => {
@@ -9937,7 +9937,7 @@ pub fn reduce<'alloc>(
             stack.push(TryIntoStack::try_into_stack({
                 let a0 = x0;
                 handler.binding_identifier(a0)
-            })?);
+            }?)?);
             Ok(NonterminalId::BindingIdentifier)
         }
         170 => {
@@ -9946,7 +9946,7 @@ pub fn reduce<'alloc>(
             stack.push(TryIntoStack::try_into_stack({
                 let a0 = x0;
                 handler.binding_identifier_yield(a0)
-            })?);
+            }?)?);
             Ok(NonterminalId::BindingIdentifier)
         }
         171 => {
@@ -9955,7 +9955,7 @@ pub fn reduce<'alloc>(
             stack.push(TryIntoStack::try_into_stack({
                 let a0 = x0;
                 handler.binding_identifier_await(a0)
-            })?);
+            }?)?);
             Ok(NonterminalId::BindingIdentifier)
         }
         172 => {
@@ -13548,7 +13548,7 @@ pub fn reduce<'alloc>(
             stack.push(TryIntoStack::try_into_stack({
                 let a0 = x0;
                 handler.identifier_reference(a0)
-            })?);
+            }?)?);
             Ok(NonterminalId::IdentifierReference)
         }
         456 => {
