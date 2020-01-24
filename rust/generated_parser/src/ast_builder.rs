@@ -3503,7 +3503,7 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // MethodDefinition : `set` PropertyName `(` PropertySetParameterList `)` `{` FunctionBody `}`
     pub fn setter(
-        &self,
+        &mut self,
         set_token: arena::Box<'alloc, Token<'alloc>>,
         name: arena::Box<'alloc, PropertyName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token<'alloc>>,
@@ -3512,16 +3512,23 @@ impl<'alloc> AstBuilder<'alloc> {
         body_open_token: arena::Box<'alloc, Token<'alloc>>,
         mut body: arena::Box<'alloc, FunctionBody<'alloc>>,
         body_close_token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, MethodDefinition<'alloc>> {
-        parameter.set_loc(param_open_token.loc, param_close_token.loc);
+    ) -> Result<'alloc, arena::Box<'alloc, MethodDefinition<'alloc>>> {
+        let param_open_loc = param_open_token.loc;
+        let param_close_loc = param_close_token.loc;
         let body_close_loc = body_close_token.loc;
+
+        // A setter only has one parameter, but it can be a destructuring
+        // pattern, so it is still possible to flunk this check.
+        self.check_unique_function_bindings(param_open_loc.start, param_close_loc.end)?;
+
+        parameter.set_loc(param_open_loc, param_close_loc);
         body.loc.set_range(body_open_token.loc, body_close_loc);
-        self.alloc(MethodDefinition::Setter(Setter {
+        Ok(self.alloc(MethodDefinition::Setter(Setter {
             property_name: name.unbox(),
             param: parameter.unbox(),
             body: body.unbox(),
             loc: SourceLocation::from_parts(set_token.loc, body_close_loc),
-        }))
+        })))
     }
 
     // GeneratorMethod : `*` PropertyName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`
