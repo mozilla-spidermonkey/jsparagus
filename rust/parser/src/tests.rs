@@ -471,7 +471,7 @@ fn test_regex() {
     // TODO: Should the lexer running out of input throw an incomplete error, or a lexer error?
     assert_error_eq("/x", ParseError::UnterminatedRegExp);
     assert_incomplete("x = //"); // comment
-    assert_incomplete("x = /*/"); /*/ comment */
+    assert_error_eq("x = /*/", ParseError::UnterminatedMultiLineComment); /*/ comment */
     assert_error_eq("x =/= 2", ParseError::UnterminatedRegExp);
     assert_parses("x /= 2");
     assert_parses("x = /[]/");
