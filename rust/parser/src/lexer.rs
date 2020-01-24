@@ -666,7 +666,7 @@ impl<'alloc> Lexer<'alloc> {
                 return Ok(NumericType::BigInt);
             }
 
-            _ => {
+            Some('0'..='9') => {
                 // This is almost always the token `0` in practice.
                 //
                 // In nonstrict code, as a legacy feature, other numbers
@@ -704,6 +704,8 @@ impl<'alloc> Lexer<'alloc> {
                 // }
                 return Err(ParseError::NotImplemented("LegacyOctalIntegerLiteral"));
             }
+
+            _ => {}
         }
 
         self.check_after_numeric_literal()?;
