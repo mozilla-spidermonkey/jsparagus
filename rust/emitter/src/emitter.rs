@@ -6,9 +6,9 @@
 #![allow(dead_code)]
 
 use super::opcode::Opcode;
+use byteorder::{ByteOrder, LittleEndian};
 use std::convert::TryInto;
 use std::fmt;
-use byteorder::{ByteOrder, LittleEndian};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ResumeKind {
@@ -28,7 +28,7 @@ pub type u24 = u32;
 /// For tracking bytecode offsets in jumps
 #[derive(PartialEq, Debug)]
 pub struct BytecodeOffset {
-    pub offset: usize
+    pub offset: usize,
 }
 
 /// Low-level bytecode emitter.
@@ -715,7 +715,9 @@ impl InstructionWriter {
     }
 
     pub fn bytecode_offset(&mut self) -> BytecodeOffset {
-        BytecodeOffset { offset: self.bytecode.len() }
+        BytecodeOffset {
+            offset: self.bytecode.len(),
+        }
     }
 
     pub fn patch_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {

@@ -2,10 +2,9 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{EmitError, EmitResult, InstructionWriter, BytecodeOffset};
+use super::emitter::{BytecodeOffset, EmitError, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
 use ast::{arena, types::*};
-
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
@@ -392,7 +391,7 @@ impl AstEmitter {
     fn emit_jump(
         &mut self,
         operator: &BinaryOperator,
-        jumplist: &mut Vec<BytecodeOffset>
+        jumplist: &mut Vec<BytecodeOffset>,
     ) -> Result<(), EmitError> {
         let offset: BytecodeOffset = self.emit.bytecode_offset();
         jumplist.push(offset);
@@ -412,18 +411,13 @@ impl AstEmitter {
             BinaryOperator::LogicalAnd { .. } => {
                 self.emit.and(placeholder_offset);
             }
-            _ => {
-                panic!("unrecognized operator used in jump")
-            }
+            _ => panic!("unrecognized operator used in jump"),
         }
 
         return Ok(());
     }
 
-    fn emit_jump_target(
-        &mut self,
-        jumplist: Vec<BytecodeOffset>
-    ) {
+    fn emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
         self.emit.patch_jump_target(jumplist);
         self.emit.jump_target();
     }
