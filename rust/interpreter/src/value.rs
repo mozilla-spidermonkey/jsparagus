@@ -17,3 +17,17 @@ pub fn to_number(v: JSValue) -> f64 {
         JSValue::Null => 0.0,
     }
 }
+
+pub fn to_boolean(v: JSValue) -> bool {
+    match v {
+        JSValue::Null | JSValue::Undefined => false,
+        JSValue::Boolean(b) => b,
+        JSValue::Number(n) => {
+            if n == 0.0 || n.is_nan() {
+                false
+            } else {
+                true
+            }
+        }
+    }
+}

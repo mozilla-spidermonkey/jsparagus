@@ -252,8 +252,13 @@ impl AstEmitter {
                 ));
             }
 
-            Expression::ConditionalExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ConditionalExpression"));
+            Expression::ConditionalExpression {
+                test,
+                consequent,
+                alternate,
+                ..
+            } => {
+                self.emit_conditional_expression(test, consequent, alternate)?;
             }
 
             Expression::FunctionExpression(_) => {
@@ -440,6 +445,34 @@ impl AstEmitter {
             }
         }
         self.emit.double(value);
+    }
+
+    fn emit_conditional_expression(
+        &mut self,
+        test: &Expression,
+        consequent: &Expression,
+        alternate: &Expression,
+    ) -> Result<(), EmitError> {
+        self.emit_expression(test)?;
+
+        let offset_else = self.emit.bytecode_offset();
+        self.emit.if_eq(0);
+
+        // Then branch
+        self.emit.jump_target();
+        self.emit_expression(consequent)?;
+
+        let offset_final = self.emit.bytecode_offset();
+        self.emit.goto(0);
+
+        // Else branch
+        self.emit_jump_target(vec![offset_else]);
+        self.emit_expression(alternate)?;
+
+        // Merge point
+        self.emit_jump_target(vec![offset_final]);
+
+        Ok(())
     }
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {

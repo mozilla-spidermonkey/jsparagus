@@ -2,9 +2,10 @@ use emitter::opcode::Opcode;
 use emitter::EmitResult;
 
 use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::fmt;
 
-use crate::value::{to_number, JSValue};
+use crate::value::{to_number, to_boolean, JSValue};
 
 /// The error of evaluating JS bytecode.
 #[derive(Clone, Debug)]
@@ -19,6 +20,21 @@ impl fmt::Display for EvalError {
             EvalError::NotImplemented(message) => write!(f, "not implemented: {}", message),
             EvalError::EmptyStack => write!(f, "trying to pop from empty stack"),
         }
+    }
+}
+
+trait Helpers {
+    fn read_i32(&self, offset: usize) -> i32;
+    fn read_offset(&self, offset: usize) -> isize;
+}
+
+impl Helpers for EmitResult {
+    fn read_i32(&self, offset: usize) -> i32 {
+        i32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
+    }
+
+    fn read_offset(&self, offset: usize) -> isize {
+        self.read_i32(offset) as isize
     }
 }
 
@@ -81,6 +97,26 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 return Ok(rval);
             }
 
+            Opcode::IfEq => {
+                let offset = emit.read_offset(pc + 1);
+
+                let b = to_boolean(stack.pop().ok_or(EvalError::EmptyStack)?);
+                if !b {
+                    pc = (pc as isize + offset) as usize;
+                    continue;
+                }
+            }
+
+            Opcode::Goto => {
+                let offset = emit.read_offset(pc + 1);
+                pc = (pc as isize + offset) as usize;
+                continue;
+            }
+
+            Opcode::JumpTarget => {}
+
+            Opcode::True => stack.push(JSValue::Boolean(true)),
+            Opcode::False => stack.push(JSValue::Boolean(false)),
             Opcode::Undefined => stack.push(JSValue::Undefined),
             Opcode::Null => stack.push(JSValue::Null),
 
