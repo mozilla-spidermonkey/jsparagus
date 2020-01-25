@@ -37,6 +37,10 @@ pub enum ParseError<'alloc> {
     DuplicateBinding(&'alloc str, DeclarationKind, usize, DeclarationKind, usize),
     DuplicateExport(&'alloc str, usize, usize),
     MissingExport(&'alloc str, usize),
+
+    // Annex B. FunctionDeclarations in IfStatement Statement Clauses
+    // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
+    FunctionDeclInSingleStatement,
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -87,6 +91,9 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::MissingExport(name, _) => format!(
                 "local binding for export '{}' not found",
                 name,
+            ),
+            ParseError::FunctionDeclInSingleStatement => format!(
+                "function declarations can't appear in single-statement context"
             ),
         }
     }

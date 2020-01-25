@@ -2552,6 +2552,49 @@ impl<'alloc> AstBuilder<'alloc> {
         })
     }
 
+    // Create BlockStatement from FunctionDeclaration, for the following:
+    //
+    // IfStatement : `if` `(` Expression `)` FunctionDeclaration `else` Statement
+    // IfStatement : `if` `(` Expression `)` Statement `else` FunctionDeclaration
+    // IfStatement : `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration
+    // IfStatement : `if` `(` Expression `)` FunctionDeclaration
+    pub fn make_block_stmt_from_function_decl(
+        &mut self,
+        fun: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let fun_loc = fun.get_loc();
+
+        // Annex B. FunctionDeclarations in IfStatement Statement Clauses
+        // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
+        //
+        // This production only applies when parsing non-strict code.
+        if self.is_strict()? {
+            return Err(ParseError::FunctionDeclInSingleStatement);
+        }
+
+        // Code matching this production is processed as if each matching
+        // occurrence of FunctionDeclaration[?Yield, ?Await, ~Default] was the
+        // sole StatementListItem of a BlockStatement occupying that position
+        // in the source code. The semantics of such a synthetic BlockStatement
+        // includes the web legacy compatibility semantics specified in B.3.3.
+        self.check_block_bindings(fun_loc.start)?;
+
+        Ok(self.alloc(Statement::BlockStatement {
+            block: Block {
+                statements: self.new_vec_single(fun.unbox()),
+                declarations: None,
+                loc: fun_loc,
+            },
+            loc: fun_loc,
+        }))
+    }
+
+    fn is_strict(&self) -> Result<'alloc, bool> {
+        Err(ParseError::NotImplemented(
+            "strict-mode-only early error is not yet supported",
+        ))
+    }
+
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
     pub fn do_while_statement(
         &self,
