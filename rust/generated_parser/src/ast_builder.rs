@@ -2538,18 +2538,23 @@ impl<'alloc> AstBuilder<'alloc> {
         test: arena::Box<'alloc, Expression<'alloc>>,
         consequent: arena::Box<'alloc, Statement<'alloc>>,
         alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&consequent)?;
+        if let Some(ref stmt) = alternate {
+            self.check_single_statement(&stmt)?;
+        }
+
         let if_loc = if_token.loc;
         let loc = match alternate {
             Some(ref alternate) => SourceLocation::from_parts(if_loc, alternate.get_loc()),
             None => SourceLocation::from_parts(if_loc, consequent.get_loc()),
         };
-        self.alloc(Statement::IfStatement {
+        Ok(self.alloc(Statement::IfStatement {
             test,
             consequent,
             alternate,
             loc,
-        })
+        }))
     }
 
     // Create BlockStatement from FunctionDeclaration, for the following:
@@ -2599,15 +2604,17 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn do_while_statement(
         &self,
         do_token: arena::Box<'alloc, Token<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
         close_token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        self.alloc(Statement::DoWhileStatement {
-            block,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
+
+        Ok(self.alloc(Statement::DoWhileStatement {
+            block: stmt,
             test,
             loc: SourceLocation::from_parts(do_token.loc, close_token.loc),
-        })
+        }))
     }
 
     // IterationStatement : `while` `(` Expression `)` Statement
@@ -2615,14 +2622,16 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         while_token: arena::Box<'alloc, Token<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        let block_loc = block.get_loc();
-        self.alloc(Statement::WhileStatement {
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
+
+        let stmt_loc = stmt.get_loc();
+        Ok(self.alloc(Statement::WhileStatement {
             test,
-            block,
-            loc: SourceLocation::from_parts(while_token.loc, block_loc),
-        })
+            block: stmt,
+            loc: SourceLocation::from_parts(while_token.loc, stmt_loc),
+        }))
     }
 
     // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
@@ -2633,16 +2642,10 @@ impl<'alloc> AstBuilder<'alloc> {
         init: Option<VariableDeclarationOrExpression<'alloc>>,
         test: Option<arena::Box<'alloc, Expression<'alloc>>>,
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        let block_loc = block.get_loc();
-        self.alloc(Statement::ForStatement {
-            init,
-            test,
-            update,
-            block,
-            loc: SourceLocation::from_parts(for_token.loc, block_loc),
-        })
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
+        self.for_statement_common(for_token, init, test, update, stmt)
     }
 
     // IterationStatement : `for` `(` ForLexicalDeclaration Expression? `;` Expression? `)` Statement
@@ -2652,11 +2655,29 @@ impl<'alloc> AstBuilder<'alloc> {
         init: VariableDeclarationOrExpression<'alloc>,
         test: Option<arena::Box<'alloc, Expression<'alloc>>>,
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
         self.check_lexical_for_bindings(&init.get_loc())?;
+        self.for_statement_common(for_token, Some(init), test, update, stmt)
+    }
 
-        Ok(self.for_statement(for_token, Some(init), test, update, block))
+    pub fn for_statement_common(
+        &self,
+        for_token: arena::Box<'alloc, Token<'alloc>>,
+        init: Option<VariableDeclarationOrExpression<'alloc>>,
+        test: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        update: Option<arena::Box<'alloc, Expression<'alloc>>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let stmt_loc = stmt.get_loc();
+        Ok(self.alloc(Statement::ForStatement {
+            init,
+            test,
+            update,
+            block: stmt,
+            loc: SourceLocation::from_parts(for_token.loc, stmt_loc),
+        }))
     }
 
     pub fn for_expression(
@@ -2700,15 +2721,10 @@ impl<'alloc> AstBuilder<'alloc> {
         for_token: arena::Box<'alloc, Token<'alloc>>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        let block_loc = block.get_loc();
-        self.alloc(Statement::ForInStatement {
-            left,
-            right,
-            block,
-            loc: SourceLocation::from_parts(for_token.loc, block_loc),
-        })
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
+        self.for_in_statement_common(for_token, left, right, stmt)
     }
 
     // IterationStatement : `for` `(` ForDeclaration `in` Expression `)` Statement
@@ -2717,11 +2733,27 @@ impl<'alloc> AstBuilder<'alloc> {
         for_token: arena::Box<'alloc, Token<'alloc>>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
+        self.for_in_statement_common(for_token, left, right, stmt)
+    }
 
-        Ok(self.for_in_statement(for_token, left, right, block))
+    pub fn for_in_statement_common(
+        &self,
+        for_token: arena::Box<'alloc, Token<'alloc>>,
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let stmt_loc = stmt.get_loc();
+        Ok(self.alloc(Statement::ForInStatement {
+            left,
+            right,
+            block: stmt,
+            loc: SourceLocation::from_parts(for_token.loc, stmt_loc),
+        }))
     }
 
     pub fn for_in_or_of_var_declaration(
@@ -2768,15 +2800,10 @@ impl<'alloc> AstBuilder<'alloc> {
         for_token: arena::Box<'alloc, Token<'alloc>>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
-        let block_loc = block.get_loc();
-        self.alloc(Statement::ForOfStatement {
-            left,
-            right,
-            block,
-            loc: SourceLocation::from_parts(for_token.loc, block_loc),
-        })
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
+        self.for_of_statement_common(for_token, left, right, stmt)
     }
 
     // IterationStatement : `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement
@@ -2785,25 +2812,40 @@ impl<'alloc> AstBuilder<'alloc> {
         for_token: arena::Box<'alloc, Token<'alloc>>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
+        self.for_of_statement_common(for_token, left, right, stmt)
+    }
 
-        Ok(self.for_of_statement(for_token, left, right, block))
+    pub fn for_of_statement_common(
+        &self,
+        for_token: arena::Box<'alloc, Token<'alloc>>,
+        left: VariableDeclarationOrAssignmentTarget<'alloc>,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let stmt_loc = stmt.get_loc();
+        Ok(self.alloc(Statement::ForOfStatement {
+            left,
+            right,
+            block: stmt,
+            loc: SourceLocation::from_parts(for_token.loc, stmt_loc),
+        }))
     }
 
     // IterationStatement : `for` `await` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
     // IterationStatement : `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
     pub fn for_await_of_statement(
         &self,
-        _for_token: arena::Box<'alloc, Token<'alloc>>,
-        _left: VariableDeclarationOrAssignmentTarget,
-        _right: arena::Box<'alloc, Expression<'alloc>>,
-        _block: arena::Box<'alloc, Statement<'alloc>>,
+        for_token: arena::Box<'alloc, Token<'alloc>>,
+        left: VariableDeclarationOrAssignmentTarget,
+        right: arena::Box<'alloc, Expression<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        Err(ParseError::NotImplemented(
-            "for await statement (missing from AST)",
-        ))
+        self.check_single_statement(&stmt)?;
+        self.for_await_of_statement_common(for_token, left, right, stmt)
     }
 
     // IterationStatement : `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement
@@ -2812,11 +2854,23 @@ impl<'alloc> AstBuilder<'alloc> {
         for_token: arena::Box<'alloc, Token<'alloc>>,
         left: VariableDeclarationOrAssignmentTarget,
         right: arena::Box<'alloc, Expression<'alloc>>,
-        block: arena::Box<'alloc, Statement<'alloc>>,
+        stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        self.check_single_statement(&stmt)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
+        self.for_await_of_statement_common(for_token, left, right, stmt)
+    }
 
-        self.for_await_of_statement(for_token, left, right, block)
+    pub fn for_await_of_statement_common(
+        &self,
+        _for_token: arena::Box<'alloc, Token<'alloc>>,
+        _left: VariableDeclarationOrAssignmentTarget,
+        _right: arena::Box<'alloc, Expression<'alloc>>,
+        _stmt: arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        Err(ParseError::NotImplemented(
+            "for await statement (missing from AST)",
+        ))
     }
 
     // ForDeclaration : LetOrConst ForBinding => ForDeclaration($0, $1)
@@ -4572,5 +4626,47 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         true
+    }
+
+    // Static Semantics: Early Errors
+    // https://tc39.es/ecma262/#sec-if-statement-static-semantics-early-errors
+    // https://tc39.es/ecma262/#sec-semantics-static-semantics-early-errors
+    // https://tc39.es/ecma262/#sec-with-statement-static-semantics-early-errors
+    fn check_single_statement(
+        &self,
+        stmt: &arena::Box<'alloc, Statement<'alloc>>,
+    ) -> Result<'alloc, ()> {
+        // * It is a Syntax Error if IsLabelledFunction(Statement) is true.
+        if self.is_labelled_function(stmt) {
+            return Err(ParseError::LabelledFunctionDeclInSingleStatement);
+        }
+        Ok(())
+    }
+
+    // https://tc39.es/ecma262/#sec-islabelledfunction
+    // Static Semantics: IsLabelledFunction ( stmt )
+    //
+    // Returns IsLabelledFunction of `stmt`.
+    //
+    // NOTE: For Syntax-only parsing (NYI), the stack value for Statement
+    //       should contain this information.
+    fn is_labelled_function(&self, mut stmt: &Statement<'alloc>) -> bool {
+        // Step 1. If stmt is not a LabelledStatement , return false.
+        while let Statement::LabeledStatement { ref body, .. } = stmt {
+            // Step 2. Let item be the LabelledItem of stmt.
+            let item: &Statement<'alloc> = body;
+
+            // Step 3. If item is LabelledItem : FunctionDeclaration,
+            // return true.
+            if let Statement::FunctionDeclaration(_) = item {
+                return true;
+            }
+
+            // Step 4. Let subStmt be the Statement of item.
+            // Step 5. Return IsLabelledFunction(subStmt).
+            stmt = item;
+        }
+
+        false
     }
 }

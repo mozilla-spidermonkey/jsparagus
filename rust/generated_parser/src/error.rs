@@ -41,6 +41,7 @@ pub enum ParseError<'alloc> {
     // Annex B. FunctionDeclarations in IfStatement Statement Clauses
     // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
     FunctionDeclInSingleStatement,
+    LabelledFunctionDeclInSingleStatement,
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -94,6 +95,9 @@ impl<'alloc> ParseError<'alloc> {
             ),
             ParseError::FunctionDeclInSingleStatement => format!(
                 "function declarations can't appear in single-statement context"
+            ),
+            ParseError::LabelledFunctionDeclInSingleStatement => format!(
+                "functions can only be labelled inside blocks"
             ),
         }
     }
