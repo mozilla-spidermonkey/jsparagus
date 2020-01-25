@@ -1499,17 +1499,17 @@ impl<'alloc> Lexer<'alloc> {
                         continue;
                     }
                     _ => {
-                        if parser.can_accept_terminal(TerminalId::RegularExpressionLiteral) {
-                            builder.push_matching('/');
-                            return self.regular_expression_literal(&mut builder);
-                        }
-                        match self.peek() {
-                            Some('=') => {
-                                self.chars.next();
-                                return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::DivideAssign));
+                        if parser.can_accept_terminal(TerminalId::Divide) {
+                            match self.peek() {
+                                Some('=') => {
+                                    self.chars.next();
+                                    return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::DivideAssign));
+                                }
+                                _ => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::Divide)),
                             }
-                            _ => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::Divide)),
                         }
+                        builder.push_matching('/');
+                        return self.regular_expression_literal(&mut builder);
                     }
                 },
 
