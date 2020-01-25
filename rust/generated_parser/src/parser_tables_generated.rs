@@ -8126,7 +8126,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = Some(x6);
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         55 => {
@@ -8142,7 +8142,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = None;
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         56 => {
@@ -8163,7 +8163,7 @@ pub fn reduce<'alloc>(
                 }?;
                 let a3 = Some(x6);
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         57 => {
@@ -8184,7 +8184,7 @@ pub fn reduce<'alloc>(
                     handler.make_block_stmt_from_function_decl(a0)
                 }?);
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         58 => {
@@ -8208,7 +8208,7 @@ pub fn reduce<'alloc>(
                     handler.make_block_stmt_from_function_decl(a0)
                 }?);
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         59 => {
@@ -8227,7 +8227,7 @@ pub fn reduce<'alloc>(
                 }?;
                 let a3 = None;
                 handler.if_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IfStatement)
         }
         60 => {
@@ -8910,7 +8910,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = x5;
                 handler.do_while_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         123 => {
@@ -8927,7 +8927,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = x5;
                 handler.do_while_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         124 => {
@@ -8942,7 +8942,7 @@ pub fn reduce<'alloc>(
                 let a1 = x2;
                 let a2 = x4;
                 handler.while_statement(a0, a1, a2)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         125 => {
@@ -8963,7 +8963,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x5;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         126 => {
@@ -8985,7 +8985,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x6;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         127 => {
@@ -9007,7 +9007,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x6;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         128 => {
@@ -9030,7 +9030,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x7;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         129 => {
@@ -9052,7 +9052,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x4);
                 let a4 = x6;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         130 => {
@@ -9075,7 +9075,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x5);
                 let a4 = x7;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         131 => {
@@ -9098,7 +9098,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x5);
                 let a4 = x7;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         132 => {
@@ -9122,7 +9122,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x6);
                 let a4 = x8;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         133 => {
@@ -9146,7 +9146,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x7;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         134 => {
@@ -9171,7 +9171,7 @@ pub fn reduce<'alloc>(
                 let a3 = None;
                 let a4 = x8;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         135 => {
@@ -9196,7 +9196,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x6);
                 let a4 = x8;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         136 => {
@@ -9222,7 +9222,7 @@ pub fn reduce<'alloc>(
                 let a3 = Some(x7);
                 let a4 = x9;
                 handler.for_statement(a0, a1, a2, a3, a4)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         137 => {
@@ -9331,7 +9331,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = x6;
                 handler.for_in_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         142 => {
@@ -9354,7 +9354,7 @@ pub fn reduce<'alloc>(
                 let a2 = x5;
                 let a3 = x7;
                 handler.for_in_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         143 => {
@@ -9397,7 +9397,7 @@ pub fn reduce<'alloc>(
                 let a2 = x4;
                 let a3 = x6;
                 handler.for_of_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         145 => {
@@ -9420,7 +9420,7 @@ pub fn reduce<'alloc>(
                 let a2 = x5;
                 let a3 = x7;
                 handler.for_of_statement(a0, a1, a2, a3)
-            })?);
+            }?)?);
             Ok(NonterminalId::IterationStatement)
         }
         146 => {
@@ -13475,7 +13475,7 @@ pub fn reduce<'alloc>(
                 };
                 let a7 = x6;
                 handler.setter(a0, a1, a2, a3, a4, a5, a6, a7)
-            })?);
+            }?)?);
             Ok(NonterminalId::MethodDefinition)
         }
         450 => {
@@ -13498,7 +13498,7 @@ pub fn reduce<'alloc>(
                 let a6 = x6;
                 let a7 = x7;
                 handler.setter(a0, a1, a2, a3, a4, a5, a6, a7)
-            })?);
+            }?)?);
             Ok(NonterminalId::MethodDefinition)
         }
         451 => {
