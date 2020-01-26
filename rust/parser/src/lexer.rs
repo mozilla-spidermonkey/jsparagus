@@ -353,7 +353,12 @@ impl<'alloc> Lexer<'alloc> {
             match &text as &str {
                 "as" => TerminalId::As,
                 "async" => TerminalId::Async,
-                "await" => TerminalId::Await,
+                "await" => {
+                    //TerminalId::Await
+                    return Err(ParseError::NotImplemented(
+                        "await cannot be handled in parser",
+                    ));
+                }
                 "break" => TerminalId::Break,
                 "case" => TerminalId::Case,
                 "catch" => TerminalId::Catch,
@@ -393,7 +398,12 @@ impl<'alloc> Lexer<'alloc> {
                 "void" => TerminalId::Void,
                 "while" => TerminalId::While,
                 "with" => TerminalId::With,
-                "yield" => TerminalId::Yield,
+                "yield" => {
+                    //TerminalId::Yield
+                    return Err(ParseError::NotImplemented(
+                        "yield cannot be handled in parser",
+                    ));
+                }
                 "null" => TerminalId::NullLiteral,
                 "true" | "false" => TerminalId::BooleanLiteral,
                 _ => TerminalId::Name,

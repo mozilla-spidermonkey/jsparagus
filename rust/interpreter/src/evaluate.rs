@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
 
-use crate::value::{to_number, to_boolean, JSValue};
+use crate::value::{to_boolean, to_number, JSValue};
 
 /// The error of evaluating JS bytecode.
 #[derive(Clone, Debug)]
