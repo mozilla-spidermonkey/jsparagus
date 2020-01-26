@@ -20,6 +20,7 @@ jsparagus/types.py \
 js_parser/esgrammar.pgen \
 js_parser/generate_js_parser_tables.py \
 js_parser/parse_esgrammar.py \
+js_parser/load_es_grammar.py \
 js_parser/es-simplified.esgrammar
 
 EMIT_FILES = $(SOURCE_FILES) \

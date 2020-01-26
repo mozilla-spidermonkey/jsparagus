@@ -518,7 +518,9 @@ fn test_can_close_with_asi() {
 fn test_conditional_keywords() {
     // property names
     assert_parses("let obj = {if: 3, function: 4};");
+    assert_parses("let obj = {true: 1, false: 0, null: NaN};");
     assert_parses("assert(obj.if == 3);");
+    assert_parses("assert(obj.true + obj.false + obj.null == NaN);");
 
     // method names
     assert_parses(
