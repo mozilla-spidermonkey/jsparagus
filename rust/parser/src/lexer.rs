@@ -6,6 +6,7 @@ use bumpalo::{collections::String, Bump};
 use generated_parser::{ParseError, Result, TerminalId, Token};
 use std::convert::TryFrom;
 use std::str::Chars;
+use unic_ucd_ident::{is_xid_continue, is_xid_start};
 
 pub struct Lexer<'alloc> {
     allocator: &'alloc Bump,
@@ -216,8 +217,12 @@ impl<'alloc> Lexer<'alloc> {
 ///     > any Unicode code point with the Unicode property "ID_Start"
 /// ```
 fn is_identifier_start(c: char) -> bool {
-    // TODO - Adjust this to match the Unicode ID_Start property (#23).
-    c == '$' || c == '_' || c.is_alphabetic()
+    // Escaped case is handled separately.
+    if c.is_ascii() {
+        c == '$' || c == '_' || c.is_ascii_alphabetic()
+    } else {
+        is_xid_start(c)
+    }
 }
 
 /// True if `c` is a one-character *IdentifierPart*.
@@ -234,14 +239,11 @@ fn is_identifier_start(c: char) -> bool {
 ///     > any Unicode code point with the Unicode property "ID_Continue"
 /// ```
 fn is_identifier_part(c: char) -> bool {
-    if (c as u32) < 128 {
-        match c {
-            '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => true,
-            _ => false,
-        }
+    // Escaped case is handled separately.
+    if c.is_ascii() {
+        c == '$' || c == '_' || c.is_ascii_alphanumeric()
     } else {
-        // TODO - Adjust this to match the Unicode ID_Continue property (#23).
-        c.is_alphabetic() || c == ZWNJ || c == ZWJ
+        is_xid_continue(c) || c == ZWNJ || c == ZWJ
     }
 }
 
