@@ -509,11 +509,10 @@ fn test_invalid_assignment_targets() {
     assert_error_eq("(x && y)--;", ParseError::InvalidAssignmentTarget);
 }
 
-// XXX TODO
-//#[test]
-//fn test_can_close_with_asi() {
-//    assert_can_close_after("2 + 2\n");
-//}
+#[test]
+fn test_can_close_with_asi() {
+    assert_can_close_after("2 + 2\n");
+}
 
 #[test]
 fn test_conditional_keywords() {
