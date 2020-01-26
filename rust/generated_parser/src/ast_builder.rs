@@ -2719,6 +2719,11 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `in` Expression `)` Statement
     // IterationStatement : `for` `(` `var` ForBinding `in` Expression `)` Statement
+    //
+    // Annex B: Initializers in ForIn Statement Heads
+    // https://tc39.es/ecma262/#sec-initializers-in-forin-statement-heads
+    //
+    // IterationStatement :  `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement
     pub fn for_in_statement(
         &self,
         for_token: arena::Box<'alloc, Token<'alloc>>,
@@ -2763,9 +2768,14 @@ impl<'alloc> AstBuilder<'alloc> {
         &mut self,
         var_token: arena::Box<'alloc, Token<'alloc>>,
         binding: arena::Box<'alloc, Binding<'alloc>>,
+        init: Option<arena::Box<'alloc, Expression<'alloc>>>,
     ) -> VariableDeclarationOrAssignmentTarget<'alloc> {
         let var_loc = var_token.loc;
         let binding_loc = binding.get_loc();
+        let decl_loc = match init {
+            Some(ref init) => SourceLocation::from_parts(binding_loc, init.get_loc()),
+            None => binding_loc,
+        };
 
         self.mark_binding_kind(binding_loc.start, Some(binding_loc.end), BindingKind::Var);
 
@@ -2773,10 +2783,10 @@ impl<'alloc> AstBuilder<'alloc> {
             kind: VariableDeclarationKind::Var { loc: var_loc },
             declarators: self.new_vec_single(VariableDeclarator {
                 binding: binding.unbox(),
-                init: None,
-                loc: binding_loc,
+                init,
+                loc: decl_loc,
             }),
-            loc: SourceLocation::from_parts(var_loc, binding_loc),
+            loc: SourceLocation::from_parts(var_loc, decl_loc),
         })
     }
 
