@@ -155,10 +155,6 @@ def check_cycle_free(grammar):
                                 break
                             all_possibly_empty_so_far = False
                             result = [e]
-                    elif isinstance(e, Optional):
-                        if isinstance(e.inner, Nt):
-                            # XXX FIXME BUG this can't be right
-                            result.append(e.inner)
                     elif isinstance(e, Exclude):
                         if isinstance(e.inner, Nt):
                             result.append(e.inner)
@@ -176,8 +172,10 @@ def check_cycle_free(grammar):
                         # therefore it cannot correspond to an empty cycle.
                         break
                     else:
-                        # ErrorSymbol effectively matches the empty string
-                        # (though only if nothing else matches).
+                        # Optional is not possible because we called
+                        # expand_optional_symbols_in_rhs. ErrorSymbol
+                        # effectively matches the empty string (though only if
+                        # nothing else matches).
                         assert isinstance(e, ErrorSymbol)
                 else:
                     # If we get here, we didn't break, so our results are good!
