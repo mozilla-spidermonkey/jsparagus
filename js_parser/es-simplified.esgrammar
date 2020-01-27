@@ -311,9 +311,9 @@ CallMemberExpression[Yield, Await] :
 UpdateExpression[Yield, Await] :
   LeftHandSideExpression[?Yield, ?Await]
     => $0
-  LeftHandSideExpression[?Yield, ?Await] `++`
+  LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `++`
     => post_increment_expr($0, $1)
-  LeftHandSideExpression[?Yield, ?Await] `--`
+  LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `--`
     => post_decrement_expr($0, $1)
   `++` UnaryExpression[?Yield, ?Await]
     => pre_decrement_expr($0, $1)
@@ -869,7 +869,7 @@ ForBinding[Yield, Await] :
 ContinueStatement[Yield, Await] :
   `continue` `;`
     => continue_statement($0, None)
-  `continue` LabelIdentifier[?Yield, ?Await] `;`
+  `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
     => continue_statement($0, Some($1))
 
 
@@ -877,7 +877,7 @@ ContinueStatement[Yield, Await] :
 BreakStatement[Yield, Await] :
   `break` `;`
     => break_statement($0, None)
-  `break` LabelIdentifier[?Yield, ?Await] `;`
+  `break` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
     => break_statement($0, Some($1))
 
 
@@ -885,7 +885,7 @@ BreakStatement[Yield, Await] :
 ReturnStatement[Yield, Await] :
   `return` `;`
     => return_statement($0, None)
-  `return` Expression[+In, ?Yield, ?Await] `;`
+  `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
     => return_statement($0, Some($1))
 
 
@@ -940,7 +940,7 @@ LabelledItem[Yield, Await, Return] :
 
 @returns Statement
 ThrowStatement[Yield, Await] :
-  `throw` Expression[+In, ?Yield, ?Await] `;`
+  `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
     => throw_statement($0, $1)
 
 @returns Statement
@@ -1043,7 +1043,7 @@ FunctionStatementList[Yield, Await] :
 
 @returns Expression
 ArrowFunction[In, Yield, Await] :
-  ArrowParameters[?Yield, ?Await] `=>` ConciseBody[?In]
+  ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]
     => arrow_function($0, $2)
 
 @returns FormalParameters
@@ -1112,27 +1112,27 @@ GeneratorBody :
 YieldExpression[In, Await] :
   `yield`
     => yield_expr($0, None)
-  `yield` AssignmentExpression[?In, +Yield, ?Await]
+  `yield` [no LineTerminator here] AssignmentExpression[?In, +Yield, ?Await]
     => yield_expr($0, Some($1))
-  `yield` `*` AssignmentExpression[?In, +Yield, ?Await]
+  `yield` [no LineTerminator here] `*` AssignmentExpression[?In, +Yield, ?Await]
     => yield_star_expr($0, $2)
 
 
 @returns MethodDefinition
 AsyncGeneratorMethod[Yield, Await] :
-  `async` `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+  `async` [no LineTerminator here] `*` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => async_generator_method($0, $2, $3, $4, $5, $6, $7, $8)
 
 @returns Statement
 AsyncGeneratorDeclaration[Yield, Await, Default] :
-  `async` `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+  `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_decl(async_generator($0, Some($3), $4, $5, $6, $7, $8, $9))
-  [+Default] `async` `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+  [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_decl(async_generator($0, None, $3, $4, $5, $6, $7, $8))
 
 @returns Expression
 AsyncGeneratorExpression :
-  `async` `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+  `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
     => function_expr(async_function($0, $3, $4, $5, $6, $7, $8, $9))
 
 @returns FunctionBody
@@ -1201,21 +1201,21 @@ ClassElement[Yield, Await] :
 
 @returns Statement
 AsyncFunctionDeclaration[Yield, Await, Default] :
-  `async` `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+  `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_decl(async_function($0, Some($2), $3, $4, $5, $6, $7, $8))
-  [+Default] `async` `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+  [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_decl(async_function($0, None, $2, $3, $4, $5, $6, $7))
 
 @returns Expression
 AsyncFunctionExpression :
-  `async` `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+  `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_expr(async_function($0, None, $2, $3, $4, $5, $6, $7))
-  `async` `function` BindingIdentifier[~Yield, +Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+  `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => function_expr(async_function($0, Some($2), $3, $4, $5, $6, $7, $8))
 
 @returns MethodDefinition
 AsyncMethod[Yield, Await] :
-  `async` PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+  `async` [no LineTerminator here] PropertyName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
     => async_method($0, $1, $2, $3, $4, $5, $6, $7)
 
 @returns FunctionBody
@@ -1231,9 +1231,9 @@ AwaitExpression[Yield] :
 
 @returns Expression
 AsyncArrowFunction[In, Yield, Await] :
-  `async` AsyncArrowBindingIdentifier[?Yield] `=>` AsyncConciseBody[?In]
+  `async` [no LineTerminator here] AsyncArrowBindingIdentifier[?Yield] [no LineTerminator here] `=>` AsyncConciseBody[?In]
     => async_arrow_function_bare($0, $1, $3)
-  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] `=>` AsyncConciseBody[?In]
+  CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]
     => async_arrow_function($0, $2)
 
 @returns ArrowExpressionBody
@@ -1255,7 +1255,7 @@ CoverCallExpressionAndAsyncArrowHead[Yield, Await] :
 
 
 AsyncArrowHead :
-  `async` ArrowFormalParameters[~Yield, +Await]
+  `async` [no LineTerminator here] ArrowFormalParameters[~Yield, +Await]
 
 
 @returns Script
