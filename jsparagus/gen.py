@@ -36,7 +36,8 @@ from .ordered import OrderedSet, OrderedFrozenSet
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
                       is_concrete_element,
-                      Optional, Exclude, Literal, UnicodeCategory, Nt, Var, ErrorSymbol,
+                      Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
+                      NoLineTerminatorHere, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
@@ -71,6 +72,7 @@ def empty_nt_set(grammar):
         return all(isinstance(e, LookaheadRule)
                    or isinstance(e, Optional)
                    or (isinstance(e, Nt) and e in empties)
+                   or e is NoLineTerminatorHere
                    for e in p.body)
 
     def evaluate_reducer_with_empty_matches(p):
@@ -160,7 +162,11 @@ def check_cycle_free(grammar):
                             result.append(e.inner)
                     elif isinstance(e, LookaheadRule):
                         # Ignore the restriction. We lose a little precision
-                        # here; there could be a bug.
+                        # here, and could report a cycle where there isn't one,
+                        # but it's unlikely in real-world grammars.
+                        pass
+                    elif e is NoLineTerminatorHere:
+                        # This doesn't affect the property we're checking.
                         pass
                     elif isinstance(e, Literal):
                         if e.text != "":
@@ -218,6 +224,37 @@ def check_lookahead_rules(grammar):
                         "invalid grammar: lookahead restriction "
                         "at end of production: {}"
                         .format(grammar.production_to_str(nt, body)))
+
+
+def check_no_line_terminator_here(grammar):
+    empties = empty_nt_set(grammar)
+
+    def check(e, nt, body):
+        if grammar.is_terminal(e):
+            pass
+        elif isinstance(e, Nt):
+            if e in empties:
+                raise ValueError(
+                    "invalid grammar: [no LineTerminator here] cannot appear next to "
+                    "a nonterminal that matches the empty string\n"
+                    "in production: {}".format(grammar.production_to_str(nt, body)))
+        else:
+            raise ValueError(
+                "invalid grammar: [no LineTerminator here] must appear only "
+                "between terminals and/or nonterminals\n"
+                "in production: {}".format(grammar.production_to_str(nt, body)))
+
+    for nt in grammar.nonterminals:
+        for production in grammar.nonterminals[nt].rhs_list:
+            body = production.body
+            for i, e in enumerate(body):
+                if e is NoLineTerminatorHere:
+                    if i == 0 or i == len(body) - 1:
+                        raise ValueError(
+                            "invalid grammar: [no LineTerminator here] must be between two symbols\n"
+                            "in production: {}".format(grammar.production_to_str(nt, body)))
+                    check(body[i - 1], nt, body)
+                    check(body[i + 1], nt, body)
 
 
 def expand_parameterized_nonterminals(grammar):
@@ -356,6 +393,8 @@ def seq_start(grammar, start, seq):
             s.add(ErrorToken)
         elif isinstance(e, Nt):
             s |= start[e]
+        elif e is NoLineTerminatorHere:
+            s.add(EMPTY)
         else:
             assert isinstance(e, LookaheadRule)
             future = seq_start(grammar, start, seq[i + 1:])
@@ -388,6 +427,8 @@ def make_start_set_cache(grammar, prods, start):
                 s = start[e]
                 if EMPTY in s:
                     s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
+            elif e is NoLineTerminatorHere:
+                s = sets[-1]
             else:
                 assert isinstance(e, LookaheadRule)
                 if e.positive:
@@ -795,7 +836,7 @@ def assert_items_are_compatible(grammar, prods, items):
     def item_history(item):
         return [e
                 for e in prods[item.prod_index].rhs[:item.offset]
-                if not isinstance(e, LookaheadRule)]
+                if is_concrete_element(e)]
 
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
@@ -847,6 +888,11 @@ class PgenContext:
                 offset=item.offset + 1,
                 lookahead=lookahead_intersect(item.lookahead,
                                               rhs[item.offset]))
+
+        if item.offset < len(rhs) and rhs[item.offset] is NoLineTerminatorHere:
+            # Ignore this restriction for now.
+            item = item._replace(
+                offset=item.offset + 1)
 
         # if item.lookahead is not None:
         if False:  # this block is disabled for now; see comment
@@ -1242,7 +1288,8 @@ class State:
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
-                    # grammar) or LookaheadRule (see make_lr_item).
+                    # grammar) or LookaheadRule or NoLineTerminatorHere (see
+                    # make_lr_item).
                     assert isinstance(next_symbol, Nt)
 
                     # We never reduce with a lookahead restriction still
@@ -1452,6 +1499,7 @@ def generate_parser_states(grammar, *, verbose=False, progress=False):
     grammar = expand_parameterized_nonterminals(grammar)
     check_cycle_free(grammar)
     check_lookahead_rules(grammar)
+    check_no_line_terminator_here(grammar)
     grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
         grammar)
     grammar = remove_empty_productions(grammar)
