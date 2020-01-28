@@ -3,6 +3,7 @@
 import json
 import re
 import unicodedata
+import sys
 
 from ..runtime import (ERROR, ErrorToken)
 from ..ordered import OrderedSet
@@ -488,7 +489,12 @@ class RustParserWriter:
 
 
 def write_rust_parser(out, parser_states, handler_info):
-    with open(handler_info, "r") as json_file:
-        handler_info_json = json.load(json_file)
+    if not handler_info:
+        print("WARNING: info.json is not provided", file=sys.stderr)
+        fallible_methods = []
+    else:
+        with open(handler_info, "r") as json_file:
+            handler_info_json = json.load(json_file)
+        fallible_methods = handler_info_json["fallible-methods"]
 
-    RustParserWriter(out, parser_states, handler_info_json["fallible-methods"]).emit()
+    RustParserWriter(out, parser_states, fallible_methods).emit()
