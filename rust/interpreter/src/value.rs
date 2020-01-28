@@ -1,18 +1,34 @@
 use std::cell::RefCell;
 use std::f64;
+use std::fmt;
 use std::rc::Rc;
 use std::str::FromStr;
 
 use crate::object::Object;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum JSValue {
     Boolean(bool),
     Number(f64),
     String(String),
     Object(Rc<RefCell<Object>>),
+    NativeFunction(fn(JSValue, &[JSValue]) -> JSValue),
     Undefined,
     Null,
+}
+
+impl fmt::Debug for JSValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Boolean(b) => write!(f, "{}", b),
+            Self::Number(n) => write!(f, "{}", n),
+            Self::String(ref s) => write!(f, "{:?}", s),
+            Self::Object(ref o) => write!(f, "{:?}", o),
+            Self::NativeFunction(ref n) => write!(f, "<native-function: {:p}>", n),
+            Self::Undefined => write!(f, "undefined"),
+            Self::Null => write!(f, "null"),
+        }
+    }
 }
 
 pub fn to_number(v: &JSValue) -> f64 {
@@ -21,7 +37,7 @@ pub fn to_number(v: &JSValue) -> f64 {
         JSValue::Boolean(false) => 0.0,
         JSValue::Number(n) => *n,
         JSValue::String(ref s) => f64::from_str(s).unwrap_or(f64::NAN),
-        JSValue::Object(_) => f64::NAN, // ToDo: valueOf
+        JSValue::Object(_) | JSValue::NativeFunction(_) => f64::NAN, // ToDo: valueOf
         JSValue::Undefined => f64::NAN,
         JSValue::Null => 0.0,
     }
@@ -39,6 +55,6 @@ pub fn to_boolean(v: &JSValue) -> bool {
             }
         }
         JSValue::String(ref s) => !s.is_empty(),
-        JSValue::Object(_) => true,
+        JSValue::Object(_) | JSValue::NativeFunction(_) => true,
     }
 }

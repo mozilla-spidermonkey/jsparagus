@@ -1,10 +1,13 @@
 use emitter::opcode::Opcode;
 use emitter::EmitResult;
 
+use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
+use std::rc::Rc;
 
+use crate::object::Object;
 use crate::value::{to_boolean, to_number, JSValue};
 
 /// The error of evaluating JS bytecode.
@@ -24,11 +27,17 @@ impl fmt::Display for EvalError {
 }
 
 trait Helpers {
+    fn read_u16(&self, offset: usize) -> u16;
     fn read_i32(&self, offset: usize) -> i32;
     fn read_offset(&self, offset: usize) -> isize;
+    fn read_atom(&self, offset: usize) -> String;
 }
 
 impl Helpers for EmitResult {
+    fn read_u16(&self, offset: usize) -> u16 {
+        u16::from_le_bytes(self.bytecode[offset..offset + 2].try_into().unwrap())
+    }
+
     fn read_i32(&self, offset: usize) -> i32 {
         i32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
     }
@@ -36,12 +45,26 @@ impl Helpers for EmitResult {
     fn read_offset(&self, offset: usize) -> isize {
         self.read_i32(offset) as isize
     }
+
+    fn read_atom(&self, offset: usize) -> String {
+        self.strings[self.read_i32(offset) as usize].clone()
+    }
+}
+
+fn print(_this_value: JSValue, args: &[JSValue]) -> JSValue {
+    println!("{:?}", args);
+    JSValue::Undefined
 }
 
 pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
+
+    let global = Rc::new(RefCell::new(Object::new()));
+    global
+        .borrow_mut()
+        .set("print".to_owned(), JSValue::NativeFunction(print));
 
     loop {
         let op = match Opcode::try_from(emit.bytecode[pc]) {
@@ -112,6 +135,36 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 continue;
             }
 
+            Opcode::GetGName => {
+                let atom = emit.read_atom(pc + 1);
+                stack.push(global.borrow().get(atom));
+            }
+
+            Opcode::GImplicitThis => {
+                // "The result is always `undefined` except when the name refers to a
+                // binding in a non-syntactic `with` environment."
+                stack.push(JSValue::Undefined);
+            }
+
+            Opcode::Call => {
+                let argc = emit.read_u16(pc + 1) as usize;
+
+                if stack.len() < argc {
+                    return Err(EvalError::EmptyStack);
+                }
+
+                let args = stack.split_off(stack.len() - argc);
+                let thisv = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let callee = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                match callee {
+                    JSValue::NativeFunction(fun) => {
+                        stack.push(fun(thisv, &args));
+                    }
+                    _ => return Err(EvalError::NotImplemented("non function callee".to_owned())),
+                }
+            }
+
             Opcode::And => {
                 let cond = to_boolean(stack.last().ok_or(EvalError::EmptyStack)?);
                 if !cond {
@@ -145,8 +198,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             Opcode::JumpTarget => {}
 
             Opcode::String => {
-                let index = emit.read_i32(pc + 1) as usize;
-                stack.push(JSValue::String(emit.strings[index].clone()))
+                stack.push(JSValue::String(emit.read_atom(pc + 1)));
             }
 
             Opcode::True => stack.push(JSValue::Boolean(true)),
