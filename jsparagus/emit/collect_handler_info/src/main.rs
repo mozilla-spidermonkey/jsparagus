@@ -2,28 +2,15 @@ extern crate clap;
 extern crate syn;
 
 use std::fs::File;
-use std::io::Read;
+use std::io::{Error, Read, Write};
 use clap::{ App, Arg };
 
-fn main() {
-    let matches = App::new("Collect information about handler functions")
-        .args(&[
-            Arg::with_name("INPUT.rs")
-                .required(true)
-                .help("Source file of handler struct definition."),
-        ])
-    .get_matches();
-
-    let source_path = matches.value_of("INPUT.rs")
-        .expect("Expected INPUT.rs");
-
+fn get_method_names(mut in_file: File) -> Vec<String> {
     let mut source = String::new();
-    File::open(source_path)
-        .unwrap()
-        .read_to_string(&mut source)
-        .unwrap();
+    in_file.read_to_string(&mut source).unwrap();
 
-    let file = syn::parse_file(&source).expect("Parsing handler");
+    let file = syn::parse_file(&source)
+        .expect("Syntax error found while parsing handler file");
 
     let mut names = Vec::new();
 
@@ -45,9 +32,40 @@ fn main() {
         }
     }
 
-    println!("{{");
-    println!("\"fallible-methods\": [");
-    println!("{}", names.join(",\n"));
-    println!("]");
-    println!("}}");
+    names
+}
+
+fn write_json(mut out_file: File, names: Vec<String>) -> Result<(), Error> {
+    writeln!(out_file, "{{")?;
+    writeln!(out_file, "\"fallible-methods\": [")?;
+    writeln!(out_file, "{}", names.join(",\n"))?;
+    writeln!(out_file, "]")?;
+    writeln!(out_file, "}}")?;
+
+    Ok(())
+}
+
+fn main() {
+    let matches = App::new("Collect information about handler functions")
+        .args(&[
+            Arg::with_name("INPUT.rs")
+                .required(true)
+                .help("Source file of handler struct definition."),
+            Arg::with_name("OUTPUT.json")
+                .required(true)
+                .help("Target file to write the information."),
+        ])
+    .get_matches();
+
+    let source_path = matches.value_of("INPUT.rs")
+        .expect("Expected INPUT.rs");
+
+    let target_path = matches.value_of("OUTPUT.json")
+        .expect("Expected OUTPUT.json");
+
+    let in_file = File::open(source_path).unwrap();
+    let names = get_method_names(in_file);
+
+    let out_file = File::create(target_path).unwrap();
+    write_json(out_file, names).expect("Failed to write");
 }
