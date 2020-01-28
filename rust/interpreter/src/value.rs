@@ -1,11 +1,16 @@
+use std::cell::RefCell;
 use std::f64;
+use std::rc::Rc;
 use std::str::FromStr;
+
+use crate::object::Object;
 
 #[derive(Clone, Debug)]
 pub enum JSValue {
     Boolean(bool),
     Number(f64),
     String(String),
+    Object(Rc<RefCell<Object>>),
     Undefined,
     Null,
 }
@@ -16,6 +21,7 @@ pub fn to_number(v: &JSValue) -> f64 {
         JSValue::Boolean(false) => 0.0,
         JSValue::Number(n) => *n,
         JSValue::String(ref s) => f64::from_str(s).unwrap_or(f64::NAN),
+        JSValue::Object(_) => f64::NAN, // ToDo: valueOf
         JSValue::Undefined => f64::NAN,
         JSValue::Null => 0.0,
     }
@@ -32,6 +38,7 @@ pub fn to_boolean(v: &JSValue) -> bool {
                 true
             }
         }
-        JSValue::String(ref s) => !s.is_empty()
+        JSValue::String(ref s) => !s.is_empty(),
+        JSValue::Object(_) => true,
     }
 }
