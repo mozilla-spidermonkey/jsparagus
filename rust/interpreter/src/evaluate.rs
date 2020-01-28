@@ -133,7 +133,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             Opcode::Coalesce => {
                 let last = stack.last().ok_or(EvalError::EmptyStack)?;
                 match last {
-                    JSValue::Null | JSValue::Undefined => {},
+                    JSValue::Null | JSValue::Undefined => {}
                     _ => {
                         let offset = emit.read_offset(pc + 1);
                         pc = (pc as isize + offset) as usize;
