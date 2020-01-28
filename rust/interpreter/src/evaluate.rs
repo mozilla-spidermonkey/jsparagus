@@ -65,6 +65,9 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
     global
         .borrow_mut()
         .set("print".to_owned(), JSValue::NativeFunction(print));
+    global
+        .borrow_mut()
+        .set("undefined".to_owned(), JSValue::Undefined);
 
     loop {
         let op = match Opcode::try_from(emit.bytecode[pc]) {
