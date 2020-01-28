@@ -1,6 +1,6 @@
 use std::f64;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum JSValue {
     Boolean(bool),
     Number(f64),

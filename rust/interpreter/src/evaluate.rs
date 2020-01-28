@@ -98,10 +98,9 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::IfEq => {
-                let offset = emit.read_offset(pc + 1);
-
                 let b = to_boolean(stack.pop().ok_or(EvalError::EmptyStack)?);
                 if !b {
+                    let offset = emit.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
                     continue;
                 }
@@ -111,6 +110,36 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 let offset = emit.read_offset(pc + 1);
                 pc = (pc as isize + offset) as usize;
                 continue;
+            }
+
+            Opcode::And => {
+                let cond = to_boolean(*stack.last().ok_or(EvalError::EmptyStack)?);
+                if !cond {
+                    let offset = emit.read_offset(pc + 1);
+                    pc = (pc as isize + offset) as usize;
+                    continue;
+                }
+            }
+
+            Opcode::Or => {
+                let cond = to_boolean(*stack.last().ok_or(EvalError::EmptyStack)?);
+                if cond {
+                    let offset = emit.read_offset(pc + 1);
+                    pc = (pc as isize + offset) as usize;
+                    continue;
+                }
+            }
+
+            Opcode::Coalesce => {
+                let last = stack.last().ok_or(EvalError::EmptyStack)?;
+                match last {
+                    JSValue::Null | JSValue::Undefined => {},
+                    _ => {
+                        let offset = emit.read_offset(pc + 1);
+                        pc = (pc as isize + offset) as usize;
+                        continue;
+                    }
+                }
             }
 
             Opcode::JumpTarget => {}
