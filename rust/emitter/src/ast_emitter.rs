@@ -213,8 +213,12 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: ArrowExpression"));
             }
 
-            Expression::AssignmentExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
+            Expression::AssignmentExpression {
+                binding,
+                expression,
+                ..
+            } => {
+                self.emit_assignment_expression(binding, expression)?;
             }
 
             Expression::BinaryExpression {
@@ -459,6 +463,29 @@ impl AstEmitter {
         self.emit_jump_target(vec![offset_final]);
 
         Ok(())
+    }
+
+    fn emit_assignment_expression(
+        &mut self,
+        binding: &AssignmentTarget,
+        expression: &Expression,
+    ) -> Result<(), EmitError> {
+        match binding {
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                    ..
+                }),
+            ) => {
+                self.emit.bind_g_name(name.value);
+                self.emit_expression(expression)?;
+                self.emit.set_g_name(name.value);
+                return Ok(());
+            }
+            _ => {}
+        }
+
+        return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
     }
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
