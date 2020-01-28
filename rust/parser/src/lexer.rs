@@ -333,6 +333,20 @@ impl<'alloc> Lexer<'alloc> {
     /// possible keywords. It's up to the parser to understand that, for
     /// example, `TerminalId::If` is not a keyword when it's used as a property
     /// or method name.
+    ///
+    /// If the source string contains no escape and it matches to possible
+    /// keywords (including contextual keywords), the result is corresponding
+    /// `TerminalId`.  For example, if the source string is "yield", the result
+    /// is `TerminalId::Yield`.
+    ///
+    /// If the source string contains no escape sequence and also it doesn't
+    /// match to any possible keywords, the result is `TerminalId::Name`.
+    ///
+    /// If the source string contains at least one escape sequence,
+    /// the result is always `TerminalId::NameWithEscape`, regardless of the
+    /// StringValue of it. For example, if the source string is "\u{79}ield",
+    /// the result is `TerminalId::NameWithEscape`, and the StringValue is
+    /// "yield".
     fn identifier_tail(
         &mut self,
         start: usize,
@@ -346,11 +360,11 @@ impl<'alloc> Lexer<'alloc> {
         // SourceCharacter elements. A code point in a keyword cannot be
         // expressed by a `\` UnicodeEscapeSequence.
         let id = if has_different {
-            // Always return `Name`.
+            // Always return `NameWithEscape`.
             //
             // Error check against reserved word should be handled in the
             // consumer.
-            TerminalId::Name
+            TerminalId::NameWithEscape
         } else {
             match &text as &str {
                 "as" => TerminalId::As,
@@ -385,9 +399,11 @@ impl<'alloc> Lexer<'alloc> {
                 "function" => TerminalId::Function,
                 "get" => TerminalId::Get,
                 "if" => TerminalId::If,
+                "implements" => TerminalId::Implements,
                 "import" => TerminalId::Import,
                 "in" => TerminalId::In,
                 "instanceof" => TerminalId::Instanceof,
+                "interface" => TerminalId::Interface,
                 "let" => {
                     //TerminalId::Let,
                     return Err(ParseError::NotImplemented(
@@ -396,6 +412,10 @@ impl<'alloc> Lexer<'alloc> {
                 }
                 "new" => TerminalId::New,
                 "of" => TerminalId::Of,
+                "package" => TerminalId::Package,
+                "private" => TerminalId::Private,
+                "protected" => TerminalId::Protected,
+                "public" => TerminalId::Public,
                 "return" => TerminalId::Return,
                 "set" => TerminalId::Set,
                 "static" => TerminalId::Static,

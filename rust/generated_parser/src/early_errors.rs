@@ -1,5 +1,8 @@
+use crate::parser_tables_generated::TerminalId;
 use crate::DeclarationKind;
 use crate::ParseError;
+use crate::Token;
+use ast::arena;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
@@ -73,74 +76,109 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
     }
      */
 
+    fn is_arguments_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
+        return (token.terminal_id == TerminalId::Name
+            || token.terminal_id == TerminalId::NameWithEscape)
+            && token.value.unwrap() == "arguments";
+    }
+
+    fn is_eval_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
+        return (token.terminal_id == TerminalId::Name
+            || token.terminal_id == TerminalId::NameWithEscape)
+            && token.value.unwrap() == "eval";
+    }
+
+    fn is_yield_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
+        return token.terminal_id == TerminalId::Yield
+            || (token.terminal_id == TerminalId::NameWithEscape
+                && token.value.unwrap() == "yield");
+    }
+
+    fn is_await_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
+        return token.terminal_id == TerminalId::Await
+            || (token.terminal_id == TerminalId::NameWithEscape
+                && token.value.unwrap() == "await");
+    }
+
     pub fn check_binding_identifier(
         &self,
-        name: Name<'alloc>,
-        offset: usize,
+        token: &arena::Box<'alloc, Token<'alloc>>,
     ) -> EarlyErrorsResult<'alloc> {
-        match name {
-            "arguments" | "eval" => {
-                // Static Semantics: Early Errors
-                // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
-                //
-                // BindingIdentifier : Identifier
-                //
-                // * It is a Syntax Error if the code matched by this
-                //   production is contained in strict mode code and the
-                //   StringValue of Identifier is "arguments" or "eval".
-                if self.is_strict()? {
-                    return Err(ParseError::InvalidIdentifier(name.clone(), offset));
-                }
-
-                Ok(())
+        if Self::is_arguments_identifier(token) || Self::is_eval_identifier(token) {
+            // Static Semantics: Early Errors
+            // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
+            //
+            // BindingIdentifier : Identifier
+            //
+            // * It is a Syntax Error if the code matched by this
+            //   production is contained in strict mode code and the
+            //   StringValue of Identifier is "arguments" or "eval".
+            if self.is_strict()? {
+                let name = token.value.unwrap();
+                let offset = token.loc.start;
+                return Err(ParseError::InvalidIdentifier(name.clone(), offset));
             }
-            "yield" => {
-                // BindingIdentifier : yield
-                //
-                // * It is a Syntax Error if this production has a [Yield]
-                //   parameter.
-                Err(ParseError::NotImplemented("[Yield] parameter"))
 
-                // self.check_yield_common()
-            }
-            "await" => {
-                // BindingIdentifier : await
-                //
-                // * It is a Syntax Error if this production has an [Await]
-                //   parameter.
-                Err(ParseError::NotImplemented("[Await] parameter"))
-
-                // self.check_await_common()
-            }
-            _ => self.check_identifier(name, offset),
+            return Ok(());
         }
+
+        if Self::is_yield_identifier(token) {
+            // BindingIdentifier : yield
+            //
+            // * It is a Syntax Error if this production has a [Yield]
+            //   parameter.
+            return Err(ParseError::NotImplemented("[Yield] parameter"));
+
+            // return self.check_yield_common();
+        }
+
+        if Self::is_await_identifier(token) {
+            // BindingIdentifier : await
+            //
+            // * It is a Syntax Error if this production has an [Await]
+            //   parameter.
+            return Err(ParseError::NotImplemented("[Await] parameter"));
+
+            // return self.check_await_common();
+        }
+
+        self.check_identifier(token)
     }
 
     pub fn check_label_identifier(
         &self,
-        name: Name<'alloc>,
-        offset: usize,
+        token: &arena::Box<'alloc, Token<'alloc>>,
     ) -> EarlyErrorsResult<'alloc> {
-        match name {
-            "yield" => self.check_yield_common(offset),
-            "await" => self.check_await_common(offset),
-            _ => self.check_identifier(name, offset),
+        if Self::is_yield_identifier(token) {
+            return self.check_yield_common(token);
         }
+
+        if Self::is_await_identifier(token) {
+            return self.check_await_common(token);
+        }
+
+        self.check_identifier(token)
     }
 
     pub fn check_identifier_reference(
         &self,
-        name: Name<'alloc>,
-        offset: usize,
+        token: &arena::Box<'alloc, Token<'alloc>>,
     ) -> EarlyErrorsResult<'alloc> {
-        match name {
-            "yield" => self.check_yield_common(offset),
-            "await" => self.check_await_common(offset),
-            _ => self.check_identifier(name, offset),
+        if Self::is_yield_identifier(token) {
+            return self.check_yield_common(token);
         }
+
+        if Self::is_await_identifier(token) {
+            return self.check_await_common(token);
+        }
+
+        self.check_identifier(token)
     }
 
-    fn check_yield_common(&self, _offset: usize) -> EarlyErrorsResult<'alloc> {
+    fn check_yield_common(
+        &self,
+        _token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
         //
@@ -174,7 +212,7 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
         //
         // if self.is_strict()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         name.clone(),
+        //         token.value.unwrap().clone(),
         //         offset,
         //     ));
         // }
@@ -182,7 +220,10 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
         // Ok(())
     }
 
-    fn check_await_common(&self, _offset: usize) -> EarlyErrorsResult<'alloc> {
+    fn check_await_common(
+        &self,
+        _token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
         //
@@ -214,7 +255,7 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
         //
         // if self.is_module()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         name.clone(),
+        //         token.value.unwrap().clone(),
         //         offset,
         //     ));
         // }
@@ -222,13 +263,59 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
         // Ok(())
     }
 
-    fn check_identifier(&self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc> {
-        match name {
-            "implements" | "interface" | "let" | "package" | "private" | "protected" | "public"
-            | "static" => {
-                // Static Semantics: Early Errors
-                // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
-                //
+    fn check_identifier(
+        &self,
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
+        match token.terminal_id {
+            TerminalId::NameWithEscape => {
+                let name = token.value.unwrap();
+                match name {
+                    "implements" | "interface" | "let" | "package" | "private" | "protected"
+                    | "public" | "static" => {
+                        // Identifier : IdentifierName but not ReservedWord
+                        //
+                        // * It is a Syntax Error if this phrase is contained
+                        //   in strict mode code and the StringValue of
+                        //   IdentifierName is:
+                        //   "implements", "interface", "let", "package",
+                        //   "private", "protected", "public", "static",
+                        //   or "yield".
+                        //
+                        // NOTE: "yield" case is handled in
+                        //       `check_yield_common`.
+                        if self.is_strict()? {
+                            let offset = token.loc.start;
+                            return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                        }
+                    }
+
+                    "break" | "case" | "catch" | "class" | "const" | "continue" | "debugger"
+                    | "default" | "delete" | "do" | "else" | "enum" | "export" | "extends"
+                    | "false" | "finally" | "for" | "function" | "if" | "import" | "in"
+                    | "instanceof" | "new" | "null" | "return" | "super" | "switch" | "this"
+                    | "throw" | "true" | "try" | "typeof" | "var" | "void" | "while" | "with" => {
+                        // Identifier : IdentifierName but not ReservedWord
+                        //
+                        // * It is a Syntax Error if StringValue of
+                        //   IdentifierName is the same String value as the
+                        //   StringValue of any ReservedWord except for yield
+                        //   or await.
+                        let offset = token.loc.start;
+                        return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                    }
+
+                    _ => {}
+                }
+            }
+            TerminalId::Implements
+            | TerminalId::Interface
+            | TerminalId::Let
+            | TerminalId::Package
+            | TerminalId::Private
+            | TerminalId::Protected
+            | TerminalId::Public
+            | TerminalId::Static => {
                 // Identifier : IdentifierName but not ReservedWord
                 //
                 // * It is a Syntax Error if this phrase is contained in strict
@@ -238,23 +325,11 @@ impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
                 //
                 // NOTE: "yield" case is handled in `check_yield_common`.
                 if self.is_strict()? {
+                    let name = token.value.unwrap();
+                    let offset = token.loc.start;
                     return Err(ParseError::InvalidIdentifier(name.clone(), offset));
                 }
             }
-
-            "break" | "case" | "catch" | "class" | "const" | "continue" | "debugger"
-            | "default" | "delete" | "do" | "else" | "enum" | "export" | "extends" | "false"
-            | "finally" | "for" | "function" | "if" | "import" | "in" | "instanceof" | "new"
-            | "null" | "return" | "super" | "switch" | "this" | "throw" | "true" | "try"
-            | "typeof" | "var" | "void" | "while" | "with" => {
-                // Identifier : IdentifierName but not ReservedWord
-                //
-                // * It is a Syntax Error if StringValue of IdentifierName is
-                //   the same String value as the StringValue of any
-                //   ReservedWord except for yield or await.
-                return Err(ParseError::InvalidIdentifier(name.clone(), offset));
-            }
-
             _ => {}
         }
 
