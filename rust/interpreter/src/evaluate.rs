@@ -61,23 +61,23 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
                 // TODO: Add is special, i.e. string concat
-                stack.push(JSValue::Number(to_number(lhs) + to_number(rhs)))
+                stack.push(JSValue::Number(to_number(&lhs) + to_number(&rhs)))
             }
 
             Opcode::Sub => {
                 let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
-                stack.push(JSValue::Number(to_number(lhs) - to_number(rhs)))
+                stack.push(JSValue::Number(to_number(&lhs) - to_number(&rhs)))
             }
 
             Opcode::Pos => {
                 let v = stack.pop().ok_or(EvalError::EmptyStack)?;
-                stack.push(JSValue::Number(to_number(v)));
+                stack.push(JSValue::Number(to_number(&v)));
             }
 
             Opcode::Neg => {
                 let v = stack.pop().ok_or(EvalError::EmptyStack)?;
-                stack.push(JSValue::Number(-to_number(v)));
+                stack.push(JSValue::Number(-to_number(&v)));
             }
 
             Opcode::Void => {
@@ -98,7 +98,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::IfEq => {
-                let b = to_boolean(stack.pop().ok_or(EvalError::EmptyStack)?);
+                let b = to_boolean(&stack.pop().ok_or(EvalError::EmptyStack)?);
                 if !b {
                     let offset = emit.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
@@ -113,7 +113,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::And => {
-                let cond = to_boolean(*stack.last().ok_or(EvalError::EmptyStack)?);
+                let cond = to_boolean(stack.last().ok_or(EvalError::EmptyStack)?);
                 if !cond {
                     let offset = emit.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
@@ -122,7 +122,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::Or => {
-                let cond = to_boolean(*stack.last().ok_or(EvalError::EmptyStack)?);
+                let cond = to_boolean(stack.last().ok_or(EvalError::EmptyStack)?);
                 if cond {
                     let offset = emit.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
@@ -143,6 +143,11 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::JumpTarget => {}
+
+            Opcode::String => {
+                let index = emit.read_i32(pc + 1) as usize;
+                stack.push(JSValue::String(emit.strings[index].clone()))
+            }
 
             Opcode::True => stack.push(JSValue::Boolean(true)),
             Opcode::False => stack.push(JSValue::Boolean(false)),
