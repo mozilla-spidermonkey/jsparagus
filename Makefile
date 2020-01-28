@@ -37,7 +37,7 @@ $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)
 
 $(HANDLER_INFO_OUT): jsparagus/emit/collect_handler_info/src/main.rs $(HANDLER_FILE)
-	(cd jsparagus/emit/collect_handler_info/; cargo run --bin collect_handler_info ../../../$(HANDLER_FILE) > $(subst jsparagus/emit/collect_handler_info/,,$(HANDLER_INFO_OUT)))
+	(cd jsparagus/emit/collect_handler_info/; cargo run --bin collect_handler_info ../../../$(HANDLER_FILE) $(subst jsparagus/emit/collect_handler_info/,,$(HANDLER_INFO_OUT)))
 
 $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
 	(cd rust/ast && $(PYTHON) generate_ast.py)
