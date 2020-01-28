@@ -138,9 +138,29 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 continue;
             }
 
+            Opcode::BindGName => {
+                // TODO: proper binding
+                stack.push(JSValue::Object(global.clone()))
+            }
+
             Opcode::GetGName => {
                 let atom = emit.read_atom(pc + 1);
                 stack.push(global.borrow().get(atom));
+            }
+
+            Opcode::SetGName => {
+                let value = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                let atom = emit.read_atom(pc + 1);
+                match obj {
+                    JSValue::Object(ref obj) => {
+                        obj.borrow_mut().set(atom, value.clone());
+                    }
+                    _ => return Err(EvalError::NotImplemented("not an object".to_owned())),
+                }
+
+                stack.push(value);
             }
 
             Opcode::GImplicitThis => {
