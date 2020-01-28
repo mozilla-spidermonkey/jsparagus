@@ -2,7 +2,10 @@ PY_OUT = js_parser/parser_tables.py
 HANDLER_FILE = rust/generated_parser/src/ast_builder.rs
 HANDLER_INFO_OUT = jsparagus/emit/collect_handler_info/info.json
 RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
-RS_AST_OUT = rust/ast/src/types.rs rust/ast/src/visit.rs rust/ast/src/source_location_accessor.rs rust/generated_parser/src/stack_value_generated.rs
+RS_AST_OUT = rust/ast/src/types_generated.rs \
+	rust/ast/src/visit_generated.rs \
+	rust/ast/src/source_location_accessor_generated.rs \
+	rust/generated_parser/src/stack_value_generated.rs
 PYTHON = python3
 
 all: $(PY_OUT) rust
