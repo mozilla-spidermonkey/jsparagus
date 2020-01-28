@@ -53,11 +53,13 @@ ECMASCRIPT_SYNTHETIC_TERMINALS = {
         'Name',
         'BooleanLiteral',
         'NullLiteral',
+        'NameWithEscape',
         *ECMASCRIPT_FULL_KEYWORDS,
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
     ]) - OrderedSet(['true', 'false', 'null']),
     'Identifier': OrderedSet([
         'Name',
+        'NameWithEscape',
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
     ]),
 }

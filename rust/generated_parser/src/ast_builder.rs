@@ -132,8 +132,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Identifier<'alloc>>> {
-        let loc = token.loc;
-        self.on_identifier_reference(token.value.unwrap(), loc.start)?;
+        self.on_identifier_reference(&token)?;
         Ok(self.alloc(self.identifier(token)))
     }
 
@@ -142,8 +141,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &mut self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, BindingIdentifier<'alloc>>> {
+        self.on_binding_identifier(&token)?;
         let loc = token.loc;
-        self.on_binding_identifier(token.value.unwrap(), loc.start)?;
         Ok(self.alloc(BindingIdentifier {
             name: self.identifier(token),
             loc,
@@ -155,8 +154,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &mut self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, BindingIdentifier<'alloc>>> {
+        self.on_binding_identifier(&token)?;
         let loc = token.loc;
-        self.on_binding_identifier("yield", loc.start)?;
         Ok(self.alloc(BindingIdentifier {
             name: Identifier {
                 value: "yield",
@@ -171,8 +170,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &mut self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, BindingIdentifier<'alloc>>> {
+        self.on_binding_identifier(&token)?;
         let loc = token.loc;
-        self.on_binding_identifier("await", loc.start)?;
         Ok(self.alloc(BindingIdentifier {
             name: Identifier {
                 value: "await",
@@ -187,8 +186,8 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Label<'alloc>>> {
+        self.on_label_identifier(&token)?;
         let loc = token.loc;
-        self.on_label_identifier(token.value.unwrap(), loc.start)?;
         Ok(self.alloc(Label {
             value: token.value.unwrap(),
             loc,
@@ -4322,9 +4321,15 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // Check Early Error for BindingIdentifier and note binding info to the
     // stack.
-    fn on_binding_identifier(&mut self, name: &'alloc str, offset: usize) -> Result<'alloc, ()> {
+    fn on_binding_identifier(
+        &mut self,
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
-        context.check_binding_identifier(name, offset)?;
+        context.check_binding_identifier(token)?;
+
+        let name = token.value.unwrap();
+        let offset = token.loc.start;
 
         if let Some(info) = self.bindings.last() {
             debug_assert!(info.offset < offset);
@@ -4340,15 +4345,18 @@ impl<'alloc> AstBuilder<'alloc> {
     }
 
     // Check Early Error for IdentifierReference.
-    fn on_identifier_reference(&self, name: &'alloc str, offset: usize) -> Result<'alloc, ()> {
+    fn on_identifier_reference(
+        &self,
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
-        context.check_identifier_reference(name, offset)
+        context.check_identifier_reference(token)
     }
 
     // Check Early Error for LabelIdentifier.
-    fn on_label_identifier(&self, name: &'alloc str, offset: usize) -> Result<'alloc, ()> {
+    fn on_label_identifier(&self, token: &arena::Box<'alloc, Token<'alloc>>) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
-        context.check_label_identifier(name, offset)
+        context.check_label_identifier(token)
     }
 
     // Update the binding kind of all names declared in a specific range of the
