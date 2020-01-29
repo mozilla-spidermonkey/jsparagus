@@ -267,8 +267,8 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: NewTargetExpression"));
             }
 
-            Expression::ObjectExpression(_) => {
-                return Err(EmitError::NotImplemented("TODO: ObjectExpression"));
+            Expression::ObjectExpression(ast) => {
+                self.emit_object_expression(ast)?;
             }
 
             Expression::UnaryExpression {
@@ -435,6 +435,42 @@ impl AstEmitter {
             }
         }
         self.emit.double(value);
+    }
+
+    fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
+        self.emit.new_init(0);
+
+        for property in object.properties.iter() {
+            self.emit_object_property(property)?;
+        }
+
+        Ok(())
+    }
+
+    fn emit_object_property(&mut self, property: &ObjectProperty) -> Result<(), EmitError> {
+        match property {
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
+                DataProperty {
+                    property_name,
+                    expression,
+                    ..
+                },
+            )) => {
+                self.emit_expression(expression)?;
+
+                match property_name {
+                    PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
+                        self.emit.init_prop(value);
+                    }
+                    PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
+                        return Err(EmitError::NotImplemented("TODO: computed property"))
+                    }
+                }
+            }
+            _ => return Err(EmitError::NotImplemented("TODO: non data property")),
+        }
+
+        Ok(())
     }
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
