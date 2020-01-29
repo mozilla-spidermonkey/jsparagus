@@ -5,7 +5,7 @@ import re
 import unicodedata
 import sys
 
-from ..runtime import (ERROR, ErrorToken)
+from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
 from ..grammar import (CallMethod, Some, is_concrete_element, Nt, Optional)
@@ -80,11 +80,14 @@ class RustParserWriter:
             t for state in self.states for t in state.action_row))
         self.nonterminals = list(OrderedSet(
             nt for state in self.states for nt in state.ctn_row))
+        self.special_cases = []
+        self.special_case_cache = {}
 
     def emit(self):
         self.header()
         self.terminal_id()
         self.actions()
+        self.emit_special_cases()
         self.error_codes()
         self.check_camel_case()
         self.nonterminal_id()
@@ -142,16 +145,52 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
 
+    def add_special_case(self, code):
+        if code not in self.special_case_cache:
+            index = len(self.special_cases)
+            self.special_cases.append(code)
+            self.special_case_cache[code] = index
+        return self.special_case_cache[code]
+
+    def render_action(self, action):
+        if isinstance(action, tuple):
+            if action[0] == 'IfSameLine':
+                _, a1, a2 = action
+                if a1 is None:
+                    a1 = 'ERROR'
+                if a2 is None:
+                    a2 = 'ERROR'
+                index = self.add_special_case(
+                    "if token.is_on_new_line { %s } else { %s }"
+                    % (a2, a1))
+            else:
+                raise ValueError("unrecognized kind of special case: {!r}".format(action))
+            return SPECIAL_CASE_TAG + index
+        elif action == 'ERROR':
+            return action
+        else:
+            assert isinstance(action, int)
+            return action
+
     def actions(self):
         self.write(0, "#[rustfmt::skip]")
         self.write(0, "static ACTIONS: [i64; {}] = [",
                    len(self.states) * len(self.terminals))
         for i, state in enumerate(self.states):
             self.write(1, "// {}. {}", i, state.traceback() or "<empty>")
-            self.write(1, "{}",
-                       ' '.join("{},".format(state.action_row.get(t, "ERROR")) for t in self.terminals))
+            self.write(1, "{},",
+                       ", ".join(str(self.render_action(state.action_row.get(t, "ERROR")))
+                                 for t in self.terminals))
             if i < len(self.states) - 1:
                 self.write(0, "")
+        self.write(0, "];")
+        self.write(0, "")
+
+    def emit_special_cases(self):
+        self.write(0, "static SPECIAL_CASES: [fn(&Token<'_>) -> i64; {}] = [",
+                   len(self.special_cases))
+        for i, code in enumerate(self.special_cases):
+            self.write(1, "|token| {{ {} }},", code)
         self.write(0, "];")
         self.write(0, "")
 
@@ -452,6 +491,7 @@ class RustParserWriter:
         self.write(1, "pub state_count: usize,")
         self.write(1, "pub action_table: &'a [i64],")
         self.write(1, "pub action_width: usize,")
+        self.write(1, "pub special_cases: &'a [fn (&Token) -> i64],")
         self.write(1, "pub error_codes: &'a [Option<ErrorCode>],")
         self.write(1, "pub reduce_simulator: &'a [(usize, NonterminalId)],")
         self.write(1, "pub goto_table: &'a [u16],")
@@ -474,6 +514,7 @@ class RustParserWriter:
         self.write(1, "state_count: {},", len(self.states))
         self.write(1, "action_table: &ACTIONS,")
         self.write(1, "action_width: {},", len(self.terminals))
+        self.write(1, "special_cases: &SPECIAL_CASES,")
         self.write(1, "error_codes: &STATE_TO_ERROR_CODE,")
         self.write(1, "reduce_simulator: &REDUCE_SIMULATOR,")
         self.write(1, "goto_table: &GOTO,")
