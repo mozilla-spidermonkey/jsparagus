@@ -325,11 +325,8 @@ pub trait Pass<'alloc> {
                 self.visit_expression(left);
                 self.visit_expression(right);
             }
-            Expression::CallExpression {
-                callee, arguments, ..
-            } => {
-                self.visit_expression_or_super(callee);
-                self.visit_arguments(arguments);
+            Expression::CallExpression(ast) => {
+                self.visit_call_expression(ast);
             }
             Expression::CompoundAssignmentExpression {
                 operator,
@@ -426,6 +423,11 @@ pub trait Pass<'alloc> {
                 self.visit_static_property_name(ast);
             }
         }
+    }
+
+    fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) {
+        self.visit_expression_or_super(&mut ast.callee);
+        self.visit_arguments(&mut ast.arguments);
     }
 
     fn visit_class_element_name(&mut self, ast: &mut ClassElementName<'alloc>) {
@@ -1411,13 +1413,6 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
-    fn visit_call_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(callee);
-        result.append(arguments);
-        result
-    }
-
     fn visit_compound_assignment_expression(
         &self,
         operator: Self::Value,
@@ -1493,6 +1488,13 @@ pub trait PostfixPass<'alloc> {
     fn visit_import_call_expression(&self, argument: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(argument);
+        result
+    }
+
+    fn visit_call_expression(&self, callee: Self::Value, arguments: Self::Value) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(callee);
+        result.append(arguments);
         result
     }
 
@@ -2453,13 +2455,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 let a2 = self.visit_expression((right));
                 self.pass.visit_binary_expression(a0, a1, a2)
             }
-            Expression::CallExpression {
-                callee, arguments, ..
-            } => {
-                let a0 = self.visit_expression_or_super((callee));
-                let a1 = self.visit_arguments((arguments));
-                self.pass.visit_call_expression(a0, a1)
-            }
+            Expression::CallExpression(ast) => self.visit_call_expression(ast),
             Expression::CompoundAssignmentExpression {
                 operator,
                 binding,
@@ -2553,6 +2549,12 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
             PropertyName::ComputedPropertyName(ast) => self.visit_computed_property_name(ast),
             PropertyName::StaticPropertyName(ast) => self.visit_static_property_name(ast),
         }
+    }
+
+    pub fn visit_call_expression(&mut self, ast: &mut CallExpression<'alloc>) -> T::Value {
+        let a0 = self.visit_expression_or_super((&mut ast.callee));
+        let a1 = self.visit_arguments((&mut ast.arguments));
+        self.pass.visit_call_expression(a0, a1)
     }
 
     pub fn visit_class_element_name(&mut self, ast: &mut ClassElementName<'alloc>) -> T::Value {

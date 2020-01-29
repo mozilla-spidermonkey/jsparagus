@@ -1336,11 +1336,11 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let callee_loc = callee.get_loc();
         let arguments_loc = arguments.loc;
-        self.alloc(Expression::CallExpression {
+        self.alloc(Expression::CallExpression(CallExpression {
             callee: ExpressionOrSuper::Expression(callee),
             arguments: arguments.unbox(),
             loc: SourceLocation::from_parts(callee_loc, arguments_loc),
-        })
+        }))
     }
 
     // SuperCall : `super` Arguments
@@ -1351,11 +1351,11 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let super_loc = super_token.loc;
         let arguments_loc = arguments.loc;
-        self.alloc(Expression::CallExpression {
+        self.alloc(Expression::CallExpression(CallExpression {
             callee: ExpressionOrSuper::Super { loc: super_loc },
             arguments: arguments.unbox(),
             loc: SourceLocation::from_parts(super_loc, arguments_loc),
-        })
+        }))
     }
 
     // ImportCall : `import` `(` AssignmentExpression `)`
@@ -1964,7 +1964,7 @@ impl<'alloc> AstBuilder<'alloc> {
                 ),
             ),
 
-            Expression::CallExpression { .. } => {
+            Expression::CallExpression(CallExpression { .. }) => {
                 return Err(ParseError::NotImplemented(
                     "Assignment to CallExpression is allowed for non-strict mode.",
                 ));
@@ -4002,11 +4002,11 @@ impl<'alloc> AstBuilder<'alloc> {
         call_expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, (arena::Box<'alloc, FormalParameters<'alloc>>, SourceLocation)> {
         match call_expression.unbox() {
-            Expression::CallExpression {
+            Expression::CallExpression(CallExpression {
                 callee: ce,
                 arguments,
                 loc,
-            } => {
+            }) => {
                 // Check that `callee` is `async`.
                 match ce {
                     ExpressionOrSuper::Expression(callee) => match callee.unbox() {

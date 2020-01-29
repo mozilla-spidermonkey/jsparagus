@@ -223,10 +223,7 @@
       "left": "Box<Expression>",
       "right": "Box<Expression>"
     },
-    "CallExpression": {
-      "callee": "ExpressionOrSuper",
-      "arguments": "Arguments"
-    },
+    "CallExpression": "CallExpression",
     "CompoundAssignmentExpression": {
       "operator": "CompoundAssignmentOperator",
       "binding": "SimpleAssignmentTarget",
@@ -279,6 +276,11 @@
     "_type": "enum",
     "ComputedPropertyName": "ComputedPropertyName",
     "StaticPropertyName": "StaticPropertyName"
+  },
+  "CallExpression": {
+    "_type": "struct",
+    "callee": "ExpressionOrSuper",
+    "arguments": "Arguments"
   },
   "ClassElementName": {
     "_type": "enum",

@@ -36,6 +36,7 @@ pub enum StackValue<'alloc> {
     BindingPropertyProperty(arena::Box<'alloc, BindingPropertyProperty<'alloc>>),
     BindingWithDefault(arena::Box<'alloc, BindingWithDefault<'alloc>>),
     Block(arena::Box<'alloc, Block<'alloc>>),
+    CallExpression(arena::Box<'alloc, CallExpression<'alloc>>),
     CatchClause(arena::Box<'alloc, CatchClause<'alloc>>),
     ClassDeclaration(arena::Box<'alloc, ClassDeclaration<'alloc>>),
     ClassElement(arena::Box<'alloc, ClassElement<'alloc>>),
@@ -397,6 +398,15 @@ impl<'alloc> StackValueItem<'alloc> for Block<'alloc> {
         match sv {
             StackValue::Block(v) => Ok(v),
             _ => Err(format!("StackValue expected Block, got {:?}", sv)),
+        }
+    }
+}
+
+impl<'alloc> StackValueItem<'alloc> for CallExpression<'alloc> {
+    fn to_ast(sv: StackValue<'alloc>) -> AstResult<'alloc, Self> {
+        match sv {
+            StackValue::CallExpression(v) => Ok(v),
+            _ => Err(format!("StackValue expected CallExpression, got {:?}", sv)),
         }
     }
 }
@@ -1410,6 +1420,13 @@ impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, Block<'alloc>> {
     type Error = Infallible;
     fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
         Ok(StackValue::Block(self))
+    }
+}
+
+impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, CallExpression<'alloc>> {
+    type Error = Infallible;
+    fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {
+        Ok(StackValue::CallExpression(self))
     }
 }
 
