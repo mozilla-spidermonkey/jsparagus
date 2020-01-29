@@ -29,6 +29,7 @@ impl fmt::Display for EvalError {
 trait Helpers {
     fn read_u16(&self, offset: usize) -> u16;
     fn read_i32(&self, offset: usize) -> i32;
+    fn read_u32(&self, offset: usize) -> u32;
     fn read_offset(&self, offset: usize) -> isize;
     fn read_atom(&self, offset: usize) -> String;
 }
@@ -40,6 +41,10 @@ impl Helpers for EmitResult {
 
     fn read_i32(&self, offset: usize) -> i32 {
         i32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
+    }
+
+    fn read_u32(&self, offset: usize) -> u32 {
+        u32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
     }
 
     fn read_offset(&self, offset: usize) -> isize {
@@ -163,6 +168,21 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 stack.push(value);
             }
 
+            Opcode::InitElemArray => {
+                let value = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                let index = emit.read_u32(pc + 1);
+                match obj {
+                    JSValue::Object(ref obj) => {
+                        obj.borrow_mut().set(index.to_string(), value);
+                    }
+                    _ => return Err(EvalError::NotImplemented("not an object".to_owned())),
+                }
+
+                stack.push(obj);
+            }
+
             Opcode::GImplicitThis => {
                 // "The result is always `undefined` except when the name refers to a
                 // binding in a non-syntactic `with` environment."
@@ -219,6 +239,10 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::JumpTarget => {}
+
+            Opcode::NewArray => {
+                stack.push(JSValue::Object(Rc::new(RefCell::new(Object::new()))));
+            }
 
             Opcode::String => {
                 stack.push(JSValue::String(emit.read_atom(pc + 1)));

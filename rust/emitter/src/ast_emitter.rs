@@ -205,8 +205,8 @@ impl AstEmitter {
                 self.emit.string(value);
             }
 
-            Expression::ArrayExpression(_) => {
-                return Err(EmitError::NotImplemented("TODO: ArrayExpression"));
+            Expression::ArrayExpression(ast) => {
+                self.emit_array_expression(ast)?;
             }
 
             Expression::ArrowExpression { .. } => {
@@ -435,6 +435,23 @@ impl AstEmitter {
             }
         }
         self.emit.double(value);
+    }
+
+    fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
+        // TODO: Initialze to correct length where possible.
+        self.emit.new_array(0);
+
+        for (index, element) in array.elements.iter().enumerate() {
+            match element {
+                ArrayExpressionElement::Expression(expr) => {
+                    self.emit_expression(&expr)?;
+                    self.emit.init_elem_array(index as u32);
+                }
+                _ => return Err(EmitError::NotImplemented("TODO: Array Element")),
+            }
+        }
+
+        Ok(())
     }
 
     fn emit_conditional_expression(
