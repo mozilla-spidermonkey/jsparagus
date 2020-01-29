@@ -833,6 +833,9 @@ def assert_items_are_compatible(grammar, prods, items):
     All items in the same state must be produced by the same history,
     the same sequence of terminals and nonterminals.
     """
+    if len(items) == 0:
+        return
+
     def item_history(item):
         return [e
                 for e in prods[item.prod_index].rhs[:item.offset]
@@ -841,7 +844,7 @@ def assert_items_are_compatible(grammar, prods, items):
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
     for item, history in pairs:
-        assert grammar.compatible_sequences(history[:item.offset], known_history[-item.offset:]), \
+        assert grammar.compatible_sequences(history, known_history[-len(history):]), \
             "incompatible LR items:\n    {}\n    {}\n".format(
                 grammar.lr_item_to_str(prods, max_item),
                 grammar.lr_item_to_str(prods, item))
@@ -888,11 +891,6 @@ class PgenContext:
                 offset=item.offset + 1,
                 lookahead=lookahead_intersect(item.lookahead,
                                               rhs[item.offset]))
-
-        if item.offset < len(rhs) and rhs[item.offset] is NoLineTerminatorHere:
-            # Ignore this restriction for now.
-            item = item._replace(
-                offset=item.offset + 1)
 
         # if item.lookahead is not None:
         if False:  # this block is disabled for now; see comment
@@ -1203,6 +1201,84 @@ class State:
                                 closure_todo.append(new_item)
         return closure
 
+    def split_if_restricted(self):
+        """Handle any restricted productions relevant to this state.
+
+        If any items in this state have a [no LineTerminator here] restriction next,
+        this splits the state and returns two State objects:
+
+        -   The first is a clone of this state, but with each item advanced
+            past the restriction. (This State represents the situation where
+            the next token is on the same line.)
+
+        -   The second is a clone of this state, but with all restricted
+            productions dropped. (The situation where the next token is on a
+            new line.)
+
+        If no items in this state have a [no LineTerminator here] restriction
+        next, this does nothing and returns None.
+        """
+        restricted_items = []
+        prods = self.context.prods
+        for i, item in enumerate(self._lr_items):
+            rhs = prods[item.prod_index].rhs
+            if item.offset < len(rhs) and rhs[item.offset] is NoLineTerminatorHere:
+                restricted_items.append(i)
+
+        if restricted_items:
+            items_1 = []
+            items_2 = []
+            for i, item in enumerate(self._lr_items):
+                if i in restricted_items:
+                    item = item._replace(offset=item.offset + 1)
+                else:
+                    items_2.append(item)
+                items_1.append(item)
+            s1 = State(self.context, items_1, self._debug_traceback)
+            s2 = State(self.context, items_2, self._debug_traceback)
+            return s1, s2
+        else:
+            return None
+
+    def merge_rows(self, s1, s2):
+        action_row = {}
+        for t in OrderedSet(s1.action_row) | OrderedSet(s2.action_row):
+            s1_act = s1.action_row.get(t)
+            s2_act = s2.action_row.get(t)
+            if s1_act == s2_act:
+                action_row[t] = s1_act
+            else:
+                action_row[t] = ("IfSameLine", s1_act, s2_act)
+
+        ctn_row = {}
+        for nt in OrderedSet(s1.ctn_row) | OrderedSet(s2.ctn_row):
+            s1_ctn = s1.ctn_row.get(nt)
+            s2_ctn = s2.ctn_row.get(nt)
+            if s1_ctn is None:
+                ctn_row[nt] = s2_ctn
+            elif s2_ctn is None or s1_ctn == s2_ctn:
+                ctn_row[nt] = s1_ctn
+            else:
+                raise ValueError("conflicting continuation states!")
+
+        if s1.error_code != s2.error_code:
+            raise ValueError("conflicting error codes!")
+
+        self.action_row = action_row
+        self.ctn_row = ctn_row
+        self.error_code = s1.error_code
+
+    def analyze_if_restricted(self, get_state_index, *, verbose=False):
+        split_result = self.split_if_restricted()
+        if split_result is None:
+            return False
+        else:
+            s1, s2 = split_result
+            s1.analyze(get_state_index, verbose=verbose)
+            s2.analyze(get_state_index, verbose=verbose)
+            self.merge_rows(s1, s2)
+            return True
+
     def analyze(self, get_state_index, *, verbose=False):
         """Generate the LR parser table entry for this state.
 
@@ -1211,6 +1287,9 @@ class State:
         get_state_index() -- a callback that can enqueue new states to be
         visited later.
         """
+
+        if self.analyze_if_restricted(get_state_index, verbose=verbose):
+            return
 
         context = self.context
         grammar = context.grammar
@@ -1288,8 +1367,8 @@ class State:
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
-                    # grammar) or LookaheadRule or NoLineTerminatorHere (see
-                    # make_lr_item).
+                    # grammar) or LookaheadRule (see make_lr_item) or
+                    # NoLineTerminatorHere (handled by analyze_if_restricted).
                     assert isinstance(next_symbol, Nt)
 
                     # We never reduce with a lookahead restriction still

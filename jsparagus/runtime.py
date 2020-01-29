@@ -6,7 +6,16 @@ from .lexer import UnexpectedEndError
 
 __all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken']
 
-ACCEPT = -0x7fffffffffffffff
+# Actions are encoded as 64-bit signed integers, with the following meanings:
+# - n in range(0, 0x8000_0000_0000_0000) - shift to state n
+# - n in range(0x8000_0000_0000_0000, 0xc000_0000_0000_0000) - call special_case(n & SPECIAL_CASE_MASK)
+# - n == ERROR (0xbfff_ffff_ffff_fffe)
+# - n == ACCEPT (0xbfff_ffff_ffff_ffff)
+# - n in range(0xc000_0000_0000_0000, 0x1_0000_0000_0000_0000) - reduce by production -n - 1
+
+SPECIAL_CASE_MASK = 0x3fff_ffff_ffff_ffff
+SPECIAL_CASE_TAG = -0x8000_0000_0000_0000
+ACCEPT = 0x_bfff_ffff_ffff_ffff - (1 << 64)
 ERROR = ACCEPT - 1
 
 
@@ -76,10 +85,11 @@ class Parser:
 
     """
 
-    def __init__(self, actions, ctns, reductions, error_codes, entry_state, builder):
+    def __init__(self, actions, ctns, reductions, special_cases, error_codes, entry_state, builder):
         self.actions = actions
         self.ctns = ctns
         self.reductions = reductions
+        self.special_cases = special_cases
         self.error_codes = error_codes
         self.stack = [entry_state]
         self.builder = builder
@@ -93,8 +103,8 @@ class Parser:
 
         This is absurdly expensive and is for very odd and special use cases.
         """
-        p = Parser(self.actions, self.ctns, self.reductions, self.error_codes,
-                   self.stack[0], self.builder)
+        p = Parser(self.actions, self.ctns, self.reductions, self.special_cases,
+                   self.error_codes, self.stack[0], self.builder)
         p.stack = self.stack[:]
         # This doesn't need to be so expensive. We could proxy it instead of copying.
         p.reductions = [
@@ -104,10 +114,13 @@ class Parser:
         return p
 
     def _reduce(self, t):
-        stack = self.stack
-        state = stack[-1]
+        state = self.stack[-1]
         action = self.actions[state].get(t, ERROR)
-        while ACCEPT < action < 0:  # reduce
+        return self._reduce_action(t, action)
+
+    def _reduce_action(self, t, action):
+        stack = self.stack
+        while ACCEPT < action < 0:  # action is reduce
             tag_name, n, reducer = self.reductions[-action - 1]
             start = len(stack) - 2 * n
             node = reducer(self.builder, *stack[start::2])
@@ -121,15 +134,20 @@ class Parser:
 
         # The loop is here for error-handling; the normal path through this
         # code reaches the `break` statement.
+        action = self._reduce(t)
         while True:
-            action = self._reduce(t)
             if action >= 0:  # shift
                 self.stack.append(lexer.take())
                 self.stack.append(action)
                 break
+            elif action < ERROR:  # special case
+                i = action & SPECIAL_CASE_MASK
+                action = self.special_cases[i](lexer, t)
+                action = self._reduce_action(t, action)
             else:
                 assert action == ERROR
                 self._try_error_handling(lexer, t)
+                action = self._reduce(t)
 
     def close(self, lexer):
         assert not self.closed

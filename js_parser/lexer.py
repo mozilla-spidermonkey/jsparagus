@@ -303,11 +303,7 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
         return self._current_match.group(1)
 
     def saw_line_terminator(self):
-        """True if there's a LineTerminator before the current token.
-
-        Call this only after having called `.peek()` more recently than
-        `.take()`.
-        """
+        """True if there's a LineTerminator before the current token."""
         i = self.previous_token_end
         j = self.current_token_start
         ws_between = self.src[i:j]
