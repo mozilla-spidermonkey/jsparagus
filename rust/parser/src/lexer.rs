@@ -1013,6 +1013,11 @@ impl<'alloc> Lexer<'alloc> {
                                 "legacy octal escape sequence in string",
                             ));
                         }
+                        Some('8'..='9') => {
+                            return Err(ParseError::NotImplemented(
+                                "digit immediately following \\0 escape sequence",
+                            ));
+                        }
                         _ => {}
                     }
                     text.push('\0');
