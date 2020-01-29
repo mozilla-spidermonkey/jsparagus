@@ -611,3 +611,74 @@ fn test_coalesce() {
     assert_parses("const f = options.prop ?? 0;");
     assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
 }
+
+#[test]
+fn test_no_line_terminator_here() {
+    // Parse `code` as a Script and compute some function of the resulting AST.
+    fn parse_then<F, R>(code: &str, f: F) -> R
+    where
+        F: FnOnce(&Script) -> R,
+    {
+        let allocator = &Bump::new();
+        match try_parse(allocator, code) {
+            Err(err) => {
+                panic!("Failed to parse code {:?}: {}", code, err);
+            }
+            Ok(script) => f(&*script),
+        }
+    }
+
+    // Parse `code` as a Script and return the number of top-level
+    // StatementListItems.
+    fn count_items(code: &str) -> usize {
+        parse_then(code, |script| script.statements.len())
+    }
+
+    // Without a newline, labelled `break` in loop.  But a line break changes
+    // the meaning -- then it's a plain `break` statement, followed by
+    // ExpressionStatement `LOOP;`
+    assert_eq!(count_items("LOOP: while (true) break LOOP;"), 1);
+    assert_eq!(count_items("LOOP: while (true) break \n LOOP;"), 2);
+
+    // The same, but for `continue`.
+    assert_eq!(count_items("LOOP: while (true) continue LOOP;"), 1);
+    assert_eq!(count_items("LOOP: while (true) continue \n LOOP;"), 2);
+
+    // Parse `code` as a Script, expected to contain a single function
+    // declaration, and return the number of statements in the function body.
+    fn count_statements_in_function(code: &str) -> usize {
+        parse_then(code, |script| {
+            assert_eq!(
+                script.statements.len(),
+                1,
+                "expected function declaration, got {:?}",
+                script
+            );
+            match &script.statements[0] {
+                Statement::FunctionDeclaration(func) => func.body.statements.len(),
+                _ => panic!("expected function declaration, got {:?}", script),
+            }
+        })
+    }
+
+    assert_eq!(
+        count_statements_in_function("function f() { return x; }"),
+        1
+    );
+    assert_eq!(
+        count_statements_in_function("function f() { return\n x; }"),
+        2
+    );
+
+    assert_parses("x++");
+    assert_incomplete("x\n++");
+
+    assert_parses("throw fit;");
+    assert_syntax_error("throw\nfit;");
+
+    // Alternative ways of spelling LineTerminator
+    assert_syntax_error("throw//\nfit;");
+    assert_syntax_error("throw/*\n*/fit;");
+    assert_syntax_error("throw\rfit;");
+    assert_syntax_error("throw\r\nfit;");
+}
