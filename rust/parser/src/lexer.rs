@@ -354,7 +354,12 @@ impl<'alloc> Lexer<'alloc> {
         } else {
             match &text as &str {
                 "as" => TerminalId::As,
-                "async" => TerminalId::Async,
+                "async" => {
+                    //TerminalId::Async
+                    return Err(ParseError::NotImplemented(
+                        "async cannot be handled in parser due to multiple lookahead",
+                    ));
+                }
                 "await" => {
                     //TerminalId::Await
                     return Err(ParseError::NotImplemented(
@@ -383,7 +388,12 @@ impl<'alloc> Lexer<'alloc> {
                 "import" => TerminalId::Import,
                 "in" => TerminalId::In,
                 "instanceof" => TerminalId::Instanceof,
-                "let" => TerminalId::Let,
+                "let" => {
+                    //TerminalId::Let,
+                    return Err(ParseError::NotImplemented(
+                        "let cannot be handled in parser due to multiple lookahead",
+                    ));
+                }
                 "new" => TerminalId::New,
                 "of" => TerminalId::Of,
                 "return" => TerminalId::Return,
