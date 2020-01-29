@@ -168,6 +168,21 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 stack.push(value);
             }
 
+            Opcode::InitProp => {
+                let value = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                let atom = emit.read_atom(pc + 1);
+                match obj {
+                    JSValue::Object(ref obj) => {
+                        obj.borrow_mut().set(atom, value);
+                    }
+                    _ => return Err(EvalError::NotImplemented("not an object".to_owned())),
+                }
+
+                stack.push(obj);
+            }
+
             Opcode::InitElemArray => {
                 let value = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
@@ -240,7 +255,7 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
 
             Opcode::JumpTarget => {}
 
-            Opcode::NewArray => {
+            Opcode::NewArray | Opcode::NewInit => {
                 stack.push(JSValue::Object(Rc::new(RefCell::new(Object::new()))));
             }
 
