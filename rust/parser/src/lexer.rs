@@ -6,7 +6,7 @@ use bumpalo::{collections::String, Bump};
 use generated_parser::{ParseError, Result, TerminalId, Token};
 use std::convert::TryFrom;
 use std::str::Chars;
-use unic_ucd_ident::{is_xid_continue, is_xid_start};
+use unic_ucd_ident::{is_id_continue, is_id_start};
 
 pub struct Lexer<'alloc> {
     allocator: &'alloc Bump,
@@ -221,7 +221,7 @@ fn is_identifier_start(c: char) -> bool {
     if c.is_ascii() {
         c == '$' || c == '_' || c.is_ascii_alphabetic()
     } else {
-        is_xid_start(c)
+        is_id_start(c)
     }
 }
 
@@ -243,7 +243,7 @@ fn is_identifier_part(c: char) -> bool {
     if c.is_ascii() {
         c == '$' || c == '_' || c.is_ascii_alphanumeric()
     } else {
-        is_xid_continue(c) || c == ZWNJ || c == ZWJ
+        is_id_continue(c) || c == ZWNJ || c == ZWJ
     }
 }
 
