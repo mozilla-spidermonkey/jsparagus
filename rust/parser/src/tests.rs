@@ -220,7 +220,7 @@ fn test_asi_suppressed() {
     assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}");
     assert_syntax_error("for (i = 0     \n i < 9;   i++) {}");
     assert_syntax_error("for (i = 0;       i < 9 \n i++) {}");
-    assert_syntax_error("for (let i = 0 \n i < 9;   i++) {}");
+    assert_syntax_error("for (const i = 0 \n i < 9;   i++) {}");
 
     // ASI is suppressed in the production ClassElement[Yield, Await] : `;`
     // to prevent an infinite loop of ASI. lol
@@ -412,8 +412,8 @@ fn test_strings() {
 
 #[test]
 fn test_awkward_chunks() {
-    assert_parses(&vec!["let", "ter.head = 1;"]);
-    assert_parses(&vec!["let", " x = 1;"]);
+    assert_parses(&vec!["const", "ructor.length = 1;"]);
+    assert_parses(&vec!["const", " x = 1;"]);
 
     // Try feeding one character at a time to the parser.
     let chars: Vec<&str> = "function f() { ok(); }".split("").collect();
@@ -494,7 +494,7 @@ fn test_regex() {
     assert_parses("x = /[^x]/");
     assert_parses("x = /+=351*/");
     assert_parses("x = /^\\s*function (\\w+)/;");
-    assert_parses("let regexp = /this is fine: [/] dont @ me/;");
+    assert_parses("const regexp = /this is fine: [/] dont @ me/;");
 }
 
 #[test]
@@ -529,8 +529,8 @@ fn test_can_close_with_asi() {
 #[test]
 fn test_conditional_keywords() {
     // property names
-    assert_parses("let obj = {if: 3, function: 4};");
-    assert_parses("let obj = {true: 1, false: 0, null: NaN};");
+    assert_parses("const obj = {if: 3, function: 4};");
+    assert_parses("const obj = {true: 1, false: 0, null: NaN};");
     assert_parses("assert(obj.if == 3);");
     assert_parses("assert(obj.true + obj.false + obj.null == NaN);");
 
@@ -544,17 +544,18 @@ fn test_conditional_keywords() {
         ",
     );
 
-    // Not implemented:
-    // assert_parses("var let = [new Date];"); // let as identifier
-
-    // Not implemented:
-    // assert_parses("let v = let;"); // let as keyword, then identifier
-
-    // Not implemented (multitoken lookahead):
-    // assert_parses("let.length;");           // `let .` -> ExpressionStatement
-
-    // Not implemented:
-    // assert_syntax_error("let[0].getYear();"); // `let [` -> LexicalDeclaration
+    // FIXME: let (multitoken lookahead):
+    assert_not_implemented("let a = 1;");
+    /*
+    // let as identifier
+    assert_parses("var let = [new Date];");
+    // let as keyword, then identifier
+    assert_parses("let v = let;");
+    // `let .` -> ExpressionStatement
+    assert_parses("let.length;");
+    // `let [` -> LexicalDeclaration
+    assert_syntax_error("let[0].getYear();");
+     */
 
     assert_parses(
         "
@@ -580,6 +581,9 @@ fn test_conditional_keywords() {
 
 #[test]
 fn test_async_arrows() {
+    // FIXME: async (multiple lookahead)
+    assert_not_implemented("const a = async a => 1;");
+    /*
     assert_parses("let f = async arg => body;");
     assert_parses("f = async (a1, a2) => {};");
     assert_parses("f = async (a1 = b + c, ...a2) => {};");
@@ -589,13 +593,15 @@ fn test_async_arrows() {
         "f = async (...a1, a2) => {};",
         ParseError::ArrowParametersWithNonFinalRest,
     );
+    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
+    */
 
     assert_error_eq("foo(a, b) => {}", ParseError::ArrowHeadInvalid);
-    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
 }
 
 #[test]
 fn test_coalesce() {
-    assert_parses("let f = options.prop ?? 0;");
+    assert_parses("const f = options.prop ?? 0;");
     assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
+
 }
