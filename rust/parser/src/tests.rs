@@ -344,6 +344,18 @@ fn test_identifier() {
     assert_parses("_\u{200d}\u{200c}();"); // <ZWJ>
     assert_illegal_character("var \u{200c};"); // <ZWNJ>
     assert_illegal_character("x = \u{200d};"); // <ZWJ>
+
+    // Other_ID_Start for backward compat.
+    assert_parses("\u{309B}();");
+    assert_parses("\u{309C}();");
+    assert_parses("_\u{309B}();");
+    assert_parses("_\u{309C}();");
+
+    // Non-BMP.
+    assert_parses("\u{10000}();");
+    assert_parses("_\u{10000}();");
+    assert_illegal_character("\u{1000c}();");
+    assert_illegal_character("_\u{1000c}();");
 }
 
 #[test]
