@@ -73,6 +73,15 @@ fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
     try_parse(allocator, code).unwrap();
 }
 
+fn assert_error<'alloc, T: IntoChunks<'alloc>>(code: T) {
+    let allocator = &Bump::new();
+    assert!(match try_parse(allocator, code) {
+        Err(ParseError::NotImplemented(_)) => panic!("expected error, got NotImplemented"),
+        Err(_) => true,
+        Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
+    });
+}
+
 fn assert_syntax_error<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     assert!(match try_parse(allocator, code) {
@@ -321,8 +330,7 @@ fn test_arrow() {
     assert_parses("f = x => x;");
     assert_parses("(x, y) => [y, x]");
     assert_parses("f = (x, y) => {}");
-    // XXX TODO
-    // assert_syntax_error("(x, y) => {x: x, y: y}");
+    assert_syntax_error("(x, y) => {x: x, y: y}");
 }
 
 #[test]
@@ -335,7 +343,7 @@ fn test_illegal_character() {
 #[test]
 fn test_identifier() {
     // U+00B7 MIDDLE DOT is an IdentifierPart.
-    // assert_parses("_·_ = {_·_:'·_·'};");  // would fail
+    assert_parses("_·_ = {_·_:'·_·'};");
 
     // <ZWJ> and <ZWNJ> match IdentifierPart but not IdentifierStart.
     assert_parses("var x\u{200c};"); // <ZWNJ>
@@ -384,10 +392,9 @@ fn test_html_comments() {
 
 #[test]
 fn test_incomplete_comments() {
-    // XXX TODO
-    // assert_syntax_error("/*");
-    // assert_syntax_error("/* hello world");
-    // assert_syntax_error("/* hello world *");
+    assert_error("/*");
+    assert_error("/* hello world");
+    assert_error("/* hello world *");
 
     assert_parses(&vec!["/* hello\n", " world */"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);
