@@ -226,9 +226,9 @@ impl AstEmitter {
                 self.emit_binary_expression(operator, left, right)?;
             }
 
-            Expression::CallExpression {
+            Expression::CallExpression(CallExpression {
                 callee, arguments, ..
-            } => {
+            }) => {
                 self.emit_call_expression(callee, arguments)?;
             }
 

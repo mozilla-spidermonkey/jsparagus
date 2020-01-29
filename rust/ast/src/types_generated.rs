@@ -279,11 +279,7 @@ pub enum Expression<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         loc: SourceLocation,
     },
-    CallExpression {
-        callee: ExpressionOrSuper<'alloc>,
-        arguments: Arguments<'alloc>,
-        loc: SourceLocation,
-    },
+    CallExpression(CallExpression<'alloc>),
     CompoundAssignmentExpression {
         operator: CompoundAssignmentOperator,
         binding: SimpleAssignmentTarget<'alloc>,
@@ -351,6 +347,13 @@ pub enum MemberExpression<'alloc> {
 pub enum PropertyName<'alloc> {
     ComputedPropertyName(ComputedPropertyName<'alloc>),
     StaticPropertyName(StaticPropertyName<'alloc>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct CallExpression<'alloc> {
+    pub callee: ExpressionOrSuper<'alloc>,
+    pub arguments: Arguments<'alloc>,
+    pub loc: SourceLocation,
 }
 
 #[derive(Debug, PartialEq)]

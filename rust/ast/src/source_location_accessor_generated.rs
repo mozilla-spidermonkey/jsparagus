@@ -470,6 +470,17 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Block<'alloc> {
     }
 }
 
+impl<'alloc> SourceLocationAccessor<'alloc> for CallExpression<'alloc> {
+    fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
+        self.loc.start = start.start;
+        self.loc.end = end.end;
+    }
+
+    fn get_loc(&self) -> SourceLocation {
+        self.loc
+    }
+}
+
 impl<'alloc> SourceLocationAccessor<'alloc> for CatchClause<'alloc> {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         self.loc.start = start.start;
@@ -844,10 +855,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Expression::CallExpression { mut loc, .. } => {
-                loc.start = start.start;
-                loc.end = end.end;
-            }
+            Expression::CallExpression(content) => content.set_loc(start, end),
             Expression::CompoundAssignmentExpression { mut loc, .. } => {
                 loc.start = start.start;
                 loc.end = end.end;
@@ -913,7 +921,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Expression<'alloc> {
             Expression::ArrowExpression { loc, .. } => *loc,
             Expression::AssignmentExpression { loc, .. } => *loc,
             Expression::BinaryExpression { loc, .. } => *loc,
-            Expression::CallExpression { loc, .. } => *loc,
+            Expression::CallExpression(content) => content.get_loc(),
             Expression::CompoundAssignmentExpression { loc, .. } => *loc,
             Expression::ConditionalExpression { loc, .. } => *loc,
             Expression::FunctionExpression(content) => content.get_loc(),
