@@ -244,6 +244,11 @@
     },
     "NewTargetExpression": null,
     "ObjectExpression": "ObjectExpression",
+    "OptionalExpression": {
+      "object": "ExpressionOrSuper",
+      "tail": "Box<Expression>"
+    },
+    "OptionalChain": "OptionalChain",
     "UnaryExpression": {
       "operator": "UnaryOperator",
       "operand": "Box<Expression>"
@@ -273,6 +278,21 @@
     "ComputedMemberExpression": "ComputedMemberExpression",
     "StaticMemberExpression": "StaticMemberExpression",
     "PrivateFieldExpression": "PrivateFieldExpression"
+  },
+  "OptionalChain": {
+    "_type": "enum",
+    "ComputedMemberExpressionTail": {
+      "expression": "Box<Expression>"
+    },
+    "StaticMemberExpressionTail": {
+      "property": "IdentifierName"
+    },
+    "CallExpressionTail": {
+      "arguments": "Arguments"
+    },
+    "ComputedMemberExpression": "ComputedMemberExpression",
+    "StaticMemberExpression": "StaticMemberExpression",
+    "CallExpression": "CallExpression"
   },
   "PropertyName": {
     "_type": "enum",

@@ -309,6 +309,14 @@ impl<'alloc> AstEmitter<'alloc> {
                 self.emit_object_expression(ast)?;
             }
 
+            Expression::OptionalChain { .. } => {
+                return Err(EmitError::NotImplemented("TODO: OptionalChain"));
+            }
+
+            Expression::OptionalExpression { .. } => {
+                return Err(EmitError::NotImplemented("TODO: OptionalExpression"));
+            }
+
             Expression::UnaryExpression {
                 operator, operand, ..
             } => {

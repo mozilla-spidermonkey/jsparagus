@@ -1689,6 +1689,13 @@ impl<'alloc> Lexer<'alloc> {
                         self.chars.next();
                         return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::Coalesce));
                     }
+                    Some('.') => {
+                        self.chars.next();
+                        if let Some('0'..='9') = self.peek() {
+                            return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::QuestionMark))
+                        }
+                        return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::OptionalChain));
+                    }
                     _ => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::QuestionMark)),
                 }
 
