@@ -129,6 +129,14 @@ pub enum Program<'alloc> {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct IfStatement<'alloc> {
+    pub test: arena::Box<'alloc, Expression<'alloc>>,
+    pub consequent: arena::Box<'alloc, Statement<'alloc>>,
+    pub alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
+    pub loc: SourceLocation,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Statement<'alloc> {
     BlockStatement {
         block: Block<'alloc>,
@@ -173,12 +181,7 @@ pub enum Statement<'alloc> {
         block: arena::Box<'alloc, Statement<'alloc>>,
         loc: SourceLocation,
     },
-    IfStatement {
-        test: arena::Box<'alloc, Expression<'alloc>>,
-        consequent: arena::Box<'alloc, Statement<'alloc>>,
-        alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
-        loc: SourceLocation,
-    },
+    IfStatement(IfStatement<'alloc>),
     LabeledStatement {
         label: Label<'alloc>,
         body: arena::Box<'alloc, Statement<'alloc>>,

@@ -105,6 +105,12 @@
     "Module": "Module",
     "Script": "Script"
   },
+  "IfStatement": {
+    "_type": "struct",
+    "test": "Box<Expression>",
+    "consequent": "Box<Statement>",
+    "alternate": "Option<Box<Statement>>"
+  },
   "Statement": {
     "_type": "enum",
     "BlockStatement": {
@@ -139,11 +145,7 @@
       "update": "Option<Box<Expression>>",
       "block": "Box<Statement>"
     },
-    "IfStatement": {
-      "test": "Box<Expression>",
-      "consequent": "Box<Statement>",
-      "alternate": "Option<Box<Statement>>"
-    },
+    "IfStatement": "IfStatement",
     "LabeledStatement": {
       "label": "Label",
       "body": "Box<Statement>"

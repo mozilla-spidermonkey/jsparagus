@@ -70,8 +70,8 @@ impl AstEmitter {
             Statement::ForStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForStatement"));
             }
-            Statement::IfStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: IfStatement"));
+            Statement::IfStatement(if_statement) => {
+                self.emit_if(if_statement)?;
             }
             Statement::LabeledStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
@@ -117,6 +117,35 @@ impl AstEmitter {
 
     fn emit_this(&mut self) -> Result<(), EmitError> {
         Err(EmitError::NotImplemented("TODO: this"))
+    }
+
+    fn emit_if(&mut self, if_statement: &IfStatement) -> Result<(), EmitError> {
+        self.emit_expression(&if_statement.test)?;
+
+        let offset_alternate = self.emit.bytecode_offset();
+        self.emit.if_eq(0);
+
+        // Then branch
+        self.emit.jump_target();
+        self.emit_statement(&if_statement.consequent)?;
+
+        if let Some(alternate) = &if_statement.alternate {
+            let offset_final = self.emit.bytecode_offset();
+            self.emit.goto(0);
+            // ^^ part of then branch
+
+            // Else branch
+            self.emit_jump_target(vec![offset_alternate]);
+            self.emit_statement(alternate)?;
+
+            // Merge point after else
+            self.emit_jump_target(vec![offset_final]);
+        } else {
+            // Merge point without else
+            self.emit_jump_target(vec![offset_alternate])
+        }
+
+        Ok(())
     }
 
     fn emit_expression(&mut self, ast: &Expression) -> Result<(), EmitError> {
