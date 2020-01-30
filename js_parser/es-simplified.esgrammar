@@ -304,11 +304,11 @@ OptionalExpression[Yield, Await] :
 @returns Expression
 OptionalChain[Yield, Await] :
   `?.` `[` Expression[+In, ?Yield, ?Await] `]`
-    => optional_computed_member_expr_tail($2, $3)
+    => optional_computed_member_expr_tail($0, $2, $3)
   `?.` IdentifierName
-    => optional_static_member_expr_tail($1)
+    => optional_static_member_expr_tail($0, $1)
   `?.` Arguments[?Yield, ?Await]
-    => optional_call_expr_tail($1)
+    => optional_call_expr_tail($0, $1)
   `?.` TemplateLiteral[?Yield, ?Await, +Tagged]
     => optional_tagged_template_expr_tail($1)
   OptionalChain[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
