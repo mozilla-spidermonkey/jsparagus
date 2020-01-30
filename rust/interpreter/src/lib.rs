@@ -2,4 +2,8 @@ mod evaluate;
 mod object;
 mod value;
 
-pub use evaluate::evaluate;
+#[cfg(test)]
+mod tests;
+
+pub use evaluate::{evaluate, EvalError};
+pub use value::JSValue;
