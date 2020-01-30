@@ -52,7 +52,10 @@ dependencies = [
 name = "interpreter"
 version = "0.1.0"
 dependencies = [
+ "ast 0.1.0",
+ "bumpalo 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "emitter 0.1.0",
+ "parser 0.1.0",
 ]
 
 [[package]]
