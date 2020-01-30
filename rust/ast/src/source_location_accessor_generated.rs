@@ -1037,6 +1037,17 @@ impl<'alloc> SourceLocationAccessor<'alloc> for IdentifierName<'alloc> {
     }
 }
 
+impl<'alloc> SourceLocationAccessor<'alloc> for IfStatement<'alloc> {
+    fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
+        self.loc.start = start.start;
+        self.loc.end = end.end;
+    }
+
+    fn get_loc(&self) -> SourceLocation {
+        self.loc
+    }
+}
+
 impl<'alloc> SourceLocationAccessor<'alloc> for Import<'alloc> {
     fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {
         self.loc.start = start.start;
@@ -1421,10 +1432,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Statement<'alloc> {
                 loc.start = start.start;
                 loc.end = end.end;
             }
-            Statement::IfStatement { mut loc, .. } => {
-                loc.start = start.start;
-                loc.end = end.end;
-            }
+            Statement::IfStatement(content) => content.set_loc(start, end),
             Statement::LabeledStatement { mut loc, .. } => {
                 loc.start = start.start;
                 loc.end = end.end;
@@ -1479,7 +1487,7 @@ impl<'alloc> SourceLocationAccessor<'alloc> for Statement<'alloc> {
             Statement::ForInStatement { loc, .. } => *loc,
             Statement::ForOfStatement { loc, .. } => *loc,
             Statement::ForStatement { loc, .. } => *loc,
-            Statement::IfStatement { loc, .. } => *loc,
+            Statement::IfStatement(content) => content.get_loc(),
             Statement::LabeledStatement { loc, .. } => *loc,
             Statement::ReturnStatement { loc, .. } => *loc,
             Statement::SwitchStatement { loc, .. } => *loc,

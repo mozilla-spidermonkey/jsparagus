@@ -2552,12 +2552,12 @@ impl<'alloc> AstBuilder<'alloc> {
             Some(ref alternate) => SourceLocation::from_parts(if_loc, alternate.get_loc()),
             None => SourceLocation::from_parts(if_loc, consequent.get_loc()),
         };
-        Ok(self.alloc(Statement::IfStatement {
+        Ok(self.alloc(Statement::IfStatement(IfStatement {
             test,
             consequent,
             alternate,
             loc,
-        }))
+        })))
     }
 
     // Create BlockStatement from FunctionDeclaration, for the following:

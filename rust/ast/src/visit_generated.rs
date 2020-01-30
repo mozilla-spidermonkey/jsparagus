@@ -129,6 +129,14 @@ pub trait Pass<'alloc> {
         }
     }
 
+    fn visit_if_statement(&mut self, ast: &mut IfStatement<'alloc>) {
+        self.visit_expression(&mut ast.test);
+        self.visit_statement(&mut ast.consequent);
+        if let Some(item) = &mut ast.alternate {
+            self.visit_statement(item);
+        }
+    }
+
     fn visit_statement(&mut self, ast: &mut Statement<'alloc>) {
         match ast {
             Statement::BlockStatement { block, .. } => {
@@ -185,17 +193,8 @@ pub trait Pass<'alloc> {
                 }
                 self.visit_statement(block);
             }
-            Statement::IfStatement {
-                test,
-                consequent,
-                alternate,
-                ..
-            } => {
-                self.visit_expression(test);
-                self.visit_statement(consequent);
-                if let Some(item) = alternate {
-                    self.visit_statement(item);
-                }
+            Statement::IfStatement(ast) => {
+                self.visit_if_statement(ast);
             }
             Statement::LabeledStatement { label, body, .. } => {
                 self.visit_label(label);
@@ -1165,6 +1164,21 @@ pub trait PostfixPass<'alloc> {
         result
     }
 
+    fn visit_if_statement(
+        &self,
+        test: Self::Value,
+        consequent: Self::Value,
+        alternate: Option<Self::Value>,
+    ) -> Self::Value {
+        let mut result = Self::Value::default();
+        result.append(test);
+        result.append(consequent);
+        if let Some(item) = alternate {
+            result.append(item);
+        }
+        result
+    }
+
     fn visit_block_statement(&self, block: Self::Value) -> Self::Value {
         let mut result = Self::Value::default();
         result.append(block);
@@ -1238,21 +1252,6 @@ pub trait PostfixPass<'alloc> {
             result.append(item);
         }
         result.append(block);
-        result
-    }
-
-    fn visit_if_statement(
-        &self,
-        test: Self::Value,
-        consequent: Self::Value,
-        alternate: Option<Self::Value>,
-    ) -> Self::Value {
-        let mut result = Self::Value::default();
-        result.append(test);
-        result.append(consequent);
-        if let Some(item) = alternate {
-            result.append(item);
-        }
         result
     }
 
@@ -2232,6 +2231,15 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
         }
     }
 
+    pub fn visit_if_statement(&mut self, ast: &mut IfStatement<'alloc>) -> T::Value {
+        let a0 = self.visit_expression((&mut ast.test));
+        let a1 = self.visit_statement((&mut ast.consequent));
+        let a2 = (&mut ast.alternate)
+            .as_mut()
+            .map(|item| self.visit_statement(item));
+        self.pass.visit_if_statement(a0, a1, a2)
+    }
+
     pub fn visit_statement(&mut self, ast: &mut Statement<'alloc>) -> T::Value {
         match ast {
             Statement::BlockStatement { block, .. } => {
@@ -2285,17 +2293,7 @@ impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {
                 let a3 = self.visit_statement((block));
                 self.pass.visit_for_statement(a0, a1, a2, a3)
             }
-            Statement::IfStatement {
-                test,
-                consequent,
-                alternate,
-                ..
-            } => {
-                let a0 = self.visit_expression((test));
-                let a1 = self.visit_statement((consequent));
-                let a2 = (alternate).as_mut().map(|item| self.visit_statement(item));
-                self.pass.visit_if_statement(a0, a1, a2)
-            }
+            Statement::IfStatement(ast) => self.visit_if_statement(ast),
             Statement::LabeledStatement { label, body, .. } => {
                 let a0 = self.visit_label((label));
                 let a1 = self.visit_statement((body));
