@@ -770,12 +770,18 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn string_literal(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
         let loc = token.loc;
-        self.alloc(Expression::LiteralStringExpression {
+        // Hack: Prevent emission for scripts with "use strict"
+        // directive.
+        if token.value == Some("use strict") {
+            return Err(ParseError::NotImplemented("use strict directive"));
+        }
+
+        Ok(self.alloc(Expression::LiteralStringExpression {
             value: token.value.unwrap(),
             loc,
-        })
+        }))
     }
 
     // ArrayLiteral : `[` Elision? `]`
