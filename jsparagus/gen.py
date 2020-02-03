@@ -1860,7 +1860,25 @@ class LR0Generator:
 #          edges. Maybe we should rename this history. This is a list of edges
 #          taken, which helps tracking which state got visited since we
 #          started.
-APS = collections.namedtuple("APS", "stack shift lookahead actions")
+#
+#   replay: This is the list of lookahead terminals and non-terminals which
+#          remains to be executed. This represents the fact that reduce actions
+#          are popping elements which are below the top of the stack, and add
+#          them back to the stack.
+#
+APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
+
+# LaneTransform is a structure used for solving reduce-reduce conflicts.
+#
+# It is used for progressively consuming `stack` edges, and inserting actions
+# such as PushFlag, FilterFlag and PopFlag based on the `flag_value`.
+#
+# As edges are consumed, and actions added, the `state` value is updated to
+# reflect the state in which the lane is supposed to be.
+#
+# When a state which consume the non-terminal reduced by the action is
+# encountered, the `push` flag is set.
+LaneTransform = collections.namedtuple("LaneTransform", "stack state action push flag_value")
 
 # A Lane table is a structure used to represent the conflicting and add context
 # surrounding these conflicting states.
@@ -2008,20 +2026,21 @@ class ParseTable:
                     self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
 
-    def shifted_path_to(self, state, n, stacked = True):
+    def shifted_path_to(self, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
+        assert isinstance(right_of, list) && len(right_of) >= 1
         if n == 0:
-            return [[]]
-        paths = []
+            yield right_of
+            return
         for edge in self.states[state].backedges:
             s_n = n - 1
             stacked = True
             if isinstance(edge.term, Action):
                 s_n = n
                 stacked = False
-            for path in self.shifted_path_to(edge.src, s_n, stacked):
-                paths.append(path + [StackedEdge(edge.src, edge.term, stacked)])
-        return paths
+            stacked_edge = StackedEdge(edge.src, edge.term, stacked)
+            for path in self.shifted_path_to_list(edge.src, s_n, [stacked_edge] + right_of):
+                yield path
 
     def reduce_path(self, state, action):
         "Compute all paths which might be reduced by a given action."
@@ -2029,78 +2048,99 @@ class ParseTable:
         action = action.reduce_with()
         assert isinstance(action, Reduce)
         depth = action.pop + action.replay
-        for path in self.shifted_path_to(state, depth):
-            sh_path = [ edge.src for edge in path ] + [ state ]
-            head = self.states[sh_path[0]]
+        for path in self.shifted_path_to(depth, [StackedEdge(state, action, False)]):
+            head = self.states[path[0].src]
             assert action.nt in head.nonterminals
             to = head.nonterminals[action.nt]
-            yield sh_path, path, to
+            yield path, to
 
-    def aps_shift_with_epsilon(self, aps, pred, shifted, replay):
+    def term_is_stacked(self, term):
+        return not isinstance(term, Action):
+
+    def aps_empty(self):
+        return APS([], [], [], [], [])
+    def aps_start(self, state, replay = []):
+        "Return a parser state only knowing the state at which we are currently."
+        edge = StackedEdge(state, None, True)
+        return APS([edge], [edge], [], [], replay)
+
+    def aps_visitor(self, parent_aps, aps, visit):
         """Push an APS based on the lookahead or actions to be executed, the `pred` and
         `shifted` functions are used as a way to control the recursion."""
-        if pred(aps):
-            return [aps]
-        term, replay, any_action = shifted(aps, replay)
-        st, sh, la, ac = aps
-        state = self.states[sh[-1]]
-        next_list = []
+        cont, any_action = visit(parent_aps, aps)
+        if not cont:
+            return
+        st, sh, la, ac, rp = aps
+        if rp != []:
+            term = rp[0]
+            rp = rp[-1]
+        else:
+            term = None
+        last_edge = sh[-1]
+        state = self.states[last_edge.src]
         if term in state.terminals:
+            edge = StackedEdge(last_edge.src, term, True)
+            new_sh = sh[-1] + [edge]
             to = state.terminals[term]
-            new_aps = APS(st, sh + [to], la + [term], ac + [term])
-            res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
-            next_list.extend(res)
+            to = StackedEdge(to, None, True)
+            new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
+            self.aps_visitor(aps, new_aps, visit)
         elif term in state.nonterminals:
+            edge = StackedEdge(last_edge.src, term, True)
+            new_sh = sh[-1] + [edge]
             to = state.nonterminals[term]
-            new_aps = APS(st, sh + [to], la + [term], ac + [term])
-            res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
-            next_list.extend(res)
+            to = StackedEdge(to, None, True)
+            new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
+            self.aps_visitor(aps, new_aps, visit)
         elif term is None:
             for term, to in itertools.chains(state.terminals, state.nonterminals):
-                new_aps = APS(st, sh + [to], la + [term], ac + [term])
-                res = self.aps_shift_with_epsilon(new_aps, pred, shifted, replay)
-                next_list.extend(res)
+                edge = StackedEdge(last_edge.src, term, True)
+                new_sh = sh[-1] + [edge]
+                to = StackedEdge(to, None, True)
+                new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
+                self.aps_visitor(aps, new_aps, visit)
 
         if any_action and term != None:
-            replay = [term] + replay
+            rp = [term] + rp
         for a, to in state.epsilon:
             if not any_action and a != term:
                 continue
+            edge = StackedEdge(last_edge.src, a, False)
+            new_sh = sh[-1] + [edge]
             if a.update_stack():
-                for sh_path, path, to in self.reduce_path(state, a):
+                for path, to in self.reduce_path(state, a):
                     # reduce_paths contains the chains of state shifted,
                     # including epsilon transitions, in order to reduce the
                     # nonterminal. When reducing, the stack is resetted to
                     # head, and the nonterminal `term.nt` is pushed, to resume
                     # in the state `to`.
-                    if sh[-len(sh_path):] != sh_path[-len(sh):]:
-                        # If the reduced production does not match the
-                        # shifted state, then this reduction does not
-                        # apply.
+                    if new_sh[-len(path):] != path[-len(new_sh):]:
+                        # If the reduced production does not match the shifted
+                        # state, then this reduction does not apply. This is
+                        # the equivalent result as splitting the parse table
+                        # based on the predecessor.
                         continue
-                    new_st = sh_path[:max(len(sh_path) - len(sh), 0)] + st
-                    new_sh = sh[:-len(sh_path)] + [sh_path[0], to]
-                    new_aps = APS(new_st, new_sh, la, ac + [term])
+                    new_st = path[:max(len(path) - len(sh), 0)] + st
+                    new_sh = new_sh[:-len(path)] + [path[0], to]
                     # When reducing, we replay terms which got previously
                     # pushed on the stack as our lookahead. These terms are
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
-                    new_replay = [ t for _, t, on_stack for path if on_stack ]
+                    new_replay = [ edge.term for edge for path if self.term_is_stacked(edge,term) ]
                     new_replay = la[max(len(replay) - a.replay, 0):]
+                    new_replay = new_replay + rp
                     new_la = la[:max(len(la) - a.replay, 0)]
-                    new_aps = APS(new_st, new_sh, new_la, ac + [term])
-                    new_replay = new_replay + replay
-                    res = self.aps_shift_with_epsilon(new_aps, pred, shifted, new_replay)
-                    next_list.extend(res)
+                    new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
+                    self.aps_visitor(aps, new_aps, visit)
             else:
-                new_aps = APS(st, sh + [to], la, ac + [term])
-                res = self.aps_shift_with_epsilon(new_aps, pred, shifted)
-                next_list.extend(res)
+                to = StackedEdge(to, None, True)
+                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
+                self.aps_visitor(aps, new_aps, visit)
 
     def lanes(self, state):
         "Compute the lanes from the amount of lookahead available. Only consider
         context when reduce states are encountered."
-        start = APS([s], [s], [], [])
+        record = []
         def stop_lane_when(aps):
             # Check if there is any edge which got already visited. While this
             # does not cover all the space of possible vocabulary which can be
@@ -2117,11 +2157,14 @@ class ParseTable:
             if len(aps.lookahead) <= 1:
                 return False
             return True
-        def lookahead(aps, replay):
-            if replay == []:
-                return None, [], True
-            return replay[0], replay[1:], True
-        return self.aps_shift_with_epsilon(start, stop_lane_when, lookahead, [])
+
+        def visit(parent_aps, aps):
+            stop = stop_lane_when(aps)
+            if stop:
+                record.append(parent_aps)
+            return not stop, True
+        self.aps_visitor(self.aps_empty(), self.aps_start(s))
+        return record
 
     def fix_inconsistent_state(self, s, todo):
         # Fix inconsistent states works one state at a time. The goal is to
@@ -2148,6 +2191,75 @@ class ParseTable:
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
         aps_lanes = self.lanes(s)
         if all_reduce and not any_shift:
+            # This strategy is about looking up for context information. By
+            # using chains of reduce actions, we are able to increase the lanes
+            # which are reducing each actions.
+            #
+            # If some lanes are unique to some reduce actions, then we continue
+            # by adding push-flag, filter-flag and pop-flags, at the end of
+            # each sequence which appears uniquely in the lane context. We are
+            # looking at unqiue sequences, as these might be the locations
+            # where we want to insert filter rules.
+            #
+            # Example:
+            #   G <- `b` E `b` | `b` O `c` | `c` O `b` | `c` E `c`
+            #   E <- `a` O | `a`    O <- `a` E | `a`
+            #
+            # When reduing E, we produce the lanes:
+            #   G.0 `b` G.1 E.0 `a` E.1 [G.2 `b`]
+            #   G.0 `c` G.1 E.0 `a` E.1 [G.2 `c`]
+            #   G.0 `b` G.1 O.0 `a` O.1 E.0 `a` E.1 [O.2 G.2 `c`]
+            #   G.0 `c` G.1 O.0 `a` O.1 E.0 `a` E.1 [O.2 G.2 `b`]
+            #
+            # When reduing O, we produce the lanes:
+            #   G.0 `b` G.1 O.0 `a` O.1 [G.2 `c`]
+            #   G.0 `c` G.1 O.0 `a` O.1 [G.2 `b`]
+            #   G.0 `b` G.1 E.0 `a` E.1 O.0 `a` O.1 [E.2 G.2 `b`]
+            #   G.0 `c` G.1 E.0 `a` E.1 O.0 `a` O.1 [E.2 G.2 `c`]
+            #
+            # In this grammar, the unique sequences would be:
+            #   G.0 `b` G.1 (E.0 | O.0) `a` (E.1 | O.1)
+            #   G.0 `c` G.1 (E.0 | O.0) `a` (E.1 | O.1)
+            #   (E.1 | O.1) (E.0 | O.0) `a` (E.1 | O.1)
+            #   (E.1 | O.1) [.. `b`]    *inconsistent*
+            #   (E.1 | O.1) [.. `c`]    *inconsistent*
+
+            # Identify unique sequences of lanes, by looking at the number of
+            # predecessor edges. If there is exactly 1, then this edge is part
+            # of a unique sequence, otherwise this is the beginning of a unqiue
+            # sequence.
+            edge_neighbour = defaultdict(lambda: (set(), set()))
+            for aps in aps_lanes:
+                for edge_from, edge_to in zip(aps.stack, aps.stack[1:]):
+                    edge_neighbour[edge_to][0].add(edge_from)
+                    edge_neighbour[edge_from][1].add(edge_to)
+
+            # Do a topo-logical ordering of edges. The lanes should not have
+            # any loops, and as such the following function should not hit an
+            # infinite loop.
+            edge_incoming = { e: len(edge_neighbour[edge_to][0]) for e in edge_neighbour }
+            edge_next = [ e for e in edge_incoming if edge_incoming[e] == 0 ]
+            edge_order = { e: -1 for e in edge_neighbour }
+            order = 0
+            while edge_next:
+                edge, edge_next = edge_next[0], edge_next[1:]
+                edge_order[edge] = order
+                order += 1
+                for edge_to in edge_neighbour[edge_to][1]:
+                    edge_incoming[edge_to] -= 1
+                    assert edge_incoming[edge_to] >= 0
+                    if edge_incoming[edge_to] == 0:
+                        edge_next.append(edge_to)
+
+            # Whether this edge adds more information on where it is flowing into.
+            edge_useless = { e: len(edge_neighbour[e][1]) >= 1 for e in edge_neighbour }
+
+            # Create transform structures, which are used to add Push, Filter
+            # and Pop actions.
+
+            while True:
+
+            #
             # NOTE: we could apply this strategy even when we have some shift
             # operations, but this would imply that we should get rid of the
             # newly introduced flags by completely duplicating the state
@@ -2156,15 +2268,15 @@ class ParseTable:
             # these is by folding these actions with the matching pop action.
             #
             # Find the all lanes reducing to each reduce action.
-            lanes = defaultdict(lambda: list()) # Action -> Lanes
+            lanes = defaultdict(lambda: list()) # Action -> APS
             state_actions = defaultdict(lambda: set()) # State -> set(Actions)
             known_edges = defaultdict(lambda: set()) # Action -> set(Edges)
             edges_actions = defaultdict(lambda: set()) # Edge -> set(Actions)
             for aps in aps_lanes:
                 action = aps.actions[0]
                 assert action.update_stack()
-                assert aps.stack[-1] == s
-                lanes[action].append(aps.stack)
+                assert aps.stack[-1] == StackedEdge(s, None, True)
+                lanes[action].append(aps)
                 for st in aps.stack:
                     state_actions[st].add(action)
                 for edge in zip(aps.stack, aps.stack[1:]):
@@ -2193,13 +2305,7 @@ class ParseTable:
 
                 # Replay exactly the path recorded by the APS in order to find
                 # the reduce action which gave us this lane head.
-                start = APS([s], [s], [], [])
-                rest = list(aps.actions)
-                def stop_if(aps):
-                    return rest == []:
-                def lookahead(aps, replay):
-                    return rest[0], [], False
-                reducer = self.aps_shift_with_epsilon(start, stop_if, lookahead, [])
+                # TODO: ???
 
                 # TODO: strip the lane head front until we have only one lane
                 # head in each lane.
