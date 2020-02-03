@@ -11,10 +11,7 @@ use std::convert::TryInto;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum ResumeKind {
-    Normal = 0,
-    Throw = 1,
-}
+pub enum ResumeKind { Normal = 0, Throw = 1, }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AsyncFunctionResolveKind {
