@@ -36,6 +36,8 @@ pip install -r requirements.txt
 
 cargo install cargo-fmt
 
+git config core.hooksPath .githooks
+
 make all
 ```
 
