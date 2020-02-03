@@ -1,4 +1,4 @@
-name: Rust
+name: Build
 
 on: [push]
 
@@ -15,7 +15,7 @@ jobs:
         python-version: "3.7"
     - name: Setup venv
       run: sudo apt-get install python3-venv && python3 -m venv venv
-    - name: Install python dependencies     
+    - name: Install python dependencies
       run:  source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
     - name: Build
       run: make all
