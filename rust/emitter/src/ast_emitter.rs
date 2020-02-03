@@ -190,7 +190,8 @@ impl<'alloc> AstEmitter<'alloc> {
                 },
             )) => {
                 self.emit_expression(object)?;
-                self.emit.get_prop(&property.value);
+                let name_index = self.emit.get_atom_index(&property.value);
+                self.emit.get_prop(name_index);
             }
 
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
@@ -203,7 +204,8 @@ impl<'alloc> AstEmitter<'alloc> {
                 self.emit_this()?;
                 self.emit.callee();
                 self.emit.super_base();
-                self.emit.get_prop_super(&property.value);
+                let name_index = self.emit.get_atom_index(&property.value);
+                self.emit.get_prop_super(name_index);
             }
 
             Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
@@ -237,7 +239,8 @@ impl<'alloc> AstEmitter<'alloc> {
             }
 
             Expression::LiteralStringExpression { value, .. } => {
-                self.emit.string(value);
+                let str_index = self.emit.get_atom_index(value);
+                self.emit.string(str_index);
             }
 
             Expression::ArrayExpression(ast) => {
@@ -496,7 +499,8 @@ impl<'alloc> AstEmitter<'alloc> {
 
                 match property_name {
                     PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                        self.emit.init_prop(value);
+                        let name_index = self.emit.get_atom_index(value);
+                        self.emit.init_prop(name_index);
                     }
                     PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
                         return Err(EmitError::NotImplemented("TODO: computed property"))
@@ -570,9 +574,10 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 }),
             ) => {
-                self.emit.bind_g_name(name.value);
+                let name_index = self.emit.get_atom_index(name.value);
+                self.emit.bind_g_name(name_index);
                 self.emit_expression(expression)?;
-                self.emit.set_g_name(name.value);
+                self.emit.set_g_name(name_index);
                 return Ok(());
             }
             _ => {}
@@ -583,7 +588,8 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
         let name = &ast.name.value;
-        self.emit.get_g_name(name);
+        let name_index = self.emit.get_atom_index(name);
+        self.emit.get_g_name(name_index);
     }
 
     fn emit_call_expression(
@@ -597,7 +603,8 @@ impl<'alloc> AstEmitter<'alloc> {
             ExpressionOrSuper::Expression(expr) => match &**expr {
                 Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
                     self.emit_expression(expr)?;
-                    self.emit.g_implicit_this(name.value);
+                    let name_index = self.emit.get_atom_index(name.value);
+                    self.emit.g_implicit_this(name_index);
                 }
                 _ => {
                     return Err(EmitError::NotImplemented(
