@@ -44,6 +44,9 @@ pub struct InstructionWriter {
 
     /// Number of JOF_IC instructions emitted so far.
     num_ic_entries: usize,
+
+    /// Number of instructions in this script that have JOF_TYPESET.
+    num_type_sets: usize,
 }
 
 /// The output of bytecode-compiling a script or module.
@@ -53,6 +56,7 @@ pub struct EmitResult {
     pub strings: Vec<String>,
     pub maximum_stack_depth: u32,
     pub num_ic_entries: u32,
+    pub num_type_sets: u32,
 }
 
 /// The error of bytecode-compilation.
@@ -77,6 +81,7 @@ impl InstructionWriter {
             stack_depth: 0,
             maximum_stack_depth: 0,
             num_ic_entries: 0,
+            num_type_sets: 0,
         }
     }
 
@@ -89,6 +94,7 @@ impl InstructionWriter {
             // have hit other limits first. Release-assert anyway.
             maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
+            num_type_sets: self.num_type_sets.try_into().unwrap(),
         }
     }
 
@@ -136,6 +142,10 @@ impl InstructionWriter {
 
         if opcode.has_ic_index() {
             self.write_u32(self.num_ic_entries.try_into().unwrap());
+        }
+
+        if opcode.has_typeset() {
+            self.num_type_sets += 1;
         }
     }
 
