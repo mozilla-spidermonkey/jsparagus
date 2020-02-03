@@ -603,5 +603,4 @@ fn test_async_arrows() {
 fn test_coalesce() {
     assert_parses("const f = options.prop ?? 0;");
     assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
-
 }
