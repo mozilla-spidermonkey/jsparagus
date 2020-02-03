@@ -1183,6 +1183,7 @@ impl<'alloc> AstBuilder<'alloc> {
             }),
         ))
     }
+
     // OptionalExpression : MemberExpression OptionalChain
     // OptionalExpression : CallExpression OptionalChain
     // OptionalExpression : OptionalExpression OptionalChain
@@ -1246,11 +1247,10 @@ impl<'alloc> AstBuilder<'alloc> {
     }
 
     // OptionalChain : `?.` TemplateLiteral
-    pub fn optional_tagged_template_expr_tail(
+    pub fn error_optional_chain_with_template(
         &self,
-        template_literal: arena::Box<'alloc, TemplateExpression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        self.alloc(Expression::TemplateExpression(template_literal.unbox()))
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Err(ParseError::IllegalCharacter('`'))
     }
 
     // OptionalChain : OptionalChain `[` Expression `]`
@@ -1302,16 +1302,6 @@ impl<'alloc> AstBuilder<'alloc> {
                 loc: SourceLocation::from_parts(callee_loc, arguments_loc),
             },
         )))
-    }
-
-    // OptionalChain : OptionalChain TemplateLiteral
-    pub fn optional_tagged_template_expr(
-        &self,
-        tag: arena::Box<'alloc, Expression<'alloc>>,
-        mut template_literal: arena::Box<'alloc, TemplateExpression<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
-        template_literal.tag = Some(tag);
-        self.alloc(Expression::TemplateExpression(template_literal.unbox()))
     }
 
     fn identifier(&self, token: arena::Box<'alloc, Token<'alloc>>) -> Identifier<'alloc> {

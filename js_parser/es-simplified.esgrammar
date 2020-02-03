@@ -310,7 +310,7 @@ OptionalChain[Yield, Await] :
   `?.` Arguments[?Yield, ?Await]
     => optional_call_expr_tail($0, $1)
   `?.` TemplateLiteral[?Yield, ?Await, +Tagged]
-    => optional_tagged_template_expr_tail($1)
+    => error_optional_chain_with_template()
   OptionalChain[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
     => optional_computed_member_expr($0, $2, $3)
   OptionalChain[?Yield, ?Await] `.` IdentifierName
@@ -318,7 +318,7 @@ OptionalChain[Yield, Await] :
   OptionalChain[?Yield, ?Await] Arguments[?Yield, ?Await]
     => optional_call_expr($0, $1)
   OptionalChain[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
-    => optional_tagged_template_expr($0, $1)
+    => error_optional_chain_with_template()
 
 @returns Expression
 LeftHandSideExpression[Yield, Await] :
