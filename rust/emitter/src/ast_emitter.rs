@@ -476,7 +476,7 @@ impl AstEmitter {
                     name,
                     ..
                 }),
-            ) if name.value != "eval" && name.value != "arguments" => {
+            ) => {
                 self.emit.bind_g_name(name.value);
                 self.emit_expression(expression)?;
                 self.emit.set_g_name(name.value);

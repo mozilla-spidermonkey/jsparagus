@@ -1926,13 +1926,44 @@ impl<'alloc> AstBuilder<'alloc> {
         expression: arena::Box<'alloc, Expression<'alloc>>,
     ) -> Result<'alloc, SimpleAssignmentTarget<'alloc>> {
         Ok(match expression.unbox() {
+            // Static Semantics: AssignmentTargetType
+            // https://tc39.es/ecma262/#sec-identifiers-static-semantics-assignmenttargettype
             Expression::IdentifierExpression(IdentifierExpression { name, loc }) => {
+                // IdentifierReference : Identifier
+                //
+                // 1. If this IdentifierReference is contained in strict mode
+                //    code and StringValue of Identifier is "eval" or
+                //    "arguments", return invalid.
+                if name.value == "arguments" || name.value == "eval" {
+                    if self.is_strict()? {
+                        return Err(ParseError::InvalidAssignmentTarget);
+                    }
+                }
+
+                // 2. Return simple.
+                //
+                // IdentifierReference : yield
+                //
+                // 1. Return simple.
+                //
+                // IdentifierReference : await
+                //
+                // 1. Return simple.
                 SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
                     name,
                     loc,
                 })
             }
 
+            // Static Semantics: AssignmentTargetType
+            // https://tc39.es/ecma262/#sec-static-semantics-static-semantics-assignmenttargettype
+            //
+            // MemberExpression :
+            //   MemberExpression [ Expression ]
+            //   MemberExpression . IdentifierName
+            //   SuperProperty
+            //
+            // 1. Return simple.
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                 StaticMemberExpression {
                     object,
@@ -1964,6 +1995,14 @@ impl<'alloc> AstBuilder<'alloc> {
                 ),
             ),
 
+            // Static Semantics: AssignmentTargetType
+            // https://tc39.es/ecma262/#sec-static-semantics-static-semantics-assignmenttargettype
+            //
+            // CallExpression :
+            //   CallExpression [ Expression ]
+            //   CallExpression . IdentifierName
+            //
+            // 1. Return simple.
             Expression::CallExpression(CallExpression { .. }) => {
                 return Err(ParseError::NotImplemented(
                     "Assignment to CallExpression is allowed for non-strict mode.",
