@@ -558,6 +558,10 @@ impl Opcode {
     pub fn has_argc(self) -> bool {
         self.format_bits() & JOF_TYPEMASK == JOF_ARGC
     }
+
+    pub fn has_typeset(self) -> bool {
+        self.format_bits() & JOF_TYPESET != 0
+    }
 }
 
 #[cfg(test)]
