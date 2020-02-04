@@ -10,7 +10,6 @@ PYTHON = $(shell pwd)/jsparagus_build_venv/bin/python3
 
 init:
 	python3 -m venv jsparagus_build_venv &&\
-	source jsparagus_build_venv/bin/activate &&\
 	pip install --upgrade pip &&\
 	pip install -r requirements.txt
 
