@@ -1,8 +1,8 @@
 use std::iter;
 
 use crate::lexer::Lexer;
-use crate::parse_script;
 use crate::parser::Parser;
+use crate::{parse_script, ParseOptions};
 use ast::{arena, source_location::SourceLocation, types::*};
 use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
@@ -65,7 +65,8 @@ where
     Source: IntoChunks<'source>,
 {
     let buf = arena::alloc_str(allocator, &chunks_to_string(code));
-    parse_script(allocator, &buf)
+    let options = ParseOptions::new();
+    parse_script(allocator, &buf, &options)
 }
 
 fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {

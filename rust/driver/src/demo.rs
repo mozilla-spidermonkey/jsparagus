@@ -12,7 +12,7 @@ use ast::{
 };
 use bumpalo::Bump;
 use emitter;
-use parser::{parse_script, ParseError};
+use parser::{parse_script, ParseError, ParseOptions};
 
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
@@ -58,7 +58,8 @@ fn parse_file(path: &Path, size_bytes: u64) -> io::Result<DemoStats> {
         Ok(s) => s,
     };
     let allocator = &Bump::new();
-    let result = parse_script(allocator, &contents);
+    let options = ParseOptions::new();
+    let result = parse_script(allocator, &contents, &options);
     let stats = DemoStats::new_single(size_bytes, result.is_ok());
     match result {
         Ok(_ast) => println!(" ok"),
@@ -109,7 +110,8 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
 fn handle_script<'alloc>(script: Script<'alloc>) {
     println!("{:#?}", script);
     let mut program = Program::Script(script);
-    match emitter::emit(&mut program) {
+    let options = emitter::EmitOptions::new();
+    match emitter::emit(&mut program, &options) {
         Err(err) => {
             eprintln!("error: {}", err);
         }
