@@ -7,12 +7,9 @@ pub mod opcode;
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use dis::dis;
 
-pub fn emit(
-    ast: &mut ast::types::Program,
-    _options: &EmitOptions,
-) -> Result<EmitResult, EmitError> {
+pub fn emit(ast: &mut ast::types::Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
     //lower::run(ast);
-    ast_emitter::emit_program(ast)
+    ast_emitter::emit_program(ast, options)
 }
 
 #[cfg(test)]

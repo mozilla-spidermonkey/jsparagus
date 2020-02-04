@@ -47,10 +47,14 @@ pub struct InstructionWriter {
 }
 
 #[derive(Debug)]
-pub struct EmitOptions {}
+pub struct EmitOptions {
+    pub no_script_rval: bool,
+}
 impl EmitOptions {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            no_script_rval: false,
+        }
     }
 }
 
