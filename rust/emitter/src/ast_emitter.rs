@@ -513,6 +513,10 @@ impl AstEmitter {
                     self.emit_expression(&expr)?;
                     self.emit.init_elem_array(index as u32);
                 }
+                ArrayExpressionElement::Elision { .. } => {
+                    self.emit.hole();
+                    self.emit.init_elem_array(index as u32);
+                }
                 _ => return Err(EmitError::NotImplemented("TODO: Array Element")),
             }
         }
