@@ -6,7 +6,13 @@ RS_AST_OUT = rust/ast/src/types_generated.rs \
 	rust/ast/src/visit_generated.rs \
 	rust/ast/src/source_location_accessor_generated.rs \
 	rust/generated_parser/src/stack_value_generated.rs
-PYTHON = python3
+PYTHON = $(shell pwd)/jsparagus_build_venv/bin/python3
+
+init:
+	python3 -m venv jsparagus_build_venv &&\
+	source jsparagus_build_venv/bin/activate &&\
+	pip install --upgrade pip &&\
+	pip install -r requirements.txt
 
 all: $(PY_OUT) rust
 
