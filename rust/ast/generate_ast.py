@@ -725,7 +725,6 @@ def main():
     stack_value(ast)
     loc_trait(ast)
     pass_(ast)
-    subprocess.run(['cargo', 'fmt'], cwd="..")
 
 
 if __name__ == "__main__":
