@@ -1,3 +1,5 @@
+[![Rust](https://github.com/mozilla-spidermonkey/jsparagus/workflows/Rust/badge.svg)](https://github.com/mozilla-spidermonkey/jsparagus/actions?query=branch%3Amaster)
+
 # jsparagus - A JavaScript parser written in Rust
 
 jsparagus is intended to replace the JavaScript parser in Firefox.
