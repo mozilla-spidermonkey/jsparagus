@@ -412,6 +412,7 @@ impl AstEmitter {
         self.emit_expression(left)?;
         let mut jumplist: Vec<BytecodeOffset> = Vec::with_capacity(1);
         self.emit_jump(operator, &mut jumplist)?;
+        self.emit.jump_target();
         self.emit.pop();
         self.emit_expression(right)?;
         self.emit_jump_target(jumplist);
