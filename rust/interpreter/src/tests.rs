@@ -1,14 +1,19 @@
 use bumpalo::Bump;
-use emitter::emit;
-use parser::parse_script;
+use emitter::{emit, EmitOptions};
+use parser::{parse_script, ParseOptions};
 
 use crate::{evaluate, EvalError, JSValue};
 
 fn try_evaluate(source: &str) -> Result<JSValue, EvalError> {
     let alloc = &Bump::new();
-    let parse_result = parse_script(alloc, source).expect("Failed to parse");
-    let emit_result =
-        emit(&mut ast::types::Program::Script(parse_result.unbox())).expect("Should work!");
+    let parse_options = ParseOptions::new();
+    let parse_result = parse_script(alloc, source, &parse_options).expect("Failed to parse");
+    let emit_options = EmitOptions::new();
+    let emit_result = emit(
+        &mut ast::types::Program::Script(parse_result.unbox()),
+        &emit_options,
+    )
+    .expect("Should work!");
     evaluate(&emit_result)
 }
 

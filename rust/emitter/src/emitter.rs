@@ -49,6 +49,14 @@ pub struct InstructionWriter {
     num_type_sets: usize,
 }
 
+#[derive(Debug)]
+pub struct EmitOptions {}
+impl EmitOptions {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 /// The output of bytecode-compiling a script or module.
 #[derive(Debug)]
 pub struct EmitResult {
