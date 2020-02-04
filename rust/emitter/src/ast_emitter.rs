@@ -2,14 +2,15 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{BytecodeOffset, EmitError, EmitResult, InstructionWriter};
+use super::emitter::{BytecodeOffset, EmitError, EmitOptions, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
 use ast::types::*;
 
 /// Emit a program, converting the AST directly to bytecode.
-pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
+pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
     let mut emitter = AstEmitter {
         emit: InstructionWriter::new(),
+        options,
     };
 
     match ast {
@@ -22,11 +23,12 @@ pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
     Ok(emitter.emit.into_emit_result())
 }
 
-struct AstEmitter {
+struct AstEmitter<'alloc> {
     emit: InstructionWriter,
+    options: &'alloc EmitOptions,
 }
 
-impl AstEmitter {
+impl<'alloc> AstEmitter<'alloc> {
     fn emit_script(&mut self, ast: &Script) -> Result<(), EmitError> {
         for statement in &ast.statements {
             self.emit_statement(statement)?;
@@ -59,7 +61,11 @@ impl AstEmitter {
             Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast)?;
-                self.emit.set_rval();
+                if self.options.no_script_rval {
+                    self.emit.pop();
+                } else {
+                    self.emit.set_rval();
+                }
             }
             Statement::ForInStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForInStatement"));
