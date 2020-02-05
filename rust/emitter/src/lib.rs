@@ -3,6 +3,7 @@ mod dis;
 mod emitter;
 mod lower;
 pub mod opcode;
+mod reference_op_emitter;
 
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use dis::dis;
