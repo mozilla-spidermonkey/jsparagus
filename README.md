@@ -1,4 +1,8 @@
-[![Rust](https://github.com/mozilla-spidermonkey/jsparagus/workflows/Rust/badge.svg)](https://github.com/mozilla-spidermonkey/jsparagus/actions?query=branch%3Amaster)
+[![Rust][Rust Badge]][Rust CI Link]
+[![NotImplemented Counter][NotImplemented Badge]][NotImplemented Search]
+[![Fuzzbug days since][Fuzzbug Days Badge]][Fuzzbugs]
+[![Fuzzbug open][Fuzzbug Open Badge]][Open Fuzzbugs]
+
 
 # jsparagus - A JavaScript parser written in Rust
 
@@ -57,3 +61,13 @@ to parsing JS.
 
 *   No table compaction or table optimization. There's plenty of
     low-hanging fruit there.
+
+
+[Rust Badge]: https://github.com/mozilla-spidermonkey/jsparagus/workflows/Rust/badge.svg
+[Rust CI Link]: https://github.com/mozilla-spidermonkey/jsparagus/actions?query=branch%3Amaster
+[NotImplemented Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fnot-implemented.json
+[NotImplemented Search]: https://github.com/mozilla-spidermonkey/jsparagus/search?q=notimplemented&unscoped_q=notimplemented
+[Fuzzbug days Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fsince-last-fuzzbug.json
+[Fuzzbug Open Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fopen-fuzzbug.json
+[Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/issues?utf8=%E2%9C%93&q=label%3AlibFuzzer+
+[Open Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/labels/libFuzzer
