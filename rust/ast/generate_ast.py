@@ -349,6 +349,12 @@ def pass_(ast):
         def to_method_name(name):
             return "visit_{}".format(to_snek_case(name))
 
+        def to_enter_method_name(name):
+            return "enter_{}".format(to_snek_case(name))
+
+        def to_leave_method_name(name):
+            return "leave_{}".format(to_snek_case(name))
+
         # --- Pass ---
 
         def emit_call(indent, ty, var):
@@ -386,10 +392,30 @@ def pass_(ast):
 
             write(1, "fn {}(&mut self, ast: &mut {}) {{",
                   to_method_name(type_decl.name), Type(name).to_rust_type(ast))
+
+            write(2, "self.{}(ast);",
+                  to_enter_method_name(type_decl.name))
+
             type_decl.write_rust_pass_method_body(write, emit_call)
+
+            write(2, "self.{}(ast);",
+                  to_leave_method_name(type_decl.name))
 
             write(1, "}")
             write(0, "")
+
+            write(1, "fn {}(&mut self, ast: &mut {}) {{",
+                  to_enter_method_name(type_decl.name),
+                  Type(name).to_rust_type(ast))
+            write(1, "}")
+            write(0, "")
+
+            write(1, "fn {}(&mut self, ast: &mut {}) {{",
+                  to_leave_method_name(type_decl.name),
+                  Type(name).to_rust_type(ast))
+            write(1, "}")
+            write(0, "")
+
         write(0, "}")
         write(0, "")
 
