@@ -6,8 +6,9 @@ RS_AST_OUT = rust/ast/src/types_generated.rs \
 	rust/ast/src/visit_generated.rs \
 	rust/ast/src/source_location_accessor_generated.rs \
 	rust/generated_parser/src/stack_value_generated.rs
+
 JSPARAGUS_DIR := $(dir $(firstword $(MAKEFILE_LIST)))
-VENV_BIN_DIR := $(JSPARAGUS_DIR)/jsparagus_build_venv/bin
+VENV_BIN_DIR := $(JSPARAGUS_DIR)jsparagus_build_venv/bin
 PYTHON := $(VENV_BIN_DIR)/python
 PIP := $(VENV_BIN_DIR)/pip
 
@@ -48,7 +49,7 @@ $(HANDLER_INFO_OUT): jsparagus/emit/collect_handler_info/src/main.rs $(HANDLER_F
 	(cd jsparagus/emit/collect_handler_info/; cargo run --bin collect_handler_info ../../../$(HANDLER_FILE) $(subst jsparagus/emit/collect_handler_info/,,$(HANDLER_INFO_OUT)))
 
 $(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
-	(cd rust/ast && $(PYTHON) generate_ast.py)
+	(cd rust/ast && $(abspath $(PYTHON)) generate_ast.py)
 
 $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE) $(HANDLER_INFO_OUT)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE) $(HANDLER_INFO_OUT)
