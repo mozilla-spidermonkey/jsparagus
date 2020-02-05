@@ -1,0 +1,41 @@
+name: NotImplemented
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: "3.7"
+    - name: Get Count
+      run: |
+        find rust -iname '*.rs' -type f -exec cat {} + | grep -c -E "(Emit|Parse)Error::NotImplemented" > /tmp/count
+        git rev-parse HEAD > /tmp/commit
+    - uses: actions/checkout@v2
+      with:
+        ref: ci-results
+    - name: Add NotImplemented count
+      run: |
+        export total_count=$(cat /tmp/count)
+        export current_commit=$(cat /tmp/commit)
+        cd .metrics
+        python badge.py
+        python count.py
+    - name: Commit files
+      run: |
+        git add .metrics/badges/not-implemented.json
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "update NotImplemented Count" -a
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ci-results
+        force: true

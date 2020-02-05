@@ -1,5 +1,7 @@
 [![Rust](https://github.com/mozilla-spidermonkey/jsparagus/workflows/Rust/badge.svg)](https://github.com/mozilla-spidermonkey/jsparagus/actions?query=branch%3Amaster)
 
+[![NotImplemented](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcodehag%2Fjsparagus%2Fci-results%2F.metrics%2Fbadges/not-implemented.json)](https://github.com/mozilla-spidermonkey/jsparagus/search?q=NotImplemented&unscoped_q=NotImplemented)
+
 # jsparagus - A JavaScript parser written in Rust
 
 jsparagus is intended to replace the JavaScript parser in Firefox.
