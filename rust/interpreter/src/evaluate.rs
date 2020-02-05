@@ -7,6 +7,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::rc::Rc;
 
+use crate::globals::create_global;
 use crate::object::Object;
 use crate::value::{to_boolean, to_number, JSValue};
 
@@ -56,23 +57,12 @@ impl Helpers for EmitResult {
     }
 }
 
-fn print(_this_value: JSValue, args: &[JSValue]) -> JSValue {
-    println!("{:?}", args);
-    JSValue::Undefined
-}
-
 pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
 
-    let global = Rc::new(RefCell::new(Object::new()));
-    global
-        .borrow_mut()
-        .set("print".to_owned(), JSValue::NativeFunction(print));
-    global
-        .borrow_mut()
-        .set("undefined".to_owned(), JSValue::Undefined);
+    let global = create_global();
 
     loop {
         let op = match Opcode::try_from(emit.bytecode[pc]) {
@@ -198,6 +188,18 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 stack.push(obj);
             }
 
+            Opcode::GetProp | Opcode::CallProp => {
+                let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                let atom = emit.read_atom(pc + 1);
+                match obj {
+                    JSValue::Object(ref obj) => {
+                        stack.push(obj.borrow().get(atom));
+                    }
+                    _ => return Err(EvalError::NotImplemented("not an object".to_owned())),
+                }
+            }
+
             Opcode::GImplicitThis => {
                 // "The result is always `undefined` except when the name refers to a
                 // binding in a non-syntactic `with` environment."
@@ -254,6 +256,18 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
             }
 
             Opcode::JumpTarget => {}
+
+            Opcode::Dup => {
+                stack.push(stack.last().ok_or(EvalError::EmptyStack)?.clone());
+            }
+
+            Opcode::Swap => {
+                let a = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let b = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                stack.push(a);
+                stack.push(b);
+            }
 
             Opcode::NewArray | Opcode::NewInit => {
                 stack.push(JSValue::Object(Rc::new(RefCell::new(Object::new()))));
