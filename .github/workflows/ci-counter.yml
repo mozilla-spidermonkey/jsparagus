@@ -1,0 +1,32 @@
+name: NotImplemented
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Update tracking branch
+      run: |
+        git pull origin ci-results
+        git checkout ci-results
+        git rebase master
+    - name: Add NotImplemented count
+      run: |
+        cd .metrics && make count
+    - name: Commit files
+      run: |
+        git pull origin ci-results
+        git add .metrics/badges/not-implemented.json
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "update NotImplemented Count" -a
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ci-results
+        force: true
