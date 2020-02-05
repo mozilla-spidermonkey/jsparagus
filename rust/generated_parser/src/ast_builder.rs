@@ -1036,24 +1036,34 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn property_name_identifier(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, PropertyName<'alloc>>> {
+        let value = token.value.unwrap();
+        if value == "__proto__" {
+            return Err(ParseError::NotImplemented("__proto__ as property name"));
+        }
+
         let loc = token.loc;
-        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: token.value.unwrap(),
+        Ok(self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+            value,
             loc,
-        }))
+        })))
     }
 
     // LiteralPropertyName : StringLiteral
     pub fn property_name_string(
         &self,
         token: arena::Box<'alloc, Token<'alloc>>,
-    ) -> arena::Box<'alloc, PropertyName<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, PropertyName<'alloc>>> {
+        let value = token.value.unwrap();
+        if value == "__proto__" {
+            return Err(ParseError::NotImplemented("__proto__ as property name"));
+        }
+
         let loc = token.loc;
-        self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value: token.value.unwrap(),
+        Ok(self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+            value,
             loc,
-        }))
+        })))
     }
 
     // LiteralPropertyName : NumericLiteral
