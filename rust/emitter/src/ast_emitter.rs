@@ -297,8 +297,10 @@ impl<'alloc> AstEmitter<'alloc> {
                 self.emit_identifier_expression(ast);
             }
 
-            Expression::NewExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: NewExpression"));
+            Expression::NewExpression {
+                callee, arguments, ..
+            } => {
+                self.emit_new_expression(callee, arguments)?;
             }
 
             Expression::NewTargetExpression { .. } => {
@@ -523,7 +525,9 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
         // Initialize the array to its minimum possible length.
-        let min_length = array.elements.iter()
+        let min_length = array
+            .elements
+            .iter()
             .map(|e| match e {
                 ArrayExpressionElement::Expression(_) => 1,
                 ArrayExpressionElement::Elision { .. } => 1,
@@ -608,6 +612,34 @@ impl<'alloc> AstEmitter<'alloc> {
         let name = &ast.name.value;
         let name_index = self.emit.get_atom_index(name);
         self.emit.get_g_name(name_index);
+    }
+
+    fn emit_new_expression(
+        &mut self,
+        callee: &Expression,
+        arguments: &Arguments,
+    ) -> Result<(), EmitError> {
+        for arg in &arguments.args {
+            if let Argument::SpreadElement(_) = arg {
+                return Err(EmitError::NotImplemented("TODO: SpreadNew"));
+            }
+        }
+
+        self.emit_expression(callee)?;
+        // Callee
+
+        self.emit.is_constructing();
+        // Callee JS_IS_CONSTRUCTING
+
+        self.emit_arguments(arguments)?;
+        // Callee JS_IS_CONSTRUCTING Args..
+
+        self.emit.dup_at(arguments.args.len() as u32 + 1);
+        // Callee JS_IS_CONSTRUCTING Args.. Callee
+
+        self.emit.new_(arguments.args.len() as u16);
+
+        Ok(())
     }
 
     fn emit_call_expression(
