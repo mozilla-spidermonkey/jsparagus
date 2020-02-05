@@ -1,4 +1,5 @@
 mod evaluate;
+mod globals;
 mod object;
 mod value;
 

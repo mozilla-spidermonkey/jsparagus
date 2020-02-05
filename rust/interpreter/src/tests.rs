@@ -110,4 +110,9 @@ fn test_call() {
         Ok(JSValue::Undefined) => (),
         _ => panic!("wrong result"),
     }
+
+    match try_evaluate("Math.sqrt(36)") {
+        Ok(JSValue::Number(n)) if n == 6.0 => (),
+        _ => panic!("wrong result"),
+    }
 }
