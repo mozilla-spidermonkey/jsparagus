@@ -43,6 +43,7 @@ TERMINAL_NAMES = {
     '**=': 'ExponentiateAssign',
     '.': 'Dot',
     '**': 'Exponentiate',
+    '?.': 'OptionalChain',
     '?': 'QuestionMark',
     '??': 'Coalesce',
     '*': 'Star',

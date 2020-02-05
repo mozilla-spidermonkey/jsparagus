@@ -1184,6 +1184,126 @@ impl<'alloc> AstBuilder<'alloc> {
         ))
     }
 
+    // OptionalExpression : MemberExpression OptionalChain
+    // OptionalExpression : CallExpression OptionalChain
+    // OptionalExpression : OptionalExpression OptionalChain
+    pub fn optional_expr(
+        &self,
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        tail: arena::Box<'alloc, Expression<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let object_loc = object.get_loc();
+        let expression_loc = tail.get_loc();
+        self.alloc(Expression::OptionalExpression {
+            object: ExpressionOrSuper::Expression(object),
+            tail,
+            loc: SourceLocation::from_parts(object_loc, expression_loc),
+        })
+    }
+
+    // OptionalChain : `?.` `[` Expression `]`
+    pub fn optional_computed_member_expr_tail(
+        &self,
+        start_token: arena::Box<'alloc, Token<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+        close_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        self.alloc(Expression::OptionalChain(
+            OptionalChain::ComputedMemberExpressionTail {
+                expression,
+                loc: SourceLocation::from_parts(start_token.loc, close_token.loc),
+            },
+        ))
+    }
+
+    // OptionalChain : `?.` Expression
+    pub fn optional_static_member_expr_tail(
+        &self,
+        start_token: arena::Box<'alloc, Token<'alloc>>,
+        identifier_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let identifier_token_loc = identifier_token.loc;
+        self.alloc(Expression::OptionalChain(
+            OptionalChain::StaticMemberExpressionTail {
+                property: self.identifier_name(identifier_token),
+                loc: SourceLocation::from_parts(start_token.loc, identifier_token_loc),
+            },
+        ))
+    }
+
+    // OptionalChain : `?.` Arguments
+    pub fn optional_call_expr_tail(
+        &self,
+        start_token: arena::Box<'alloc, Token<'alloc>>,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let arguments_loc = arguments.loc;
+        self.alloc(Expression::OptionalChain(
+            OptionalChain::CallExpressionTail {
+                arguments: arguments.unbox(),
+                loc: SourceLocation::from_parts(start_token.loc, arguments_loc),
+            },
+        ))
+    }
+
+    // OptionalChain : `?.` TemplateLiteral
+    pub fn error_optional_chain_with_template(
+        &self,
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        Err(ParseError::IllegalCharacter('`'))
+    }
+
+    // OptionalChain : OptionalChain `[` Expression `]`
+    pub fn optional_computed_member_expr(
+        &self,
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        expression: arena::Box<'alloc, Expression<'alloc>>,
+        close_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let object_loc = object.get_loc();
+        self.alloc(Expression::OptionalChain(
+            OptionalChain::ComputedMemberExpression(ComputedMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
+                expression,
+                loc: SourceLocation::from_parts(object_loc, close_token.loc),
+            }),
+        ))
+    }
+
+    // OptionalChain : OptionalChain `.` Expression
+    pub fn optional_static_member_expr(
+        &self,
+        object: arena::Box<'alloc, Expression<'alloc>>,
+        identifier_token: arena::Box<'alloc, Token<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let object_loc = object.get_loc();
+        let identifier_token_loc = identifier_token.loc;
+        self.alloc(Expression::OptionalChain(
+            OptionalChain::StaticMemberExpression(StaticMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
+                property: self.identifier_name(identifier_token),
+                loc: SourceLocation::from_parts(object_loc, identifier_token_loc),
+            }),
+        ))
+    }
+
+    // OptionalChain : OptionalChain Arguments
+    pub fn optional_call_expr(
+        &self,
+        callee: arena::Box<'alloc, Expression<'alloc>>,
+        arguments: arena::Box<'alloc, Arguments<'alloc>>,
+    ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let callee_loc = callee.get_loc();
+        let arguments_loc = arguments.loc;
+        self.alloc(Expression::OptionalChain(OptionalChain::CallExpression(
+            CallExpression {
+                callee: ExpressionOrSuper::Expression(callee),
+                arguments: arguments.unbox(),
+                loc: SourceLocation::from_parts(callee_loc, arguments_loc),
+            },
+        )))
+    }
+
     fn identifier(&self, token: arena::Box<'alloc, Token<'alloc>>) -> Identifier<'alloc> {
         Identifier {
             value: token.value.unwrap(),

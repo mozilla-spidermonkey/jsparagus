@@ -56,6 +56,12 @@ impl<'alloc> Lexer<'alloc> {
         self.chars.as_str().chars().next()
     }
 
+    fn double_peek(&self) -> Option<char> {
+        let mut chars = self.chars.as_str().chars();
+        chars.next();
+        chars.next()
+    }
+
     pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token<'alloc>> {
         let (loc, value, terminal_id) = self.advance_impl(parser)?;
         let is_on_new_line = self.is_on_new_line;
@@ -1688,6 +1694,13 @@ impl<'alloc> Lexer<'alloc> {
                     Some('?') => {
                         self.chars.next();
                         return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::Coalesce));
+                    }
+                    Some('.') => {
+                        if let Some('0'..='9') = self.double_peek() {
+                            return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::QuestionMark))
+                        }
+                        self.chars.next();
+                        return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::OptionalChain));
                     }
                     _ => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::QuestionMark)),
                 }
