@@ -8,15 +8,7 @@ the ECMAScript spec you're interested in.
     cd tc39
     git clone git@github.com:tc39/ecma262.git
 
-Then set up python:
-
-    cd ../jsparagus
-    python3 -m venv venv
-    . venv/bin/activate
-    pip install --upgrade pip
-    pip install -r requirements.txt
-
-Finally:
+Then:
 
     make js_parser/es.esgrammar
 

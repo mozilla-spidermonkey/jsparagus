@@ -1,4 +1,4 @@
-## jsparagus/js_parser: Work towards generating a parser for JavaScript
+## jsparagus/js_parser: Generating a parser for JavaScript
 
 In this directory:
 
@@ -23,11 +23,7 @@ To generate a parser, follow these steps:
 
 ```console
 $ cd ..
-$ python3 -m venv venv
-$ . venv/bin/activate
-$ pip install --upgrade pip
-$ pip install -r requirements.txt
-
+$ make init
 $ make all
 ```
 
@@ -37,24 +33,12 @@ laptop.  jsparagus is slow.
 Once you're done, to see your parser run, try this:
 
 ```console
-$ python -m js_parser.try_it
-```
-
-
-### Or the Rust version
-
-Run all the steps above, except substitute this command for the one that ends in `.py`:
-
-```console
-$ python -m js_parser.generate_js_parser_tables js_parser/parser_generated.jsparagus_dump -o rust/parser/src/parser_generated.rs
-```
-
-Then, to see your parser run, try this:
-
-```console
-$ cd rust/parser
+$ cd rust
 $ cargo run --release
 ```
+
+The build also produces a copy of the JS parser in Python.
+After `make all`, you can use `make jsdemo` to run that.
 
 
 ### How simplified is "es-simplified"?
@@ -70,9 +54,6 @@ actually handle:
 *   Truncated lookahead.
 
     `ValueError: unsupported: lookahead > 1 token, [['{'], ['function'], ['async', ('no-LineTerminator-here',), 'function'], ['class'], ['let', '[']]`
-
-*   Delete `[no LineTerminator here]` (restricted productions) since
-    there's no way to implement it yet.
 
 *   Delete a rule that uses `but not` since it's not implemented.
 
