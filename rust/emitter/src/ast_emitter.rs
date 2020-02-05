@@ -93,8 +93,9 @@ impl<'alloc> AstEmitter<'alloc> {
                     "TODO: SwitchStatementWithDefault",
                 ));
             }
-            Statement::ThrowStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ThrowStatement"));
+            Statement::ThrowStatement { expression, .. } => {
+                self.emit_expression(expression)?;
+                self.emit.throw();
             }
             Statement::TryCatchStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: TryCatchStatement"));
