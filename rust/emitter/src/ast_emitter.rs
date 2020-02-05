@@ -522,8 +522,16 @@ impl<'alloc> AstEmitter<'alloc> {
     }
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
-        // TODO: Initialze to correct length where possible.
-        self.emit.new_array(0);
+        // Initialize the array to its minimum possible length.
+        let min_length = array.elements.iter()
+            .map(|e| match e {
+                ArrayExpressionElement::Expression(_) => 1,
+                ArrayExpressionElement::Elision { .. } => 1,
+                ArrayExpressionElement::SpreadElement { .. } => 0,
+            })
+            .sum::<u32>();
+
+        self.emit.new_array(min_length);
 
         for (index, element) in array.elements.iter().enumerate() {
             match element {
@@ -535,7 +543,9 @@ impl<'alloc> AstEmitter<'alloc> {
                     self.emit.hole();
                     self.emit.init_elem_array(index as u32);
                 }
-                _ => return Err(EmitError::NotImplemented("TODO: Array Element")),
+                ArrayExpressionElement::SpreadElement { .. } => {
+                    return Err(EmitError::NotImplemented("TODO: SpreadElement"));
+                }
             }
         }
 
