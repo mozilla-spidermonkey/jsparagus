@@ -1868,18 +1868,6 @@ class LR0Generator:
 #
 APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
 
-# LaneTransform is a structure used for solving reduce-reduce conflicts.
-#
-# It is used for progressively consuming `stack` edges, and inserting actions
-# such as PushFlag, FilterFlag and PopFlag based on the `flag_value`.
-#
-# As edges are consumed, and actions added, the `state` value is updated to
-# reflect the state in which the lane is supposed to be.
-#
-# When a state which consume the non-terminal reduced by the action is
-# encountered, the `push` flag is set.
-LaneTransform = collections.namedtuple("LaneTransform", "stack state action push flag_value")
-
 # A Lane table is a structure used to represent the conflicting and add context
 # surrounding these conflicting states.
 #
@@ -2190,6 +2178,7 @@ class ParseTable:
         all_reduce = all([ a.update_stack() for a, _ in state.epsilon ])
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
         aps_lanes = self.lanes(s)
+        assert aps_lanes != []
         if all_reduce and not any_shift:
             # This strategy is about looking up for context information. By
             # using chains of reduce actions, we are able to increase the lanes
@@ -2224,92 +2213,163 @@ class ParseTable:
             #   (E.1 | O.1) [.. `b`]    *inconsistent*
             #   (E.1 | O.1) [.. `c`]    *inconsistent*
 
-            # Identify unique sequences of lanes, by looking at the number of
-            # predecessor edges. If there is exactly 1, then this edge is part
-            # of a unique sequence, otherwise this is the beginning of a unqiue
-            # sequence.
-            edge_neighbour = defaultdict(lambda: (set(), set()))
+            # Iterate over lanes with the shortest stack length first, as these
+            # have less edges where the flag value can be updated to match the
+            # expectation.
+            edge_fun = defaultdict(lambda: set())
+            aps_lanes.sort(key = lambda aps: len(aps.stack))
             for aps in aps_lanes:
-                for edge_from, edge_to in zip(aps.stack, aps.stack[1:]):
-                    edge_neighbour[edge_to][0].add(edge_from)
-                    edge_neighbour[edge_from][1].add(edge_to)
+                assert len(aps.stack) >= 1
+                edge = aps.stack[-1]
+                nt = edge.term.reduce_with()
+                edge_fun[edge].add((nt, None))
+                edge = aps.stack[0]
+                if edge not in edge_fun:
+                    edge_fun[edge].add((None, nt))
 
-            # Do a topo-logical ordering of edges. The lanes should not have
-            # any loops, and as such the following function should not hit an
-            # infinite loop.
-            edge_incoming = { e: len(edge_neighbour[edge_to][0]) for e in edge_neighbour }
-            edge_next = [ e for e in edge_incoming if edge_incoming[e] == 0 ]
-            edge_order = { e: -1 for e in edge_neighbour }
-            order = 0
-            while edge_next:
-                edge, edge_next = edge_next[0], edge_next[1:]
-                edge_order[edge] = order
-                order += 1
-                for edge_to in edge_neighbour[edge_to][1]:
-                    edge_incoming[edge_to] -= 1
-                    assert edge_incoming[edge_to] >= 0
-                    if edge_incoming[edge_to] == 0:
-                        edge_next.append(edge_to)
-
-            # Whether this edge adds more information on where it is flowing into.
-            edge_useless = { e: len(edge_neighbour[e][1]) >= 1 for e in edge_neighbour }
-
-            # Create transform structures, which are used to add Push, Filter
-            # and Pop actions.
-
-            while True:
-
+            # Consider each edge as having an implicit function which can map
+            # one flag value to another. The following implements a unification
+            # algorithm which is attempting to solve the question of what is
+            # the flag value, and where it should be changed.
             #
-            # NOTE: we could apply this strategy even when we have some shift
-            # operations, but this would imply that we should get rid of the
-            # newly introduced flags by completely duplicating the state
-            # machine. The reason being that this strategy introduce filtering
-            # actions which are also ambiguous, and the only way to get rid of
-            # these is by folding these actions with the matching pop action.
-            #
-            # Find the all lanes reducing to each reduce action.
-            lanes = defaultdict(lambda: list()) # Action -> APS
-            state_actions = defaultdict(lambda: set()) # State -> set(Actions)
-            known_edges = defaultdict(lambda: set()) # Action -> set(Edges)
-            edges_actions = defaultdict(lambda: set()) # Edge -> set(Actions)
+            # Note: I would not be surprised if there is a more specialized
+            # algorithm, but I failed to find one so far, and this problem
+            # definitely looks like a unification problem.
+            Id = collections.namedtuple("Id", "edge")
+            Eq = collections.namedtuple("Eq", "flag_in edge flag_out")
+            Var = collections.namedtuple("Var", "n")
+            SubSt = collections.namedtuple("SubSt", "var by")
+            def unify_expr(expr1, expr2, swapped = False):
+                if isinstance(expr1, Eq) and isinstance(expr2, Id):
+                    if expr1.edge != expr2.edge:
+                        # Different edges are ok, but produce no substituions.
+                        return True
+                    if isinstance(expr1.flag_in, Var):
+                        return SubSt(expr1.flag_in, expr1.flag_out)
+                    if isinstance(expr1.flag_out, Var):
+                        return SubSt(expr1.flag_out, expr1.flag_in)
+                    # We are unifying with a relation which consider
+                    # the current function as an identity function.
+                    # Having different values as input and output fails
+                    # the unification rule.
+                    return expr1.flag_out == expr1.flag_in:
+                if isinstance(expr1, Eq) and isinstance(expr2, Eq):
+                    if expr1.edge != expr2.edge:
+                        # Different edges are ok, but produce no substituions.
+                        return True
+                    if expr1.flag_in == None and isinstance(expr2.flag_in, Var):
+                        return SubSt(expr2.flag_in, None)
+                    if expr1.flag_out == None and isinstance(expr2.flag_out, Var):
+                        return SubSt(expr2.flag_out, None)
+                    if expr1.flag_in == expr2.flag_in:
+                        if isinstance(expr1.flag_out, Var):
+                            return SubSt(expr1.flag_out, expr2.flag_out)
+                        elif isinstance(expr2.flag_out, Var):
+                            return SubSt(expr2.flag_out, expr1.flag_out)
+                        # Reject solutions which are not deterministic. We
+                        # do not want the same input flag to have multiple
+                        # outputs.
+                        return expr1.flag_out == expr2.flag_out
+                    if expr1.flag_out == expr2.flag_out:
+                        if isinstance(expr1.flag_in, Var):
+                            return SubSt(expr1.flag_in, expr2.flag_in)
+                        elif isinstance(expr2.flag_in, Var):
+                            return SubSt(expr2.flag_in, expr1.flag_in)
+                        return True
+                if not swapped:
+                    return unify_expr(expr2, expr1, True)
+                return True
+
+            def subst_expr(subst, val):
+                if val == subst.var:
+                    return True, subst.by
+                if isinstance(val, Eq):
+                    subst1, flag_in = subst_expr(subst, val.flag_in)
+                    subst2, flag_out = subst_expr(subst, val.flag_out)
+                    return subst1 or subst2, Eq(flag_in, val.edge, flag_out)
+                return False, val
+
+            def unify_with(expr, knowledge, free_vars):
+                old_knowledge = knowledge
+                old_free_Vars = free_vars
+                while True:
+                    subst = None
+                    for rel in knowledge:
+                        subst = unify_expr(rel, expr)
+                        if subst == False:
+                            raise Error("Failed to find a coherent solution")
+                        if subst == True:
+                            continue
+                        break
+                    else:
+                        return knowledge + [expr], free_vars
+                    free_vars = [fv for fv in free_vars if fv != subst.var]
+                    # Substitue variables, and re-add rules which have
+                    # substituted vars to check the changes to other rules, in
+                    # case 2 rules are now in conflict or in case we can
+                    # propagate more variable changes.
+                    subst_rules = [subst_expr(subst, k) for k in knowledge]
+                    knowledge = [rule for changed, rule in subst_rule if not changed]
+                    for changed, rule in subst_rule:
+                        if not changed:
+                            continue
+                        knowledge, free_vars = unify_with(rule, knowledge, free_vars)
+
+            # TODO: Catch exceptions from the unify function in case we do not
+            # yet have enough context to disambiguate.
+            rules = []
+            free_vars = []
+            last_free = 0
+            maybe_id_edges = set()
             for aps in aps_lanes:
-                action = aps.actions[0]
-                assert action.update_stack()
-                assert aps.stack[-1] == StackedEdge(s, None, True)
-                lanes[action].append(aps)
-                for st in aps.stack:
-                    state_actions[st].add(action)
-                for edge in zip(aps.stack, aps.stack[1:]):
-                    edges_actions[edge].add(action)
-                known_edges[action].union(set(zip(aps.stack, aps.stack[1:])))
+                assert len(aps.stack) >= 1
+                edge = aps.stack[0]
+                flag_in = None
+                for edge in aps.stack[-1]:
+                    i = last_free
+                    last_free += 1
+                    free_vars.append(Var(i))
+                    rule = Eq(flag_in, edge, Var(i))
+                    rules, free_vars = unify_with(rule, rules, free_vars)
+                    flag_in = Var(i)
+                    if flag_in != None:
+                        maybe_id_edges.add(Id(edge))
+                edge = aps.stack[-1]
+                nt = edge.term.reduce_with()
+                rule = Eq(nt, edge, None)
+                rules, free_vars = unify_with(rule, rules, free_vars)
 
-            # Find lane heads. Lane heads are supposed to be the first state
-            # which belong to the reduced production. However, for our case, we
-            # consider lane heads as the first state which resolve uniquely to
-            # one reduce action.
-            lanes_with_head = defaultdict(lambda: [])
-            rejected_states = defaultdict(lambda: set())
-            for aps in aps_lanes:
-                action = aps.actions[0]
-                unique = [len(state_actions[s]) == 1 for s in aps.stack]
-                if not any(unique):
-                    # TODO: Should we assert that all the states of this lane
-                    # are covered by the accepted lanes with a lane head.
-                    for s in aps.stack:
-                        rejected_states[action].add(s)
-                    continue
-                # Keep only a single non-ambiguous head.
-                # TODO: shouldn't we keep the head which lead to the reduce state only?
-                head = [ i for i, u in enumerate(unique) if u ][-1]
-                lane = aps.stack[head:]
+            # We want to produce a parse table where most of the node are
+            # ignoring the content of the flag which is being added. Thus we
+            # want to find a solution where most edges are the identical
+            # function.
+            def fill_with_id_functions(rules, free_vars, maybe_id_edges):
+                min_rules, min_vars = rules, free_vars
+                for num_id_edges in reversed(range(len(maybe_id_edges))):
+                    for id_edges in itertools.combinations(edges, num_id_edges):
+                        try:
+                            for edge in id_edges:
+                                new_rules, new_free_vars = unify_with(rule, rules, free_vars)
+                                if new_free_vars == []:
+                                    return new_rules, new_free_vars
+                                if len(new_free_vars) < len(min_free_vars):
+                                    min_vars = new_free_vars
+                                    min_rules = new_rules
+                        except:
+                            pass
+                return rules, free_vars
 
-                # Replay exactly the path recorded by the APS in order to find
-                # the reduce action which gave us this lane head.
-                # TODO: ???
+            rules, free_vars = fill_with_id_functions(rules, free_vars, maybe_id_edges)
+            if free_vars != []:
+                raise Error("Hum … maybe we can try to iterate over the remaining free-variable.")
+            print("debug: Great we found a solution for a reduce-reduce conflict")
 
-                # TODO: strip the lane head front until we have only one lane
-                # head in each lane.
-                lanes_with_head[action].append(lane)
+            # The set of rules describe the function that each edge is expected
+            # to support. If there is an Id(edge), then we know that we do not
+            # have to change the graph for the given edge. If the rule is Eq(A,
+            # edge, B), then we have to (filter A & pop) and push B, except if
+            # A or B is None.
+
 
             # For disjoint lane heads, create a new flag, and push it after
             # each lane head, pop it before all the reduce action which are
