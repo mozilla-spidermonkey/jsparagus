@@ -606,6 +606,26 @@ impl<'alloc> AstEmitter<'alloc> {
                     let name_index = self.emit.get_atom_index(name.value);
                     self.emit.g_implicit_this(name_index);
                 }
+                Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                    StaticMemberExpression {
+                        object: ExpressionOrSuper::Expression(object),
+                        property,
+                        ..
+                    },
+                )) => {
+                    self.emit_expression(object)?;
+                    // [stack] Obj
+
+                    self.emit.dup();
+                    // [stack] Obj Obj
+
+                    let property_index = self.emit.get_atom_index(property.value);
+                    self.emit.call_prop(property_index);
+                    // [stack] Obj Callee
+
+                    self.emit.swap();
+                    // [stack] Callee Obj/This
+                }
                 _ => {
                     return Err(EmitError::NotImplemented(
                         "TODO: Call (only global functions are supported)",
