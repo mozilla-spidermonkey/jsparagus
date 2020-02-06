@@ -1525,6 +1525,28 @@ class StateAndTransitions:
         for k, s in self.epsilon:
             yield (k, s)
 
+    def __contains__(self, term):
+        if isinstance(term, Action):
+            for t, s in self.epsilon:
+                if t == term:
+                    return True
+            return False
+        elif isinstance(term, Nt):
+            return term in self.nonterminals
+        else:
+            return term in self.terminals
+
+    def __getitem__(self, term):
+        if isinstance(term, Action):
+            for t, s in self.epsilon:
+                if t == term:
+                    return s
+            raise KeyError(term)
+        elif isinstance(term, Nt):
+            return self.nonterminals[term]
+        else:
+            return self.terminals[term]
+
     def __str__(self):
         conflict = ""
         if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
@@ -1932,6 +1954,8 @@ class ParseTable:
         "terminals",
         # List of non-terminals.
         "nonterminals",
+        # Set of existing flags.
+        "flags",
     ]
 
     def __init__(self, grammar, verbose = False, progress = False):
@@ -1959,6 +1983,7 @@ class ParseTable:
 
     def add_edge(src, term, dest):
         assert isinstance(src, StateAndTransitions)
+        assert term not in src
         assert isinstance(dest, int) and dest < len(self.states)
         if isinstance(term, Action):
             src.epsilon.append((term, dest))
@@ -1967,6 +1992,25 @@ class ParseTable:
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
+
+    def replace_edge(src, term, dest):
+        assert isinstance(src, StateAndTransitions)
+        assert isinstance(dest, int) and dest < len(self.states)
+        old_dest = src[term]
+        self.states[old_dest].backedges.remove(Edge(src.index, term))
+        if isinstance(term, Action):
+            src.epsilon = [ (t, d) for t, d in src.epsilon if t != term ]
+            src.epsilon.append((term, dest))
+        elif isinstance(term, Nt):
+            src.nonterminals[term] = dest
+        else:
+            src.terminals[term] = dest
+        self.states[dest].backedges.add(Edge(src.index, term))
+
+    def get_flag_for(self.nts):
+        nts = OrderedFrozenSet(nts)
+        self.flags.add(nts)
+        return "_".join(["flag", *nts])
 
     def create_lr0_table(self, grammar, verbose, progress):
         if verbose or progress:
@@ -2180,65 +2224,30 @@ class ParseTable:
         aps_lanes = self.lanes(s)
         assert aps_lanes != []
         if all_reduce and not any_shift:
-            # This strategy is about looking up for context information. By
-            # using chains of reduce actions, we are able to increase the lanes
-            # which are reducing each actions.
+            # This strategy is about using context information. By using chains
+            # of reduce actions, we are able to increase the knowledge of the
+            # stack content. The stack content is the context which can be used
+            # to determine how to consider a reduction. The stack content is
+            # also called a lane, as defined in the Lane Table algorithm.
             #
-            # If some lanes are unique to some reduce actions, then we continue
-            # by adding push-flag, filter-flag and pop-flags, at the end of
-            # each sequence which appears uniquely in the lane context. We are
-            # looking at unqiue sequences, as these might be the locations
-            # where we want to insert filter rules.
+            # To add context information to the current graph, we add flags
+            # manipulation actions.
             #
-            # Example:
-            #   G <- `b` E `b` | `b` O `c` | `c` O `b` | `c` E `c`
-            #   E <- `a` O | `a`    O <- `a` E | `a`
-            #
-            # When reduing E, we produce the lanes:
-            #   G.0 `b` G.1 E.0 `a` E.1 [G.2 `b`]
-            #   G.0 `c` G.1 E.0 `a` E.1 [G.2 `c`]
-            #   G.0 `b` G.1 O.0 `a` O.1 E.0 `a` E.1 [O.2 G.2 `c`]
-            #   G.0 `c` G.1 O.0 `a` O.1 E.0 `a` E.1 [O.2 G.2 `b`]
-            #
-            # When reduing O, we produce the lanes:
-            #   G.0 `b` G.1 O.0 `a` O.1 [G.2 `c`]
-            #   G.0 `c` G.1 O.0 `a` O.1 [G.2 `b`]
-            #   G.0 `b` G.1 E.0 `a` E.1 O.0 `a` O.1 [E.2 G.2 `b`]
-            #   G.0 `c` G.1 E.0 `a` E.1 O.0 `a` O.1 [E.2 G.2 `c`]
-            #
-            # In this grammar, the unique sequences would be:
-            #   G.0 `b` G.1 (E.0 | O.0) `a` (E.1 | O.1)
-            #   G.0 `c` G.1 (E.0 | O.0) `a` (E.1 | O.1)
-            #   (E.1 | O.1) (E.0 | O.0) `a` (E.1 | O.1)
-            #   (E.1 | O.1) [.. `b`]    *inconsistent*
-            #   (E.1 | O.1) [.. `c`]    *inconsistent*
-
-            # Iterate over lanes with the shortest stack length first, as these
-            # have less edges where the flag value can be updated to match the
-            # expectation.
-            edge_fun = defaultdict(lambda: set())
-            aps_lanes.sort(key = lambda aps: len(aps.stack))
-            for aps in aps_lanes:
-                assert len(aps.stack) >= 1
-                edge = aps.stack[-1]
-                nt = edge.term.reduce_with()
-                edge_fun[edge].add((nt, None))
-                edge = aps.stack[0]
-                if edge not in edge_fun:
-                    edge_fun[edge].add((None, nt))
-
             # Consider each edge as having an implicit function which can map
             # one flag value to another. The following implements a unification
             # algorithm which is attempting to solve the question of what is
             # the flag value, and where it should be changed.
             #
-            # Note: I would not be surprised if there is a more specialized
+            # NOTE: (nbp) I would not be surprised if there is a more specialized
             # algorithm, but I failed to find one so far, and this problem
             # definitely looks like a unification problem.
             Id = collections.namedtuple("Id", "edge")
             Eq = collections.namedtuple("Eq", "flag_in edge flag_out")
             Var = collections.namedtuple("Var", "n")
             SubSt = collections.namedtuple("SubSt", "var by")
+
+            # Unify expression, and return one substitution if both expressions
+            # can be unified.
             def unify_expr(expr1, expr2, swapped = False):
                 if isinstance(expr1, Eq) and isinstance(expr2, Id):
                     if expr1.edge != expr2.edge:
@@ -2280,15 +2289,18 @@ class ParseTable:
                     return unify_expr(expr2, expr1, True)
                 return True
 
-            def subst_expr(subst, val):
-                if val == subst.var:
+            # Apply substituion rule to an expression.
+            def subst_expr(subst, expr):
+                if expr == subst.var:
                     return True, subst.by
-                if isinstance(val, Eq):
-                    subst1, flag_in = subst_expr(subst, val.flag_in)
-                    subst2, flag_out = subst_expr(subst, val.flag_out)
-                    return subst1 or subst2, Eq(flag_in, val.edge, flag_out)
-                return False, val
+                if isinstance(expr, Eq):
+                    subst1, flag_in = subst_expr(subst, expr.flag_in)
+                    subst2, flag_out = subst_expr(subst, expr.flag_out)
+                    return subst1 or subst2, Eq(flag_in, expr.edge, flag_out)
+                return False, expr
 
+            # Add an expression to an existing knowledge based which is relying
+            # on a set of free variables.
             def unify_with(expr, knowledge, free_vars):
                 old_knowledge = knowledge
                 old_free_Vars = free_vars
@@ -2315,15 +2327,20 @@ class ParseTable:
                             continue
                         knowledge, free_vars = unify_with(rule, knowledge, free_vars)
 
+            # Register boundary conditions as part of the knowledge based, i-e
+            # that reduce actions are expecting to see the flag value matching
+            # the reduced non-terminal, and that we have no flag value at the
+            # start of every lane head.
+            #
             # TODO: Catch exceptions from the unify function in case we do not
             # yet have enough context to disambiguate.
             rules = []
             free_vars = []
             last_free = 0
             maybe_id_edges = set()
+            nts = set()
             for aps in aps_lanes:
                 assert len(aps.stack) >= 1
-                edge = aps.stack[0]
                 flag_in = None
                 for edge in aps.stack[-1]:
                     i = last_free
@@ -2338,6 +2355,7 @@ class ParseTable:
                 nt = edge.term.reduce_with()
                 rule = Eq(nt, edge, None)
                 rules, free_vars = unify_with(rule, rules, free_vars)
+                nts.add(nt)
 
             # We want to produce a parse table where most of the node are
             # ignoring the content of the flag which is being added. Thus we
@@ -2369,6 +2387,49 @@ class ParseTable:
             # have to change the graph for the given edge. If the rule is Eq(A,
             # edge, B), then we have to (filter A & pop) and push B, except if
             # A or B is None.
+            #
+            # For each edge, collect the set of rules concerning the edge to
+            # determine which edges have to be transformed to add the
+            # filter&pop and push actions.
+            edge_rules = defaultdict(lambda: [])
+            for rule in rules:
+                if isinstance(rule, Id):
+                    edge_rules[rule.edge] = None
+                elif isinstance(rule, Eq):
+                    if edge_rules[rule.edge] != None:
+                        edge_rules[rule.edge].append(rule)
+
+            flag_name = self.get_flag_for(nts)
+            for edge, rules in edge_rules.items():
+                # If the edge is an identity function, then skip doing any
+                # modifications on it.
+                if rules == None:
+                    continue
+                # Otherwise, create a new state and transition for each
+                # mapping.
+                src = self.states[edge.src]
+                dest = src[edge.term]
+                dest_state = self.states[dest]
+                # TODO: Add some information to avoid having identical
+                # hashes as the destination.
+                switch = self.new_state()
+                switch.locations = dest.locations
+                for rule in OrderedFrozenSet(rules):
+                    assert isinstance(rule, Eq)
+                    seq = []
+                    if rule.flag_in != None:
+                        seq.append(FilterFlag(flag_name, True))
+                        if rule.flag_in != rule.flag_out:
+                            seq.append(PopFlag(flag_name))
+                    if rule.flag_out != None and rule.flag_in != rule.flag_out:
+                        seq.append(PushFlag(flag_name, rule.flag_out))
+                    self.add_edge(switch, Seq(seq), dest)
+
+                # Replace the edge from src to dest, by an edge from src to the
+                # newly created switch state, which then decide which flag to
+                # set before going to the destination target.
+                self.replace_edge(src, edge.term, switch)
+
 
 
             # For disjoint lane heads, create a new flag, and push it after
