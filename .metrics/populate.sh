@@ -4,7 +4,6 @@ set -ue # its like javascript, everything is allowed unless you prevent it.
 
 topdir=$(git rev-parse --show-toplevel)
 
-
 cd $topdir
 # setup: persist the scripts between commits
 mkdir -p tmp
@@ -17,7 +16,7 @@ git log --format=oneline --since=2020-01-01 | tac | awk '{print $1}' > tmp/commi
 cd tmp/.metrics
 
 # do stuff with the commits
-for commit in $(cat $topdir/commit-list)
+for commit in $(cat $topdir/tmp/commit-list)
 do
   git checkout $commit
   # python script pulls from env variables, export those
@@ -27,7 +26,7 @@ do
 done
 
 cd $topdir
-git checkout ci-results
+git checkout $ci_branch
 
 # replace this file stuff with whatever it is you want to do to get it to the right place in the
 # repo
