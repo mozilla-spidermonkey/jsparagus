@@ -43,6 +43,14 @@ from .grammar import (Grammar,
 from . import emit
 from .runtime import ACCEPT, ErrorToken
 
+def keep_until(iterable, pred):
+    """Filter an iterable generator or list and keep all elements until the first
+    time the predicate becomes true, including the element where the predicate
+    is true. All elements after are skipped."""
+    for e in iterable:
+        yield e
+        if pred(e):
+            return
 
 # *** Operations on grammars **************************************************
 
@@ -1491,22 +1499,41 @@ class StateAndTransitions:
         "nonterminals", # Non-terminals map.
         "epsilon",      # List of epsilon transitions with associated actions.
         "locations",    # Ordered set of LRItems (grammar position).
+        "delayed_actions", # Ordered set of Actions which are pushed to the
+                        # next state after a conflict.
         "backedges",    # List of back edges and whether these are expected to
                         # be on the parser stack or not.
+        "_hash",        # Hash to identify states which have to be merged. This
+                        # hash is composed of LRItems of the LR0 grammar, and
+                        # actions performed on it since.
     ]
 
-    def __init__(self, index):
+    def __init__(self, index, locations, delayed_actions = OrderedFrozenSet()):
+        assert isinstance(locations, OrderedFrozenSet)
+        assert isinstance(delayed_actions, OrderedFrozenSet)
         self.index = index
         self.terminals = {}
         self.nonterminals = {}
         self.epsilon = []
-        self.locations = None
+        self.locations = locations
+        self.delayed_actions = delayed_actions
         self.backedges = set()
+        # NOTE: The hash of a state depends on its location in the LR0
+        # parse-table, as well as the actions which have not yet been executed.
+        def hashed_content():
+            for item in sorted(self.locations):
+                yield item.prod_index
+                yield item.offset
+            yield "delayed_actions"
+            for action in sorted(delayed_actions):
+                yield hash(action)
+
+        self._hash = hash(tuple(hashed_content()))
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
         # TODO: We could easily allow having a state with non-terminal
-        # transition and other epslon transitions, as the non-terminal shift
+        # transition and other epsilon transitions, as the non-terminal shift
         # transitions are a form of condition based on the fact that a
         # non-terminal, produced by a reduce action is consumed by the
         # automaton.
@@ -1557,6 +1584,17 @@ class StateAndTransitions:
         return "{}{}:\n{}".format(self.index, conflict, "\n".join([
             "\t{} --> {}".format(k, s) for k, s in self.edges()]))
 
+    def __eq__(self, other):
+        if sorted(self.locations) != sorted(other.locations):
+            return False
+        if sorted(self.delayed_actions) != sorted(other.delayed_actions):
+            return False
+        return True
+
+    def __hash__(self):
+        return self._hash
+
+
 class Action:
     __slots__ = [
         "read",    # Set of trait names which are consumed by this action.
@@ -1572,6 +1610,9 @@ class Action:
     def is_condition(self):
         "Unordered condition, which accept or not to reach the next state."
         return False
+    def condition(self):
+        "Return the conditional action."
+        raise TypeError("Action::condition_flag not implemented")
     def update_stack(self):
         "Change the parser stack, and resume at a different location. If this function
         is defined, then the function resume_with should be implemented."
@@ -1615,10 +1656,17 @@ class Action:
         return True
 
     def __hash__(self):
-        return hash(tuple(
-            [self.__class__, "rd"] + self.read + ["wr"] + self.write +
-            [repr(getattr(self, s)) for s in self.__slots__]
-        ))
+        def hashed_content():
+            yield self.__class__
+            yield "rd"
+            for alias in self.read:
+                yield alias
+            yield "wd"
+            for alias in self.write:
+                yield alias
+            for s in self.__slots__:
+                yield repr(getattr(self, s))
+        return hash(tuple(hashed_content()))
 
 class Reduce(Action):
     """Define a reduce operation which pops N elements of he stack and pushes one
@@ -1651,6 +1699,8 @@ class Lookahead(Action):
         self.accept = accept
     def is_condition(self):
         return True
+    def condition(self):
+        return self
     def __str__(self):
         return "Lookahead({}, {})".format(self.sequences, self.accept)
     def shifted_action(self, shifted_terms):
@@ -1676,6 +1726,8 @@ class FilterFlag(Action):
         self.accept = accept
     def is_condition(self):
         return True
+    def condition(self):
+        return self
     def __str__(self):
         return "FilterFlag({}, {})".format(self.flag, self.accept)
 
@@ -1730,10 +1782,14 @@ class Seq(Action):
         write = [ wr for a in actions for wr in a.write ]
         super().__init__(read, write)
         self.actions = tuple(actions)   # Ordered list of actions to execute.
-        assert all([not a.is_condition() for a in actions])
+        assert all([not a.is_condition() for a in actions[1:]])
         assert all([not a.update_stack() for a in actions[:-1]])
     def __str__(self):
         return "Seq({})".format(repr(self.actions))
+    def is_condition(self):
+        return self.actions[0].is_condition()
+    def condition(self):
+        return self.actions[0]
     def update_stack(self):
         return self.actions[-1].update_stack()
     def reduce_with(self):
@@ -1890,29 +1946,6 @@ class LR0Generator:
 #
 APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
 
-# A Lane table is a structure used to represent the conflicting and add context
-# surrounding these conflicting states.
-#
-class LaneTable:
-    __slots__ = "table", "actions", "states", "successors"
-
-    def __init__(self, table, start_state):
-        self.table = table
-        self.states = [start_state]
-        # List of actions to be executed.
-        self.actions = []
-        self.successors = {} # Map states with their list of successors.
-
-    def increase_lookahead(self):
-        for s in self.states:
-            for term, to in self.table.states[s].edges():
-                if isinstance(term, Action):
-                    # Add the action to the list of actions to be executed, if
-                    # it matches the expectation.
-                    pass
-                elif not isinstance(term, Nt):
-                    pass
-
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
     side we have the current state, and on the other we have the expected
@@ -1948,6 +1981,8 @@ class ParseTable:
         "actions",
         # Map of state identifier to the corresponding object.
         "states",
+        # Map of state object to the corresponding identifer.
+        "state_cache",
         # List of states which are the entry point of the state machine.
         "goals",
         # List of terminals.
@@ -1974,11 +2009,23 @@ class ParseTable:
                 return True
         return False
 
-    def new_state(self):
-        "Create a new state with a given index."
+    def new_state(self, locations, delayed_actions = OrderedFrozenSet()):
+        "Get or create state with an LR0 location and delayed actions. Returns a tuple
+        where the first element is whether the element is newly created, and
+        the second element is the State object."
         index = len(self.states)
-        state = StateAndTransitions(index)
-        self.states.append(state)
+        state = StateAndTransitions(index, locations, delayed_actions)
+        try:
+            return False, self.state_cache[state]
+        except KeyError:
+            self.state_cache[state] = state
+            self.states.append(state)
+            return True, state
+
+    def get_state(self, locations, delayed_actions = OrderedFrozenSet()):
+        "Like new_state(), but only returns the state without returning whether it is
+        newly created or not."
+        _, state = self.new_state(locations, delayed_actions)
         return state
 
     def add_edge(src, term, dest):
@@ -2019,19 +2066,15 @@ class ParseTable:
         assert isinstance(grammar.grammar, Grammar)
 
         goals = grammar.grammar.goals()
-        goals = [ (nt, self.new_state()) for nt in goals ]
         self.goals = []
 
-        # Ensure that identical set of LR ITems will map to the same state.
-        lr0_cache = {}
         # Temporarily record tuples of (LR0Generator, StateAndTransition)
         # objects used for visiting the grammar.
         todo = collections.deque()
         # Record the starting goals in the todo list.
-        for nt, s in goals:
+        for nt in goals:
             it = LR0Generator.start(grammar, nt)
-            s.locations = it.lr_items
-            lr0_cache[it] = s
+            s = self.get_state(it.lr_items)
             todo.append((it, s))
             self.goals.append(s.index)
 
@@ -2046,12 +2089,8 @@ class ParseTable:
                 if verbose:
                     print("\nVisiting:\n{}".format(s_it))
                 for k, sk_it in s_it.transitions().items():
-                    if sk_it in lr0_cache:
-                        sk = lr0_cache[sk_it]
-                    else:
-                        sk = self.new_state()
-                        sk.locations = sk_it.lr_items
-                        lr0_cache[sk_it] = sk
+                    is_new, sk = self.new_state(sk_it.lr_items)
+                    if is_new:
                         todo.append((sk_it, sk))
 
                     # Add the edge from s to sk with k.
@@ -2097,8 +2136,24 @@ class ParseTable:
         return APS([edge], [edge], [], [], replay)
 
     def aps_visitor(self, parent_aps, aps, visit):
-        """Push an APS based on the lookahead or actions to be executed, the `pred` and
-        `shifted` functions are used as a way to control the recursion."""
+        """Visit all the states of the parse table, as-if we were running a
+        Generalized LR parser.
+
+        However, instead parsing content, we use this algorithm to generate
+        both the content which remains to be parsed as well as the context
+        which might lead us to be in the state which from which we started.
+
+        This algorithm takes an APS (Abstract Parser State), and consider all
+        edges of the parse table, unless restricted by one of the previously
+        encountered actions. These restrictions, such as replayed lookahead or
+        the path which might be reduced are used for filtering out states which
+        are not handled by this parse table.
+
+        For each edge, this functions recursively calls it-self and calls the
+        visit functions to know whether to stop or continue, and to capture the
+        result.
+
+        """
         cont, any_action = visit(parent_aps, aps)
         if not cont:
             return
@@ -2115,14 +2170,14 @@ class ParseTable:
             new_sh = sh[-1] + [edge]
             to = state.terminals[term]
             to = StackedEdge(to, None, True)
-            new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
+            new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
             self.aps_visitor(aps, new_aps, visit)
         elif term in state.nonterminals:
             edge = StackedEdge(last_edge.src, term, True)
             new_sh = sh[-1] + [edge]
             to = state.nonterminals[term]
             to = StackedEdge(to, None, True)
-            new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
+            new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
             self.aps_visitor(aps, new_aps, visit)
         elif term is None:
             for term, to in itertools.chains(state.terminals, state.nonterminals):
@@ -2139,6 +2194,8 @@ class ParseTable:
                 continue
             edge = StackedEdge(last_edge.src, a, False)
             new_sh = sh[-1] + [edge]
+            # TODO: Add support for Lookahead and flag manipulation rules, as
+            # both of these would invalide potential reduce paths.
             if a.update_stack():
                 for path, to in self.reduce_path(state, a):
                     # reduce_paths contains the chains of state shifted,
@@ -2198,7 +2255,240 @@ class ParseTable:
         self.aps_visitor(self.aps_empty(), self.aps_start(s))
         return record
 
-    def fix_inconsistent_state(self, s, todo):
+    def fix_with_context(self, s, aps_lanes):
+        # This strategy is about using context information. By using chains of
+        # reduce actions, we are able to increase the knowledge of the stack
+        # content. The stack content is the context which can be used to
+        # determine how to consider a reduction. The stack content is also
+        # called a lane, as defined in the Lane Table algorithm.
+        #
+        # To add context information to the current graph, we add flags
+        # manipulation actions.
+        #
+        # Consider each edge as having an implicit function which can map one
+        # flag value to another. The following implements a unification
+        # algorithm which is attempting to solve the question of what is the
+        # flag value, and where it should be changed.
+        #
+        # NOTE: (nbp) I would not be surprised if there is a more specialized
+        # algorithm, but I failed to find one so far, and this problem
+        # definitely looks like a unification problem.
+        Id = collections.namedtuple("Id", "edge")
+        Eq = collections.namedtuple("Eq", "flag_in edge flag_out")
+        Var = collections.namedtuple("Var", "n")
+        SubSt = collections.namedtuple("SubSt", "var by")
+
+        # Unify expression, and return one substitution if both expressions
+        # can be unified.
+        def unify_expr(expr1, expr2, swapped = False):
+            if isinstance(expr1, Eq) and isinstance(expr2, Id):
+                if expr1.edge != expr2.edge:
+                    # Different edges are ok, but produce no substituions.
+                    return True
+                if isinstance(expr1.flag_in, Var):
+                    return SubSt(expr1.flag_in, expr1.flag_out)
+                if isinstance(expr1.flag_out, Var):
+                    return SubSt(expr1.flag_out, expr1.flag_in)
+                # We are unifying with a relation which consider the current
+                # function as an identity function. Having different values as
+                # input and output fails the unification rule.
+                return expr1.flag_out == expr1.flag_in:
+            if isinstance(expr1, Eq) and isinstance(expr2, Eq):
+                if expr1.edge != expr2.edge:
+                    # Different edges are ok, but produce no substituions.
+                    return True
+                if expr1.flag_in == None and isinstance(expr2.flag_in, Var):
+                    return SubSt(expr2.flag_in, None)
+                if expr1.flag_out == None and isinstance(expr2.flag_out, Var):
+                    return SubSt(expr2.flag_out, None)
+                if expr1.flag_in == expr2.flag_in:
+                    if isinstance(expr1.flag_out, Var):
+                        return SubSt(expr1.flag_out, expr2.flag_out)
+                    elif isinstance(expr2.flag_out, Var):
+                        return SubSt(expr2.flag_out, expr1.flag_out)
+                    # Reject solutions which are not deterministic. We do not
+                    # want the same input flag to have multiple outputs.
+                    return expr1.flag_out == expr2.flag_out
+                if expr1.flag_out == expr2.flag_out:
+                    if isinstance(expr1.flag_in, Var):
+                        return SubSt(expr1.flag_in, expr2.flag_in)
+                    elif isinstance(expr2.flag_in, Var):
+                        return SubSt(expr2.flag_in, expr1.flag_in)
+                    return True
+            if not swapped:
+                return unify_expr(expr2, expr1, True)
+            return True
+
+        # Apply substituion rule to an expression.
+        def subst_expr(subst, expr):
+            if expr == subst.var:
+                return True, subst.by
+            if isinstance(expr, Eq):
+                subst1, flag_in = subst_expr(subst, expr.flag_in)
+                subst2, flag_out = subst_expr(subst, expr.flag_out)
+                return subst1 or subst2, Eq(flag_in, expr.edge, flag_out)
+            return False, expr
+
+        # Add an expression to an existing knowledge based which is relying on
+        # a set of free variables.
+        def unify_with(expr, knowledge, free_vars):
+            old_knowledge = knowledge
+            old_free_Vars = free_vars
+            while True:
+                subst = None
+                for rel in knowledge:
+                    subst = unify_expr(rel, expr)
+                    if subst == False:
+                        raise Error("Failed to find a coherent solution")
+                    if subst == True:
+                        continue
+                    break
+                else:
+                    return knowledge + [expr], free_vars
+                free_vars = [fv for fv in free_vars if fv != subst.var]
+                # Substitue variables, and re-add rules which have substituted
+                # vars to check the changes to other rules, in case 2 rules are
+                # now in conflict or in case we can propagate more variable
+                # changes.
+                subst_rules = [subst_expr(subst, k) for k in knowledge]
+                knowledge = [rule for changed, rule in subst_rule if not changed]
+                for changed, rule in subst_rule:
+                    if not changed:
+                        continue
+                    knowledge, free_vars = unify_with(rule, knowledge, free_vars)
+
+        # Register boundary conditions as part of the knowledge based, i-e that
+        # reduce actions are expecting to see the flag value matching the
+        # reduced non-terminal, and that we have no flag value at the start of
+        # every lane head.
+        #
+        # TODO: Catch exceptions from the unify function in case we do not yet
+        # have enough context to disambiguate.
+        rules = []
+        free_vars = []
+        last_free = 0
+        maybe_id_edges = set()
+        nts = set()
+        for aps in aps_lanes:
+            assert len(aps.stack) >= 1
+            flag_in = None
+            for edge in aps.stack[-1]:
+                i = last_free
+                last_free += 1
+                free_vars.append(Var(i))
+                rule = Eq(flag_in, edge, Var(i))
+                rules, free_vars = unify_with(rule, rules, free_vars)
+                flag_in = Var(i)
+                if flag_in != None:
+                    maybe_id_edges.add(Id(edge))
+            edge = aps.stack[-1]
+            nt = edge.term.reduce_with()
+            rule = Eq(nt, edge, None)
+            rules, free_vars = unify_with(rule, rules, free_vars)
+            nts.add(nt)
+
+        # We want to produce a parse table where most of the node are ignoring
+        # the content of the flag which is being added. Thus we want to find a
+        # solution where most edges are the identical function.
+        def fill_with_id_functions(rules, free_vars, maybe_id_edges):
+            min_rules, min_vars = rules, free_vars
+            for num_id_edges in reversed(range(len(maybe_id_edges))):
+                for id_edges in itertools.combinations(edges, num_id_edges):
+                    try:
+                        for edge in id_edges:
+                            new_rules, new_free_vars = unify_with(rule, rules, free_vars)
+                            if new_free_vars == []:
+                                return new_rules, new_free_vars
+                            if len(new_free_vars) < len(min_free_vars):
+                                min_vars = new_free_vars
+                                min_rules = new_rules
+                    except:
+                        pass
+            return rules, free_vars
+
+        rules, free_vars = fill_with_id_functions(rules, free_vars, maybe_id_edges)
+        if free_vars != []:
+            raise Error("Hum … maybe we can try to iterate over the remaining free-variable.")
+        print("debug: Great we found a solution for a reduce-reduce conflict")
+
+        # The set of rules describe the function that each edge is expected to
+        # support. If there is an Id(edge), then we know that we do not have to
+        # change the graph for the given edge. If the rule is Eq(A, edge, B),
+        # then we have to (filter A & pop) and push B, except if A or B is
+        # None.
+        #
+        # For each edge, collect the set of rules concerning the edge to
+        # determine which edges have to be transformed to add the filter&pop
+        # and push actions.
+        edge_rules = defaultdict(lambda: [])
+        for rule in rules:
+            if isinstance(rule, Id):
+                edge_rules[rule.edge] = None
+            elif isinstance(rule, Eq):
+                if edge_rules[rule.edge] != None:
+                    edge_rules[rule.edge].append(rule)
+
+        flag_name = self.get_flag_for(nts)
+        for edge, rules in edge_rules.items():
+            # If the edge is an identity function, then skip doing any
+            # modifications on it.
+            if rules == None:
+                continue
+            # Otherwise, create a new state and transition for each mapping.
+            src = self.states[edge.src]
+            dest = src[edge.term]
+            dest_state = self.states[dest]
+            # TODO: Add some information to avoid having identical hashes as
+            # the destination.
+            actions = []
+            for rule in OrderedFrozenSet(rules):
+                assert isinstance(rule, Eq)
+                seq = []
+                if rule.flag_in != None:
+                    seq.append(FilterFlag(flag_name, True))
+                    if rule.flag_in != rule.flag_out:
+                        seq.append(PopFlag(flag_name))
+                if rule.flag_out != None and rule.flag_in != rule.flag_out:
+                    seq.append(PushFlag(flag_name, rule.flag_out))
+                actions.append(Seq(seq))
+            # Assert that we do not map flag_in more than once.
+            assert len(set(eq.flag_in for eq in rules)) < len(rules)
+            # Create the new state and add edges.
+            is_new, switch = self.new_state(dest.locations, OrderedFrozenSet(actions))
+            assert is_new
+            for seq in actions:
+                self.add_edge(switch, seq, dest)
+
+            # Replace the edge from src to dest, by an edge from src to the
+            # newly created switch state, which then decide which flag to set
+            # before going to the destination target.
+            self.replace_edge(src, edge.term, switch)
+        pass
+
+    def fix_with_lookahead(self, s, aps_lanes):
+        # Find the list of terminals following each actions (even reduce
+        # actions).
+        assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
+
+        # For each terminal, associate a set of state and actions which would
+        # have to be executed.
+        terminals_map = defaultdict(lambda: [])
+        for aps in aps_lanes:
+            actions = keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0])
+            terminals_map[aps.lookahead[0]].append(actions)
+
+        #
+        # For each elements of the set of state and actions, create a new state
+        # which merges all the combinations.
+        #
+        # For each action:
+        #   Create a new state with only the corresponding action as a successor.
+        #   For each lookahead:
+        #     If it exists in the current state, copy the target state content to the action's state.
+        #   If any lookahead overlapped, add the state to the todo list.
+        pass
+
+    def fix_inconsistent_state(self, s):
         # Fix inconsistent states works one state at a time. The goal is to
         # achieve the same method as the Lane Tracer, but instead of building a
         # table to then mutate the parse state, we mutate the parse state
@@ -2224,243 +2514,10 @@ class ParseTable:
         aps_lanes = self.lanes(s)
         assert aps_lanes != []
         if all_reduce and not any_shift:
-            # This strategy is about using context information. By using chains
-            # of reduce actions, we are able to increase the knowledge of the
-            # stack content. The stack content is the context which can be used
-            # to determine how to consider a reduction. The stack content is
-            # also called a lane, as defined in the Lane Table algorithm.
-            #
-            # To add context information to the current graph, we add flags
-            # manipulation actions.
-            #
-            # Consider each edge as having an implicit function which can map
-            # one flag value to another. The following implements a unification
-            # algorithm which is attempting to solve the question of what is
-            # the flag value, and where it should be changed.
-            #
-            # NOTE: (nbp) I would not be surprised if there is a more specialized
-            # algorithm, but I failed to find one so far, and this problem
-            # definitely looks like a unification problem.
-            Id = collections.namedtuple("Id", "edge")
-            Eq = collections.namedtuple("Eq", "flag_in edge flag_out")
-            Var = collections.namedtuple("Var", "n")
-            SubSt = collections.namedtuple("SubSt", "var by")
-
-            # Unify expression, and return one substitution if both expressions
-            # can be unified.
-            def unify_expr(expr1, expr2, swapped = False):
-                if isinstance(expr1, Eq) and isinstance(expr2, Id):
-                    if expr1.edge != expr2.edge:
-                        # Different edges are ok, but produce no substituions.
-                        return True
-                    if isinstance(expr1.flag_in, Var):
-                        return SubSt(expr1.flag_in, expr1.flag_out)
-                    if isinstance(expr1.flag_out, Var):
-                        return SubSt(expr1.flag_out, expr1.flag_in)
-                    # We are unifying with a relation which consider
-                    # the current function as an identity function.
-                    # Having different values as input and output fails
-                    # the unification rule.
-                    return expr1.flag_out == expr1.flag_in:
-                if isinstance(expr1, Eq) and isinstance(expr2, Eq):
-                    if expr1.edge != expr2.edge:
-                        # Different edges are ok, but produce no substituions.
-                        return True
-                    if expr1.flag_in == None and isinstance(expr2.flag_in, Var):
-                        return SubSt(expr2.flag_in, None)
-                    if expr1.flag_out == None and isinstance(expr2.flag_out, Var):
-                        return SubSt(expr2.flag_out, None)
-                    if expr1.flag_in == expr2.flag_in:
-                        if isinstance(expr1.flag_out, Var):
-                            return SubSt(expr1.flag_out, expr2.flag_out)
-                        elif isinstance(expr2.flag_out, Var):
-                            return SubSt(expr2.flag_out, expr1.flag_out)
-                        # Reject solutions which are not deterministic. We
-                        # do not want the same input flag to have multiple
-                        # outputs.
-                        return expr1.flag_out == expr2.flag_out
-                    if expr1.flag_out == expr2.flag_out:
-                        if isinstance(expr1.flag_in, Var):
-                            return SubSt(expr1.flag_in, expr2.flag_in)
-                        elif isinstance(expr2.flag_in, Var):
-                            return SubSt(expr2.flag_in, expr1.flag_in)
-                        return True
-                if not swapped:
-                    return unify_expr(expr2, expr1, True)
-                return True
-
-            # Apply substituion rule to an expression.
-            def subst_expr(subst, expr):
-                if expr == subst.var:
-                    return True, subst.by
-                if isinstance(expr, Eq):
-                    subst1, flag_in = subst_expr(subst, expr.flag_in)
-                    subst2, flag_out = subst_expr(subst, expr.flag_out)
-                    return subst1 or subst2, Eq(flag_in, expr.edge, flag_out)
-                return False, expr
-
-            # Add an expression to an existing knowledge based which is relying
-            # on a set of free variables.
-            def unify_with(expr, knowledge, free_vars):
-                old_knowledge = knowledge
-                old_free_Vars = free_vars
-                while True:
-                    subst = None
-                    for rel in knowledge:
-                        subst = unify_expr(rel, expr)
-                        if subst == False:
-                            raise Error("Failed to find a coherent solution")
-                        if subst == True:
-                            continue
-                        break
-                    else:
-                        return knowledge + [expr], free_vars
-                    free_vars = [fv for fv in free_vars if fv != subst.var]
-                    # Substitue variables, and re-add rules which have
-                    # substituted vars to check the changes to other rules, in
-                    # case 2 rules are now in conflict or in case we can
-                    # propagate more variable changes.
-                    subst_rules = [subst_expr(subst, k) for k in knowledge]
-                    knowledge = [rule for changed, rule in subst_rule if not changed]
-                    for changed, rule in subst_rule:
-                        if not changed:
-                            continue
-                        knowledge, free_vars = unify_with(rule, knowledge, free_vars)
-
-            # Register boundary conditions as part of the knowledge based, i-e
-            # that reduce actions are expecting to see the flag value matching
-            # the reduced non-terminal, and that we have no flag value at the
-            # start of every lane head.
-            #
-            # TODO: Catch exceptions from the unify function in case we do not
-            # yet have enough context to disambiguate.
-            rules = []
-            free_vars = []
-            last_free = 0
-            maybe_id_edges = set()
-            nts = set()
-            for aps in aps_lanes:
-                assert len(aps.stack) >= 1
-                flag_in = None
-                for edge in aps.stack[-1]:
-                    i = last_free
-                    last_free += 1
-                    free_vars.append(Var(i))
-                    rule = Eq(flag_in, edge, Var(i))
-                    rules, free_vars = unify_with(rule, rules, free_vars)
-                    flag_in = Var(i)
-                    if flag_in != None:
-                        maybe_id_edges.add(Id(edge))
-                edge = aps.stack[-1]
-                nt = edge.term.reduce_with()
-                rule = Eq(nt, edge, None)
-                rules, free_vars = unify_with(rule, rules, free_vars)
-                nts.add(nt)
-
-            # We want to produce a parse table where most of the node are
-            # ignoring the content of the flag which is being added. Thus we
-            # want to find a solution where most edges are the identical
-            # function.
-            def fill_with_id_functions(rules, free_vars, maybe_id_edges):
-                min_rules, min_vars = rules, free_vars
-                for num_id_edges in reversed(range(len(maybe_id_edges))):
-                    for id_edges in itertools.combinations(edges, num_id_edges):
-                        try:
-                            for edge in id_edges:
-                                new_rules, new_free_vars = unify_with(rule, rules, free_vars)
-                                if new_free_vars == []:
-                                    return new_rules, new_free_vars
-                                if len(new_free_vars) < len(min_free_vars):
-                                    min_vars = new_free_vars
-                                    min_rules = new_rules
-                        except:
-                            pass
-                return rules, free_vars
-
-            rules, free_vars = fill_with_id_functions(rules, free_vars, maybe_id_edges)
-            if free_vars != []:
-                raise Error("Hum … maybe we can try to iterate over the remaining free-variable.")
-            print("debug: Great we found a solution for a reduce-reduce conflict")
-
-            # The set of rules describe the function that each edge is expected
-            # to support. If there is an Id(edge), then we know that we do not
-            # have to change the graph for the given edge. If the rule is Eq(A,
-            # edge, B), then we have to (filter A & pop) and push B, except if
-            # A or B is None.
-            #
-            # For each edge, collect the set of rules concerning the edge to
-            # determine which edges have to be transformed to add the
-            # filter&pop and push actions.
-            edge_rules = defaultdict(lambda: [])
-            for rule in rules:
-                if isinstance(rule, Id):
-                    edge_rules[rule.edge] = None
-                elif isinstance(rule, Eq):
-                    if edge_rules[rule.edge] != None:
-                        edge_rules[rule.edge].append(rule)
-
-            flag_name = self.get_flag_for(nts)
-            for edge, rules in edge_rules.items():
-                # If the edge is an identity function, then skip doing any
-                # modifications on it.
-                if rules == None:
-                    continue
-                # Otherwise, create a new state and transition for each
-                # mapping.
-                src = self.states[edge.src]
-                dest = src[edge.term]
-                dest_state = self.states[dest]
-                # TODO: Add some information to avoid having identical
-                # hashes as the destination.
-                switch = self.new_state()
-                switch.locations = dest.locations
-                for rule in OrderedFrozenSet(rules):
-                    assert isinstance(rule, Eq)
-                    seq = []
-                    if rule.flag_in != None:
-                        seq.append(FilterFlag(flag_name, True))
-                        if rule.flag_in != rule.flag_out:
-                            seq.append(PopFlag(flag_name))
-                    if rule.flag_out != None and rule.flag_in != rule.flag_out:
-                        seq.append(PushFlag(flag_name, rule.flag_out))
-                    self.add_edge(switch, Seq(seq), dest)
-
-                # Replace the edge from src to dest, by an edge from src to the
-                # newly created switch state, which then decide which flag to
-                # set before going to the destination target.
-                self.replace_edge(src, edge.term, switch)
-
-
-
-            # For disjoint lane heads, create a new flag, and push it after
-            # each lane head, pop it before all the reduce action which are
-            # reducing to the lane head. Then a filter in front of the
-            # inconsistent reduce action to remove conflicts.
-            #
-            # TODO: For the moment do not even try, and just fail.
-            # For non-disjoint lane heads, shift the equivalent non-terminals
-            # (or create one to represent the ambiguous state?) and move both
-            # edges after the reduced non-terminal.
-            return
-
+            self.fix_with_context(s, aps_lanes)
         else:
             assert any_shift
-            # Find the list of terminals following each actions (even reduce
-            # actions).
-            #
-            # For each terminal, associate a set of state and actions which
-            # would have to be executed.
-            #
-            # For each elements of the set of state and actions, create a new
-            # state which merges all the combinations.
-            #
-            # For each action:
-            #   Create a new state with only the corresponding action as a successor.
-            #   For each lookahead:
-            #     If it exists in the current state, copy the target state content to the action's state.
-            #   If any lookahead overlapped, add the state to the todo list.
-            #
-            # TODO: How do we prevent loops?
+            self.fix_with_lookahead(s, aps_lanes)
 
 
     def fix_inconsistent_table(self, verbose, progress):
@@ -2487,9 +2544,7 @@ class ParseTable:
                 assert self.states[s].is_inconsistent()
                 if verbose:
                     print("\nFixing state {}".format(self.states[s]))
-                lookaround = self.build_lookaround_table(s)
-                decision_tree = self.build_decision_tree(lookaround)
-                self.fix_inconsistent_state(s, decision_tree)
+                self.fix_inconsistent_state(s)
 
         consume(visit_table(), progress)
 
