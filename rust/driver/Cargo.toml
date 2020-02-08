@@ -7,6 +7,8 @@ edition = "2018"
 [dependencies]
 ast = { path = "../ast" }
 bumpalo = "2.6.0"
+rustyline = "6.0.0"
+rustyline-derive = "0.3.0"
 emitter = { path = "../emitter" }
 parser = { path = "../parser" }
 interpreter = { path = "../interpreter" }

@@ -12,7 +12,12 @@ use ast::{
 };
 use bumpalo::Bump;
 use emitter;
-use parser::{parse_script, ParseError, ParseOptions};
+use parser::{is_partial_script, parse_script, ParseOptions};
+
+use rustyline::error::ReadlineError;
+use rustyline::validate::{ValidationContext, ValidationResult, Validator};
+use rustyline::Editor;
+use rustyline_derive::{Completer, Helper, Highlighter, Hinter};
 
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
@@ -125,14 +130,39 @@ fn handle_script<'alloc>(script: Script<'alloc>) {
     }
 }
 
-pub fn read_print_loop() {
-    loop {
+#[derive(Completer, Helper, Highlighter, Hinter)]
+struct InputValidator {}
+
+impl Validator for InputValidator {
+    fn validate(&self, ctx: &mut ValidationContext) -> Result<ValidationResult, ReadlineError> {
         let allocator = &Bump::new();
-        match parser::read_script_interactively(allocator, "js> ", "..> ") {
-            Err(ParseError::UnexpectedEnd) => {
-                println!();
-                break;
-            }
+        match is_partial_script(allocator, ctx.input()) {
+            Ok(true) => Ok(ValidationResult::Incomplete),
+            // We treat ParseErrors as "valid" so that they
+            // can be handled by the REPL function.
+            _ => Ok(ValidationResult::Valid(None)),
+        }
+    }
+}
+
+pub fn read_print_loop() {
+    let h = InputValidator {};
+    let mut rl = Editor::new();
+    rl.set_helper(Some(h));
+
+    loop {
+        let input = rl.readline("> ");
+        if let Err(err) = input {
+            eprintln!("error: {:?}", err);
+            break;
+        }
+
+        let input = input.unwrap();
+        rl.add_history_entry(input.as_str());
+
+        let allocator = &Bump::new();
+        let script = parse_script(allocator, &input, &ParseOptions::new());
+        match script {
             Err(err) => {
                 eprintln!("error: {}", err);
             }

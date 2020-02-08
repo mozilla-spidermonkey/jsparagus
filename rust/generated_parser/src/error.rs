@@ -1,12 +1,10 @@
 use crate::stack_value_generated::AstError;
 use crate::DeclarationKind;
 use crate::Token;
-use std::{convert::Infallible, error::Error, fmt, io};
+use std::{convert::Infallible, error::Error, fmt};
 
 #[derive(Debug)]
 pub enum ParseError<'alloc> {
-    IOError(io::Error),
-
     // Lexical errors
     IllegalCharacter(char),
     InvalidEscapeSequence,
@@ -48,7 +46,6 @@ pub enum ParseError<'alloc> {
 impl<'alloc> ParseError<'alloc> {
     pub fn message(&self) -> String {
         match self {
-            ParseError::IOError(io_error) => format!("{}", io_error),
             ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
             ParseError::InvalidEscapeSequence => format!("invalid escape sequence"),
             ParseError::UnterminatedString => format!("unterminated string literal"),
@@ -116,12 +113,6 @@ impl<'alloc> PartialEq for ParseError<'alloc> {
 impl<'alloc> fmt::Display for ParseError<'alloc> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message())
-    }
-}
-
-impl<'alloc> From<io::Error> for ParseError<'alloc> {
-    fn from(err: io::Error) -> ParseError<'alloc> {
-        ParseError::IOError(err)
     }
 }
 
