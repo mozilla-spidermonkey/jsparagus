@@ -380,9 +380,7 @@ def pass_(ast):
         write(0, "#![allow(unused_variables)]")
         write(0, "#![allow(dead_code)]")
         write(0, "")
-        write(0, "use crate::arena;")
         write(0, "use crate::types::*;")
-        write(0, "use bumpalo;")
         write(0, "")
         write(0, "pub trait Pass<'alloc> {")
         for name, type_decl in ast.type_decls.items():
@@ -416,93 +414,6 @@ def pass_(ast):
             write(1, "}")
             write(0, "")
 
-        write(0, "}")
-        write(0, "")
-
-        # --- PostfixPass ---
-
-        def to_postfix_type(ty):
-            if ty.name == 'Vec':
-                res = to_postfix_type(ty.params[0])
-                return None if res is None else Type("Vec", [res])
-            elif ty.name == 'Option':
-                res = to_postfix_type(ty.params[0])
-                return None if res is None else Type("Option", [res])
-            elif ty.name in RUST_BUILTIN_TYPES:
-                return None
-            else:
-                return Type("Self::Value")
-
-        def append_postfix_pass(indent, ty, var):
-            if ty.name == 'Vec':
-                write(indent, "for item in {} {{", var)
-                append_postfix_pass(indent + 1, ty.params[0], "item")
-                write(indent, "}")
-            elif ty.name == 'Option':
-                write(indent, "if let Some(item) = {} {{", var)
-                append_postfix_pass(indent + 1, ty.params[0], "item")
-                write(indent, "}")
-            elif ty.name in RUST_BUILTIN_TYPES:
-                pass
-            else:
-                write(indent, "result.append({});", var)
-
-        write(0, "pub trait PostfixPassMonoid: Default {")
-        write(1, "fn append(&mut self, other: Self);")
-        write(0, "}")
-        write(0, "")
-        write(0, "pub trait PostfixPass<'alloc> {")
-        write(1, "type Value: PostfixPassMonoid + 'alloc;")
-        for type_decl in ast.type_decls.values():
-            if type_decl.name == "Void":
-                continue
-            type_decl.write_postfix_pass_method(ast, write, to_method_name,
-                                                to_postfix_type, append_postfix_pass)
-        write(0, "}")
-        write(0, "")
-
-        # --- PostfixPassVisitor ---
-        def call_postfix_visitor(ty, var):
-            if ty.name == 'Vec':
-                res = call_postfix_visitor(ty.params[0], "item")
-                if res is None:
-                    return None
-                return ("{ "
-                        + "let allocator: &bumpalo::Bump = self.allocator; "
-                        + "arena::map_vec({}, |item| {}, allocator) ".format(var, res)
-                        + "}")
-            elif ty.name == 'Option':
-                res = call_postfix_visitor(ty.params[0], "item")
-                return None if res is None else "{}.as_mut().map(|item| {})".format(var, res)
-            elif ty.name in RUST_BUILTIN_TYPES:
-                return None
-            elif ty.name == 'Box':
-                return "self.{}({})".format(to_method_name(ty.params[0].name), var)
-            else:
-                return "self.{}({})".format(to_method_name(ty.name), var)
-
-        write(0, "pub struct PostfixPassVisitor<'alloc, T: PostfixPass<'alloc>> {")
-        write(1, "allocator: &'alloc bumpalo::Bump,")
-        write(1, "pass: T,")
-        write(0, "}")
-        write(0, "")
-        write(0, "impl<'alloc, T: PostfixPass<'alloc>> PostfixPassVisitor<'alloc, T> {")
-        write(1, "pub fn new(allocator: &'alloc bumpalo::Bump, pass: T) -> Self {")
-        write(2, "Self { allocator, pass }")
-        write(1, "}")
-        write(0, "")
-        for name, type_decl in ast.type_decls.items():
-            if name == "Void":
-                # Hack in a quick fix
-                continue
-
-            write(1, "pub fn {}(&mut self, ast: &mut {}) -> T::Value {{",
-                  to_method_name(name),
-                  Type(name).to_rust_type(ast))
-            type_decl.write_postfix_pass_visitor_method_body(
-                write, to_method_name, call_postfix_visitor)
-            write(1, "}")
-            write(0, "")
         write(0, "}")
         write(0, "")
 
@@ -559,36 +470,6 @@ class Struct(AggregateTypeDecl):
     def write_rust_pass_method_body(self, write, emit_call):
         for name, ty in self.fields.items():
             emit_call(2, ty, "&mut ast.{}".format(name))
-
-    def write_postfix_pass_method(
-            self, ast, write, to_method_name, to_postfix_type, append_postfix_pass):
-        write(1, "fn {}(&self,", to_method_name(self.name))
-        for field, ty in self.fields.items():
-            postfix_type = to_postfix_type(ty)
-            if postfix_type is None:
-                postfix_type = "&mut {}".format(ty.to_rust_type(ast))
-            elif isinstance(postfix_type, Type):
-                postfix_type = postfix_type.to_rust_type(ast)
-            write(2, "{}: {},", field, postfix_type)
-        write(1, ") -> Self::Value {")
-        write(2, "let mut result = Self::Value::default();")
-        for name, ty in self.fields.items():
-            append_postfix_pass(2, ty, name)
-        write(2, "result")
-        write(1, "}")
-        write(0, "")
-
-    def write_postfix_pass_visitor_method_body(
-            self, write, to_method_name, call_postfix_visitor):
-        index = 0
-        for field_name, ty in self.fields.items():
-            res = call_postfix_visitor(ty, "(&mut ast.{})".format(field_name))
-            if res is None:
-                res = "&mut ast.{}".format(field_name)
-            write(2, "let a{} = {};", index, res)
-            index += 1
-        write(2, "self.pass.{}({})", to_method_name(self.name),
-              ", ".join("a{}".format(i) for i in range(index)))
 
 
 class Enum(AggregateTypeDecl):
@@ -651,52 +532,6 @@ class Enum(AggregateTypeDecl):
                 write(3, "{}::{}(ast) => {{", self.name, variant_name)
                 emit_call(4, variant_type, "ast")
                 write(3, "}")
-        write(2, "}")
-
-    def write_postfix_pass_method(
-            self, ast, write, to_method_name, to_postfix_type, append_postfix_pass):
-        for variant_name, variant_ty in self.variants.items():
-            if isinstance(variant_ty, dict):
-                write(1, "fn {}(", to_method_name(variant_name))
-                write(2, "&self,")
-                for field, field_ty in variant_ty.items():
-                    postfix_type = to_postfix_type(field_ty)
-                    if postfix_type is None:
-                        postfix_type = "&mut {}".format(field_ty.to_rust_type(ast))
-                    elif isinstance(postfix_type, Type):
-                        postfix_type = postfix_type.to_rust_type(ast)
-                    write(2, "{}: {},", field, postfix_type)
-                write(1, ") -> Self::Value {")
-                write(2, "let mut result = Self::Value::default();")
-                for field, field_ty in variant_ty.items():
-                    append_postfix_pass(2, field_ty, field)
-                write(2, "result")
-                write(1, "}")
-                write(0, "")
-
-
-    def write_postfix_pass_visitor_method_body(
-            self, write, to_method_name, call_postfix_visitor):
-        write(2, "match ast {")
-        for variant_name, ty in self.variants.items():
-            if ty is None:
-                write(3, "{}::{} {{ .. }} => T::Value::default(),", self.name, variant_name)
-            elif isinstance(ty, dict):
-                write(3, "{}::{} {{ {}, .. }} => {{", self.name, variant_name, ", ".join(ty.keys()))
-
-                index = 0
-                for field_name, field_ty in ty.items():
-                    res = call_postfix_visitor(field_ty, "({})".format(field_name))
-                    if res is None:
-                        res = field_name
-                    write(4, "let a{} = {};", index, res)
-                    index += 1
-                write(4, "self.pass.{}({})", to_method_name(variant_name),
-                      ", ".join("a{}".format(i) for i in range(index)))
-
-                write(3, "}")
-            else:
-                write(3, "{}::{}(ast) => {},", self.name, variant_name, call_postfix_visitor(ty, "ast"))
         write(2, "}")
 
 
