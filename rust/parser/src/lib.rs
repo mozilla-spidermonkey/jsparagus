@@ -18,7 +18,6 @@ use generated_parser::{
 };
 pub use generated_parser::{ParseError, Result};
 use lexer::Lexer;
-use std::io::{self, Write};
 
 pub struct ParseOptions {}
 impl ParseOptions {
@@ -64,52 +63,18 @@ fn parse<'alloc>(
     parser.close(tokens.offset())
 }
 
-/// Prompt the user for some JS code and read a script from stdin.
-/// Returns the parsed script.
-///
-/// Errors can be `ParseError::UnexpectedEnd` if the user typed Ctrl-D,
-/// `ParseError::IOError` if reading stdin or writing stdout failed, or
-/// any other `ParseError` if the input isn't valid JS.
-pub fn read_script_interactively<'alloc>(
+pub fn is_partial_script<'alloc>(
     allocator: &'alloc bumpalo::Bump,
-    prompt: &str,
-    continue_prompt: &str,
-) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
-    TABLES.check();
-
+    source: &'alloc str,
+) -> Result<'alloc, bool> {
     let mut parser = Parser::new(AstBuilder::new(allocator), START_STATE_SCRIPT);
-    let mut byte_total = 0;
-
-    print!("{}", prompt);
+    let mut tokens = Lexer::new(allocator, source.chars());
     loop {
-        let mut line = String::new();
-        io::stdout().flush()?;
-        if io::stdin().read_line(&mut line)? == 0 {
-            return Err(ParseError::UnexpectedEnd);
-        }
-        let line_str: &'alloc str = arena::alloc_str(allocator, &line);
-
-        let mut tokens = Lexer::with_offset(allocator, line_str.chars(), byte_total);
-        byte_total += line_str.len();
-        loop {
-            let t = tokens.next(&parser)?;
-            if t.terminal_id == TerminalId::End {
-                break;
-            }
-            parser.write_token(&t)?;
-        }
-        if parser.can_close() {
+        let t = tokens.next(&parser)?;
+        if t.terminal_id == TerminalId::End {
             break;
         }
-        print!("{}", continue_prompt);
+        parser.write_token(&t)?;
     }
-    match parser.close(0)? {
-        StackValue::Script(s) => Ok(s),
-        other => {
-            // Can't happen due to invariants provided by the parser generator;
-            // the only finish state reachable from START_STATE_SCRIPT produces
-            // a Script.
-            panic!("unexpected StackValue: {:?}", other);
-        }
-    }
+    Ok(!parser.can_close())
 }
