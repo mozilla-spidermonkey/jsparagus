@@ -1594,6 +1594,7 @@ class StateAndTransitions:
             "\t{} --> {}".format(k, s) for k, s in self.edges()]))
 
     def __eq__(self, other):
+        assert isinstance(other, StateAndTransitions)
         if sorted(self.locations) != sorted(other.locations):
             return False
         if sorted(self.delayed_actions) != sorted(other.delayed_actions):
@@ -1955,6 +1956,23 @@ class LR0Generator:
 #
 APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
 
+def aps_str(aps, name = "aps"):
+    return """{}.stack = [{}]
+{}.shift = [{}]
+{}.lookahead = [{}]
+{}.actions = [{}]
+{}.replay = [{}]
+    """.format(
+        name, ", ".join(repr(e) for e in aps.stack),
+        name, ", ".join(repr(e) for e in aps.shift),
+        name, ", ".join(repr(e) for e in aps.lookahead),
+        name, ", ".join(repr(e) for e in aps.actions),
+        name, ", ".join(repr(e) for e in aps.replay)
+    )
+
+def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
+    return "{}\n{}".format(header, "\n".join(aps_str(aps, name) for aps in aps_lanes))
+
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
     side we have the current state, and on the other we have the expected
@@ -2053,8 +2071,11 @@ class ParseTable:
     def replace_edge(self, src, term, dest):
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
-        old_dest = src[term]
-        self.states[old_dest].backedges.remove(Edge(src.index, term))
+        try:
+            old_dest = src[term]
+            self.states[old_dest].backedges.remove(Edge(src.index, term))
+        except:
+            pass
         if isinstance(term, Action):
             src.epsilon = [ (t, d) for t, d in src.epsilon if t != term ]
             src.epsilon.append((term, dest))
@@ -2067,13 +2088,13 @@ class ParseTable:
     def clear_edges(self, src):
         """Remove all existing edges, in order to replace them by new one. This is used
         when resolving shift-reduce conflicts."""
-        src = self.states[src]
+        assert isinstance(src, StateAndTransitions)
         for term, dest in src.edges():
             dest = self.states[dest]
             dest.backedges.remove(Edge(src.index, term))
-        self.terminals = {}
-        self.nonterminals = {}
-        self.epsilon = []
+        src.terminals = {}
+        src.nonterminals = {}
+        src.epsilon = []
 
     def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
@@ -2118,20 +2139,21 @@ class ParseTable:
                     self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
 
-    def shifted_path_to(self, n, right_of):
+    def shifted_path_to(self, state, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
         assert isinstance(right_of, list) and len(right_of) >= 1
+        assert isinstance(state, int)
         if n == 0:
             yield right_of
             return
         for edge in self.states[state].backedges:
             s_n = n - 1
             stacked = True
-            if isinstance(edge.term, Action):
+            if not self.term_is_stacked(edge.term):
                 s_n = n
                 stacked = False
             stacked_edge = StackedEdge(edge.src, edge.term, stacked)
-            for path in self.shifted_path_to_list(edge.src, s_n, [stacked_edge] + right_of):
+            for path in self.shifted_path_to(edge.src, s_n, [stacked_edge] + right_of):
                 yield path
 
     def reduce_path(self, state, action):
@@ -2140,11 +2162,11 @@ class ParseTable:
         action = action.reduce_with()
         assert isinstance(action, Reduce)
         depth = action.pop + action.replay
-        for path in self.shifted_path_to(depth, [StackedEdge(state, action, False)]):
+        for path in self.shifted_path_to(state.index, depth, [StackedEdge(state.index, action, False)]):
             head = self.states[path[0].src]
             assert action.nt in head.nonterminals
             to = head.nonterminals[action.nt]
-            yield path, to
+            yield path, StackedEdge(to, None, True)
 
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
@@ -2175,35 +2197,41 @@ class ParseTable:
         result.
 
         """
+        assert all(isinstance(st, StackedEdge) for st in aps.stack)
+        assert all(isinstance(sh, StackedEdge) for sh in aps.shift)
+        assert all(not isinstance(la, Action) for la in aps.lookahead)
+        assert all(isinstance(ac, StackedEdge) for ac in aps.actions)
+        assert all(not isinstance(rp, Action) for rp in aps.replay)
+        print(aps_str(aps, "\tvisitor"))
         cont, any_action = visit(parent_aps, aps)
         if not cont:
             return
         st, sh, la, ac, rp = aps
         if rp != []:
             term = rp[0]
-            rp = rp[-1]
+            rp = rp[1:]
         else:
             term = None
         last_edge = sh[-1]
         state = self.states[last_edge.src]
         if term in state.terminals:
             edge = StackedEdge(last_edge.src, term, True)
-            new_sh = sh[-1] + [edge]
+            new_sh = aps.shift[:-1] + [edge]
             to = state.terminals[term]
             to = StackedEdge(to, None, True)
             new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
             self.aps_visitor(aps, new_aps, visit)
         elif term in state.nonterminals:
             edge = StackedEdge(last_edge.src, term, True)
-            new_sh = sh[-1] + [edge]
+            new_sh = aps.shift[:-1] + [edge]
             to = state.nonterminals[term]
             to = StackedEdge(to, None, True)
             new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
             self.aps_visitor(aps, new_aps, visit)
         elif term is None:
-            for term, to in itertools.chains(state.terminals, state.nonterminals):
+            for term, to in itertools.chain(state.terminals.items(), state.nonterminals.items()):
                 edge = StackedEdge(last_edge.src, term, True)
-                new_sh = sh[-1] + [edge]
+                new_sh = aps.shift[:-1] + [edge]
                 to = StackedEdge(to, None, True)
                 new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
                 self.aps_visitor(aps, new_aps, visit)
@@ -2214,7 +2242,7 @@ class ParseTable:
             if not any_action and a != term:
                 continue
             edge = StackedEdge(last_edge.src, a, False)
-            new_sh = sh[-1] + [edge]
+            new_sh = aps.shift[:-1] + [edge]
             # TODO: Add support for Lookahead and flag manipulation rules, as
             # both of these would invalide potential reduce paths.
             if a.update_stack():
@@ -2236,8 +2264,7 @@ class ParseTable:
                     # pushed on the stack as our lookahead. These terms are
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
-                    new_replay = [ edge.term for edge in path if self.term_is_stacked(edge,term) ]
-                    new_replay = la[max(len(replay) - a.replay, 0):]
+                    new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - a.replay, 0)]
                     new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
@@ -2250,6 +2277,7 @@ class ParseTable:
     def lanes(self, state):
         """Compute the lanes from the amount of lookahead available. Only consider
         context when reduce states are encountered."""
+        assert isinstance(state, int)
         record = []
         def stop_lane_when(aps):
             # Check if there is any edge which got already visited. While this
@@ -2258,22 +2286,29 @@ class ParseTable:
             # be accepted, as well as all te space of previous states which can
             # be used to reach the current state. (TODO: verify this
             # hypothesis)
-            if len(aps.shifted) != 1 + len(set(zip(aps.shifted, aps.shifted[1:]))):
+            if len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:]))):
+                print("\tStop due to a loop in shift\n")
                 return True
             if len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:]))):
+                print("\tStop due to a loop in stack\n")
                 return True
-            if self.states[aps.shifted[-1]].epsilon != []:
+            if self.states[aps.shift[-1].src].epsilon != []:
+                print("\tContinue because {} is an inconsistent state\n".format(aps.shift[-1].src))
                 return False
             if len(aps.lookahead) <= 1:
+                print("\tContinue because lookahead (= {}) <= 1.\n".format(len(aps.lookahead)))
                 return False
+            print("\tStop because lookahead >= 2 and no epsilon on last shifted state.\n")
             return True
 
         def visit(parent_aps, aps):
             stop = stop_lane_when(aps)
             if stop:
+                print("lanes_visit stop:")
+                print(aps_str(parent_aps, "\tparent"))
                 record.append(parent_aps)
             return not stop, True
-        self.aps_visitor(self.aps_empty(), self.aps_start(s))
+        self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
         return record
 
     def fix_with_context(self, s, aps_lanes):
@@ -2441,7 +2476,7 @@ class ParseTable:
         # For each edge, collect the set of rules concerning the edge to
         # determine which edges have to be transformed to add the filter&pop
         # and push actions.
-        edge_rules = defaultdict(lambda: [])
+        edge_rules = collections.defaultdict(lambda: [])
         for rule in rules:
             if isinstance(rule, Id):
                 edge_rules[rule.edge] = None
@@ -2493,9 +2528,9 @@ class ParseTable:
 
         # For each shifted term, associate a set of state and actions which
         # would have to be executed.
-        shift_map = defaultdict(lambda: [])
+        shift_map = collections.defaultdict(lambda: [])
         for aps in aps_lanes:
-            actions = keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0])
+            actions = list(keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0]))
             assert isinstance(actions[-1], StackedEdge)
             assert actions[-1].term == aps.lookahead[0]
             term = aps.lookahead[0]
@@ -2517,39 +2552,59 @@ class ParseTable:
                     continue
                 new_actions.append(new_action)
             if accept:
-                shift_map[aps.lookahead[0]].append(new_actions)
-        self.clear_edges(s)
-        state = self.states[s]
+                target = self.states[new_actions[0].src][new_actions[0].term]
+                target = self.states[target]
+                shift_map[aps.lookahead[0]].append((target, new_actions))
 
         # Restore the new state machine based on a given state to use as a base
         # and the shift_map corresponding to edges.
         def restore_edges(state, shift_map):
-            for term, actions_list in shift_map.index():
+            assert isinstance(state, StateAndTransitions)
+            edges = {}
+            for term, actions_list in shift_map.items():
                 # Collect all the states reachable after shifting the term.
                 # Compute the unique name, based on the locations and actions
                 # which are delayed.
                 locations = OrderedSet()
                 delayed = OrderedSet()
-                new_shift_map = defaultdict(lambda: [])
-                for actions in actions_list:
-                    edge = actions[0]
-                    assert isinstance(edge, StackedEdge)
-                    target = self.states[edge.state][edge.term]
+                new_shift_map = collections.defaultdict(lambda: [])
+                recurse = False
+                for target, actions in actions_list:
+                    assert isinstance(target, StateAndTransitions)
                     locations |= target.locations
                     delayed |= target.delayed_actions
-                    if actions[1:] != []:
+                    if actions != []:
+                        # Pull edges, with delayed actions.
+                        edge = actions[0]
+                        assert isinstance(edge, StackedEdge)
                         for action in actions[1:]:
                             delayed.add(action)
-                        new_shift_map[edge.term].append(actions[1:])
+                        new_shift_map[edge.term].append((target, actions[1:]))
+                        recurse = True
+                    else:
+                        # Pull edges, as a copy of existing edges.
+                        for next_term, next_dest in target.edges():
+                            next_dest = self.states[next_dest]
+                            new_shift_map[next_term].append((next_dest, []))
 
+                locations = OrderedFrozenSet(locations)
+                delayed = OrderedFrozenSet(delayed)
                 is_new, new_target = self.new_state(locations, delayed)
-                self.add_edge(state, la, new_target)
-                if not is_new:
+                print("is_new = {}, index = {}".format(is_new, new_target.index))
+                edges[term] = new_target.index
+                if is_new or recurse:
                     restore_edges(new_target, new_shift_map)
 
+            print("clear_edges({})".format(state))
+            self.clear_edges(state)
+            for term, target in edges.items():
+                self.add_edge(state, term, target)
+            print("after adding edges: {}".format(state))
+
+        state = self.states[s]
         restore_edges(state, shift_map)
 
-    def fix_inconsistent_state(self, s):
+    def fix_inconsistent_state(self, s, verbose):
         # Fix inconsistent states works one state at a time. The goal is to
         # achieve the same method as the Lane Tracer, but instead of building a
         # table to then mutate the parse state, we mutate the parse state
@@ -2573,6 +2628,8 @@ class ParseTable:
         all_reduce = all( a.update_stack() for a, _ in state.epsilon )
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
         aps_lanes = self.lanes(s)
+        if verbose:
+            print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:"))
         assert aps_lanes != []
         if all_reduce and not any_shift:
             # TODO: If adding more context fails, we should fallback on using
@@ -2596,11 +2653,15 @@ class ParseTable:
             if state.is_inconsistent():
                 todo.append(state.index)
 
-        if verbose:
-            print("  Found {} inconsistent states.".format(len(todo)))
+        if verbose and todo:
+            print("""\nGrammar is inconsistent.
+\tNumber of States = {}
+\tNumber of inconsistencies found = {}""".format(
+                len(self.states), len(todo)))
 
         count = 0
         def visit_table():
+            nonlocal count
             while todo:
                 yield # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
@@ -2608,9 +2669,9 @@ class ParseTable:
                 assert self.states[s].is_inconsistent()
                 start_len = len(self.states)
                 if verbose:
-                    count += 1
+                    count = count + 1
                     print("\nFixing state {}".format(self.states[s]))
-                self.fix_inconsistent_state(s)
+                self.fix_inconsistent_state(s, verbose)
                 new_inconsistent_states = [
                     s.index for s in self.states[start_len:]
                     if s.is_inconsistent()
@@ -2622,7 +2683,9 @@ class ParseTable:
 
         consume(visit_table(), progress)
         if verbose:
-            print("\nGrammar is now consistent.\n\t# States = {}\n\t# Fixed inconsistencies = {}".format(
+            print("""\nGrammar is now consistent.
+\tNumber of States = {}
+\tNumber of inconsistencies solved = {}""".format(
                 len(self.states), count))
 
 
