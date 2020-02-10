@@ -2005,6 +2005,7 @@ class ParseTable:
     def __init__(self, grammar, verbose = False, progress = False):
         self.actions = []
         self.states = []
+        self.state_cache = {}
         self.goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
