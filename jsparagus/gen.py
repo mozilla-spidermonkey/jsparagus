@@ -1540,7 +1540,16 @@ class StateAndTransitions:
         if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
             return True
         elif len(self.epsilon) > 1:
-            if any([ not k.is_unordered_condition() for k, s in self.epsilon ]):
+            # If all the out-going edges are FilterFlags, with the same flag
+            # and different values, then this state remains consistent, as this
+            # can be implemented as a deterministic switch statement.
+            if any(not k.is_condition() for k, s in self.epsilon):
+                return True
+            if any(not isinstance(k.condition(), FilterFlag) for k, s in self.epsilon):
+                return True
+            if len(set(k.condition().flag for k, s in self.epsilon)) > 1:
+                return True
+            if len(self.epsilon) == len(set(k.condition().value for k, s in self.epsilon)):
                 return True
         return False
 
@@ -1719,17 +1728,17 @@ class Lookahead(Action):
 class FilterFlag(Action):
     """Define a filter which check for one value of the flag, and continue to the
     next state if the top of the flag stack matches the expected value."""
-    __slots__ = 'flag', 'accept'
-    def __init__(self, flag, accept):
+    __slots__ = 'flag', 'value'
+    def __init__(self, flag, value):
         super().__init__(["flag_" + flag], [])
         self.flag = flag,
-        self.accept = accept
+        self.value = value
     def is_condition(self):
         return True
     def condition(self):
         return self
     def __str__(self):
-        return "FilterFlag({}, {})".format(self.flag, self.accept)
+        return "FilterFlag({}, {})".format(self.flag, self.value)
 
 class PushFlag(Action):
     """Define an action which pushes a value on a stack dedicated to the flag. This
@@ -2028,7 +2037,7 @@ class ParseTable:
         _, state = self.new_state(locations, delayed_actions)
         return state
 
-    def add_edge(src, term, dest):
+    def add_edge(self, src, term, dest):
         assert isinstance(src, StateAndTransitions)
         assert term not in src
         assert isinstance(dest, int) and dest < len(self.states)
@@ -2040,7 +2049,7 @@ class ParseTable:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def replace_edge(src, term, dest):
+    def replace_edge(self, src, term, dest):
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
         old_dest = src[term]
@@ -2053,6 +2062,17 @@ class ParseTable:
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
+
+    def clear_edges(self, src):
+        "Remove all existing edges, in order to replace them by new one. This is used
+        when resolving shift-reduce conflicts."
+        src = self.states[src]
+        for term, dest in src.edges():
+            dest = self.states[dest]
+            dest.backedges.remove(Edge(src.index, term))
+        self.terminals = {}
+        self.nonterminals = {}
+        self.epsilon = []
 
     def get_flag_for(self.nts):
         nts = OrderedFrozenSet(nts)
@@ -2470,23 +2490,63 @@ class ParseTable:
         # actions).
         assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
 
-        # For each terminal, associate a set of state and actions which would
-        # have to be executed.
-        terminals_map = defaultdict(lambda: [])
+        # For each shifted term, associate a set of state and actions which
+        # would have to be executed.
+        shift_map = defaultdict(lambda: [])
         for aps in aps_lanes:
             actions = keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0])
-            terminals_map[aps.lookahead[0]].append(actions)
+            assert isinstance(actions[-1], StackedEdge)
+            assert actions[-1].term == aps.lookahead[0]
+            term = aps.lookahead[0]
+            # Change the order of the shifted term, shift all actions by 1 with
+            # the given lookahead term, in order to match the newly generated
+            # state machine.
+            #
+            # Shifting actions with the list of shifted terms is used to record
+            # the number of terms to be replayed, as well as verifying whether
+            # Lookahead filter actions should accept or reject this lane.
+            new_actions = [actions[-1]]
+            accept = True
+            for action in actions[1:]:
+                new_action = action.shifted_action([term])
+                if new_action == False:
+                    accept = False
+                    break
+                elif new_action == True:
+                    continue
+                new_actions.append(new_action)
+            if accept:
+                shift_map[aps.lookahead[0]].append(new_actions)
+        self.clear_edges(s)
+        state = self.states[s]
 
-        #
-        # For each elements of the set of state and actions, create a new state
-        # which merges all the combinations.
-        #
-        # For each action:
-        #   Create a new state with only the corresponding action as a successor.
-        #   For each lookahead:
-        #     If it exists in the current state, copy the target state content to the action's state.
-        #   If any lookahead overlapped, add the state to the todo list.
-        pass
+        # Restore the new state machine based on a given state to use as a base
+        # and the shift_map corresponding to edges.
+        def restore_edges(state, shift_map):
+            for term, actions_list in shift_map.index():
+                # Collect all the states reachable after shifting the term.
+                # Compute the unique name, based on the locations and actions
+                # which are delayed.
+                locations = OrderedSet()
+                delayed = OrderedSet()
+                new_shift_map = defaultdict(lambda: [])
+                for actions in actions_list:
+                    edge = actions[0]
+                    assert isinstance(edge, StackedEdge)
+                    target = self.states[edge.state][edge.term]
+                    locations |= target.locations
+                    delayed |= target.delayed_actions
+                    if actions[1:] != []:
+                        for action in actions[1:]:
+                            delayed.add(action)
+                        new_shift_map[edge.term].append(actions[1:])
+
+                is_new, new_target = self.new_state(locations, delayed)
+                self.add_edge(state, la, new_target)
+                if not is_new:
+                    restore_edges(new_target, new_shift_map)
+
+        restore_edges(state, shift_map)
 
     def fix_inconsistent_state(self, s):
         # Fix inconsistent states works one state at a time. The goal is to
@@ -2509,11 +2569,13 @@ class ParseTable:
         if not state.is_inconsistent():
             return
 
-        all_reduce = all([ a.update_stack() for a, _ in state.epsilon ])
+        all_reduce = all( a.update_stack() for a, _ in state.epsilon )
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
         aps_lanes = self.lanes(s)
         assert aps_lanes != []
         if all_reduce and not any_shift:
+            # TODO: If adding more context fails, we should fallback on using
+            # more lookahead.
             self.fix_with_context(s, aps_lanes)
         else:
             assert any_shift
