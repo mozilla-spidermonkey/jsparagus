@@ -2604,9 +2604,18 @@ class ParseTable:
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s = todo.popleft()
                 assert self.states[s].is_inconsistent()
+                start_len = len(self.states)
                 if verbose:
                     print("\nFixing state {}".format(self.states[s]))
                 self.fix_inconsistent_state(s)
+                new_inconsistent_states = [
+                    s.index for s in self.states[start_len:]
+                    if s.is_inconsistent()
+                ]
+                if verbose:
+                    print("\nAdding {} inconsistent states".format(len(new_inconsistent_states)))
+                for s in new_inconsistent_states:
+                    todo.append(s)
 
         consume(visit_table(), progress)
 
