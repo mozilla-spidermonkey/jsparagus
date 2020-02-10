@@ -20,8 +20,9 @@ else
   git rm -r !(.metrics|.git|tmp)
 
   cp .metrics/generated_README.md README.md
+  mkdir .metrics/badges
+  mkdir .metrics/count
 
-  cd $topdir
   git add .
   git commit -m"Initial commit for results branch"
 

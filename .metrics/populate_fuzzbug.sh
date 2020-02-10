@@ -10,9 +10,10 @@ url="https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues?labels=l
 
 curl $url > count/fuzzbug.json
 python fuzzbug_count_badge.py
+git add .
+git commit -m"Add Fuzzbug date"
 python fuzzbug_date_badge.py
 
-cd $topdir
 git add .
 
 git commit -m"Add Fuzzbug count"

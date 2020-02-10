@@ -1,7 +1,7 @@
-[![Rust](Rust Badge)](Rust CI Link)
-[![NotImplemented Counter](NotImplemented Badge)](NotImplemented Search)
-[![Fuzzbug days since](Fuzzbug Days Badge)](Fuzzbug)
-[![Fuzzbug open](Fuzzbug Open Badge)](Fuzzbug)
+[![Rust][Rust Badge]][Rust CI Link]
+[![NotImplemented Counter][NotImplemented Badge]][NotImplemented Search]
+[![Fuzzbug days since][Fuzzbug Days Badge]][Fuzzbugs]
+[![Fuzzbug open][Fuzzbug Open Badge]][Fuzzbugs]
 
 # Metrics
 

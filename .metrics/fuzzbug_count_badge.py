@@ -16,7 +16,7 @@ with open(read_filename, 'r') as f:
 data = {
     "schemaVersion": 1,
     "label": "Open FuzzBugs",
-    "message": open_fuzzbugs,
+    "message": str(open_fuzzbugs) if open_fuzzbugs > 0 else "None",
     "color": "green" if open_fuzzbugs > 0 else "yellow",
     "cacheSeconds": 1800,
 }
