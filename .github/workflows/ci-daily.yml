@@ -1,6 +1,9 @@
-name: NotImplemented
+name: CI Daily
 
-on: [push]
+on:
+  schedule:
+    # Run daily at 00:00
+    - cron:  '0 0 * * 0-6'
 
 jobs:
   build:
@@ -8,28 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
         python-version: "3.7"
-    - name: Get Count
-      run: |
-        find rust -iname '*.rs' -type f -exec cat {} + | grep -c -E "(Emit|Parse)Error::NotImplemented" > /tmp/count
-        git rev-parse HEAD > /tmp/commit
     - uses: actions/checkout@v2
       with:
         ref: ci-results
-    - name: Add NotImplemented count
+    - name: Get Fuzzbugs
       run: |
-        export total_count=$(cat /tmp/count)
-        export current_commit=$(cat /tmp/commit)
         cd .metrics
-        python badge.py
-        python count.py
+        # Only update this if it doesn't already exist.
+        # This action is only used to calculate the days since the last fuzzbug.
+        if [ ! -f count/fuzzbug.json ]; then
+          curl "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues?labels=libFuzzer&state=all" > count/fuzzbug.json
+        fi
+        python fuzzbug_daily.py
+        git add badges/fuzzbug_daily.json
+        git add count/fuzzbug.json
     - name: Commit files
       run: |
-        git add .metrics/badges/not-implemented.json
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "update NotImplemented Count" -a

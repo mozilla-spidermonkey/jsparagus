@@ -1,18 +1,26 @@
+[![Rust](Rust Badge)](Rust CI Link)
+[![NotImplemented Counter](NotImplemented Badge)](NotImplemented Search)
+[![Fuzzbug days since](Fuzzbug Days Badge)](Fuzzbug)
+[![Fuzzbug open](Fuzzbug Open Badge)](Fuzzbug)
+
 # Metrics
 
 This is the metrics directory. It follows the evolution of the repository separately from the
 repostory. You can find the actual metrics in the
 [`ci-results`](https://github.com/mozilla-spidermonkey/jsparagus/tree/ci-results) branch of the jsparagus project. This branch is automatically generated using the `create-ci-branch.sh` script found in this directory. If there are issues with your fork, you can remove the `ci-results` branch, and the ci will automatically rerun the `create-ci-branch` script to reset it. Do not push manula data to this repository, it will be lost.
 
-This is an area that you normally shouldn't need to touch. The files here are automatically invoked
-by the build system, and populates the `ci-results` branch. The idea here is that metrics will be frequently updated, and to reduce the noise in pull requests, this is kept separate from our normal work flow.
+If you find that the `ci-results` branch has disappeared or been corrupted somehow, you can reset it by deleting it and recreating it.
+
+```
+git branch -D ci-results
+cd .metrics
+./create-ci-branch.sh
+```
+
+The `create-ci-branch.sh` file creates the branch, prepares it, and populates it with data from the past.
 
 ## Making your own metrics
-If you need to add a new metric there are two things you need to ensure.
-
-The first is that you follow the pattern established in this repository. You can find template files in this folder under `/templates`. There you will find a template for badges, a template for a python script, and any others that might have been added.
-
-The second, is that you do not use data that can not be automatically recovered. We cannot rely on the `ci-results` branch always being present, therefore anything that you write must be recoverable on its own, either by relying on external APIs or through some other mechanism.
+Make sure you do not use data that can not be automatically recovered. We cannot rely on the `ci-results` branch always being present, therefore anything that you write must be recoverable on its own, either by relying on external APIs or through some other mechanism.
 
 Please update this README if you make any changes.
 
@@ -57,3 +65,11 @@ These are the types of data that this metrics folder tracks.
     * TODO: see comment about writing bytes to a file in [this repo](https://github.com/nbp/seqrec)
     * implementation is dependant on how we get the data. We need a robust solution for importing this data.
 
+
+[Rust Badge]: https://github.com/mozilla-spidermonkey/jsparagus/workflows/Rust/badge.svg
+[Rust CI Link]: https://github.com/mozilla-spidermonkey/jsparagus/actions?query=branch%3Amaster
+[NotImplemented Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcodehag%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fnot-implemented.json
+[NotImplemented Search]: https://github.com/mozilla-spidermonkey/jsparagus/search?q=notimplemented&unscoped_q=notimplemented
+[Fuzzbug days Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcodehag%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fsince-last-fuzzbug.json
+[Fuzzbug Open Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcodehag%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fopen-fuzzbug.json
+[Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/issues?utf8=%E2%9C%93&q=label%3AlibFuzzer+
