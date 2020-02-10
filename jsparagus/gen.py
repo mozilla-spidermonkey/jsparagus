@@ -1623,8 +1623,8 @@ class Action:
         "Return the conditional action."
         raise TypeError("Action::condition_flag not implemented")
     def update_stack(self):
-        "Change the parser stack, and resume at a different location. If this function
-        is defined, then the function resume_with should be implemented."
+        """Change the parser stack, and resume at a different location. If this function
+        is defined, then the function resume_with should be implemented."""
         return False
     def reduce_with(self):
         "Returns the non-terminal with which this action is reducing with."
@@ -1717,7 +1717,7 @@ class Lookahead(Action):
         new_seqs = []
         match = False
         for seq in self.sequences:
-            if shifted_terms[:len(seq)] = seq[:shift]:
+            if shifted_terms[:len(seq)] == seq[:shift]:
                 if seq[shift:] == []:
                     return self.accept
                 new_seqs.append(seq[shift:])
@@ -2019,9 +2019,9 @@ class ParseTable:
         return False
 
     def new_state(self, locations, delayed_actions = OrderedFrozenSet()):
-        "Get or create state with an LR0 location and delayed actions. Returns a tuple
+        """Get or create state with an LR0 location and delayed actions. Returns a tuple
         where the first element is whether the element is newly created, and
-        the second element is the State object."
+        the second element is the State object."""
         index = len(self.states)
         state = StateAndTransitions(index, locations, delayed_actions)
         try:
@@ -2032,8 +2032,8 @@ class ParseTable:
             return True, state
 
     def get_state(self, locations, delayed_actions = OrderedFrozenSet()):
-        "Like new_state(), but only returns the state without returning whether it is
-        newly created or not."
+        """Like new_state(), but only returns the state without returning whether it is
+        newly created or not."""
         _, state = self.new_state(locations, delayed_actions)
         return state
 
@@ -2064,8 +2064,8 @@ class ParseTable:
         self.states[dest].backedges.add(Edge(src.index, term))
 
     def clear_edges(self, src):
-        "Remove all existing edges, in order to replace them by new one. This is used
-        when resolving shift-reduce conflicts."
+        """Remove all existing edges, in order to replace them by new one. This is used
+        when resolving shift-reduce conflicts."""
         src = self.states[src]
         for term, dest in src.edges():
             dest = self.states[dest]
@@ -2074,7 +2074,7 @@ class ParseTable:
         self.nonterminals = {}
         self.epsilon = []
 
-    def get_flag_for(self.nts):
+    def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
         self.flags.add(nts)
         return "_".join(["flag", *nts])
@@ -2119,7 +2119,7 @@ class ParseTable:
 
     def shifted_path_to(self, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
-        assert isinstance(right_of, list) && len(right_of) >= 1
+        assert isinstance(right_of, list) and len(right_of) >= 1
         if n == 0:
             yield right_of
             return
@@ -2146,7 +2146,7 @@ class ParseTable:
             yield path, to
 
     def term_is_stacked(self, term):
-        return not isinstance(term, Action):
+        return not isinstance(term, Action)
 
     def aps_empty(self):
         return APS([], [], [], [], [])
@@ -2235,7 +2235,7 @@ class ParseTable:
                     # pushed on the stack as our lookahead. These terms are
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
-                    new_replay = [ edge.term for edge for path if self.term_is_stacked(edge,term) ]
+                    new_replay = [ edge.term for edge in path if self.term_is_stacked(edge,term) ]
                     new_replay = la[max(len(replay) - a.replay, 0):]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - a.replay, 0)]
@@ -2247,8 +2247,8 @@ class ParseTable:
                 self.aps_visitor(aps, new_aps, visit)
 
     def lanes(self, state):
-        "Compute the lanes from the amount of lookahead available. Only consider
-        context when reduce states are encountered."
+        """Compute the lanes from the amount of lookahead available. Only consider
+        context when reduce states are encountered."""
         record = []
         def stop_lane_when(aps):
             # Check if there is any edge which got already visited. While this
@@ -2312,7 +2312,7 @@ class ParseTable:
                 # We are unifying with a relation which consider the current
                 # function as an identity function. Having different values as
                 # input and output fails the unification rule.
-                return expr1.flag_out == expr1.flag_in:
+                return expr1.flag_out == expr1.flag_in
             if isinstance(expr1, Eq) and isinstance(expr2, Eq):
                 if expr1.edge != expr2.edge:
                     # Different edges are ok, but produce no substituions.
@@ -2598,6 +2598,7 @@ class ParseTable:
         if verbose:
             print("  Found {} inconsistent states.".format(len(todo)))
 
+        count = 0
         def visit_table():
             while todo:
                 yield # progress bar.
@@ -2606,6 +2607,7 @@ class ParseTable:
                 assert self.states[s].is_inconsistent()
                 start_len = len(self.states)
                 if verbose:
+                    count += 1
                     print("\nFixing state {}".format(self.states[s]))
                 self.fix_inconsistent_state(s)
                 new_inconsistent_states = [
@@ -2618,6 +2620,9 @@ class ParseTable:
                     todo.append(s)
 
         consume(visit_table(), progress)
+        if verbose:
+            print("\nGrammar is now consistent.\n\t# States = {}\n\t# Fixed inconsistencies = {}".format(
+                len(self.states), count))
 
 
 def generate_parser_states(grammar, *, verbose=False, progress=False):
