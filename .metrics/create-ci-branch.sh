@@ -18,6 +18,7 @@ else
 
   # clear out the repostory
   git rm -r !(.metrics|.git|tmp)
+  git rm -r .github
 
   cp .metrics/generated_README.md README.md
   mkdir .metrics/badges

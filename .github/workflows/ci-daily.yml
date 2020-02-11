@@ -1,9 +1,9 @@
 name: CI Daily
 
-on: [push]
-  #  schedule:
-  #    # Run daily at 00:00
-  #    - cron:  '0 0 * * 0-6'
+on:
+  schedule:
+    # Run daily at 00:00
+    - cron:  '0 0 * * 0-6'
 
 jobs:
   build:
@@ -26,15 +26,19 @@ jobs:
         if [ ! -f count/fuzzbug.json ]; then
           curl "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues?labels=libFuzzer&state=all" > count/fuzzbug.json
         fi
-        python fuzzbug_daily.py
-        git add badges/fuzzbug_date_badge.json
+        python fuzzbug_date_badge.py
+        git add badges/since-last-fuzzbug.json
         git add count/fuzzbug.json
     - name: Commit files
+      # fails if no files to commit
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "update NotImplemented Count" -a
     - name: Push changes
+      # fails if no files to commit
+      continue-on-error: true
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

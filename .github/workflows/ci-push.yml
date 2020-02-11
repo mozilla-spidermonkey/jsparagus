@@ -1,6 +1,9 @@
 name: NotImplemented
 
-on: [push]
+on:
+  push:
+      branches:
+      - master
 
 jobs:
   build:
@@ -39,12 +42,15 @@ jobs:
         git add badges/not-implemented.json
         git add count/not-implemented.json
     - name: Commit files
+      # fails if no files to commit
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "update NotImplemented Count" -a
     - name: Push changes
       uses: ad-m/github-push-action@master
+      continue-on-error: true
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: ci-results

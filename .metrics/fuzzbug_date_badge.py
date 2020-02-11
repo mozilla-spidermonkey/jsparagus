@@ -13,7 +13,7 @@ with open(read_filename, 'r') as f:
     # the last time we saw a fuzzbug regardless of status
     if count > 0:
         dt_format =  "%Y-%m-%dT%H:%M:%SZ"
-        fuzzbug_opened = filedata[count - 1]["created_at"]
+        fuzzbug_opened = filedata[0]["created_at"]
         fuzzbug_date = datetime.strptime(fuzzbug_opened, dt_format)
         today = datetime.today()
         days_since = (today - fuzzbug_date).days
@@ -31,9 +31,8 @@ def get_color(days):
 data = {
     "schemaVersion": 1,
     "label": "Days since last FuzzBug",
-    "message": str(days_since) if days_since else "Forever",
+    "message": str(days_since) if days_since != None else "Forever",
     "color": get_color(days_since),
-    "cacheSeconds": 1800,
 }
 
 with open(write_since, 'w') as f:
