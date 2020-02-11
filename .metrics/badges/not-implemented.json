@@ -1,6 +1,6 @@
 {
-    "color": "yellow", 
-    "schemaVersion": 1, 
-    "message": "109", 
-    "label": "NotImplemented"
+    "schemaVersion": 1,
+    "label": "NotImplemented",
+    "message": "109",
+    "color": "yellow"
 }
