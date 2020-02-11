@@ -78,9 +78,27 @@ impl EmitOptions {
 pub struct EmitResult {
     pub bytecode: Vec<u8>,
     pub strings: Vec<String>,
+
+    // Line and column numbers for the first character of source.
+    pub lineno: usize,
+    pub column: usize,
+
+    pub main_offset: usize,
+    pub max_fixed_slots: u32,
     pub maximum_stack_depth: u32,
+    pub body_scope_index: u32,
     pub num_ic_entries: u32,
     pub num_type_sets: u32,
+
+    pub strict: bool,
+    pub bindings_accessed_dynamically: bool,
+    pub has_call_site_obj: bool,
+    pub is_for_eval: bool,
+    pub is_module: bool,
+    pub is_function: bool,
+    pub has_non_syntactic_scope: bool,
+    pub needs_function_environment_objects: bool,
+    pub has_module_goal: bool,
 }
 
 /// The error of bytecode-compilation.
@@ -114,11 +132,28 @@ impl InstructionWriter {
             bytecode: self.bytecode,
             strings: self.strings,
 
+            lineno: 1,
+            column: 0,
+
+            main_offset: 0,
+            max_fixed_slots: 0,
+
             // These values probably can't be out of range for u32, as we would
             // have hit other limits first. Release-assert anyway.
             maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
+            body_scope_index: 0,
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
             num_type_sets: self.num_type_sets.try_into().unwrap(),
+
+            strict: false,
+            bindings_accessed_dynamically: false,
+            has_call_site_obj: false,
+            is_for_eval: false,
+            is_module: false,
+            is_function: false,
+            has_non_syntactic_scope: false,
+            needs_function_environment_objects: false,
+            has_module_goal: false,
         }
     }
 
