@@ -252,7 +252,7 @@ def loc_trait(ast):
         write(0, "use crate::types::*;")
         write(0, "use std::borrow::{Borrow, BorrowMut};")
         write(0, "")
-        write(0, "pub trait SourceLocationAccessor<'alloc> {")
+        write(0, "pub trait SourceLocationAccessor {")
         write(1, "fn set_loc(&mut self, start: SourceLocation, end: SourceLocation);")
         write(1, "fn get_loc(&self) -> SourceLocation;")
         write(0, "}")
@@ -271,7 +271,7 @@ def loc_trait(ast):
             rust_ty = ty.to_rust_type(ast)
             decl = ast.type_decls[ty.name]
 
-            write(0, "impl<'alloc> SourceLocationAccessor<'alloc> for {} {{", rust_ty)
+            write(0, "impl<'alloc> SourceLocationAccessor for {} {{", rust_ty)
             if isinstance(decl, Struct):
                 write(1, "fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {")
                 write(2, "self.loc.start = start.start;")
@@ -329,9 +329,9 @@ def loc_trait(ast):
         for ty in extra_types:
             define_accessor(ty)
 
-        write(0, "impl<'alloc, T> SourceLocationAccessor<'alloc> for arena::Box<'alloc, T>")
+        write(0, "impl<'alloc, T> SourceLocationAccessor for arena::Box<'alloc, T>")
         write(0, "where")
-        write(1, "T: SourceLocationAccessor<'alloc>,")
+        write(1, "T: SourceLocationAccessor,")
         write(0, "{")
         write(1, "fn set_loc(&mut self, start: SourceLocation, end: SourceLocation) {")
         write(2, "(self.borrow_mut() as &mut T).set_loc(start, end)")
