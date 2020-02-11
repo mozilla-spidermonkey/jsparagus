@@ -45,6 +45,8 @@ class Type(TypeBase):
         params_str = ", ".join(p.to_rust_type(ast) for p in self.params)
         if self.name == 'String':
             return "&'alloc str"
+        if self.name == 'Option':
+            return "Option<{}>".format(params_str)
         if self.name == 'Box':
             return "arena::Box<'alloc, {}>".format(params_str)
         if self.name == 'Vec':
@@ -349,11 +351,23 @@ def pass_(ast):
         def to_method_name(name):
             return "visit_{}".format(to_snek_case(name))
 
+        def to_enum_method_name(enum_name, variant_name):
+            return "visit_enum_{}_variant_{}".format(to_snek_case(enum_name),
+                                                     to_snek_case(variant_name))
+
         def to_enter_method_name(name):
             return "enter_{}".format(to_snek_case(name))
 
+        def to_enter_enum_method_name(enum_name, variant_name):
+            return "enter_enum_{}_variant_{}".format(to_snek_case(enum_name),
+                                                     to_snek_case(variant_name))
+
         def to_leave_method_name(name):
             return "leave_{}".format(to_snek_case(name))
+
+        def to_leave_enum_method_name(enum_name, variant_name):
+            return "leave_enum_{}_variant_{}".format(to_snek_case(enum_name),
+                                                     to_snek_case(variant_name))
 
         # --- Pass ---
 
@@ -373,6 +387,23 @@ def pass_(ast):
             else:
                 write(indent, "self.{}({});", to_method_name(ty.name), var)
 
+        def emit_variant_dict_call(indent, enum_name, variant_name,
+                                   variant_type):
+            write(indent, "self.{}(",
+                  to_enum_method_name(enum_name, variant_name))
+            for field_name, field_ty in variant_type.items():
+                write(indent + 1, "{},", field_name)
+            write(indent, ")")
+
+        def emit_variant_tuple_call(indent, enum_name, variant_name, param):
+            write(indent, "self.{}({})",
+                  to_enum_method_name(enum_name, variant_name),
+                  param)
+
+        def emit_variant_none_call(indent, enum_name, variant_name):
+            write(indent, "self.{}()",
+                  to_enum_method_name(enum_name, variant_name))
+
         write(0, "// WARNING: This file is auto-generated.")
         write(0, "")
         write(0, "#![allow(unused_mut)]")
@@ -380,6 +411,7 @@ def pass_(ast):
         write(0, "#![allow(unused_variables)]")
         write(0, "#![allow(dead_code)]")
         write(0, "")
+        write(0, "use crate::arena;")
         write(0, "use crate::types::*;")
         write(0, "")
         write(0, "pub trait Pass<'alloc> {")
@@ -394,7 +426,10 @@ def pass_(ast):
             write(2, "self.{}(ast);",
                   to_enter_method_name(type_decl.name))
 
-            type_decl.write_rust_pass_method_body(write, emit_call)
+            type_decl.write_rust_pass_method_body(write, emit_call,
+                                                  emit_variant_dict_call,
+                                                  emit_variant_tuple_call,
+                                                  emit_variant_none_call)
 
             write(2, "self.{}(ast);",
                   to_leave_method_name(type_decl.name))
@@ -413,6 +448,110 @@ def pass_(ast):
                   Type(name).to_rust_type(ast))
             write(1, "}")
             write(0, "")
+
+            if isinstance(type_decl, Enum):
+                for variant_name, variant_type in type_decl.variants.items():
+                    if variant_type is None:
+                        write(1, "fn {}(&mut self) {{",
+                              to_enum_method_name(type_decl.name,
+                                                  variant_name)),
+                        write(1, "}")
+                        write(0, "")
+                    elif isinstance(variant_type, dict):
+                        def write_field_params(indent, write, variant_type,
+                                               ast):
+                            for field_name, field_ty in variant_type.items():
+                                write(2, "{}: &mut {},",
+                                      field_name, field_ty.to_rust_type(ast))
+
+                        write(1, "fn {}(",
+                              to_enum_method_name(type_decl.name,
+                                                  variant_name)),
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+
+                        write(2, "self.{}(",
+                              to_enter_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        for field_name, field_ty in variant_type.items():
+                            write(3 , "{},", field_name)
+                        write(2, ");")
+
+                        type_decl.write_rust_pass_variant_dict_method_body(
+                            emit_call, variant_type)
+
+                        write(2, "self.{}(",
+                              to_leave_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        for field_name, field_ty in variant_type.items():
+                            write(3, "{},", field_name)
+                        write(2, ");")
+
+                        write(1, "}")
+                        write(0, "")
+
+                        write(1, "fn {}(",
+                              to_enter_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+                        write(1, "}")
+                        write(0, "")
+
+                        write(1, "fn {}(",
+                              to_leave_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+                        write(1, "}")
+                        write(0, "")
+                    else:
+                        def write_field_params(indent, write, variant_type,
+                                               ast):
+                            write(2, "ast: &mut {},",
+                                  variant_type.to_rust_type(ast))
+
+                        write(1, "fn {}(",
+                              to_enum_method_name(type_decl.name,
+                                                  variant_name)),
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+
+                        write(2, "self.{}(ast);",
+                              to_enter_enum_method_name(type_decl.name,
+                                                        variant_name))
+
+                        type_decl.write_rust_pass_variant_tuple_method_body(
+                            emit_call, variant_type, "ast")
+
+                        write(2, "self.{}(ast);",
+                              to_leave_enum_method_name(type_decl.name,
+                                                        variant_name))
+
+                        write(1, "}")
+                        write(0, "")
+
+                        write(1, "fn {}(",
+                              to_enter_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+                        write(1, "}")
+                        write(0, "")
+
+                        write(1, "fn {}(",
+                              to_leave_enum_method_name(type_decl.name,
+                                                        variant_name))
+                        write(2, "&mut self,")
+                        write_field_params(2, write, variant_type, ast)
+                        write(1, ") {")
+                        write(1, "}")
+                        write(0, "")
 
         write(0, "}")
         write(0, "")
@@ -467,7 +606,10 @@ class Struct(AggregateTypeDecl):
         write(0, "}")
         write(0, "")
 
-    def write_rust_pass_method_body(self, write, emit_call):
+    def write_rust_pass_method_body(self, write, emit_call,
+                                    emit_variant_dict_call,
+                                    emit_variant_tuple_call,
+                                    emit_variant_none_call):
         for name, ty in self.fields.items():
             emit_call(2, ty, "&mut ast.{}".format(name))
 
@@ -518,22 +660,37 @@ class Enum(AggregateTypeDecl):
         write(0, "}")
         write(0, "")
 
-    def write_rust_pass_method_body(self, write, emit_call):
+    def write_rust_pass_method_body(self, write, emit_call,
+                                    emit_variant_dict_call,
+                                    emit_variant_tuple_call,
+                                    emit_variant_none_call):
         write(2, "match ast {")
         for variant_name, variant_type in self.variants.items():
             if variant_type is None:
-                write(3, "{}::{} {{ .. }} => (),", self.name, variant_name)
+                write(3, "{}::{} {{ .. }} => {{", self.name, variant_name)
+                emit_variant_none_call(4, self.name, variant_name)
+                write(3, "}")
             elif isinstance(variant_type, dict):
                 write(3, "{}::{} {{ {}, .. }} => {{", self.name, variant_name, ', '.join(variant_type.keys()))
-                for field_name, field_ty in variant_type.items():
-                    emit_call(4, field_ty, field_name)
+                emit_variant_dict_call(4, self.name, variant_name, variant_type);
                 write(3, "}")
             else:
                 write(3, "{}::{}(ast) => {{", self.name, variant_name)
-                emit_call(4, variant_type, "ast")
+                emit_variant_tuple_call(4, self.name, variant_name, "ast")
                 write(3, "}")
         write(2, "}")
 
+    def write_rust_pass_variant_dict_method_body(self, emit_call,
+                                                 variant_type):
+        for field_name, field_ty in variant_type.items():
+            if field_ty.name == 'Vec':
+                emit_call(2, field_ty, '{}.iter_mut()'.format(field_name))
+            else:
+                emit_call(2, field_ty, field_name)
+
+    def write_rust_pass_variant_tuple_method_body(self, emit_call,
+                                                  variant_type, param):
+        emit_call(2, variant_type, param)
 
 class Ast:
     def __init__(self, ast_json):
