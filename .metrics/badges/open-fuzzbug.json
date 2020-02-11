@@ -1,6 +1,6 @@
 {
-    "color": "green", 
-    "schemaVersion": 1, 
-    "message": "None", 
-    "label": "Open FuzzBugs"
+    "schemaVersion": 1,
+    "label": "Open FuzzBugs",
+    "message": "None",
+    "color": "green"
 }
