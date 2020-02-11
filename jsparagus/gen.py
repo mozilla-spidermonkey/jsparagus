@@ -1585,11 +1585,8 @@ class StateAndTransitions:
 
     def __str__(self):
         conflict = ""
-        if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
-            conflict = " (shift-reduce)"
-        elif len(self.epsilon) > 1:
-            if any([ not k.is_unordered_condition() for k, s in self.epsilon ]):
-                conflict = " (reduce-reduce)"
+        if self.is_inconsistent():
+            conflict = " (inconsistent)"
         return "{}{}:\n{}".format(self.index, conflict, "\n".join([
             "\t{} --> {}".format(k, s) for k, s in self.edges()]))
 
@@ -1677,6 +1674,9 @@ class Action:
             for s in self.__slots__:
                 yield repr(getattr(self, s))
         return hash(tuple(hashed_content()))
+
+    def __repr__(self):
+        return str(self)
 
 class Reduce(Action):
     """Define a reduce operation which pops N elements of he stack and pushes one
@@ -2260,12 +2260,13 @@ class ParseTable:
                     # nonterminal. When reducing, the stack is resetted to
                     # head, and the nonterminal `term.nt` is pushed, to resume
                     # in the state `to`.
-                    print("Compare shifted path, with reduced path:\n\tshifted = [{}]\n\treduced = [{}], \n\taction = {},\n\tto = {}\n".format(
-                        ", ".join(repr(e) for e in prev_sh),
-                        ", ".join(repr(e) for e in path),
-                        str(a),
-                        self.states[to.src],
-                    ))
+
+                    # print("Compare shifted path, with reduced path:\n\tshifted = [{}]\n\treduced = [{}], \n\taction = {},\n\tto = {}\n".format(
+                    #     ", ".join(repr(e) for e in prev_sh),
+                    #     ", ".join(repr(e) for e in path),
+                    #     str(a),
+                    #     self.states[to.src],
+                    # ))
                     if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         # If the reduced production does not match the shifted
                         # state, then this reduction does not apply. This is
@@ -2317,12 +2318,12 @@ class ParseTable:
             has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
             has_lookahead = len(aps.lookahead) >= 1
             stop = has_shift_loop or has_stack_loop or has_lookahead
-            print("\t{} = {} or {} or {}".format(
-                stop, has_shift_loop, has_stack_loop, has_lookahead))
-            print(aps_str(aps, "\tvisitor"))
+            # print("\t{} = {} or {} or {}".format(
+            #     stop, has_shift_loop, has_stack_loop, has_lookahead))
+            # print(aps_str(aps, "\tvisitor"))
             if stop:
-                print("lanes_visit stop:")
-                print(aps_str(aps, "\trecord"))
+                # print("lanes_visit stop:")
+                # print(aps_str(aps, "\trecord"))
                 record.append(aps)
             return not stop, True
         self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
@@ -2550,7 +2551,8 @@ class ParseTable:
             actions = list(keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0]))
             assert isinstance(actions[-1], StackedEdge)
             assert actions[-1].term == aps.lookahead[0]
-            term = aps.lookahead[0]
+            src = actions[-1].src
+            term = actions[-1].term
             # Change the order of the shifted term, shift all actions by 1 with
             # the given lookahead term, in order to match the newly generated
             # state machine.
@@ -2558,33 +2560,36 @@ class ParseTable:
             # Shifting actions with the list of shifted terms is used to record
             # the number of terms to be replayed, as well as verifying whether
             # Lookahead filter actions should accept or reject this lane.
-            new_actions = [actions[-1]]
+            new_actions = []
             accept = True
-            for action in actions[1:]:
-                new_action = action.shifted_action([term])
-                if new_action == False:
+            for edge in actions[:-1]:
+                new_term = edge.term.shifted_action([term])
+                if new_term == False:
                     accept = False
                     break
-                elif new_action == True:
+                elif new_term == True:
                     continue
-                new_actions.append(new_action)
+                new_actions.append(StackedEdge(edge.src, new_term, edge.on_stack))
             if accept:
-                target = self.states[new_actions[0].src][new_actions[0].term]
+                target = self.states[src][term]
                 target = self.states[target]
-                shift_map[aps.lookahead[0]].append((target, new_actions))
+                shift_map[term].append((target, new_actions))
 
         # Restore the new state machine based on a given state to use as a base
         # and the shift_map corresponding to edges.
-        def restore_edges(state, shift_map):
+        def restore_edges(state, shift_map, depth):
             assert isinstance(state, StateAndTransitions)
+            print("{}starting with {}\n".format(depth, state))
             edges = {}
             for term, actions_list in shift_map.items():
+                # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
                 # Collect all the states reachable after shifting the term.
                 # Compute the unique name, based on the locations and actions
                 # which are delayed.
                 locations = OrderedSet()
                 delayed = OrderedSet()
                 new_shift_map = collections.defaultdict(lambda: [])
+                is_reduced_end = isinstance(term, Action) and term.update_stack()
                 recurse = False
                 for target, actions in actions_list:
                     assert isinstance(target, StateAndTransitions)
@@ -2594,11 +2599,11 @@ class ParseTable:
                         # Pull edges, with delayed actions.
                         edge = actions[0]
                         assert isinstance(edge, StackedEdge)
-                        for action in actions[1:]:
+                        for action in actions:
                             delayed.add(action)
                         new_shift_map[edge.term].append((target, actions[1:]))
                         recurse = True
-                    else:
+                    elif not is_reduced_end:
                         # Pull edges, as a copy of existing edges.
                         for next_term, next_dest in target.edges():
                             next_dest = self.states[next_dest]
@@ -2607,19 +2612,20 @@ class ParseTable:
                 locations = OrderedFrozenSet(locations)
                 delayed = OrderedFrozenSet(delayed)
                 is_new, new_target = self.new_state(locations, delayed)
-                print("is_new = {}, index = {}".format(is_new, new_target.index))
+                # print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
+                # print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
                 edges[term] = new_target.index
-                if is_new or recurse:
-                    restore_edges(new_target, new_shift_map)
+                # print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
+                if (is_new or recurse) and not is_reduced_end:
+                    restore_edges(new_target, new_shift_map, depth + "  ")
 
-            print("clear_edges({})".format(state))
             self.clear_edges(state)
             for term, target in edges.items():
                 self.add_edge(state, term, target)
-            print("after adding edges: {}".format(state))
+            print("{}replaced by {}\n".format(depth, state))
 
         state = self.states[s]
-        restore_edges(state, shift_map)
+        restore_edges(state, shift_map, "")
 
     def fix_inconsistent_state(self, s, verbose):
         # Fix inconsistent states works one state at a time. The goal is to
@@ -2645,8 +2651,8 @@ class ParseTable:
         all_reduce = all( a.update_stack() for a, _ in state.epsilon )
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
         aps_lanes = self.lanes(s)
-        if verbose:
-            print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:"))
+        # if verbose:
+        #     print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:", "\taps"))
         assert aps_lanes != []
         if all_reduce and not any_shift:
             # TODO: If adding more context fails, we should fallback on using
