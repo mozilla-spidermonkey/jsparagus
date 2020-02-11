@@ -17,7 +17,7 @@ jobs:
         python-version: "3.7"
     - uses: actions/checkout@v2
       with:
-        ref: ci-results
+        ref: ci_results
     - name: Get Fuzzbugs
       run: |
         cd .metrics
