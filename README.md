@@ -29,7 +29,6 @@ Join us on Discord: https://discord.gg/tUFFk9Y
 ## Getting started
 
 ```sh
-cargo install cargo-fmt
 git config core.hooksPath .githooks
 make init
 make all
