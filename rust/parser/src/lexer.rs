@@ -1229,7 +1229,7 @@ impl<'alloc> Lexer<'alloc> {
 
         // 12.2.8.2.2 Check that only gimsuy flags are mentioned at most once.
         let gimsuy_mask: u32 = ['g', 'i', 'm', 's', 'u', 'y']
-            .into_iter()
+            .iter()
             .map(|x| 1 << ((*x as u8) - ('a' as u8)))
             .sum();
         let mut flag_text_set: u32 = 0;
