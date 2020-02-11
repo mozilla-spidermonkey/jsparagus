@@ -1,8 +1,8 @@
 name: CI Issues
 
-on: [push]
-  #  issues:
-  #    types: [opened, closed, reopened]
+on:
+  issues:
+    types: [opened, closed, reopened]
 
 jobs:
   build:
@@ -23,14 +23,20 @@ jobs:
         # Get the new list
         curl "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues?labels=libFuzzer&state=all" > count/fuzzbug.json
         python fuzzbug_count_badge.py
-        git add badges/fuzzbug_count.json
+        python fuzzbug_date_badge.py
+        git add badges/since-last-fuzzbug.json
+        git add badges/open-fuzzbug.json
         git add count/fuzzbug.json
     - name: Commit files
+      # fails if no files to commit
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "update NotImplemented Count" -a
     - name: Push changes
+      # fails if no files to commit
+      continue-on-error: true
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

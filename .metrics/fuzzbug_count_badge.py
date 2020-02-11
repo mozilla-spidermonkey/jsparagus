@@ -18,7 +18,6 @@ data = {
     "label": "Open FuzzBugs",
     "message": str(open_fuzzbugs) if open_fuzzbugs > 0 else "None",
     "color": "green" if open_fuzzbugs == 0 else "yellow",
-    "cacheSeconds": 1800,
 }
 
 with open(write_count, 'w') as f:

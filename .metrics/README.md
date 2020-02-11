@@ -43,23 +43,27 @@ These are the types of data that this metrics folder tracks.
 
 1) Rust Passing
     * Ensures our internal tests are passing
-    * Updates on every pull request to master. See [this action](.github/workflows/Rust.yml)
+    * Updates on every pull request to master. See [this
+        action](https://github.com/mozilla-spidermonkey/jsparagus/tree/master/.github/workflows/rust.yml)
 
 2) NotImplemented Count
     * counts number of NotImplemented errors in the codebase. This should slowly rundown to zero
-    * Updates on every push to master. See [this action](.github/workflows/ci-counter.yml)
+    * Updates on every push to master. See [this
+        action](https://github.com/mozilla-spidermonkey/jsparagus/tree/master/.github/workflows/ci-push.yml)
 
 3) Days Since last Fuzzbug
     * tracks the last fuzzbug we saw, if it does not exist, return ∞, otherwise return the last date regardless of state.
-    * Updates daily, regardless of push. See [this action](.github/workflows/ci-daily.yml)
+    * Updates daily, regardless of push. See [this
+        action](https://github.com/mozilla-spidermonkey/jsparagus/tree/master/.github/workflows/ci-daily.yml)
 
 4) Fuzzbug open count
     * tracks the number of open fuzzbugs
-    * Updates on issue open. See [this action](.github/workflows/ci-issue.yml)
+    * Updates on issue open. See [this action](https://github.com/mozilla-spidermonkey/jsparagus/.github/workflows/ci-issues.yml)
 
 5) Percentage of tests passing with SmooshMonkey
     * TODO: tracks the number of tests passing without fallback. We should use the try api for this.
-    * Updates daily, regardless of push. See [this action](.github/workflows/ci-daily.yml)
+    * Updates daily, regardless of push. See [this
+        action](https://github.com/mozilla-spidermonkey/jsparagus/tree/master/.github/workflows/ci-daily.yml)
 
 6) Percentage of JS compilable with SmooshMonkey
     * TODO: see comment about writing bytes to a file in [this repo](https://github.com/nbp/seqrec)
