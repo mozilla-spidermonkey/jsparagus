@@ -1973,6 +1973,17 @@ def aps_str(aps, name = "aps"):
 def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
     return "{}\n{}".format(header, "\n".join(aps_str(aps, name) for aps in aps_lanes))
 
+def is_valid_aps(aps):
+    "Returns whether an APS contains the right content."
+    check = True
+    check &= all(isinstance(st, StackedEdge) for st in aps.stack)
+    check &= all(isinstance(sh, StackedEdge) for sh in aps.shift)
+    check &= all(not isinstance(la, Action) for la in aps.lookahead)
+    check &= all(isinstance(ac, StackedEdge) for ac in aps.actions)
+    check &= all(not isinstance(rp, Action) for rp in aps.replay)
+    return check
+
+
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
     side we have the current state, and on the other we have the expected
@@ -2197,52 +2208,49 @@ class ParseTable:
         result.
 
         """
-        assert all(isinstance(st, StackedEdge) for st in aps.stack)
-        assert all(isinstance(sh, StackedEdge) for sh in aps.shift)
-        assert all(not isinstance(la, Action) for la in aps.lookahead)
-        assert all(isinstance(ac, StackedEdge) for ac in aps.actions)
-        assert all(not isinstance(rp, Action) for rp in aps.replay)
-        print(aps_str(aps, "\tvisitor"))
+        assert is_valid_aps(aps)
         cont, any_action = visit(parent_aps, aps)
         if not cont:
             return
         st, sh, la, ac, rp = aps
-        if rp != []:
-            term = rp[0]
-            rp = rp[1:]
-        else:
-            term = None
         last_edge = sh[-1]
         state = self.states[last_edge.src]
-        if term in state.terminals:
-            edge = StackedEdge(last_edge.src, term, True)
-            new_sh = aps.shift[:-1] + [edge]
-            to = state.terminals[term]
-            to = StackedEdge(to, None, True)
-            new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
-            self.aps_visitor(aps, new_aps, visit)
-        elif term in state.nonterminals:
-            edge = StackedEdge(last_edge.src, term, True)
-            new_sh = aps.shift[:-1] + [edge]
-            to = state.nonterminals[term]
-            to = StackedEdge(to, None, True)
-            new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
-            self.aps_visitor(aps, new_aps, visit)
-        elif term is None:
+        if aps.replay == []:
             for term, to in itertools.chain(state.terminals.items(), state.nonterminals.items()):
                 edge = StackedEdge(last_edge.src, term, True)
                 new_sh = aps.shift[:-1] + [edge]
                 to = StackedEdge(to, None, True)
                 new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
                 self.aps_visitor(aps, new_aps, visit)
+        else:
+            term = aps.replay[0]
+            rp = aps.replay[1:]
+            if term in state.terminals:
+                edge = StackedEdge(last_edge.src, term, True)
+                new_sh = aps.shift[:-1] + [edge]
+                to = state.terminals[term]
+                to = StackedEdge(to, None, True)
+                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
+                self.aps_visitor(aps, new_aps, visit)
+            elif term in state.nonterminals:
+                edge = StackedEdge(last_edge.src, term, True)
+                new_sh = aps.shift[:-1] + [edge]
+                to = state.nonterminals[term]
+                to = StackedEdge(to, None, True)
+                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
+                self.aps_visitor(aps, new_aps, visit)
 
-        if any_action and term != None:
-            rp = [term] + rp
+        if any_action:
+            term = None
+            rp = aps.replay
+        else:
+            term = aps.replay[0]
+            rp = aps.replay[1:]
         for a, to in state.epsilon:
             if not any_action and a != term:
                 continue
             edge = StackedEdge(last_edge.src, a, False)
-            new_sh = aps.shift[:-1] + [edge]
+            prev_sh = aps.shift[:-1] + [edge]
             # TODO: Add support for Lookahead and flag manipulation rules, as
             # both of these would invalide potential reduce paths.
             if a.update_stack():
@@ -2252,26 +2260,51 @@ class ParseTable:
                     # nonterminal. When reducing, the stack is resetted to
                     # head, and the nonterminal `term.nt` is pushed, to resume
                     # in the state `to`.
-                    if new_sh[-len(path):] != path[-len(new_sh):]:
+                    print("Compare shifted path, with reduced path:\n\tshifted = [{}]\n\treduced = [{}], \n\taction = {},\n\tto = {}\n".format(
+                        ", ".join(repr(e) for e in prev_sh),
+                        ", ".join(repr(e) for e in path),
+                        str(a),
+                        self.states[to.src],
+                    ))
+                    if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         # If the reduced production does not match the shifted
                         # state, then this reduction does not apply. This is
                         # the equivalent result as splitting the parse table
                         # based on the predecessor.
                         continue
-                    new_st = path[:max(len(path) - len(sh), 0)] + st
-                    new_sh = new_sh[:-len(path)] + [path[0], to]
+
+                    # The stack corresponds to the stack present at the
+                    # starting point. The shift list correspond to the actual
+                    # parser stack as we iterate through the state machine.
+                    # Each time we consume all the shift list, this implies
+                    # that we had extra stack elements which were not present
+                    # initially, and therefore we are learning about the
+                    # context.
+                    new_st = path[:max(len(path) - len(prev_sh), 0)] + st
+
+                    # The shift list corresponds to the stack which is used in
+                    # an LR parser, in addition to all the states which are
+                    # epsilon transitions. We pop from this list the reduced
+                    # path, as long as it matches. Then all popped elements are
+                    # replaced by the state that we visit after replaying the
+                    # non-terminal reduced by this action.
+                    new_sh = prev_sh[:-len(path)] + [to]
+
                     # When reducing, we replay terms which got previously
                     # pushed on the stack as our lookahead. These terms are
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
-                    new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
+                    new_replay = []
+                    if a.replay > 0:
+                        new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
+                        new_replay = mew_replay[-a.replay:]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - a.replay, 0)]
                     new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
                     self.aps_visitor(aps, new_aps, visit)
             else:
                 to = StackedEdge(to, None, True)
-                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
+                new_aps = APS(st, prev_sh + [to], la, ac + [edge], rp)
                 self.aps_visitor(aps, new_aps, visit)
 
     def lanes(self, state):
@@ -2279,34 +2312,18 @@ class ParseTable:
         context when reduce states are encountered."""
         assert isinstance(state, int)
         record = []
-        def stop_lane_when(aps):
-            # Check if there is any edge which got already visited. While this
-            # does not cover all the space of possible vocabulary which can be
-            # matched, this cover all the space of lookahead tokens which can
-            # be accepted, as well as all te space of previous states which can
-            # be used to reach the current state. (TODO: verify this
-            # hypothesis)
-            if len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:]))):
-                print("\tStop due to a loop in shift\n")
-                return True
-            if len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:]))):
-                print("\tStop due to a loop in stack\n")
-                return True
-            if self.states[aps.shift[-1].src].epsilon != []:
-                print("\tContinue because {} is an inconsistent state\n".format(aps.shift[-1].src))
-                return False
-            if len(aps.lookahead) <= 1:
-                print("\tContinue because lookahead (= {}) <= 1.\n".format(len(aps.lookahead)))
-                return False
-            print("\tStop because lookahead >= 2 and no epsilon on last shifted state.\n")
-            return True
-
         def visit(parent_aps, aps):
-            stop = stop_lane_when(aps)
+            has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
+            has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
+            has_lookahead = len(aps.lookahead) >= 1
+            stop = has_shift_loop or has_stack_loop or has_lookahead
+            print("\t{} = {} or {} or {}".format(
+                stop, has_shift_loop, has_stack_loop, has_lookahead))
+            print(aps_str(aps, "\tvisitor"))
             if stop:
                 print("lanes_visit stop:")
-                print(aps_str(parent_aps, "\tparent"))
-                record.append(parent_aps)
+                print(aps_str(aps, "\trecord"))
+                record.append(aps)
             return not stop, True
         self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
         return record
