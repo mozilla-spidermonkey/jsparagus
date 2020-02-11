@@ -15,7 +15,8 @@ PIP := $(VENV_BIN_DIR)/pip
 init:
 	python3 -m venv jsparagus_build_venv &&\
 	$(PIP) install --upgrade pip &&\
-	$(PIP) install -r requirements.txt
+	$(PIP) install -r requirements.txt &&\
+	git config core.hooksPath .githooks
 
 all: $(PY_OUT) rust
 
