@@ -1816,8 +1816,9 @@ class ParseTable:
         "states",
         # Map of state object to the corresponding identifer.
         "state_cache",
-        # List of states which are the entry point of the state machine.
-        "goals",
+        # List of (Nt, states) tuples which are the entry point of the state
+        # machine.
+        "named_goals",
         # List of terminals.
         "terminals",
         # List of non-terminals.
@@ -1830,11 +1831,16 @@ class ParseTable:
         self.actions = []
         self.states = []
         self.state_cache = {}
-        self.goals = []
+        self.named_goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
         self.create_lr0_table(grammar, verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
+        # TODO: Optimize chains of actions into sequences.
+        # TODO: Optimize by removing unused states.
+        # TODO: Statically compute replayed terms. (maybe?)
+        # TODO: Fold paths which have the same ending.
+        # TODO: Split shift states from epsilon states.
 
     def is_inconsistent(self):
         "Returns True if the grammar contains any inconsistent state."
@@ -1914,7 +1920,7 @@ class ParseTable:
         assert isinstance(grammar.grammar, Grammar)
 
         goals = grammar.grammar.goals()
-        self.goals = []
+        self.named_goals = []
 
         # Temporarily record tuples of (LR0Generator, StateAndTransition)
         # objects used for visiting the grammar.
@@ -1924,7 +1930,7 @@ class ParseTable:
             it = LR0Generator.start(grammar, nt)
             s = self.get_state(it.lr_items)
             todo.append((it, s))
-            self.goals.append(s.index)
+            self.named_goals.append((nt, s.index))
 
         # Iterate the grammar with sets of LR Items abstracted by the
         # LR0Generator, and create new states in the parse table as long as new
