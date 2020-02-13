@@ -1943,6 +1943,9 @@ class ParseTable:
                 if verbose:
                     print("\nVisiting:\n{}".format(s_it))
                 for k, sk_it in s_it.transitions().items():
+                    locations = sk_it.lr_items
+                    if not self.is_term_shifted(k):
+                        locations = OrderedFrozenSet()
                     is_new, sk = self.new_state(sk_it.lr_items)
                     if is_new:
                         todo.append((sk_it, sk))
@@ -1950,6 +1953,9 @@ class ParseTable:
                     # Add the edge from s to sk with k.
                     self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
+
+    def is_term_shifted(self, term):
+        return not (isinstance(term, Action) and term.update_stack())
 
     def shifted_path_to(self, state, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
@@ -1959,6 +1965,10 @@ class ParseTable:
             yield right_of
             return
         for edge in self.states[state].backedges:
+            if not self.is_term_shifted(edge.term):
+                print(repr(edge))
+                print(self.states[edge.src])
+            assert self.is_term_shifted(edge.term)
             s_n = n - 1
             stacked = True
             if not self.term_is_stacked(edge.term):
@@ -1976,6 +1986,10 @@ class ParseTable:
         depth = action.pop + action.replay
         for path in self.shifted_path_to(state.index, depth, [StackedEdge(state.index, action, False)]):
             head = self.states[path[0].src]
+            if action.nt not in head.nonterminals:
+                print(head)
+                print(action.nt)
+                print(repr(path))
             assert action.nt in head.nonterminals
             to = head.nonterminals[action.nt]
             yield path, StackedEdge(to, None, True)
@@ -2099,7 +2113,7 @@ class ParseTable:
                     new_replay = []
                     if a.replay > 0:
                         new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
-                        new_replay = mew_replay[-a.replay:]
+                        new_replay = new_replay[-a.replay:]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - a.replay, 0)]
                     new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
@@ -2380,7 +2394,7 @@ class ParseTable:
         # and the shift_map corresponding to edges.
         def restore_edges(state, shift_map, depth):
             assert isinstance(state, StateAndTransitions)
-            print("{}starting with {}\n".format(depth, state))
+            # print("{}starting with {}\n".format(depth, state))
             edges = {}
             for term, actions_list in shift_map.items():
                 # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
@@ -2390,8 +2404,10 @@ class ParseTable:
                 locations = OrderedSet()
                 delayed = OrderedSet()
                 new_shift_map = collections.defaultdict(lambda: [])
-                is_reduced_end = isinstance(term, Action) and term.update_stack()
                 recurse = False
+                if not self.is_term_shifted(term):
+                    # There is no more target after a reduce action.
+                    actions_list = []
                 for target, actions in actions_list:
                     assert isinstance(target, StateAndTransitions)
                     locations |= target.locations
@@ -2404,7 +2420,7 @@ class ParseTable:
                             delayed.add(action)
                         new_shift_map[edge.term].append((target, actions[1:]))
                         recurse = True
-                    elif not is_reduced_end:
+                    else:
                         # Pull edges, as a copy of existing edges.
                         for next_term, next_dest in target.edges():
                             next_dest = self.states[next_dest]
@@ -2417,13 +2433,13 @@ class ParseTable:
                 # print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
                 edges[term] = new_target.index
                 # print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
-                if (is_new or recurse) and not is_reduced_end:
+                if is_new or recurse:
                     restore_edges(new_target, new_shift_map, depth + "  ")
 
             self.clear_edges(state)
             for term, target in edges.items():
                 self.add_edge(state, term, target)
-            print("{}replaced by {}\n".format(depth, state))
+            # print("{}replaced by {}\n".format(depth, state))
 
         state = self.states[s]
         restore_edges(state, shift_map, "")
@@ -2494,14 +2510,14 @@ class ParseTable:
                 start_len = len(self.states)
                 if verbose:
                     count = count + 1
-                    print("\nFixing state {}".format(self.states[s]))
+                    # print("\nFixing state {}".format(self.states[s]))
                 self.fix_inconsistent_state(s, verbose)
                 new_inconsistent_states = [
                     s.index for s in self.states[start_len:]
                     if s.is_inconsistent()
                 ]
-                if verbose:
-                    print("\nAdding {} inconsistent states".format(len(new_inconsistent_states)))
+                # if verbose:
+                #     print("\nAdding {} inconsistent states".format(len(new_inconsistent_states)))
                 for s in new_inconsistent_states:
                     todo.append(s)
 
