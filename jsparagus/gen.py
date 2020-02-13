@@ -2527,24 +2527,55 @@ class ParseTable:
 \tNumber of States = {}
 \tNumber of inconsistencies solved = {}""".format(
                 len(self.states), count))
+        assert not self.is_inconsistent()
+
+    def debug_context(self, state, split_txt = "; ", prefix = ""):
+        "Reconstruct the grammar production by traversing the parse table."
+        assert isinstance(state, int)
+        record = []
+        def visit(parent_aps, aps):
+            # Stop after reducing once.
+            if aps.actions == []:
+                return True, True
+            last = aps.actions[-1].term
+            is_reduce = not self.is_term_shifted(last)
+            has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
+            stop = is_reduce or has_shift_loop
+            if stop and len(aps.shift) == 1:
+                # Record state which are reducing at most all the shifted states.
+                record.append(aps)
+            return not stop, True
+        self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
+
+        context = OrderedSet()
+        for aps in record:
+            assert aps.actions != []
+            assert aps.actions[-1].term.update_stack()
+            reducer = aps.actions[-1].term.reduce_with()
+            replay = reducer.replay
+            before = [repr(e.term) for e in aps.stack[:-1]]
+            after = [repr(e.term) for e in aps.actions[:-1]]
+            prod = before + ["\N{MIDDLE DOT}"] + after
+            if replay > len(after):
+                replay += 1
+            if replay > 0:
+                prod = prod[:-replay] + ["[lookahead:"] + prod[-replay:] + ["]"]
+            txt = "{}{} ::= {}".format(
+                prefix,
+                repr(aps.actions[-1].term.reduce_with().nt),
+                " ".join(prod)
+            )
+            context.add(txt)
+
+        return split_txt.join(context)
+        pass
 
 
 def generate_parser_states(grammar, *, verbose=False, progress=False):
     assert isinstance(grammar, Grammar)
     grammar = CanonicalGrammar(grammar)
     parse_table = ParseTable(grammar, verbose, progress)
-    raise ValueError(51)
-
-    # Now the grammar is in its final form. Compute information about it that
-    # we can cache and use during the main part of the algorithm below.
-    start = start_sets(grammar.grammar)
-    start_set_cache = make_start_set_cache(grammar.grammar, grammar.prods, start)
-    follow = follow_sets(grammar.grammar, grammar.prods_with_indexes_by_nt, start_set_cache)
-    context = PgenContext(
-        grammar.grammar, grammar.prods, grammar.prods_with_indexes_by_nt, start, start_set_cache, follow)
-
-    # Run the core LR table generation algorithm.
-    return analyze_states(context, grammar.prods, verbose=verbose, progress=progress)
+    return parse_table
 
 
 def generate_parser(out, source, *, verbose=False, progress=False, target='python', handler_info=None):
@@ -2552,17 +2583,27 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
 
     if isinstance(source, Grammar):
         grammar = CanonicalGrammar(source)
-        parser_states = generate_parser_states(
+        parser_data = generate_parser_states(
             source, verbose=verbose, progress=progress)
+    elif isinstance(source, ParseTable):
+        parser_data = source
     elif isinstance(source, ParserStates):
-        parser_states = source
+        parser_data = source
     else:
         raise TypeError("unrecognized source: {!r}".format(source))
 
     if target == 'rust':
-        emit.write_rust_parser(out, parser_states, handler_info)
+        if isinstance(parser_data, ParserStates):
+            emit.write_rust_parser(out, parser_data, handler_info)
+        else:
+            raise ValueError("Unexpected parser_data kind")
     else:
-        emit.write_python_parser(out, parser_states)
+        if isinstance(parser_data, ParserStates):
+            emit.write_python_parser_states(out, parser_data)
+        elif isinstance(parser_data, ParseTable):
+            emit.write_python_parse_table(out, parser_data)
+        else:
+            raise ValueError("Unexpected parser_data kind")
 
 
 def compile(grammar):
