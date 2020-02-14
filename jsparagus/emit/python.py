@@ -6,7 +6,7 @@ from ..actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, 
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
-        out.write("from jsparagus.runtime import Nt, ErrorToken\n")
+        out.write("from jsparagus.runtime import Nt, ErrorToken, StateTermValue\n")
     out.write("\n")
 
     methods = set()
@@ -18,7 +18,7 @@ def write_python_parse_table(out, parse_table):
                 out.write("{}replay = replay + parser.stack[-{}:]\n".format(indent, act.replay))
             if act.replay + act.pop > 0:
                 out.write("{}parser.stack = parser.stack[:-{}]\n".format(indent, act.replay + act.pop))
-            out.write("{}parser.shift_list(replay)\n".format(indent))
+            out.write("{}parser.shift_list(replay, lexer)\n".format(indent))
             return indent, False
         if isinstance(act, Lookahead):
           raise ValueError("Unexpected Lookahead action")
@@ -50,7 +50,7 @@ def write_python_parse_table(out, parse_table):
         assert i == state.index
         if state.epsilon == []:
             continue
-        out.write("def state_{}_actions(parser):\n".format(i))
+        out.write("def state_{}_actions(parser, lexer):\n".format(i))
         out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
         for term, dest in state.edges():
             indent, res = write_action(term, "    ")
@@ -82,7 +82,7 @@ def write_python_parse_table(out, parse_table):
     out.write("]\n\n")
 
     out.write("goal_nt_to_init_state = {}\n\n".format(
-        repr({ nt: goal for nt, goal in parse_table.named_goals })
+        repr({ nt.name: goal for nt, goal in parse_table.named_goals })
     ))
 
     if len(parse_table.named_goals) == 1:
@@ -102,11 +102,11 @@ def write_python_parse_table(out, parse_table):
         out.write("    pass\n")
     out.write("\n")
 
-    out.write("class Parser(runtime.Parser):\n")
-    out.write("    def __init__(self, goal{}, methods=None):\n".format(default_goal))
-    out.write("        if methods is None:\n")
-    out.write("            methods = DefaultMethods()\n")
-    out.write("        super().__init__(actions, goal_nt_to_init_state[goal], methods)\n")
+    out.write("class Parser(runtime.ParserV2):\n")
+    out.write("    def __init__(self, goal{}, builder=None):\n".format(default_goal))
+    out.write("        if builder is None:\n")
+    out.write("            builder = DefaultMethods()\n")
+    out.write("        super().__init__(actions, error_codes, goal_nt_to_init_state[goal], builder)\n")
     out.write("\n")
 
 def write_python_parser_states(out, parser_states):
