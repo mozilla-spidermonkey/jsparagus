@@ -570,6 +570,46 @@ def ast_(ast):
             type_decl.write_rust_type_decl(ast, write)
 
 
+def type_id(ast):
+    with open("src/type_id_generated.rs", "w+") as f:
+        def write(*args):
+            write_impl(f, *args)
+        write(0, "// WARNING: This file is auto-generated.")
+        write(0, "")
+        write(0, "use crate::types::*;")
+        write(0, "")
+
+        write(0, "#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]")
+        write(0, "pub enum NodeTypeId {")
+
+        for type_decl in ast.type_decls.values():
+            if type_decl.name in ['Box', 'Token', 'Vec', 'Void']:
+                continue
+
+            write(1, "{},", type_decl.name)
+
+        write(0, "}")
+        write(0, "")
+
+        write(0, "pub trait NodeTypeIdAccessor {")
+        write(1, "fn get_type_id(&self) -> NodeTypeId;")
+        write(0, "}")
+        write(0, "")
+
+        for type_decl in ast.type_decls.values():
+            if type_decl.name in ['Box', 'Token', 'Vec', 'Void']:
+                continue
+
+            write(0, "impl<'alloc> NodeTypeIdAccessor for {}{} {{",
+                  type_decl.name,
+                  type_decl.lifetime_params())
+            write(1, "fn get_type_id(&self) -> NodeTypeId {")
+            write(2, "NodeTypeId::{}", type_decl.name)
+            write(1, "}")
+            write(0, "}")
+            write(0, "")
+
+
 class AggregateTypeDecl:
     def __init__(self):
         self.has_lifetime = None
@@ -740,6 +780,7 @@ def main():
     ast = Ast(ast_json)
 
     ast_(ast)
+    type_id(ast)
     stack_value(ast)
     loc_trait(ast)
     pass_(ast)

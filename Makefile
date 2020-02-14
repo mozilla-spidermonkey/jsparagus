@@ -3,6 +3,7 @@ HANDLER_FILE = rust/generated_parser/src/ast_builder.rs
 HANDLER_INFO_OUT = jsparagus/emit/collect_handler_info/info.json
 RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
 RS_AST_OUT = rust/ast/src/types_generated.rs \
+	rust/ast/src/type_id_generated.rs \
 	rust/ast/src/visit_generated.rs \
 	rust/ast/src/source_location_accessor_generated.rs \
 	rust/generated_parser/src/stack_value_generated.rs
