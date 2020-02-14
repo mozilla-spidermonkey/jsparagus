@@ -1690,9 +1690,9 @@ class LR0Generator:
         prod = self.grammar.prods[lr_item.prod_index]
 
         # Read the term located at the offset in the production.
-        if len(prod.rhs) > lr_item.offset:
+        if lr_item.offset < len(prod.rhs):
             term = prod.rhs[lr_item.offset]
-        elif len(prod.rhs) == lr_item.offset:
+        elif lr_item.offset == len(prod.rhs):
             # Add the reduce operation as a state transition in the generated
             # automaton. (TODO: this supposed that the canonical form did not
             # move the reduce action to be part of the production)
