@@ -1486,6 +1486,10 @@ class CanonicalGrammar:
 Edge = collections.namedtuple("Edge", "src term")
 StackedEdge = collections.namedtuple("Edge", "src term on_stack")
 
+# Structure used to report conflict while creating or merging states.
+class Conflict(Exception):
+    pass
+
 class StateAndTransitions:
     """This is one state of the parse table, which has transitions based on
     terminals (text), non-terminals (grammar rules) and epsilon (reduce).
@@ -1504,6 +1508,11 @@ class StateAndTransitions:
                         # next state after a conflict.
         "backedges",    # List of back edges and whether these are expected to
                         # be on the parser stack or not.
+        "error_code",   # If an error occurs while matching this production,
+                        # then the state index is mapped to this error code. be
+                        # on the parser stack or not. Attempting to merge 2
+                        # states with different error_code would lead to a
+                        # conflict.
         "_hash",        # Hash to identify states which have to be merged. This
                         # hash is composed of LRItems of the LR0 grammar, and
                         # actions performed on it since.
@@ -1519,6 +1528,7 @@ class StateAndTransitions:
         self.locations = locations
         self.delayed_actions = delayed_actions
         self.backedges = set()
+        self.error_code = None
         # NOTE: The hash of a state depends on its location in the LR0
         # parse-table, as well as the actions which have not yet been executed.
         def hashed_content():
@@ -1619,6 +1629,9 @@ class LR0Generator:
     __slots__ = [
         "grammar",
         "lr_items",
+        "error_code", # The grammar is annotated with ErrorSymbols, which are
+                      # mapped to error_code. These codes are used to provide
+                      # user friendly error messages.
         "key",
         "_hash",
     ]
@@ -2403,6 +2416,7 @@ class ParseTable:
                 # which are delayed.
                 locations = OrderedSet()
                 delayed = OrderedSet()
+                error_code_from = None
                 new_shift_map = collections.defaultdict(lambda: [])
                 recurse = False
                 if not self.is_term_shifted(term):
@@ -2412,6 +2426,10 @@ class ParseTable:
                     assert isinstance(target, StateAndTransitions)
                     locations |= target.locations
                     delayed |= target.delayed_actions
+                    if target.error_code:
+                        if error_code_from:
+                            raise Conflict("error_code cannot be merged between {} and {}".format(target.index, error_code_from.index))
+                        error_code_from = target
                     if actions != []:
                         # Pull edges, with delayed actions.
                         edge = actions[0]

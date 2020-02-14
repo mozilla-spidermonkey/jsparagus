@@ -73,6 +73,14 @@ def write_python_parse_table(out, parse_table):
         out.write("\n")
     out.write("]\n\n")
 
+    out.write("error_codes = [\n")
+    SLICE_LEN = 16
+    for i in range(0, len(parse_table.states), SLICE_LEN):
+        states_slice = parse_table.states[i:i + SLICE_LEN]
+        out.write("    {}\n".format(
+            " ".join(repr(state.error_code) + "," for state in states_slice)))
+    out.write("]\n\n")
+
     out.write("goal_nt_to_init_state = {}\n\n".format(
         repr({ nt: goal for nt, goal in parse_table.named_goals })
     ))
