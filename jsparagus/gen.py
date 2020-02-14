@@ -1622,6 +1622,8 @@ def on_stack(grammar, term):
         return True
     elif isinstance(term, LookaheadRule):
         return False
+    elif isinstance(term, ErrorSymbol):
+        return False
     raise ValueError(term)
 
 class LR0Generator:
@@ -1688,16 +1690,46 @@ class LR0Generator:
         """Given one LR Item, register all the transitions and LR Items reachables
         through these transitions."""
         prod = self.grammar.prods[lr_item.prod_index]
+        assert isinstance(prod, Prod)
 
         # Read the term located at the offset in the production.
         if lr_item.offset < len(prod.rhs):
             term = prod.rhs[lr_item.offset]
         elif lr_item.offset == len(prod.rhs):
             # Add the reduce operation as a state transition in the generated
-            # automaton. (TODO: this supposed that the canonical form did not
+            # parse table. (TODO: this supposed that the canonical form did not
             # move the reduce action to be part of the production)
-            pop = len([e for e in prod.rhs if on_stack(self.grammar.grammar, e)])
+            pop = sum(1 for e in prod.rhs if on_stack(self.grammar.grammar, e))
             term = Reduce(prod.nt, pop)
+            expr = prod.reducer
+            if expr:
+                reduce_nt = term
+                # TODO: find a way to carry alias sets to here.
+                alias_set = ["parser"]
+                # TODO: This is a flatten representation of what can be
+                # expressed, but we do not need more than that as everything
+                # else can be expressed in the host language. We should
+                # restrict what is a valid input to reject anything else.
+                if isinstance(expr, int):
+                    stack_index = pop - expr
+                    expr = FunCall("id", alias_set, alias_set, (stack_index,))
+                elif isinstance(expr, CallMethod):
+                    def map_to_stack(args):
+                        for a in args:
+                            if isinstance(a, int):
+                                yield pop - a
+                            elif isinstance(a, Some):
+                                yield Some(pop - a.inner)
+                            elif a is None:
+                                yield None
+                            else:
+                                raise ValueError(a)
+                    args = tuple(map_to_stack(expr.args))
+                    expr = FunCall(expr.method, alias_set, alias_set, args)
+                else:
+                    raise ValueError(expr)
+                assert isinstance(expr, Action)
+                term = Seq([expr, reduce_nt])
         else:
             # No edges after the reduce operation.
             return
@@ -1994,17 +2026,17 @@ class ParseTable:
     def reduce_path(self, state, action):
         "Compute all paths which might be reduced by a given action."
         assert action.update_stack()
-        action = action.reduce_with()
-        assert isinstance(action, Reduce)
-        depth = action.pop + action.replay
+        reducer = action.reduce_with()
+        assert isinstance(reducer, Reduce)
+        depth = reducer.pop + reducer.replay
         for path in self.shifted_path_to(state.index, depth, [StackedEdge(state.index, action, False)]):
             head = self.states[path[0].src]
-            if action.nt not in head.nonterminals:
+            if reducer.nt not in head.nonterminals:
                 print(head)
-                print(action.nt)
+                print(reducer.nt)
                 print(repr(path))
-            assert action.nt in head.nonterminals
-            to = head.nonterminals[action.nt]
+            assert reducer.nt in head.nonterminals
+            to = head.nonterminals[reducer.nt]
             yield path, StackedEdge(to, None, True)
 
     def term_is_stacked(self, term):
@@ -2082,6 +2114,7 @@ class ParseTable:
             # TODO: Add support for Lookahead and flag manipulation rules, as
             # both of these would invalide potential reduce paths.
             if a.update_stack():
+                reducer = a.reduce_with()
                 for path, to in self.reduce_path(state, a):
                     # reduce_paths contains the chains of state shifted,
                     # including epsilon transitions, in order to reduce the
@@ -2124,11 +2157,11 @@ class ParseTable:
                     # computed here such that we can traverse the graph from
                     # `to` state, using the replayed terms.
                     new_replay = []
-                    if a.replay > 0:
+                    if reducer.replay > 0:
                         new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
-                        new_replay = new_replay[-a.replay:]
+                        new_replay = new_replay[-reducer.replay:]
                     new_replay = new_replay + rp
-                    new_la = la[:max(len(la) - a.replay, 0)]
+                    new_la = la[:max(len(la) - reducer.replay, 0)]
                     new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
                     self.aps_visitor(aps, new_aps, visit)
             else:
@@ -2284,7 +2317,7 @@ class ParseTable:
                 if flag_in != None:
                     maybe_id_edges.add(Id(edge))
             edge = aps.stack[-1]
-            nt = edge.term.reduce_with()
+            nt = edge.term.reduce_with().nt
             rule = Eq(nt, edge, None)
             rules, free_vars = unify_with(rule, rules, free_vars)
             nts.add(nt)

@@ -13,7 +13,7 @@ def write_python_parse_table(out, parse_table):
     def write_action(act, indent = ""):
         assert isinstance(act, Action)
         if isinstance(act, Reduce):
-            out.write("{}replay = [StateTermValue(0, {}, None)]\n".format(indent, repr(act.nt)))
+            out.write("{}replay = [StateTermValue(0, {}, value)]\n".format(indent, repr(act.nt)))
             if act.replay > 0:
                 out.write("{}replay = replay + parser.stack[-{}:]\n".format(indent, act.replay))
             if act.replay + act.pop > 0:
@@ -33,10 +33,25 @@ def write_python_parse_table(out, parse_table):
           return indent, True
         if isinstance(act, FunCall):
             methods.add(act)
-            out.write("{}parser.methods.{}({})\n".format(
-                indent, act.method,
-                ", ".join("parser.stack[{}].value".format(act.offset + a) for a in act.args)
-            ))
+            def map_with_offset(args):
+                get_value = "parser.stack[{}].value"
+                for a in args:
+                    if isinstance(a, int):
+                        yield get_value.format(-(a + act.offset))
+                    elif isinstance(a, Some):
+                        yield get_value.format(-(a.inner + act.offset))
+                    elif a is None:
+                        yield "None"
+                    else:
+                        raise ValueError(a)
+            if act.method == "id":
+                assert len(act.args) == 1
+                out.write("{}value = {}\n".format(indent, next(map_with_offset(act.args))))
+            else:
+                out.write("{}value = parser.methods.{}({})\n".format(
+                    indent, act.method,
+                    ", ".join(map_with_offset(act.args))
+                ))
             return indent, True
         if isinstance(act, Seq):
             res = True
@@ -52,10 +67,11 @@ def write_python_parse_table(out, parse_table):
             continue
         out.write("def state_{}_actions(parser, lexer):\n".format(i))
         out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
+        out.write("    value = None\n")
         for term, dest in state.edges():
             indent, res = write_action(term, "    ")
             if res:
-                out.write("{}parser.stack.append(StateTermValue({}, None, None))\n".format(
+                out.write("{}parser.stack.append(StateTermValue({}, None, value))\n".format(
                     indent, dest
                 ))
             out.write("{}return\n".format(indent))

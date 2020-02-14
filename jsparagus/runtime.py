@@ -285,15 +285,15 @@ class ParserV2:
 
     def _dbg_where(self, t=""):
         print("stack: {}; {}\nexpect one of: {}".format(
-            ", ".join(str(s.state) for s in self.stack), t,
+            ", ".join(repr(s) for s in self.stack), t,
             repr(self.actions[self.stack[-1].state])
         ))
 
-    def _shift(self, t, lexer, consume_lexer = True):
+    def _shift(self, stv, lexer, consume_lexer = True):
         state = self.stack[-1].state
-        self._dbg_where("shift: {}".format(repr(t)))
+        self._dbg_where("shift: {}".format(repr(stv.term)))
         assert isinstance(self.actions[state], dict)
-        state = self.actions[state].get(t, ERROR)
+        state = self.actions[state].get(stv.term, ERROR)
         if state == ERROR:
             # self._dbg_where("(error)")
             raise ShiftError()
@@ -301,12 +301,12 @@ class ParserV2:
             # self._dbg_where("(accept)")
             raise ShiftAccept()
         if consume_lexer:
-            self.stack.append(StateTermValue(state, t, lexer.take()))
+            self.stack.append(StateTermValue(state, stv.term, lexer.take()))
         else:
-            self.stack.append(StateTermValue(state, t, None))
+            self.stack.append(StateTermValue(state, stv.term, stv.value))
         action = self.actions[state]
         while not isinstance(action, dict):  # Action
-            # self._dbg_where("(action {})".format(state))
+            self._dbg_where("(action {})".format(state))
             action(self, lexer)
             state = self.stack[-1].state
             action = self.actions[state]
@@ -314,13 +314,13 @@ class ParserV2:
 
     def shift_list(self, stv_list, lexer):
         for stv in stv_list:
-            self._shift(stv.term, lexer, False)
+            self._shift(stv, lexer, False)
 
     def write_terminal(self, lexer, t):
         assert not self.closed
         while True:
             try:
-                self._shift(t, lexer)
+                self._shift(StateTermValue(0, t, None), lexer)
                 break
             except ShiftError:
                 self._try_error_handling(lexer, t)
@@ -330,7 +330,7 @@ class ParserV2:
         self.closed = True
         while True:
             try:
-                self._shift(None, lexer, False)
+                self._shift(StateTermValue(0, None, None), lexer, False)
                 break
             except ShiftAccept:
                 assert len(self.stack) == 1
@@ -348,7 +348,7 @@ class ParserV2:
         saved_stack = self.stack[:]
 
         try:
-            self._shift(ErrorToken, lexer)
+            self._shift(StateTermValue(0, ErrorToken, None), lexer)
         except ShiftError:
             # 3. On error, don't attempt error handling again. Throw.
             self.stack[:] = saved_stack

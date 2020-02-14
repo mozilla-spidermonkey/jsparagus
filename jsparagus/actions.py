@@ -154,7 +154,7 @@ class PushFlag(Action):
 
 class PopFlag(Action):
     """Define an action which pops a flag from the flag bit stack."""
-    __slots__ = ['flag']
+    __slots__ = 'flag',
     def __init__(self, flag):
         super().__init__(["flag_" + flag], ["flag_" + flag])
         self.flag = flag
@@ -182,7 +182,7 @@ class Seq(Action):
     """Aggregate multiple actions in one statement. Note, that the aggregated
     actions should not contain any condition or action which are mutating the
     state. Only the last action aggregated can update the parser stack"""
-    __slots__ = 'actions'
+    __slots__ = 'actions',
     def __init__(self, actions):
         assert isinstance(actions, list)
         read = [ rd for a in actions for rd in a.read ]
