@@ -1724,11 +1724,12 @@ class LR0Generator:
 
                 prod = grammar.prods[prod_index]
                 assert isinstance(prod, Prod)
-                assert len(prod.rhs) >= 1 # Otherwise we should add the logic
-                                          # for adding reduce actions.
-                term = prod.rhs[0]
-                if isinstance(term, Nt):
-                    todo.append(term)
+                try:
+                    term = prod.rhs[0]
+                    if isinstance(term, Nt):
+                        todo.append(term)
+                except IndexError:
+                    pass
         return LR0Generator(grammar, lr_items)
 
     def transitions(self):

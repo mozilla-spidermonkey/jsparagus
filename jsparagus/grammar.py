@@ -524,10 +524,13 @@ class Grammar:
                         .format(nt, nt_def))
                 rhs_list = nt_def.rhs_list
                 g = nt.goal
-                if (rhs_list != [Production([g], 'accept')]
-                        and rhs_list != [Production([Optional(g)], 'accept')]
-                        and rhs_list != [Production([], 'accept'),
-                                         Production([g], 'accept')]):
+                if (rhs_list != [Production([g], 'accept'),
+                                 Production([Nt(nt,()), End()], 'accept')]
+                    and rhs_list != [Production([Optional(g)], 'accept'),
+                                     Production([Nt(nt,()), End()], 'accept')]
+                    and rhs_list != [Production([End()], 'accept'),
+                                     Production([g, End()], 'accept'),
+                                     Production([Nt(nt,()), End()], 'accept')]):
                     raise ValueError(
                         "invalid grammar: grammar[{!r}] is not one of "
                         "the expected forms: got {!r}"
