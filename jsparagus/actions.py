@@ -170,17 +170,18 @@ class FunCall(Action):
     pushpathne non-terminal. The replay attribute of a reduce action correspond
     to the number of stack elements which would have to be popped and pushed
     again using the parser table after reducing this operation. """
-    __slots__ = 'method', 'offset', 'args'
-    def __init__(self, method, alias_read, alias_write, args, offset = 0):
+    __slots__ = 'method', 'offset', 'args', 'set_to'
+    def __init__(self, method, alias_read, alias_write, args, set_to = None, offset = 0):
         super().__init__(alias_read, alias_write)
         self.method = method     # Method and argument to be read for calling it.
         self.offset = offset     # Offset to add to each argument offset.
         self.args = args         # Tuple of arguments offsets.
+        self.set_to = set_to     # Temporary variable name to set with the result.
     def __str__(self):
-        return "FunCall({}, {}, {})".format(self.method, self.offset, self.args)
+        return "FunCall({}, {}, {}, {})".format(self.method, self.offset, self.args, self.set_to)
     def shifted_action(self, shifted_terms):
         shift = len(shifted_terms)
-        return FunCall(self.method, self.read, self.write, self.args, offset = self.offset + shift)
+        return FunCall(self.method, self.read, self.write, self.args, self.set_to, offset = self.offset + shift)
 
 class Seq(Action):
     """Aggregate multiple actions in one statement. Note, that the aggregated

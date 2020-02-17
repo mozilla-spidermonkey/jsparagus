@@ -37,22 +37,26 @@ def write_python_parse_table(out, parse_table):
                 for a in args:
                     if isinstance(a, int):
                         yield get_value.format(-(a + act.offset))
-                    elif isinstance(a, Some):
+                    elif isinstance(a, str):
+                        yield a
+                    elif isinstance(a, Some) and isinstance(a.inner, int):
                         yield get_value.format(-(a.inner + act.offset))
+                    elif isinstance(a, Some) and isinstance(a.inner, str):
+                        yield "Some({})".format(a.inner)
                     elif a is None:
                         yield "None"
                     else:
                         raise ValueError(a)
             if act.method == "id":
                 assert len(act.args) == 1
-                out.write("{}value = {}\n".format(indent, next(map_with_offset(act.args))))
+                out.write("{}{} = {}\n".format(indent, act.set_to, next(map_with_offset(act.args))))
             elif act.method == "accept":
                 assert len(act.args) == 0
                 out.write("{}raise ShiftAccept()\n".format(indent))
             else:
                 methods.add(act)
-                out.write("{}value = parser.methods.{}({})\n".format(
-                    indent, act.method,
+                out.write("{}{} = parser.methods.{}({})\n".format(
+                    indent, act.set_to, act.method,
                     ", ".join(map_with_offset(act.args))
                 ))
             return indent, True

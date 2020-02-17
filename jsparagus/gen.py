@@ -1634,6 +1634,37 @@ def on_stack(grammar, term):
         return True
     raise ValueError(term)
 
+def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
+    # TODO: find a way to carry alias sets to here.
+    alias_set = ["parser"]
+    if isinstance(expr, int):
+        stack_index = pop - expr
+        if depth == 0:
+            expr = FunCall("id", alias_set, alias_set, (stack_index,), ret)
+            funcalls.append(expr)
+            return ret
+        else:
+            return stack_index
+    elif isinstance(expr, Some):
+        res = callmethods_to_funcalls(expr.inner, pop, ret, depth, funcalls)
+        return Some(res)
+    elif expr is None:
+        return None
+    elif isinstance(expr, CallMethod):
+        def convert_args(args):
+            for i, arg in enumerate(args):
+                yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
+        args = tuple(convert_args(expr.args))
+        expr = FunCall(expr.method, alias_set, alias_set, args, ret)
+        funcalls.append(expr)
+        return ret
+    elif expr == "accept":
+        expr = FunCall("accept", alias_set, alias_set, (), ret)
+        funcalls.append(expr)
+        return ret
+    else:
+        raise ValueError(expr)
+
 class LR0Generator:
     """Provide a way to iterate over the grammar, given a set of LR items."""
     __slots__ = [
@@ -1730,35 +1761,9 @@ class LR0Generator:
             term = Reduce(prod.nt, pop)
             expr = prod.reducer
             if expr is not None:
-                reduce_nt = term
-                # TODO: find a way to carry alias sets to here.
-                alias_set = ["parser"]
-                # TODO: This is a flatten representation of what can be
-                # expressed, but we do not need more than that as everything
-                # else can be expressed in the host language. We should
-                # restrict what is a valid input to reject anything else.
-                if isinstance(expr, int):
-                    stack_index = pop - expr
-                    expr = FunCall("id", alias_set, alias_set, (stack_index,))
-                elif isinstance(expr, CallMethod):
-                    def map_to_stack(args):
-                        for a in args:
-                            if isinstance(a, int):
-                                yield pop - a
-                            elif isinstance(a, Some):
-                                yield Some(pop - a.inner)
-                            elif a is None:
-                                yield None
-                            else:
-                                raise ValueError(a)
-                    args = tuple(map_to_stack(expr.args))
-                    expr = FunCall(expr.method, alias_set, alias_set, args)
-                elif expr == "accept":
-                    expr = FunCall("accept", alias_set, alias_set, ())
-                else:
-                    raise ValueError(expr)
-                assert isinstance(expr, Action)
-                term = Seq([expr, reduce_nt])
+                funcalls = []
+                callmethods_to_funcalls(expr, pop, "value", 0, funcalls)
+                term = Seq(funcalls + [term])
         else:
             # No edges after the reduce operation.
             return
