@@ -1664,14 +1664,32 @@ class LR0Generator:
         assert isinstance(grammar, CanonicalGrammar)
         assert isinstance(grammar.grammar, Grammar)
         lr_items = []
-        for prod_index, _ in grammar.prods_with_indexes_by_nt[nt]:
-            assert isinstance(prod_index, int)
-            lr_items.append(LRItem(
-                prod_index = prod_index,
-                offset = 0,
-                lookahead = None,
-                followed_by = tuple(),
-            ))
+        # Visit the initial non-terminal, as well as all the non-terminals
+        # which are at the left of each productions.
+        todo = collections.deque()
+        visited_nts = []
+        todo.append(nt)
+        while todo:
+            nt = todo.popleft()
+            if nt in visited_nts:
+                continue
+            visited_nts.append(nt)
+            for prod_index, _ in grammar.prods_with_indexes_by_nt[nt]:
+                assert isinstance(prod_index, int)
+                lr_items.append(LRItem(
+                    prod_index = prod_index,
+                    offset = 0,
+                    lookahead = None,
+                    followed_by = tuple(),
+                ))
+
+                prod = grammar.prods[prod_index]
+                assert isinstance(prod, Prod)
+                assert len(prod.rhs) >= 1 # Otherwise we should add the logic
+                                          # for adding reduce actions.
+                term = prod.rhs[0]
+                if isinstance(term, Nt):
+                    todo.append(term)
         return LR0Generator(grammar, lr_items)
 
     def transitions(self):
