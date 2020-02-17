@@ -1702,7 +1702,7 @@ class LR0Generator:
             pop = sum(1 for e in prod.rhs if on_stack(self.grammar.grammar, e))
             term = Reduce(prod.nt, pop)
             expr = prod.reducer
-            if expr:
+            if expr is not None:
                 reduce_nt = term
                 # TODO: find a way to carry alias sets to here.
                 alias_set = ["parser"]

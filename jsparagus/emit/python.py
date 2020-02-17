@@ -32,7 +32,6 @@ def write_python_parse_table(out, parse_table):
           out.write("{}parser.flags[{}].pop()\n".format(indent, act.flag))
           return indent, True
         if isinstance(act, FunCall):
-            methods.add(act)
             def map_with_offset(args):
                 get_value = "parser.stack[{}].value"
                 for a in args:
@@ -48,6 +47,7 @@ def write_python_parse_table(out, parse_table):
                 assert len(act.args) == 1
                 out.write("{}value = {}\n".format(indent, next(map_with_offset(act.args))))
             else:
+                methods.add(act)
                 out.write("{}value = parser.methods.{}({})\n".format(
                     indent, act.method,
                     ", ".join(map_with_offset(act.args))
