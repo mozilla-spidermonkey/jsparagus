@@ -35,12 +35,12 @@ import math
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
-from .grammar import (Grammar,
-                      NtDef, Production, Some, CallMethod, InitNt,
-                      is_concrete_element,
-                      Optional, Exclude, Literal, UnicodeCategory, Nt, Var, ErrorSymbol,
+from .grammar import (Grammar, NtDef, Production, Some, CallMethod, InitNt,
+                      is_concrete_element, Optional, Exclude, Literal,
+                      UnicodeCategory, Nt, Var, End, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
-from .actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from .actions import (Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag,
+                      FunCall, Seq)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
 
@@ -185,6 +185,12 @@ def check_cycle_free(grammar):
                     elif isinstance(e, UnicodeCategory):
                         # This production consume a class of character,
                         # therefore it cannot correspond to an empty cycle.
+                        break
+                    elif isinstance(e, End):
+                        # This production consume the End meta-character,
+                        # therefore it cannot correspond to an empty cycle,
+                        # even if this character is expect to be produced
+                        # infinitely once the end is reached.
                         break
                     else:
                         # ErrorSymbol effectively matches the empty string
@@ -1624,6 +1630,8 @@ def on_stack(grammar, term):
         return False
     elif isinstance(term, ErrorSymbol):
         return False
+    elif isinstance(term, End):
+        return True
     raise ValueError(term)
 
 class LR0Generator:
@@ -1702,6 +1710,7 @@ class LR0Generator:
 
         for k, lr_items in followed_by.items():
             followed_by[k] = LR0Generator(self.grammar, lr_items)
+
         return followed_by
 
     def item_transitions(self, lr_item, followed_by):
@@ -1744,6 +1753,8 @@ class LR0Generator:
                                 raise ValueError(a)
                     args = tuple(map_to_stack(expr.args))
                     expr = FunCall(expr.method, alias_set, alias_set, args)
+                elif expr == "accept":
+                    expr = FunCall("accept", alias_set, alias_set, ())
                 else:
                     raise ValueError(expr)
                 assert isinstance(expr, Action)
@@ -1990,7 +2001,8 @@ class ParseTable:
         todo = collections.deque()
         # Record the starting goals in the todo list.
         for nt in goals:
-            it = LR0Generator.start(grammar, nt)
+            init_nt = Nt(InitNt(nt), ())
+            it = LR0Generator.start(grammar, init_nt)
             s = self.get_state(it.lr_items)
             todo.append((it, s))
             self.named_goals.append((nt, s.index))
@@ -2053,7 +2065,7 @@ class ParseTable:
                 print(head)
                 print(reducer.nt)
                 print(repr(path))
-            assert reducer.nt in head.nonterminals
+            assert reducer.nt in head.nonterminals or isinstance(reducer.nt.name, InitNt)
             to = head.nonterminals[reducer.nt]
             yield path, StackedEdge(to, None, True)
 
@@ -2678,7 +2690,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
 def compile(grammar):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
-    generate_parser(out, grammar, verbose=True, progress=True)
+    generate_parser(out, grammar)
     scope = {}
     # print(out.getvalue())
     exec(out.getvalue(), scope)

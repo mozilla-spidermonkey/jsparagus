@@ -350,7 +350,7 @@ class Grammar:
                                 "in production `grammar[{!r}][{}][{}]`"
                                 .format(arg_expr.name, nt, i, j))
                 return self.intern(e)
-            elif isinstance(e, (LookaheadRule, ErrorSymbol)):
+            elif isinstance(e, (LookaheadRule, End, ErrorSymbol)):
                 return self.intern(e)
             else:
                 raise TypeError(
@@ -579,7 +579,7 @@ class Grammar:
                 init_key = init_nt
             if init_key not in self.nonterminals:
                 self.nonterminals[init_key] = NtDef(
-                    (), [Production([goal], 'accept')], types.NoReturnType)
+                    (), [Production([goal], 'accept'), Production([init_nt, End()], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
     def intern(self, obj):
@@ -651,6 +651,8 @@ class Grammar:
                 op = "in" if e.positive else "not in"
                 s = '{' + repr(list(e.set))[1:-1] + '}'
             return "[lookahead {} {}]".format(op, s)
+        elif isinstance(e, End):
+            return "<END>"
         else:
             return str(e)
 
@@ -693,7 +695,7 @@ class Grammar:
         else:
             la = [self.element_to_str(item.lookahead)]
         return "{} ::= {} >> {{{}}}".format(
-            prod.nt,
+            self.element_to_str(prod.nt),
             " ".join([self.element_to_str(e) for e in prod.rhs[:item.offset]]
                      + ["\N{MIDDLE DOT}"]
                      + la
@@ -833,6 +835,8 @@ class Nt:
             else:
                 return name + "=" + repr(value)
 
+        if isinstance(self.name, InitNt):
+            return "Start_" + self.name.goal.pretty()
         if len(self.args) == 0:
             return self.name
         return "{}[{}]".format(self.name,
@@ -908,6 +912,11 @@ def lookahead_intersect(a, b):
 # so the core of the algorithm never sees them.
 Exclude = collections.namedtuple("Exclude", "inner exclusion_list")
 Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."""
+
+# End. This is used to represent the terminal which is infinitely produced by
+# the lexer when input end is reached.
+End = collections.namedtuple("End", "")
+End.__doc__ = """End() represent the end of the input content."""
 
 
 class ErrorSymbol:

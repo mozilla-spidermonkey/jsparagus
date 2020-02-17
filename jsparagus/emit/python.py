@@ -6,7 +6,7 @@ from ..actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, 
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
-        out.write("from jsparagus.runtime import Nt, ErrorToken, StateTermValue\n")
+        out.write("from jsparagus.runtime import Nt, InitNt, End, ErrorToken, StateTermValue, ShiftAccept\n")
     out.write("\n")
 
     methods = set()
@@ -46,6 +46,9 @@ def write_python_parse_table(out, parse_table):
             if act.method == "id":
                 assert len(act.args) == 1
                 out.write("{}value = {}\n".format(indent, next(map_with_offset(act.args))))
+            elif act.method == "accept":
+                assert len(act.args) == 0
+                out.write("{}raise ShiftAccept()\n".format(indent))
             else:
                 methods.add(act)
                 out.write("{}value = parser.methods.{}({})\n".format(

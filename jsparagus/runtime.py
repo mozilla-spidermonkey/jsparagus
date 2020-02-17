@@ -1,11 +1,11 @@
 """Runtime support for jsparagus-generated parsers."""
 
 # Nt is unused here, but we re-export it.
-from .grammar import Nt
+from .grammar import Nt, InitNt, End
 from .lexer import UnexpectedEndError
 import collections
 
-__all__ = ['ACCEPT', 'ERROR', 'Nt', 'Parser', 'ErrorToken']
+__all__ = ['ACCEPT', 'ERROR', 'Nt', 'InitNt', 'End', 'Parser', 'ErrorToken']
 
 ACCEPT = -0x7fffffffffffffff
 ERROR = ACCEPT - 1
@@ -283,30 +283,34 @@ class ParserV2:
         p.stack = self.stack[:]
         return p
 
+    def _str_stv(self, stv):
+        # NOTE: replace this function by repr(), to inspect wrong computations.
+        val = ''
+        if stv.value:
+            val = '*'
+        return "-- {} {}--> {}".format(stv.term, val, stv.state)
+
     def _dbg_where(self, t=""):
         print("stack: {}; {}\nexpect one of: {}".format(
-            ", ".join(repr(s) for s in self.stack), t,
+            " ".join(self._str_stv(s) for s in self.stack), t,
             repr(self.actions[self.stack[-1].state])
         ))
 
     def _shift(self, stv, lexer, consume_lexer = True):
         state = self.stack[-1].state
-        self._dbg_where("shift: {}".format(repr(stv.term)))
+        # self._dbg_where("shift: {}".format(repr(stv.term)))
         assert isinstance(self.actions[state], dict)
         state = self.actions[state].get(stv.term, ERROR)
         if state == ERROR:
             # self._dbg_where("(error)")
             raise ShiftError()
-        if state == ACCEPT:
-            # self._dbg_where("(accept)")
-            raise ShiftAccept()
         if consume_lexer:
             self.stack.append(StateTermValue(state, stv.term, lexer.take()))
         else:
             self.stack.append(StateTermValue(state, stv.term, stv.value))
         action = self.actions[state]
         while not isinstance(action, dict):  # Action
-            self._dbg_where("(action {})".format(state))
+            # self._dbg_where("(action {})".format(state))
             action(self, lexer)
             state = self.stack[-1].state
             action = self.actions[state]
@@ -330,11 +334,16 @@ class ParserV2:
         self.closed = True
         while True:
             try:
-                self._shift(StateTermValue(0, None, None), lexer, False)
+                self._shift(StateTermValue(0, End(), None), lexer, False)
                 break
             except ShiftAccept:
-                assert len(self.stack) == 1
-                return self.stack[0].value
+                # self._dbg_where("(accept)")
+                while self.stack[-1].term == End():
+                    self.stack.pop()
+                assert len(self.stack) == 2
+                assert self.stack[0].term is None
+                assert isinstance(self.stack[1].term, Nt)
+                return self.stack[1].value
             except ShiftError:
                 self._try_error_handling(lexer, None)
 
@@ -391,7 +400,7 @@ class ParserV2:
     def can_close(self):
         """Return True if self.close() would succeed."""
         # The easy case: no error, parsing just succeeds.
-        if self.can_accept_terminal(None):
+        if self.can_accept_terminal(End()):
             return True
 
         # The hard case: maybe error-handling would succeed?

@@ -1,3 +1,4 @@
+from .grammar import InitNt
 
 class Action:
     __slots__ = [
@@ -82,7 +83,10 @@ class Reduce(Action):
     using the parser table after reducing this operation. """
     __slots__ = 'nt', 'replay', 'pop'
     def __init__(self, nt, pop, replay = 0):
-        super().__init__([], ["nt_" + nt.name])
+        name = nt.name
+        if isinstance(name, InitNt):
+            name = "Start_" + name.goal.name
+        super().__init__([], ["nt_" + name])
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
         self.replay = replay # List of terms to shift back
