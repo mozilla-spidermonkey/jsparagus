@@ -2116,15 +2116,12 @@ class ParseTable:
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
 
-    def aps_empty(self):
-        return APS([], [], [], [], [])
     def aps_start(self, state, replay = []):
         "Return a parser state only knowing the state at which we are currently."
-        self.reduce_path_cache = {}
         edge = StackedEdge(state, None, True)
         return APS([edge], [edge], [], [], replay)
 
-    def aps_visitor(self, parent_aps, aps, visit):
+    def aps_next(self, aps):
         """Visit all the states of the parse table, as-if we were running a
         Generalized LR parser.
 
@@ -2144,9 +2141,6 @@ class ParseTable:
 
         """
         assert is_valid_aps(aps)
-        cont, any_action = visit(parent_aps, aps)
-        if not cont:
-            return
         st, sh, la, ac, rp = aps
         last_edge = sh[-1]
         state = self.states[last_edge.src]
@@ -2155,8 +2149,7 @@ class ParseTable:
                 edge = StackedEdge(last_edge.src, term, True)
                 new_sh = aps.shift[:-1] + [edge]
                 to = StackedEdge(to, None, True)
-                new_aps = APS(st, new_sh + [to], la + [term], ac + [edge], rp)
-                self.aps_visitor(aps, new_aps, visit)
+                yield APS(st, new_sh + [to], la + [term], ac + [edge], rp)
         else:
             term = aps.replay[0]
             rp = aps.replay[1:]
@@ -2165,25 +2158,17 @@ class ParseTable:
                 new_sh = aps.shift[:-1] + [edge]
                 to = state.terminals[term]
                 to = StackedEdge(to, None, True)
-                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
-                self.aps_visitor(aps, new_aps, visit)
+                yield APS(st, new_sh + [to], la, ac + [edge], rp)
             elif term in state.nonterminals:
                 edge = StackedEdge(last_edge.src, term, True)
                 new_sh = aps.shift[:-1] + [edge]
                 to = state.nonterminals[term]
                 to = StackedEdge(to, None, True)
-                new_aps = APS(st, new_sh + [to], la, ac + [edge], rp)
-                self.aps_visitor(aps, new_aps, visit)
+                yield APS(st, new_sh + [to], la, ac + [edge], rp)
 
-        if any_action:
-            term = None
-            rp = aps.replay
-        else:
-            term = aps.replay[0]
-            rp = aps.replay[1:]
+        term = None
+        rp = aps.replay
         for a, to in state.epsilon:
-            if not any_action and a != term:
-                continue
             edge = StackedEdge(last_edge.src, a, False)
             prev_sh = aps.shift[:-1] + [edge]
             # TODO: Add support for Lookahead and flag manipulation rules, as
@@ -2237,19 +2222,28 @@ class ParseTable:
                         new_replay = new_replay[-reducer.replay:]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - reducer.replay, 0)]
-                    new_aps = APS(new_st, new_sh, new_la, ac + [edge], new_replay)
-                    self.aps_visitor(aps, new_aps, visit)
+                    yield APS(new_st, new_sh, new_la, ac + [edge], new_replay)
             else:
                 to = StackedEdge(to, None, True)
-                new_aps = APS(st, prev_sh + [to], la, ac + [edge], rp)
-                self.aps_visitor(aps, new_aps, visit)
+                yield APS(st, prev_sh + [to], la, ac + [edge], rp)
+
+    def aps_visitor(self, aps, visit):
+        self.reduce_path_cache = {}
+        todo = []
+        todo.append(aps)
+        while todo:
+            aps = todo.pop()
+            cont = visit(aps)
+            if not cont:
+                continue
+            todo.extend(self.aps_next(aps))
 
     def lanes(self, state):
         """Compute the lanes from the amount of lookahead available. Only consider
         context when reduce states are encountered."""
         assert isinstance(state, int)
         record = []
-        def visit(parent_aps, aps):
+        def visit(aps):
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
             has_lookahead = len(aps.lookahead) >= 1
@@ -2261,8 +2255,8 @@ class ParseTable:
                 # print("lanes_visit stop:")
                 # print(aps_str(aps, "\trecord"))
                 record.append(aps)
-            return not stop, True
-        self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
+            return not stop
+        self.aps_visitor(self.aps_start(state), visit)
         return record
 
     def lookahead_lanes(self, state):
@@ -2271,7 +2265,7 @@ class ParseTable:
         assert isinstance(state, int)
         record = []
         seen_edge_after_reduce = set()
-        def visit(parent_aps, aps):
+        def visit(aps):
             # Note, this suppose that we are not considering flags when
             # computing, as flag might prevent some lookahead investigations.
             try:
@@ -2287,8 +2281,8 @@ class ParseTable:
                     record.append(aps)
             if first_reduce:
                 seen_edge_after_reduce.add((first_reduce, aps.actions[-1]))
-            return not stop, True
-        self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
+            return not stop
+        self.aps_visitor(self.aps_start(state), visit)
         return record
 
     def fix_with_context(self, s, aps_lanes):
@@ -2692,7 +2686,7 @@ class ParseTable:
         "Reconstruct the grammar production by traversing the parse table."
         assert isinstance(state, int)
         record = []
-        def visit(parent_aps, aps):
+        def visit(aps):
             # Stop after reducing once.
             if aps.actions == []:
                 return True, True
@@ -2703,8 +2697,8 @@ class ParseTable:
             if stop and len(aps.shift) == 1:
                 # Record state which are reducing at most all the shifted states.
                 record.append(aps)
-            return not stop, True
-        self.aps_visitor(self.aps_empty(), self.aps_start(state), visit)
+            return not stop
+        self.aps_visitor(self.aps_start(state), visit)
 
         context = OrderedSet()
         for aps in record:
