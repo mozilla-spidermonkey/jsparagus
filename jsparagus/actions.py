@@ -1,9 +1,11 @@
+from .ordered import OrderedFrozenSet
 from .grammar import InitNt
 
 class Action:
     __slots__ = [
         "read",    # Set of trait names which are consumed by this action.
         "write",   # Set of trait names which are mutated by this action.
+        "_hash",   # Cached hash.
     ]
 
     def __init__(self, read, write):
@@ -11,6 +13,7 @@ class Action:
         assert isinstance(write, list)
         self.read = read
         self.write = write
+        self._hash = None
 
     def is_condition(self):
         "Unordered condition, which accept or not to reach the next state."
@@ -61,6 +64,8 @@ class Action:
         return True
 
     def __hash__(self):
+        if self._hash is not None:
+            return self._hash
         def hashed_content():
             yield self.__class__
             yield "rd"
@@ -71,7 +76,11 @@ class Action:
                 yield alias
             for s in self.__slots__:
                 yield repr(getattr(self, s))
-        return hash(tuple(hashed_content()))
+        self._hash = hash(tuple(hashed_content()))
+        return self._hash
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)
 
     def __repr__(self):
         return str(self)
@@ -104,9 +113,10 @@ class Lookahead(Action):
     sequences of terminal/non-terminals sequences."""
     __slots__ = 'sequences', 'accept'
     def __init__(self, sequences, accept):
+        assert isinstance(sequences, OrderedFrozenSet)
         assert isinstance(accept, bool)
         super().__init__([], [])
-        self.sequences = sequences,
+        self.sequences = sequences
         self.accept = accept
     def is_condition(self):
         return True
