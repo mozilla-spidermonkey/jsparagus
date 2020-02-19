@@ -2046,6 +2046,28 @@ class ParseTable:
     def is_term_shifted(self, term):
         return not (isinstance(term, Action) and term.update_stack())
 
+    def is_valid_path(self, path, state = None):
+        """This function is used to check a list of edges and returns whether it
+        corresponds to a valid path within the parse table. This is useful when
+        merging sequences of edges from various locations."""
+        if len(path) == 0:
+            return True
+        edge = path[0]
+        path = path[1:]
+        if not state:
+            state = edge.src
+        if state != edge.src:
+            return False
+        state = edge.src
+        term = edge.term
+        if term == None and len(path) == 0:
+            return True
+        try:
+            dest = self.states[state][term]
+        except:
+            return False
+        return self.is_valid_path(path, dest)
+
     def shifted_path_to(self, state, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
         assert isinstance(right_of, list) and len(right_of) >= 1
@@ -2084,7 +2106,7 @@ class ParseTable:
             success_paths.append(path)
             assert reducer.nt in head.nonterminals
             to = head.nonterminals[reducer.nt]
-            yield path, StackedEdge(to, None, True)
+            yield path, [StackedEdge(path[0].src, reducer.nt, True), StackedEdge(to, None, True)]
         # When dealing with inconsistent states, we have to walk epsilon
         # backedges. This can lead us to have path where the head is not
         # reducing, increasing the number of error_paths.
@@ -2175,7 +2197,7 @@ class ParseTable:
             # both of these would invalide potential reduce paths.
             if a.update_stack():
                 reducer = a.reduce_with()
-                for path, to in self.reduce_path_cached(state, a):
+                for path, reduced_path in self.reduce_path_cached(state, a):
                     # reduce_paths contains the chains of state shifted,
                     # including epsilon transitions, in order to reduce the
                     # nonterminal. When reducing, the stack is resetted to
@@ -2203,6 +2225,7 @@ class ParseTable:
                     # initially, and therefore we are learning about the
                     # context.
                     new_st = path[:max(len(path) - len(prev_sh), 0)] + st
+                    assert self.is_valid_path(new_st)
 
                     # The shift list corresponds to the stack which is used in
                     # an LR parser, in addition to all the states which are
@@ -2210,7 +2233,8 @@ class ParseTable:
                     # path, as long as it matches. Then all popped elements are
                     # replaced by the state that we visit after replaying the
                     # non-terminal reduced by this action.
-                    new_sh = prev_sh[:-len(path)] + [to]
+                    new_sh = prev_sh[:-len(path)] + reduced_path
+                    assert self.is_valid_path(new_sh)
 
                     # When reducing, we replay terms which got previously
                     # pushed on the stack as our lookahead. These terms are
