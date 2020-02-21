@@ -13,12 +13,12 @@ edition = "2018"
 [lib]
 
 [dependencies]
-jsparagus-ast = { path = "rust/ast" }
-jsparagus-driver = { path = "rust/driver", optional = true }
-jsparagus-emitter = { path = "rust/emitter" }
-jsparagus-generated-parser = { path = "rust/generated_parser" }
-jsparagus-parser = { path = "rust/parser" }
-jsparagus-interpreter = { path = "rust/interpreter", optional = true  }
+jsparagus-ast = { path = "crates/ast" }
+jsparagus-driver = { path = "crates/driver", optional = true }
+jsparagus-emitter = { path = "crates/emitter" }
+jsparagus-generated-parser = { path = "crates/generated_parser" }
+jsparagus-parser = { path = "crates/parser" }
+jsparagus-interpreter = { path = "crates/interpreter", optional = true  }
 
 [features]
 default = []
