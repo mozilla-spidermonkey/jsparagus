@@ -556,7 +556,14 @@ def expand_all_optional_elements(grammar):
     """
     expanded_grammar = {}
 
-    empties = empty_nt_set(grammar)
+    # This was capturing the set of empty production to simplify the work of
+    # the previous algorithm which was trying to determine the lookahead.
+    # However, with the LR0Generator this is no longer needed as we are
+    # generating deliberatly inconsistent parse table states, which are then
+    # properly fixed by adding lookahead information where needed, and without
+    # bugs!
+    # empties = empty_nt_set(grammar)
+    empties = {}
 
     # Put all the productions in one big list, so each one has an index. We
     # will use the indices in the action table (as reduce action payloads).
