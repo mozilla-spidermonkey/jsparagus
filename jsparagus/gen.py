@@ -2345,16 +2345,117 @@ class ParseTable:
             #     stop, has_shift_loop, has_stack_loop, has_lookahead))
             # print(aps_str(aps, "\tvisitor"))
             if stop:
-                # print("lanes_visit stop:")
-                # print(aps_str(aps, "\trecord"))
+                print("lanes_visit stop:")
+                print(aps_str(aps, "\trecord"))
+                record.append(aps)
+            return not stop
+        self.aps_visitor(self.aps_start(state), visit)
+        return record
+
+    def context_lanes(self, state):
+        """Compute lanes, such that each reduce action can have set of unique stack to
+        reach the given state. The stacks are assumed to be loop-free by
+        reducing edges at most once.
+
+        In order to avoid attempting to eagerly solve everything using context
+        information, we break this loop as soon as we have one token of
+        lookahead in a case which does not have enough context.
+
+        The return value is a tuple where the first element is a boolean which
+        is True if we should fallback on solving this issue with more
+        lookahead, and the second is the list of APS lanes which are providing
+        enough context to disambiguate the inconsistency of the given state."""
+        assert isinstance(state, int)
+        def not_interesting(aps):
+            reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
+            has_reduce_loop = len(reduce_list) != len(set(reduce_list))
+            return has_reduce_loop
+
+        # The context is a dictionary which maps all stack suffixes from an APS
+        # stack. It is mapped to a list of tuples, where the each tuple is the
+        # index with the APS stack and the APS action used to follow this path.
+        context = collections.defaultdict(lambda: [])
+        def has_enough_context(aps):
+            try:
+                assert aps.actions[0] in context[tuple(aps.stack)]
+                # Check the number of different actions which can reach this
+                # location. If there is more than 1, then we do not have enough
+                # context.
+                return len(set(context[tuple(aps.stack)])) <= 1
+            except IndexError:
+                return False
+
+        self.reduce_path_cache = {}
+        collect = [self.aps_start(state)]
+        enough_context = False
+        while not enough_context:
+            print("collect.len = {}".format(len(collect)))
+            # Fill the context dictionary with all the sub-stack which might be
+            # encountered by other APS.
+            recurse = []
+            context = collections.defaultdict(lambda: [])
+            while collect:
+                aps = collect.pop()
+                recurse.append(aps)
+                if aps.actions == []:
+                    continue
+                for i in range(len(aps.stack)):
+                    context[tuple(aps.stack[i:])].append(aps.actions[0])
+            assert collect == []
+
+            print("recurse.len = {}".format(len(recurse)))
+            # Iterate over APS which do not yet have enough context information
+            # to uniquely identify a single action.
+            enough_context = True
+            while recurse:
+                aps = recurse.pop()
+                if not_interesting(aps):
+                    print("discard context lane:")
+                    print(aps_str(aps, "\tcontext"))
+                    continue
+                if has_enough_context(aps):
+                    collect.append(aps)
+                    continue
+                # If we have not enough context but some lookahead is
+                # available, attempt to first solve this issue using more
+                # lookahead before attempting to use context information.
+                if len(aps.lookahead) >= 1:
+                    # print("context_lanes:")
+                    # for aps in itertools.chain(collect, recurse, [aps]):
+                    #     print(aps_str(aps, "\tcontext"))
+                    return True, []
+                enough_context = False
+                print("extend starting at:\n{}".format(aps_str(aps, "\tcontext")))
+                collect.extend(self.aps_next(aps))
+            assert recurse == []
+
+        print("context_lanes:")
+        for aps in collect:
+            print(aps_str(aps, "\tcontext"))
+
+        return False, collect
+
+        def visit(aps):
+            reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
+            has_reduce_loop = len(reduce_list) != len(set(reduce_list))
+            has_lookahead = len(aps.lookahead) >= 1
+            stop = has_shift_loop or has_stack_loop or has_lookahead
+            # print("\t{} = {} or {} or {}".format(
+            #     stop, has_shift_loop, has_stack_loop, has_lookahead))
+            # print(aps_str(aps, "\tvisitor"))
+            if stop:
+                print("lanes_visit stop:")
+                print(aps_str(aps, "\trecord"))
                 record.append(aps)
             return not stop
         self.aps_visitor(self.aps_start(state), visit)
         return record
 
     def lookahead_lanes(self, state):
-        """As opposed to computing lanes to collect the stack changes, we only collect
-        lanes such that we see each non-terminal at most once."""
+        """Compute lanes to collect all lookahead symbols available. After each reduce
+        action, there is no need to consider the same non-terminal multiple
+        times, we are only interested in lookahead token and not in the context
+        information provided by reducing action."""
         assert isinstance(state, int)
         record = []
         seen_edge_after_reduce = set()
@@ -2711,24 +2812,31 @@ class ParseTable:
         # table state duplication.
 
         state = self.states[s]
-        if not state.is_inconsistent():
-            return
+        if state is None or not state.is_inconsistent():
+            return False
 
         all_reduce = all( a.update_stack() for a, _ in state.epsilon )
         any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
+        try_with_context = all_reduce and not any_shift
+        try_with_lookahead = not try_with_context
         # if verbose:
         #     print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:", "\taps"))
-        if all_reduce and not any_shift:
-            # TODO: If adding more context fails, we should fallback on using
-            # more lookahead.
-            aps_lanes = self.lanes(s)
-            assert aps_lanes != []
-            self.fix_with_context(s, aps_lanes)
-        else:
-            assert any_shift
+        if try_with_context:
+            if verbose:
+                print("\tFix with context.")
+            try_with_lookahead, aps_lanes = self.context_lanes(s)
+            if not try_with_lookahead:
+                assert aps_lanes != []
+                self.fix_with_context(s, aps_lanes)
+            elif verbose:
+                print("\tFallback on fixing with lookahead.")
+        if try_with_lookahead:
+            if verbose:
+                print("\tFix with lookahead.")
             aps_lanes = self.lookahead_lanes(s)
             assert aps_lanes != []
             self.fix_with_lookahead(s, aps_lanes)
+        return True
 
 
     def fix_inconsistent_table(self, verbose, progress):
