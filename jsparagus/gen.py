@@ -2922,12 +2922,12 @@ class ParseTable:
         def visit(aps):
             # Stop after reducing once.
             if aps.actions == []:
-                return True, True
+                return True
             last = aps.actions[-1].term
             is_reduce = not self.is_term_shifted(last)
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             stop = is_reduce or has_shift_loop
-            if stop and len(aps.shift) == 1:
+            if stop and len(aps.shift) == 2 and isinstance(aps.shift[0].term, Nt):
                 # Record state which are reducing at most all the shifted states.
                 record.append(aps)
             return not stop
