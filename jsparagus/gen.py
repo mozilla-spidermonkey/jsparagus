@@ -628,20 +628,6 @@ def expand_all_optional_elements(grammar):
             prods_with_indexes_by_nt)
 
 
-def remove_empty_productions(grammar):
-    """Return a clone of `grammar` with empty right-hand sides removed.
-
-    All empty productions are removed except any for the goal nonterminals,
-    so the grammar still recognizes the same language.
-    """
-    goal_nts = set(grammar.goals())
-    return grammar.with_nonterminals({
-        nt: NtDef((), [p for p in nt_def.rhs_list
-                       if len(p.body) > 0 or nt in goal_nts], nt_def.type)
-        for nt, nt_def in grammar.nonterminals.items()
-    })
-
-
 # *** The path algorithm ******************************************************
 
 def find_path(start_set, successors, test):
@@ -1484,9 +1470,7 @@ class CanonicalGrammar:
             grammar)
         self.prods = prods
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
-
-        self.grammar = remove_empty_productions(grammar)
-
+        self.grammar = grammar
 
 # An edge in a Parse table is a tuple of a source state and the term followed
 # to exit this state. The destination is not saved here as it can easily be
