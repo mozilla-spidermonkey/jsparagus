@@ -1648,7 +1648,7 @@ def on_stack(grammar, term):
     elif isinstance(term, LookaheadRule):
         return False
     elif isinstance(term, ErrorSymbol):
-        return False
+        return True
     elif isinstance(term, End):
         return True
     raise ValueError(term)
