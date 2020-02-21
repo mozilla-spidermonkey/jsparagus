@@ -61,11 +61,11 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
 rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
-	cd rust && cargo build
+	cargo build
 
 check: all
 	./test.sh
-	cd rust && cargo fmt && cargo test
+	cargo fmt && cargo test
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
