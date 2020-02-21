@@ -2399,8 +2399,8 @@ class ParseTable:
             while recurse:
                 aps = recurse.pop()
                 if not_interesting(aps):
-                    print("discard context lane:")
-                    print(aps_str(aps, "\tcontext"))
+                    # print("discard uninteresting context lane:")
+                    # print(aps_str(aps, "\tcontext"))
                     continue
                 if has_enough_context(aps):
                     collect.append(aps)
@@ -2409,12 +2409,12 @@ class ParseTable:
                 # available, attempt to first solve this issue using more
                 # lookahead before attempting to use context information.
                 if len(aps.lookahead) >= 1:
-                    # print("context_lanes:")
+                    # print("discard context_lanes due to lookahead:")
                     # for aps in itertools.chain(collect, recurse, [aps]):
                     #     print(aps_str(aps, "\tcontext"))
                     return True, []
                 enough_context = False
-                print("extend starting at:\n{}".format(aps_str(aps, "\tcontext")))
+                # print("extend starting at:\n{}".format(aps_str(aps, "\tcontext")))
                 collect.extend(self.aps_next(aps))
             assert recurse == []
 
@@ -2842,10 +2842,11 @@ class ParseTable:
                 todo.append(state.index)
 
         if verbose and todo:
-            print("\nGrammar is inconsistent."
-                  "\tNumber of States = {}"
-                  "\tNumber of inconsistencies found = {}".format(
-                      len(self.states), len(todo)))
+            print("\n".join([
+                "\nGrammar is inconsistent.",
+                "\tNumber of States = {}",
+                "\tNumber of inconsistencies found = {}"]).format(
+                    len(self.states), len(todo)))
 
         count = 0
         def visit_table():
@@ -2868,8 +2869,13 @@ class ParseTable:
                     start_len = len(self.states)
                     if verbose:
                         count = count + 1
-                        print("\nFixing state {}\n".format(self.states[s]))
-                    self.fix_inconsistent_state(s, verbose)
+                        print("Fixing state {}\n".format(self.states[s]))
+                    try:
+                        self.fix_inconsistent_state(s, verbose)
+                    except:
+                        print("Error while fixing state {}\n\n".format(self.states[s]))
+                        print(self.debug_context(s, "\n", "# "))
+                        raise
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
                         if s.is_inconsistent()
@@ -2892,10 +2898,11 @@ class ParseTable:
 
         consume(visit_table(), progress)
         if verbose:
-            print("\nGrammar is now consistent."
-                  "\tNumber of States = {}"
-                  "\tNumber of inconsistencies solved = {}".format(
-                  len(self.states), count))
+            print("\n".join([
+                "\nGrammar is now consistent.",
+                "\tNumber of States = {}",
+                "\tNumber of inconsistencies solved = {}"]).format(
+                    len(self.states), count))
         assert not self.is_inconsistent()
 
     def remove_all_unreachable_state(self, verbose, progress):
