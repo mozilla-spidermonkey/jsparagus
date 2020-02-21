@@ -7,6 +7,9 @@ mod simulator;
 #[cfg(test)]
 mod tests;
 
+extern crate jsparagus_ast as ast;
+extern crate jsparagus_generated_parser as generated_parser;
+
 use crate::parser::Parser;
 use ast::{
     arena,

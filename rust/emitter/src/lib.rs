@@ -4,6 +4,8 @@ mod emitter;
 mod lower;
 pub mod opcode;
 
+extern crate jsparagus_ast as ast;
+
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use dis::dis;
 
@@ -14,6 +16,8 @@ pub fn emit(ast: &mut ast::types::Program, options: &EmitOptions) -> Result<Emit
 
 #[cfg(test)]
 mod tests {
+    extern crate jsparagus_parser as parser;
+
     use super::{emit, EmitOptions};
     use crate::dis::*;
     use crate::opcode::*;

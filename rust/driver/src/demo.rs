@@ -6,12 +6,13 @@ use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use ast::{
-    self,
-    types::{Program, Script},
-};
+extern crate jsparagus_ast as ast;
+extern crate jsparagus_emitter as emitter;
+extern crate jsparagus_interpreter as interpreter;
+extern crate jsparagus_parser as parser;
+
+use ast::types::{Program, Script};
 use bumpalo::Bump;
-use emitter;
 use parser::{is_partial_script, parse_script, ParseOptions};
 
 use rustyline::error::ReadlineError;

@@ -1043,10 +1043,12 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         let loc = token.loc;
-        Ok(self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value,
-            loc,
-        })))
+        Ok(
+            self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+                value,
+                loc,
+            })),
+        )
     }
 
     // LiteralPropertyName : StringLiteral
@@ -1060,10 +1062,12 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         let loc = token.loc;
-        Ok(self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
-            value,
-            loc,
-        })))
+        Ok(
+            self.alloc(PropertyName::StaticPropertyName(StaticPropertyName {
+                value,
+                loc,
+            })),
+        )
     }
 
     // LiteralPropertyName : NumericLiteral
