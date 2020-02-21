@@ -1516,7 +1516,7 @@ class StateAndTransitions:
         "locations",    # Ordered set of LRItems (grammar position).
         "delayed_actions", # Ordered set of Actions which are pushed to the
                         # next state after a conflict.
-        "backedges",    # List of back edges and whether these are expected to
+        "backedges",    # Set of back edges and whether these are expected to
                         # be on the parser stack or not.
         "error_code",   # If an error occurs while matching this production,
                         # then the state index is mapped to this error code. be
@@ -1581,6 +1581,21 @@ class StateAndTransitions:
             yield (k, s)
         for k, s in self.epsilon:
             yield (k, s)
+
+    def rewrite_state_indexes(self, state_map):
+        self.index = state_map[self.index]
+        self.terminals = {
+            k: state_map[s] for k, s in self.terminals.items()
+        }
+        self.nonterminals = {
+            k: state_map[s] for k, s in self.nonterminals.items()
+        }
+        self.epsilon = [
+            (k, state_map[s]) for k, s in self.epsilon
+        ]
+        self.backedges = set(
+            Edge(state_map[s], k) for s, k in self.backedges
+        )
 
     def __contains__(self, term):
         if isinstance(term, Action):
@@ -1926,6 +1941,7 @@ class ParseTable:
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
         # TODO: Optimize by removing unused states.
+        self.remove_all_unreachable_state(verbose, progress)
         # TODO: Statically compute replayed terms. (maybe?)
         # TODO: Fold paths which have the same ending.
         # TODO: Split shift states from epsilon states.
@@ -1933,7 +1949,7 @@ class ParseTable:
     def is_inconsistent(self):
         "Returns True if the grammar contains any inconsistent state."
         for s in self.states:
-            if s.is_inconsistent():
+            if s is not None and s.is_inconsistent():
                 return True
         return False
 
@@ -1956,6 +1972,13 @@ class ParseTable:
         _, state = self.new_state(locations, delayed_actions)
         return state
 
+    def remove_state(self, s, maybe_unreachable_set):
+        state = self.states[s]
+        # print("Remove state {}".format(state))
+        self.clear_edges(state, maybe_unreachable_set)
+        del self.state_cache[state]
+        self.states[s] = None
+
     def add_edge(self, src, term, dest):
         assert isinstance(src, StateAndTransitions)
         assert term not in src
@@ -1968,12 +1991,16 @@ class ParseTable:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def replace_edge(self, src, term, dest):
+    def remove_edge(self, src, term, dest, maybe_unreachable_set):
+        self.states[dest].backedges.remove(Edge(src.index, term))
+        maybe_unreachable_set.add(dest)
+
+    def replace_edge(self, src, term, dest, maybe_unreachable_set):
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
         try:
             old_dest = src[term]
-            self.states[old_dest].backedges.remove(Edge(src.index, term))
+            self.remove_edge(src, term, old_dest, maybe_unreachable_set)
         except:
             pass
         if isinstance(term, Action):
@@ -1985,16 +2012,51 @@ class ParseTable:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def clear_edges(self, src):
+    def clear_edges(self, src, maybe_unreachable_set):
         """Remove all existing edges, in order to replace them by new one. This is used
         when resolving shift-reduce conflicts."""
         assert isinstance(src, StateAndTransitions)
         for term, dest in src.edges():
-            dest = self.states[dest]
-            dest.backedges.remove(Edge(src.index, term))
+            self.remove_edge(src, term, dest, maybe_unreachable_set)
         src.terminals = {}
         src.nonterminals = {}
         src.epsilon = []
+
+    def remove_unreachable_states(self, maybe_unreachable_set):
+        # TODO: This function is incomplete in case of loops, some cycle might
+        # remain isolated while not being reachable from the init states. We
+        # should maintain a notion of depth per-state, such that we can
+        # identify loops by noticing the all backedges have a larger depth than
+        # the current state.
+        _, init = zip(*self.named_goals)
+        init = set(init)
+        check_set = maybe_unreachable_set
+        while maybe_unreachable_set:
+            next_set = set()
+            for s in maybe_unreachable_set:
+                # Check if the state is reachable, if not remove the state and
+                # fill the next_set will all outgoing edges.
+                if len(self.states[s].backedges) == 0 and s not in init:
+                    self.remove_state(s, next_set)
+            maybe_unreachable_set = next_set
+
+    def is_reachable_state(self, s):
+        """Check whether the current state is reachable or not."""
+        assert isinstance(s, int)
+        if self.states[s] is None:
+            return False
+        reachable_back = set()
+        todo = [s]
+        while todo:
+            s = todo.pop()
+            reachable_back.add(s)
+            for s, _ in self.states[s].backedges:
+                if s not in reachable_back:
+                    todo.append(s)
+        for _, s in self.named_goals:
+            if s in reachable_back:
+                return True
+        return False
 
     def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
@@ -2091,7 +2153,9 @@ class ParseTable:
                 yield path
 
     def reduce_path(self, state, action):
-        "Compute all paths which might be reduced by a given action."
+        """Compute all paths which might be reduced by a given action. This function
+        assumes that the state is reachable from the starting goals, and that
+        the depth which is being queried has valid answers."""
         assert action.update_stack()
         reducer = action.reduce_with()
         assert isinstance(reducer, Reduce)
@@ -2110,18 +2174,23 @@ class ParseTable:
         # When dealing with inconsistent states, we have to walk epsilon
         # backedges. This can lead us to have path where the head is not
         # reducing, increasing the number of error_paths.
+        assert success_paths != []
         if error_paths:
             def stacked_path(path):
                 return tuple(e for e in path if self.term_is_stacked(e.term))
-            success_paths = set(stacked_path(p) for p in success_paths)
+            stack_success_paths = set(map(stacked_path, success_paths))
             for path in error_paths:
-                if stacked_path(path) not in success_paths:
+                if stacked_path(path) not in stack_success_paths:
+                    for p in success_paths:
+                        print("Success path: {}".format(" ".join(map(edge_str, p))))
+                    head = self.states[path[0].src]
                     print("\n".join([
                         "Reduce path does not start with a state capable of shifting the non-terminal {}.",
                         "The Reduce path is: {}",
-                        "The starting state is {}"
-                    ]).format(reducer.nt, " ".join(edge_str(edge) for edge in path), head))
-                    head = self.states[path[0].src]
+                        "The starting state is {}",
+                        "{} backedges are: {}"
+                    ]).format(reducer.nt, " ".join(map(edge_str, path)), head,
+                              len(head.backedges), ", ".join(map(edge_str, head.backedges))))
                     assert reducer.nt in head.nonterminals
 
     def reduce_path_cached(self, state, action):
@@ -2204,11 +2273,11 @@ class ParseTable:
                     # head, and the nonterminal `term.nt` is pushed, to resume
                     # in the state `to`.
 
-                    # print("Compare shifted path, with reduced path:\n\tshifted = [{}]\n\treduced = [{}], \n\taction = {},\n\tto = {}\n".format(
-                    #     ", ".join(repr(e) for e in prev_sh),
-                    #     ", ".join(repr(e) for e in path),
+                    # print("Compare shifted path, with reduced path:\n\tshifted = {}\n\treduced = {}, \n\taction = {},\n\tnew_path = {}\n".format(
+                    #     " ".join(edge_str(e) for e in prev_sh),
+                    #     " ".join(edge_str(e) for e in path),
                     #     str(a),
-                    #     self.states[to.src],
+                    #     " ".join(edge_str(e) for e in reduced_path),
                     # ))
                     if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         # If the reduced production does not match the shifted
@@ -2482,6 +2551,7 @@ class ParseTable:
                 if edge_rules[rule.edge] != None:
                     edge_rules[rule.edge].append(rule)
 
+        maybe_unreachable_set = set()
         flag_name = self.get_flag_for(nts)
         for edge, rules in edge_rules.items():
             # If the edge is an identity function, then skip doing any
@@ -2516,13 +2586,16 @@ class ParseTable:
             # Replace the edge from src to dest, by an edge from src to the
             # newly created switch state, which then decide which flag to set
             # before going to the destination target.
-            self.replace_edge(src, edge.term, switch)
+            self.replace_edge(src, edge.term, switch, maybe_unreachable_set)
+
+        self.remove_unreachable_states(maybe_unreachable_set)
         pass
 
     def fix_with_lookahead(self, s, aps_lanes):
         # Find the list of terminals following each actions (even reduce
         # actions).
         assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
+        maybe_unreachable_set = set()
 
         # For each shifted term, associate a set of state and actions which
         # would have to be executed.
@@ -2611,13 +2684,14 @@ class ParseTable:
                 if is_new or recurse:
                     restore_edges(new_target, new_shift_map, depth + "  ")
 
-            self.clear_edges(state)
+            self.clear_edges(state, maybe_unreachable_set)
             for term, target in edges.items():
                 self.add_edge(state, term, target)
             # print("{}replaced by {}\n".format(depth, state))
 
         state = self.states[s]
         restore_edges(state, shift_map, "")
+        self.remove_unreachable_states(maybe_unreachable_set)
 
     def fix_inconsistent_state(self, s, verbose):
         # Fix inconsistent states works one state at a time. The goal is to
@@ -2671,40 +2745,67 @@ class ParseTable:
                 todo.append(state.index)
 
         if verbose and todo:
-            print("""\nGrammar is inconsistent.
-\tNumber of States = {}
-\tNumber of inconsistencies found = {}""".format(
-                len(self.states), len(todo)))
+            print("\nGrammar is inconsistent."
+                  "\tNumber of States = {}"
+                  "\tNumber of inconsistencies found = {}".format(
+                      len(self.states), len(todo)))
 
         count = 0
         def visit_table():
             nonlocal count
+            unreachable = []
             while todo:
-                yield # progress bar.
-                # TODO: Compare stack / queue, for the traversal of the states.
-                s = todo.popleft()
-                assert self.states[s].is_inconsistent()
-                start_len = len(self.states)
-                if verbose:
-                    count = count + 1
-                    # print("\nFixing state {}".format(self.states[s]))
-                self.fix_inconsistent_state(s, verbose)
-                new_inconsistent_states = [
-                    s.index for s in self.states[start_len:]
-                    if s.is_inconsistent()
-                ]
-                # if verbose:
-                #     print("\nAdding {} inconsistent states".format(len(new_inconsistent_states)))
-                for s in new_inconsistent_states:
-                    todo.append(s)
+                while todo:
+                    yield # progress bar.
+                    # TODO: Compare stack / queue, for the traversal of the states.
+                    s = todo.popleft()
+                    if not self.is_reachable_state(s):
+                        # NOTE: We do not fix unreachable states, as we might
+                        # not be able to compute the reduce actions. However,
+                        # we should not clean edges not backedges as the state
+                        # might become reachable later on, since states are
+                        # shared if they have the same locations.
+                        unreachable.append(s)
+                        continue
+                    assert self.states[s].is_inconsistent()
+                    start_len = len(self.states)
+                    if verbose:
+                        count = count + 1
+                        print("\nFixing state {}\n".format(self.states[s]))
+                    self.fix_inconsistent_state(s, verbose)
+                    new_inconsistent_states = [
+                        s.index for s in self.states[start_len:]
+                        if s.is_inconsistent()
+                    ]
+                    if verbose:
+                        print("\tAdding {} states".format(len(self.states[start_len:])))
+                        print("\tWith {} inconsistent states".format(len(new_inconsistent_states)))
+                    todo.extend(new_inconsistent_states)
+
+                # Check whether none of the previously inconsistent and
+                # unreahable state became reachable. If so add it back to the
+                # todo list.
+                still_unreachable = []
+                for s in unreachable:
+                    if self.is_reachable_state(s):
+                        todo.append(s)
+                    else:
+                        still_unreachable.append(s)
+                unreachable = still_unreachable
 
         consume(visit_table(), progress)
         if verbose:
-            print("""\nGrammar is now consistent.
-\tNumber of States = {}
-\tNumber of inconsistencies solved = {}""".format(
-                len(self.states), count))
+            print("\nGrammar is now consistent."
+                  "\tNumber of States = {}"
+                  "\tNumber of inconsistencies solved = {}".format(
+                  len(self.states), count))
         assert not self.is_inconsistent()
+
+    def remove_all_unreachable_state(self, verbose, progress):
+        self.states = [s for s in self.states if s is not None]
+        state_map = { s.index: i for i, s in enumerate(self.states) }
+        for s in self.states:
+            s.rewrite_state_indexes(state_map)
 
     def debug_context(self, state, split_txt = "; ", prefix = ""):
         "Reconstruct the grammar production by traversing the parse table."
