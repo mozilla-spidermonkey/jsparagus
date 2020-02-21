@@ -8,6 +8,8 @@ mod parser_tables_generated;
 mod stack_value_generated;
 mod token;
 
+extern crate jsparagus_ast as ast;
+
 pub use ast_builder::AstBuilder;
 pub use declaration_kind::DeclarationKind;
 pub use error::{ParseError, Result};
