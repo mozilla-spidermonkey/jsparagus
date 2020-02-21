@@ -1,5 +1,5 @@
 from .ordered import OrderedFrozenSet
-from .grammar import InitNt
+from .grammar import InitNt, Nt
 
 class Action:
     __slots__ = [
@@ -105,37 +105,32 @@ class Reduce(Action):
         return True
     def reduce_with(self):
         return self
-    def shifted_action(self, shifted_terms):
-        return Reduce(self.nt, self.pop, replay = self.replay + len(shifted_terms))
+    def shifted_action(self, shifted_term):
+        return Reduce(self.nt, self.pop, replay = self.replay + 1)
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
     sequences of terminal/non-terminals sequences."""
-    __slots__ = 'sequences', 'accept'
-    def __init__(self, sequences, accept):
-        assert isinstance(sequences, OrderedFrozenSet)
+    __slots__ = 'terms', 'accept'
+    def __init__(self, terms, accept):
+        assert isinstance(terms, OrderedFrozenSet)
+        assert all(not isinstance(t, Nt) for t in terms)
         assert isinstance(accept, bool)
         super().__init__([], [])
-        self.sequences = sequences
+        self.terms = terms
         self.accept = accept
     def is_condition(self):
         return True
     def condition(self):
         return self
     def __str__(self):
-        return "Lookahead({}, {})".format(self.sequences, self.accept)
-    def shifted_action(self, shifted_terms):
-        shift = len(shifted_terms)
-        new_seqs = []
-        match = False
-        for seq in self.sequences:
-            if shifted_terms[:len(seq)] == seq[:shift]:
-                if seq[shift:] == []:
-                    return self.accept
-                new_seqs.append(seq[shift:])
-        if new_seqs == []:
-            return not self.accept
-        return Lookahead(new_seqs, accept)
+        return "Lookahead({}, {})".format(self.terms, self.accept)
+    def shifted_action(self, shifted_term):
+        if isinstance(shifted_term, Nt):
+            return True
+        if shifted_term in self.terms:
+            return self.accept
+        return not self.accept
 
 class FilterFlag(Action):
     """Define a filter which check for one value of the flag, and continue to the
@@ -189,9 +184,8 @@ class FunCall(Action):
         self.set_to = set_to     # Temporary variable name to set with the result.
     def __str__(self):
         return "FunCall({}, {}, {}, {})".format(self.method, self.offset, self.args, self.set_to)
-    def shifted_action(self, shifted_terms):
-        shift = len(shifted_terms)
-        return FunCall(self.method, self.read, self.write, self.args, self.set_to, offset = self.offset + shift)
+    def shifted_action(self, shifted_term):
+        return FunCall(self.method, self.read, self.write, self.args, self.set_to, offset = self.offset + 1)
 
 class Seq(Action):
     """Aggregate multiple actions in one statement. Note, that the aggregated
@@ -216,6 +210,6 @@ class Seq(Action):
         return self.actions[-1].update_stack()
     def reduce_with(self):
         return self.actions[-1].reduce_with()
-    def shifted_action(self, shift = 1):
+    def shifted_action(self, shift):
         actions = list(map(lambda a: a.shifted_action(shift), self.actions))
         return Seq(actions)

@@ -2548,7 +2548,7 @@ class ParseTable:
             new_actions = []
             accept = True
             for edge in actions:
-                new_term = edge.term.shifted_action([term])
+                new_term = edge.term.shifted_action(term)
                 if new_term == False:
                     accept = False
                     break
