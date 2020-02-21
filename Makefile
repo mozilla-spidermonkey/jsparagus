@@ -12,10 +12,12 @@ VENV_BIN_DIR := $(JSPARAGUS_DIR)jsparagus_build_venv/bin
 PYTHON := $(VENV_BIN_DIR)/python
 PIP := $(VENV_BIN_DIR)/pip
 
-init:
+init-venv:
 	python3 -m venv jsparagus_build_venv &&\
 	$(PIP) install --upgrade pip &&\
-	$(PIP) install -r requirements.txt &&\
+	$(PIP) install -r requirements.txt
+
+init: init-venv
 	git config core.hooksPath .githooks
 
 all: $(PY_OUT) rust
