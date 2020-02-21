@@ -2378,7 +2378,7 @@ class ParseTable:
         collect = [self.aps_start(state)]
         enough_context = False
         while not enough_context:
-            print("collect.len = {}".format(len(collect)))
+            # print("collect.len = {}".format(len(collect)))
             # Fill the context dictionary with all the sub-stack which might be
             # encountered by other APS.
             recurse = []
@@ -2392,7 +2392,7 @@ class ParseTable:
                     context[tuple(aps.stack[i:])].append(aps.actions[0])
             assert collect == []
 
-            print("recurse.len = {}".format(len(recurse)))
+            # print("recurse.len = {}".format(len(recurse)))
             # Iterate over APS which do not yet have enough context information
             # to uniquely identify a single action.
             enough_context = True
@@ -2418,9 +2418,9 @@ class ParseTable:
                 collect.extend(self.aps_next(aps))
             assert recurse == []
 
-        print("context_lanes:")
-        for aps in collect:
-            print(aps_str(aps, "\tcontext"))
+        # print("context_lanes:")
+        # for aps in collect:
+        #     print(aps_str(aps, "\tcontext"))
 
         return False, collect
 
