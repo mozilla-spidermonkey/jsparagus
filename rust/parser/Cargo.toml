@@ -3,6 +3,7 @@ name = "parser"
 version = "0.1.0"
 authors = ["Jason Orendorff <jason.orendorff@gmail.com>"]
 edition = "2018"
+license = "MIT/Apache-2.0"
 
 [dependencies]
 generated_parser = { path = "../generated_parser" }
