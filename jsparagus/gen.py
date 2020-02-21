@@ -2103,23 +2103,21 @@ class ParseTable:
         """This function is used to check a list of edges and returns whether it
         corresponds to a valid path within the parse table. This is useful when
         merging sequences of edges from various locations."""
-        if len(path) == 0:
-            return True
-        edge = path[0]
-        path = path[1:]
-        if not state:
-            state = edge.src
-        if state != edge.src:
-            return False
-        state = edge.src
-        term = edge.term
-        if term == None and len(path) == 0:
-            return True
-        try:
-            dest = self.states[state][term]
-        except:
-            return False
-        return self.is_valid_path(path, dest)
+        if not state and path != []:
+            state = path[0].src
+        while path:
+            edge = path[0]
+            path = path[1:]
+            if state != edge.src:
+                return False
+            term = edge.term
+            if term == None and len(path) == 0:
+                return True
+            try:
+                state = self.states[state][term]
+            except:
+                return False
+        return True
 
     def shifted_path_to(self, state, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
