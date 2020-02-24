@@ -1476,15 +1476,18 @@ class CanonicalGrammar:
 # to exit this state. The destination is not saved here as it can easily be
 # inferred by looking it up in the parse table.
 #
+# Note, the term might be `None` if no term is specified yet. This is useful
+# when manipulating a list of edges and we know that we are taking transitions
+# from a given state, but not yet with which term.
+#
 #   state: Index of the state from which this directed edge is coming from.
 #
 #   term: Edge transition value, this can be a terminal, non-terminal or an
 #       action to be executed on an epsilon transition.
 Edge = collections.namedtuple("Edge", "src term")
-StackedEdge = collections.namedtuple("Edge", "src term on_stack")
 
 def edge_str(edge):
-    assert isinstance(edge, (Edge, StackedEdge))
+    assert isinstance(edge, (Edge, Edge))
     return "{} -- {} -->".format(edge.src, str(edge.term))
 
 # Structure used to report conflict while creating or merging states.
@@ -1861,13 +1864,12 @@ def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
 def is_valid_aps(aps):
     "Returns whether an APS contains the right content."
     check = True
-    check &= all(isinstance(st, StackedEdge) for st in aps.stack)
-    check &= all(isinstance(sh, StackedEdge) for sh in aps.shift)
+    check &= all(isinstance(st, Edge) for st in aps.stack)
+    check &= all(isinstance(sh, Edge) for sh in aps.shift)
     check &= all(not isinstance(la, Action) for la in aps.lookahead)
-    check &= all(isinstance(ac, StackedEdge) for ac in aps.actions)
+    check &= all(isinstance(ac, Edge) for ac in aps.actions)
     check &= all(not isinstance(rp, Action) for rp in aps.replay)
     return check
-
 
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
@@ -2159,7 +2161,7 @@ class ParseTable:
             success_paths.append(path)
             assert reducer.nt in head.nonterminals
             to = head.nonterminals[reducer.nt]
-            yield path, [StackedEdge(path[0].src, reducer.nt, True), StackedEdge(to, None, True)]
+            yield path, [Edge(path[0].src, reducer.nt), Edge(to, None)]
         # When dealing with inconsistent states, we have to walk epsilon
         # backedges. This can lead us to have path where the head is not
         # reducing, increasing the number of error_paths.
@@ -2198,7 +2200,7 @@ class ParseTable:
 
     def aps_start(self, state, replay = []):
         "Return a parser state only knowing the state at which we are currently."
-        edge = StackedEdge(state, None, True)
+        edge = Edge(state, None)
         return APS([edge], [edge], [], [], replay)
 
     def aps_next(self, aps):
@@ -2226,30 +2228,30 @@ class ParseTable:
         state = self.states[last_edge.src]
         if aps.replay == []:
             for term, to in itertools.chain(state.terminals.items(), state.nonterminals.items()):
-                edge = StackedEdge(last_edge.src, term, True)
+                edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
-                to = StackedEdge(to, None, True)
+                to = Edge(to, None)
                 yield APS(st, new_sh + [to], la + [term], ac + [edge], rp)
         else:
             term = aps.replay[0]
             rp = aps.replay[1:]
             if term in state.terminals:
-                edge = StackedEdge(last_edge.src, term, True)
+                edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
                 to = state.terminals[term]
-                to = StackedEdge(to, None, True)
+                to = Edge(to, None)
                 yield APS(st, new_sh + [to], la, ac + [edge], rp)
             elif term in state.nonterminals:
-                edge = StackedEdge(last_edge.src, term, True)
+                edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
                 to = state.nonterminals[term]
-                to = StackedEdge(to, None, True)
+                to = Edge(to, None)
                 yield APS(st, new_sh + [to], la, ac + [edge], rp)
 
         term = None
         rp = aps.replay
         for a, to in state.epsilon:
-            edge = StackedEdge(last_edge.src, a, False)
+            edge = Edge(last_edge.src, a)
             prev_sh = aps.shift[:-1] + [edge]
             # TODO: Add support for Lookahead and flag manipulation rules, as
             # both of these would invalide potential reduce paths.
@@ -2306,7 +2308,7 @@ class ParseTable:
                     new_la = la[:max(len(la) - reducer.replay, 0)]
                     yield APS(new_st, new_sh, new_la, ac + [edge], new_replay)
             else:
-                to = StackedEdge(to, None, True)
+                to = Edge(to, None)
                 yield APS(st, prev_sh + [to], la, ac + [edge], rp)
 
     def aps_visitor(self, aps, visit):
@@ -2692,7 +2694,7 @@ class ParseTable:
         shift_map = collections.defaultdict(lambda: [])
         for aps in aps_lanes:
             actions = list(keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0]))
-            assert isinstance(actions[-1], StackedEdge)
+            assert isinstance(actions[-1], Edge)
             assert actions[-1].term == aps.lookahead[0]
             src = actions[-1].src
             term = actions[-1].term
@@ -2717,7 +2719,7 @@ class ParseTable:
                     break
                 elif new_term == True:
                     continue
-                new_actions.append(StackedEdge(edge.src, new_term, edge.on_stack))
+                new_actions.append(Edge(edge.src, new_term))
             if accept:
                 target = self.states[src][term]
                 target = self.states[target]
@@ -2753,7 +2755,7 @@ class ParseTable:
                     if actions != []:
                         # Pull edges, with delayed actions.
                         edge = actions[0]
-                        assert isinstance(edge, StackedEdge)
+                        assert isinstance(edge, Edge)
                         for action in actions:
                             delayed.add(action)
                         new_shift_map[edge.term].append((target, actions[1:]))
