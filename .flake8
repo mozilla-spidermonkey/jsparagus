@@ -9,7 +9,7 @@
 #     what you do. We choose to break before operators.
 ignore = E721,W503
 
-exclude = jsparagus_build_venv,rust/target,jsparagus/parse_pgen_generated.py,js_parser/parser_tables.py
+exclude = jsparagus_build_venv,crates/target,jsparagus/parse_pgen_generated.py,js_parser/parser_tables.py
 
 # todo: get this down to 99
 max_line_length=109

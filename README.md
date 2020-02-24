@@ -41,7 +41,7 @@ When it's done, you can:
 
 *   Run `make check` to make sure things are working.
 
-*   `cd rust && cargo run` to test the JS parser and bytecode emitter.
+*   `cd crates/driver && cargo run` to test the JS parser and bytecode emitter.
 
 
 ## Limitations
