@@ -1915,9 +1915,6 @@ class ParseTable:
         "terminals",
         # List of non-terminals.
         "nonterminals",
-        # Dictionary which serves as a cache of reduce_paths. Indexed by state
-        # and action tuples.
-        "reduce_path_cache",
         # Set of existing flags.
         "flags",
     ]
@@ -1927,7 +1924,6 @@ class ParseTable:
         self.states = []
         self.state_cache = {}
         self.named_goals = []
-        self.reduce_path_cache = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
         self.create_lr0_table(grammar, verbose, progress)
@@ -2121,39 +2117,59 @@ class ParseTable:
                 return False
         return True
 
-    def shifted_path_to(self, state, n, right_of):
+    def shifted_path_to(self, n, right_of):
         "Compute all paths with n shifted terms, ending with state."
         assert isinstance(right_of, list) and len(right_of) >= 1
-        assert isinstance(state, int)
         if n == 0:
             yield right_of
+        state = right_of[0].src
+        assert isinstance(state, int)
         for edge in self.states[state].backedges:
             if not self.is_term_shifted(edge.term):
                 print(repr(edge))
                 print(self.states[edge.src])
             assert self.is_term_shifted(edge.term)
-            stacked = self.term_is_stacked(edge.term)
-            if stacked:
+            if self.term_is_stacked(edge.term):
                 s_n = n - 1
                 if n == 0:
                     continue
             else:
                 s_n = n
-            stacked_edge = StackedEdge(edge.src, edge.term, stacked)
-            for path in self.shifted_path_to(edge.src, s_n, [stacked_edge] + right_of):
+            from_edge = Edge(edge.src, edge.term)
+            for path in self.shifted_path_to(s_n, [from_edge] + right_of):
                 yield path
 
-    def reduce_path(self, state, action):
+    def reduce_path(self, shifted):
         """Compute all paths which might be reduced by a given action. This function
         assumes that the state is reachable from the starting goals, and that
         the depth which is being queried has valid answers."""
+        assert len(shifted) >= 1
+        action = shifted[-1].term
         assert action.update_stack()
         reducer = action.reduce_with()
         assert isinstance(reducer, Reduce)
         depth = reducer.pop + reducer.replay
+        if depth > 0:
+            # We are readucing at least one element from the stack.
+            stacked = [i for i, e in enumerate(shifted) if self.term_is_stacked(e.term)]
+            if len(stacked) < depth:
+                # We have not shifted enough elements to cover the full reduce
+                # rule, start looking for context using backedges.
+                shifted_from = 0
+                depth -= len(stacked)
+            else:
+                # We shifted much more elements than necessary for reducing,
+                # just start from the first stacked element which correspond to
+                # consuming all stack element reduced.
+                shifted_from = stacked[-depth]
+                depth = 0
+            shifted_end = shifted[shifted_from:]
+        else:
+            # We are reducing no element from the stack.
+            shifted_end = shifted[-1:]
         error_paths = []
         success_paths = []
-        for path in self.shifted_path_to(state.index, depth, [StackedEdge(state.index, action, False)]):
+        for path in self.shifted_path_to(depth, shifted_end):
             head = self.states[path[0].src]
             if reducer.nt not in head.nonterminals:
                 error_paths.append(path)
@@ -2183,17 +2199,6 @@ class ParseTable:
                     ]).format(reducer.nt, " ".join(map(edge_str, path)), head,
                               len(head.backedges), ", ".join(map(edge_str, head.backedges))))
                     assert reducer.nt in head.nonterminals
-
-    def reduce_path_cached(self, state, action):
-        key = (state, action)
-        try:
-            return iter(self.reduce_path_cache[key])
-        except KeyError:
-            collect = []
-            for result in self.reduce_path(state, action):
-                collect.append(result)
-            self.reduce_path_cache[key] = collect
-            return iter(collect)
 
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
@@ -2257,7 +2262,7 @@ class ParseTable:
             # both of these would invalide potential reduce paths.
             if a.update_stack():
                 reducer = a.reduce_with()
-                for path, reduced_path in self.reduce_path_cached(state, a):
+                for path, reduced_path in self.reduce_path(prev_sh):
                     # reduce_paths contains the chains of state shifted,
                     # including epsilon transitions, in order to reduce the
                     # nonterminal. When reducing, the stack is resetted to
@@ -2312,7 +2317,6 @@ class ParseTable:
                 yield APS(st, prev_sh + [to], la, ac + [edge], rp)
 
     def aps_visitor(self, aps, visit):
-        self.reduce_path_cache = {}
         todo = []
         todo.append(aps)
         while todo:
@@ -2376,7 +2380,6 @@ class ParseTable:
             except IndexError:
                 return False
 
-        self.reduce_path_cache = {}
         collect = [self.aps_start(state)]
         enough_context = False
         while not enough_context:
