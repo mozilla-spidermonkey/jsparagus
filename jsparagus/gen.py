@@ -1641,7 +1641,7 @@ def demo():
 
     sandbox = {}
     exec(code, sandbox)
-    parse = sandbox['parse_expr']
+    Parser = sandbox['Parser']
 
     while True:
         try:
@@ -1650,7 +1650,10 @@ def demo():
             break
 
         try:
-            result = parse(tokenize, line)
+            parser = Parser()
+            lexer = tokenize(parser)
+            lexer.write(line)
+            result = lexer.close()
         except Exception as exc:
             print(exc.__class__.__name__ + ": " + str(exc))
         else:
