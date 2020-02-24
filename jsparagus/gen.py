@@ -2931,7 +2931,28 @@ class ParseTable:
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
-    def debug_context(self, state, split_txt = "; ", prefix = ""):
+    def prepare_debug_context(self):
+        """To better filter out the traversal of the grammar in debug context, we
+        pre-compute for each state the maximal depth of each state within a
+        production. Therefore, if visiting a state no increases the reducing
+        depth beyind the ability to shrink the shift list to 0, then we can
+        stop going deeper, as we entered a different production. """
+        depths = collections.defaultdict(lambda: [])
+        for s in self.states:
+            if s is None:
+                continue
+            for t, d in s.epsilon:
+                if self.is_term_shifted(t):
+                    continue
+                for path, _ in self.reduce_path([Edge(s.index, t)]):
+                    for i, edge in enumerate(path):
+                        depths[edge.src].append(i + 1)
+        depths = { s: max(ds) for s, ds in depths.items() }
+        # print(repr(depths))
+        return depths
+
+
+    def debug_context(self, state, split_txt = "; ", prefix = "", depth = None):
         "Reconstruct the grammar production by traversing the parse table."
         assert isinstance(state, int)
         record = []
@@ -2942,9 +2963,18 @@ class ParseTable:
             last = aps.actions[-1].term
             is_reduce = not self.is_term_shifted(last)
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
-            stop = is_reduce or has_shift_loop
-            if stop and len(aps.shift) == 2 and isinstance(aps.shift[0].term, Nt):
-                # Record state which are reducing at most all the shifted states.
+            can_reduce_later = True
+            if depth is not None:
+                try:
+                    can_reduce_later = depth[aps.shift[-1].src] >= len(aps.shift)
+                except KeyError:
+                    can_reduce_later = False
+            stop = is_reduce or has_shift_loop or not can_reduce_later
+            # Record state which are reducing at most all the shifted states.
+            save = stop and len(aps.shift) == 2
+            save = save and isinstance(aps.shift[0].term, Nt)
+            save = save and not self.is_term_shifted(aps.actions[-1].term)
+            if save:
                 record.append(aps)
             return not stop
         self.aps_visitor(self.aps_start(state), visit)

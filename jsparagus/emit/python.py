@@ -67,13 +67,14 @@ def write_python_parse_table(out, parse_table):
             return indent, res
         raise ValueError("Unknown action type")
 
+    depth = parse_table.prepare_debug_context()
     # Write code correspond to each action which has to be performed.
     for i, state in enumerate(parse_table.states):
         assert i == state.index
         if state.epsilon == []:
             continue
         out.write("def state_{}_actions(parser, lexer):\n".format(i))
-        out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
+        out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ", depth)))
         out.write("    value = None\n")
         for term, dest in state.edges():
             indent, res = write_action(term, "    ")
@@ -87,7 +88,7 @@ def write_python_parse_table(out, parse_table):
     out.write("actions = [\n")
     for i, state in enumerate(parse_table.states):
         assert i == state.index
-        out.write("    # {}.\n{}\n".format(i, parse_table.debug_context(i, "\n", "    # ")))
+        out.write("    # {}.\n{}\n".format(i, parse_table.debug_context(i, "\n", "    # ", depth)))
         if state.epsilon == []:
             row = { term: dest for term, dest in state.edges() }
             out.write("    " + repr(row) + ",\n")
