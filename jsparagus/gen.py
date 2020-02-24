@@ -1935,6 +1935,21 @@ class ParseTable:
         # TODO: Fold paths which have the same ending.
         # TODO: Split shift states from epsilon states.
 
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, filename):
+        with open(filename, 'rb') as f:
+            obj = pickle.load(f)
+            if len(f.read()) != 0:
+                raise ValueError("file has unexpected extra bytes at end")
+        if not isinstance(obj, cls):
+            raise TypeError("file contains wrong kind of object: expected {}, got {}"
+                            .format(cls.__name__, obj.__class__.__name__))
+        return obj
+
     def is_inconsistent(self):
         "Returns True if the grammar contains any inconsistent state."
         for s in self.states:

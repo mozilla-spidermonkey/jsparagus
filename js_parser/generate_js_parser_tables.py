@@ -101,7 +101,7 @@ def main():
         states = jsparagus.gen.generate_parser_states(
             grammar, verbose=args.verbose, progress=args.progress)
     else:
-        states = jsparagus.gen.ParserStates.load(in_filename)
+        states = jsparagus.gen.ParseTable.load(in_filename)
 
     # Generate output.
     try:
