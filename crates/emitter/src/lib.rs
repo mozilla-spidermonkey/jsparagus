@@ -3,6 +3,7 @@ mod dis;
 mod emitter;
 mod lower;
 pub mod opcode;
+mod reference_op_emitter;
 
 extern crate jsparagus_ast as ast;
 
