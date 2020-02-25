@@ -1512,11 +1512,6 @@ class StateAndTransitions:
                         # next state after a conflict.
         "backedges",    # Set of back edges and whether these are expected to
                         # be on the parser stack or not.
-        "error_code",   # If an error occurs while matching this production,
-                        # then the state index is mapped to this error code. be
-                        # on the parser stack or not. Attempting to merge 2
-                        # states with different error_code would lead to a
-                        # conflict.
         "_hash",        # Hash to identify states which have to be merged. This
                         # hash is composed of LRItems of the LR0 grammar, and
                         # actions performed on it since.
@@ -1532,7 +1527,6 @@ class StateAndTransitions:
         self.locations = locations
         self.delayed_actions = delayed_actions
         self.backedges = set()
-        self.error_code = None
         # NOTE: The hash of a state depends on its location in the LR0
         # parse-table, as well as the actions which have not yet been executed.
         def hashed_content():
@@ -1566,6 +1560,11 @@ class StateAndTransitions:
                 return True
             if len(self.epsilon) != len(set(k.condition().value for k, s in self.epsilon)):
                 return True
+        else:
+            try:
+                self.get_error_code()
+            except ValueError:
+                return True
         return False
 
     def edges(self):
@@ -1591,6 +1590,15 @@ class StateAndTransitions:
             Edge(state_map[s], k) for s, k in self.backedges
         )
 
+    def get_error_code(self):
+        errors = [t for t in self.terminals if isinstance(t, ErrorSymbol)]
+        if len(errors) == 0:
+            return None
+        elif len(errors) > 1:
+            raise ValueError("More than one error symbol on the same state.")
+        else:
+            return errors[0]
+
     def __contains__(self, term):
         if isinstance(term, Action):
             for t, s in self.epsilon:
@@ -1612,6 +1620,12 @@ class StateAndTransitions:
             return self.nonterminals[term]
         else:
             return self.terminals[term]
+
+    def get(self, term, default):
+        try:
+            return self.__getitem__(term)
+        except KeyError:
+            return default
 
     def __str__(self):
         conflict = ""
@@ -1683,9 +1697,6 @@ class LR0Generator:
     __slots__ = [
         "grammar",
         "lr_items",
-        "error_code", # The grammar is annotated with ErrorSymbols, which are
-                      # mapped to error_code. These codes are used to provide
-                      # user friendly error messages.
         "key",
         "_hash",
     ]
@@ -1917,6 +1928,9 @@ class ParseTable:
         "nonterminals",
         # Set of existing flags.
         "flags",
+        # Carry the info to be used when generating debug_context. If False,
+        # then no debug_context is ever produced.
+        "debug_info",
     ]
 
     def __init__(self, grammar, verbose = False, progress = False):
@@ -1926,14 +1940,16 @@ class ParseTable:
         self.named_goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
+        self.debug_info = False
         self.create_lr0_table(grammar, verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
-        # TODO: Optimize by removing unused states.
+        # Optimize by removing unused states.
         self.remove_all_unreachable_state(verbose, progress)
         # TODO: Statically compute replayed terms. (maybe?)
         # TODO: Fold paths which have the same ending.
-        # TODO: Split shift states from epsilon states.
+        # Split shift states from epsilon states.
+        self.group_epsilon_states(verbose, progress)
 
     def save(self, filename):
         with open(filename, 'wb') as f:
@@ -2756,7 +2772,6 @@ class ParseTable:
                 # which are delayed.
                 locations = OrderedSet()
                 delayed = OrderedSet()
-                error_code_from = None
                 new_shift_map = collections.defaultdict(lambda: [])
                 recurse = False
                 if not self.is_term_shifted(term):
@@ -2766,10 +2781,6 @@ class ParseTable:
                     assert isinstance(target, StateAndTransitions)
                     locations |= target.locations
                     delayed |= target.delayed_actions
-                    if target.error_code:
-                        if error_code_from:
-                            raise Conflict("error_code cannot be merged between {} and {}".format(target.index, error_code_from.index))
-                        error_code_from = target
                     if actions != []:
                         # Pull edges, with delayed actions.
                         edge = actions[0]
@@ -2894,6 +2905,7 @@ class ParseTable:
                         self.fix_inconsistent_state(s, verbose)
                     except:
                         print("Error while fixing state {}\n\n".format(self.states[s]))
+                        self.debug_info = True
                         print(self.debug_context(s, "\n", "# "))
                         raise
                     new_inconsistent_states = [
@@ -2931,6 +2943,21 @@ class ParseTable:
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
+    def group_epsilon_states(self, verbose, progress):
+        shift_states = [s for s in self.states if len(s.epsilon) == 0]
+        action_states = [s for s in self.states if len(s.epsilon) > 0]
+        self.states = []
+        self.states.extend(shift_states)
+        self.states.extend(action_states)
+        state_map = { s.index: i for i, s in enumerate(self.states) }
+        for s in self.states:
+            s.rewrite_state_indexes(state_map)
+
+    def count_shift_states(self):
+        return sum(1 for s in self.states if len(s.epsilon) == 0)
+    def count_action_states(self):
+        return sum(1 for s in self.states if len(s.epsilon) > 0)
+
     def prepare_debug_context(self):
         """To better filter out the traversal of the grammar in debug context, we
         pre-compute for each state the maximal depth of each state within a
@@ -2948,13 +2975,16 @@ class ParseTable:
                     for i, edge in enumerate(path):
                         depths[edge.src].append(i + 1)
         depths = { s: max(ds) for s, ds in depths.items() }
-        # print(repr(depths))
         return depths
 
 
-    def debug_context(self, state, split_txt = "; ", prefix = "", depth = None):
+    def debug_context(self, state, split_txt = "; ", prefix = ""):
         "Reconstruct the grammar production by traversing the parse table."
         assert isinstance(state, int)
+        if self.debug_info is False:
+            return ""
+        if self.debug_info is True:
+            self.debug_info = self.prepare_debug_context()
         record = []
         def visit(aps):
             # Stop after reducing once.
@@ -2964,11 +2994,10 @@ class ParseTable:
             is_reduce = not self.is_term_shifted(last)
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             can_reduce_later = True
-            if depth is not None:
-                try:
-                    can_reduce_later = depth[aps.shift[-1].src] >= len(aps.shift)
-                except KeyError:
-                    can_reduce_later = False
+            try:
+                can_reduce_later = self.debug_info[aps.shift[-1].src] >= len(aps.shift)
+            except KeyError:
+                can_reduce_later = False
             stop = is_reduce or has_shift_loop or not can_reduce_later
             # Record state which are reducing at most all the shifted states.
             save = stop and len(aps.shift) == 2
@@ -2999,8 +3028,9 @@ class ParseTable:
             )
             context.add(txt)
 
+        if split_txt == None:
+            return context
         return split_txt.join(context)
-        pass
 
 
 def generate_parser_states(grammar, *, verbose=False, progress=False):
@@ -3026,9 +3056,9 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
 
     if target == 'rust':
         if isinstance(parser_data, ParserStates):
-            emit.write_rust_parser(out, parser_data, handler_info)
+            emit.write_rust_parser_states(out, parser_data, handler_info)
         else:
-            raise ValueError("Unexpected parser_data kind")
+            emit.write_rust_parse_table(out, parser_data, handler_info)
     else:
         if isinstance(parser_data, ParserStates):
             emit.write_python_parser_states(out, parser_data)
@@ -3043,7 +3073,8 @@ def compile(grammar):
     out = io.StringIO()
     generate_parser(out, grammar)
     scope = {}
-    # print(out.getvalue())
+    # with open("parse_with_python.py", "w") as f:
+    #     f.write(out.getvalue())
     exec(out.getvalue(), scope)
     return scope['Parser']
 

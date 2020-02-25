@@ -67,14 +67,13 @@ def write_python_parse_table(out, parse_table):
             return indent, res
         raise ValueError("Unknown action type")
 
-    depth = parse_table.prepare_debug_context()
     # Write code correspond to each action which has to be performed.
     for i, state in enumerate(parse_table.states):
         assert i == state.index
         if state.epsilon == []:
             continue
         out.write("def state_{}_actions(parser, lexer):\n".format(i))
-        out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ", depth)))
+        out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
         out.write("    value = None\n")
         for term, dest in state.edges():
             indent, res = write_action(term, "    ")
@@ -88,7 +87,7 @@ def write_python_parse_table(out, parse_table):
     out.write("actions = [\n")
     for i, state in enumerate(parse_table.states):
         assert i == state.index
-        out.write("    # {}.\n{}\n".format(i, parse_table.debug_context(i, "\n", "    # ", depth)))
+        out.write("    # {}.\n{}\n".format(i, parse_table.debug_context(i, "\n", "    # ")))
         if state.epsilon == []:
             row = { term: dest for term, dest in state.edges() }
             out.write("    " + repr(row) + ",\n")
@@ -102,7 +101,7 @@ def write_python_parse_table(out, parse_table):
     for i in range(0, len(parse_table.states), SLICE_LEN):
         states_slice = parse_table.states[i:i + SLICE_LEN]
         out.write("    {}\n".format(
-            " ".join(repr(state.error_code) + "," for state in states_slice)))
+            " ".join(repr(state.get_error_code()) + "," for state in states_slice)))
     out.write("]\n\n")
 
     out.write("goal_nt_to_init_state = {}\n\n".format(
