@@ -651,4 +651,4 @@ def write_rust_parse_table(out, parse_table, handler_info):
         fallible_methods = handler_info_json["fallible-methods"]
         parser_traits = handler_info_json["parser-traits"]
 
-    RustParserWriter(out, parser_states, fallible_methods, parser_traits).emit()
+    RustParserWriter(out, parse_table, fallible_methods, parser_traits).emit()
