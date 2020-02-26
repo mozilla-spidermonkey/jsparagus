@@ -2,6 +2,7 @@
 
 from ..grammar import InitNt, CallMethod, Some, is_concrete_element, Nt
 from ..actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from ..runtime import SPECIAL_CASE_TAG
 
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
@@ -143,14 +144,36 @@ def write_python_parser_states(out, parser_states):
         out.write("from jsparagus.runtime import Nt, ErrorToken\n")
     out.write("\n")
 
+    special_case_cache = {}
+    special_cases = []
+    def render_action(action):
+        if isinstance(action, tuple):
+            if action not in special_case_cache:
+                if action[0] == 'IfSameLine':
+                    special_case_cache[action] = len(special_cases)
+                    special_cases.append(
+                        "lambda lexer, t: {} if lexer.saw_line_terminator() else {}"
+                        .format(action[2], action[1]))
+                else:
+                    raise ValueError("unrecognized kind of special case: " + repr(action))
+            index = special_case_cache[action]
+            return SPECIAL_CASE_TAG + index
+        else:
+            assert isinstance(action, int)
+            return action
+
     out.write("actions = [\n")
     for i, state in enumerate(states):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))
         # for item in state._lr_items:
         #     out.write("    #       {}\n".format(grammar.lr_item_to_str(prods, item)))
-        out.write("    " + repr(state.action_row) + ",\n")
+        out.write("    {"
+                  + ", ".join("{!r}: {!r}".format(t, render_action(action))
+                              for t, action in state.action_row.items())
+                  + "},\n")
         out.write("\n")
     out.write("]\n\n")
+
     out.write("ctns = [\n")
     for state in states:
         row = {
@@ -159,6 +182,12 @@ def write_python_parser_states(out, parser_states):
         }
         out.write("    " + repr(row) + ",\n")
     out.write("]\n\n")
+
+    out.write("special_cases = [\n")
+    for case in special_cases:
+        out.write("    {},\n".format(case))
+    out.write("]\n\n")
+
     out.write("error_codes = [\n")
     SLICE_LEN = 16
     for i in range(0, len(states), SLICE_LEN):
@@ -219,6 +248,6 @@ def write_python_parser_states(out, parser_states):
     out.write("    def __init__(self, goal{}, builder=None):\n".format(default_goal))
     out.write("        if builder is None:\n")
     out.write("            builder = DefaultBuilder()\n")
-    out.write("        super().__init__(actions, ctns, reductions, error_codes,\n")
+    out.write("        super().__init__(actions, ctns, reductions, special_cases, error_codes,\n")
     out.write("                         goal_nt_to_init_state[goal], builder)\n")
     out.write("\n")

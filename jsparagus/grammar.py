@@ -10,7 +10,7 @@ from . import types
 # A grammar is a dictionary mapping nonterminal names to lists of right-hand
 # sides. Each right-hand side (also called a "production") is a list whose
 # elements can include terminals, nonterminals, Optional elements, LookaheadRules,
-# and Nt elements (function calls).
+# and NoLineTerminatorHere.
 #
 # The most common elements are terminals and nonterminals, so a grammar usually
 # looks something like this:
@@ -99,9 +99,9 @@ class Production:
 #     `1` would refer to the `+` token itself, but that's not super useful.)
 #
 #     These integers are not quite indexes into `production.body`, because
-#     LookaheadRule and ErrorSymbol elements don't count: in the production
-#     `stmt ::= [lookahead != "let"] expr ";"`, `0` is the expr, and `1` is the
-#     semicolon token.  See `is_concrete_element(e)`.
+#     LookaheadRule, ErrorSymbol, and NoLineTerminatorHere elements don't
+#     count: in the production `stmt ::= [lookahead != "let"] expr ";"`, `0` is
+#     the expr, and `1` is the semicolon token.  See `is_concrete_element(e)`.
 #
 # *   CallMethod objects pass values to a builder method and return the result.
 #     The `args` are nested reduce expressions.
@@ -352,6 +352,8 @@ class Grammar:
                 return self.intern(e)
             elif isinstance(e, (LookaheadRule, End, ErrorSymbol)):
                 return self.intern(e)
+            elif e is NoLineTerminatorHere:
+                return e
             else:
                 raise TypeError(
                     "invalid grammar: unrecognized element in production "
@@ -656,6 +658,8 @@ class Grammar:
             return "[lookahead {} {}]".format(op, s)
         elif isinstance(e, End):
             return "<END>"
+        elif e is NoLineTerminatorHere:
+            return "[no LineTerminator here]"
         else:
             return str(e)
 
@@ -776,6 +780,9 @@ a "reduce" action.
 # *   `LookaheadRule` objects are like lookahead assertions in regular
 #     expressions.
 #
+# *   The `NoLineTerminatorHere` singleton object can appear between two other
+#     symbols to rule out line breaks between them.
+#
 # *   `ErrorSymbol` objects never match anything produced by the lexer. Instead
 #     they match an ErrorToken that's artificially injected into the token
 #     stream at runtime, by the parser itself, just before a token that does
@@ -787,7 +794,7 @@ def is_concrete_element(e):
 
     A production's concrete elements can be used in reduce expressions.
     """
-    return not isinstance(e, (LookaheadRule, ErrorSymbol))
+    return not isinstance(e, (LookaheadRule, ErrorSymbol, NoLineTerminatorHereClass))
 
 
 class Nt:
@@ -910,6 +917,13 @@ def lookahead_intersect(a, b):
         else:
             return LookaheadRule(a.set | b.set, False)
 
+
+class NoLineTerminatorHereClass:
+    def __str__(self):
+        return 'NoLineTerminatorHere'
+
+
+NoLineTerminatorHere = NoLineTerminatorHereClass()
 
 # Optional elements. These are expanded out before states are calculated,
 # so the core of the algorithm never sees them.

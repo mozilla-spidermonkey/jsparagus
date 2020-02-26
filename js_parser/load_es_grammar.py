@@ -42,14 +42,24 @@ ECMASCRIPT_SYNTACTIC_GOAL_NTS = [
 # Identifiers are complicated. A "synthetic terminal" is a shorthand symbol
 # that stands for any one of a set of terminals. For example, *IdentifierName*
 # stands for any token that looks like an identifier, including keywords.
+#
+# These sets must use the names of the terminals produced by the lexer.  Except
+# for `Name`, our lexer output uses the terminal symbols of the syntactic
+# grammar, which include some nonterminals of the lexical grammar. The
+# syntactic grammar uses `BooleanLiteral`, not `true` and `false`; and it uses
+# `NullLiteral` instead of `null`.
 ECMASCRIPT_SYNTHETIC_TERMINALS = {
     'IdentifierName': OrderedSet([
         'Name',
+        'BooleanLiteral',
+        'NullLiteral',
+        'NameWithEscape',
         *ECMASCRIPT_FULL_KEYWORDS,
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
-    ]),
+    ]) - OrderedSet(['true', 'false', 'null']),
     'Identifier': OrderedSet([
         'Name',
+        'NameWithEscape',
         *ECMASCRIPT_CONDITIONAL_KEYWORDS
     ]),
 }
@@ -58,9 +68,11 @@ ECMASCRIPT_SYNTHETIC_TERMINALS = {
 ECMASCRIPT_TOKEN_NAMES = [
     'BooleanLiteral',
     'IdentifierName',
+    'PrivateIdentifier',
     'NoSubstitutionTemplate',
     'NullLiteral',
     'NumericLiteral',
+    'BigIntLiteral',
     'RegularExpressionLiteral',
     'StringLiteral',
     'TemplateHead',

@@ -20,6 +20,7 @@ class JSParser(jsparagus.runtime.Parser):
             parser_tables.actions,
             parser_tables.ctns,
             parser_tables.reductions,
+            parser_tables.special_cases,
             parser_tables.error_codes,
             Script_entry_state,
             parser_tables.DefaultBuilder()

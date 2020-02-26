@@ -19,6 +19,10 @@
     "_type": "struct",
     "value": "String"
   },
+  "PrivateIdentifier": {
+    "_type": "struct",
+    "value": "String"
+  },
   "Label": {
     "_type": "struct",
     "value": "String"
@@ -101,6 +105,12 @@
     "Module": "Module",
     "Script": "Script"
   },
+  "IfStatement": {
+    "_type": "struct",
+    "test": "Box<Expression>",
+    "consequent": "Box<Statement>",
+    "alternate": "Option<Box<Statement>>"
+  },
   "Statement": {
     "_type": "enum",
     "BlockStatement": {
@@ -135,11 +145,7 @@
       "update": "Option<Box<Expression>>",
       "block": "Box<Statement>"
     },
-    "IfStatement": {
-      "test": "Box<Expression>",
-      "consequent": "Box<Statement>",
-      "alternate": "Option<Box<Statement>>"
-    },
+    "IfStatement": "IfStatement",
     "LabeledStatement": {
       "label": "Label",
       "body": "Box<Statement>"
@@ -219,10 +225,7 @@
       "left": "Box<Expression>",
       "right": "Box<Expression>"
     },
-    "CallExpression": {
-      "callee": "ExpressionOrSuper",
-      "arguments": "Arguments"
-    },
+    "CallExpression": "CallExpression",
     "CompoundAssignmentExpression": {
       "operator": "CompoundAssignmentOperator",
       "binding": "SimpleAssignmentTarget",
@@ -241,6 +244,11 @@
     },
     "NewTargetExpression": null,
     "ObjectExpression": "ObjectExpression",
+    "OptionalExpression": {
+      "object": "ExpressionOrSuper",
+      "tail": "Box<Expression>"
+    },
+    "OptionalChain": "OptionalChain",
     "UnaryExpression": {
       "operator": "UnaryOperator",
       "operand": "Box<Expression>"
@@ -268,12 +276,39 @@
   "MemberExpression": {
     "_type": "enum",
     "ComputedMemberExpression": "ComputedMemberExpression",
-    "StaticMemberExpression": "StaticMemberExpression"
+    "StaticMemberExpression": "StaticMemberExpression",
+    "PrivateFieldExpression": "PrivateFieldExpression"
+  },
+  "OptionalChain": {
+    "_type": "enum",
+    "ComputedMemberExpressionTail": {
+      "expression": "Box<Expression>"
+    },
+    "StaticMemberExpressionTail": {
+      "property": "IdentifierName"
+    },
+    "CallExpressionTail": {
+      "arguments": "Arguments"
+    },
+    "ComputedMemberExpression": "ComputedMemberExpression",
+    "StaticMemberExpression": "StaticMemberExpression",
+    "CallExpression": "CallExpression"
   },
   "PropertyName": {
     "_type": "enum",
     "ComputedPropertyName": "ComputedPropertyName",
     "StaticPropertyName": "StaticPropertyName"
+  },
+  "CallExpression": {
+    "_type": "struct",
+    "callee": "ExpressionOrSuper",
+    "arguments": "Arguments"
+  },
+  "ClassElementName": {
+    "_type": "enum",
+    "ComputedPropertyName": "ComputedPropertyName",
+    "StaticPropertyName": "StaticPropertyName",
+    "PrivateFieldName": "PrivateIdentifier"
   },
   "ObjectProperty": {
     "_type": "enum",
@@ -437,18 +472,24 @@
     "_type": "struct",
     "name": "Option<BindingIdentifier>",
     "super_": "Option<Box<Expression>>",
-    "elements": "Vec<ClassElement>"
+    "elements": "Vec<Box<ClassElement>>"
   },
   "ClassDeclaration": {
     "_type": "struct",
     "name": "BindingIdentifier",
     "super_": "Option<Box<Expression>>",
-    "elements": "Vec<ClassElement>"
+    "elements": "Vec<Box<ClassElement>>"
   },
   "ClassElement": {
-    "_type": "struct",
-    "is_static": "bool",
-    "method": "MethodDefinition"
+    "_type": "enum",
+    "MethodDefinition": {
+      "is_static": "bool",
+      "method": "MethodDefinition"
+    },
+    "FieldDefinition": {
+      "name": "ClassElementName",
+      "init": "Option<Box<Expression>>"
+    }
   },
   "ModuleItems": {
     "_type": "enum",
@@ -581,6 +622,11 @@
     "_type": "struct",
     "object": "ExpressionOrSuper",
     "property": "IdentifierName"
+  },
+  "PrivateFieldExpression": {
+    "_type": "struct",
+    "object": "Box<Expression>",
+    "field": "PrivateIdentifier"
   },
   "TemplateExpressionElement": {
     "_type": "enum",

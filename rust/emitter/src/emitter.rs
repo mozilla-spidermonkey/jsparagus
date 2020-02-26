@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 use super::opcode::Opcode;
+use byteorder::{ByteOrder, LittleEndian};
 use std::convert::TryInto;
 use std::fmt;
 
@@ -24,6 +25,24 @@ pub enum AsyncFunctionResolveKind {
 #[allow(non_camel_case_types)]
 pub type u24 = u32;
 
+/// For tracking bytecode offsets in jumps
+#[derive(PartialEq, Debug)]
+pub struct BytecodeOffset {
+    pub offset: usize,
+}
+
+// Struct to hold atom index in `EmitResult.strings`.
+// Opaque from outside of this module to avoid creating invalid atom index.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct AtomIndex {
+    index: u32,
+}
+impl AtomIndex {
+    fn new(index: u32) -> Self {
+        Self { index }
+    }
+}
+
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
@@ -37,6 +56,21 @@ pub struct InstructionWriter {
 
     /// Number of JOF_IC instructions emitted so far.
     num_ic_entries: usize,
+
+    /// Number of instructions in this script that have JOF_TYPESET.
+    num_type_sets: usize,
+}
+
+#[derive(Debug)]
+pub struct EmitOptions {
+    pub no_script_rval: bool,
+}
+impl EmitOptions {
+    pub fn new() -> Self {
+        Self {
+            no_script_rval: false,
+        }
+    }
 }
 
 /// The output of bytecode-compiling a script or module.
@@ -44,8 +78,27 @@ pub struct InstructionWriter {
 pub struct EmitResult {
     pub bytecode: Vec<u8>,
     pub strings: Vec<String>,
+
+    // Line and column numbers for the first character of source.
+    pub lineno: usize,
+    pub column: usize,
+
+    pub main_offset: usize,
+    pub max_fixed_slots: u32,
     pub maximum_stack_depth: u32,
+    pub body_scope_index: u32,
     pub num_ic_entries: u32,
+    pub num_type_sets: u32,
+
+    pub strict: bool,
+    pub bindings_accessed_dynamically: bool,
+    pub has_call_site_obj: bool,
+    pub is_for_eval: bool,
+    pub is_module: bool,
+    pub is_function: bool,
+    pub has_non_syntactic_scope: bool,
+    pub needs_function_environment_objects: bool,
+    pub has_module_goal: bool,
 }
 
 /// The error of bytecode-compilation.
@@ -70,6 +123,7 @@ impl InstructionWriter {
             stack_depth: 0,
             maximum_stack_depth: 0,
             num_ic_entries: 0,
+            num_type_sets: 0,
         }
     }
 
@@ -78,10 +132,28 @@ impl InstructionWriter {
             bytecode: self.bytecode,
             strings: self.strings,
 
+            lineno: 1,
+            column: 0,
+
+            main_offset: 0,
+            max_fixed_slots: 0,
+
             // These values probably can't be out of range for u32, as we would
             // have hit other limits first. Release-assert anyway.
             maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
+            body_scope_index: 0,
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
+            num_type_sets: self.num_type_sets.try_into().unwrap(),
+
+            strict: false,
+            bindings_accessed_dynamically: false,
+            has_call_site_obj: false,
+            is_for_eval: false,
+            is_module: false,
+            is_function: false,
+            has_non_syntactic_scope: false,
+            needs_function_environment_objects: false,
+            has_module_goal: false,
         }
     }
 
@@ -107,8 +179,10 @@ impl InstructionWriter {
     }
 
     fn emit_op_common(&mut self, opcode: Opcode, nuses: usize) {
-        assert!(self.stack_depth >= nuses as usize,
-                "InstructionWriter misuse! Not enough arguments on the stack.");
+        assert!(
+            self.stack_depth >= nuses as usize,
+            "InstructionWriter misuse! Not enough arguments on the stack."
+        );
         self.stack_depth -= nuses as usize;
 
         let ndefs = opcode.ndefs();
@@ -127,6 +201,10 @@ impl InstructionWriter {
 
         if opcode.has_ic_index() {
             self.write_u32(self.num_ic_entries.try_into().unwrap());
+        }
+
+        if opcode.has_typeset() {
+            self.num_type_sets += 1;
         }
     }
 
@@ -165,9 +243,9 @@ impl InstructionWriter {
         self.write_u32(value);
     }
 
-    fn emit_with_name_index(&mut self, opcode: Opcode, name: &str) {
+    fn emit_with_atom(&mut self, opcode: Opcode, atom_index: AtomIndex) {
         self.emit_op(opcode);
-        self.emit_atom(name);
+        self.emit_atom_index(atom_index);
     }
 
     fn emit_aliased(&mut self, opcode: Opcode, hops: u8, slot: u24) {
@@ -182,23 +260,22 @@ impl InstructionWriter {
         self.emit_i32(opcode, offset);
     }
 
-    fn emit_atom(&mut self, value: &str) {
-        let mut index = None;
+    pub fn get_atom_index(&mut self, value: &str) -> AtomIndex {
         // Eventually we should be fancy and make this O(1)
         for (i, string) in self.strings.iter().enumerate() {
             if string == value {
-                index = Some(i as u32);
+                return AtomIndex::new(i as u32);
             }
         }
-        let index: u32 = match index {
-            Some(index) => index,
-            None => {
-                let index = self.strings.len();
-                self.strings.push(value.to_string());
-                index as u32
-            }
-        };
-        self.bytecode.extend_from_slice(&index.to_ne_bytes());
+
+        let index = self.strings.len();
+        self.strings.push(value.to_string());
+        AtomIndex::new(index as u32)
+    }
+
+    fn emit_atom_index(&mut self, atom_index: AtomIndex) {
+        self.bytecode
+            .extend_from_slice(&atom_index.index.to_ne_bytes());
     }
 
     // Public methods to emit each instruction.
@@ -249,9 +326,9 @@ impl InstructionWriter {
         self.emit_u32(Opcode::BigInt, const_index);
     }
 
-    pub fn string(&mut self, value: &str) {
+    pub fn string(&mut self, str_index: AtomIndex) {
         self.emit_op(Opcode::String);
-        self.emit_atom(value);
+        self.emit_atom_index(str_index);
     }
 
     pub fn symbol(&mut self, symbol: u8) {
@@ -334,16 +411,16 @@ impl InstructionWriter {
         self.emit1(Opcode::ObjWithProto);
     }
 
-    pub fn init_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitProp, name);
+    pub fn init_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitProp, name);
     }
 
-    pub fn init_hidden_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitHiddenProp, name);
+    pub fn init_hidden_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitHiddenProp, name);
     }
 
-    pub fn init_locked_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitLockedProp, name);
+    pub fn init_locked_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitLockedProp, name);
     }
 
     pub fn init_elem(&mut self) {
@@ -354,12 +431,12 @@ impl InstructionWriter {
         self.emit1(Opcode::InitHiddenElem);
     }
 
-    pub fn init_prop_getter(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitPropGetter, name);
+    pub fn init_prop_getter(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitPropGetter, name);
     }
 
-    pub fn init_hidden_prop_getter(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitHiddenPropGetter, name);
+    pub fn init_hidden_prop_getter(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitHiddenPropGetter, name);
     }
 
     pub fn init_elem_getter(&mut self) {
@@ -370,12 +447,12 @@ impl InstructionWriter {
         self.emit1(Opcode::InitHiddenElemGetter);
     }
 
-    pub fn init_prop_setter(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitPropSetter, name);
+    pub fn init_prop_setter(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitPropSetter, name);
     }
 
-    pub fn init_hidden_prop_setter(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitHiddenPropSetter, name);
+    pub fn init_hidden_prop_setter(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitHiddenPropSetter, name);
     }
 
     pub fn init_elem_setter(&mut self) {
@@ -386,14 +463,14 @@ impl InstructionWriter {
         self.emit1(Opcode::InitHiddenElemSetter);
     }
 
-    pub fn get_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetProp, name);
+    pub fn get_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetProp, name);
     }
 
-    pub fn call_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::CallProp, name);
+    pub fn call_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::CallProp, name);
     }
-    
+
     pub fn get_elem(&mut self) {
         self.emit1(Opcode::GetElem);
     }
@@ -402,16 +479,16 @@ impl InstructionWriter {
         self.emit1(Opcode::CallElem);
     }
 
-    pub fn length(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::Length, name);
+    pub fn length(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::Length, name);
     }
 
-    pub fn set_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetProp, name);
+    pub fn set_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::SetProp, name);
     }
 
-    pub fn strict_set_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictSetProp, name);
+    pub fn strict_set_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::StrictSetProp, name);
     }
 
     pub fn set_elem(&mut self) {
@@ -422,12 +499,12 @@ impl InstructionWriter {
         self.emit1(Opcode::StrictSetElem);
     }
 
-    pub fn del_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::DelProp, name);
+    pub fn del_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::DelProp, name);
     }
 
-    pub fn strict_del_prop(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictDelProp, name);
+    pub fn strict_del_prop(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::StrictDelProp, name);
     }
 
     pub fn del_elem(&mut self) {
@@ -446,20 +523,20 @@ impl InstructionWriter {
         self.emit1(Opcode::SuperBase);
     }
 
-    pub fn get_prop_super(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetPropSuper, name);
+    pub fn get_prop_super(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetPropSuper, name);
     }
 
     pub fn get_elem_super(&mut self) {
         self.emit1(Opcode::GetElemSuper);
     }
 
-    pub fn set_prop_super(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetPropSuper, name);
+    pub fn set_prop_super(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::SetPropSuper, name);
     }
 
-    pub fn strict_set_prop_super(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictSetPropSuper, name);
+    pub fn strict_set_prop_super(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::StrictSetPropSuper, name);
     }
 
     pub fn set_elem_super(&mut self) {
@@ -617,12 +694,12 @@ impl InstructionWriter {
         self.emit1(Opcode::StrictSpreadEval);
     }
 
-    pub fn implicit_this(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::ImplicitThis, name);
+    pub fn implicit_this(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::ImplicitThis, name);
     }
 
-    pub fn g_implicit_this(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GImplicitThis, name);
+    pub fn g_implicit_this(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GImplicitThis, name);
     }
 
     pub fn call_site_obj(&mut self, object_index: u32) {
@@ -703,6 +780,21 @@ impl InstructionWriter {
 
     pub fn jump_target(&mut self) {
         self.emit_op(Opcode::JumpTarget);
+    }
+
+    pub fn bytecode_offset(&mut self) -> BytecodeOffset {
+        BytecodeOffset {
+            offset: self.bytecode.len(),
+        }
+    }
+
+    pub fn patch_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
+        let target = self.bytecode_offset();
+        for jump in jumplist {
+            let new_target = (target.offset - jump.offset) as i32;
+            let index = jump.offset + 1;
+            LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
+        }
     }
 
     pub fn loop_head(&mut self) {
@@ -827,8 +919,8 @@ impl InstructionWriter {
         self.emit_u24(Opcode::InitLexical, local_no);
     }
 
-    pub fn init_g_lexical(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::InitGLexical, name);
+    pub fn init_g_lexical(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::InitGLexical, name);
     }
 
     pub fn init_aliased_lexical(&mut self, hops: u8, slot: u24) {
@@ -847,20 +939,20 @@ impl InstructionWriter {
         self.emit1(Opcode::CheckThis);
     }
 
-    pub fn bind_g_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::BindGName, name);
+    pub fn bind_g_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::BindGName, name);
     }
 
-    pub fn bind_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::BindName, name);
+    pub fn bind_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::BindName, name);
     }
 
-    pub fn get_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetName, name);
+    pub fn get_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetName, name);
     }
 
-    pub fn get_g_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetGName, name);
+    pub fn get_g_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetGName, name);
     }
 
     pub fn get_arg(&mut self, arg_no: u16) {
@@ -875,16 +967,16 @@ impl InstructionWriter {
         self.emit_aliased(Opcode::GetAliasedVar, hops, slot);
     }
 
-    pub fn get_import(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetImport, name);
+    pub fn get_import(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetImport, name);
     }
 
-    pub fn get_bound_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetBoundName, name);
+    pub fn get_bound_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetBoundName, name);
     }
 
-    pub fn get_intrinsic(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::GetIntrinsic, name);
+    pub fn get_intrinsic(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::GetIntrinsic, name);
     }
 
     pub fn callee(&mut self) {
@@ -895,20 +987,20 @@ impl InstructionWriter {
         self.emit_u8(Opcode::EnvCallee, hops);
     }
 
-    pub fn set_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetName, name);
+    pub fn set_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::SetName, name);
     }
 
-    pub fn strict_set_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictSetName, name);
+    pub fn strict_set_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::StrictSetName, name);
     }
 
-    pub fn set_g_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetGName, name);
+    pub fn set_g_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::SetGName, name);
     }
 
-    pub fn strict_set_g_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::StrictSetGName, name);
+    pub fn strict_set_g_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::StrictSetGName, name);
     }
 
     pub fn set_arg(&mut self, arg_no: u16) {
@@ -923,8 +1015,8 @@ impl InstructionWriter {
         self.emit_aliased(Opcode::SetAliasedVar, hops, slot);
     }
 
-    pub fn set_intrinsic(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::SetIntrinsic, name);
+    pub fn set_intrinsic(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::SetIntrinsic, name);
     }
 
     pub fn push_lexical_env(&mut self, scope_index: u32) {
@@ -967,24 +1059,24 @@ impl InstructionWriter {
         self.emit1(Opcode::BindVar);
     }
 
-    pub fn def_var(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::DefVar, name);
+    pub fn def_var(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::DefVar, name);
     }
 
     pub fn def_fun(&mut self) {
         self.emit1(Opcode::DefFun);
     }
 
-    pub fn def_let(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::DefLet, name);
+    pub fn def_let(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::DefLet, name);
     }
 
-    pub fn def_const(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::DefConst, name);
+    pub fn def_const(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::DefConst, name);
     }
 
-    pub fn del_name(&mut self, name: &str) {
-        self.emit_with_name_index(Opcode::DelName, name);
+    pub fn del_name(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::DelName, name);
     }
 
     pub fn arguments(&mut self) {

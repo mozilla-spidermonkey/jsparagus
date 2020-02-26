@@ -1,9 +1,9 @@
 use std::iter;
 
 use crate::lexer::Lexer;
-use crate::parse_script;
 use crate::parser::Parser;
-use ast::{arena, types::*};
+use crate::{parse_script, ParseOptions};
+use ast::{arena, source_location::SourceLocation, types::*};
 use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
 
@@ -65,7 +65,8 @@ where
     Source: IntoChunks<'source>,
 {
     let buf = arena::alloc_str(allocator, &chunks_to_string(code));
-    parse_script(allocator, &buf)
+    let options = ParseOptions::new();
+    parse_script(allocator, &buf, &options)
 }
 
 fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
@@ -73,10 +74,28 @@ fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
     try_parse(allocator, code).unwrap();
 }
 
+fn assert_error<'alloc, T: IntoChunks<'alloc>>(code: T) {
+    let allocator = &Bump::new();
+    assert!(match try_parse(allocator, code) {
+        Err(ParseError::NotImplemented(_)) => panic!("expected error, got NotImplemented"),
+        Err(_) => true,
+        Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
+    });
+}
+
 fn assert_syntax_error<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     assert!(match try_parse(allocator, code) {
         Err(ParseError::SyntaxError(_)) => true,
+        Err(other) => panic!("unexpected error: {:?}", other),
+        Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
+    });
+}
+
+fn assert_not_implemented<'alloc, T: IntoChunks<'alloc>>(code: T) {
+    let allocator = &Bump::new();
+    assert!(match try_parse(allocator, code) {
+        Err(ParseError::NotImplemented(_)) => true,
         Err(other) => panic!("unexpected error: {:?}", other),
         Ok(ast) => panic!("assertion failed: SUCCESS error: {:?}", ast),
     });
@@ -113,7 +132,7 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
     let mut right_lexer = Lexer::new(allocator, right.chars());
 
     let mut parser = Parser::new(
-        AstBuilder { allocator },
+        AstBuilder::new(allocator),
         generated_parser::START_STATE_MODULE,
     );
 
@@ -125,12 +144,12 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
         assert_eq!(
             left_token.terminal_id, right_token.terminal_id,
             "at offset {} in {:?} / {} in {:?}",
-            left_token.offset, left, right_token.offset, right,
+            left_token.loc.start, left, right_token.loc.start, right,
         );
         assert_eq!(
             left_token.value, right_token.value,
             "at offsets {} / {}",
-            left_token.offset, right_token.offset
+            left_token.loc.start, right_token.loc.start
         );
 
         if left_token.terminal_id == TerminalId::End {
@@ -146,7 +165,7 @@ fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let buf = chunks_to_string(code);
     let mut lexer = Lexer::new(allocator, buf.chars());
     let mut parser = Parser::new(
-        AstBuilder { allocator },
+        AstBuilder::new(allocator),
         generated_parser::START_STATE_SCRIPT,
     );
     loop {
@@ -211,7 +230,7 @@ fn test_asi_suppressed() {
     assert_syntax_error("for (var i = 0;   i < 9 \n i++) {}");
     assert_syntax_error("for (i = 0     \n i < 9;   i++) {}");
     assert_syntax_error("for (i = 0;       i < 9 \n i++) {}");
-    assert_syntax_error("for (let i = 0 \n i < 9;   i++) {}");
+    assert_syntax_error("for (const i = 0 \n i < 9;   i++) {}");
 
     // ASI is suppressed in the production ClassElement[Yield, Await] : `;`
     // to prevent an infinite loop of ASI. lol
@@ -276,7 +295,11 @@ fn test_numbers() {
     assert_parses(".0");
     assert_parses("");
 
-    assert_parses("0b0");
+    // FIXME: NYI: non-decimal literal
+    // assert_parses("0b0");
+    assert_not_implemented("0b0");
+
+    /*
     assert_parses("0b1");
     assert_parses("0B01");
     assert_error_eq("0b", ParseError::UnexpectedEnd);
@@ -297,6 +320,7 @@ fn test_numbers() {
     assert_error_eq("0x", ParseError::UnexpectedEnd);
     assert_error_eq("0x ", ParseError::IllegalCharacter(' '));
     assert_error_eq("0xg", ParseError::IllegalCharacter('g'));
+     */
 
     assert_parses("1..x");
 }
@@ -307,8 +331,7 @@ fn test_arrow() {
     assert_parses("f = x => x;");
     assert_parses("(x, y) => [y, x]");
     assert_parses("f = (x, y) => {}");
-    // XXX TODO
-    // assert_syntax_error("(x, y) => {x: x, y: y}");
+    assert_syntax_error("(x, y) => {x: x, y: y}");
 }
 
 #[test]
@@ -321,7 +344,7 @@ fn test_illegal_character() {
 #[test]
 fn test_identifier() {
     // U+00B7 MIDDLE DOT is an IdentifierPart.
-    // assert_parses("_·_ = {_·_:'·_·'};");  // would fail
+    assert_parses("_·_ = {_·_:'·_·'};");
 
     // <ZWJ> and <ZWNJ> match IdentifierPart but not IdentifierStart.
     assert_parses("var x\u{200c};"); // <ZWNJ>
@@ -330,6 +353,18 @@ fn test_identifier() {
     assert_parses("_\u{200d}\u{200c}();"); // <ZWJ>
     assert_illegal_character("var \u{200c};"); // <ZWNJ>
     assert_illegal_character("x = \u{200d};"); // <ZWJ>
+
+    // Other_ID_Start for backward compat.
+    assert_parses("\u{309B}();");
+    assert_parses("\u{309C}();");
+    assert_parses("_\u{309B}();");
+    assert_parses("_\u{309C}();");
+
+    // Non-BMP.
+    assert_parses("\u{10000}();");
+    assert_parses("_\u{10000}();");
+    assert_illegal_character("\u{1000c}();");
+    assert_illegal_character("_\u{1000c}();");
 }
 
 #[test]
@@ -358,10 +393,9 @@ fn test_html_comments() {
 
 #[test]
 fn test_incomplete_comments() {
-    // XXX TODO
-    // assert_syntax_error("/*");
-    // assert_syntax_error("/* hello world");
-    // assert_syntax_error("/* hello world *");
+    assert_error("/*");
+    assert_error("/* hello world");
+    assert_error("/* hello world *");
 
     assert_parses(&vec!["/* hello\n", " world */"]);
     assert_parses(&vec!["// oawfeoiawj", "ioawefoawjie"]);
@@ -386,8 +420,8 @@ fn test_strings() {
 
 #[test]
 fn test_awkward_chunks() {
-    assert_parses(&vec!["let", "ter.head = 1;"]);
-    assert_parses(&vec!["let", " x = 1;"]);
+    assert_parses(&vec!["const", "ructor.length = 1;"]);
+    assert_parses(&vec!["const", " x = 1;"]);
 
     // Try feeding one character at a time to the parser.
     let chars: Vec<&str> = "function f() { ok(); }".split("").collect();
@@ -411,19 +445,30 @@ fn test_awkward_chunks() {
             Statement::ExpressionStatement(arena::alloc(
                 allocator,
                 Expression::CompoundAssignmentExpression {
-                    operator: CompoundAssignmentOperator::Div,
+                    operator: CompoundAssignmentOperator::Div {
+                        loc: SourceLocation::new(1, 3),
+                    },
                     binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier {
-                            name: Identifier { value: "x" },
+                            name: Identifier {
+                                value: "x",
+                                loc: SourceLocation::new(0, 1),
+                            },
+                            loc: SourceLocation::new(0, 1),
                         },
                     ),
                     expression: arena::alloc(
                         allocator,
-                        Expression::LiteralNumericExpression { value: 2.0 },
+                        Expression::LiteralNumericExpression {
+                            value: 2.0,
+                            loc: SourceLocation::new(3, 4),
+                        },
                     ),
+                    loc: SourceLocation::new(0, 4),
                 },
             ))
         ],
+        loc: SourceLocation::new(0, 4),
     };
     assert_eq!(format!("{:?}", actual), format!("{:?}", expected));
 }
@@ -442,18 +487,22 @@ fn test_regex() {
     assert_parses("/x/");
     assert_parses("x = /x/");
     assert_parses("x = /x/g");
-    assert_parses("x = /x/wow_flags_can_be_$$anything$$");
+
+    // FIXME: Unexpected flag
+    // assert_parses("x = /x/wow_flags_can_be_$$anything$$");
+    assert_not_implemented("x = /x/wow_flags_can_be_$$anything$$");
+
     // TODO: Should the lexer running out of input throw an incomplete error, or a lexer error?
     assert_error_eq("/x", ParseError::UnterminatedRegExp);
     assert_incomplete("x = //"); // comment
-    assert_incomplete("x = /*/"); /*/ comment */
+    assert_error_eq("x = /*/", ParseError::UnterminatedMultiLineComment); /*/ comment */
     assert_error_eq("x =/= 2", ParseError::UnterminatedRegExp);
     assert_parses("x /= 2");
     assert_parses("x = /[]/");
     assert_parses("x = /[^x]/");
     assert_parses("x = /+=351*/");
     assert_parses("x = /^\\s*function (\\w+)/;");
-    assert_parses("let regexp = /this is fine: [/] dont @ me/;");
+    assert_parses("const regexp = /this is fine: [/] dont @ me/;");
 }
 
 #[test]
@@ -480,17 +529,18 @@ fn test_invalid_assignment_targets() {
     assert_error_eq("(x && y)--;", ParseError::InvalidAssignmentTarget);
 }
 
-// XXX TODO
-//#[test]
-//fn test_can_close_with_asi() {
-//    assert_can_close_after("2 + 2\n");
-//}
+#[test]
+fn test_can_close_with_asi() {
+    assert_can_close_after("2 + 2\n");
+}
 
 #[test]
 fn test_conditional_keywords() {
     // property names
-    assert_parses("let obj = {if: 3, function: 4};");
+    assert_parses("const obj = {if: 3, function: 4};");
+    assert_parses("const obj = {true: 1, false: 0, null: NaN};");
     assert_parses("assert(obj.if == 3);");
+    assert_parses("assert(obj.true + obj.false + obj.null == NaN);");
 
     // method names
     assert_parses(
@@ -502,13 +552,18 @@ fn test_conditional_keywords() {
         ",
     );
 
-    assert_parses("var let = [new Date];"); // let as identifier
-    assert_parses("let v = let;"); // let as keyword, then identifier
-
-    // Next line would fail because the multitoken `let [` lookahead isn't implemented yet.
-    // assert_parses("let.length;");           // `let .` -> ExpressionStatement
-
-    assert_syntax_error("let[0].getYear();"); // `let [` -> LexicalDeclaration
+    // FIXME: let (multitoken lookahead):
+    assert_not_implemented("let a = 1;");
+    /*
+    // let as identifier
+    assert_parses("var let = [new Date];");
+    // let as keyword, then identifier
+    assert_parses("let v = let;");
+    // `let .` -> ExpressionStatement
+    assert_parses("let.length;");
+    // `let [` -> LexicalDeclaration
+    assert_syntax_error("let[0].getYear();");
+     */
 
     assert_parses(
         "
@@ -517,18 +572,26 @@ fn test_conditional_keywords() {
         ",
     );
 
-    assert_parses("var of, let, private, target;");
-    assert_parses("class X { get y() {} }");
-    assert_parses("async: { break async; }");
-    assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };");
-    assert_parses("for (async of => {};;) {}");
+    // Not implemented:
+    // assert_parses("var of, let, private, target;");
 
-    // This would fail because this case is currently disabled syntactically.
-    // assert_parses("for (async of []) {}");  // would fail
+    assert_parses("class X { get y() {} }");
+
+    // Not implemented:
+    // assert_parses("async: { break async; }");
+
+    assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };");
+
+    // Not implemented (requires hack; grammar is not LR(1)):
+    // assert_parses("for (async of => {};;) {}");
+    // assert_parses("for (async of []) {}");
 }
 
 #[test]
 fn test_async_arrows() {
+    // FIXME: async (multiple lookahead)
+    assert_not_implemented("const a = async a => 1;");
+    /*
     assert_parses("let f = async arg => body;");
     assert_parses("f = async (a1, a2) => {};");
     assert_parses("f = async (a1 = b + c, ...a2) => {};");
@@ -538,13 +601,85 @@ fn test_async_arrows() {
         "f = async (...a1, a2) => {};",
         ParseError::ArrowParametersWithNonFinalRest,
     );
+    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
+    */
 
     assert_error_eq("foo(a, b) => {}", ParseError::ArrowHeadInvalid);
-    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
 }
 
 #[test]
 fn test_coalesce() {
-    assert_parses("let f = options.prop ?? 0;");
+    assert_parses("const f = options.prop ?? 0;");
     assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
+}
+
+#[test]
+fn test_no_line_terminator_here() {
+    // Parse `code` as a Script and compute some function of the resulting AST.
+    fn parse_then<F, R>(code: &str, f: F) -> R
+    where
+        F: FnOnce(&Script) -> R,
+    {
+        let allocator = &Bump::new();
+        match try_parse(allocator, code) {
+            Err(err) => {
+                panic!("Failed to parse code {:?}: {}", code, err);
+            }
+            Ok(script) => f(&*script),
+        }
+    }
+
+    // Parse `code` as a Script and return the number of top-level
+    // StatementListItems.
+    fn count_items(code: &str) -> usize {
+        parse_then(code, |script| script.statements.len())
+    }
+
+    // Without a newline, labelled `break` in loop.  But a line break changes
+    // the meaning -- then it's a plain `break` statement, followed by
+    // ExpressionStatement `LOOP;`
+    assert_eq!(count_items("LOOP: while (true) break LOOP;"), 1);
+    assert_eq!(count_items("LOOP: while (true) break \n LOOP;"), 2);
+
+    // The same, but for `continue`.
+    assert_eq!(count_items("LOOP: while (true) continue LOOP;"), 1);
+    assert_eq!(count_items("LOOP: while (true) continue \n LOOP;"), 2);
+
+    // Parse `code` as a Script, expected to contain a single function
+    // declaration, and return the number of statements in the function body.
+    fn count_statements_in_function(code: &str) -> usize {
+        parse_then(code, |script| {
+            assert_eq!(
+                script.statements.len(),
+                1,
+                "expected function declaration, got {:?}",
+                script
+            );
+            match &script.statements[0] {
+                Statement::FunctionDeclaration(func) => func.body.statements.len(),
+                _ => panic!("expected function declaration, got {:?}", script),
+            }
+        })
+    }
+
+    assert_eq!(
+        count_statements_in_function("function f() { return x; }"),
+        1
+    );
+    assert_eq!(
+        count_statements_in_function("function f() { return\n x; }"),
+        2
+    );
+
+    assert_parses("x++");
+    assert_incomplete("x\n++");
+
+    assert_parses("throw fit;");
+    assert_syntax_error("throw\nfit;");
+
+    // Alternative ways of spelling LineTerminator
+    assert_syntax_error("throw//\nfit;");
+    assert_syntax_error("throw/*\n*/fit;");
+    assert_syntax_error("throw\rfit;");
+    assert_syntax_error("throw\r\nfit;");
 }

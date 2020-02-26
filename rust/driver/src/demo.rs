@@ -1,16 +1,23 @@
 //! Functions to exercise the parser from the command line.
 
-use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
 
-use ast::{self, types::Program};
+use ast::{
+    self,
+    types::{Program, Script},
+};
 use bumpalo::Bump;
-use emitter::emit;
-use parser::parse_script;
+use emitter;
+use parser::{is_partial_script, parse_script, ParseOptions};
+
+use rustyline::error::ReadlineError;
+use rustyline::validate::{ValidationContext, ValidationResult, Validator};
+use rustyline::Editor;
+use rustyline_derive::{Completer, Helper, Highlighter, Hinter};
 
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
@@ -56,7 +63,8 @@ fn parse_file(path: &Path, size_bytes: u64) -> io::Result<DemoStats> {
         Ok(s) => s,
     };
     let allocator = &Bump::new();
-    let result = parse_script(allocator, &contents);
+    let options = ParseOptions::new();
+    let result = parse_script(allocator, &contents, &options);
     let stats = DemoStats::new_single(size_bytes, result.is_ok());
     match result {
         Ok(_ast) => println!(" ok"),
@@ -104,38 +112,63 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
     }
 }
 
-fn run(buffer: &str) {
-    let allocator = &Bump::new();
-    let parse_result = parse_script(allocator, buffer);
-    match parse_result {
-        Ok(ast) => {
-            let mut script = Program::Script(ast.unbox());
-            let emit_result = emit(&mut script);
-            // FIXME - json support removed for now
-            // if let Ok(script_json) = ast::json::to_string_pretty(&script) {
-            //     println!("{}", script_json);
-            // } else {
-            println!("{:#?}", script);
-            // }
-            println!("{:#?}", emit_result);
+fn handle_script<'alloc>(script: Script<'alloc>) {
+    println!("{:#?}", script);
+    let mut program = Program::Script(script);
+    let options = emitter::EmitOptions::new();
+    match emitter::emit(&mut program, &options) {
+        Err(err) => {
+            eprintln!("error: {}", err);
         }
-        Err(err) => println!("{}", err.message()),
+        Ok(emit_result) => {
+            println!("\n{:#?}", emit_result);
+            println!("\n{}", emitter::dis(&emit_result.bytecode));
+
+            let eval_result = interpreter::evaluate(&emit_result);
+            println!("{:?}", eval_result);
+        }
     }
 }
 
-fn get_input(prompt: &str) -> Result<String, Box<dyn Error>> {
-    print!("{}", prompt);
-    io::stdout().flush()?;
-    let mut input = String::new();
-    if let 0 = io::stdin().read_line(&mut input)? {
-        Err("EOF".into())
-    } else {
-        Ok(input.trim().to_string())
+#[derive(Completer, Helper, Highlighter, Hinter)]
+struct InputValidator {}
+
+impl Validator for InputValidator {
+    fn validate(&self, ctx: &mut ValidationContext) -> Result<ValidationResult, ReadlineError> {
+        let allocator = &Bump::new();
+        match is_partial_script(allocator, ctx.input()) {
+            Ok(true) => Ok(ValidationResult::Incomplete),
+            // We treat ParseErrors as "valid" so that they
+            // can be handled by the REPL function.
+            _ => Ok(ValidationResult::Valid(None)),
+        }
     }
 }
 
 pub fn read_print_loop() {
-    while let Ok(buffer) = get_input("> ") {
-        run(&buffer);
+    let h = InputValidator {};
+    let mut rl = Editor::new();
+    rl.set_helper(Some(h));
+
+    loop {
+        let input = rl.readline("> ");
+        if let Err(err) = input {
+            eprintln!("error: {:?}", err);
+            break;
+        }
+
+        let input = input.unwrap();
+        rl.add_history_entry(input.as_str());
+
+        let allocator = &Bump::new();
+        let script = parse_script(allocator, &input, &ParseOptions::new());
+        match script {
+            Err(err) => {
+                eprintln!("error: {}", err);
+            }
+            Ok(script) => {
+                handle_script(script.unbox());
+            }
+        }
     }
 }

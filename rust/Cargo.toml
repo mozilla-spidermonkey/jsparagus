@@ -6,6 +6,7 @@ members = [
     "emitter",
     "generated_parser",
     "parser",
+    "interpreter",
 ]
 
 [profile.release]

@@ -2,14 +2,15 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{EmitError, EmitResult, InstructionWriter};
+use super::emitter::{BytecodeOffset, EmitError, EmitOptions, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
-use ast::{arena, types::*};
+use ast::types::*;
 
 /// Emit a program, converting the AST directly to bytecode.
-pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
+pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
     let mut emitter = AstEmitter {
         emit: InstructionWriter::new(),
+        options,
     };
 
     match ast {
@@ -22,11 +23,12 @@ pub fn emit_program(ast: &Program) -> Result<EmitResult, EmitError> {
     Ok(emitter.emit.into_emit_result())
 }
 
-struct AstEmitter {
+struct AstEmitter<'alloc> {
     emit: InstructionWriter,
+    options: &'alloc EmitOptions,
 }
 
-impl AstEmitter {
+impl<'alloc> AstEmitter<'alloc> {
     fn emit_script(&mut self, ast: &Script) -> Result<(), EmitError> {
         for statement in &ast.statements {
             self.emit_statement(statement)?;
@@ -50,16 +52,20 @@ impl AstEmitter {
             Statement::ContinueStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
             }
-            Statement::DebuggerStatement(_) => {
+            Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
             Statement::DoWhileStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DoWhileStatement"));
             }
-            Statement::EmptyStatement(_) => (),
+            Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
                 self.emit_expression(ast)?;
-                self.emit.set_rval();
+                if self.options.no_script_rval {
+                    self.emit.pop();
+                } else {
+                    self.emit.set_rval();
+                }
             }
             Statement::ForInStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForInStatement"));
@@ -70,14 +76,14 @@ impl AstEmitter {
             Statement::ForStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForStatement"));
             }
-            Statement::IfStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: IfStatement"));
+            Statement::IfStatement(if_statement) => {
+                self.emit_if(if_statement)?;
             }
             Statement::LabeledStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
             }
-            Statement::ReturnStatement { expression, .. } => {
-                self.emit_return_statement(expression)?;
+            Statement::ReturnStatement { .. } => {
+                return Err(EmitError::NotImplemented("TODO: ReturnStatement"));
             }
             Statement::SwitchStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: SwitchStatement"));
@@ -87,8 +93,9 @@ impl AstEmitter {
                     "TODO: SwitchStatementWithDefault",
                 ));
             }
-            Statement::ThrowStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ThrowStatement"));
+            Statement::ThrowStatement { expression, .. } => {
+                self.emit_expression(expression)?;
+                self.emit.throw();
             }
             Statement::TryCatchStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: TryCatchStatement"));
@@ -96,7 +103,11 @@ impl AstEmitter {
             Statement::TryFinallyStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: TryFinallyStatement"));
             }
-            Statement::VariableDeclarationStatement(ast) => self.emit_variable_declaration(ast)?,
+            Statement::VariableDeclarationStatement(_ast) => {
+                return Err(EmitError::NotImplemented(
+                    "TODO: VariableDeclarationStatement",
+                ));
+            }
             Statement::WhileStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WhileStatement"));
             }
@@ -111,51 +122,37 @@ impl AstEmitter {
         Ok(())
     }
 
-    fn emit_variable_declaration(&mut self, ast: &VariableDeclaration) -> Result<(), EmitError> {
-        match ast.kind {
-            VariableDeclarationKind::Var(_) => (),
-            VariableDeclarationKind::Let(_) => (),
-            VariableDeclarationKind::Const(_) => (),
-        }
-        for declarator in &ast.declarators {
-            let _ = match &declarator.binding {
-                Binding::BindingPattern(_) => {
-                    return Err(EmitError::NotImplemented("TODO: BindingPattern"));
-                }
-                Binding::BindingIdentifier(ident) => &ident.name.value,
-            };
-            // TODO
-            self.emit.uninitialized();
-            self.emit.init_lexical(0);
-            self.emit.pop();
-
-            if let Some(init) = &declarator.init {
-                self.emit_expression(&*init)?;
-            }
-
-            self.emit.init_lexical(0);
-            self.emit.pop();
-        }
-
-        Ok(())
-    }
-
-    fn emit_return_statement(
-        &mut self,
-        expression: &Option<arena::Box<Expression>>,
-    ) -> Result<(), EmitError> {
-        match expression {
-            Some(ast) => self.emit_expression(ast)?,
-            None => self.emit.undefined(),
-        }
-        self.emit.set_rval();
-        self.emit.ret_rval();
-
-        Ok(())
-    }
-
     fn emit_this(&mut self) -> Result<(), EmitError> {
         Err(EmitError::NotImplemented("TODO: this"))
+    }
+
+    fn emit_if(&mut self, if_statement: &IfStatement) -> Result<(), EmitError> {
+        self.emit_expression(&if_statement.test)?;
+
+        let offset_alternate = self.emit.bytecode_offset();
+        self.emit.if_eq(0);
+
+        // Then branch
+        self.emit.jump_target();
+        self.emit_statement(&if_statement.consequent)?;
+
+        if let Some(alternate) = &if_statement.alternate {
+            let offset_final = self.emit.bytecode_offset();
+            self.emit.goto(0);
+            // ^^ part of then branch
+
+            // Else branch
+            self.emit_jump_target(vec![offset_alternate]);
+            self.emit_statement(alternate)?;
+
+            // Merge point after else
+            self.emit_jump_target(vec![offset_final]);
+        } else {
+            // Merge point without else
+            self.emit_jump_target(vec![offset_alternate])
+        }
+
+        Ok(())
     }
 
     fn emit_expression(&mut self, ast: &Expression) -> Result<(), EmitError> {
@@ -174,7 +171,7 @@ impl AstEmitter {
 
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
                 ComputedMemberExpression {
-                    object: ExpressionOrSuper::Super(_),
+                    object: ExpressionOrSuper::Super { .. },
                     expression,
                     ..
                 },
@@ -194,12 +191,13 @@ impl AstEmitter {
                 },
             )) => {
                 self.emit_expression(object)?;
-                self.emit.get_prop(&property.value);
+                let name_index = self.emit.get_atom_index(&property.value);
+                self.emit.get_prop(name_index);
             }
 
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                 StaticMemberExpression {
-                    object: ExpressionOrSuper::Super(_),
+                    object: ExpressionOrSuper::Super { .. },
                     property,
                     ..
                 },
@@ -207,7 +205,14 @@ impl AstEmitter {
                 self.emit_this()?;
                 self.emit.callee();
                 self.emit.super_base();
-                self.emit.get_prop_super(&property.value);
+                let name_index = self.emit.get_atom_index(&property.value);
+                self.emit.get_prop_super(name_index);
+            }
+
+            Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
+                PrivateFieldExpression { .. },
+            )) => {
+                return Err(EmitError::NotImplemented("PrivateFieldExpression"));
             }
 
             Expression::ClassExpression(_) => {
@@ -218,11 +223,11 @@ impl AstEmitter {
                 self.emit.emit_boolean(*value);
             }
 
-            Expression::LiteralInfinityExpression(_) => {
+            Expression::LiteralInfinityExpression { .. } => {
                 self.emit.double(std::f64::INFINITY);
             }
 
-            Expression::LiteralNullExpression(_) => {
+            Expression::LiteralNullExpression { .. } => {
                 self.emit.null();
             }
 
@@ -235,19 +240,24 @@ impl AstEmitter {
             }
 
             Expression::LiteralStringExpression { value, .. } => {
-                self.emit.string(value);
+                let str_index = self.emit.get_atom_index(value);
+                self.emit.string(str_index);
             }
 
-            Expression::ArrayExpression(_) => {
-                return Err(EmitError::NotImplemented("TODO: ArrayExpression"));
+            Expression::ArrayExpression(ast) => {
+                self.emit_array_expression(ast)?;
             }
 
             Expression::ArrowExpression { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ArrowExpression"));
             }
 
-            Expression::AssignmentExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
+            Expression::AssignmentExpression {
+                binding,
+                expression,
+                ..
+            } => {
+                self.emit_assignment_expression(binding, expression)?;
             }
 
             Expression::BinaryExpression {
@@ -259,9 +269,9 @@ impl AstEmitter {
                 self.emit_binary_expression(operator, left, right)?;
             }
 
-            Expression::CallExpression {
+            Expression::CallExpression(CallExpression {
                 callee, arguments, ..
-            } => {
+            }) => {
                 self.emit_call_expression(callee, arguments)?;
             }
 
@@ -271,8 +281,13 @@ impl AstEmitter {
                 ));
             }
 
-            Expression::ConditionalExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ConditionalExpression"));
+            Expression::ConditionalExpression {
+                test,
+                consequent,
+                alternate,
+                ..
+            } => {
+                self.emit_conditional_expression(test, consequent, alternate)?;
             }
 
             Expression::FunctionExpression(_) => {
@@ -283,31 +298,41 @@ impl AstEmitter {
                 self.emit_identifier_expression(ast);
             }
 
-            Expression::NewExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: NewExpression"));
+            Expression::NewExpression {
+                callee, arguments, ..
+            } => {
+                self.emit_new_expression(callee, arguments)?;
             }
 
-            Expression::NewTargetExpression(_) => {
+            Expression::NewTargetExpression { .. } => {
                 return Err(EmitError::NotImplemented("TODO: NewTargetExpression"));
             }
 
-            Expression::ObjectExpression(_) => {
-                return Err(EmitError::NotImplemented("TODO: ObjectExpression"));
+            Expression::ObjectExpression(ast) => {
+                self.emit_object_expression(ast)?;
+            }
+
+            Expression::OptionalChain { .. } => {
+                return Err(EmitError::NotImplemented("TODO: OptionalChain"));
+            }
+
+            Expression::OptionalExpression { .. } => {
+                return Err(EmitError::NotImplemented("TODO: OptionalExpression"));
             }
 
             Expression::UnaryExpression {
                 operator, operand, ..
             } => {
                 let opcode = match operator {
-                    UnaryOperator::Plus(_) => Opcode::Pos,
-                    UnaryOperator::Minus(_) => Opcode::Neg,
-                    UnaryOperator::LogicalNot(_) => Opcode::Not,
-                    UnaryOperator::BitwiseNot(_) => Opcode::BitNot,
-                    UnaryOperator::Void(_) => Opcode::Void,
-                    UnaryOperator::Typeof(_) => {
+                    UnaryOperator::Plus { .. } => Opcode::Pos,
+                    UnaryOperator::Minus { .. } => Opcode::Neg,
+                    UnaryOperator::LogicalNot { .. } => Opcode::Not,
+                    UnaryOperator::BitwiseNot { .. } => Opcode::BitNot,
+                    UnaryOperator::Void { .. } => Opcode::Void,
+                    UnaryOperator::Typeof { .. } => {
                         return Err(EmitError::NotImplemented("TODO: Typeof"));
                     }
-                    UnaryOperator::Delete(_) => {
+                    UnaryOperator::Delete { .. } => {
                         return Err(EmitError::NotImplemented("TODO: Delete"));
                     }
                 };
@@ -319,7 +344,7 @@ impl AstEmitter {
                 return Err(EmitError::NotImplemented("TODO: TemplateExpression"));
             }
 
-            Expression::ThisExpression(_) => {
+            Expression::ThisExpression { .. } => {
                 self.emit_this()?;
             }
 
@@ -354,38 +379,37 @@ impl AstEmitter {
         right: &Expression,
     ) -> Result<(), EmitError> {
         let opcode = match operator {
-            BinaryOperator::Equals(_) => Opcode::Eq,
-            BinaryOperator::NotEquals(_) => Opcode::Ne,
-            BinaryOperator::StrictEquals(_) => Opcode::StrictEq,
-            BinaryOperator::StrictNotEquals(_) => Opcode::StrictNe,
-            BinaryOperator::LessThan(_) => Opcode::Lt,
-            BinaryOperator::LessThanOrEqual(_) => Opcode::Le,
-            BinaryOperator::GreaterThan(_) => Opcode::Gt,
-            BinaryOperator::GreaterThanOrEqual(_) => Opcode::Ge,
-            BinaryOperator::In(_) => Opcode::In,
-            BinaryOperator::Instanceof(_) => Opcode::Instanceof,
-            BinaryOperator::LeftShift(_) => Opcode::Lsh,
-            BinaryOperator::RightShift(_) => Opcode::Rsh,
-            BinaryOperator::RightShiftExt(_) => Opcode::Ursh,
-            BinaryOperator::Add(_) => Opcode::Add,
-            BinaryOperator::Sub(_) => Opcode::Sub,
-            BinaryOperator::Mul(_) => Opcode::Mul,
-            BinaryOperator::Div(_) => Opcode::Div,
-            BinaryOperator::Mod(_) => Opcode::Mod,
-            BinaryOperator::Pow(_) => Opcode::Pow,
-            BinaryOperator::BitwiseOr(_) => Opcode::BitOr,
-            BinaryOperator::BitwiseXor(_) => Opcode::BitXor,
-            BinaryOperator::BitwiseAnd(_) => Opcode::BitAnd,
-            BinaryOperator::Coalesce(_) => {
-                return Err(EmitError::NotImplemented("TODO: Coalescer"));
+            BinaryOperator::Equals { .. } => Opcode::Eq,
+            BinaryOperator::NotEquals { .. } => Opcode::Ne,
+            BinaryOperator::StrictEquals { .. } => Opcode::StrictEq,
+            BinaryOperator::StrictNotEquals { .. } => Opcode::StrictNe,
+            BinaryOperator::LessThan { .. } => Opcode::Lt,
+            BinaryOperator::LessThanOrEqual { .. } => Opcode::Le,
+            BinaryOperator::GreaterThan { .. } => Opcode::Gt,
+            BinaryOperator::GreaterThanOrEqual { .. } => Opcode::Ge,
+            BinaryOperator::In { .. } => Opcode::In,
+            BinaryOperator::Instanceof { .. } => Opcode::Instanceof,
+            BinaryOperator::LeftShift { .. } => Opcode::Lsh,
+            BinaryOperator::RightShift { .. } => Opcode::Rsh,
+            BinaryOperator::RightShiftExt { .. } => Opcode::Ursh,
+            BinaryOperator::Add { .. } => Opcode::Add,
+            BinaryOperator::Sub { .. } => Opcode::Sub,
+            BinaryOperator::Mul { .. } => Opcode::Mul,
+            BinaryOperator::Div { .. } => Opcode::Div,
+            BinaryOperator::Mod { .. } => Opcode::Mod,
+            BinaryOperator::Pow { .. } => Opcode::Pow,
+            BinaryOperator::BitwiseOr { .. } => Opcode::BitOr,
+            BinaryOperator::BitwiseXor { .. } => Opcode::BitXor,
+            BinaryOperator::BitwiseAnd { .. } => Opcode::BitAnd,
+
+            BinaryOperator::Coalesce { .. }
+            | BinaryOperator::LogicalOr { .. }
+            | BinaryOperator::LogicalAnd { .. } => {
+                self.emit_short_circuit(operator, left, right)?;
+                return Ok(());
             }
-            BinaryOperator::LogicalOr(_) => {
-                return Err(EmitError::NotImplemented("TODO: LogicalOr"));
-            }
-            BinaryOperator::LogicalAnd(_) => {
-                return Err(EmitError::NotImplemented("TODO: LogicalAndr"));
-            }
-            BinaryOperator::Comma(_) => {
+
+            BinaryOperator::Comma { .. } => {
                 self.emit_expression(left)?;
                 self.emit.pop();
                 self.emit_expression(right)?;
@@ -397,6 +421,56 @@ impl AstEmitter {
         self.emit_expression(right)?;
         self.emit.emit_binary_op(opcode);
         Ok(())
+    }
+
+    fn emit_short_circuit(
+        &mut self,
+        operator: &BinaryOperator,
+        left: &Expression,
+        right: &Expression,
+    ) -> Result<(), EmitError> {
+        self.emit_expression(left)?;
+        let mut jumplist: Vec<BytecodeOffset> = Vec::with_capacity(1);
+        self.emit_jump(operator, &mut jumplist)?;
+        self.emit.jump_target();
+        self.emit.pop();
+        self.emit_expression(right)?;
+        self.emit_jump_target(jumplist);
+        return Ok(());
+    }
+
+    fn emit_jump(
+        &mut self,
+        operator: &BinaryOperator,
+        jumplist: &mut Vec<BytecodeOffset>,
+    ) -> Result<(), EmitError> {
+        let offset: BytecodeOffset = self.emit.bytecode_offset();
+        jumplist.push(offset);
+
+        // in the c++ bytecode emitter, the jumplist is emitted
+        // and four bytes are used in order to save memory. We are not using that
+        // here, so instead we are using a placeholder offset set to 0, which will
+        // be updated later in patch_jump_target.
+        let placeholder_offset: i32 = 0;
+        match operator {
+            BinaryOperator::Coalesce { .. } => {
+                self.emit.coalesce(placeholder_offset);
+            }
+            BinaryOperator::LogicalOr { .. } => {
+                self.emit.or(placeholder_offset);
+            }
+            BinaryOperator::LogicalAnd { .. } => {
+                self.emit.and(placeholder_offset);
+            }
+            _ => panic!("unrecognized operator used in jump"),
+        }
+
+        return Ok(());
+    }
+
+    fn emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
+        self.emit.patch_jump_target(jumplist);
+        self.emit.jump_target();
     }
 
     fn emit_numeric_expression(&mut self, value: f64) {
@@ -413,9 +487,160 @@ impl AstEmitter {
         self.emit.double(value);
     }
 
+    fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
+        self.emit.new_init(0);
+
+        for property in object.properties.iter() {
+            self.emit_object_property(property)?;
+        }
+
+        Ok(())
+    }
+
+    fn emit_object_property(&mut self, property: &ObjectProperty) -> Result<(), EmitError> {
+        match property {
+            ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
+                DataProperty {
+                    property_name,
+                    expression,
+                    ..
+                },
+            )) => {
+                self.emit_expression(expression)?;
+
+                match property_name {
+                    PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
+                        let name_index = self.emit.get_atom_index(value);
+                        self.emit.init_prop(name_index);
+                    }
+                    PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
+                        return Err(EmitError::NotImplemented("TODO: computed property"))
+                    }
+                }
+            }
+            _ => return Err(EmitError::NotImplemented("TODO: non data property")),
+        }
+
+        Ok(())
+    }
+
+    fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
+        // Initialize the array to its minimum possible length.
+        let min_length = array
+            .elements
+            .iter()
+            .map(|e| match e {
+                ArrayExpressionElement::Expression(_) => 1,
+                ArrayExpressionElement::Elision { .. } => 1,
+                ArrayExpressionElement::SpreadElement { .. } => 0,
+            })
+            .sum::<u32>();
+
+        self.emit.new_array(min_length);
+
+        for (index, element) in array.elements.iter().enumerate() {
+            match element {
+                ArrayExpressionElement::Expression(expr) => {
+                    self.emit_expression(&expr)?;
+                    self.emit.init_elem_array(index as u32);
+                }
+                ArrayExpressionElement::Elision { .. } => {
+                    self.emit.hole();
+                    self.emit.init_elem_array(index as u32);
+                }
+                ArrayExpressionElement::SpreadElement { .. } => {
+                    return Err(EmitError::NotImplemented("TODO: SpreadElement"));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn emit_conditional_expression(
+        &mut self,
+        test: &Expression,
+        consequent: &Expression,
+        alternate: &Expression,
+    ) -> Result<(), EmitError> {
+        self.emit_expression(test)?;
+
+        let offset_else = self.emit.bytecode_offset();
+        self.emit.if_eq(0);
+
+        // Then branch
+        self.emit.jump_target();
+        self.emit_expression(consequent)?;
+
+        let offset_final = self.emit.bytecode_offset();
+        self.emit.goto(0);
+
+        // Else branch
+        self.emit_jump_target(vec![offset_else]);
+        self.emit_expression(alternate)?;
+
+        // Merge point
+        self.emit_jump_target(vec![offset_final]);
+
+        Ok(())
+    }
+
+    fn emit_assignment_expression(
+        &mut self,
+        binding: &AssignmentTarget,
+        expression: &Expression,
+    ) -> Result<(), EmitError> {
+        match binding {
+            AssignmentTarget::SimpleAssignmentTarget(
+                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
+                    name,
+                    ..
+                }),
+            ) => {
+                let name_index = self.emit.get_atom_index(name.value);
+                self.emit.bind_g_name(name_index);
+                self.emit_expression(expression)?;
+                self.emit.set_g_name(name_index);
+                return Ok(());
+            }
+            _ => {}
+        }
+
+        return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
+    }
+
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
         let name = &ast.name.value;
-        self.emit.get_g_name(name);
+        let name_index = self.emit.get_atom_index(name);
+        self.emit.get_g_name(name_index);
+    }
+
+    fn emit_new_expression(
+        &mut self,
+        callee: &Expression,
+        arguments: &Arguments,
+    ) -> Result<(), EmitError> {
+        for arg in &arguments.args {
+            if let Argument::SpreadElement(_) = arg {
+                return Err(EmitError::NotImplemented("TODO: SpreadNew"));
+            }
+        }
+
+        self.emit_expression(callee)?;
+        // Callee
+
+        self.emit.is_constructing();
+        // Callee JS_IS_CONSTRUCTING
+
+        self.emit_arguments(arguments)?;
+        // Callee JS_IS_CONSTRUCTING Args..
+
+        self.emit.dup_at(arguments.args.len() as u32 + 1);
+        // Callee JS_IS_CONSTRUCTING Args.. Callee
+
+        self.emit.new_(arguments.args.len() as u16);
+
+        Ok(())
     }
 
     fn emit_call_expression(
@@ -426,13 +651,42 @@ impl AstEmitter {
         // Don't do super handling in an emit_expresion_or_super because the bytecode heavily
         // depends on how you're using the super
         match callee {
-            ExpressionOrSuper::Expression(ast) => self.emit_expression(ast)?,
-            ExpressionOrSuper::Super(_) => {
+            ExpressionOrSuper::Expression(expr) => match &**expr {
+                Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
+                    self.emit_expression(expr)?;
+                    let name_index = self.emit.get_atom_index(name.value);
+                    self.emit.g_implicit_this(name_index);
+                }
+                Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                    StaticMemberExpression {
+                        object: ExpressionOrSuper::Expression(object),
+                        property,
+                        ..
+                    },
+                )) => {
+                    self.emit_expression(object)?;
+                    // [stack] Obj
+
+                    self.emit.dup();
+                    // [stack] Obj Obj
+
+                    let property_index = self.emit.get_atom_index(property.value);
+                    self.emit.call_prop(property_index);
+                    // [stack] Obj Callee
+
+                    self.emit.swap();
+                    // [stack] Callee Obj/This
+                }
+                _ => {
+                    return Err(EmitError::NotImplemented(
+                        "TODO: Call (only global functions are supported)",
+                    ));
+                }
+            },
+            _ => {
                 return Err(EmitError::NotImplemented("TODO: Super"));
             }
         }
-
-        self.emit.g_implicit_this("asdf");
 
         self.emit_arguments(arguments)?;
         self.emit.call(arguments.args.len() as u16);

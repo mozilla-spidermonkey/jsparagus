@@ -3,8 +3,9 @@
 import json
 import re
 import unicodedata
+import sys
 
-from ..runtime import (ERROR, ErrorToken)
+from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
 from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End)
@@ -43,6 +44,7 @@ TERMINAL_NAMES = {
     '**=': 'ExponentiateAssign',
     '.': 'Dot',
     '**': 'Exponentiate',
+    '?.': 'OptionalChain',
     '?': 'QuestionMark',
     '??': 'Coalesce',
     '*': 'Star',
@@ -155,6 +157,34 @@ class RustParserWriter:
                        ' '.join("{},".format(state.get(t, "ERROR")) for t in self.terminals))
             self.write(1, "{}",
                        ' '.join("{},".format(state.get(t, "ERROR")) for t in self.nonterminals))
+        self.write(0, "];")
+        self.write(0, "")
+
+    def render_action(self, action):
+        if isinstance(action, tuple):
+            if action[0] == 'IfSameLine':
+                _, a1, a2 = action
+                if a1 is None:
+                    a1 = 'ERROR'
+                if a2 is None:
+                    a2 = 'ERROR'
+                index = self.add_special_case(
+                    "if token.is_on_new_line { %s } else { %s }"
+                    % (a2, a1))
+            else:
+                raise ValueError("unrecognized kind of special case: {!r}".format(action))
+            return SPECIAL_CASE_TAG + index
+        elif action == 'ERROR':
+            return action
+        else:
+            assert isinstance(action, int)
+            return action
+
+    def emit_special_cases(self):
+        self.write(0, "static SPECIAL_CASES: [fn(&Token<'_>) -> i64; {}] = [",
+                   len(self.special_cases))
+        for i, code in enumerate(self.special_cases):
+            self.write(1, "|token| {{ {} }},", code)
         self.write(0, "];")
         self.write(0, "")
 
@@ -454,7 +484,7 @@ class RustParserWriter:
         # Note use of std::vec::Vec below: we have imported `arena::Vec` in this module,
         # since every other data structure mentioned in this file lives in the arena.
         self.write(0, "pub fn reduce<'alloc>(")
-        self.write(1, "handler: &AstBuilder<'alloc>,")
+        self.write(1, "handler: &mut AstBuilder<'alloc>,")
         self.write(1, "prod: usize,")
         self.write(1, "stack: &mut std::vec::Vec<StackValue<'alloc>>,")
         self.write(0, ") -> Result<'alloc, NonterminalId> {")
@@ -500,12 +530,20 @@ class RustParserWriter:
                         method_type = self.grammar.methods[expr.method]
                         method_name = self.method_name_to_rust(expr.method)
                         assert len(method_type.argument_types) == len(expr.args)
-                        args = ', '.join(
-                            compile_reduce_expr(arg)
-                            for ty, arg in zip(method_type.argument_types,
-                                               expr.args)
-                            if ty != types.UnitType)
-                        call = "handler.{}({})".format(method_name, args)
+
+                        # Given arguments can contain any mutable call,
+                        # store them in local variable first.
+                        arg_defs = ''
+                        args = ''
+                        i = 0
+                        for ty, arg in zip(method_type.argument_types,
+                                           expr.args):
+                            if ty != types.UnitType:
+                                arg_defs += 'let a{} = {};'.format(i, compile_reduce_expr(arg))
+                                args += 'a{},'.format(i)
+                                i += 1
+                        call = "{{ {} handler.{}({}) }}".format(
+                            arg_defs, method_name, args)
 
                         # Extremely bad hack. In Rust, since type inference is
                         # currently so poor, we don't have enough information
@@ -603,9 +641,14 @@ def write_rust_parser_states(out, parser_states, handler_info):
     raise ValueError("Unsupported ParserStates")
 
 def write_rust_parse_table(out, parse_table, handler_info):
-    with open(handler_info, "r") as json_file:
-        handler_info_json = json.load(json_file)
-    fallible_methods = handler_info_json["fallible-methods"]
-    parser_traits = handler_info_json["parser-traits"]
+    if not handler_info:
+        print("WARNING: info.json is not provided", file=sys.stderr)
+        fallible_methods = []
+        parser_traits = []
+    else:
+        with open(handler_info, "r") as json_file:
+            handler_info_json = json.load(json_file)
+        fallible_methods = handler_info_json["fallible-methods"]
+        parser_traits = handler_info_json["parser-traits"]
 
-    RustParserWriter(out, parse_table, fallible_methods, parser_traits).emit()
+    RustParserWriter(out, parser_states, fallible_methods, parser_traits).emit()

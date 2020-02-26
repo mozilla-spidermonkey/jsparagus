@@ -264,8 +264,10 @@ class ESGrammarBuilder:
         return grammar.Exclude(nt, exclusion_list)
         # return ('-', nt, exclusion_list)
 
-    def no_line_terminator_here(self):
-        return ("no-LineTerminator-here",)
+    def no_line_terminator_here(self, lt):
+        if lt not in ('LineTerminator', '|LineTerminator|'):
+            raise ValueError("unrecognized directive " + repr("[no " + lt + " here]"))
+        return grammar.NoLineTerminatorHere
 
     def nonterminal(self, name):
         if name in self.terminal_names:

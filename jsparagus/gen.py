@@ -35,9 +35,11 @@ import math
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
-from .grammar import (Grammar, NtDef, Production, Some, CallMethod, InitNt,
-                      is_concrete_element, Optional, Exclude, Literal,
-                      UnicodeCategory, Nt, Var, End, ErrorSymbol,
+from .grammar import (Grammar,
+                      NtDef, Production, Some, CallMethod, InitNt,
+                      is_concrete_element,
+                      Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
+                      End, NoLineTerminatorHere, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from .actions import (Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag,
                       FunCall, Seq)
@@ -82,6 +84,7 @@ def empty_nt_set(grammar):
         return all(isinstance(e, LookaheadRule)
                    or isinstance(e, Optional)
                    or (isinstance(e, Nt) and e in empties)
+                   or e is NoLineTerminatorHere
                    for e in p.body)
 
     def evaluate_reducer_with_empty_matches(p):
@@ -166,16 +169,16 @@ def check_cycle_free(grammar):
                                 break
                             all_possibly_empty_so_far = False
                             result = [e]
-                    elif isinstance(e, Optional):
-                        if isinstance(e.inner, Nt):
-                            # XXX FIXME BUG this can't be right
-                            result.append(e.inner)
                     elif isinstance(e, Exclude):
                         if isinstance(e.inner, Nt):
                             result.append(e.inner)
                     elif isinstance(e, LookaheadRule):
                         # Ignore the restriction. We lose a little precision
-                        # here; there could be a bug.
+                        # here, and could report a cycle where there isn't one,
+                        # but it's unlikely in real-world grammars.
+                        pass
+                    elif e is NoLineTerminatorHere:
+                        # This doesn't affect the property we're checking.
                         pass
                     elif isinstance(e, Literal):
                         if e.text != "":
@@ -193,8 +196,10 @@ def check_cycle_free(grammar):
                         # infinitely once the end is reached.
                         break
                     else:
-                        # ErrorSymbol effectively matches the empty string
-                        # (though only if nothing else matches).
+                        # Optional is not possible because we called
+                        # expand_optional_symbols_in_rhs. ErrorSymbol
+                        # effectively matches the empty string (though only if
+                        # nothing else matches).
                         assert isinstance(e, ErrorSymbol)
                 else:
                     # If we get here, we didn't break, so our results are good!
@@ -237,6 +242,37 @@ def check_lookahead_rules(grammar):
                         "invalid grammar: lookahead restriction "
                         "at end of production: {}"
                         .format(grammar.production_to_str(nt, body)))
+
+
+def check_no_line_terminator_here(grammar):
+    empties = empty_nt_set(grammar)
+
+    def check(e, nt, body):
+        if grammar.is_terminal(e):
+            pass
+        elif isinstance(e, Nt):
+            if e in empties:
+                raise ValueError(
+                    "invalid grammar: [no LineTerminator here] cannot appear next to "
+                    "a nonterminal that matches the empty string\n"
+                    "in production: {}".format(grammar.production_to_str(nt, body)))
+        else:
+            raise ValueError(
+                "invalid grammar: [no LineTerminator here] must appear only "
+                "between terminals and/or nonterminals\n"
+                "in production: {}".format(grammar.production_to_str(nt, body)))
+
+    for nt in grammar.nonterminals:
+        for production in grammar.nonterminals[nt].rhs_list:
+            body = production.body
+            for i, e in enumerate(body):
+                if e is NoLineTerminatorHere:
+                    if i == 0 or i == len(body) - 1:
+                        raise ValueError(
+                            "invalid grammar: [no LineTerminator here] must be between two symbols\n"
+                            "in production: {}".format(grammar.production_to_str(nt, body)))
+                    check(body[i - 1], nt, body)
+                    check(body[i + 1], nt, body)
 
 
 def expand_parameterized_nonterminals(grammar):
@@ -375,6 +411,8 @@ def seq_start(grammar, start, seq):
             s.add(ErrorToken)
         elif isinstance(e, Nt):
             s |= start[e]
+        elif e is NoLineTerminatorHere:
+            s.add(EMPTY)
         else:
             assert isinstance(e, LookaheadRule)
             future = seq_start(grammar, start, seq[i + 1:])
@@ -407,6 +445,8 @@ def make_start_set_cache(grammar, prods, start):
                 s = start[e]
                 if EMPTY in s:
                     s = OrderedFrozenSet((s - {EMPTY}) | sets[-1])
+            elif e is NoLineTerminatorHere:
+                s = sets[-1]
             else:
                 assert isinstance(e, LookaheadRule)
                 if e.positive:
@@ -804,15 +844,18 @@ def assert_items_are_compatible(grammar, prods, items):
     All items in the same state must be produced by the same history,
     the same sequence of terminals and nonterminals.
     """
+    if len(items) == 0:
+        return
+
     def item_history(item):
         return [e
                 for e in prods[item.prod_index].rhs[:item.offset]
-                if not isinstance(e, LookaheadRule)]
+                if is_concrete_element(e)]
 
     pairs = [(item, item_history(item)) for item in items]
     max_item, known_history = max(pairs, key=lambda pair: len(pair[1]))
     for item, history in pairs:
-        assert grammar.compatible_sequences(history[:item.offset], known_history[-item.offset:]), \
+        assert grammar.compatible_sequences(history, known_history[-len(history):]), \
             "incompatible LR items:\n    {}\n    {}\n".format(
                 grammar.lr_item_to_str(prods, max_item),
                 grammar.lr_item_to_str(prods, item))
@@ -1169,6 +1212,84 @@ class State:
                                 closure_todo.append(new_item)
         return closure
 
+    def split_if_restricted(self):
+        """Handle any restricted productions relevant to this state.
+
+        If any items in this state have a [no LineTerminator here] restriction next,
+        this splits the state and returns two State objects:
+
+        -   The first is a clone of this state, but with each item advanced
+            past the restriction. (This State represents the situation where
+            the next token is on the same line.)
+
+        -   The second is a clone of this state, but with all restricted
+            productions dropped. (The situation where the next token is on a
+            new line.)
+
+        If no items in this state have a [no LineTerminator here] restriction
+        next, this does nothing and returns None.
+        """
+        restricted_items = []
+        prods = self.context.prods
+        for i, item in enumerate(self._lr_items):
+            rhs = prods[item.prod_index].rhs
+            if item.offset < len(rhs) and rhs[item.offset] is NoLineTerminatorHere:
+                restricted_items.append(i)
+
+        if restricted_items:
+            items_1 = []
+            items_2 = []
+            for i, item in enumerate(self._lr_items):
+                if i in restricted_items:
+                    item = item._replace(offset=item.offset + 1)
+                else:
+                    items_2.append(item)
+                items_1.append(item)
+            s1 = State(self.context, items_1, self._debug_traceback)
+            s2 = State(self.context, items_2, self._debug_traceback)
+            return s1, s2
+        else:
+            return None
+
+    def merge_rows(self, s1, s2):
+        action_row = {}
+        for t in OrderedSet(s1.action_row) | OrderedSet(s2.action_row):
+            s1_act = s1.action_row.get(t)
+            s2_act = s2.action_row.get(t)
+            if s1_act == s2_act:
+                action_row[t] = s1_act
+            else:
+                action_row[t] = ("IfSameLine", s1_act, s2_act)
+
+        ctn_row = {}
+        for nt in OrderedSet(s1.ctn_row) | OrderedSet(s2.ctn_row):
+            s1_ctn = s1.ctn_row.get(nt)
+            s2_ctn = s2.ctn_row.get(nt)
+            if s1_ctn is None:
+                ctn_row[nt] = s2_ctn
+            elif s2_ctn is None or s1_ctn == s2_ctn:
+                ctn_row[nt] = s1_ctn
+            else:
+                raise ValueError("conflicting continuation states!")
+
+        if s1.error_code != s2.error_code:
+            raise ValueError("conflicting error codes!")
+
+        self.action_row = action_row
+        self.ctn_row = ctn_row
+        self.error_code = s1.error_code
+
+    def analyze_if_restricted(self, get_state_index, *, verbose=False):
+        split_result = self.split_if_restricted()
+        if split_result is None:
+            return False
+        else:
+            s1, s2 = split_result
+            s1.analyze(get_state_index, verbose=verbose)
+            s2.analyze(get_state_index, verbose=verbose)
+            self.merge_rows(s1, s2)
+            return True
+
     def analyze(self, get_state_index, *, verbose=False):
         """Generate the LR parser table entry for this state.
 
@@ -1177,6 +1298,9 @@ class State:
         get_state_index() -- a callback that can enqueue new states to be
         visited later.
         """
+
+        if self.analyze_if_restricted(get_state_index, verbose=verbose):
+            return
 
         context = self.context
         grammar = context.grammar
@@ -1254,7 +1378,8 @@ class State:
                 else:
                     # The next element is always a terminal or nonterminal,
                     # never an Optional (already preprocessed out of the
-                    # grammar) or LookaheadRule (see make_lr_item).
+                    # grammar) or LookaheadRule (see make_lr_item) or
+                    # NoLineTerminatorHere (handled by analyze_if_restricted).
                     assert isinstance(next_symbol, Nt)
 
                     # We never reduce with a lookahead restriction still
@@ -1466,6 +1591,7 @@ class CanonicalGrammar:
         grammar = expand_parameterized_nonterminals(grammar)
         check_cycle_free(grammar)
         check_lookahead_rules(grammar)
+        check_no_line_terminator_here(grammar)
         grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
             grammar)
         self.prods = prods

@@ -7,8 +7,11 @@ edition = "2018"
 [dependencies]
 ast = { path = "../ast" }
 bumpalo = "2.6.0"
+rustyline = "6.0.0"
+rustyline-derive = "0.3.0"
 emitter = { path = "../emitter" }
 parser = { path = "../parser" }
+interpreter = { path = "../interpreter" }
 
 # jemalloc is temporarily disabled due to a known upstream bug (macOS crashes
 # in release builds): <https://github.com/gnzlbg/jemallocator/issues/136>

@@ -18,7 +18,7 @@ actions = [
     {'token': 13},
 
     # 5. grammar
-    {None: -9223372036854775807},
+    {None: -4611686018427387905},
 
     # 6. nt_defs
     {'nt': 1, 'goal': 2, None: -1},
@@ -243,6 +243,9 @@ ctns = [
     {},
 ]
 
+special_cases = [
+]
+
 error_codes = [
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
@@ -343,6 +346,6 @@ class Parser(runtime.Parser):
     def __init__(self, goal='grammar', builder=None):
         if builder is None:
             builder = DefaultBuilder()
-        super().__init__(actions, ctns, reductions, error_codes,
+        super().__init__(actions, ctns, reductions, special_cases, error_codes,
                          goal_nt_to_init_state[goal], builder)
 

@@ -158,7 +158,7 @@ nt symbol {
 }
 
 nt no_line_terminator_here {
-    "[" "no" line_terminator "here" "]" => no_line_terminator_here();
+    "[" "no" line_terminator "here" "]" => no_line_terminator_here($2);
 }
 
 nt nonterminal {

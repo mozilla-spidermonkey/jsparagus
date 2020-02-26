@@ -4,257 +4,257 @@ macro_rules! using_opcode_database {
     ( $macro:ident ! ( ) ) => {
         $macro! {
             [
-                (JSOP_UNDEFINED, Undefined, undefined, js_undefined_str, "", 1, 0, 1, JOF_BYTE),
-                (JSOP_NULL, Null, null, js_null_str, js_null_str, 1, 0, 1, JOF_BYTE),
-                (JSOP_FALSE, False, false_, js_false_str, js_false_str, 1, 0, 1, JOF_BYTE),
-                (JSOP_TRUE, True, true_, js_true_str, js_true_str, 1, 0, 1, JOF_BYTE),
-                (JSOP_INT32, Int32, int32, "int32", NULL, 5, 0, 1, JOF_INT32),
-                (JSOP_ZERO, Zero, zero, "zero", "0", 1, 0, 1, JOF_BYTE),
-                (JSOP_ONE, One, one, "one", "1", 1, 0, 1, JOF_BYTE),
-                (JSOP_INT8, Int8, int8, "int8", NULL, 2, 0, 1, JOF_INT8),
-                (JSOP_UINT16, Uint16, uint16, "uint16", NULL, 3, 0, 1, JOF_UINT16),
-                (JSOP_UINT24, Uint24, uint24, "uint24", NULL, 4, 0, 1, JOF_UINT24),
-                (JSOP_DOUBLE, Double, double_, "double", NULL, 9, 0, 1, JOF_DOUBLE),
-                (JSOP_BIGINT, BigInt, big_int, "bigint", NULL, 5, 0, 1, JOF_BIGINT),
-                (JSOP_STRING, String, string, "string", NULL, 5, 0, 1, JOF_ATOM),
-                (JSOP_SYMBOL, Symbol, symbol, "symbol", NULL, 2, 0, 1, JOF_UINT8),
-                (JSOP_VOID, Void, void_, js_void_str, NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_TYPEOF, Typeof, typeof, js_typeof_str, NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_TYPEOFEXPR, TypeofExpr, typeof_expr, "typeofexpr", NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_POS, Pos, pos, "pos", "+ ", 1, 1, 1, JOF_BYTE),
-                (JSOP_NEG, Neg, neg, "neg", "- ", 1, 1, 1, JOF_BYTE|JOF_IC),
-                (JSOP_BITNOT, BitNot, bit_not, "bitnot", "~", 1, 1, 1, JOF_BYTE|JOF_IC),
-                (JSOP_NOT, Not, not_, "not", "!", 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_BITOR, BitOr, bit_or, "bitor", "|",  1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_BITXOR, BitXor, bit_xor, "bitxor", "^", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_BITAND, BitAnd, bit_and, "bitand", "&", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_EQ, Eq, eq, "eq", "==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_NE, Ne, ne, "ne", "!=", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_STRICTEQ, StrictEq, strict_eq, "stricteq", "===", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_STRICTNE, StrictNe, strict_ne, "strictne", "!==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
-                (JSOP_LT, Lt, lt, "lt", "<",  1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_GT, Gt, gt, "gt", ">",  1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_LE, Le, le, "le", "<=", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_GE, Ge, ge, "ge", ">=", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_INSTANCEOF, Instanceof, instanceof, js_instanceof_str, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_IN, In, in_, js_in_str, js_in_str, 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_LSH, Lsh, lsh, "lsh", "<<", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_RSH, Rsh, rsh, "rsh", ">>", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_URSH, Ursh, ursh, "ursh", ">>>", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_ADD, Add, add, "add", "+", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_SUB, Sub, sub, "sub", "-", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_INC, Inc, inc, "inc", NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
-                (JSOP_DEC, Dec, dec, "dec", NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
-                (JSOP_MUL, Mul, mul, "mul", "*", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_DIV, Div, div, "div", "/", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_MOD, Mod, mod, "mod", "%", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_POW, Pow, pow, "pow", "**", 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_TOID, ToId, to_id, "toid", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_TONUMERIC, ToNumeric, to_numeric, "tonumeric", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_TOSTRING, ToString, to_string, "tostring", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_GLOBALTHIS, GlobalThis, global_this, "globalthis", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_NEWTARGET, NewTarget, new_target, "newtarget", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_DYNAMIC_IMPORT, DynamicImport, dynamic_import, "dynamic-import", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_IMPORTMETA, ImportMeta, import_meta, "importmeta", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_NEWINIT, NewInit, new_init, "newinit", NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
-                (JSOP_NEWOBJECT, NewObject, new_object, "newobject", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
-                (JSOP_NEWOBJECT_WITHGROUP, NewObjectWithGroup, new_object_with_group, "newobjectwithgroup", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
-                (JSOP_OBJECT, Object, object, "object", NULL, 5, 0, 1, JOF_OBJECT),
-                (JSOP_OBJWITHPROTO, ObjWithProto, obj_with_proto, "objwithproto", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_INITPROP, InitProp, init_prop, "initprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITHIDDENPROP, InitHiddenProp, init_hidden_prop, "inithiddenprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITLOCKEDPROP, InitLockedProp, init_locked_prop, "initlockedprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITELEM, InitElem, init_elem, "initelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITHIDDENELEM, InitHiddenElem, init_hidden_elem, "inithiddenelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITPROP_GETTER, InitPropGetter, init_prop_getter, "initprop_getter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITHIDDENPROP_GETTER, InitHiddenPropGetter, init_hidden_prop_getter, "inithiddenprop_getter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITELEM_GETTER, InitElemGetter, init_elem_getter, "initelem_getter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITHIDDENELEM_GETTER, InitHiddenElemGetter, init_hidden_elem_getter, "inithiddenelem_getter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITPROP_SETTER, InitPropSetter, init_prop_setter, "initprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITHIDDENPROP_SETTER, InitHiddenPropSetter, init_hidden_prop_setter, "inithiddenprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITELEM_SETTER, InitElemSetter, init_elem_setter, "initelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_INITHIDDENELEM_SETTER, InitHiddenElemSetter, init_hidden_elem_setter, "inithiddenelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_GETPROP, GetProp, get_prop, "getprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (JSOP_CALLPROP, CallProp, call_prop, "callprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (JSOP_GETELEM, GetElem, get_elem, "getelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
-                (JSOP_CALLELEM, CallElem, call_elem, "callelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
-                (JSOP_LENGTH, Length, length, "length", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (JSOP_SETPROP, SetProp, set_prop, "setprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_STRICTSETPROP, StrictSetProp, strict_set_prop, "strict-setprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_SETELEM, SetElem, set_elem, "setelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_STRICTSETELEM, StrictSetElem, strict_set_elem, "strict-setelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_DELPROP, DelProp, del_prop, "delprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSLOPPY),
-                (JSOP_STRICTDELPROP, StrictDelProp, strict_del_prop, "strict-delprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSTRICT),
-                (JSOP_DELELEM, DelElem, del_elem, "delelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY),
-                (JSOP_STRICTDELELEM, StrictDelElem, strict_del_elem, "strict-delelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSTRICT),
-                (JSOP_HASOWN, HasOwn, has_own, "hasown", NULL, 1, 2, 1, JOF_BYTE|JOF_IC),
-                (JSOP_SUPERBASE, SuperBase, super_base, "superbase", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_GETPROP_SUPER, GetPropSuper, get_prop_super, "getprop-super", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (JSOP_GETELEM_SUPER, GetElemSuper, get_elem_super, "getelem-super", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
-                (JSOP_SETPROP_SUPER, SetPropSuper, set_prop_super, "setprop-super", NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY),
-                (JSOP_STRICTSETPROP_SUPER, StrictSetPropSuper, strict_set_prop_super, "strictsetprop-super", NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT),
-                (JSOP_SETELEM_SUPER, SetElemSuper, set_elem_super, "setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY),
-                (JSOP_STRICTSETELEM_SUPER, StrictSetElemSuper, strict_set_elem_super, "strict-setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT),
-                (JSOP_ITER, Iter, iter, "iter", NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
-                (JSOP_MOREITER, MoreIter, more_iter, "moreiter", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_ISNOITER, IsNoIter, is_no_iter, "isnoiter", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_ITERNEXT, IterNext, iter_next, "iternext", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_ENDITER, EndIter, end_iter, "enditer", NULL, 1, 2, 0, JOF_BYTE),
-                (JSOP_CHECKISOBJ, CheckIsObj, check_is_obj, "checkisobj", NULL, 2, 1, 1, JOF_UINT8),
-                (JSOP_CHECKISCALLABLE, CheckIsCallable, check_is_callable, "checkiscallable", NULL, 2, 1, 1, JOF_UINT8),
-                (JSOP_CHECKOBJCOERCIBLE, CheckObjCoercible, check_obj_coercible, "checkobjcoercible", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_TOASYNCITER, ToAsyncIter, to_async_iter, "toasynciter", NULL, 1, 2, 1, JOF_BYTE),
-                (JSOP_MUTATEPROTO, MutateProto, mutate_proto, "mutateproto", NULL, 1, 2, 1, JOF_BYTE),
-                (JSOP_NEWARRAY, NewArray, new_array, "newarray", NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
-                (JSOP_INITELEM_ARRAY, InitElemArray, init_elem_array, "initelem_array", NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
-                (JSOP_INITELEM_INC, InitElemInc, init_elem_inc, "initelem_inc", NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC),
-                (JSOP_HOLE, Hole, hole, "hole", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_NEWARRAY_COPYONWRITE, NewArrayCopyOnWrite, new_array_copy_on_write, "newarray_copyonwrite", NULL, 5, 0, 1, JOF_OBJECT),
-                (JSOP_REGEXP, RegExp, reg_exp, "regexp", NULL, 5, 0, 1, JOF_REGEXP),
-                (JSOP_LAMBDA, Lambda, lambda, "lambda", NULL, 5, 0, 1, JOF_OBJECT),
-                (JSOP_LAMBDA_ARROW, LambdaArrow, lambda_arrow, "lambda_arrow", NULL, 5, 1, 1, JOF_OBJECT),
-                (JSOP_SETFUNNAME, SetFunName, set_fun_name, "setfunname", NULL, 2, 2, 1, JOF_UINT8),
-                (JSOP_INITHOMEOBJECT, InitHomeObject, init_home_object, "inithomeobject", NULL, 1, 2, 1, JOF_BYTE),
-                (JSOP_CHECKCLASSHERITAGE, CheckClassHeritage, check_class_heritage, "checkclassheritage", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_FUNWITHPROTO, FunWithProto, fun_with_proto, "funwithproto", NULL, 5, 1, 1, JOF_OBJECT),
-                (JSOP_CLASSCONSTRUCTOR, ClassConstructor, class_constructor, "classconstructor", NULL, 13, 0, 1, JOF_CLASS_CTOR),
-                (JSOP_DERIVEDCONSTRUCTOR, DerivedConstructor, derived_constructor, "derivedconstructor", NULL, 13, 1, 1, JOF_CLASS_CTOR),
-                (JSOP_BUILTINPROTO, BuiltinProto, builtin_proto, "builtinproto", NULL, 2, 0, 1, JOF_UINT8),
-                (JSOP_CALL, Call, call, "call", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_CALLITER, CallIter, call_iter, "calliter", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_FUNAPPLY, FunApply, fun_apply, "funapply", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_FUNCALL, FunCall, fun_call, "funcall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_CALL_IGNORES_RV, CallIgnoresRv, call_ignores_rv, "call-ignores-rv", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_SPREADCALL, SpreadCall, spread_call, "spreadcall", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_OPTIMIZE_SPREADCALL, OptimizeSpreadCall, optimize_spread_call, "optimize-spreadcall", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_EVAL, Eval, eval, "eval", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_SPREADEVAL, SpreadEval, spread_eval, "spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_STRICTEVAL, StrictEval, strict_eval, "strict-eval", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_STRICTSPREADEVAL, StrictSpreadEval, strict_spread_eval, "strict-spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_IMPLICITTHIS, ImplicitThis, implicit_this, "implicitthis", "", 5, 0, 1, JOF_ATOM),
-                (JSOP_GIMPLICITTHIS, GImplicitThis, g_implicit_this, "gimplicitthis", "", 5, 0, 1, JOF_ATOM),
-                (JSOP_CALLSITEOBJ, CallSiteObj, call_site_obj, "callsiteobj", NULL, 5, 0, 1, JOF_OBJECT),
-                (JSOP_IS_CONSTRUCTING, IsConstructing, is_constructing, "is-constructing", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_NEW, New, new_, "new", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC|JOF_IC),
-                (JSOP_SUPERCALL, SuperCall, super_call, "supercall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_SPREADNEW, SpreadNew, spread_new, "spreadnew", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_SPREADSUPERCALL, SpreadSuperCall, spread_super_call, "spreadsupercall", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (JSOP_SUPERFUN, SuperFun, super_fun, "superfun", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_CHECKTHISREINIT, CheckThisReinit, check_this_reinit, "checkthisreinit", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_GENERATOR, Generator, generator, "generator", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_INITIALYIELD, InitialYield, initial_yield, "initialyield", NULL, 4, 1, 3, JOF_RESUMEINDEX),
-                (JSOP_AFTERYIELD, AfterYield, after_yield, "afteryield", NULL, 5, 0, 0, JOF_ICINDEX),
-                (JSOP_FINALYIELDRVAL, FinalYieldRval, final_yield_rval, "finalyieldrval", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_YIELD, Yield, yield, "yield", NULL, 4, 2, 3, JOF_RESUMEINDEX),
-                (JSOP_ISGENCLOSING, IsGenClosing, is_gen_closing, "isgenclosing", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_ASYNCAWAIT, AsyncAwait, async_await, "async-await", NULL, 1, 2, 1, JOF_BYTE),
-                (JSOP_ASYNCRESOLVE, AsyncResolve, async_resolve, "async-resolve", NULL, 2, 2, 1, JOF_UINT8),
-                (JSOP_AWAIT, Await, await, "await", NULL, 4, 2, 3, JOF_RESUMEINDEX),
-                (JSOP_TRYSKIPAWAIT, TrySkipAwait, try_skip_await, "tryskipawait", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_RESUMEKIND, ResumeKind, resume_kind, "resumekind", NULL, 2, 0, 1, JOF_UINT8),
-                (JSOP_CHECK_RESUMEKIND, CheckResumeKind, check_resume_kind, "check-resumekind", NULL, 1, 3, 1, JOF_BYTE),
-                (JSOP_RESUME, Resume, resume, "resume", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE),
-                (JSOP_JUMPTARGET, JumpTarget, jump_target, "jumptarget", NULL, 5, 0, 0, JOF_ICINDEX),
-                (JSOP_LOOPHEAD, LoopHead, loop_head, "loophead", NULL, 6, 0, 0, JOF_LOOPHEAD),
-                (JSOP_GOTO, Goto, goto_, "goto", NULL, 5, 0, 0, JOF_JUMP),
-                (JSOP_IFEQ, IfEq, if_eq, "ifeq", NULL, 5, 1, 0, JOF_JUMP|JOF_DETECTING|JOF_IC),
-                (JSOP_IFNE, IfNe, if_ne, "ifne", NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
-                (JSOP_AND, And, and_, "and", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC),
-                (JSOP_OR, Or, or_, "or", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC),
-                (JSOP_COALESCE, Coalesce, coalesce, "coalesce", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING),
-                (JSOP_CASE, Case, case_, "case", NULL, 5, 2, 1, JOF_JUMP),
-                (JSOP_DEFAULT, Default, default_, "default", NULL, 5, 1, 0, JOF_JUMP),
-                (JSOP_TABLESWITCH, TableSwitch, table_switch, "tableswitch", NULL, 16, 1, 0, JOF_TABLESWITCH|JOF_DETECTING),
-                (JSOP_RETURN, Return, return_, "return", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_GETRVAL, GetRval, get_rval, "getrval", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_SETRVAL, SetRval, set_rval, "setrval", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_RETRVAL, RetRval, ret_rval, "retrval", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_CHECKRETURN, CheckReturn, check_return, "checkreturn", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_THROW, Throw, throw_, js_throw_str, NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_THROWMSG, ThrowMsg, throw_msg, "throwmsg", NULL, 3, 0, 0, JOF_UINT16),
-                (JSOP_THROWSETALIASEDCONST, ThrowSetAliasedConst, throw_set_aliased_const, "throwsetaliasedconst", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_DETECTING),
-                (JSOP_THROWSETCALLEE, ThrowSetCallee, throw_set_callee, "throwsetcallee", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_THROWSETCONST, ThrowSetConst, throw_set_const, "throwsetconst", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
-                (JSOP_TRY, Try, try_, "try", NULL, 5, 0, 0, JOF_CODE_OFFSET),
-                (JSOP_TRY_DESTRUCTURING, TryDestructuring, try_destructuring, "try-destructuring", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_EXCEPTION, Exception, exception, "exception", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_RESUMEINDEX, ResumeIndex, resume_index, "resume-index", NULL, 4, 0, 1, JOF_RESUMEINDEX),
-                (JSOP_GOSUB, Gosub, gosub, "gosub", NULL, 5, 2, 0, JOF_JUMP),
-                (JSOP_FINALLY, Finally, finally, "finally", NULL, 1, 0, 2, JOF_BYTE),
-                (JSOP_RETSUB, Retsub, retsub, "retsub", NULL, 1, 2, 0, JOF_BYTE),
-                (JSOP_UNINITIALIZED, Uninitialized, uninitialized, "uninitialized", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_INITLEXICAL, InitLexical, init_lexical, "initlexical", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
-                (JSOP_INITGLEXICAL, InitGLexical, init_g_lexical, "initglexical", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME|JOF_IC),
-                (JSOP_INITALIASEDLEXICAL, InitAliasedLexical, init_aliased_lexical, "initaliasedlexical", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT|JOF_DETECTING),
-                (JSOP_CHECKLEXICAL, CheckLexical, check_lexical, "checklexical", NULL, 4, 0, 0, JOF_LOCAL|JOF_NAME),
-                (JSOP_CHECKALIASEDLEXICAL, CheckAliasedLexical, check_aliased_lexical, "checkaliasedlexical", NULL, 5, 0, 0, JOF_ENVCOORD|JOF_NAME),
-                (JSOP_CHECKTHIS, CheckThis, check_this, "checkthis", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_BINDGNAME, BindGName, bind_g_name, "bindgname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC),
-                (JSOP_BINDNAME, BindName, bind_name, "bindname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
-                (JSOP_GETNAME, GetName, get_name, "getname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (JSOP_GETGNAME, GetGName, get_g_name, "getgname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_GNAME|JOF_IC),
-                (JSOP_GETARG, GetArg, get_arg, "getarg", NULL, 3, 0, 1, JOF_QARG|JOF_NAME),
-                (JSOP_GETLOCAL, GetLocal, get_local, "getlocal", NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME),
-                (JSOP_GETALIASEDVAR, GetAliasedVar, get_aliased_var, "getaliasedvar", NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (JSOP_GETIMPORT, GetImport, get_import, "getimport", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (JSOP_GETBOUNDNAME, GetBoundName, get_bound_name, "getboundname", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (JSOP_GETINTRINSIC, GetIntrinsic, get_intrinsic, "getintrinsic", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (JSOP_CALLEE, Callee, callee, "callee", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_ENVCALLEE, EnvCallee, env_callee, "envcallee", NULL, 2, 0, 1, JOF_UINT8),
-                (JSOP_SETNAME, SetName, set_name, "setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_STRICTSETNAME, StrictSetName, strict_set_name, "strict-setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_SETGNAME, SetGName, set_g_name, "setgname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC),
-                (JSOP_STRICTSETGNAME, StrictSetGName, strict_set_g_name, "strict-setgname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC),
-                (JSOP_SETARG, SetArg, set_arg, "setarg", NULL, 3, 1, 1, JOF_QARG|JOF_NAME),
-                (JSOP_SETLOCAL, SetLocal, set_local, "setlocal", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
-                (JSOP_SETALIASEDVAR, SetAliasedVar, set_aliased_var, "setaliasedvar", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_DETECTING),
-                (JSOP_SETINTRINSIC, SetIntrinsic, set_intrinsic, "setintrinsic", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_DETECTING),
-                (JSOP_PUSHLEXICALENV, PushLexicalEnv, push_lexical_env, "pushlexicalenv", NULL, 5, 0, 0, JOF_SCOPE),
-                (JSOP_POPLEXICALENV, PopLexicalEnv, pop_lexical_env, "poplexicalenv", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_DEBUGLEAVELEXICALENV, DebugLeaveLexicalEnv, debug_leave_lexical_env, "debugleavelexicalenv", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_RECREATELEXICALENV, RecreateLexicalEnv, recreate_lexical_env, "recreatelexicalenv", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_FRESHENLEXICALENV, FreshenLexicalEnv, freshen_lexical_env, "freshenlexicalenv", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_PUSHVARENV, PushVarEnv, push_var_env, "pushvarenv", NULL, 5, 0, 0, JOF_SCOPE),
-                (JSOP_POPVARENV, PopVarEnv, pop_var_env, "popvarenv", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_ENTERWITH, EnterWith, enter_with, "enterwith", NULL, 5, 1, 0, JOF_SCOPE),
-                (JSOP_LEAVEWITH, LeaveWith, leave_with, "leavewith", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_BINDVAR, BindVar, bind_var, "bindvar", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_DEFVAR, DefVar, def_var, "defvar", NULL, 5, 0, 0, JOF_ATOM),
-                (JSOP_DEFFUN, DefFun, def_fun, "deffun", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_DEFLET, DefLet, def_let, "deflet", NULL, 5, 0, 0, JOF_ATOM),
-                (JSOP_DEFCONST, DefConst, def_const, "defconst", NULL, 5, 0, 0, JOF_ATOM),
-                (JSOP_DELNAME, DelName, del_name, "delname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY),
-                (JSOP_ARGUMENTS, Arguments, arguments, "arguments", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_REST, Rest, rest, "rest", NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC),
-                (JSOP_FUNCTIONTHIS, FunctionThis, function_this, "functionthis", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_POP, Pop, pop, "pop", NULL, 1, 1, 0, JOF_BYTE),
-                (JSOP_POPN, PopN, pop_n, "popn", NULL, 3, -1, 0, JOF_UINT16),
-                (JSOP_DUP, Dup, dup, "dup", NULL, 1, 1, 2, JOF_BYTE),
-                (JSOP_DUP2, Dup2, dup2, "dup2", NULL, 1, 2, 4, JOF_BYTE),
-                (JSOP_DUPAT, DupAt, dup_at, "dupat", NULL, 4, 0, 1, JOF_UINT24),
-                (JSOP_SWAP, Swap, swap, "swap", NULL, 1, 2, 2, JOF_BYTE),
-                (JSOP_PICK, Pick, pick, "pick", NULL, 2, 0, 0, JOF_UINT8),
-                (JSOP_UNPICK, Unpick, unpick, "unpick", NULL, 2, 0, 0, JOF_UINT8),
-                (JSOP_NOP, Nop, nop, "nop", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_LINENO, Lineno, lineno, "lineno", NULL, 5, 0, 0, JOF_UINT32),
-                (JSOP_NOP_DESTRUCTURING, NopDestructuring, nop_destructuring, "nop-destructuring", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_FORCEINTERPRETER, ForceInterpreter, force_interpreter, "forceinterpreter", NULL, 1, 0, 0, JOF_BYTE),
-                (JSOP_DEBUGCHECKSELFHOSTED, DebugCheckSelfHosted, debug_check_self_hosted, "debug-checkselfhosted", NULL, 1, 1, 1, JOF_BYTE),
-                (JSOP_INSTRUMENTATION_ACTIVE, InstrumentationActive, instrumentation_active, "instrumentationActive", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_INSTRUMENTATION_CALLBACK, InstrumentationCallback, instrumentation_callback, "instrumentationCallback", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_INSTRUMENTATION_SCRIPT_ID, InstrumentationScriptId, instrumentation_script_id, "instrumentationScriptId", NULL, 1, 0, 1, JOF_BYTE),
-                (JSOP_DEBUGGER, Debugger, debugger, "debugger", NULL, 1, 0, 0, JOF_BYTE),
+                (Undefined, undefined, "", 1, 0, 1, JOF_BYTE),
+                (Null, null, js_null_str, 1, 0, 1, JOF_BYTE),
+                (False, false_, js_false_str, 1, 0, 1, JOF_BYTE),
+                (True, true_, js_true_str, 1, 0, 1, JOF_BYTE),
+                (Int32, int32, NULL, 5, 0, 1, JOF_INT32),
+                (Zero, zero, "0", 1, 0, 1, JOF_BYTE),
+                (One, one, "1", 1, 0, 1, JOF_BYTE),
+                (Int8, int8, NULL, 2, 0, 1, JOF_INT8),
+                (Uint16, uint16, NULL, 3, 0, 1, JOF_UINT16),
+                (Uint24, uint24, NULL, 4, 0, 1, JOF_UINT24),
+                (Double, double_, NULL, 9, 0, 1, JOF_DOUBLE),
+                (BigInt, big_int, NULL, 5, 0, 1, JOF_BIGINT),
+                (String, string, NULL, 5, 0, 1, JOF_ATOM),
+                (Symbol, symbol, NULL, 2, 0, 1, JOF_UINT8),
+                (Void, void_, NULL, 1, 1, 1, JOF_BYTE),
+                (Typeof, typeof_, NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (TypeofExpr, typeof_expr, NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (Pos, pos, "+ ", 1, 1, 1, JOF_BYTE),
+                (Neg, neg, "- ", 1, 1, 1, JOF_BYTE|JOF_IC),
+                (BitNot, bit_not, "~", 1, 1, 1, JOF_BYTE|JOF_IC),
+                (Not, not_, "!", 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (BitOr, bit_or, "|",  1, 2, 1, JOF_BYTE|JOF_IC),
+                (BitXor, bit_xor, "^", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (BitAnd, bit_and, "&", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Eq, eq, "==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (Ne, ne, "!=", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (StrictEq, strict_eq, "===", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (StrictNe, strict_ne, "!==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC),
+                (Lt, lt, "<",  1, 2, 1, JOF_BYTE|JOF_IC),
+                (Gt, gt, ">",  1, 2, 1, JOF_BYTE|JOF_IC),
+                (Le, le, "<=", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Ge, ge, ">=", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Instanceof, instanceof, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC),
+                (In, in_, js_in_str, 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Lsh, lsh, "<<", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Rsh, rsh, ">>", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Ursh, ursh, ">>>", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Add, add, "+", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Sub, sub, "-", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Inc, inc, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
+                (Dec, dec, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
+                (Mul, mul, "*", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Div, div, "/", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Mod, mod, "%", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (Pow, pow, "**", 1, 2, 1, JOF_BYTE|JOF_IC),
+                (ToId, to_id, NULL, 1, 1, 1, JOF_BYTE),
+                (ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE),
+                (ToString, to_string, NULL, 1, 1, 1, JOF_BYTE),
+                (GlobalThis, global_this, NULL, 1, 0, 1, JOF_BYTE),
+                (NewTarget, new_target, NULL, 1, 0, 1, JOF_BYTE),
+                (DynamicImport, dynamic_import, NULL, 1, 1, 1, JOF_BYTE),
+                (ImportMeta, import_meta, NULL, 1, 0, 1, JOF_BYTE),
+                (NewInit, new_init, NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
+                (NewObject, new_object, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
+                (NewObjectWithGroup, new_object_with_group, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
+                (Object, object, NULL, 5, 0, 1, JOF_OBJECT),
+                (ObjWithProto, obj_with_proto, NULL, 1, 1, 1, JOF_BYTE),
+                (InitProp, init_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitHiddenProp, init_hidden_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitLockedProp, init_locked_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitElem, init_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitHiddenElem, init_hidden_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitPropGetter, init_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
+                (InitHiddenPropGetter, init_hidden_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
+                (InitElemGetter, init_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
+                (InitHiddenElemGetter, init_hidden_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
+                (InitPropSetter, init_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
+                (InitHiddenPropSetter, init_hidden_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING),
+                (InitElemSetter, init_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
+                (InitHiddenElemSetter, init_hidden_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING),
+                (GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
+                (CallProp, call_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
+                (GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
+                (CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
+                (Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
+                (SetProp, set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictSetProp, strict_set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
+                (SetElem, set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictSetElem, strict_set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
+                (DelProp, del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSLOPPY),
+                (StrictDelProp, strict_del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSTRICT),
+                (DelElem, del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY),
+                (StrictDelElem, strict_del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSTRICT),
+                (HasOwn, has_own, NULL, 1, 2, 1, JOF_BYTE|JOF_IC),
+                (SuperBase, super_base, NULL, 1, 1, 1, JOF_BYTE),
+                (GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
+                (GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
+                (SetPropSuper, set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY),
+                (StrictSetPropSuper, strict_set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT),
+                (SetElemSuper, set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY),
+                (StrictSetElemSuper, strict_set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT),
+                (Iter, iter, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
+                (MoreIter, more_iter, NULL, 1, 1, 2, JOF_BYTE),
+                (IsNoIter, is_no_iter, NULL, 1, 1, 2, JOF_BYTE),
+                (IterNext, iter_next, NULL, 1, 1, 1, JOF_BYTE),
+                (EndIter, end_iter, NULL, 1, 2, 0, JOF_BYTE),
+                (CheckIsObj, check_is_obj, NULL, 2, 1, 1, JOF_UINT8),
+                (CheckIsCallable, check_is_callable, NULL, 2, 1, 1, JOF_UINT8),
+                (CheckObjCoercible, check_obj_coercible, NULL, 1, 1, 1, JOF_BYTE),
+                (ToAsyncIter, to_async_iter, NULL, 1, 2, 1, JOF_BYTE),
+                (MutateProto, mutate_proto, NULL, 1, 2, 1, JOF_BYTE),
+                (NewArray, new_array, NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
+                (InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC),
+                (InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC),
+                (Hole, hole, NULL, 1, 0, 1, JOF_BYTE),
+                (NewArrayCopyOnWrite, new_array_copy_on_write, NULL, 5, 0, 1, JOF_OBJECT),
+                (RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP),
+                (Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT),
+                (LambdaArrow, lambda_arrow, NULL, 5, 1, 1, JOF_OBJECT),
+                (SetFunName, set_fun_name, NULL, 2, 2, 1, JOF_UINT8),
+                (InitHomeObject, init_home_object, NULL, 1, 2, 1, JOF_BYTE),
+                (CheckClassHeritage, check_class_heritage, NULL, 1, 1, 1, JOF_BYTE),
+                (FunWithProto, fun_with_proto, NULL, 5, 1, 1, JOF_OBJECT),
+                (ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR),
+                (DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR),
+                (BuiltinProto, builtin_proto, NULL, 2, 0, 1, JOF_UINT8),
+                (Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
+                (CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
+                (FunApply, fun_apply, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
+                (FunCall, fun_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
+                (CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
+                (SpreadCall, spread_call, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_IC),
+                (OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE),
+                (Eval, eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
+                (SpreadEval, spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictEval, strict_eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
+                (StrictSpreadEval, strict_spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
+                (ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM),
+                (GImplicitThis, g_implicit_this, "", 5, 0, 1, JOF_ATOM),
+                (CallSiteObj, call_site_obj, NULL, 5, 0, 1, JOF_OBJECT),
+                (IsConstructing, is_constructing, NULL, 1, 0, 1, JOF_BYTE),
+                (New, new_, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC|JOF_IC),
+                (SuperCall, super_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC),
+                (SpreadNew, spread_new, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC),
+                (SpreadSuperCall, spread_super_call, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC),
+                (SuperFun, super_fun, NULL, 1, 1, 1, JOF_BYTE),
+                (CheckThisReinit, check_this_reinit, NULL, 1, 1, 1, JOF_BYTE),
+                (Generator, generator, NULL, 1, 0, 1, JOF_BYTE),
+                (InitialYield, initial_yield, NULL, 4, 1, 3, JOF_RESUMEINDEX),
+                (AfterYield, after_yield, NULL, 5, 0, 0, JOF_ICINDEX),
+                (FinalYieldRval, final_yield_rval, NULL, 1, 1, 0, JOF_BYTE),
+                (Yield, yield, NULL, 4, 2, 3, JOF_RESUMEINDEX),
+                (IsGenClosing, is_gen_closing, NULL, 1, 1, 2, JOF_BYTE),
+                (AsyncAwait, async_await, NULL, 1, 2, 1, JOF_BYTE),
+                (AsyncResolve, async_resolve, NULL, 2, 2, 1, JOF_UINT8),
+                (Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX),
+                (TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE),
+                (ResumeKind, resume_kind, NULL, 2, 0, 1, JOF_UINT8),
+                (CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE),
+                (Resume, resume, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE),
+                (JumpTarget, jump_target, NULL, 5, 0, 0, JOF_ICINDEX),
+                (LoopHead, loop_head, NULL, 6, 0, 0, JOF_LOOPHEAD),
+                (Goto, goto_, NULL, 5, 0, 0, JOF_JUMP),
+                (IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_DETECTING|JOF_IC),
+                (IfNe, if_ne, NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
+                (And, and_, NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC),
+                (Or, or_, NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC),
+                (Coalesce, coalesce, NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING),
+                (Case, case_, NULL, 5, 2, 1, JOF_JUMP),
+                (Default, default_, NULL, 5, 1, 0, JOF_JUMP),
+                (TableSwitch, table_switch, NULL, 16, 1, 0, JOF_TABLESWITCH|JOF_DETECTING),
+                (Return, return_, NULL, 1, 1, 0, JOF_BYTE),
+                (GetRval, get_rval, NULL, 1, 0, 1, JOF_BYTE),
+                (SetRval, set_rval, NULL, 1, 1, 0, JOF_BYTE),
+                (RetRval, ret_rval, NULL, 1, 0, 0, JOF_BYTE),
+                (CheckReturn, check_return, NULL, 1, 1, 0, JOF_BYTE),
+                (Throw, throw_, NULL, 1, 1, 0, JOF_BYTE),
+                (ThrowMsg, throw_msg, NULL, 3, 0, 0, JOF_UINT16),
+                (ThrowSetAliasedConst, throw_set_aliased_const, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_DETECTING),
+                (ThrowSetCallee, throw_set_callee, NULL, 1, 1, 1, JOF_BYTE),
+                (ThrowSetConst, throw_set_const, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
+                (Try, try_, NULL, 5, 0, 0, JOF_CODE_OFFSET),
+                (TryDestructuring, try_destructuring, NULL, 1, 0, 0, JOF_BYTE),
+                (Exception, exception, NULL, 1, 0, 1, JOF_BYTE),
+                (ResumeIndex, resume_index, NULL, 4, 0, 1, JOF_RESUMEINDEX),
+                (Gosub, gosub, NULL, 5, 2, 0, JOF_JUMP),
+                (Finally, finally, NULL, 1, 0, 2, JOF_BYTE),
+                (Retsub, retsub, NULL, 1, 2, 0, JOF_BYTE),
+                (Uninitialized, uninitialized, NULL, 1, 0, 1, JOF_BYTE),
+                (InitLexical, init_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
+                (InitGLexical, init_g_lexical, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME|JOF_IC),
+                (InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT|JOF_DETECTING),
+                (CheckLexical, check_lexical, NULL, 4, 0, 0, JOF_LOCAL|JOF_NAME),
+                (CheckAliasedLexical, check_aliased_lexical, NULL, 5, 0, 0, JOF_ENVCOORD|JOF_NAME),
+                (CheckThis, check_this, NULL, 1, 1, 1, JOF_BYTE),
+                (BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC),
+                (BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
+                (GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_GNAME|JOF_IC),
+                (GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME),
+                (GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME),
+                (GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (Callee, callee, NULL, 1, 0, 1, JOF_BYTE),
+                (EnvCallee, env_callee, NULL, 2, 0, 1, JOF_UINT8),
+                (SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC),
+                (SetGName, set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictSetGName, strict_set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC),
+                (SetArg, set_arg, NULL, 3, 1, 1, JOF_QARG|JOF_NAME),
+                (SetLocal, set_local, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING),
+                (SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_DETECTING),
+                (SetIntrinsic, set_intrinsic, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_DETECTING),
+                (PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE),
+                (PopLexicalEnv, pop_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
+                (DebugLeaveLexicalEnv, debug_leave_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
+                (RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
+                (FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
+                (PushVarEnv, push_var_env, NULL, 5, 0, 0, JOF_SCOPE),
+                (PopVarEnv, pop_var_env, NULL, 1, 0, 0, JOF_BYTE),
+                (EnterWith, enter_with, NULL, 5, 1, 0, JOF_SCOPE),
+                (LeaveWith, leave_with, NULL, 1, 0, 0, JOF_BYTE),
+                (BindVar, bind_var, NULL, 1, 0, 1, JOF_BYTE),
+                (DefVar, def_var, NULL, 5, 0, 0, JOF_ATOM),
+                (DefFun, def_fun, NULL, 1, 1, 0, JOF_BYTE),
+                (DefLet, def_let, NULL, 5, 0, 0, JOF_ATOM),
+                (DefConst, def_const, NULL, 5, 0, 0, JOF_ATOM),
+                (DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY),
+                (Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE),
+                (Rest, rest, NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC),
+                (FunctionThis, function_this, NULL, 1, 0, 1, JOF_BYTE),
+                (Pop, pop, NULL, 1, 1, 0, JOF_BYTE),
+                (PopN, pop_n, NULL, 3, -1, 0, JOF_UINT16),
+                (Dup, dup, NULL, 1, 1, 2, JOF_BYTE),
+                (Dup2, dup2, NULL, 1, 2, 4, JOF_BYTE),
+                (DupAt, dup_at, NULL, 4, 0, 1, JOF_UINT24),
+                (Swap, swap, NULL, 1, 2, 2, JOF_BYTE),
+                (Pick, pick, NULL, 2, 0, 0, JOF_UINT8),
+                (Unpick, unpick, NULL, 2, 0, 0, JOF_UINT8),
+                (Nop, nop, NULL, 1, 0, 0, JOF_BYTE),
+                (Lineno, lineno, NULL, 5, 0, 0, JOF_UINT32),
+                (NopDestructuring, nop_destructuring, NULL, 1, 0, 0, JOF_BYTE),
+                (ForceInterpreter, force_interpreter, NULL, 1, 0, 0, JOF_BYTE),
+                (DebugCheckSelfHosted, debug_check_self_hosted, NULL, 1, 1, 1, JOF_BYTE),
+                (InstrumentationActive, instrumentation_active, NULL, 1, 0, 1, JOF_BYTE),
+                (InstrumentationCallback, instrumentation_callback, NULL, 1, 0, 1, JOF_BYTE),
+                (InstrumentationScriptId, instrumentation_script_id, NULL, 1, 0, 1, JOF_BYTE),
+                (Debugger, debugger, NULL, 1, 0, 0, JOF_BYTE),
             ]
         }
     }
 }
 
 macro_rules! define_opcode_enum {
-    ( [ $( ( $_op_upper:ident , $op_camel:ident , $( $_etc:tt )* ), )* ] ) => {
+    ( [ $( ( $op:ident , $( $_etc:tt )* ), )* ] ) => {
         #[derive(Copy, Clone, Debug, Eq, PartialEq)]
         #[repr(u8)]
         pub enum Opcode {
-            $( $op_camel, )*
+            $( $op, )*
         }
     }
 }
@@ -348,7 +348,6 @@ const JOF_CODE_OFFSET: u32 = 23;
 /// mask for above immediate types
 const JOF_TYPEMASK: u32 = 0x001f;
 
-
 /// name operation
 const JOF_NAME: u32 = 1 << 5;
 
@@ -360,7 +359,6 @@ const JOF_ELEM: u32 = 3 << 5;
 
 // /// mask for above addressing modes
 // const JOF_MODEMASK: u32 = 3 << 5;
-
 
 /// property/element/name set operation
 const JOF_PROPSET: u32 = 1 << 7;
@@ -380,17 +378,20 @@ const JOF_CHECKSTRICT: u32 = 1 << 11;
 /// call, construct, or spreadcall instruction
 const JOF_INVOKE: u32 = 1 << 12;
 
+/// invoke instruction using [[Construct]] entry
+const JOF_CONSTRUCT: u32 = 1 << 13;
+
+/// invoke instruction using spread argument
+const JOF_SPREAD: u32 = 1 << 14;
+
 /// predicted global name
-const JOF_GNAME: u32 = 1 << 13;
+const JOF_GNAME: u32 = 1 << 15;
 
 /// has an entry in a script's type sets
-const JOF_TYPESET: u32 = 1 << 14;
+const JOF_TYPESET: u32 = 1 << 16;
 
 /// baseline may use an IC for this op
-const JOF_IC: u32 = 1 << 15;
-
-
-
+const JOF_IC: u32 = 1 << 17;
 
 impl Opcode {
     /// Return the numeric bytecode value for this opcode, as understood by the
@@ -457,9 +458,14 @@ impl TryFrom<u8> for Opcode {
 }
 
 macro_rules! define_table {
-    ( [ $( ( $op_upper:ident , $op_camel:ident , $( $_etc:tt )* ) , )* ] ) => {
+    ( [ $(
+        (
+            $op:ident , $op_snake:ident , $str:expr ,
+            $length:expr , $nuses:expr , $ndefs:expr , $format:expr
+        ) ,
+    )* ] ) => {
         pub static TABLE: [Opcode; JSOP_LIMIT] = [
-            $( Opcode::$op_camel , )*
+            $( Opcode::$op , )*
         ];
     }
 }
@@ -472,12 +478,12 @@ impl Opcode {
         macro_rules! select_length {
             ( [ $(
                 (
-                    $op_upper:ident , $op_camel:ident , $op_snake:ident , $str:expr , $str2:expr ,
+                    $op:ident , $op_snake:ident , $str:expr ,
                     $length:expr , $nuses:expr , $ndefs:expr , $format:expr
                 ) ,
             )* ] ) => {
                 match self {
-                    $( Opcode::$op_camel => $length , )*
+                    $( Opcode::$op => $length , )*
                 }
             }
         }
@@ -491,12 +497,12 @@ impl Opcode {
         macro_rules! select_nuses {
             ( [ $(
                 (
-                    $op_upper:ident , $op_camel:ident , $op_snake:ident , $str:expr , $str2:expr ,
+                    $op:ident , $op_snake:ident , $str:expr ,
                     $length:expr , $nuses:expr , $ndefs:expr , $format:expr
                 ) ,
             )* ] ) => {
                 match self {
-                    $( Opcode::$op_camel => $nuses , )*
+                    $( Opcode::$op => $nuses , )*
                 }
             }
         }
@@ -508,12 +514,12 @@ impl Opcode {
         macro_rules! select_ndefs {
             ( [ $(
                 (
-                    $op_upper:ident , $op_camel:ident , $op_snake:ident , $str:expr , $str2:expr ,
+                    $op:ident , $op_snake:ident , $str:expr ,
                     $length:expr , $nuses:expr , $ndefs:expr , $format:expr
                 ) ,
             )* ] ) => {
                 match self {
-                    $( Opcode::$op_camel => $ndefs , )*
+                    $( Opcode::$op => $ndefs , )*
                 }
             }
         }
@@ -525,12 +531,12 @@ impl Opcode {
         macro_rules! select_format {
             ( [ $(
                 (
-                    $op_upper:ident , $op_camel:ident , $op_snake:ident , $str:expr , $str2:expr ,
+                    $op:ident , $op_snake:ident , $str:expr ,
                     $length:expr , $nuses:expr , $ndefs:expr , $format:expr
                 ) ,
             )* ] ) => {
                 match self {
-                    $( Opcode::$op_camel => $format , )*
+                    $( Opcode::$op => $format , )*
                 }
             }
         }
@@ -551,6 +557,10 @@ impl Opcode {
 
     pub fn has_argc(self) -> bool {
         self.format_bits() & JOF_TYPEMASK == JOF_ARGC
+    }
+
+    pub fn has_typeset(self) -> bool {
+        self.format_bits() & JOF_TYPESET != 0
     }
 }
 

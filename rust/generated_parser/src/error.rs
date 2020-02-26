@@ -1,11 +1,10 @@
 use crate::stack_value_generated::AstError;
+use crate::DeclarationKind;
 use crate::Token;
-use std::{convert::Infallible, error::Error, fmt, io};
+use std::{convert::Infallible, error::Error, fmt};
 
 #[derive(Debug)]
 pub enum ParseError<'alloc> {
-    IOError(io::Error),
-
     // Lexical errors
     IllegalCharacter(char),
     InvalidEscapeSequence,
@@ -20,6 +19,7 @@ pub enum ParseError<'alloc> {
     UnexpectedEnd,
     InvalidAssignmentTarget,
     InvalidParameter,
+    InvalidIdentifier(&'alloc str, usize),
     AstError(String),
 
     // Destructuring errors
@@ -32,12 +32,20 @@ pub enum ParseError<'alloc> {
     // 14.8 Async arrow function definitions
     ArrowHeadInvalid,
     ArrowParametersWithNonFinalRest,
+
+    DuplicateBinding(&'alloc str, DeclarationKind, usize, DeclarationKind, usize),
+    DuplicateExport(&'alloc str, usize, usize),
+    MissingExport(&'alloc str, usize),
+
+    // Annex B. FunctionDeclarations in IfStatement Statement Clauses
+    // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
+    FunctionDeclInSingleStatement,
+    LabelledFunctionDeclInSingleStatement,
 }
 
 impl<'alloc> ParseError<'alloc> {
     pub fn message(&self) -> String {
         match self {
-            ParseError::IOError(io_error) => format!("{}", io_error),
             ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
             ParseError::InvalidEscapeSequence => format!("invalid escape sequence"),
             ParseError::UnterminatedString => format!("unterminated string literal"),
@@ -49,6 +57,9 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::UnexpectedEnd => format!("unexpected end of input"),
             ParseError::InvalidAssignmentTarget => format!("invalid left-hand side of assignment"),
             ParseError::InvalidParameter => format!("invalid parameter"),
+            ParseError::InvalidIdentifier(name, _) => {
+                format!("invalid identifier {}", name)
+            }
             ParseError::AstError(ast_error) => format!("{}", ast_error),
             ParseError::ArrayPatternWithNonFinalRest => {
                 format!("array patterns can have a rest element (`...x`) only at the end")
@@ -69,6 +80,26 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::ArrowParametersWithNonFinalRest => format!(
                 "arrow function parameters can have a rest element (`...x`) only at the end"
             ),
+            ParseError::DuplicateBinding(name, kind1, _, kind2, _) => format!(
+                "redeclaration of {} '{}' with {}",
+                kind1.to_str(),
+                name,
+                kind2.to_str(),
+            ),
+            ParseError::DuplicateExport(name, _, _) => format!(
+                "duplicate export name '{}'",
+                name,
+            ),
+            ParseError::MissingExport(name, _) => format!(
+                "local binding for export '{}' not found",
+                name,
+            ),
+            ParseError::FunctionDeclInSingleStatement => format!(
+                "function declarations can't appear in single-statement context"
+            ),
+            ParseError::LabelledFunctionDeclInSingleStatement => format!(
+                "functions can only be labelled inside blocks"
+            ),
         }
     }
 }
@@ -82,12 +113,6 @@ impl<'alloc> PartialEq for ParseError<'alloc> {
 impl<'alloc> fmt::Display for ParseError<'alloc> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message())
-    }
-}
-
-impl<'alloc> From<io::Error> for ParseError<'alloc> {
-    fn from(err: io::Error) -> ParseError<'alloc> {
-        ParseError::IOError(err)
     }
 }
 
