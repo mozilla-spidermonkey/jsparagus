@@ -108,6 +108,7 @@ class RustParserWriter:
         self.write(0, "use ast::{arena::{Box, Vec}, types::*};")
         self.write(0, "use crate::ast_builder::AstBuilder;")
         self.write(0, "use crate::stack_value_generated::{StackValue, TryIntoStack};")
+        self.write(0, "use crate::error::ParseError;")
         self.write(0, "use crate::error::Result;")
         self.write(0, "use crate::token::Token;")
         self.write(0, "")
