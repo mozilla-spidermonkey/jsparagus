@@ -3174,6 +3174,9 @@ class ParseTable:
             before = [repr(e.term) for e in aps.stack[:-1]]
             after = [repr(e.term) for e in aps.actions[:-1]]
             prod = before + ["\N{MIDDLE DOT}"] + after
+            if replay < len(after) and replay > 0:
+                del prod[-replay:]
+                replay = 0
             if replay > len(after):
                 replay += 1
             if replay > 0:
@@ -3187,7 +3190,7 @@ class ParseTable:
 
         if split_txt == None:
             return context
-        return split_txt.join(context)
+        return split_txt.join(txt for txt in sorted(context))
 
 
 def generate_parser_states(grammar, *, verbose=False, progress=False, debug=False):
