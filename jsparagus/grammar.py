@@ -690,22 +690,24 @@ class Grammar:
             self.rhs_to_str(rhs),
             "" if reducer == () else " => " + expr_to_str(reducer))
 
-    def lr_item_to_str(self, prods, item):
+    def lr_item_to_str(self, prods, item, with_follow=True):
         prod = prods[item.prod_index]
         if item.lookahead is None:
             la = []
         else:
             la = [self.element_to_str(item.lookahead)]
-        return "{} ::= {} >> {{{}}}".format(
-            prod.nt,
+        s = "{} ::= {}".format(
+            prod.nt.pretty(),
             " ".join([self.element_to_str(e) for e in prod.rhs[:item.offset]]
                      + ["\N{MIDDLE DOT}"]
                      + la
-                     + [self.element_to_str(e) for e in prod.rhs[item.offset:]]),
-            ", ".join(
-                "$" if t is None else self.element_to_str(t)
-                for t in item.followed_by)
-        )
+                     + [self.element_to_str(e) for e in prod.rhs[item.offset:]]))
+        if with_follow:
+            s += " >> {{{}}}".format(
+                ", ".join(
+                    "$" if t is None else self.element_to_str(t)
+                    for t in item.followed_by))
+        return s
 
     def item_set_to_str(self, prods, item_set):
         return "{{{}}}".format(

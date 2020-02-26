@@ -36,8 +36,8 @@ def write_python_parser(out, parser_states):
     out.write("actions = [\n")
     for i, state in enumerate(states):
         out.write("    # {}. {}\n".format(i, state.traceback() or "<empty>"))
-        # for item in state._lr_items:
-        #     out.write("    #       {}\n".format(grammar.lr_item_to_str(prods, item)))
+        for item in state._lr_items:
+            out.write("    #       {}\n".format(grammar.lr_item_to_str(prods, item, with_follow=False)))
         out.write("    {"
                   + ", ".join("{!r}: {!r}".format(t, render_action(action))
                               for t, action in state.action_row.items())
