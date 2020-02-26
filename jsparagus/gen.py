@@ -2059,14 +2059,14 @@ class ParseTable:
         "debug_info",
     ]
 
-    def __init__(self, grammar, verbose = False, progress = False):
+    def __init__(self, grammar, verbose = False, progress = False, debug = False):
         self.actions = []
         self.states = []
         self.state_cache = {}
         self.named_goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
-        self.debug_info = False
+        self.debug_info = debug
         self.create_lr0_table(grammar, verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
@@ -3159,14 +3159,14 @@ class ParseTable:
         return split_txt.join(context)
 
 
-def generate_parser_states(grammar, *, verbose=False, progress=False):
+def generate_parser_states(grammar, *, verbose=False, progress=False, debug=False):
     assert isinstance(grammar, Grammar)
     grammar = CanonicalGrammar(grammar)
-    parse_table = ParseTable(grammar, verbose, progress)
+    parse_table = ParseTable(grammar, verbose, progress, debug)
     return parse_table
 
 
-def generate_parser(out, source, *, verbose=False, progress=False, target='python', handler_info=None):
+def generate_parser(out, source, *, verbose=False, progress=False, debug=False, target='python', handler_info=None):
     assert target in ('python', 'rust')
 
     if isinstance(source, Grammar):
@@ -3175,6 +3175,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, target='pytho
             source, verbose=verbose, progress=progress)
     elif isinstance(source, ParseTable):
         parser_data = source
+        parser_data.debug_info = debug
     elif isinstance(source, ParserStates):
         parser_data = source
     else:
