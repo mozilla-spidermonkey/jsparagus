@@ -138,7 +138,7 @@ class FilterFlag(Action):
     __slots__ = 'flag', 'value'
     def __init__(self, flag, value):
         super().__init__(["flag_" + flag], [])
-        self.flag = flag,
+        self.flag = flag
         self.value = value
     def is_condition(self):
         return True
@@ -156,7 +156,7 @@ class PushFlag(Action):
     __slots__ = 'flag', 'value'
     def __init__(self, flag, value):
         super().__init__([], ["flag_" + flag])
-        self.flag = flag,
+        self.flag = flag
         self.value = value
     def __str__(self):
         return "PushFlag({}, {})".format(self.flag, self.value)
