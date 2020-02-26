@@ -2,9 +2,11 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{BytecodeOffset, EmitError, EmitOptions, EmitResult, InstructionWriter};
+use super::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
 use ast::types::*;
+
+use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
@@ -23,8 +25,8 @@ pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, 
     Ok(emitter.emit.into_emit_result())
 }
 
-struct AstEmitter<'alloc> {
-    emit: InstructionWriter,
+pub struct AstEmitter<'alloc> {
+    pub emit: InstructionWriter,
     options: &'alloc EmitOptions,
 }
 
@@ -129,27 +131,31 @@ impl<'alloc> AstEmitter<'alloc> {
     fn emit_if(&mut self, if_statement: &IfStatement) -> Result<(), EmitError> {
         self.emit_expression(&if_statement.test)?;
 
-        let offset_alternate = self.emit.bytecode_offset();
-        self.emit.if_eq(0);
+        let alternate_jump = ForwardJumpEmitter {
+            jump: JumpKind::IfEq,
+        }
+        .emit(self);
 
         // Then branch
         self.emit.jump_target();
         self.emit_statement(&if_statement.consequent)?;
 
         if let Some(alternate) = &if_statement.alternate {
-            let offset_final = self.emit.bytecode_offset();
-            self.emit.goto(0);
+            let then_jump = ForwardJumpEmitter {
+                jump: JumpKind::IfEq,
+            }
+            .emit(self);
             // ^^ part of then branch
 
             // Else branch
-            self.emit_jump_target(vec![offset_alternate]);
+            alternate_jump.patch(self);
             self.emit_statement(alternate)?;
 
             // Merge point after else
-            self.emit_jump_target(vec![offset_final]);
+            then_jump.patch(self);
         } else {
             // Merge point without else
-            self.emit_jump_target(vec![offset_alternate])
+            alternate_jump.patch(self);
         }
 
         Ok(())
@@ -402,10 +408,16 @@ impl<'alloc> AstEmitter<'alloc> {
             BinaryOperator::BitwiseXor { .. } => Opcode::BitXor,
             BinaryOperator::BitwiseAnd { .. } => Opcode::BitAnd,
 
-            BinaryOperator::Coalesce { .. }
-            | BinaryOperator::LogicalOr { .. }
-            | BinaryOperator::LogicalAnd { .. } => {
-                self.emit_short_circuit(operator, left, right)?;
+            BinaryOperator::Coalesce { .. } => {
+                self.emit_short_circuit(JumpKind::Coalesce, left, right)?;
+                return Ok(());
+            }
+            BinaryOperator::LogicalOr { .. } => {
+                self.emit_short_circuit(JumpKind::LogicalOr, left, right)?;
+                return Ok(());
+            }
+            BinaryOperator::LogicalAnd { .. } => {
+                self.emit_short_circuit(JumpKind::LogicalAnd, left, right)?;
                 return Ok(());
             }
 
@@ -425,52 +437,16 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_short_circuit(
         &mut self,
-        operator: &BinaryOperator,
+        jump: JumpKind,
         left: &Expression,
         right: &Expression,
     ) -> Result<(), EmitError> {
         self.emit_expression(left)?;
-        let mut jumplist: Vec<BytecodeOffset> = Vec::with_capacity(1);
-        self.emit_jump(operator, &mut jumplist)?;
-        self.emit.jump_target();
+        let jump = ForwardJumpEmitter { jump: jump }.emit(self);
         self.emit.pop();
         self.emit_expression(right)?;
-        self.emit_jump_target(jumplist);
+        jump.patch(self);
         return Ok(());
-    }
-
-    fn emit_jump(
-        &mut self,
-        operator: &BinaryOperator,
-        jumplist: &mut Vec<BytecodeOffset>,
-    ) -> Result<(), EmitError> {
-        let offset: BytecodeOffset = self.emit.bytecode_offset();
-        jumplist.push(offset);
-
-        // in the c++ bytecode emitter, the jumplist is emitted
-        // and four bytes are used in order to save memory. We are not using that
-        // here, so instead we are using a placeholder offset set to 0, which will
-        // be updated later in patch_jump_target.
-        let placeholder_offset: i32 = 0;
-        match operator {
-            BinaryOperator::Coalesce { .. } => {
-                self.emit.coalesce(placeholder_offset);
-            }
-            BinaryOperator::LogicalOr { .. } => {
-                self.emit.or(placeholder_offset);
-            }
-            BinaryOperator::LogicalAnd { .. } => {
-                self.emit.and(placeholder_offset);
-            }
-            _ => panic!("unrecognized operator used in jump"),
-        }
-
-        return Ok(());
-    }
-
-    fn emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
-        self.emit.patch_jump_target(jumplist);
-        self.emit.jump_target();
     }
 
     fn emit_numeric_expression(&mut self, value: f64) {
@@ -565,22 +541,26 @@ impl<'alloc> AstEmitter<'alloc> {
     ) -> Result<(), EmitError> {
         self.emit_expression(test)?;
 
-        let offset_else = self.emit.bytecode_offset();
-        self.emit.if_eq(0);
+        let else_jump = ForwardJumpEmitter {
+            jump: JumpKind::IfEq,
+        }
+        .emit(self);
 
         // Then branch
         self.emit.jump_target();
         self.emit_expression(consequent)?;
 
-        let offset_final = self.emit.bytecode_offset();
-        self.emit.goto(0);
+        let finally_jump = ForwardJumpEmitter {
+            jump: JumpKind::Goto,
+        }
+        .emit(self);
 
         // Else branch
-        self.emit_jump_target(vec![offset_else]);
+        else_jump.patch(self);
         self.emit_expression(alternate)?;
 
         // Merge point
-        self.emit_jump_target(vec![offset_final]);
+        finally_jump.patch(self);
 
         Ok(())
     }

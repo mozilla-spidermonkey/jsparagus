@@ -26,7 +26,8 @@ pub enum AsyncFunctionResolveKind {
 pub type u24 = u32;
 
 /// For tracking bytecode offsets in jumps
-#[derive(PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
+#[must_use]
 pub struct BytecodeOffset {
     pub offset: usize,
 }

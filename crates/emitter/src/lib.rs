@@ -1,6 +1,7 @@
 mod ast_emitter;
 mod dis;
 mod emitter;
+mod forward_jump_emitter;
 mod lower;
 pub mod opcode;
 
