@@ -1,5 +1,6 @@
 [![Rust][Rust Badge]][Rust CI Link]
 [![NotImplemented Counter][NotImplemented Badge]][NotImplemented Search]
+[![Percentage tests][TestPercentage Badge]][NotImplemented Search]
 [![Fuzzbug days since][Fuzzbug Days Badge]][Fuzzbugs]
 [![Fuzzbug open][Fuzzbug Open Badge]][Open Fuzzbugs]
 
@@ -46,3 +47,4 @@ These are the types of data that this metrics folder tracks.
 [Fuzzbug Open Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fopen-fuzzbug.json
 [Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/issues?utf8=%E2%9C%93&q=label%3AlibFuzzer+
 [Open Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/labels/libFuzzer
+[TestPercentage Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Ftest-percentage-compiled.json
