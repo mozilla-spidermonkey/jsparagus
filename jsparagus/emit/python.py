@@ -1,18 +1,19 @@
 """Emit code and parser tables in Python."""
 
 from ..grammar import InitNt, CallMethod, Some, is_concrete_element, Nt
-from ..actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
 from ..runtime import SPECIAL_CASE_TAG
 
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
-        out.write("from jsparagus.runtime import Nt, InitNt, End, ErrorToken, StateTermValue, ShiftAccept\n")
+        out.write("from jsparagus.runtime import Nt, InitNt, End, ErrorToken, StateTermValue, ShiftError, ShiftAccept\n")
     out.write("\n")
 
     methods = set()
     def write_action(act, indent = ""):
         assert isinstance(act, Action)
+        assert not act.is_inconsistent()
         if isinstance(act, Reduce):
             out.write("{}replay = [StateTermValue(0, {}, value)]\n".format(indent, repr(act.nt)))
             if act.replay > 0:
@@ -22,16 +23,21 @@ def write_python_parse_table(out, parse_table):
             out.write("{}parser.shift_list(replay, lexer)\n".format(indent))
             return indent, False
         if isinstance(act, Lookahead):
-          raise ValueError("Unexpected Lookahead action")
+            raise ValueError("Unexpected Lookahead action")
+        if isinstance(act, CheckNotOnNewLine):
+            assert act.offset == -1
+            out.write("{}if lexer.saw_line_terminator():".format(indent))
+            out.write("{}    raise ShiftError()".format(indent))
+            return indent + "    ", True
         if isinstance(act, FilterFlag):
-          out.write("{}if parser.flags[{}][-1] == {}:\n".format(indent, act.flag, act.value))
-          return indent + "    ", True
+            out.write("{}if parser.flags[{}][-1] == {}:\n".format(indent, act.flag, act.value))
+            return indent + "    ", True
         if isinstance(act, PushFlag):
-          out.write("{}parser.flags[{}].append({})\n".format(indent, act.flag, act.value))
-          return indent, True
+            out.write("{}parser.flags[{}].append({})\n".format(indent, act.flag, act.value))
+            return indent, True
         if isinstance(act, PopFlag):
-          out.write("{}parser.flags[{}].pop()\n".format(indent, act.flag))
-          return indent, True
+            out.write("{}parser.flags[{}].pop()\n".format(indent, act.flag))
+            return indent, True
         if isinstance(act, FunCall):
             def map_with_offset(args):
                 get_value = "parser.stack[{}].value"
@@ -77,7 +83,13 @@ def write_python_parse_table(out, parse_table):
         out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
         out.write("    value = None\n")
         for term, dest in state.edges():
-            indent, res = write_action(term, "    ")
+            try:
+                indent, res = write_action(term, "    ")
+            except:
+                print("Error while writting code for {}\n\n".format(state))
+                parse_table.debug_info = True
+                print(parse_table.debug_context(state.index, "\n", "# "))
+                raise
             if res:
                 out.write("{}parser.stack.append(StateTermValue({}, None, value))\n".format(
                     indent, dest

@@ -15,6 +15,12 @@ class Action:
         self.write = write
         self._hash = None
 
+    def is_inconsistent(self):
+        """Returns True whether this action is inconsistent. An action can be
+        inconsistent if the parameters it is given cannot be evaluated given
+        its current location in the parse table. Such as CheckNotOnNewLine.
+        """
+        return False
     def is_condition(self):
         "Unordered condition, which accept or not to reach the next state."
         return False
@@ -29,7 +35,7 @@ class Action:
         "Returns the non-terminal with which this action is reducing with."
         assert self.update_stack()
         raise TypeError("Action::reduce_to not implemented.")
-    def shifted_action(self, shifted_terms):
+    def shifted_action(self, shifted_term):
         "Returns the same action shifted by a given amount."
         return self
 
@@ -119,6 +125,10 @@ class Lookahead(Action):
         super().__init__([], [])
         self.terms = terms
         self.accept = accept
+    def is_inconsistent(self):
+        # A lookahead restriction cannot be encoded in code, it has to be
+        # solved using fix_with_lookahead.
+        return True
     def is_condition(self):
         return True
     def condition(self):
@@ -131,6 +141,32 @@ class Lookahead(Action):
         if shifted_term in self.terms:
             return self.accept
         return not self.accept
+
+class CheckNotOnNewLine(Action):
+    """Check whether the terminal at the given stack offset is on a new line or
+    not. If not this would produce an Error, otherwise this rule would be
+    shifted."""
+    __slots__ = 'offset',
+    def __init__(self, offset = 0):
+        assert offset >= -1 and "Smaller offsets are not supported on all backends."
+        super().__init__([], [])
+        self.offset = offset
+    def is_inconsistent(self):
+        # We can only look at stacked terminals. Having an offset of 0 implies
+        # that we are looking for the next terminal, which is not yet shifted.
+        # Therefore this action is inconsistent as long as the terminal is not
+        # on the stack.
+        return self.offset >= 0
+    def is_condition(self):
+        return True
+    def condition(self):
+        return self
+    def shifted_action(self, shifted_term):
+        if isinstance(shifted_term, Nt):
+            return True
+        return CheckNotOnNewLine(self.offset - 1)
+    def __str__(self):
+        return "CheckNotOnNewLine({})".format(self.offset)
 
 class FilterFlag(Action):
     """Define a filter which check for one value of the flag, and continue to the

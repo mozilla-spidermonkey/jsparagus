@@ -41,8 +41,8 @@ from .grammar import (Grammar,
                       Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
                       End, NoLineTerminatorHere, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
-from .actions import (Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag,
-                      FunCall, Seq)
+from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
+                      PushFlag, PopFlag, FunCall, Seq)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
 
@@ -1674,7 +1674,12 @@ class StateAndTransitions:
         # automaton.
         if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
             return True
+        elif len(self.epsilon) == 1:
+            if any(k.is_inconsistent() for k, s in self.epsilon):
+                return True
         elif len(self.epsilon) > 1:
+            if any(k.is_inconsistent() for k, s in self.epsilon):
+                return True
             # If all the out-going edges are FilterFlags, with the same flag
             # and different values, then this state remains consistent, as this
             # can be implemented as a deterministic switch statement.
@@ -1785,6 +1790,11 @@ def on_stack(grammar, term):
         return True
     elif isinstance(term, End):
         return True
+    elif term is NoLineTerminatorHere:
+        # No line terminator is a property of the next token being shifted. It
+        # is implemented as an action which once shifted past the next term,
+        # will check whether the previous term shifted is on a new line.
+        return False
     raise ValueError(term)
 
 def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
@@ -1904,6 +1914,29 @@ class LR0Generator:
         # Read the term located at the offset in the production.
         if lr_item.offset < len(prod.rhs):
             term = prod.rhs[lr_item.offset]
+            if isinstance(term, Nt):
+                pass
+            elif self.grammar.grammar.is_terminal(term):
+                pass
+            elif isinstance(term, LookaheadRule):
+                term = Lookahead(term.set, term.positive)
+            elif isinstance(term, ErrorSymbol):
+                # ErrorSymbol as considered as terminals. These terminals would
+                # be produced by the error handling code which produces these
+                # error symbols on-demand.
+                pass
+            elif isinstance(term, End):
+                # End is considered as a terminal which is produduced once by
+                # the lexer upon reaching the end. However, the parser might
+                # finish without consuming the End terminal, if there is no
+                # ambiguity on whether the End is expected.
+                pass
+            elif term is NoLineTerminatorHere:
+                # Check whether the following terminal is on a new line. If
+                # not, this would produce a syntax error. The argument is the
+                # terminal offset.
+                term = CheckNotOnNewLine()
+
         elif lr_item.offset == len(prod.rhs):
             # Add the reduce operation as a state transition in the generated
             # parse table. (TODO: this supposed that the canonical form did not
@@ -1919,8 +1952,6 @@ class LR0Generator:
             # No edges after the reduce operation.
             return
 
-        if isinstance(term, LookaheadRule):
-            term = Lookahead(term.set, term.positive)
 
         # Add terminals, non-terminals and lookahead actions, as transitions to
         # the next LR Item.

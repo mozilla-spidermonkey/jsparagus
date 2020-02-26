@@ -9,7 +9,7 @@ from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
 from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End)
-from ..actions import Action, Reduce, Lookahead, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
 
 from .. import types
 
@@ -374,6 +374,7 @@ class RustParserWriter:
             # Compile function calls and reduce actions to Rust. Return whether
             # the control flow exit (False) or fallthrough (True).
             assert isinstance(act, Action)
+            assert not act.is_inconsistent()
             if isinstance(act, Reduce):
                 value = "value"
                 try:
@@ -389,6 +390,11 @@ class RustParserWriter:
                     self.write(indent, "parser.shift(s{});", i + 1)
                 self.write(indent, "return Ok(false);")
                 return False
+            elif isinstance(act, CheckNotOnNewLine):
+                self.write(indent, "let token = parser.peek({});", act.offset)
+                self.write(indent, "if token.is_on_new_line {")
+                self.write(indent + 1, "return Err(ParseError::LexerError);")
+                self.write(indent, "}")
             elif isinstance(act, Lookahead):
                 raise ValueError("Unexpected Lookahead action")
             elif isinstance(act, FilterFlag):
@@ -468,7 +474,13 @@ class RustParserWriter:
             for act, d in state.edges():
                 self.write(3, "// {}", repr(act))
                 is_packed = {} # Map variable names to a boolean to know if the data is packaed or not.
-                fallthrough = write_action(3, act, is_packed)
+                try:
+                    fallthrough = write_action(3, act, is_packed)
+                except:
+                    print("Error while writting code for {}\n\n".format(state))
+                    self.parse_table.debug_info = True
+                    print(self.parse_table.debug_context(state.index, "\n", "# "))
+                    raise
                 if fallthrough:
                     self.write(3, "parser.epsilon({});", d)
                     self.write(3, "return Ok(false)")
