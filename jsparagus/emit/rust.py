@@ -83,8 +83,7 @@ class RustParserWriter:
     def emit(self):
         self.header()
         self.terminal_id()
-        self.shift_t()
-        self.shift_nt()
+        self.shift()
         self.error_codes()
         self.check_camel_case()
         self.nonterminal_id()
@@ -145,27 +144,16 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
 
-    def shift_t(self):
+    def shift(self):
         self.write(0, "#[rustfmt::skip]")
-        self.write(0, "static SHIFT_T: [i64; {}] = [",
-                   self.shift_count * len(self.terminals))
+        width = len(self.terminals) + len(self.nonterminals)
+        self.write(0, "static SHIFT: [i64; {}] = [", self.shift_count * width)
         for i, state in enumerate(self.states[:self.shift_count]):
             self.write(1, "// {}.", i)
             for ctx in self.parse_table.debug_context(state.index, None):
                 self.write(1, "// {}", ctx)
             self.write(1, "{}",
                        ' '.join("{},".format(state.get(t, "ERROR")) for t in self.terminals))
-        self.write(0, "];")
-        self.write(0, "")
-
-    def shift_nt(self):
-        self.write(0, "#[rustfmt::skip]")
-        self.write(0, "static SHIFT_NT: [i64; {}] = [",
-                   self.shift_count * len(self.nonterminals))
-        for i, state in enumerate(self.states[:self.shift_count]):
-            self.write(1, "// {}.", i)
-            for ctx in self.parse_table.debug_context(state.index, None):
-                self.write(1, "// {}", ctx)
             self.write(1, "{}",
                        ' '.join("{},".format(state.get(t, "ERROR")) for t in self.nonterminals))
         self.write(0, "];")
@@ -184,11 +172,11 @@ class RustParserWriter:
         self.write(0, "static STATE_TO_ERROR_CODE: [Option<ErrorCode>; {}] = [",
                    self.shift_count)
         for i, state in enumerate(self.states[:self.shift_count]):
-            self.write(1, "// {}.", i)
             error_symbol = state.get_error_code()
             if error_symbol is None:
                 self.write(1, "None,")
             else:
+                self.write(1, "// {}.", i)
                 for ctx in self.parse_table.debug_context(state.index, None):
                     self.write(1, "// {}", ctx)
                 self.write(1, "Some(ErrorCode::{}),",
@@ -560,10 +548,8 @@ class RustParserWriter:
         self.write(0, "pub struct ParseTable<'a> {")
         self.write(1, "pub shift_count: usize,")
         self.write(1, "pub action_count: usize,")
-        self.write(1, "pub shift_t_table: &'a [i64],")
-        self.write(1, "pub shift_nt_table: &'a [i64],")
-        self.write(1, "pub shift_t_width: usize,")
-        self.write(1, "pub shift_nt_width: usize,")
+        self.write(1, "pub shift_table: &'a [i64],")
+        self.write(1, "pub shift_width: usize,")
         self.write(1, "pub error_codes: &'a [Option<ErrorCode>],")
         self.write(0, "}")
         self.write(0, "")
@@ -571,22 +557,18 @@ class RustParserWriter:
         self.write(0, "impl<'a> ParseTable<'a> {")
         self.write(1, "pub fn check(&self) {")
         self.write(2, "assert_eq!(")
-        self.write(3, "self.shift_t_table.len(),")
-        self.write(3, "(self.shift_count * self.shift_t_width) as usize")
+        self.write(3, "self.shift_table.len(),")
+        self.write(3, "(self.shift_count * self.shift_width) as usize")
         self.write(2, ");")
-        self.write(2, "assert_eq!(self.shift_nt_table.len(),")
-        self.write(3, "(self.shift_count * self.shift_nt_width) as usize);")
         self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
 
-        self.write(0, "pub static TABLES: ParserTables<'static> = ParserTables {")
+        self.write(0, "pub static TABLES: ParserTable<'static> = ParserTable {")
         self.write(1, "shift_count: {},", self.shift_count)
         self.write(1, "action_count: {},", self.action_count)
-        self.write(1, "shift_t_table: &SHIFT_T,")
-        self.write(1, "shift_nt_table: &SHIFT_NT,")
-        self.write(1, "shift_t_width: {},", len(self.terminals))
-        self.write(1, "shift_nt_width: {},", len(self.nonterminals))
+        self.write(1, "shift_table: &SHIFT,")
+        self.write(1, "shift_width: {},", len(self.terminals) + len(self.nonterminals))
         self.write(1, "error_codes: &STATE_TO_ERROR_CODE,")
         self.write(0, "};")
         self.write(0, "")
