@@ -13,6 +13,8 @@ VENV_BIN_DIR := $(JSPARAGUS_DIR)jsparagus_build_venv/bin
 PYTHON := $(VENV_BIN_DIR)/python
 PIP := $(VENV_BIN_DIR)/pip
 
+all: $(PY_OUT) rust
+
 init-venv:
 	python3 -m venv jsparagus_build_venv &&\
 	$(PIP) install --upgrade pip &&\
@@ -20,8 +22,6 @@ init-venv:
 
 init: init-venv
 	git config core.hooksPath .githooks
-
-all: $(PY_OUT) rust
 
 ECMA262_SPEC_HTML = ../tc39/ecma262/spec.html
 STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
