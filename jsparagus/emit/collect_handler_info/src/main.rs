@@ -48,6 +48,8 @@ fn main() {
     println!("{{");
     println!("\"fallible-methods\": [");
     println!("{}", names.join(",\n"));
+    println!("],");
+    println!("\"parser-traits\": [");
     println!("]");
     println!("}}");
 }
