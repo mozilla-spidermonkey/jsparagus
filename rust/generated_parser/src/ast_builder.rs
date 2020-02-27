@@ -84,6 +84,10 @@ pub struct AstBuilder<'alloc> {
     bindings: Vec<BindingInfo<'alloc>>,
 }
 
+pub trait AstBuilderDelegate<'alloc> {
+    fn ast_builder_refmut(&mut self) -> &mut AstBuilder<'alloc>;
+}
+
 impl<'alloc> AstBuilder<'alloc> {
     pub fn new(allocator: &'alloc Bump) -> Self {
         Self {
