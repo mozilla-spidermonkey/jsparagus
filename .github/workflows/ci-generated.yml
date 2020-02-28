@@ -26,21 +26,16 @@ jobs:
       run: |
         git ls-remote origin
         if git ls-remote origin | grep refs/ci_generated/master; then
-          # If the remote hidden branch exists
+          # If the remote hidden branch exists.
           # Map the remote ref to branch.
           git fetch origin +refs/ci_generated/master:refs/remotes/origin/ci_generated/master
-          git checkout -b ci_generated-prev origin/ci_generated/master
 
-          # Revert the previous generated files, so that the merge is clean.
-          git revert HEAD
-
-          # Merge master.
+          # Merge master, discarding changes in refs/ci_generated/master.
           MASTER_REV=$(git log -1 master --pretty=%H)
-
           git checkout -b ci_generated-master origin/master
-          git merge ci_generated-prev -m "Merge master ${MASTER_REV}" -s ours --allow-unrelated-histories
+          git merge origin/ci_generated/master -m "Merge master ${MASTER_REV}" -s ours --allow-unrelated-histories
         else
-          # Otherwise, just start from master branch
+          # Otherwise, just start from master branch.
           git checkout -b ci_generated-master
         fi
     - name: Generate Files
