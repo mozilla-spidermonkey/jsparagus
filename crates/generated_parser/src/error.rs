@@ -13,6 +13,7 @@ pub enum ParseError<'alloc> {
     UnterminatedMultiLineComment,
     LexerError,
     NoLineTerminatorHereExpectedToken,
+    ParserCannotUnpackToken,
 
     // Generic syntax errors
     NotImplemented(&'static str),
@@ -56,6 +57,7 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::NoLineTerminatorHereExpectedToken => format!(
                 "no-line-terminator-here expects a token"
             ),
+            ParseError::ParserCannotUnpackToken => format!("cannot unpack token"),
             ParseError::NotImplemented(message) => format!("not implemented: {}", message),
             ParseError::SyntaxError(token) => format!("syntax error on: {:?}", token),
             ParseError::UnexpectedEnd => format!("unexpected end of input"),

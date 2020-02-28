@@ -1632,6 +1632,7 @@ class StateAndTransitions:
         "index",        # Numerical index of this state.
         "terminals",    # Terminals map.
         "nonterminals", # Non-terminals map.
+        "errors",       # List of error symbol transitions.
         "epsilon",      # List of epsilon transitions with associated actions.
         "locations",    # Ordered set of LRItems (grammar position).
         "delayed_actions", # Ordered set of Actions which are pushed to the
@@ -1649,6 +1650,7 @@ class StateAndTransitions:
         self.index = index
         self.terminals = {}
         self.nonterminals = {}
+        self.errors = []
         self.epsilon = []
         self.locations = locations
         self.delayed_actions = delayed_actions
@@ -1672,7 +1674,7 @@ class StateAndTransitions:
         # transitions are a form of condition based on the fact that a
         # non-terminal, produced by a reduce action is consumed by the
         # automaton.
-        if len(self.terminals) + len(self.nonterminals) > 0 and len(self.epsilon) > 0:
+        if len(self.terminals) + len(self.nonterminals) + len(self.errors) > 0 and len(self.epsilon) > 0:
             return True
         elif len(self.epsilon) == 1:
             if any(k.is_inconsistent() for k, s in self.epsilon):
@@ -1693,15 +1695,25 @@ class StateAndTransitions:
                 return True
         else:
             try:
-                self.get_error_code()
+                self.get_error_symbol()
             except ValueError:
                 return True
         return False
+
+    def shifted_edges(self):
+        for k, s in self.terminals.items():
+            yield (k, s)
+        for k, s in self.nonterminals.items():
+            yield (k, s)
+        for k, s in self.errors:
+            yield (k, s)
 
     def edges(self):
         for k, s in self.terminals.items():
             yield (k, s)
         for k, s in self.nonterminals.items():
+            yield (k, s)
+        for k, s in self.errors:
             yield (k, s)
         for k, s in self.epsilon:
             yield (k, s)
@@ -1714,6 +1726,9 @@ class StateAndTransitions:
         self.nonterminals = {
             k: state_map[s] for k, s in self.nonterminals.items()
         }
+        self.errors = [
+            (k, state_map[s]) for k, s in self.errors
+        ]
         self.epsilon = [
             (k, state_map[s]) for k, s in self.epsilon
         ]
@@ -1721,14 +1736,14 @@ class StateAndTransitions:
             Edge(state_map[s], k) for s, k in self.backedges
         )
 
-    def get_error_code(self):
-        errors = [t for t in self.terminals if isinstance(t, ErrorSymbol)]
-        if len(errors) == 0:
+    def get_error_symbol(self):
+        if len(self.errors) == 0:
             return None
-        elif len(errors) > 1:
+        elif len(self.errors) > 1:
             raise ValueError("More than one error symbol on the same state.")
         else:
-            return errors[0]
+            k, d = self.errors[0]
+            return k
 
     def __contains__(self, term):
         if isinstance(term, Action):
@@ -1738,6 +1753,11 @@ class StateAndTransitions:
             return False
         elif isinstance(term, Nt):
             return term in self.nonterminals
+        elif isinstance(term, ErrorSymbol):
+            for t, s in self.errors:
+                if t == term:
+                    return True
+            return False
         else:
             return term in self.terminals
 
@@ -1749,6 +1769,11 @@ class StateAndTransitions:
             raise KeyError(term)
         elif isinstance(term, Nt):
             return self.nonterminals[term]
+        if isinstance(term, ErrorSymbol):
+            for t, s in self.errors:
+                if t == term:
+                    return s
+            raise KeyError(term)
         else:
             return self.terminals[term]
 
@@ -2164,6 +2189,8 @@ class ParseTable:
             src.epsilon.append((term, dest))
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
+        elif isinstance(term, ErrorSymbol):
+            src.errors.append((term, dest))
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
@@ -2185,6 +2212,8 @@ class ParseTable:
             src.epsilon.append((term, dest))
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
+        elif isinstance(term, ErrorSymbol):
+            src.errors.append((term, dest))
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
@@ -2197,6 +2226,7 @@ class ParseTable:
             self.remove_edge(src, term, dest, maybe_unreachable_set)
         src.terminals = {}
         src.nonterminals = {}
+        src.errors = []
         src.epsilon = []
 
     def remove_unreachable_states(self, maybe_unreachable_set):
@@ -2420,7 +2450,7 @@ class ParseTable:
         last_edge = sh[-1]
         state = self.states[last_edge.src]
         if aps.replay == []:
-            for term, to in itertools.chain(state.terminals.items(), state.nonterminals.items()):
+            for term, to in itertools.chain(state.shifted_edges()):
                 edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
                 to = Edge(to, None)
@@ -2428,16 +2458,10 @@ class ParseTable:
         else:
             term = aps.replay[0]
             rp = aps.replay[1:]
-            if term in state.terminals:
+            if term in state:
                 edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
-                to = state.terminals[term]
-                to = Edge(to, None)
-                yield APS(st, new_sh + [to], la, ac + [edge], rp)
-            elif term in state.nonterminals:
-                edge = Edge(last_edge.src, term)
-                new_sh = aps.shift[:-1] + [edge]
-                to = state.nonterminals[term]
+                to = state[term]
                 to = Edge(to, None)
                 yield APS(st, new_sh + [to], la, ac + [edge], rp)
 
@@ -2993,7 +3017,7 @@ class ParseTable:
             return False
 
         all_reduce = all( a.update_stack() for a, _ in state.epsilon )
-        any_shift = (len(state.terminals) + len(state.nonterminals)) > 0
+        any_shift = (len(state.terminals) + len(state.nonterminals) + len(state.errors)) > 0
         try_with_context = all_reduce and not any_shift
         try_with_lookahead = not try_with_context
         # if verbose:

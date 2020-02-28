@@ -266,6 +266,7 @@ class Grammar:
         # validate_element on every element of the grammar populates
         # all_terminals.
         all_terminals = OrderedSet(self.variable_terminals)
+        all_terminals.add(End())
 
         def note_terminal(t):
             """Add t (and all representations of it, if synthetic) to all_terminals."""

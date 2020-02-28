@@ -4,11 +4,12 @@ import json
 import re
 import unicodedata
 import sys
+import itertools
 
 from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
-from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End)
+from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End, ErrorSymbol)
 from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
 
 from .. import types
@@ -81,15 +82,18 @@ class RustParserWriter:
         self.action_count = pt.count_action_states()
         self.init_state_map = pt.named_goals
         self.terminals = list(OrderedSet(pt.terminals))
+        # This extra terminal is used to represent any ErrorySymbol transition,
+        # knowing that we assert that there is only one ErrorSymbol kind per
+        # state.
+        self.terminals.append("ErrorToken")
         self.nonterminals = list(OrderedSet(pt.nonterminals))
 
     def emit(self):
         self.header()
-        self.terminal_id()
+        self.terms_id()
         self.shift()
         self.error_codes()
         self.check_camel_case()
-        self.nonterminal_id()
         self.parser_trait()
         self.actions()
         self.reduce()
@@ -108,7 +112,6 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "use crate::ast_builder::AstBuilderDelegate;")
         self.write(0, "use crate::stack_value_generated::{StackValue, TryIntoStack};")
-        self.write(0, "use crate::error::ParseError;")
         self.write(0, "use crate::error::Result;")
         self.write(0, "")
         self.write(0, "const ERROR: i64 = {};", hex(ERROR))
@@ -116,9 +119,9 @@ class RustParserWriter:
 
 
     def terminal_name(self, value):
-        if value is End() or value is None:
+        if isinstance(value, End) or value is None:
             return "End"
-        elif value is ErrorToken:
+        elif isinstance(value, ErrorSymbol) or value is ErrorToken:
             return "ErrorToken"
         elif value in TERMINAL_NAMES:
             return TERMINAL_NAMES[value]
@@ -136,7 +139,7 @@ class RustParserWriter:
     def terminal_name_camel(self, value):
         return self.to_camel_case(self.terminal_name(value))
 
-    def terminal_id(self):
+    def terms_id(self):
         self.write(0, "#[derive(Copy, Clone, Debug, PartialEq)]")
         self.write(0, "pub enum TerminalId {")
         for i, t in enumerate(self.terminals):
@@ -144,19 +147,62 @@ class RustParserWriter:
             self.write(1, "{} = {}, // {}", name, i, repr(t))
         self.write(0, "}")
         self.write(0, "")
+        self.write(0, "#[derive(Clone, Copy, Debug, PartialEq)]")
+        self.write(0, "pub enum NonterminalId {")
+        offset = len(self.terminals)
+        for i, nt in enumerate(self.nonterminals):
+            self.write(1, "{} = {},", self.nonterminal_to_camel(nt), i + offset)
+        self.write(0, "}")
+        self.write(0, "")
+        self.write(0, "#[derive(Clone, Copy, Debug, PartialEq)]")
+        self.write(0, "pub enum Term {")
+        self.write(1, "Terminal(TerminalId),")
+        self.write(1, "Nonterminal(NonterminalId),")
+        self.write(0, "}")
+        self.write(0, "")
+        self.write(0, "impl From<Term> for usize {")
+        self.write(1, "fn from(term: Term) -> Self {")
+        self.write(2, "match term {")
+        self.write(3, "Term::Terminal(t) => t as usize,")
+        self.write(3, "Term::Nonterminal(nt) => nt as usize,")
+        self.write(2, "}")
+        self.write(1, "}")
+        self.write(0, "}")
+        self.write(0, "")
 
     def shift(self):
         self.write(0, "#[rustfmt::skip]")
         width = len(self.terminals) + len(self.nonterminals)
+        num_shifted_edges = 0
+        def state_get(state, t):
+            nonlocal num_shifted_edges
+            res = state.get(t, "ERROR")
+            if res == "ERROR":
+                if t == "ErrorToken" and len(state.errors) > 0:
+                    _, res = state.errors[0]
+                    num_shifted_edges += 1
+            else:
+                num_shifted_edges += 1
+            return res
         self.write(0, "static SHIFT: [i64; {}] = [", self.shift_count * width)
+        assert self.terminals[-1] == "ErrorToken"
         for i, state in enumerate(self.states[:self.shift_count]):
+            num_shifted_edges = 0
             self.write(1, "// {}.", i)
             for ctx in self.parse_table.debug_context(state.index, None):
                 self.write(1, "// {}", ctx)
             self.write(1, "{}",
-                       ' '.join("{},".format(state.get(t, "ERROR")) for t in self.terminals))
+                       ' '.join("{},".format(state_get(state, t)) for t in self.terminals))
             self.write(1, "{}",
-                       ' '.join("{},".format(state.get(t, "ERROR")) for t in self.nonterminals))
+                       ' '.join("{},".format(state_get(state, t)) for t in self.nonterminals))
+            try:
+                assert sum(1 for _ in state.shifted_edges()) == num_shifted_edges
+            except:
+                print("Some edges are not encoded.")
+                print("List of terminals: {}".format(', '.join(map(repr, self.terminals))))
+                print("List of nonterminals: {}".format(', '.join(map(repr, self.nonterminals))))
+                print("State having the issue: {}".format(str(state)))
+                raise
         self.write(0, "];")
         self.write(0, "")
 
@@ -189,9 +235,9 @@ class RustParserWriter:
         self.write(0, "")
 
     def error_codes(self):
-        self.write(0, "#[derive(Clone, Debug, PartialEq)]")
+        self.write(0, "#[derive(Clone, Copy, Debug, PartialEq)]")
         self.write(0, "pub enum ErrorCode {")
-        error_symbols = (s.get_error_code() for s in self.states[:self.shift_count])
+        error_symbols = (s.get_error_symbol() for s in self.states[:self.shift_count])
         error_codes = (e.error_code for e in error_symbols if e is not None)
         for error_code in OrderedSet(error_codes):
             self.write(1, "{},", self.to_camel_case(error_code))
@@ -201,7 +247,7 @@ class RustParserWriter:
         self.write(0, "static STATE_TO_ERROR_CODE: [Option<ErrorCode>; {}] = [",
                    self.shift_count)
         for i, state in enumerate(self.states[:self.shift_count]):
-            error_symbol = state.get_error_code()
+            error_symbol = state.get_error_symbol()
             if error_symbol is None:
                 self.write(1, "None,")
             else:
@@ -334,14 +380,6 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
 
-    def nonterminal_id(self):
-        self.write(0, "#[derive(Clone, Copy, Debug, PartialEq)]")
-        self.write(0, "pub enum NonterminalId {")
-        for i, nt in enumerate(self.nonterminals):
-            self.write(1, "{} = {},", self.nonterminal_to_camel(nt), i)
-        self.write(0, "}")
-        self.write(0, "")
-
     def element_type(self, e):
         # Mostly duplicated from types.py. :(
         g = self.grammar
@@ -359,18 +397,26 @@ class RustParserWriter:
             assert False, "unexpected element type: {!r}".format(e)
 
     def parser_trait(self):
-        self.write(0, "pub trait Parser<'alloc> {")
-        self.write(1, "fn shift(&mut self, sv: StackValue<'alloc>);")
-        self.write(1, "fn reduce(&mut self, nt: NonterminalId, value: StackValue<'alloc>) -> Result<'alloc, ()>;")
-        self.write(1, "fn epsilon(&mut self, state: i64);")
-        self.write(1, "fn pop(&mut self) -> StackValue<'alloc>;")
-        self.write(1, "fn peek(&self, peek: usize) -> &StackValue<'alloc>;")
+        self.write(0, "pub struct TermValue<Value> {")
+        self.write(1, "pub term: Term,")
+        self.write(1, "pub value: Value,")
+        self.write(0, "}")
+        self.write(0, "")
+        self.write(0, "pub trait ParserTrait<'alloc, Value> {")
+        self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
+        self.write(1, "fn reduce(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
+        self.write(1, "fn epsilon(&mut self, state: usize);")
+        self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
+        self.write(1, "fn check_not_on_new_line(&self, peek: usize) -> Result<'alloc, bool>;")
         self.write(0, "}")
         self.write(0, "")
 
     def actions(self):
         if not self.parse_table:
             return
+        has_ast_builder = False
+        used_offsets = set()
+
         def collect_offsets(act):
             # Given an action, returns the list of used stack slots.
             assert isinstance(act, Action)
@@ -386,14 +432,14 @@ class RustParserWriter:
                         elif isinstance(a, Some):
                             for offset in map_with_offset([a.inner]):
                                 yield offset
-                for offset in map_with_offset(act.args):
-                    yield offset
+                if has_ast_builder or act.method == "id":
+                    for offset in map_with_offset(act.args):
+                        yield offset
             elif isinstance(act, Seq):
                 for a in act.actions:
                     for offset in collect_offsets(a):
                         yield offset
 
-        used_offsets = set()
         def write_action(indent, act, is_packed):
             # Compile function calls and reduce actions to Rust. Return whether
             # the control flow exit (False) or fallthrough (True).
@@ -406,22 +452,30 @@ class RustParserWriter:
                 except:
                     packed = False
                     value = "None"
-                if not packed:
-                    value = "TryIntoStack::try_into_stack({})?".format(value)
-                self.write(indent, "parser.reduce(NonterminalId::{}, {})?;",
-                           self.nonterminal_to_camel(act.nt), value)
+                if packed:
+                    value = "{}.value".format(value)
+                else:
+                    if has_ast_builder:
+                        value = "TryIntoStack::try_into_stack({})?".format(value)
+                    else:
+                        value = "value"
+
+                replay_list = []
+                self.write(indent, "let term = Term::Nonterminal(NonterminalId::{});",
+                           self.nonterminal_to_camel(act.nt))
+                if value != "value":
+                    self.write(indent, "let value = {};", value)
+                replay_list.append("parser.reduce(TermValue { term, value })")
                 for i in reversed(range(act.replay)):
-                    self.write(indent, "parser.shift(s{});", i + 1)
-                self.write(indent, "return Ok(false);")
+                    replay_list.append("parser.shift(s{})".format(i + 1))
+                last_stmt = replay_list[-1]
+                replay_list.pop()
+                for stmt in replay_list:
+                    self.write(indent, "{}?;", stmt)
+                self.write(indent, "{}", last_stmt)
                 return False
             elif isinstance(act, CheckNotOnNewLine):
-                self.write(indent, "if let StackValue::Token(ref token) = parser.peek({}) {{", 1 - act.offset)
-                self.write(indent + 1, "if token.is_on_new_line {")
-                self.write(indent + 2, "return Err(ParseError::LexerError);")
-                self.write(indent + 1, "}")
-                self.write(indent, "} else {")
-                self.write(indent + 1, "return Err(ParseError::NoLineTerminatorHereExpectedToken)")
-                self.write(indent, "}")
+                self.write(indent, "parser.check_not_on_new_line({})?;", 1 - act.offset)
             elif isinstance(act, Lookahead):
                 raise ValueError("Unexpected Lookahead action")
             elif isinstance(act, FilterFlag):
@@ -439,7 +493,7 @@ class RustParserWriter:
                     except:
                         packed = True
                     if packed:
-                        return "{}.to_ast()?".format(val)
+                        return "{}.value.to_ast()?".format(val)
                     return val
                 def map_with_offset(args, unpack):
                     get_value = "s{}"
@@ -463,7 +517,9 @@ class RustParserWriter:
                     assert len(act.args) == 0
                     self.write(indent, "return Ok(true);")
                     return False
-                else:
+                elif has_ast_builder:
+                    # TODO: Check whether the function is implemented by the
+                    # given traits, to decide whether to implement it or not.
                     forward_errors = ""
                     if act.method in self.fallible_methods:
                         forward_errors = "?"
@@ -471,6 +527,9 @@ class RustParserWriter:
                                act.set_to, act.method, ", ".join(map_with_offset(act.args, unpack)),
                                forward_errors)
                     is_packed[act.set_to] = False
+                else:
+                    if act.set_to == "value":
+                        self.write(indent, "let value = ();")
             elif isinstance(act, Seq):
                 if act.update_stack():
                     reducer = act.reduce_with()
@@ -491,8 +550,9 @@ class RustParserWriter:
 
         # Note use of std::vec::Vec below: we have imported `arena::Vec` in this module,
         # since every other data structure mentioned in this file lives in the arena.
-        traits = ["Parser<'alloc>", "AstBuilderDelegate<'alloc>"]
-        self.write(0, "pub fn actions<'alloc, Handler>(parser: &mut Handler, state: i64) -> Result<'alloc, bool>")
+        has_ast_builder = True
+        traits = ["ParserTrait<'alloc, StackValue<'alloc>>", "AstBuilderDelegate<'alloc>"]
+        self.write(0, "pub fn actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<'alloc, bool>")
         self.write(0, "where")
         self.write(1, "Handler: {}", ' + '.join(traits))
         self.write(0, "{")
@@ -504,7 +564,7 @@ class RustParserWriter:
                 self.write(3, "// {}", ctx)
             for act, d in state.edges():
                 self.write(3, "// {}", repr(act))
-                is_packed = {} # Map variable names to a boolean to know if the data is packaed or not.
+                is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
                 try:
                     used_offsets = set(collect_offsets(act))
                     fallthrough = write_action(3, act, is_packed)
@@ -521,6 +581,41 @@ class RustParserWriter:
         self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
+        # Add another implementation which is only reducing and not checking
+        # any values.
+        used_offsets = set()
+        has_ast_builder = False
+        traits = ["ParserTrait<'alloc, ()>"]
+        self.write(0, "pub fn noop_actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<'alloc, bool>")
+        self.write(0, "where")
+        self.write(1, "Handler: {}", ' + '.join(traits))
+        self.write(0, "{")
+        self.write(1, "match state {")
+        assert len(self.states[self.shift_count:]) == self.action_count
+        for state in self.states[self.shift_count:]:
+            self.write(2, "{} => {{", state.index)
+            for ctx in self.parse_table.debug_context(state.index, None):
+                self.write(3, "// {}", ctx)
+            for act, d in state.edges():
+                self.write(3, "// {}", repr(act))
+                is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
+                try:
+                    used_offsets = set(collect_offsets(act))
+                    fallthrough = write_action(3, act, is_packed)
+                except:
+                    print("Error while writting code for {}\n\n".format(state))
+                    self.parse_table.debug_info = True
+                    print(self.parse_table.debug_context(state.index, "\n", "# "))
+                    raise
+                if fallthrough:
+                    self.write(3, "parser.epsilon({});", d)
+                    self.write(3, "return Ok(false)")
+            self.write(2, "}")
+        self.write(2, '_ => panic!("no such state: {}", state),')
+        self.write(1, "}")
+        self.write(0, "}")
+        self.write(0, "")
+
 
     def reduce(self):
         if self.parse_table:
