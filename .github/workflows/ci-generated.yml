@@ -25,13 +25,16 @@ jobs:
         sed -i.bak '/*_generated.rs/d' .gitignore && rm .gitignore.bak
     - name: Commit files
       run: |
+        MASTER_REV=$(git log -1 --pretty=%H)
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "Add Generated Files" -a
+        git tag "generated-for-${MASTER_REV}"
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: ci_generated
+        tags: true
         force: true
