@@ -4,7 +4,7 @@ This directory contains an LALR parser generator called "jsparagus",
 written in Python.
 
 This is used to build parts of the jsparagus JS parser in
-[rust/generated_parser](https://github.com/mozilla-spidermonkey/jsparagus/blob/master/rust/generated_parser/).
+[crates/generated_parser](https://github.com/mozilla-spidermonkey/jsparagus/blob/master/crates/generated_parser/).
 
 jsparagus generates parsers only; it's "bring your own lexer".
 
@@ -58,7 +58,7 @@ Parser generators are complicated. Here's how this works.
     [runtime.py](https://github.com/jorendorff/jsparagus/blob/master/jsparagus/runtime.py).
     
     For Rust, it's in
-    [rust/parser/src/parser.rs](https://github.com/jorendorff/jsparagus/blob/master/rust/parser/src/parser.rs).
+    [crates/parser/src/parser.rs](https://github.com/jorendorff/jsparagus/blob/master/crates/parser/src/parser.rs).
     Because this code is currently tightly coupled to the JS lexer,
     jsparagus is not a fully general Rust parser generator yet.
     The Python code is more flexible.

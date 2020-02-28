@@ -33,7 +33,7 @@ laptop.  jsparagus is slow.
 Once you're done, to see your parser run, try this:
 
 ```console
-$ cd rust
+$ cd crates/driver
 $ cargo run --release
 ```
 

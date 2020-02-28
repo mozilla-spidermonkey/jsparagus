@@ -1,24 +1,27 @@
 PY_OUT = js_parser/parser_tables.py
-HANDLER_FILE = rust/generated_parser/src/ast_builder.rs
+HANDLER_FILE = crates/generated_parser/src/ast_builder.rs
 HANDLER_INFO_OUT = jsparagus/emit/collect_handler_info/info.json
-RS_TABLES_OUT = rust/generated_parser/src/parser_tables_generated.rs
-RS_AST_OUT = rust/ast/src/types_generated.rs \
-	rust/ast/src/visit_generated.rs \
-	rust/ast/src/source_location_accessor_generated.rs \
-	rust/generated_parser/src/stack_value_generated.rs
+RS_TABLES_OUT = crates/generated_parser/src/parser_tables_generated.rs
+RS_AST_OUT = crates/ast/src/types_generated.rs \
+	crates/ast/src/type_id_generated.rs \
+	crates/ast/src/visit_generated.rs \
+	crates/ast/src/source_location_accessor_generated.rs \
+	crates/generated_parser/src/stack_value_generated.rs
 
 JSPARAGUS_DIR := $(dir $(firstword $(MAKEFILE_LIST)))
 VENV_BIN_DIR := $(JSPARAGUS_DIR)jsparagus_build_venv/bin
 PYTHON := $(VENV_BIN_DIR)/python
 PIP := $(VENV_BIN_DIR)/pip
 
-init:
+all: $(PY_OUT) rust
+
+init-venv:
 	python3 -m venv jsparagus_build_venv &&\
 	$(PIP) install --upgrade pip &&\
-	$(PIP) install -r requirements.txt &&\
-	git config core.hooksPath .githooks
+	$(PIP) install -r requirements.txt
 
-all: $(PY_OUT) rust
+init: init-venv
+	git config core.hooksPath .githooks
 
 ECMA262_SPEC_HTML = ../tc39/ecma262/spec.html
 STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
@@ -50,8 +53,8 @@ $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 $(HANDLER_INFO_OUT): jsparagus/emit/collect_handler_info/src/main.rs $(HANDLER_FILE)
 	(cd jsparagus/emit/collect_handler_info/; cargo run --bin collect_handler_info ../../../$(HANDLER_FILE) $(subst jsparagus/emit/collect_handler_info/,,$(HANDLER_INFO_OUT)))
 
-$(RS_AST_OUT): rust/ast/ast.json rust/ast/generate_ast.py
-	(cd rust/ast && $(abspath $(PYTHON)) generate_ast.py)
+$(RS_AST_OUT): crates/ast/ast.json crates/ast/generate_ast.py
+	(cd crates/ast && $(abspath $(PYTHON)) generate_ast.py)
 
 $(RS_TABLES_OUT): $(EMIT_FILES) $(DUMP_FILE) $(HANDLER_INFO_OUT)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE) $(HANDLER_INFO_OUT)
@@ -62,11 +65,11 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
 rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
-	cd rust && cargo build
+	cargo build
 
 check: all
 	./test.sh
-	cd rust && cargo fmt && cargo test
+	cargo fmt && cargo test
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
