@@ -1,0 +1,10 @@
+window.naver=window.naver||{};naver.kin=naver.kin||{};naver.kin.pc=naver.kin.pc||{};naver.kin.pc.detail=naver.kin.pc.detail||{};
+naver.kin.pc.detail.BottomQnaListTab=eg.Class({_$element:null,_oRelatedQnaListParam:null,_oReactRankQnaListParam:null,_oRelatedQnaList:null,_oReactRankQnaList:null,construct:function(oOption){if(!oOption)return;
+this._oRelatedQnaListParam=oOption.oRelatedQnaLstParam;this._oReactRankQnaListParam=oOption.oReactRankQnaListParam;if(!this._oRelatedQnaListParam||!this._oReactRankQnaListParam)return;this._setElement();
+this._setEvent();this._oRelatedQnaList=new naver.kin.pc.detail.BottomQnaList(this._oRelatedQnaListParam)},
+_setElement:function(){this._$element={};this._$element["detailQnaListTabTitleArea"]=$("#detailQnaListTabTitleArea");this._$element["detailQnaListTabTitle"]=this._$element["detailQnaListTabTitleArea"].find("a._detailQnaListTabTitle");
+this._$element["relatedQnaListTabPanel"]=$("#relatedQnaListTabPanel");this._$element["reactRankQnaListTabPanel"]=$("#reactRankQnaListTabPanel")},
+_setEvent:function(){this._$element["detailQnaListTabTitle"].on("click",function(oEvent){var $elSelectedTab=$(oEvent.target);if($elSelectedTab.prop("aria-selected")!="true"){$elSelectedTab.siblings().removeClass("is_active").prop("aria-selected",
+"false");$elSelectedTab.addClass("is_active").prop("aria-selected","true")}if($elSelectedTab.hasClass("_relatedQna")){if(!this._oRelatedQnaList)this._oRelatedQnaList=new naver.kin.pc.detail.BottomQnaList(this._oRelatedQnaListParam);
+this._$element["relatedQnaListTabPanel"].show();this._$element["reactRankQnaListTabPanel"].hide()}else if($elSelectedTab.hasClass("_reactRankQna")){if(!this._oReactRankQnaList)this._oReactRankQnaList=new naver.kin.pc.detail.BottomQnaList(this._oReactRankQnaListParam);
+this._$element["reactRankQnaListTabPanel"].show();this._$element["relatedQnaListTabPanel"].hide()}oEvent.preventDefault();oEvent.stopPropagation()}.bind(this))}});

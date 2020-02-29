@@ -1,0 +1,1 @@
+var DeeplinksSearchBox;(function(){function n(){function i(){var i=n.value;t.disabled=i?!1:!0}var t=_ge("sb_submit"),n=_d.getElementsByName("query")[0];n&&t&&(sj_be(n,"input",i),sj_be(n,"blur",i),t.disabled=!n.value)}n()})(DeeplinksSearchBox||(DeeplinksSearchBox={}))

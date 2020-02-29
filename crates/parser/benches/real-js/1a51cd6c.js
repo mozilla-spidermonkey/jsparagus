@@ -1,0 +1,1 @@
+_w.CarouselConfigRegistry&&CarouselConfigRegistry.setHandler(function(n,t){_w[n]&&_w[n].init(t)})

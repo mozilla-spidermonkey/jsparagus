@@ -1,0 +1,2 @@
+/* release date : 2015-06-10 */
+void 0===window.nxrtrank&&(window.nxrtrank={}),void 0===window.nxrtrank.map&&(window.nxrtrank.map={}),window.nxrtrank.registRealtimeKeyword=function(n,r){return"undefined"==typeof window.nxrtrank.map[n]&&(window.nxrtrank.map[n]=[]),window.nxrtrank.map[n].push(r),window.nxrtrank.map[n]},window.nxrtrank.response=function(n,r){$A(window.nxrtrank.map[n]).forEach(function(n,o,i){n.response(r)})},window.nxrtrank.responseTime=function(n,r){$A(window.nxrtrank.map[n]).forEach(function(n,o,i){n.responseTime(r.split(" ").join(". "))})};

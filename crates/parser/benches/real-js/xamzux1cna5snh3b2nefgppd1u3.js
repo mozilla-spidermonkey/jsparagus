@@ -1,0 +1,1 @@
+window.addEventListener("message",function(a){if(a&&"message"===a.type&&a.data&&("http://ad.doubleclick.net"===a.origin||"http://ad-emea.doubleclick.net"===a.origin||"http://ad-apac.doubleclick.net"===a.origin))(a=document.querySelectorAll(".rpp-rtm-banner[data-placement-id='"+a.data+"']"))&&a.length&&a[0].parentNode.removeChild(a[0])},!1);
