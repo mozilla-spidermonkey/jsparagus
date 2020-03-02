@@ -169,6 +169,19 @@ class RustParserWriter:
         self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
+        self.write(0, "impl From<Term> for &'static str {")
+        self.write(1, "fn from(term: Term) -> Self {")
+        self.write(2, "match term {")
+        for t in self.terminals:
+            name = self.terminal_name(t)
+            self.write(3, "Term::Terminal(TerminalId::{}) => &\"{}\",", name, repr(t))
+        for nt in self.nonterminals:
+            name = self.nonterminal_to_camel(nt)
+            self.write(3, "Term::Nonterminal(NonterminalId::{}) => &\"{}\",", name, str(nt.name))
+        self.write(2, "}")
+        self.write(1, "}")
+        self.write(0, "}")
+        self.write(0, "")
 
     def shift(self):
         self.write(0, "#[rustfmt::skip]")
