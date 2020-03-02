@@ -1,8 +1,8 @@
 use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
-    actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait,
-    Result, StackValue, TermValue, Term, TerminalId, Token, TABLES,
+    actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
+    StackValue, Term, TermValue, TerminalId, Token, TABLES,
 };
 
 pub struct Parser<'alloc> {
@@ -61,9 +61,9 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             if token.is_on_new_line {
                 return Err(ParseError::LexerError);
             }
-            return Ok(false)
+            return Ok(false);
         }
-        return Err(ParseError::NoLineTerminatorHereExpectedToken)
+        Err(ParseError::NoLineTerminatorHereExpectedToken)
     }
 }
 
@@ -136,18 +136,15 @@ impl<'alloc> Parser<'alloc> {
                 return self.shift(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
                     value: t.value,
-                })
+                });
             }
             // On error, don't attempt error handling again.
-            return Err(Self::parse_error(token))
+            return Err(Self::parse_error(token));
         }
         Err(ParseError::ParserCannotUnpackToken)
     }
 
-    pub(crate) fn recover(
-        t: &Token<'alloc>,
-        error_code: ErrorCode,
-    ) -> Result<'alloc, ()> {
+    pub(crate) fn recover(t: &Token<'alloc>, error_code: ErrorCode) -> Result<'alloc, ()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.is_on_new_line
@@ -159,9 +156,7 @@ impl<'alloc> Parser<'alloc> {
                     Err(Self::parse_error(t))
                 }
             }
-            ErrorCode::DoWhileAsi => {
-                Ok(())
-            }
+            ErrorCode::DoWhileAsi => Ok(()),
         }
     }
 

@@ -7,8 +7,8 @@
 use crate::parser::Parser;
 use ast::SourceLocation;
 use generated_parser::{
-    noop_actions, ParseError, ParserTrait, Result, StackValue, TermValue, Term,
-    TerminalId, Token, TABLES,
+    noop_actions, ParseError, ParserTrait, Result, StackValue, Term, TermValue, TerminalId, Token,
+    TABLES,
 };
 
 /// The Simulator is used to check whether we can shift one token, either to
@@ -65,7 +65,7 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
             self.replay_state_stack.push(self.state_stack[self.sp]);
             self.replay_node_stack.push(TermValue {
                 term: self.node_stack[self.sp - 1].term,
-                value: ()
+                value: (),
             });
             self.sp -= 1;
         }
@@ -74,19 +74,22 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
     fn pop(&mut self) -> TermValue<()> {
         if let Some(s) = self.replay_node_stack.pop() {
             self.replay_state_stack.pop();
-            return s
+            return s;
         }
         let t = self.node_stack[self.sp - 1].term;
         self.sp -= 1;
         TermValue { term: t, value: () }
     }
     fn check_not_on_new_line(&self, _peek: usize) -> Result<'alloc, bool> {
-        return Ok(false)
+        Ok(false)
     }
 }
 
 impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
-    pub fn new(state_stack: &'parser [usize], node_stack: &'parser [TermValue<StackValue<'alloc>>]) -> Simulator<'alloc, 'parser> {
+    pub fn new(
+        state_stack: &'parser [usize],
+        node_stack: &'parser [TermValue<StackValue<'alloc>>],
+    ) -> Simulator<'alloc, 'parser> {
         let sp = state_stack.len() - 1;
         assert_eq!(state_stack.len(), node_stack.len() + 1);
         Simulator {
@@ -99,8 +102,8 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
     }
 
     fn state(&self) -> usize {
-        if self.replay_state_stack.is_empty() {
-            *self.replay_state_stack.last().unwrap()
+        if let Some(res) = self.replay_state_stack.last() {
+            *res
         } else {
             self.state_stack[self.sp]
         }
@@ -150,10 +153,10 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
                 Parser::recover(token, error_code)?;
                 return self.shift(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
-                value: (),
-                })
+                    value: (),
+                });
             }
-            return Err(Parser::parse_error(token))
+            return Err(Parser::parse_error(token));
         }
         // On error, don't attempt error handling again.
         Err(ParseError::ParserCannotUnpackToken)
