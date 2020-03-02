@@ -1650,7 +1650,7 @@ class StateAndTransitions:
         self.index = index
         self.terminals = {}
         self.nonterminals = {}
-        self.errors = []
+        self.errors = {}
         self.epsilon = []
         self.locations = locations
         self.delayed_actions = delayed_actions
@@ -1705,7 +1705,7 @@ class StateAndTransitions:
             yield (k, s)
         for k, s in self.nonterminals.items():
             yield (k, s)
-        for k, s in self.errors:
+        for k, s in self.errors.items():
             yield (k, s)
 
     def edges(self):
@@ -1713,7 +1713,7 @@ class StateAndTransitions:
             yield (k, s)
         for k, s in self.nonterminals.items():
             yield (k, s)
-        for k, s in self.errors:
+        for k, s in self.errors.items():
             yield (k, s)
         for k, s in self.epsilon:
             yield (k, s)
@@ -1726,9 +1726,9 @@ class StateAndTransitions:
         self.nonterminals = {
             k: state_map[s] for k, s in self.nonterminals.items()
         }
-        self.errors = [
-            (k, state_map[s]) for k, s in self.errors
-        ]
+        self.errors = {
+            k: state_map[s] for k, s in self.errors.items()
+        }
         self.epsilon = [
             (k, state_map[s]) for k, s in self.epsilon
         ]
@@ -1737,13 +1737,10 @@ class StateAndTransitions:
         )
 
     def get_error_symbol(self):
-        if len(self.errors) == 0:
-            return None
-        elif len(self.errors) > 1:
+        if len(self.errors) > 1:
             raise ValueError("More than one error symbol on the same state.")
         else:
-            k, d = self.errors[0]
-            return k
+            return next(iter(self.errors), None)
 
     def __contains__(self, term):
         if isinstance(term, Action):
@@ -1754,10 +1751,7 @@ class StateAndTransitions:
         elif isinstance(term, Nt):
             return term in self.nonterminals
         elif isinstance(term, ErrorSymbol):
-            for t, s in self.errors:
-                if t == term:
-                    return True
-            return False
+            return term in self.errors
         else:
             return term in self.terminals
 
@@ -1770,10 +1764,7 @@ class StateAndTransitions:
         elif isinstance(term, Nt):
             return self.nonterminals[term]
         if isinstance(term, ErrorSymbol):
-            for t, s in self.errors:
-                if t == term:
-                    return s
-            raise KeyError(term)
+            return self.errors[term]
         else:
             return self.terminals[term]
 
@@ -2190,12 +2181,12 @@ class ParseTable:
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
         elif isinstance(term, ErrorSymbol):
-            src.errors.append((term, dest))
+            src.errors[term] = dest
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def remove_edge(self, src, term, dest, maybe_unreachable_set):
+    def remove_backedge(self, src, term, dest, maybe_unreachable_set):
         self.states[dest].backedges.remove(Edge(src.index, term))
         maybe_unreachable_set.add(dest)
 
@@ -2204,7 +2195,7 @@ class ParseTable:
         assert isinstance(dest, int) and dest < len(self.states)
         try:
             old_dest = src[term]
-            self.remove_edge(src, term, old_dest, maybe_unreachable_set)
+            self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
         except:
             pass
         if isinstance(term, Action):
@@ -2213,7 +2204,7 @@ class ParseTable:
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
         elif isinstance(term, ErrorSymbol):
-            src.errors.append((term, dest))
+            src.errors[term] = dest
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
@@ -2223,10 +2214,10 @@ class ParseTable:
         when resolving shift-reduce conflicts."""
         assert isinstance(src, StateAndTransitions)
         for term, dest in src.edges():
-            self.remove_edge(src, term, dest, maybe_unreachable_set)
+            self.remove_backedge(src, term, dest, maybe_unreachable_set)
         src.terminals = {}
         src.nonterminals = {}
-        src.errors = []
+        src.errors = {}
         src.epsilon = []
 
     def remove_unreachable_states(self, maybe_unreachable_set):
@@ -2450,7 +2441,7 @@ class ParseTable:
         last_edge = sh[-1]
         state = self.states[last_edge.src]
         if aps.replay == []:
-            for term, to in itertools.chain(state.shifted_edges()):
+            for term, to in state.shifted_edges():
                 edge = Edge(last_edge.src, term)
                 new_sh = aps.shift[:-1] + [edge]
                 to = Edge(to, None)

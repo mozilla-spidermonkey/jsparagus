@@ -936,19 +936,12 @@ Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."
 End = collections.namedtuple("End", "")
 End.__doc__ = """End() represent the end of the input content."""
 
-
-class ErrorSymbol:
-    """Special grammar symbol that can be consumed to handle a syntax error.
-
-    The error code is passed to an error-handling routine at run time which
-    decides if the error is recoverable or not.
-    """
-
-    def __init__(self, error_code):
-        self.error_code = error_code
-
-    def __str__(self):
-        return 'ErrorSymbol({})'.format(self.error_code)
+# Special grammar symbol that can be consumed to handle a syntax error.
+#
+# The error code is passed to an error-handling routine at run time which
+# decides if the error is recoverable or not.
+ErrorSymbol = collections.namedtuple("ErrorSymbol", "error_code")
+ErrorSymbol.__doc__ = """Special grammar symbol that can be consumed to handle a syntax error."""
 
 
 class NtDef:

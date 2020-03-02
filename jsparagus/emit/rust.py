@@ -191,8 +191,9 @@ class RustParserWriter:
             nonlocal num_shifted_edges
             res = state.get(t, "ERROR")
             if res == "ERROR":
-                if t == "ErrorToken" and len(state.errors) > 0:
-                    _, res = state.errors[0]
+                error_symbol = state.get_error_symbol()
+                if t == "ErrorToken" and err:
+                    res = state[error_symbol]
                     num_shifted_edges += 1
             else:
                 num_shifted_edges += 1
