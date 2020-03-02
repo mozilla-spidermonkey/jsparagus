@@ -5,7 +5,10 @@
 // Most of this functionality isn't used yet.
 #![allow(dead_code)]
 
-use super::opcode::Opcode;
+use crate::atoms::{AtomIndex, AtomList};
+use crate::atomset::AtomSetIndex;
+use crate::compilation_info::CompilationInfo;
+use crate::opcode::Opcode;
 use byteorder::{ByteOrder, LittleEndian};
 use std::convert::TryInto;
 use std::fmt;
@@ -31,22 +34,10 @@ pub struct BytecodeOffset {
     pub offset: usize,
 }
 
-// Struct to hold atom index in `EmitResult.strings`.
-// Opaque from outside of this module to avoid creating invalid atom index.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct AtomIndex {
-    index: u32,
-}
-impl AtomIndex {
-    fn new(index: u32) -> Self {
-        Self { index }
-    }
-}
-
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
-    strings: Vec<String>,
+    atoms: AtomList,
 
     /// Stack depth after the instructions emitted so far.
     stack_depth: usize,
@@ -77,7 +68,8 @@ impl EmitOptions {
 #[derive(Debug)]
 pub struct EmitResult {
     pub bytecode: Vec<u8>,
-    pub strings: Vec<String>,
+    pub atoms: Vec<AtomSetIndex>,
+    pub all_atoms: Vec<String>,
 
     // Line and column numbers for the first character of source.
     pub lineno: usize,
@@ -119,7 +111,7 @@ impl InstructionWriter {
     pub fn new() -> Self {
         Self {
             bytecode: Vec::new(),
-            strings: Vec::new(),
+            atoms: AtomList::new(),
             stack_depth: 0,
             maximum_stack_depth: 0,
             num_ic_entries: 0,
@@ -127,10 +119,11 @@ impl InstructionWriter {
         }
     }
 
-    pub fn into_emit_result(self) -> EmitResult {
+    pub fn into_emit_result(self, compilation_info: CompilationInfo) -> EmitResult {
         EmitResult {
             bytecode: self.bytecode,
-            strings: self.strings,
+            atoms: self.atoms.into_vec(),
+            all_atoms: compilation_info.atoms.into_vec(),
 
             lineno: 1,
             column: 0,
@@ -245,7 +238,7 @@ impl InstructionWriter {
 
     fn emit_with_atom(&mut self, opcode: Opcode, atom_index: AtomIndex) {
         self.emit_op(opcode);
-        self.emit_atom_index(atom_index);
+        self.bytecode_atom_index(atom_index);
     }
 
     fn emit_aliased(&mut self, opcode: Opcode, hops: u8, slot: u24) {
@@ -260,22 +253,13 @@ impl InstructionWriter {
         self.emit_i32(opcode, offset);
     }
 
-    pub fn get_atom_index(&mut self, value: &str) -> AtomIndex {
-        // Eventually we should be fancy and make this O(1)
-        for (i, string) in self.strings.iter().enumerate() {
-            if string == value {
-                return AtomIndex::new(i as u32);
-            }
-        }
-
-        let index = self.strings.len();
-        self.strings.push(value.to_string());
-        AtomIndex::new(index as u32)
+    pub fn get_atom_index(&mut self, value: AtomSetIndex) -> AtomIndex {
+        self.atoms.insert(value)
     }
 
-    fn emit_atom_index(&mut self, atom_index: AtomIndex) {
+    fn bytecode_atom_index(&mut self, atom_index: AtomIndex) {
         self.bytecode
-            .extend_from_slice(&atom_index.index.to_ne_bytes());
+            .extend_from_slice(&atom_index.into_raw().to_ne_bytes());
     }
 
     // Public methods to emit each instruction.
@@ -328,7 +312,7 @@ impl InstructionWriter {
 
     pub fn string(&mut self, str_index: AtomIndex) {
         self.emit_op(Opcode::String);
-        self.emit_atom_index(str_index);
+        self.bytecode_atom_index(str_index);
     }
 
     pub fn symbol(&mut self, symbol: u8) {

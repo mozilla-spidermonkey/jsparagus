@@ -1,4 +1,7 @@
 mod ast_emitter;
+mod atoms;
+mod atomset;
+mod compilation_info;
 mod dis;
 mod emitter;
 mod lower;
@@ -10,9 +13,15 @@ extern crate jsparagus_ast as ast;
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use dis::dis;
 
-pub fn emit(ast: &mut ast::types::Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
-    //lower::run(ast);
-    ast_emitter::emit_program(ast, options)
+pub fn emit<'alloc>(
+    ast: &mut ast::types::Program<'alloc>,
+    options: &EmitOptions,
+) -> Result<EmitResult, EmitError> {
+    let atoms = atomset::AtomSet::new();
+
+    // NOTE: atoms will be modified by scope pass here.
+
+    ast_emitter::emit_program(ast, options, atoms)
 }
 
 #[cfg(test)]

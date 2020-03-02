@@ -2,21 +2,25 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use super::emitter::{BytecodeOffset, EmitError, EmitOptions, EmitResult, InstructionWriter};
-use super::opcode::Opcode;
+use crate::atomset::AtomSet;
+use crate::compilation_info::CompilationInfo;
+use crate::emitter::{BytecodeOffset, EmitError, EmitOptions, EmitResult, InstructionWriter};
+use crate::opcode::Opcode;
 use crate::reference_op_emitter::{
     AssignmentEmitter, CallEmitter, GetElemEmitter, GetNameEmitter, GetPropEmitter,
     GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
     PropReferenceEmitter,
 };
 use ast::types::*;
+use std::marker::PhantomData;
 
 /// Emit a program, converting the AST directly to bytecode.
-pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
-    let mut emitter = AstEmitter {
-        emit: InstructionWriter::new(),
-        options,
-    };
+pub fn emit_program<'alloc>(
+    ast: &'alloc Program,
+    options: &EmitOptions,
+    atoms: AtomSet<'alloc>,
+) -> Result<EmitResult, EmitError> {
+    let mut emitter = AstEmitter::new(options, atoms);
 
     match ast {
         Program::Script(script) => emitter.emit_script(script)?,
@@ -25,16 +29,25 @@ pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, 
         }
     }
 
-    Ok(emitter.emit.into_emit_result())
+    Ok(emitter.emit.into_emit_result(emitter.compilation_info))
 }
 
-pub struct AstEmitter<'alloc> {
+pub struct AstEmitter<'alloc, 'opt> {
     pub emit: InstructionWriter,
-    options: &'alloc EmitOptions,
+    options: &'opt EmitOptions,
+    compilation_info: CompilationInfo<'alloc>,
 }
 
-impl<'alloc> AstEmitter<'alloc> {
-    fn emit_script(&mut self, ast: &Script) -> Result<(), EmitError> {
+impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
+    fn new(options: &'opt EmitOptions, atoms: AtomSet<'alloc>) -> Self {
+        Self {
+            emit: InstructionWriter::new(),
+            options,
+            compilation_info: CompilationInfo::new(atoms),
+        }
+    }
+
+    fn emit_script(&mut self, ast: &'alloc Script) -> Result<(), EmitError> {
         for statement in &ast.statements {
             self.emit_statement(statement)?;
         }
@@ -43,7 +56,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Ok(())
     }
 
-    fn emit_statement(&mut self, ast: &Statement) -> Result<(), EmitError> {
+    fn emit_statement(&mut self, ast: &'alloc Statement) -> Result<(), EmitError> {
         match ast {
             Statement::ClassDeclaration(_) => {
                 return Err(EmitError::NotImplemented("TODO: ClassDeclaration"));
@@ -131,7 +144,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Err(EmitError::NotImplemented("TODO: this"))
     }
 
-    fn emit_if(&mut self, if_statement: &IfStatement) -> Result<(), EmitError> {
+    fn emit_if(&mut self, if_statement: &'alloc IfStatement) -> Result<(), EmitError> {
         self.emit_expression(&if_statement.test)?;
 
         let offset_alternate = self.emit.bytecode_offset();
@@ -160,7 +173,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Ok(())
     }
 
-    fn emit_expression(&mut self, ast: &Expression) -> Result<(), EmitError> {
+    fn emit_expression(&mut self, ast: &'alloc Expression) -> Result<(), EmitError> {
         match ast {
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
                 ComputedMemberExpression {
@@ -172,6 +185,7 @@ impl<'alloc> AstEmitter<'alloc> {
                 GetElemEmitter {
                     obj: |emitter| emitter.emit_expression(object),
                     key: |emitter| emitter.emit_expression(expression),
+                    phantom: PhantomData,
                 }
                 .emit(self)?;
             }
@@ -186,6 +200,7 @@ impl<'alloc> AstEmitter<'alloc> {
                 GetSuperElemEmitter {
                     this: |emitter| emitter.emit_this(),
                     key: |emitter| emitter.emit_expression(expression),
+                    phantom: PhantomData,
                 }
                 .emit(self)?;
             }
@@ -197,9 +212,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
+                let key = self.compilation_info.atoms.insert(&property.value);
                 GetPropEmitter {
                     obj: |emitter| emitter.emit_expression(object),
-                    key: &property.value,
+                    key,
+                    phantom: PhantomData,
                 }
                 .emit(self)?;
             }
@@ -211,9 +228,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
+                let key = self.compilation_info.atoms.insert(&property.value);
                 GetSuperPropEmitter {
                     this: |emitter| emitter.emit_this(),
-                    key: &property.value,
+                    key,
+                    phantom: PhantomData,
                 }
                 .emit(self)?;
             }
@@ -249,7 +268,8 @@ impl<'alloc> AstEmitter<'alloc> {
             }
 
             Expression::LiteralStringExpression { value, .. } => {
-                let str_index = self.emit.get_atom_index(value);
+                let index = self.compilation_info.atoms.insert(value);
+                let str_index = self.emit.get_atom_index(index);
                 self.emit.string(str_index);
             }
 
@@ -384,8 +404,8 @@ impl<'alloc> AstEmitter<'alloc> {
     fn emit_binary_expression(
         &mut self,
         operator: &BinaryOperator,
-        left: &Expression,
-        right: &Expression,
+        left: &'alloc Expression,
+        right: &'alloc Expression,
     ) -> Result<(), EmitError> {
         let opcode = match operator {
             BinaryOperator::Equals { .. } => Opcode::Eq,
@@ -435,8 +455,8 @@ impl<'alloc> AstEmitter<'alloc> {
     fn emit_short_circuit(
         &mut self,
         operator: &BinaryOperator,
-        left: &Expression,
-        right: &Expression,
+        left: &'alloc Expression,
+        right: &'alloc Expression,
     ) -> Result<(), EmitError> {
         self.emit_expression(left)?;
         let mut jumplist: Vec<BytecodeOffset> = Vec::with_capacity(1);
@@ -496,7 +516,7 @@ impl<'alloc> AstEmitter<'alloc> {
         self.emit.double(value);
     }
 
-    fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
+    fn emit_object_expression(&mut self, object: &'alloc ObjectExpression) -> Result<(), EmitError> {
         self.emit.new_init(0);
 
         for property in object.properties.iter() {
@@ -506,7 +526,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Ok(())
     }
 
-    fn emit_object_property(&mut self, property: &ObjectProperty) -> Result<(), EmitError> {
+    fn emit_object_property(&mut self, property: &'alloc ObjectProperty) -> Result<(), EmitError> {
         match property {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
                 DataProperty {
@@ -519,7 +539,8 @@ impl<'alloc> AstEmitter<'alloc> {
 
                 match property_name {
                     PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                        let name_index = self.emit.get_atom_index(value);
+                        let index = self.compilation_info.atoms.insert(value);
+                        let name_index = self.emit.get_atom_index(index);
                         self.emit.init_prop(name_index);
                     }
                     PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
@@ -533,7 +554,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Ok(())
     }
 
-    fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
+    fn emit_array_expression(&mut self, array: &'alloc ArrayExpression) -> Result<(), EmitError> {
         // Initialize the array to its minimum possible length.
         let min_length = array
             .elements
@@ -568,9 +589,9 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_conditional_expression(
         &mut self,
-        test: &Expression,
-        consequent: &Expression,
-        alternate: &Expression,
+        test: &'alloc Expression,
+        consequent: &'alloc Expression,
+        alternate: &'alloc Expression,
     ) -> Result<(), EmitError> {
         self.emit_expression(test)?;
 
@@ -596,8 +617,8 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_assignment_expression(
         &mut self,
-        binding: &AssignmentTarget,
-        expression: &Expression,
+        binding: &'alloc AssignmentTarget,
+        expression: &'alloc Expression,
     ) -> Result<(), EmitError> {
         AssignmentEmitter {
             lhs: |emitter| match binding {
@@ -605,25 +626,29 @@ impl<'alloc> AstEmitter<'alloc> {
                     SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier { name, .. },
                     ),
-                ) => Ok(NameReferenceEmitter { name: name.value }.emit_for_assignment(emitter)),
+                ) => {
+                    let name = emitter.compilation_info.atoms.insert(name.value);
+                    Ok(NameReferenceEmitter { name }.emit_for_assignment(emitter))
+                }
                 _ => Err(EmitError::NotImplemented(
                     "non-identifier assignment target",
                 )),
             },
             rhs: |emitter| emitter.emit_expression(expression),
+            phantom: PhantomData,
         }
         .emit(self)
     }
 
-    fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
-        let name = &ast.name.value;
+    fn emit_identifier_expression(&mut self, ast: &'alloc IdentifierExpression) {
+        let name = self.compilation_info.atoms.insert(ast.name.value);
         GetNameEmitter { name }.emit(self);
     }
 
     fn emit_new_expression(
         &mut self,
-        callee: &Expression,
-        arguments: &Arguments,
+        callee: &'alloc Expression,
+        arguments: &'alloc Arguments,
     ) -> Result<(), EmitError> {
         for arg in &arguments.args {
             if let Argument::SpreadElement(_) = arg {
@@ -637,6 +662,7 @@ impl<'alloc> AstEmitter<'alloc> {
                 emitter.emit_arguments(arguments)?;
                 Ok(arguments.args.len())
             },
+            phantom: PhantomData,
         }
         .emit(self)?;
 
@@ -645,8 +671,8 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_call_expression(
         &mut self,
-        callee: &ExpressionOrSuper,
-        arguments: &Arguments,
+        callee: &'alloc ExpressionOrSuper,
+        arguments: &'alloc Arguments,
     ) -> Result<(), EmitError> {
         // Don't do super handling in an emit_expresion_or_super because the bytecode heavily
         // depends on how you're using the super
@@ -655,7 +681,8 @@ impl<'alloc> AstEmitter<'alloc> {
             callee: |emitter| match callee {
                 ExpressionOrSuper::Expression(expr) => match &**expr {
                     Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
-                        Ok(NameReferenceEmitter { name: name.value }.emit_for_call(emitter))
+                        let name = emitter.compilation_info.atoms.insert(name.value);
+                        Ok(NameReferenceEmitter { name }.emit_for_call(emitter))
                     }
                     Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                         StaticMemberExpression {
@@ -663,11 +690,15 @@ impl<'alloc> AstEmitter<'alloc> {
                             property,
                             ..
                         },
-                    )) => PropReferenceEmitter {
-                        obj: |emitter| emitter.emit_expression(object),
-                        key: property.value,
+                    )) => {
+                        let key = emitter.compilation_info.atoms.insert(property.value);
+                        PropReferenceEmitter {
+                            obj: |emitter| emitter.emit_expression(object),
+                            key,
+                            phantom: PhantomData,
+                        }
+                        .emit_for_call(emitter)
                     }
-                    .emit_for_call(emitter),
                     _ => {
                         return Err(EmitError::NotImplemented(
                             "TODO: Call (only global functions are supported)",
@@ -682,13 +713,14 @@ impl<'alloc> AstEmitter<'alloc> {
                 emitter.emit_arguments(arguments)?;
                 Ok(arguments.args.len())
             },
+            phantom: PhantomData,
         }
         .emit(self)?;
 
         Ok(())
     }
 
-    fn emit_arguments(&mut self, ast: &Arguments) -> Result<(), EmitError> {
+    fn emit_arguments(&mut self, ast: &'alloc Arguments) -> Result<(), EmitError> {
         for argument in &ast.args {
             self.emit_argument(argument)?;
         }
@@ -696,7 +728,7 @@ impl<'alloc> AstEmitter<'alloc> {
         Ok(())
     }
 
-    fn emit_argument(&mut self, ast: &Argument) -> Result<(), EmitError> {
+    fn emit_argument(&mut self, ast: &'alloc Argument) -> Result<(), EmitError> {
         match ast {
             Argument::Expression(ast) => self.emit_expression(ast)?,
             Argument::SpreadElement(_) => {

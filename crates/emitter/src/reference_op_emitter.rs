@@ -1,5 +1,8 @@
-use super::emitter::{AtomIndex, EmitError};
 use crate::ast_emitter::AstEmitter;
+use crate::atoms::AtomIndex;
+use crate::atomset::AtomSetIndex;
+use crate::emitter::EmitError;
+use std::marker::PhantomData;
 
 #[derive(Debug, PartialEq)]
 enum AssignmentReferenceKind {
@@ -43,11 +46,11 @@ impl CallReference {
 }
 
 // Struct for emitting bytecode for get `name` operation.
-pub struct GetNameEmitter<'alloc> {
-    pub name: &'alloc str,
+pub struct GetNameEmitter {
+    pub name: AtomSetIndex,
 }
-impl<'alloc> GetNameEmitter<'alloc> {
-    pub fn emit(self, emitter: &mut AstEmitter) {
+impl GetNameEmitter {
+    pub fn emit<'alloc, 'opt>(self, emitter: &mut AstEmitter<'alloc, 'opt>) {
         let name_index = emitter.emit.get_atom_index(self.name);
 
         //              [stack]
@@ -59,18 +62,19 @@ impl<'alloc> GetNameEmitter<'alloc> {
 }
 
 // Struct for emitting bytecode for get `obj.key` operation.
-pub struct GetPropEmitter<'alloc, F>
+pub struct GetPropEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub obj: F,
-    pub key: &'alloc str,
+    pub key: AtomSetIndex,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<'alloc, F> GetPropEmitter<'alloc, F>
+impl<'alloc, 'opt, F> GetPropEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         let key_index = emitter.emit.get_atom_index(self.key);
 
         //              [stack]
@@ -86,18 +90,19 @@ where
 }
 
 // Struct for emitting bytecode for get `super.key` operation.
-pub struct GetSuperPropEmitter<'alloc, F>
+pub struct GetSuperPropEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub this: F,
-    pub key: &'alloc str,
+    pub key: AtomSetIndex,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<'alloc, F> GetSuperPropEmitter<'alloc, F>
+impl<'alloc, 'opt, F> GetSuperPropEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         let key_index = emitter.emit.get_atom_index(self.key);
 
         //              [stack]
@@ -119,20 +124,21 @@ where
 }
 
 // Struct for emitting bytecode for get `obj[key]` operation.
-pub struct GetElemEmitter<F1, F2>
+pub struct GetElemEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub obj: F1,
     pub key: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> GetElemEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> GetElemEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         //              [stack]
 
         (self.obj)(emitter)?;
@@ -149,20 +155,21 @@ where
 }
 
 // Struct for emitting bytecode for get `super[key]` operation.
-pub struct GetSuperElemEmitter<F1, F2>
+pub struct GetSuperElemEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub this: F1,
     pub key: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> GetSuperElemEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> GetSuperElemEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         //              [stack]
 
         (self.this)(emitter)?;
@@ -185,11 +192,11 @@ where
 }
 
 // Struct for emitting bytecode for `name` reference.
-pub struct NameReferenceEmitter<'alloc> {
-    pub name: &'alloc str,
+pub struct NameReferenceEmitter {
+    pub name: AtomSetIndex,
 }
-impl<'alloc> NameReferenceEmitter<'alloc> {
-    pub fn emit_for_call(self, emitter: &mut AstEmitter) -> CallReference {
+impl NameReferenceEmitter {
+    pub fn emit_for_call<'alloc, 'opt>(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> CallReference {
         let name_index = emitter.emit.get_atom_index(self.name);
 
         //              [stack]
@@ -205,7 +212,7 @@ impl<'alloc> NameReferenceEmitter<'alloc> {
         CallReference::new(CallKind::Normal)
     }
 
-    pub fn emit_for_assignment(self, emitter: &mut AstEmitter) -> AssignmentReference {
+    pub fn emit_for_assignment<'alloc, 'opt>(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> AssignmentReference {
         let name_index = emitter.emit.get_atom_index(self.name);
 
         //              [stack]
@@ -219,18 +226,19 @@ impl<'alloc> NameReferenceEmitter<'alloc> {
 }
 
 // Struct for emitting bytecode for `obj.key` reference.
-pub struct PropReferenceEmitter<'alloc, F>
+pub struct PropReferenceEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub obj: F,
-    pub key: &'alloc str,
+    pub key: AtomSetIndex,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<'alloc, F> PropReferenceEmitter<'alloc, F>
+impl<'alloc, 'opt, F> PropReferenceEmitter<'alloc, 'opt, F>
 where
-    F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit_for_call(self, emitter: &mut AstEmitter) -> Result<CallReference, EmitError> {
+    pub fn emit_for_call(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<CallReference, EmitError> {
         let key_index = emitter.emit.get_atom_index(self.key);
 
         //              [stack]
@@ -254,7 +262,7 @@ where
     #[allow(dead_code)]
     pub fn emit_for_assignment(
         self,
-        emitter: &mut AstEmitter,
+        emitter: &mut AstEmitter<'alloc, 'opt>,
     ) -> Result<AssignmentReference, EmitError> {
         let key_index = emitter.emit.get_atom_index(self.key);
 
@@ -271,21 +279,22 @@ where
 
 // Struct for emitting bytecode for `obj[key]` reference.
 #[allow(dead_code)]
-pub struct ElemReferenceEmitter<F1, F2>
+pub struct ElemReferenceEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub obj: F1,
     pub key: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> ElemReferenceEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> ElemReferenceEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     #[allow(dead_code)]
-    pub fn emit_for_call(self, emitter: &mut AstEmitter) -> Result<CallReference, EmitError> {
+    pub fn emit_for_call(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<CallReference, EmitError> {
         //              [stack]
 
         (self.obj)(emitter)?;
@@ -310,7 +319,7 @@ where
     #[allow(dead_code)]
     pub fn emit_for_assignment(
         self,
-        emitter: &mut AstEmitter,
+        emitter: &mut AstEmitter<'alloc, 'opt>,
     ) -> Result<AssignmentReference, EmitError> {
         //              [stack]
 
@@ -325,20 +334,21 @@ where
 }
 
 // Struct for emitting bytecode for call `callee(arguments)` operation.
-pub struct CallEmitter<F1, F2>
+pub struct CallEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<CallReference, EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<usize, EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<CallReference, EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<usize, EmitError>,
 {
     pub callee: F1,
     pub arguments: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> CallEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> CallEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<CallReference, EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<usize, EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<CallReference, EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<usize, EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         //              [stack]
 
         let reference = (self.callee)(emitter)?;
@@ -360,20 +370,21 @@ where
 }
 
 // Struct for emitting bytecode for `new callee(arguments)` operation.
-pub struct NewEmitter<F1, F2>
+pub struct NewEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<usize, EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<usize, EmitError>,
 {
     pub callee: F1,
     pub arguments: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> NewEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> NewEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<usize, EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<usize, EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         //              [stack]
 
         (self.callee)(emitter)?;
@@ -397,20 +408,21 @@ where
 }
 
 // Struct for emitting bytecode for assignment `lhs = rhs` operation.
-pub struct AssignmentEmitter<F1, F2>
+pub struct AssignmentEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<AssignmentReference, EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<AssignmentReference, EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
     pub lhs: F1,
     pub rhs: F2,
+    pub phantom: PhantomData<(&'alloc (), &'opt ())>,
 }
-impl<F1, F2> AssignmentEmitter<F1, F2>
+impl<'alloc, 'opt, F1, F2> AssignmentEmitter<'alloc, 'opt, F1, F2>
 where
-    F1: Fn(&mut AstEmitter) -> Result<AssignmentReference, EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F1: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<AssignmentReference, EmitError>,
+    F2: Fn(&mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError>,
 {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+    pub fn emit(self, emitter: &mut AstEmitter<'alloc, 'opt>) -> Result<(), EmitError> {
         //              [stack]
 
         let reference = (self.lhs)(emitter)?;
