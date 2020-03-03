@@ -23,57 +23,71 @@ pub struct Simulator<'alloc, 'parser> {
     node_stack: &'parser [TermValue<StackValue<'alloc>>],
     /// Mutable state stack used by the simulator on top of the immutable
     /// parser's state stack.
-    replay_state_stack: Vec<usize>,
+    sim_state_stack: Vec<usize>,
     /// Mutable term stack used by the simulator on top of the immutable
     /// parser's term stack.
-    replay_node_stack: Vec<TermValue<()>>,
+    sim_node_stack: Vec<TermValue<()>>,
+    /// Mutable term stack used by the simulator for replaying terms when reducing non-terminals are replaying lookahead terminals.
+    replay_stack: Vec<TermValue<()>>,
 }
 
 impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
     fn shift(&mut self, tv: TermValue<()>) -> Result<'alloc, bool> {
         // Shift the new terminal/nonterminal and its associated value.
+        let mut accept = false;
         let mut state = self.state();
         assert!(state < TABLES.shift_count);
-        let term_index : usize = tv.term.into();
-        assert!(term_index < TABLES.shift_width);
-        let index = state * TABLES.shift_width + term_index;
-        let goto = TABLES.shift_table[index];
-        state = if goto >= 0 {
-            goto as usize
-        } else {
-            // Error handling is in charge of shifting an ErrorSymbol from the
-            // current state.
-            return self.try_error_handling(tv);
-        };
-        self.replay_state_stack.push(state);
-        self.replay_node_stack.push(tv);
-        let mut accept = false;
-        // Execute any actions, such as reduce actions ast builder actions.
-        while state >= TABLES.shift_count {
-            assert!(state < TABLES.action_count);
-            accept = noop_actions(self, state)?;
-            state = self.state();
+        let mut tv = tv;
+        loop {
+            let term_index: usize = tv.term.into();
+            assert!(term_index < TABLES.shift_width);
+            let index = state * TABLES.shift_width + term_index;
+            let goto = TABLES.shift_table[index];
+            let term_str: &'static str = tv.term.into();
+            println!("sim_shift: {} -- {} --> {}", state, term_str, goto);
+            if goto < 0 {
+                // Error handling is in charge of shifting an ErrorSymbol from the
+                // current state.
+                self.try_error_handling(tv)?;
+                tv = self.replay_stack.pop().unwrap();
+                continue;
+            }
+            state = goto as usize;
+            self.sim_state_stack.push(state);
+            self.sim_node_stack.push(tv);
+            // Execute any actions, such as reduce actions.
+            while state >= TABLES.shift_count {
+                assert!(state - TABLES.shift_count < TABLES.action_count);
+                println!("sim_action: {}", state);
+                accept = noop_actions(self, state)?;
+                state = self.state();
+                assert!(state < TABLES.shift_count);
+            }
+            if let Some(tv_temp) = self.replay_stack.pop() {
+                tv = tv_temp;
+            } else {
+                break;
+            }
         }
-        assert!(state < TABLES.shift_count);
         Ok(accept)
     }
-    fn reduce(&mut self, tv: TermValue<()>) -> Result<'alloc, bool> {
-        self.shift(tv)
+    fn replay(&mut self, tv: TermValue<()>) {
+        self.replay_stack.push(tv)
     }
     fn epsilon(&mut self, state: usize) {
-        if self.replay_state_stack.is_empty() {
-            self.replay_state_stack.push(self.state_stack[self.sp]);
-            self.replay_node_stack.push(TermValue {
+        if self.sim_state_stack.is_empty() {
+            self.sim_state_stack.push(self.state_stack[self.sp]);
+            self.sim_node_stack.push(TermValue {
                 term: self.node_stack[self.sp - 1].term,
                 value: (),
             });
             self.sp -= 1;
         }
-        *self.replay_state_stack.last_mut().unwrap() = state;
+        *self.sim_state_stack.last_mut().unwrap() = state;
     }
     fn pop(&mut self) -> TermValue<()> {
-        if let Some(s) = self.replay_node_stack.pop() {
-            self.replay_state_stack.pop();
+        if let Some(s) = self.sim_node_stack.pop() {
+            self.sim_state_stack.pop();
             return s;
         }
         let t = self.node_stack[self.sp - 1].term;
@@ -96,13 +110,14 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             sp,
             state_stack,
             node_stack,
-            replay_state_stack: vec![],
-            replay_node_stack: vec![],
+            sim_state_stack: vec![],
+            sim_node_stack: vec![],
+            replay_stack: vec![],
         }
     }
 
     fn state(&self) -> usize {
-        if let Some(res) = self.replay_state_stack.last() {
+        if let Some(res) = self.sim_state_stack.last() {
             *res
         } else {
             self.state_stack[self.sp]
@@ -134,7 +149,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
 
         // When accepting, we are on the grammar rule:
         //   Start_Script : Script <End> {accept}
-        assert_eq!(self.sp - 1 + self.replay_node_stack.len(), 2);
+        assert_eq!(self.sp - 1 + self.sim_node_stack.len(), 2);
         Ok(())
     }
 
@@ -151,10 +166,11 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             let token = &Token::basic_token(term, bogus_loc);
             if let Some(error_code) = error_code {
                 Parser::recover(token, error_code)?;
-                return self.shift(TermValue {
+                self.replay(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
                     value: (),
                 });
+                return Ok(false);
             }
             return Err(Parser::parse_error(token));
         }

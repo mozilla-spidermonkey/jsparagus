@@ -418,7 +418,7 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "pub trait ParserTrait<'alloc, Value> {")
         self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
-        self.write(1, "fn reduce(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
+        self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
         self.write(1, "fn epsilon(&mut self, state: usize);")
         self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
         self.write(1, "fn check_not_on_new_line(&self, peek: usize) -> Result<'alloc, bool>;")
@@ -479,14 +479,10 @@ class RustParserWriter:
                            self.nonterminal_to_camel(act.nt))
                 if value != "value":
                     self.write(indent, "let value = {};", value)
-                replay_list.append("parser.reduce(TermValue { term, value })")
-                for i in reversed(range(act.replay)):
-                    replay_list.append("parser.shift(s{})".format(i + 1))
-                last_stmt = replay_list[-1]
-                replay_list.pop()
-                for stmt in replay_list:
-                    self.write(indent, "{}?;", stmt)
-                self.write(indent, "{}", last_stmt)
+                for i in range(act.replay):
+                    self.write(indent, "parser.replay(s{});", i + 1)
+                self.write(indent, "parser.replay(TermValue { term, value });")
+                self.write(indent, "Ok(false)")
                 return False
             elif isinstance(act, CheckNotOnNewLine):
                 self.write(indent, "parser.check_not_on_new_line({})?;", 1 - act.offset)
@@ -577,7 +573,7 @@ class RustParserWriter:
             for ctx in self.parse_table.debug_context(state.index, None):
                 self.write(3, "// {}", ctx)
             for act, d in state.edges():
-                self.write(3, "// {}", repr(act))
+                self.write(3, "// {} --> {}", repr(act), d)
                 is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
                 try:
                     used_offsets = set(collect_offsets(act))
@@ -611,7 +607,7 @@ class RustParserWriter:
             for ctx in self.parse_table.debug_context(state.index, None):
                 self.write(3, "// {}", ctx)
             for act, d in state.edges():
-                self.write(3, "// {}", repr(act))
+                self.write(3, "// {} --> {}", repr(act), d)
                 is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
                 try:
                     used_offsets = set(collect_offsets(act))

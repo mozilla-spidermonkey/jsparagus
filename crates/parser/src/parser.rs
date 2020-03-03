@@ -6,8 +6,14 @@ use generated_parser::{
 };
 
 pub struct Parser<'alloc> {
+    /// Vector of states visited in the LR parse table.
     state_stack: Vec<usize>,
+    /// Vector of terms and their associated values.
     node_stack: Vec<TermValue<StackValue<'alloc>>>,
+    /// Vector of lookahead terms and their associated value, to be emptied by
+    /// pop-ing elements from it before shifting any new terminals.
+    replay_stack: Vec<TermValue<StackValue<'alloc>>>,
+    /// Build the AST stored in the TermValue vectors.
     handler: AstBuilder<'alloc>,
 }
 
@@ -20,33 +26,45 @@ impl<'alloc> AstBuilderDelegate<'alloc> for Parser<'alloc> {
 impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
     fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
         // Shift the new terminal/nonterminal and its associated value.
+        let mut accept = false;
         let mut state = self.state();
         assert!(state < TABLES.shift_count);
-        let term_index : usize = tv.term.into();
-        assert!(term_index < TABLES.shift_width);
-        let index = state * TABLES.shift_width + term_index;
-        let goto = TABLES.shift_table[index];
-        state = if goto >= 0 {
-            goto as usize
-        } else {
-            // Error handling is in charge of shifting an ErrorSymbol from the
-            // current state.
-            return self.try_error_handling(tv);
-        };
-        self.state_stack.push(state);
-        self.node_stack.push(tv);
-        let mut accept = false;
-        // Execute any actions, such as reduce actions ast builder actions.
-        while state >= TABLES.shift_count {
-            assert!(state < TABLES.action_count);
-            accept = actions(self, state)?;
-            state = self.state();
+        let mut tv = tv;
+        loop {
+            let term_index: usize = tv.term.into();
+            assert!(term_index < TABLES.shift_width);
+            let index = state * TABLES.shift_width + term_index;
+            let goto = TABLES.shift_table[index];
+            let term_str: &'static str = tv.term.into();
+            println!("shift: {} -- {} --> {}", state, term_str, goto);
+            if goto < 0 {
+                // Error handling is in charge of shifting an ErrorSymbol from the
+                // current state.
+                self.try_error_handling(tv)?;
+                tv = self.replay_stack.pop().unwrap();
+                continue;
+            }
+            state = goto as usize;
+            self.state_stack.push(state);
+            self.node_stack.push(tv);
+            // Execute any actions, such as reduce actions ast builder actions.
+            while state >= TABLES.shift_count {
+                assert!(state - TABLES.shift_count < TABLES.action_count);
+                println!("action: {}", state);
+                accept = actions(self, state)?;
+                state = self.state();
+                assert!(state < TABLES.shift_count);
+            }
+            if let Some(tv_temp) = self.replay_stack.pop() {
+                tv = tv_temp;
+            } else {
+                break;
+            }
         }
-        assert!(state < TABLES.shift_count);
         Ok(accept)
     }
-    fn reduce(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
-        self.shift(tv)
+    fn replay(&mut self, tv: TermValue<StackValue<'alloc>>) {
+        self.replay_stack.push(tv)
     }
     fn epsilon(&mut self, state: usize) {
         *self.state_stack.last_mut().unwrap() = state;
@@ -75,6 +93,7 @@ impl<'alloc> Parser<'alloc> {
         Self {
             state_stack: vec![entry_state],
             node_stack: vec![],
+            replay_stack: vec![],
             handler,
         }
     }
@@ -133,10 +152,11 @@ impl<'alloc> Parser<'alloc> {
         if let StackValue::Token(ref token) = t.value {
             if let Some(error_code) = error_code {
                 Self::recover(token, error_code)?;
-                return self.shift(TermValue {
+                self.replay(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
                     value: t.value,
                 });
+                return Ok(false);
             }
             // On error, don't attempt error handling again.
             return Err(Self::parse_error(token));
@@ -161,6 +181,7 @@ impl<'alloc> Parser<'alloc> {
     }
 
     fn simulator<'a>(&'a self) -> Simulator<'alloc, 'a> {
+        assert_eq!(self.replay_stack.len(), 0);
         Simulator::new(&self.state_stack, &self.node_stack)
     }
 
@@ -173,6 +194,8 @@ impl<'alloc> Parser<'alloc> {
 
     /// Return true if self.close() would succeed.
     pub fn can_close(&self) -> bool {
-        self.simulator().close(0).is_ok()
+        let res = self.simulator().close(0).is_ok();
+        println!("can_close = {}", res);
+        res
     }
 }
