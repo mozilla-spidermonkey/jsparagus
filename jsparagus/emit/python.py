@@ -25,9 +25,10 @@ def write_python_parse_table(out, parse_table):
         if isinstance(act, Lookahead):
             raise ValueError("Unexpected Lookahead action")
         if isinstance(act, CheckNotOnNewLine):
-            assert act.offset == -1
-            out.write("{}if lexer.saw_line_terminator():".format(indent))
-            out.write("{}    raise ShiftError()".format(indent))
+            # TODO: This code does not handle larger lookahead.
+            if act.offset == -1:
+                out.write("{}if lexer.saw_line_terminator():".format(indent))
+                out.write("{}    raise ShiftError()".format(indent))
             return indent + "    ", True
         if isinstance(act, FilterFlag):
             out.write("{}if parser.flags[{}][-1] == {}:\n".format(indent, act.flag, act.value))

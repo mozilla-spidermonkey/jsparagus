@@ -221,7 +221,8 @@ class Grammar:
                             "unsupported: synthetic terminals can't include other "
                             "synthetic terminals; {!r} includes {!r}"
                             .format(key, t))
-        self.synthetic_terminals = synthetic_terminals
+        # self.synthetic_terminals = synthetic_terminals
+        self.synthetic_terminals = {}
 
         keys_are_nt = isinstance(next(iter(nonterminals)), Nt)
         key_type = Nt if keys_are_nt else (str, InitNt)
@@ -545,6 +546,12 @@ class Grammar:
         for nt, nt_def in nonterminals.items():
             nt, nt_def = validate_nt(nt, nt_def)
             self.nonterminals[nt] = nt_def
+        for nt, nt_def in synthetic_terminals.items():
+            nt_def = NtDef((nt,), [Production([e], 0) for e in nt_def], None)
+            nt, nt_def = validate_nt(nt, nt_def)
+            self.nonterminals[nt] = nt_def
+            # Remove synthetic terminals from the list of terminals.
+            all_terminals -= OrderedSet([nt])
 
         self.terminals = OrderedFrozenSet(all_terminals)
 

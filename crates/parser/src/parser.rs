@@ -51,7 +51,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
                 assert!(state - TABLES.shift_count < TABLES.action_count);
                 println!("action: {}", state);
                 if actions(self, state)? {
-                    return Ok(true)
+                    return Ok(true);
                 }
                 state = self.state();
                 assert!(state < TABLES.shift_count);

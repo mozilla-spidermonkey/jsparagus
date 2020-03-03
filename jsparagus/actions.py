@@ -148,7 +148,7 @@ class CheckNotOnNewLine(Action):
     shifted."""
     __slots__ = 'offset',
     def __init__(self, offset = 0):
-        assert offset >= -1 and "Smaller offsets are not supported on all backends."
+        # assert offset >= -1 and "Smaller offsets are not supported on all backends."
         super().__init__([], [])
         self.offset = offset
     def is_inconsistent(self):
