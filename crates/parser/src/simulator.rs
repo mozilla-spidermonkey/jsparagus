@@ -34,7 +34,6 @@ pub struct Simulator<'alloc, 'parser> {
 impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
     fn shift(&mut self, tv: TermValue<()>) -> Result<'alloc, bool> {
         // Shift the new terminal/nonterminal and its associated value.
-        let mut accept = false;
         let mut state = self.state();
         assert!(state < TABLES.shift_count);
         let mut tv = tv;
@@ -59,7 +58,9 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
             while state >= TABLES.shift_count {
                 assert!(state - TABLES.shift_count < TABLES.action_count);
                 println!("sim_action: {}", state);
-                accept = noop_actions(self, state)?;
+                if noop_actions(self, state)? {
+                    return Ok(true);
+                }
                 state = self.state();
                 assert!(state < TABLES.shift_count);
             }
@@ -69,7 +70,7 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
                 break;
             }
         }
-        Ok(accept)
+        Ok(false)
     }
     fn replay(&mut self, tv: TermValue<()>) {
         self.replay_stack.push(tv)
@@ -147,9 +148,9 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
         // value.
         assert!(accept);
 
-        // When accepting, we are on the grammar rule:
-        //   Start_Script : Script <End> {accept}
-        assert_eq!(self.sp - 1 + self.sim_node_stack.len(), 2);
+        // We can either reduce a Script/Module, or a Script/Module followed by
+        // an <End> terminal.
+        assert!(self.sp + self.sim_node_stack.len() >= 1);
         Ok(())
     }
 
@@ -166,6 +167,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             let token = &Token::basic_token(term, bogus_loc);
             if let Some(error_code) = error_code {
                 Parser::recover(token, error_code)?;
+                self.replay(t);
                 self.replay(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
                     value: (),

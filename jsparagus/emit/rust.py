@@ -411,6 +411,7 @@ class RustParserWriter:
             assert False, "unexpected element type: {!r}".format(e)
 
     def parser_trait(self):
+        self.write(0, "#[derive(Debug)]")
         self.write(0, "pub struct TermValue<Value> {")
         self.write(1, "pub term: Term,")
         self.write(1, "pub value: Value,")
@@ -541,7 +542,14 @@ class RustParserWriter:
                     if act.set_to == "value":
                         self.write(indent, "let value = ();")
             elif isinstance(act, Seq):
-                if act.update_stack():
+                # Do not pop any of the stack elements if the reduce action has
+                # an accept function call. Ideally we should be returning the
+                # result instead of keeping it on the parser stack.
+                has_accept = any(
+                    a.method == "accept" for a in act.actions
+                    if isinstance(a, FunCall)
+                )
+                if act.update_stack() and not has_accept:
                     reducer = act.reduce_with()
                     depth = reducer.pop + reducer.replay
                     for i in range(depth):

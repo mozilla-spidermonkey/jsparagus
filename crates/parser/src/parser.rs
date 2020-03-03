@@ -26,7 +26,6 @@ impl<'alloc> AstBuilderDelegate<'alloc> for Parser<'alloc> {
 impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
     fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
         // Shift the new terminal/nonterminal and its associated value.
-        let mut accept = false;
         let mut state = self.state();
         assert!(state < TABLES.shift_count);
         let mut tv = tv;
@@ -51,7 +50,9 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             while state >= TABLES.shift_count {
                 assert!(state - TABLES.shift_count < TABLES.action_count);
                 println!("action: {}", state);
-                accept = actions(self, state)?;
+                if actions(self, state)? {
+                    return Ok(true)
+                }
                 state = self.state();
                 assert!(state < TABLES.shift_count);
             }
@@ -61,7 +62,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
                 break;
             }
         }
-        Ok(accept)
+        Ok(false)
     }
     fn replay(&mut self, tv: TermValue<StackValue<'alloc>>) {
         self.replay_stack.push(tv)
@@ -127,10 +128,13 @@ impl<'alloc> Parser<'alloc> {
         // value.
         assert!(accept);
 
-        // When accepting, we are on the grammar rule:
-        //   Start_Script : Script <End> {accept}
-        assert_eq!(self.node_stack.len(), 2);
-        self.node_stack.pop();
+        // We can either reduce a Script/Module, or a Script/Module followed by
+        // an <End> terminal.
+        assert!(self.node_stack.len() >= 1);
+        assert!(self.node_stack.len() <= 2);
+        if self.node_stack.len() > 1 {
+            self.node_stack.pop();
+        }
         Ok(self.node_stack.pop().unwrap().value)
     }
 
@@ -151,10 +155,14 @@ impl<'alloc> Parser<'alloc> {
         let error_code = TABLES.error_codes[state];
         if let StackValue::Token(ref token) = t.value {
             if let Some(error_code) = error_code {
+                let loc = token.loc;
                 Self::recover(token, error_code)?;
+                self.replay(t);
+                let err_token = Token::basic_token(TerminalId::ErrorToken, loc);
+                let err_token = self.handler.alloc(err_token);
                 self.replay(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
-                    value: t.value,
+                    value: StackValue::Token(err_token),
                 });
                 return Ok(false);
             }
