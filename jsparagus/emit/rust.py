@@ -192,7 +192,7 @@ class RustParserWriter:
             res = state.get(t, "ERROR")
             if res == "ERROR":
                 error_symbol = state.get_error_symbol()
-                if t == "ErrorToken" and err:
+                if t == "ErrorToken" and error_symbol:
                     res = state[error_symbol]
                     num_shifted_edges += 1
             else:

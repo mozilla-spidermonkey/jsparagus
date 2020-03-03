@@ -1590,7 +1590,7 @@ class CanonicalGrammar:
         # Step by step, we check the grammar and lower it to a more primitive form.
         grammar = expand_parameterized_nonterminals(grammar)
         check_cycle_free(grammar)
-        check_lookahead_rules(grammar)
+        # check_lookahead_rules(grammar)
         check_no_line_terminator_here(grammar)
         grammar, prods, prods_with_indexes_by_nt = expand_all_optional_elements(
             grammar)
@@ -2655,15 +2655,20 @@ class ParseTable:
         information provided by reducing action."""
         assert isinstance(state, int)
         record = []
+        # After the first reduce action, we do not want to spend too much
+        # resource visiting edges which would give us the same information.
+        # Therefore, if we already reduce an action to a given state, then we
+        # skip looking for lookahead that we already visited.
+        #
+        # Set of (first-reduce-action, reducing-base, last-edge)
         seen_edge_after_reduce = set()
         def visit(aps):
             # Note, this suppose that we are not considering flags when
             # computing, as flag might prevent some lookahead investigations.
-            try:
-                first_reduce = next(e for e in aps.actions[:-1] if not self.is_term_shifted(e.term))
-            except StopIteration:
-                first_reduce = None
-            has_seen_edge_after_reduce = first_reduce and (first_reduce, aps.actions[-1]) in seen_edge_after_reduce
+            first_reduce = next((e for e in aps.actions[:-1] if not self.is_term_shifted(e.term)), None)
+            if first_reduce:
+                reduce_key = (first_reduce, aps.shift[0].src, aps.actions[-1].term)
+            has_seen_edge_after_reduce = first_reduce and reduce_key in seen_edge_after_reduce
             has_lookahead = len(aps.lookahead) >= 1
             stop = has_seen_edge_after_reduce or has_lookahead
             # print(aps_str(aps, "\tvisitor"))
@@ -2671,7 +2676,7 @@ class ParseTable:
                 if has_lookahead:
                     record.append(aps)
             if first_reduce:
-                seen_edge_after_reduce.add((first_reduce, aps.actions[-1]))
+                seen_edge_after_reduce.add(reduce_key)
             return not stop
         self.aps_visitor(self.aps_start(state), visit)
         return record
