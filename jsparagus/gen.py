@@ -2120,7 +2120,8 @@ class ParseTable:
         # Optimize by removing unused states.
         self.remove_all_unreachable_state(verbose, progress)
         # TODO: Statically compute replayed terms. (maybe?)
-        # TODO: Fold paths which have the same ending.
+        # Fold paths which have the same ending.
+        self.fold_identical_endings(verbose, progress)
         # Split shift states from epsilon states.
         self.group_epsilon_states(verbose, progress)
 
@@ -2233,7 +2234,7 @@ class ParseTable:
             next_set = set()
             for s in maybe_unreachable_set:
                 # Check if the state is reachable, if not remove the state and
-                # fill the next_set will all outgoing edges.
+                # fill the next_set with all outgoing edges.
                 if len(self.states[s].backedges) == 0 and s not in init:
                     self.remove_state(s, next_set)
             maybe_unreachable_set = next_set
@@ -2295,7 +2296,7 @@ class ParseTable:
                     locations = sk_it.lr_items
                     if not self.is_term_shifted(k):
                         locations = OrderedFrozenSet()
-                    is_new, sk = self.new_state(sk_it.lr_items)
+                    is_new, sk = self.new_state(locations)
                     if is_new:
                         todo.append((sk_it, sk))
 
@@ -3119,6 +3120,47 @@ class ParseTable:
         state_map = { s.index: i for i, s in enumerate(self.states) }
         for s in self.states:
             s.rewrite_state_indexes(state_map)
+
+    def fold_identical_endings(self, verbose, progress):
+        # If 2 states have the same outgoing edges, then we can merge the 2
+        # states into a single state, and rewrite all the backedges leading to
+        # these states to be replaced by edges going to the reference state.
+        if verbose or progress:
+            print("Fold identical endings.")
+        maybe_unreachable = set()
+        def rewrite_backedges(state_list):
+            # All states have the same outgoing edges. Thus we replace all of
+            # them by a single state.
+            ref = state_list[0]
+            replace_edges = [e for s in state_list[1:] for e in s.backedges]
+            hit = False
+            for src, term in replace_edges:
+                src = self.states[src]
+                # print("replace {} -- {} --> {}, by {} -- {} --> {}".format(src.index, term, src[term], src.index, term, ref.index))
+                self.replace_edge(src, term, ref.index, maybe_unreachable)
+                hit = True
+            return hit
+
+        def rewrite_if_same_outedges(state_list):
+            outedges = collections.defaultdict(lambda: [])
+            for s in state_list:
+                outedges[tuple(s.edges())].append(s)
+            hit = False
+            for same in outedges.values():
+                if len(same) > 1:
+                    hit = rewrite_backedges(same) or hit
+            return hit
+
+        def visit_table():
+            hit = True
+            while hit:
+                yield # progress bar.
+                hit = rewrite_if_same_outedges(self.states)
+        consume(visit_table(), progress)
+
+        self.remove_unreachable_states(maybe_unreachable)
+        self.remove_all_unreachable_state(verbose, progress)
+
 
     def group_epsilon_states(self, verbose, progress):
         shift_states = [s for s in self.states if len(s.epsilon) == 0]
