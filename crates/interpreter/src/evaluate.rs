@@ -200,6 +200,22 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 }
             }
 
+            Opcode::GetElem | Opcode::CallElem => {
+                let key = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                match (obj, key) {
+                    (JSValue::Object(obj), JSValue::String(key)) => {
+                        stack.push(obj.borrow().get(key));
+                    }
+                    _ => {
+                        return Err(EvalError::NotImplemented(
+                            "not an object or string key".to_owned(),
+                        ))
+                    }
+                }
+            }
+
             Opcode::GImplicitThis => {
                 // "The result is always `undefined` except when the name refers to a
                 // binding in a non-syntactic `with` environment."
