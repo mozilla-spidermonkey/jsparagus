@@ -1063,10 +1063,6 @@ impl InstructionWriter {
         self.emit_u32(Opcode::PushVarEnv, scope_index);
     }
 
-    pub fn pop_var_env(&mut self) {
-        self.emit1(Opcode::PopVarEnv);
-    }
-
     pub fn enter_with(&mut self, static_with_index: u32) {
         self.emit_u32(Opcode::EnterWith, static_with_index);
     }
