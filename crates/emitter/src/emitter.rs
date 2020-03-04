@@ -1179,4 +1179,8 @@ impl InstructionWriter {
     pub fn stack_depth(&self) -> usize {
         self.stack_depth
     }
+
+    pub fn set_stack_depth(&mut self, depth: usize) {
+        self.stack_depth = depth;
+    }
 }
