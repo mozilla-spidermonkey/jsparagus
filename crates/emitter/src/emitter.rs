@@ -175,7 +175,26 @@ impl InstructionWriter {
     fn emit_argc_op(&mut self, opcode: Opcode, argc: u16) {
         assert!(opcode.has_argc());
         assert_eq!(opcode.nuses(), -1);
-        self.emit_op_common(opcode, argc as usize);
+        let nuses = match opcode {
+            Opcode::Call
+            | Opcode::CallIgnoresRv
+            | Opcode::Eval
+            | Opcode::CallIter
+            | Opcode::StrictEval
+            | Opcode::FunCall
+            | Opcode::FunApply => {
+                // callee, this, arguments...
+                2 + (argc as usize)
+            }
+
+            Opcode::New | Opcode::SuperCall => {
+                // callee, isConstructing, arguments..., newtarget
+                2 + (argc as usize) + 1
+            }
+
+            _ => panic!("Unsupported opcode"),
+        };
+        self.emit_op_common(opcode, nuses);
         self.write_u16(argc);
     }
 
