@@ -160,10 +160,9 @@ impl<'alloc> Parser<'alloc> {
             assert!(state < TABLES.shift_count);
             let error_code = TABLES.error_codes[state];
             if let Some(error_code) = error_code {
-                let loc = token.loc;
+                let err_token = (*token).clone();
                 Self::recover(token, error_code)?;
                 self.replay(t);
-                let err_token = Token::basic_token(TerminalId::ErrorToken, loc);
                 let err_token = self.handler.alloc(err_token);
                 self.replay(TermValue {
                     term: Term::Terminal(TerminalId::ErrorToken),
