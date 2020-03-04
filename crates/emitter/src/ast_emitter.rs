@@ -5,8 +5,8 @@
 use super::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
 use crate::reference_op_emitter::{
-    AssignmentEmitter, CallEmitter, GetElemEmitter, GetNameEmitter, GetPropEmitter,
-    GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
+    AssignmentEmitter, CallEmitter, ElemReferenceEmitter, GetElemEmitter, GetNameEmitter,
+    GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
     PropReferenceEmitter,
 };
 use ast::types::*;
@@ -637,6 +637,7 @@ impl<'alloc> AstEmitter<'alloc> {
                     Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
                         Ok(NameReferenceEmitter { name: name.value }.emit_for_call(emitter))
                     }
+
                     Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                         StaticMemberExpression {
                             object: ExpressionOrSuper::Expression(object),
@@ -648,6 +649,19 @@ impl<'alloc> AstEmitter<'alloc> {
                         key: property.value,
                     }
                     .emit_for_call(emitter),
+
+                    Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
+                        ComputedMemberExpression {
+                            object: ExpressionOrSuper::Expression(object),
+                            expression,
+                            ..
+                        },
+                    )) => ElemReferenceEmitter {
+                        obj: |emitter| emitter.emit_expression(object),
+                        key: |emitter| emitter.emit_expression(expression),
+                    }
+                    .emit_for_call(emitter),
+
                     _ => {
                         return Err(EmitError::NotImplemented(
                             "TODO: Call (only global functions are supported)",
