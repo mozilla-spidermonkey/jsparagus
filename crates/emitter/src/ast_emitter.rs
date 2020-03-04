@@ -168,68 +168,6 @@ impl<'alloc> AstEmitter<'alloc> {
 
     fn emit_expression(&mut self, ast: &Expression) -> Result<(), EmitError> {
         match ast {
-            Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
-                ComputedMemberExpression {
-                    object: ExpressionOrSuper::Expression(object),
-                    expression,
-                    ..
-                },
-            )) => {
-                GetElemEmitter {
-                    obj: |emitter| emitter.emit_expression(object),
-                    key: |emitter| emitter.emit_expression(expression),
-                }
-                .emit(self)?;
-            }
-
-            Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
-                ComputedMemberExpression {
-                    object: ExpressionOrSuper::Super { .. },
-                    expression,
-                    ..
-                },
-            )) => {
-                GetSuperElemEmitter {
-                    this: |emitter| emitter.emit_this(),
-                    key: |emitter| emitter.emit_expression(expression),
-                }
-                .emit(self)?;
-            }
-
-            Expression::MemberExpression(MemberExpression::StaticMemberExpression(
-                StaticMemberExpression {
-                    object: ExpressionOrSuper::Expression(object),
-                    property,
-                    ..
-                },
-            )) => {
-                GetPropEmitter {
-                    obj: |emitter| emitter.emit_expression(object),
-                    key: &property.value,
-                }
-                .emit(self)?;
-            }
-
-            Expression::MemberExpression(MemberExpression::StaticMemberExpression(
-                StaticMemberExpression {
-                    object: ExpressionOrSuper::Super { .. },
-                    property,
-                    ..
-                },
-            )) => {
-                GetSuperPropEmitter {
-                    this: |emitter| emitter.emit_this(),
-                    key: &property.value,
-                }
-                .emit(self)?;
-            }
-
-            Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
-                PrivateFieldExpression { .. },
-            )) => {
-                return Err(EmitError::NotImplemented("PrivateFieldExpression"));
-            }
-
             Expression::ClassExpression(_) => {
                 return Err(EmitError::NotImplemented("TODO: ClassExpression"));
             }
@@ -311,6 +249,10 @@ impl<'alloc> AstEmitter<'alloc> {
 
             Expression::IdentifierExpression(ast) => {
                 self.emit_identifier_expression(ast);
+            }
+
+            Expression::MemberExpression(ast) => {
+                self.emit_member_expression(ast)?;
             }
 
             Expression::NewExpression {
@@ -598,6 +540,54 @@ impl<'alloc> AstEmitter<'alloc> {
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
         let name = &ast.name.value;
         GetNameEmitter { name }.emit(self);
+    }
+
+    fn emit_member_expression(&mut self, ast: &MemberExpression) -> Result<(), EmitError> {
+        match ast {
+            MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
+                expression,
+                ..
+            }) => GetElemEmitter {
+                obj: |emitter| emitter.emit_expression(object),
+                key: |emitter| emitter.emit_expression(expression),
+            }
+            .emit(self),
+
+            MemberExpression::ComputedMemberExpression(ComputedMemberExpression {
+                object: ExpressionOrSuper::Super { .. },
+                expression,
+                ..
+            }) => GetSuperElemEmitter {
+                this: |emitter| emitter.emit_this(),
+                key: |emitter| emitter.emit_expression(expression),
+            }
+            .emit(self),
+
+            MemberExpression::StaticMemberExpression(StaticMemberExpression {
+                object: ExpressionOrSuper::Expression(object),
+                property,
+                ..
+            }) => GetPropEmitter {
+                obj: |emitter| emitter.emit_expression(object),
+                key: &property.value,
+            }
+            .emit(self),
+
+            MemberExpression::StaticMemberExpression(StaticMemberExpression {
+                object: ExpressionOrSuper::Super { .. },
+                property,
+                ..
+            }) => GetSuperPropEmitter {
+                this: |emitter| emitter.emit_this(),
+                key: &property.value,
+            }
+            .emit(self),
+
+            MemberExpression::PrivateFieldExpression(PrivateFieldExpression { .. }) => {
+                Err(EmitError::NotImplemented("PrivateFieldExpression"))
+            }
+        }
     }
 
     fn emit_new_expression(
