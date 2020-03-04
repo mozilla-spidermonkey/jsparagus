@@ -413,7 +413,7 @@ class Grammar:
                     if sole_production:
                         method = nt
                     else:
-                        method = '{} {}'.format(nt, i)
+                        method = '{}_{}'.format(nt, i)
                     reducer = CallMethod(method, args=tuple(range(nargs)))
                 rhs = Production(rhs, reducer)
 
