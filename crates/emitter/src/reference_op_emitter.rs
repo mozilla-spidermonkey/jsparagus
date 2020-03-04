@@ -294,7 +294,6 @@ where
 }
 
 // Struct for emitting bytecode for `obj[key]` reference.
-#[allow(dead_code)]
 pub struct ElemReferenceEmitter<F1, F2>
 where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
@@ -308,7 +307,6 @@ where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    #[allow(dead_code)]
     pub fn emit_for_call(self, emitter: &mut AstEmitter) -> Result<CallReference, EmitError> {
         //              [stack]
 
