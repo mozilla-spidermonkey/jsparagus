@@ -42,8 +42,6 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
             assert!(term_index < TABLES.shift_width);
             let index = state * TABLES.shift_width + term_index;
             let goto = TABLES.shift_table[index];
-            let term_str: &'static str = tv.term.into();
-            println!("sim_shift: {} -- {} --> {}", state, term_str, goto);
             if goto < 0 {
                 // Error handling is in charge of shifting an ErrorSymbol from the
                 // current state.
@@ -57,7 +55,6 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
             // Execute any actions, such as reduce actions.
             while state >= TABLES.shift_count {
                 assert!(state - TABLES.shift_count < TABLES.action_count);
-                println!("sim_action: {}", state);
                 if noop_actions(self, state)? {
                     return Ok(true);
                 }

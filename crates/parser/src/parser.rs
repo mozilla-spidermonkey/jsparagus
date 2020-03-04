@@ -34,8 +34,6 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             assert!(term_index < TABLES.shift_width);
             let index = state * TABLES.shift_width + term_index;
             let goto = TABLES.shift_table[index];
-            let term_str: &'static str = tv.term.into();
-            println!("shift: {} -- {} --> {}", state, term_str, goto);
             if goto < 0 {
                 // Error handling is in charge of shifting an ErrorSymbol from the
                 // current state.
@@ -49,7 +47,6 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             // Execute any actions, such as reduce actions ast builder actions.
             while state >= TABLES.shift_count {
                 assert!(state - TABLES.shift_count < TABLES.action_count);
-                println!("action: {}", state);
                 if actions(self, state)? {
                     return Ok(true);
                 }
@@ -202,8 +199,6 @@ impl<'alloc> Parser<'alloc> {
 
     /// Return true if self.close() would succeed.
     pub fn can_close(&self) -> bool {
-        let res = self.simulator().close(0).is_ok();
-        println!("can_close = {}", res);
-        res
+        self.simulator().close(0).is_ok()
     }
 }
