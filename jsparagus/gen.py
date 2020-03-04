@@ -2900,12 +2900,11 @@ class ParseTable:
         # actions).
         assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
         maybe_unreachable_set = set()
-
         # For each shifted term, associate a set of state and actions which
         # would have to be executed.
         shift_map = collections.defaultdict(lambda: [])
         for aps in aps_lanes:
-            actions = list(keep_until(aps.actions, lambda edge: edge.term == aps.lookahead[0]))
+            actions = aps.actions
             assert isinstance(actions[-1], Edge)
             assert actions[-1].term == aps.lookahead[0]
             src = actions[-1].src
@@ -2914,6 +2913,7 @@ class ParseTable:
             # since the reduced action is in charge of replaying the lookahead
             # terms.
             actions = list(keep_until(actions[:-1], lambda edge: not self.is_term_shifted(edge.term)))
+            assert all(isinstance(edge.term, Action) for edge in actions)
 
             # Change the order of the shifted term, shift all actions by 1 with
             # the given lookahead term, in order to match the newly generated
@@ -2964,7 +2964,7 @@ class ParseTable:
                         edge = actions[0]
                         assert isinstance(edge, Edge)
                         for action in actions:
-                            delayed.add(action)
+                            delayed.add(action.term)
                         new_shift_map[edge.term].append((target, actions[1:]))
                         recurse = True
                     else:
