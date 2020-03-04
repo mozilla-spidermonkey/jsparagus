@@ -153,14 +153,14 @@ impl<'alloc> AstEmitter<'alloc> {
             // ^^ part of then branch
 
             // Else branch
-            alternate_jump.patch(self);
+            alternate_jump.patch_not_merge(self);
             self.emit_statement(alternate)?;
 
             // Merge point after else
-            then_jump.patch(self);
+            then_jump.patch_merge(self);
         } else {
             // Merge point without else
-            alternate_jump.patch(self);
+            alternate_jump.patch_merge(self);
         }
 
         Ok(())
@@ -454,7 +454,7 @@ impl<'alloc> AstEmitter<'alloc> {
         let jump = ForwardJumpEmitter { jump: jump }.emit(self);
         self.emit.pop();
         self.emit_expression(right)?;
-        jump.patch(self);
+        jump.patch_merge(self);
         return Ok(());
     }
 
@@ -565,11 +565,11 @@ impl<'alloc> AstEmitter<'alloc> {
         .emit(self);
 
         // Else branch
-        else_jump.patch(self);
+        else_jump.patch_not_merge(self);
         self.emit_expression(alternate)?;
 
         // Merge point
-        finally_jump.patch(self);
+        finally_jump.patch_merge(self);
 
         Ok(())
     }
