@@ -4,6 +4,7 @@ mod emitter;
 mod forward_jump_emitter;
 mod lower;
 pub mod opcode;
+mod reference_op_emitter;
 
 extern crate jsparagus_ast as ast;
 

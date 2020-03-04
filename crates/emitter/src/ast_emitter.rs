@@ -4,6 +4,11 @@
 
 use super::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use super::opcode::Opcode;
+use crate::reference_op_emitter::{
+    AssignmentEmitter, CallEmitter, GetElemEmitter, GetNameEmitter, GetPropEmitter,
+    GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
+    PropReferenceEmitter,
+};
 use ast::types::*;
 
 use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
@@ -170,9 +175,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
-                self.emit_expression(object)?;
-                self.emit_expression(expression)?;
-                self.emit.get_elem();
+                GetElemEmitter {
+                    obj: |emitter| emitter.emit_expression(object),
+                    key: |emitter| emitter.emit_expression(expression),
+                }
+                .emit(self)?;
             }
 
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
@@ -182,11 +189,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
-                self.emit_this()?;
-                self.emit_expression(expression)?;
-                self.emit.callee();
-                self.emit.super_base();
-                self.emit.get_elem_super();
+                GetSuperElemEmitter {
+                    this: |emitter| emitter.emit_this(),
+                    key: |emitter| emitter.emit_expression(expression),
+                }
+                .emit(self)?;
             }
 
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
@@ -196,9 +203,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
-                self.emit_expression(object)?;
-                let name_index = self.emit.get_atom_index(&property.value);
-                self.emit.get_prop(name_index);
+                GetPropEmitter {
+                    obj: |emitter| emitter.emit_expression(object),
+                    key: &property.value,
+                }
+                .emit(self)?;
             }
 
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
@@ -208,11 +217,11 @@ impl<'alloc> AstEmitter<'alloc> {
                     ..
                 },
             )) => {
-                self.emit_this()?;
-                self.emit.callee();
-                self.emit.super_base();
-                let name_index = self.emit.get_atom_index(&property.value);
-                self.emit.get_prop_super(name_index);
+                GetSuperPropEmitter {
+                    this: |emitter| emitter.emit_this(),
+                    key: &property.value,
+                }
+                .emit(self)?;
             }
 
             Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
@@ -570,29 +579,25 @@ impl<'alloc> AstEmitter<'alloc> {
         binding: &AssignmentTarget,
         expression: &Expression,
     ) -> Result<(), EmitError> {
-        match binding {
-            AssignmentTarget::SimpleAssignmentTarget(
-                SimpleAssignmentTarget::AssignmentTargetIdentifier(AssignmentTargetIdentifier {
-                    name,
-                    ..
-                }),
-            ) => {
-                let name_index = self.emit.get_atom_index(name.value);
-                self.emit.bind_g_name(name_index);
-                self.emit_expression(expression)?;
-                self.emit.set_g_name(name_index);
-                return Ok(());
-            }
-            _ => {}
+        AssignmentEmitter {
+            lhs: |emitter| match binding {
+                AssignmentTarget::SimpleAssignmentTarget(
+                    SimpleAssignmentTarget::AssignmentTargetIdentifier(
+                        AssignmentTargetIdentifier { name, .. },
+                    ),
+                ) => Ok(NameReferenceEmitter { name: name.value }.emit_for_assignment(emitter)),
+                _ => Err(EmitError::NotImplemented(
+                    "non-identifier assignment target",
+                )),
+            },
+            rhs: |emitter| emitter.emit_expression(expression),
         }
-
-        return Err(EmitError::NotImplemented("TODO: AssignmentExpression"));
+        .emit(self)
     }
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
         let name = &ast.name.value;
-        let name_index = self.emit.get_atom_index(name);
-        self.emit.get_g_name(name_index);
+        GetNameEmitter { name }.emit(self);
     }
 
     fn emit_new_expression(
@@ -606,19 +611,14 @@ impl<'alloc> AstEmitter<'alloc> {
             }
         }
 
-        self.emit_expression(callee)?;
-        // Callee
-
-        self.emit.is_constructing();
-        // Callee JS_IS_CONSTRUCTING
-
-        self.emit_arguments(arguments)?;
-        // Callee JS_IS_CONSTRUCTING Args..
-
-        self.emit.dup_at(arguments.args.len() as u32 + 1);
-        // Callee JS_IS_CONSTRUCTING Args.. Callee
-
-        self.emit.new_(arguments.args.len() as u16);
+        NewEmitter {
+            callee: |emitter| emitter.emit_expression(callee),
+            arguments: |emitter| {
+                emitter.emit_arguments(arguments)?;
+                Ok(arguments.args.len())
+            },
+        }
+        .emit(self)?;
 
         Ok(())
     }
@@ -630,46 +630,40 @@ impl<'alloc> AstEmitter<'alloc> {
     ) -> Result<(), EmitError> {
         // Don't do super handling in an emit_expresion_or_super because the bytecode heavily
         // depends on how you're using the super
-        match callee {
-            ExpressionOrSuper::Expression(expr) => match &**expr {
-                Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
-                    self.emit_expression(expr)?;
-                    let name_index = self.emit.get_atom_index(name.value);
-                    self.emit.g_implicit_this(name_index);
-                }
-                Expression::MemberExpression(MemberExpression::StaticMemberExpression(
-                    StaticMemberExpression {
-                        object: ExpressionOrSuper::Expression(object),
-                        property,
-                        ..
-                    },
-                )) => {
-                    self.emit_expression(object)?;
-                    // [stack] Obj
 
-                    self.emit.dup();
-                    // [stack] Obj Obj
-
-                    let property_index = self.emit.get_atom_index(property.value);
-                    self.emit.call_prop(property_index);
-                    // [stack] Obj Callee
-
-                    self.emit.swap();
-                    // [stack] Callee Obj/This
-                }
+        CallEmitter {
+            callee: |emitter| match callee {
+                ExpressionOrSuper::Expression(expr) => match &**expr {
+                    Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
+                        Ok(NameReferenceEmitter { name: name.value }.emit_for_call(emitter))
+                    }
+                    Expression::MemberExpression(MemberExpression::StaticMemberExpression(
+                        StaticMemberExpression {
+                            object: ExpressionOrSuper::Expression(object),
+                            property,
+                            ..
+                        },
+                    )) => PropReferenceEmitter {
+                        obj: |emitter| emitter.emit_expression(object),
+                        key: property.value,
+                    }
+                    .emit_for_call(emitter),
+                    _ => {
+                        return Err(EmitError::NotImplemented(
+                            "TODO: Call (only global functions are supported)",
+                        ));
+                    }
+                },
                 _ => {
-                    return Err(EmitError::NotImplemented(
-                        "TODO: Call (only global functions are supported)",
-                    ));
+                    return Err(EmitError::NotImplemented("TODO: Super"));
                 }
             },
-            _ => {
-                return Err(EmitError::NotImplemented("TODO: Super"));
-            }
+            arguments: |emitter| {
+                emitter.emit_arguments(arguments)?;
+                Ok(arguments.args.len())
+            },
         }
-
-        self.emit_arguments(arguments)?;
-        self.emit.call(arguments.args.len() as u16);
+        .emit(self)?;
 
         Ok(())
     }
