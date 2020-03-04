@@ -1160,4 +1160,8 @@ impl InstructionWriter {
     pub fn debugger(&mut self) {
         self.emit1(Opcode::Debugger);
     }
+
+    pub fn stack_depth(&self) -> usize {
+        self.stack_depth
+    }
 }
