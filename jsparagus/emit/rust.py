@@ -486,7 +486,8 @@ class RustParserWriter:
                 self.write(indent, "Ok(false)")
                 return False
             elif isinstance(act, CheckNotOnNewLine):
-                self.write(indent, "parser.check_not_on_new_line({})?;", 1 - act.offset)
+                assert -act.offset > 0
+                self.write(indent, "parser.check_not_on_new_line({})?;", -act.offset)
             elif isinstance(act, Lookahead):
                 raise ValueError("Unexpected Lookahead action")
             elif isinstance(act, FilterFlag):
