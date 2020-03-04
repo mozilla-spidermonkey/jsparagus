@@ -144,13 +144,21 @@ impl<'alloc> Parser<'alloc> {
     }
 
     fn try_error_handling(&mut self, t: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
-        // Error recovery version of the code in write_terminal. Differences
-        // between this and write_terminal are commented below.
-        assert_ne!(t.term, Term::Terminal(TerminalId::ErrorToken));
-        let state = self.state();
-        assert!(state < TABLES.shift_count);
-        let error_code = TABLES.error_codes[state];
         if let StackValue::Token(ref token) = t.value {
+            // Error tokens might them-self cause more errors to be reported.
+            // This happens due to the fact that the ErrorToken can be replayed,
+            // and while the ErrorToken might be in the lookahead rules, it
+            // might not be in the shifted terms coming after the reduced
+            // nonterminal.
+            if t.term == Term::Terminal(TerminalId::ErrorToken) {
+                return Err(Self::parse_error(token));
+            }
+
+            // Otherwise, check if the current rule accept an Automatic
+            // Semi-Colon insertion (ASI).
+            let state = self.state();
+            assert!(state < TABLES.shift_count);
+            let error_code = TABLES.error_codes[state];
             if let Some(error_code) = error_code {
                 let loc = token.loc;
                 Self::recover(token, error_code)?;

@@ -153,15 +153,24 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
 
     // Simulate the action of Parser::try_error_handling.
     fn try_error_handling(&mut self, t: TermValue<()>) -> Result<'alloc, bool> {
-        // Error recovery version of the code in write_terminal. Differences
-        // between this and write_terminal are commented below.
-        assert_ne!(t.term, Term::Terminal(TerminalId::ErrorToken));
-        let state = self.state();
-        assert!(state < TABLES.shift_count);
-        let error_code = TABLES.error_codes[state];
-        let bogus_loc = SourceLocation::new(0, 0);
         if let Term::Terminal(term) = t.term {
+            let bogus_loc = SourceLocation::new(0, 0);
             let token = &Token::basic_token(term, bogus_loc);
+
+            // Error tokens might them-self cause more errors to be reported.
+            // This happens due to the fact that the ErrorToken can be replayed,
+            // and while the ErrorToken might be in the lookahead rules, it
+            // might not be in the shifted terms coming after the reduced
+            // nonterminal.
+            if t.term == Term::Terminal(TerminalId::ErrorToken) {
+                return Err(Parser::parse_error(token));
+            }
+
+            // Otherwise, check if the current rule accept an Automatic
+            // Semi-Colon insertion (ASI).
+            let state = self.state();
+            assert!(state < TABLES.shift_count);
+            let error_code = TABLES.error_codes[state];
             if let Some(error_code) = error_code {
                 Parser::recover(token, error_code)?;
                 self.replay(t);
