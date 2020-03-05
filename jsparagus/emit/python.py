@@ -87,7 +87,7 @@ def write_python_parse_table(out, parse_table):
             try:
                 indent, res = write_action(term, "    ")
             except:
-                print("Error while writting code for {}\n\n".format(state))
+                print("Error while writing code for {}\n\n".format(state))
                 parse_table.debug_info = True
                 print(parse_table.debug_context(state.index, "\n", "# "))
                 raise

@@ -588,7 +588,7 @@ class RustParserWriter:
                     used_offsets = set(collect_offsets(act))
                     fallthrough = write_action(3, act, is_packed)
                 except:
-                    print("Error while writting code for {}\n\n".format(state))
+                    print("Error while writing code for {}\n\n".format(state))
                     self.parse_table.debug_info = True
                     print(self.parse_table.debug_context(state.index, "\n", "# "))
                     raise
@@ -622,7 +622,7 @@ class RustParserWriter:
                     used_offsets = set(collect_offsets(act))
                     fallthrough = write_action(3, act, is_packed)
                 except:
-                    print("Error while writting code for {}\n\n".format(state))
+                    print("Error while writing code for {}\n\n".format(state))
                     self.parse_table.debug_info = True
                     print(self.parse_table.debug_context(state.index, "\n", "# "))
                     raise
