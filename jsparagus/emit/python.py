@@ -20,7 +20,7 @@ def write_python_parse_table(out, parse_table):
             if act.replay > 0:
                 out.write("{}replay = replay + parser.stack[-{}:]\n".format(indent, act.replay))
             if act.replay + act.pop > 0:
-                out.write("{}parser.stack = parser.stack[:-{}]\n".format(indent, act.replay + act.pop))
+                out.write("{}del parser.stack[-{}:]\n".format(indent, act.replay + act.pop))
             out.write("{}parser.shift_list(replay, lexer)\n".format(indent))
             return indent, False
         if isinstance(act, Lookahead):
