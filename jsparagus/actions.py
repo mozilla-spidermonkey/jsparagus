@@ -119,7 +119,7 @@ class Lookahead(Action):
     sequences of terminal/non-terminals sequences."""
     __slots__ = 'terms', 'accept'
     def __init__(self, terms, accept):
-        assert isinstance(terms, OrderedFrozenSet)
+        assert isinstance(terms, (OrderedFrozenSet, frozenset))
         assert all(not isinstance(t, Nt) for t in terms)
         assert isinstance(accept, bool)
         super().__init__([], [])

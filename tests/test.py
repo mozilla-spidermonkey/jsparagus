@@ -21,7 +21,7 @@ class GenTestCase(unittest.TestCase):
         """Compile a grammar. Use this when you expect compilation to
         succeed."""
         self.tokenize = tokenize
-        self.parser_class = gen.compile(grammar)
+        self.parser_class = gen.compile(grammar, verbose = True)
 
     def parse(self, text, goal=None):
         if goal is None:
@@ -74,7 +74,7 @@ class GenTestCase(unittest.TestCase):
                 ('tail_1',
                     'lambda',
                     ('tail_1',
-                        ('expr_1', '(', ('tail 1', 'x', ')')),
+                        ('expr_1', '(', ('tail_1', 'x', ')')),
                         ('tail_1',
                             ('expr_1',
                                 '(',
@@ -193,7 +193,7 @@ class GenTestCase(unittest.TestCase):
         })
 
         out = io.StringIO()
-        self.assertRaisesRegex(ValueError, r"shift-reduce conflict",
+        self.assertRaisesRegex(ValueError, r"conflict",
                                lambda: gen.generate_parser(out, grammar))
 
     def testAmbiguousEmpty(self):
@@ -206,7 +206,7 @@ class GenTestCase(unittest.TestCase):
             out = io.StringIO()
             self.assertRaisesRegex(
                 ValueError,
-                r"ambiguous grammar|reduce-reduce conflict",
+                r"ambiguous grammar|conflict",
                 lambda: gen.generate_parser(out, grammar))
 
         check({'goal': [[], []]})
@@ -581,7 +581,9 @@ class GenTestCase(unittest.TestCase):
 
     def testTrailingLookahead(self):
         """Lookahead at the end of a production is banned."""
+        tokenize = lexer.LexicalGrammar('IF ( X ) ELSE OTHER ;')
         grammar = gen.Grammar({
+            'goal': [['stmt']],
             'stmt': [
                 ['OTHER', ';'],
                 ['IF', '(', 'X', ')', 'stmt',
@@ -589,10 +591,19 @@ class GenTestCase(unittest.TestCase):
                 ['IF', '(', 'X', ')', 'stmt', 'ELSE', 'stmt'],
             ],
         })
-        self.assertRaisesRegex(
-            ValueError,
-            r"invalid grammar: lookahead restriction at end of production",
-            lambda: gen.compile(grammar))
+        def stmt_0(): return ('stmt_0', 'OTHER', ';')
+        def stmt_1(t): return ('stmt_1', 'IF', '(', 'X', ')', t)
+        def stmt_2(t, e): return ('stmt_2', 'IF', '(', 'X', ')', t, 'ELSE', e)
+        self.compile(tokenize, grammar)
+        self.assertParse('IF(X) OTHER;', stmt_1(stmt_0()))
+        self.assertParse('IF(X) OTHER; ELSE OTHER;',
+                         stmt_2(stmt_0(), stmt_0()))
+        self.assertParse('IF(X) IF(X) OTHER; ELSE OTHER; ELSE OTHER;',
+                         stmt_2(stmt_2(stmt_0(), stmt_0()), stmt_0()))
+        self.assertParse('IF(X) OTHER; ELSE IF(X) OTHER; ELSE OTHER;',
+                         stmt_2(stmt_0(), stmt_2(stmt_0(), stmt_0())))
+        self.assertParse('IF(X) IF(X) OTHER; ELSE OTHER;',
+                         stmt_1(stmt_2(stmt_0(), stmt_0())))
 
     def testLookaheadBeforeOptional(self):
         self.compile(
@@ -629,7 +640,7 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("thread: x = 0")
         self.assertNoParse(
             "public: x = 0",
-            message="expected 'IDENT', got 'PUBLIC'")
+            message="expected 'IDENT', got 'public'")
         self.assertNoParse("_ = 0", message="expected 'IDENT', got '_'")
         self.assertParse("funny: public: x = 0")
         self.assertParse("funny: _ = 0")
@@ -838,7 +849,7 @@ class GenTestCase(unittest.TestCase):
         self.assertParse("function* farm() { cow = pig; yield cow; }")
         self.assertNoParse(
             "function city() { yield toOncomingTraffic; }",
-            message="expected one of ['(', ';', '='], got 'IDENT'")
+            message="expected one of ['(', '='], got 'toOncomingTraffic'")
         self.assertNoParse(
             "function* farm() { yield = corn; yield yield; }",
             message="expected 'IDENT', got '='")

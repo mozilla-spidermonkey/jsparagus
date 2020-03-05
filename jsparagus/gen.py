@@ -2683,6 +2683,7 @@ class ParseTable:
         return record
 
     def fix_with_context(self, s, aps_lanes):
+        raise ValueError("fix_with_context: Not Implemented")
         # This strategy is about using context information. By using chains of
         # reduce actions, we are able to increase the knowledge of the stack
         # content. The stack content is the context which can be used to
@@ -3043,7 +3044,7 @@ class ParseTable:
         potential stack state which might lead to the inconsistent state, or by
         increasing the lookahead."""
         if verbose or progress:
-            print("Fix parse table incosistencies.")
+            print("Fix parse table inconsistencies.")
 
         todo = collections.deque()
         for state in self.states:
@@ -3082,10 +3083,12 @@ class ParseTable:
                     try:
                         self.fix_inconsistent_state(s, verbose)
                     except:
-                        print("Error while fixing state {}\n\n".format(self.states[s]))
                         self.debug_info = True
-                        print(self.debug_context(s, "\n", "# "))
-                        raise
+                        raise ValueError(
+                            "Error while fixing conflict in state {}\n\n"
+                            "In the following grammar productions:\n{}"
+                            .format(self.states[s], self.debug_context(s, "\n", "\t"))
+                        )
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
                         if s.is_inconsistent()
@@ -3278,26 +3281,25 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False, 
         raise TypeError("unrecognized source: {!r}".format(source))
 
     if target == 'rust':
-        if isinstance(parser_data, ParserStates):
-            emit.write_rust_parser_states(out, parser_data, handler_info)
-        else:
+        if isinstance(parser_data, ParseTable):
             emit.write_rust_parse_table(out, parser_data, handler_info)
+        else:
+            raise ValueError("Unexpected parser_data kind")
     else:
-        if isinstance(parser_data, ParserStates):
-            emit.write_python_parser_states(out, parser_data)
-        elif isinstance(parser_data, ParseTable):
+        if isinstance(parser_data, ParseTable):
             emit.write_python_parse_table(out, parser_data)
         else:
             raise ValueError("Unexpected parser_data kind")
 
 
-def compile(grammar):
+def compile(grammar, verbose = False):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
     generate_parser(out, grammar)
     scope = {}
-    # with open("parse_with_python.py", "w") as f:
-    #     f.write(out.getvalue())
+    if verbose:
+        with open("parse_with_python.py", "w") as f:
+            f.write(out.getvalue())
     exec(out.getvalue(), scope)
     return scope['Parser']
 

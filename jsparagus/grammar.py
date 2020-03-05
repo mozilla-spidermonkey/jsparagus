@@ -528,9 +528,9 @@ class Grammar:
                         .format(nt, nt_def))
                 rhs_list = nt_def.rhs_list
                 g = nt.goal
-                if (rhs_list != [Production([g], 'accept'),
+                if (rhs_list != [Production([g], 0),
                                  Production([Nt(nt,()), End()], 'accept')]
-                    and rhs_list != [Production([Optional(g)], 'accept'),
+                    and rhs_list != [Production([Optional(g)], 0),
                                      Production([Nt(nt,()), End()], 'accept')]
                     and rhs_list != [Production([End()], 'accept'),
                                      Production([g, End()], 'accept'),
@@ -592,7 +592,7 @@ class Grammar:
                 init_key = init_nt
             if init_key not in self.nonterminals:
                 self.nonterminals[init_key] = NtDef(
-                    (), [Production([goal], 'accept'), Production([init_nt, End()], 'accept')], types.NoReturnType)
+                    (), [Production([goal], 0), Production([init_nt, End()], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
     def intern(self, obj):
@@ -942,6 +942,8 @@ Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."
 # the lexer when input end is reached.
 End = collections.namedtuple("End", "")
 End.__doc__ = """End() represent the end of the input content."""
+End_default_eq = End.__eq__
+End.__eq__ = lambda x, y: x.__class__ == y.__class__ and End_default_eq(x, y)
 
 # Special grammar symbol that can be consumed to handle a syntax error.
 #
@@ -949,6 +951,8 @@ End.__doc__ = """End() represent the end of the input content."""
 # decides if the error is recoverable or not.
 ErrorSymbol = collections.namedtuple("ErrorSymbol", "error_code")
 ErrorSymbol.__doc__ = """Special grammar symbol that can be consumed to handle a syntax error."""
+ErrorSymbol_default_eq = ErrorSymbol.__eq__
+ErrorSymbol.__eq__ = lambda x, y: x.__class__ == y.__class__ and ErrorSymbol_default_eq(x, y)
 
 
 class NtDef:
