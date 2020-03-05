@@ -1,0 +1,1 @@
+(function(){$(document).on("ready",require("browser/layout").process());$(window).on("beforeunload",require("browser/layout").process())})();(function(){var a=function(){require("ebay/cookies").setJsCookie()};$(document).bind("ajaxSend",a);$(window).bind("beforeunload",a)})();

@@ -1,0 +1,1 @@
+define(["infra/logger"],function(t){function n(t,n){this.data=n,this.signature=t}return n.prototype.getSignature=function(){return this.signature},n.prototype.getDataByKey=function(t){var n=null;return this.data&&(n=this.data[t.toLowerCase()]),n},n});

@@ -1,0 +1,1 @@
+var PlaylistCookieManager=jindo.$Class({$init:function(){},_setCookie:function(sKey,sValue,nExpireDay){jindo.$Cookie().set(sKey,sValue,nExpireDay)},setContinuousPlaylistCookie:function(){this._setCookie("NTC_ContPL","",1)}});

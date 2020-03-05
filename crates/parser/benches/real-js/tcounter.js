@@ -1,0 +1,2 @@
+(function(c,g){c.TNS=c.TNS||{};TNS.TnsCounter=function(a){var c=function(c,b,d,e){b=d||g.referrer.replace(/\*/g,"%2a")||"";d=Math.round(1E9*Math.random());return"//www.tns-counter.ru/V13a**"+(e||a.param1||"")+"*R>"+b+"*"+a.account+"/ru/UTF-8/tmsec="+(c||a.tmsec)+"/"+d};this.hit=function(a,b,d,e){a=c(a,b,d,e);(new Image).src=a};if(void 0===a.autohit||a.autohit){var b=c();(new Image).src=b}};var a=c.tnscounter_callback;if("object"==typeof a)for(var b=0;b<a.length;b++){var f=a[b];f&&(a[b]=null,f())}try{delete c[a]}catch(h){}})(this,
+this.document);

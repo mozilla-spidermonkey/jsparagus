@@ -1,0 +1,1 @@
+tvcast="undefined"!=typeof tvcast?tvcast:{},tvcast.pc=tvcast.pc||{},tvcast.m=tvcast.m||{},nhn="undefined"!=typeof nhn?nhn:{},nhn.tvcast=nhn.tvcast||{};var console=window.console||{log:function(){}};console.log=window.console.log||function(){};

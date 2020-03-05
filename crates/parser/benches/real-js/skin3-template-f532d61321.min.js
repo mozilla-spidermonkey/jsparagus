@@ -1,0 +1,1 @@
+var toolBar=new ToolMeau({posType:"bottom",fixTop:0});$(function(){function o(){var o=$(window).width()-50;t.css("left",o+"px")}var t=$("div.meau-gotop-box"),i=($("div.tool-box"),null);$(window).resize(function(){i&&clearTimeout(i),i=setTimeout(o,400)}),o()});

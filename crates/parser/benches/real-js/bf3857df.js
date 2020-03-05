@@ -1,0 +1,1 @@
+var VideoAction_ViewPage;(function(){function n(){var f=pMMUtils,i=DetailPageActionButton.apply(null,[null,"view_page",t]),r=i.getCurMeta(),u=i.instance,n;if(r)for(n=0;n<u.length;n++)f.sa(u[n],"href",r.pageUrl)}function t(n,t){t&&_w.open(t.pageUrl,"_blank");sj_pd(n);sj_sp(n)}n()})(VideoAction_ViewPage||(VideoAction_ViewPage={}))

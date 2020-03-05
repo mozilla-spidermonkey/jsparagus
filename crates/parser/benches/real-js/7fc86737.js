@@ -1,0 +1,1 @@
+var AdCarouselHelper;(function(n){function t(){var n=document.querySelector('[data-ad-carousel="1"]'),t,i;if(n!=null)return t=n.querySelectorAll(".items .item").length,i="&paCount="+t,i}n.getAdCountQueryParam=t})(AdCarouselHelper||(AdCarouselHelper={}))

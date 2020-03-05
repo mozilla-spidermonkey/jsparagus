@@ -1,0 +1,15 @@
+(function(){function g(a){this.a=a;this.f=null;this.h="hidden";this.b=0;this.c=[2E3,5E3,1E4,3E4,6E4];this.j=this.g=0;this.i="es ar cs de fr it ja ko nl pl pt ro ru th tr zh zh_TW id vi pt_BR zh-cn hi".split(" ")}
+g.prototype.s=function(){k(this,l(this,1))};
+g.prototype.l=function(a){if(a=m(1!==a.target.nodeType?a.target.parentNode:a.target)){if(-1!=a.href.indexOf("support.google.com")){var c=(new Date).getTime(),b=n(this);if(b&&!(b.time+18E5<c)&&this.f){var c=a.search,b=encodeURIComponent("vid"),e=encodeURIComponent(this.f),f=new RegExp("([?&]"+b.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")+"=)([^&]*)"),c=f.test(c)?c.replace(f,"$1"+e.replace("$","$$")):c?c+"&"+b+"="+e:"?"+b+"="+e;a.search=c}}a=a.href;c=l(this,4);b=c.resource.stats[0].click_tracking={click_method:3,
+type:50};a&&(b.id=a);k(this,c)}};
+function m(a){if(!a)return null;for(;a;){if("A"===a.tagName)return a;a=a.parentNode}return null}
+function l(a,c){var b=a.a.pid;return{common_params:{language:a.a.hl,context_params:{referer:window.location.href,request_source:10,visit_id:a.f,page_type:"forum"==b?0:"topic"===b.substr(0,5)?22:100}},resource:{stats:[{type:c,request_state:{initial_request_origin:1,page_id:a.a.pid}}]}}}
+function p(a,c){var b=a.length-c.length,e=a.lastIndexOf(c,b);return-1!==e&&e===b}
+function k(a,c){var b=new XMLHttpRequest;b.open("POST","https://support.google.com/apis/gpf_metrics?v=1&forum="+a.a.forumName+"&hl="+a.a.hl);b.withCredentials=!0;b.setRequestHeader("X-SupportContent-AllowApiCookieAuth","true");b.send(JSON.stringify(c))}
+function q(a){return(a.a.li?"1":"0")+"-"+Math.floor(Math.random()*Date.now())+"-"+Date.now()}
+function n(a){var c=window.localStorage;if(!c)return null;try{var b=c.getItem("vid-"+a.a.forumName);return b?JSON.parse(b):null}catch(e){return null}}
+g.prototype.m=function(){document[this.h]?this.b&&(this.j=this.g-Date.now(),window.clearTimeout(this.b),this.b=0):!this.b&&0<this.c.length&&r(this,this.j)};
+function r(a,c){a.g=Date.now()+c;a.b=window.setTimeout(a.o.bind(a),c)}
+g.prototype.o=function(){var a=l(this,6);a.resource.stats[0].time_on_page={top:this.c[0]/1E3};k(this,a);a=this.c.shift();0<this.c.length?r(this,this.c[0]-a):this.b=0};
+window.scGpf_initStats=function(a){a=new g(a);var c="en",b=a.a.forum;p(b,"+private")&&(b=b.substr(0,b.length-8));for(var e=0;e<a.i.length;e++){var f=a.i[e];if(p(b,"-"+f)){c=f;b=b.substr(0,b.length-(1+f.length));break}}a.a.hl=c;a.a.forumName=b;window.sc_gpf_metrics_init?0<a.b&&(window.clearTimeout(a.b),a.b=0):(document.getElementsByTagName("body")[0].addEventListener("click",a.l.bind(a)),window.sc_gpf_metrics_init=!0);var d;(c=n(a))?c.time+18E5<(new Date).getTime()?d=q(a):d=c.visit_id:d=q(a);d||(d=
+q(a));if(c=window.localStorage){b={visit_id:d,time:(new Date).getTime()};try{var h=JSON.stringify(b);c.setItem("vid-"+a.a.forumName,h)}catch(t){}}a.f=d;d="";h=["moz","ms","webkit"];for(c=0;c<h.length;c++){d=h[c];b=d+"Hidden";if("undefined"!=typeof document[b]){a.h=b;break}d=""}document.addEventListener(d+"visibilitychange",a.m.bind(a));r(a,a.c[0]);window.scGpf_trackStatsPageView=a.s.bind(a)};}).call(this);

@@ -1,0 +1,1 @@
+var ContextMenuDetector;(function(n){function r(){typeof mmLog!="undefined"&&mmLog('{"T":"CI.ContextMenu","Name":"MMCMDetector","TS":'+sb_gt()+"}")}function u(){sj_ue(_w,i,u);sj_ue(_d,t,r)}var t="contextmenu",i="unload";n.isInit=!1;n.isInit||(n.isInit=!0,sj_be(_d,t,r),sj_be(_w,i,u))})(ContextMenuDetector||(ContextMenuDetector={}))
