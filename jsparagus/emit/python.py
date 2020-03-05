@@ -48,10 +48,8 @@ def write_python_parse_table(out, parse_table):
                         yield get_value.format(-(a + act.offset))
                     elif isinstance(a, str):
                         yield a
-                    elif isinstance(a, Some) and isinstance(a.inner, int):
-                        yield get_value.format(-(a.inner + act.offset))
-                    elif isinstance(a, Some) and isinstance(a.inner, str):
-                        yield "Some({})".format(a.inner)
+                    elif isinstance(a, Some):
+                        yield next(map_with_offset([a.inner]))
                     elif a is None:
                         yield "None"
                     else:
