@@ -3,6 +3,7 @@
 from ..grammar import InitNt, CallMethod, Some, is_concrete_element, Nt, ErrorSymbol
 from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
 from ..runtime import SPECIAL_CASE_TAG, ErrorToken
+from ..ordered import OrderedSet
 
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
@@ -10,7 +11,7 @@ def write_python_parse_table(out, parse_table):
         out.write("from jsparagus.runtime import Nt, InitNt, End, ErrorToken, StateTermValue, ShiftError, ShiftAccept\n")
     out.write("\n")
 
-    methods = set()
+    methods = OrderedSet()
     def write_action(act, indent = ""):
         assert isinstance(act, Action)
         assert not act.is_inconsistent()
@@ -138,7 +139,7 @@ def write_python_parse_table(out, parse_table):
 
     # Class used to provide default methods when not defined by the caller.
     out.write("class DefaultMethods:\n")
-    for act in sorted(methods, key = lambda a: a.method):
+    for act in methods:
         assert isinstance(act, FunCall)
         args = ", ".join("x{}".format(i) for i in range(len(act.args)))
         out.write("    def {}(self, {}):\n".format(act.method, args))

@@ -1654,7 +1654,7 @@ class StateAndTransitions:
         self.epsilon = []
         self.locations = locations
         self.delayed_actions = delayed_actions
-        self.backedges = set()
+        self.backedges = OrderedSet()
         # NOTE: The hash of a state depends on its location in the LR0
         # parse-table, as well as the actions which have not yet been executed.
         def hashed_content():
