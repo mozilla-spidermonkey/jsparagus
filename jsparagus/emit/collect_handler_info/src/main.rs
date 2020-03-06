@@ -39,7 +39,8 @@ fn write_json(mut out_file: File, names: Vec<String>) -> Result<(), Error> {
     writeln!(out_file, "{{")?;
     writeln!(out_file, "\"fallible-methods\": [")?;
     writeln!(out_file, "{}", names.join(",\n"))?;
-    writeln!(out_file, "]")?;
+    writeln!(out_file, "],")?;
+    writeln!(out_file, "\"parser-traits\": []")?;
     writeln!(out_file, "}}")?;
 
     Ok(())
