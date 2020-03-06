@@ -891,16 +891,8 @@ impl InstructionWriter {
         self.emit_u16(Opcode::ThrowMsg, message_number);
     }
 
-    pub fn throw_set_aliased_const(&mut self, hops: u8, slot: u24) {
-        self.emit_aliased(Opcode::ThrowSetAliasedConst, hops, slot);
-    }
-
-    pub fn throw_set_callee(&mut self) {
-        self.emit1(Opcode::ThrowSetCallee);
-    }
-
-    pub fn throw_set_const(&mut self, local_no: u24) {
-        self.emit_u24(Opcode::ThrowSetConst, local_no);
+    pub fn throw_set_const(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::ThrowSetConst, name);
     }
 
     pub fn try_(&mut self) {
@@ -947,12 +939,8 @@ impl InstructionWriter {
         self.emit_aliased(Opcode::InitAliasedLexical, hops, slot);
     }
 
-    pub fn check_lexical(&mut self, local_no: u24) {
-        self.emit_u24(Opcode::CheckLexical, local_no);
-    }
-
-    pub fn check_aliased_lexical(&mut self, hops: u8, slot: u24) {
-        self.emit_aliased(Opcode::CheckAliasedLexical, hops, slot);
+    pub fn check_lexical(&mut self, name: AtomIndex) {
+        self.emit_with_atom(Opcode::CheckLexical, name);
     }
 
     pub fn check_this(&mut self) {
