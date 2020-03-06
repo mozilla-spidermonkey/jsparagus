@@ -74,4 +74,8 @@ check: all
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
 
-.PHONY: all check jsdemo rust
+update-opcodes-m-u:
+	$(PYTHON) crates/emitter/scripts/update_opcodes.py \
+		../mozilla-unified ./
+
+.PHONY: all check jsdemo rust update-opcodes-m-u
