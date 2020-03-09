@@ -21,7 +21,7 @@ class GenTestCase(unittest.TestCase):
         """Compile a grammar. Use this when you expect compilation to
         succeed."""
         self.tokenize = tokenize
-        self.parser_class = gen.compile(grammar, verbose = True)
+        self.parser_class = gen.compile(grammar)
 
     def parse(self, text, goal=None):
         if goal is None:
