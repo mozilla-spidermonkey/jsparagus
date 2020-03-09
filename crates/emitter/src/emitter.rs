@@ -5,7 +5,10 @@
 // Most of this functionality isn't used yet.
 #![allow(dead_code)]
 
-use super::opcode::Opcode;
+use crate::compilation_info::CompilationInfo;
+use crate::opcode::Opcode;
+use crate::script_atom_set::{ScriptAtomSet, ScriptAtomSetIndex};
+use ast::source_atom_set::SourceAtomSetIndex;
 use byteorder::{ByteOrder, LittleEndian};
 use std::convert::TryInto;
 use std::fmt;
@@ -32,22 +35,10 @@ pub struct BytecodeOffset {
     pub offset: usize,
 }
 
-// Struct to hold atom index in `EmitResult.strings`.
-// Opaque from outside of this module to avoid creating invalid atom index.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct AtomIndex {
-    index: u32,
-}
-impl AtomIndex {
-    fn new(index: u32) -> Self {
-        Self { index }
-    }
-}
-
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
-    strings: Vec<String>,
+    atoms: ScriptAtomSet,
 
     /// Stack depth after the instructions emitted so far.
     stack_depth: usize,
@@ -78,7 +69,8 @@ impl EmitOptions {
 #[derive(Debug)]
 pub struct EmitResult {
     pub bytecode: Vec<u8>,
-    pub strings: Vec<String>,
+    pub atoms: Vec<SourceAtomSetIndex>,
+    pub all_atoms: Vec<String>,
 
     // Line and column numbers for the first character of source.
     pub lineno: usize,
@@ -120,7 +112,7 @@ impl InstructionWriter {
     pub fn new() -> Self {
         Self {
             bytecode: Vec::new(),
-            strings: Vec::new(),
+            atoms: ScriptAtomSet::new(),
             stack_depth: 0,
             maximum_stack_depth: 0,
             num_ic_entries: 0,
@@ -128,10 +120,11 @@ impl InstructionWriter {
         }
     }
 
-    pub fn into_emit_result(self) -> EmitResult {
+    pub fn into_emit_result(self, compilation_info: CompilationInfo) -> EmitResult {
         EmitResult {
             bytecode: self.bytecode,
-            strings: self.strings,
+            atoms: self.atoms.into_vec(),
+            all_atoms: compilation_info.atoms.into_vec(),
 
             lineno: 1,
             column: 0,
@@ -184,8 +177,8 @@ impl InstructionWriter {
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
-    fn write_atom_index(&mut self, atom_index: AtomIndex) {
-        self.write_u32(atom_index.index);
+    fn write_script_atom_set_index(&mut self, atom_index: ScriptAtomSetIndex) {
+        self.write_u32(atom_index.into_raw());
     }
 
     fn write_offset(&mut self, offset: i32) {
@@ -268,17 +261,8 @@ impl InstructionWriter {
         }
     }
 
-    pub fn get_atom_index(&mut self, value: &str) -> AtomIndex {
-        // Eventually we should be fancy and make this O(1)
-        for (i, string) in self.strings.iter().enumerate() {
-            if string == value {
-                return AtomIndex::new(i as u32);
-            }
-        }
-
-        let index = self.strings.len();
-        self.strings.push(value.to_string());
-        AtomIndex::new(index as u32)
+    pub fn get_atom_index(&mut self, value: SourceAtomSetIndex) -> ScriptAtomSetIndex {
+        self.atoms.insert(value)
     }
 
     pub fn patch_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
@@ -384,9 +368,9 @@ impl InstructionWriter {
         self.write_u32(big_int_index);
     }
 
-    pub fn string(&mut self, atom_index: AtomIndex) {
+    pub fn string(&mut self, atom_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::String);
-        self.write_atom_index(atom_index);
+        self.write_script_atom_set_index(atom_index);
     }
 
     pub fn symbol(&mut self, symbol: u8) {
@@ -461,19 +445,19 @@ impl InstructionWriter {
         self.emit_op(Opcode::ObjWithProto);
     }
 
-    pub fn init_prop(&mut self, name_index: AtomIndex) {
+    pub fn init_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn init_hidden_prop(&mut self, name_index: AtomIndex) {
+    pub fn init_hidden_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitHiddenProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn init_locked_prop(&mut self, name_index: AtomIndex) {
+    pub fn init_locked_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitLockedProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn init_elem(&mut self) {
@@ -484,14 +468,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::InitHiddenElem);
     }
 
-    pub fn init_prop_getter(&mut self, name_index: AtomIndex) {
+    pub fn init_prop_getter(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitPropGetter);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn init_hidden_prop_getter(&mut self, name_index: AtomIndex) {
+    pub fn init_hidden_prop_getter(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitHiddenPropGetter);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn init_elem_getter(&mut self) {
@@ -502,14 +486,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::InitHiddenElemGetter);
     }
 
-    pub fn init_prop_setter(&mut self, name_index: AtomIndex) {
+    pub fn init_prop_setter(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitPropSetter);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn init_hidden_prop_setter(&mut self, name_index: AtomIndex) {
+    pub fn init_hidden_prop_setter(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitHiddenPropSetter);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn init_elem_setter(&mut self) {
@@ -520,14 +504,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::InitHiddenElemSetter);
     }
 
-    pub fn get_prop(&mut self, name_index: AtomIndex) {
+    pub fn get_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn call_prop(&mut self, name_index: AtomIndex) {
+    pub fn call_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::CallProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn get_elem(&mut self) {
@@ -538,19 +522,19 @@ impl InstructionWriter {
         self.emit_op(Opcode::CallElem);
     }
 
-    pub fn length(&mut self, name_index: AtomIndex) {
+    pub fn length(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::Length);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn set_prop(&mut self, name_index: AtomIndex) {
+    pub fn set_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::SetProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn strict_set_prop(&mut self, name_index: AtomIndex) {
+    pub fn strict_set_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::StrictSetProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn set_elem(&mut self) {
@@ -561,14 +545,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::StrictSetElem);
     }
 
-    pub fn del_prop(&mut self, name_index: AtomIndex) {
+    pub fn del_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DelProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn strict_del_prop(&mut self, name_index: AtomIndex) {
+    pub fn strict_del_prop(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::StrictDelProp);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn del_elem(&mut self) {
@@ -587,23 +571,23 @@ impl InstructionWriter {
         self.emit_op(Opcode::SuperBase);
     }
 
-    pub fn get_prop_super(&mut self, name_index: AtomIndex) {
+    pub fn get_prop_super(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetPropSuper);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn get_elem_super(&mut self) {
         self.emit_op(Opcode::GetElemSuper);
     }
 
-    pub fn set_prop_super(&mut self, name_index: AtomIndex) {
+    pub fn set_prop_super(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::SetPropSuper);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn strict_set_prop_super(&mut self, name_index: AtomIndex) {
+    pub fn strict_set_prop_super(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::StrictSetPropSuper);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn set_elem_super(&mut self) {
@@ -782,14 +766,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::StrictSpreadEval);
     }
 
-    pub fn implicit_this(&mut self, name_index: AtomIndex) {
+    pub fn implicit_this(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::ImplicitThis);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn g_implicit_this(&mut self, name_index: AtomIndex) {
+    pub fn g_implicit_this(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GImplicitThis);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn call_site_obj(&mut self, object_index: u32) {
@@ -965,9 +949,9 @@ impl InstructionWriter {
         self.write_u16(msg_number);
     }
 
-    pub fn throw_set_const(&mut self, name_index: AtomIndex) {
+    pub fn throw_set_const(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::ThrowSetConst);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn try_(&mut self, jump_at_end_offset: i32) {
@@ -1010,9 +994,9 @@ impl InstructionWriter {
         self.write_u24(localno);
     }
 
-    pub fn init_g_lexical(&mut self, name_index: AtomIndex) {
+    pub fn init_g_lexical(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::InitGLexical);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn init_aliased_lexical(&mut self, hops: u8, slot: u24) {
@@ -1021,33 +1005,33 @@ impl InstructionWriter {
         self.write_u24(slot);
     }
 
-    pub fn check_lexical(&mut self, name_index: AtomIndex) {
+    pub fn check_lexical(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::CheckLexical);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn check_this(&mut self) {
         self.emit_op(Opcode::CheckThis);
     }
 
-    pub fn bind_g_name(&mut self, name_index: AtomIndex) {
+    pub fn bind_g_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::BindGName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn bind_name(&mut self, name_index: AtomIndex) {
+    pub fn bind_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::BindName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn get_name(&mut self, name_index: AtomIndex) {
+    pub fn get_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn get_g_name(&mut self, name_index: AtomIndex) {
+    pub fn get_g_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetGName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn get_arg(&mut self, argno: u16) {
@@ -1066,19 +1050,19 @@ impl InstructionWriter {
         self.write_u24(slot);
     }
 
-    pub fn get_import(&mut self, name_index: AtomIndex) {
+    pub fn get_import(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetImport);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn get_bound_name(&mut self, name_index: AtomIndex) {
+    pub fn get_bound_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetBoundName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn get_intrinsic(&mut self, name_index: AtomIndex) {
+    pub fn get_intrinsic(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::GetIntrinsic);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn callee(&mut self) {
@@ -1090,24 +1074,24 @@ impl InstructionWriter {
         self.write_u8(num_hops);
     }
 
-    pub fn set_name(&mut self, name_index: AtomIndex) {
+    pub fn set_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::SetName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn strict_set_name(&mut self, name_index: AtomIndex) {
+    pub fn strict_set_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::StrictSetName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn set_g_name(&mut self, name_index: AtomIndex) {
+    pub fn set_g_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::SetGName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn strict_set_g_name(&mut self, name_index: AtomIndex) {
+    pub fn strict_set_g_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::StrictSetGName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn set_arg(&mut self, argno: u16) {
@@ -1126,9 +1110,9 @@ impl InstructionWriter {
         self.write_u24(slot);
     }
 
-    pub fn set_intrinsic(&mut self, name_index: AtomIndex) {
+    pub fn set_intrinsic(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::SetIntrinsic);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn push_lexical_env(&mut self, lexical_scope_index: u32) {
@@ -1170,28 +1154,28 @@ impl InstructionWriter {
         self.emit_op(Opcode::BindVar);
     }
 
-    pub fn def_var(&mut self, name_index: AtomIndex) {
+    pub fn def_var(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DefVar);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn def_fun(&mut self) {
         self.emit_op(Opcode::DefFun);
     }
 
-    pub fn def_let(&mut self, name_index: AtomIndex) {
+    pub fn def_let(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DefLet);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn def_const(&mut self, name_index: AtomIndex) {
+    pub fn def_const(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DefConst);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
-    pub fn del_name(&mut self, name_index: AtomIndex) {
+    pub fn del_name(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DelName);
-        self.write_atom_index(name_index);
+        self.write_script_atom_set_index(name_index);
     }
 
     pub fn arguments(&mut self) {

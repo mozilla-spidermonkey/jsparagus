@@ -10,7 +10,6 @@ import collections
 RUST_BUILTIN_TYPES = {
     'bool',
     'f64',
-    'String',
 }
 
 RUST_PARAMETERIZED_TYPES = {
@@ -43,8 +42,6 @@ class Type(TypeBase):
 
     def to_rust_type(self, ast):
         params_str = ", ".join(p.to_rust_type(ast) for p in self.params)
-        if self.name == 'String':
-            return "&'alloc str"
         if self.name == 'Option':
             return "Option<{}>".format(params_str)
         if self.name == 'Box':
@@ -58,7 +55,7 @@ class Type(TypeBase):
         if self.name in RUST_BUILTIN_TYPES:
             return self.name
         if self.name == 'Token':
-            return "Token<'alloc>"
+            return "Token"
         if self.name in ast.type_decls and ast.type_decls[self.name].has_lifetime:
             return "{}<'alloc>".format(self.name)
         return self.name
@@ -382,6 +379,8 @@ def pass_(ast):
                 write(indent, "}")
             elif ty.name in RUST_BUILTIN_TYPES:
                 pass
+            elif ty.name == "SourceAtomSetIndex":
+                pass
             elif ty.name == 'Box':
                 write(indent, "self.{}({});", to_method_name(ty.params[0].name), var)
             else:
@@ -412,6 +411,7 @@ def pass_(ast):
         write(0, "#![allow(dead_code)]")
         write(0, "")
         write(0, "use crate::arena;")
+        write(0, "use crate::source_atom_set::SourceAtomSetIndex;")
         write(0, "use crate::types::*;")
         write(0, "")
         write(0, "pub trait Pass<'alloc> {")
@@ -565,6 +565,7 @@ def ast_(ast):
         write(0, "")
         write(0, "use crate::source_location::SourceLocation;")
         write(0, "use crate::arena;")
+        write(0, "use crate::source_atom_set::SourceAtomSetIndex;")
         write(0, "")
         for type_decl in ast.type_decls.values():
             type_decl.write_rust_type_decl(ast, write)
@@ -764,9 +765,7 @@ class Ast:
     def type_has_lifetime(self, ty):
         return (
             ty is not None
-            and (ty.name == 'Token'
-                 or ty.name == 'String'
-                 or ty.name == 'Box'
+            and (ty.name == 'Box'
                  or ty.name == 'Vec'
                  or any(self.type_has_lifetime(u)
                         for u in ty.params)
