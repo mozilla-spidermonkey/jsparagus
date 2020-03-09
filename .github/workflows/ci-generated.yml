@@ -24,16 +24,14 @@ jobs:
         git config --local user.name "GitHub Action"
     - name: Revert Previous Change and Merge Master
       run: |
-        git ls-remote origin
-        if git ls-remote origin | grep refs/ci_generated/master; then
-          # If the remote hidden branch exists.
-          # Map the remote ref to branch.
-          git fetch origin +refs/ci_generated/master:refs/remotes/origin/ci_generated/master
+        if git ls-remote origin | grep refs/heads/ci_generated; then
+          # If the remote branch exists.
+          git fetch origin
 
-          # Merge master, discarding changes in refs/ci_generated/master.
+          # Merge master, discarding changes in origin/ci_generated
           MASTER_REV=$(git log -1 master --pretty=%H)
           git checkout -b ci_generated-master origin/master
-          git merge origin/ci_generated/master -m "Merge master ${MASTER_REV}" -s ours --allow-unrelated-histories
+          git merge origin/ci_generated -m "Merge master ${MASTER_REV}" -s ours --allow-unrelated-histories
         else
           # Otherwise, just start from master branch.
           git checkout -b ci_generated-master
@@ -52,5 +50,5 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: refs/ci_generated/master
+        branch: ci_generated
 
