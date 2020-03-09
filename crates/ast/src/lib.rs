@@ -21,9 +21,5 @@ mod type_id_generated;
 pub mod type_id {
     pub use crate::type_id_generated::*;
 }
-mod dump_generated;
-pub mod dump {
-    pub use crate::dump_generated::*;
-}
 
 pub use source_location::SourceLocation;
