@@ -420,9 +420,15 @@ class RustParserWriter:
         self.write(0, "pub trait ParserTrait<'alloc, Value> {")
         self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<bool>;")
         self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
+        self.write(1, "fn rewind(&mut self, n: usize) {")
+        self.write(2, "for _ in 0..n {")
+        self.write(3, "let tv = self.pop();")
+        self.write(3, "self.replay(tv);")
+        self.write(2, "}")
+        self.write(1, "}")
         self.write(1, "fn epsilon(&mut self, state: usize);")
         self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
-        self.write(1, "fn check_not_on_new_line(&self, peek: usize) -> Result<bool>;")
+        self.write(1, "fn check_not_on_new_line(&mut self, peek: usize) -> Result<bool>;")
         self.write(0, "}")
         self.write(0, "")
 
@@ -487,7 +493,9 @@ class RustParserWriter:
                 return False
             elif isinstance(act, CheckNotOnNewLine):
                 assert -act.offset > 0
-                self.write(indent, "parser.check_not_on_new_line({})?;", -act.offset)
+                self.write(indent, "if !parser.check_not_on_new_line({})? {{", -act.offset)
+                self.write(indent + 1, "return Ok(false);")
+                self.write(indent, "}")
             elif isinstance(act, Lookahead):
                 raise ValueError("Unexpected Lookahead action")
             elif isinstance(act, FilterFlag):
