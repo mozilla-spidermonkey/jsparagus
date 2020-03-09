@@ -13,6 +13,7 @@ extern crate jsparagus_emitter as emitter;
 extern crate jsparagus_interpreter as interpreter;
 extern crate jsparagus_parser as parser;
 
+use ast::dump::ASTDump;
 use ast::source_atom_set::SourceAtomSet;
 use ast::types::{Program, Script};
 use bumpalo::Bump;
@@ -118,7 +119,7 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
 }
 
 fn handle_script<'alloc>(script: Script<'alloc>, atoms: SourceAtomSet<'alloc>) {
-    println!("{:#?}", script);
+    script.dump_with_atoms(&mut io::stderr(), &atoms);
     let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
     match emitter::emit(&mut program, &options, atoms) {
