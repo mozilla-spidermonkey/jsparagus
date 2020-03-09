@@ -56,7 +56,8 @@ To run this parser, you should execute the following command at the root of the
 repository:
 
 ```sh
-cd crates/parser && cargo bench
+cd crates/parser
+cargo bench
 ```
 
 ### Real-world JavaScript
@@ -82,8 +83,9 @@ directory where all projects are checked out)
 
   ```sh
   cd ~/mozilla/js/src/
-  # set the path to ~/jsparagus directory.
-  edit frontend/smoosh/Cargo.toml
+  # set the jsparagus' path to the abosulte path to ~/jsparagus.
+  $EDITOR frontend/smoosh/Cargo.toml
+  ../../mach vendor rust
   # Create a build directory
   mkdir obj.opt
   cd obj.opt
