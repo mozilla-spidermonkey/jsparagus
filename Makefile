@@ -4,6 +4,7 @@ HANDLER_INFO_OUT = jsparagus/emit/collect_handler_info/info.json
 RS_TABLES_OUT = crates/generated_parser/src/parser_tables_generated.rs
 RS_AST_OUT = crates/ast/src/types_generated.rs \
 	crates/ast/src/type_id_generated.rs \
+	crates/ast/src/dump_generated.rs \
 	crates/ast/src/visit_generated.rs \
 	crates/ast/src/source_location_accessor_generated.rs \
 	crates/generated_parser/src/stack_value_generated.rs
