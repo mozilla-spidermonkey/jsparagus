@@ -82,16 +82,16 @@ impl ForwardJumpEmitter {
                 emitter.emit.coalesce(placeholder_offset);
             }
             JumpKind::LogicalOr { .. } => {
-                emitter.emit.or(placeholder_offset);
+                emitter.emit.or_(placeholder_offset);
             }
             JumpKind::LogicalAnd { .. } => {
-                emitter.emit.and(placeholder_offset);
+                emitter.emit.and_(placeholder_offset);
             }
             JumpKind::IfEq { .. } => {
                 emitter.emit.if_eq(placeholder_offset);
             }
             JumpKind::Goto { .. } => {
-                emitter.emit.goto(placeholder_offset);
+                emitter.emit.goto_(placeholder_offset);
             }
         }
     }

@@ -62,7 +62,7 @@ macro_rules! using_opcode_database {
                 (NewTarget, new_target, NULL, 1, 0, 1, JOF_BYTE),
                 (DynamicImport, dynamic_import, NULL, 1, 1, 1, JOF_BYTE),
                 (ImportMeta, import_meta, NULL, 1, 0, 1, JOF_BYTE),
-                (NewInit, new_init, NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
+                (NewInit, new_init, NULL, 1, 0, 1, JOF_BYTE|JOF_IC),
                 (NewObject, new_object, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
                 (NewObjectWithGroup, new_object_with_group, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC),
                 (Object, object, NULL, 5, 0, 1, JOF_OBJECT),

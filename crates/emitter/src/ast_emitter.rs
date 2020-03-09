@@ -102,7 +102,7 @@ impl<'alloc> AstEmitter<'alloc> {
             }
             Statement::ThrowStatement { expression, .. } => {
                 self.emit_expression(expression)?;
-                self.emit.throw();
+                self.emit.throw_();
             }
             Statement::TryCatchStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: TryCatchStatement"));
@@ -177,7 +177,7 @@ impl<'alloc> AstEmitter<'alloc> {
             }
 
             Expression::LiteralInfinityExpression { .. } => {
-                self.emit.double(std::f64::INFINITY);
+                self.emit.double_(std::f64::INFINITY);
             }
 
             Expression::LiteralNullExpression { .. } => {
@@ -411,11 +411,11 @@ impl<'alloc> AstEmitter<'alloc> {
                 return;
             }
         }
-        self.emit.double(value);
+        self.emit.double_(value);
     }
 
     fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
-        self.emit.new_init(0);
+        self.emit.new_init();
 
         for property in object.properties.iter() {
             self.emit_object_property(property)?;
