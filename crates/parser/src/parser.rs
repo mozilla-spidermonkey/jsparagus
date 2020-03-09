@@ -24,7 +24,7 @@ impl<'alloc> AstBuilderDelegate<'alloc> for Parser<'alloc> {
 }
 
 impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
-    fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
+    fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<bool> {
         // Shift the new terminal/nonterminal and its associated value.
         let mut state = self.state();
         assert!(state < TABLES.shift_count);
@@ -71,7 +71,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
         self.state_stack.pop().unwrap();
         self.node_stack.pop().unwrap()
     }
-    fn check_not_on_new_line(&self, peek: usize) -> Result<'alloc, bool> {
+    fn check_not_on_new_line(&self, peek: usize) -> Result<bool> {
         let sv = &self.node_stack[self.node_stack.len() - peek].value;
         if let StackValue::Token(ref token) = sv {
             if token.is_on_new_line {
@@ -100,7 +100,7 @@ impl<'alloc> Parser<'alloc> {
         *self.state_stack.last().unwrap()
     }
 
-    pub fn write_token(&mut self, token: &Token<'alloc>) -> Result<'alloc, ()> {
+    pub fn write_token(&mut self, token: &Token) -> Result<()> {
         // Shift the token with the associated StackValue.
         let accept = self.shift(TermValue {
             term: Term::Terminal(token.terminal_id),
@@ -112,7 +112,7 @@ impl<'alloc> Parser<'alloc> {
         Ok(())
     }
 
-    pub fn close(&mut self, position: usize) -> Result<'alloc, StackValue<'alloc>> {
+    pub fn close(&mut self, position: usize) -> Result<StackValue<'alloc>> {
         // Shift the End terminal with the associated StackValue.
         let loc = SourceLocation::new(position, position);
         let token = Token::basic_token(TerminalId::End, loc);
@@ -135,7 +135,7 @@ impl<'alloc> Parser<'alloc> {
         Ok(self.node_stack.pop().unwrap().value)
     }
 
-    pub(crate) fn parse_error(t: &Token<'alloc>) -> ParseError<'alloc> {
+    pub(crate) fn parse_error(t: &Token) -> ParseError {
         if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
@@ -143,7 +143,7 @@ impl<'alloc> Parser<'alloc> {
         }
     }
 
-    fn try_error_handling(&mut self, t: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
+    fn try_error_handling(&mut self, t: TermValue<StackValue<'alloc>>) -> Result<bool> {
         if let StackValue::Token(ref token) = t.value {
             // Error tokens might them-self cause more errors to be reported.
             // This happens due to the fact that the ErrorToken can be replayed,
@@ -176,7 +176,7 @@ impl<'alloc> Parser<'alloc> {
         Err(ParseError::ParserCannotUnpackToken)
     }
 
-    pub(crate) fn recover(t: &Token<'alloc>, error_code: ErrorCode) -> Result<'alloc, ()> {
+    pub(crate) fn recover(t: &Token, error_code: ErrorCode) -> Result<()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.is_on_new_line

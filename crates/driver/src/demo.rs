@@ -1,16 +1,19 @@
 //! Functions to exercise the parser from the command line.
 
+use std::cell::RefCell;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::prelude::*; // flush() at least
 use std::path::Path;
+use std::rc::Rc;
 
 extern crate jsparagus_ast as ast;
 extern crate jsparagus_emitter as emitter;
 extern crate jsparagus_interpreter as interpreter;
 extern crate jsparagus_parser as parser;
 
+use ast::source_atom_set::SourceAtomSet;
 use ast::types::{Program, Script};
 use bumpalo::Bump;
 use parser::{is_partial_script, parse_script, ParseOptions};
@@ -65,7 +68,8 @@ fn parse_file(path: &Path, size_bytes: u64) -> io::Result<DemoStats> {
     };
     let allocator = &Bump::new();
     let options = ParseOptions::new();
-    let result = parse_script(allocator, &contents, &options);
+    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    let result = parse_script(allocator, &contents, &options, atoms);
     let stats = DemoStats::new_single(size_bytes, result.is_ok());
     match result {
         Ok(_ast) => println!(" ok"),
@@ -113,11 +117,11 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
     }
 }
 
-fn handle_script<'alloc>(script: Script<'alloc>) {
+fn handle_script<'alloc>(script: Script<'alloc>, atoms: SourceAtomSet<'alloc>) {
     println!("{:#?}", script);
     let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
-    match emitter::emit(&mut program, &options) {
+    match emitter::emit(&mut program, &options, atoms) {
         Err(err) => {
             eprintln!("error: {}", err);
         }
@@ -137,7 +141,8 @@ struct InputValidator {}
 impl Validator for InputValidator {
     fn validate(&self, ctx: &mut ValidationContext) -> Result<ValidationResult, ReadlineError> {
         let allocator = &Bump::new();
-        match is_partial_script(allocator, ctx.input()) {
+        let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+        match is_partial_script(allocator, ctx.input(), atoms) {
             Ok(true) => Ok(ValidationResult::Incomplete),
             // We treat ParseErrors as "valid" so that they
             // can be handled by the REPL function.
@@ -162,13 +167,17 @@ pub fn read_print_loop() {
         rl.add_history_entry(input.as_str());
 
         let allocator = &Bump::new();
-        let script = parse_script(allocator, &input, &ParseOptions::new());
+        let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+        let script = parse_script(allocator, &input, &ParseOptions::new(), atoms.clone());
         match script {
             Err(err) => {
                 eprintln!("error: {}", err);
             }
             Ok(script) => {
-                handle_script(script.unbox());
+                handle_script(
+                    script.unbox(),
+                    atoms.replace(SourceAtomSet::new_uninitialized()),
+                );
             }
         }
     }

@@ -171,7 +171,7 @@ def parse_operands(opcode):
 
         if 'JOF_ATOM' in opcode.format_:
             assert ty == 'u32'
-            ty = 'AtomIndex'
+            ty = 'ScriptAtomSetIndex'
 
         if 'JOF_ICINDEX' in opcode.format_ or 'JOF_LOOPHEAD' in opcode.format_:
             if ty == 'u32' and name == 'ic_index':
