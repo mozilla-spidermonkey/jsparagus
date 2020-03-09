@@ -53,8 +53,7 @@ impl Helpers for EmitResult {
     }
 
     fn read_atom(&self, offset: usize) -> String {
-        let index = self.atoms[self.read_i32(offset) as usize];
-        self.all_atoms[index.into_raw()].clone()
+        self.strings[self.read_i32(offset) as usize].clone()
     }
 }
 

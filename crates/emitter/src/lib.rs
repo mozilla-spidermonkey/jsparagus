@@ -1,25 +1,19 @@
 mod ast_emitter;
-mod compilation_info;
 mod dis;
 mod emitter;
 mod forward_jump_emitter;
+mod lower;
 pub mod opcode;
 mod reference_op_emitter;
-mod script_atom_set;
 
 extern crate jsparagus_ast as ast;
 
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use dis::dis;
 
-use ast::source_atom_set::SourceAtomSet;
-
-pub fn emit<'alloc>(
-    ast: &mut ast::types::Program,
-    options: &EmitOptions,
-    atoms: SourceAtomSet<'alloc>,
-) -> Result<EmitResult, EmitError> {
-    ast_emitter::emit_program(ast, options, atoms)
+pub fn emit(ast: &mut ast::types::Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
+    //lower::run(ast);
+    ast_emitter::emit_program(ast, options)
 }
 
 #[cfg(test)]

@@ -3,8 +3,10 @@ use crate::DeclarationKind;
 use crate::ParseError;
 use crate::Token;
 use ast::arena;
-use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use std::collections::HashMap;
+use std::marker::PhantomData;
+
+pub type Name<'alloc> = &'alloc str;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct DeclarationInfo {
@@ -18,35 +20,28 @@ impl DeclarationInfo {
     }
 }
 
-pub type EarlyErrorsResult = Result<(), ParseError>;
+pub type EarlyErrorsResult<'alloc> = Result<(), ParseError<'alloc>>;
 
-pub trait LexicalEarlyErrorsContext {
+pub trait LexicalEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult;
+    ) -> EarlyErrorsResult<'alloc>;
 }
 
-pub trait VarEarlyErrorsContext {
+pub trait VarEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult;
+    ) -> EarlyErrorsResult<'alloc>;
 }
 
-pub trait ParameterEarlyErrorsContext {
-    fn declare(
-        &mut self,
-        name: SourceAtomSetIndex,
-        offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult;
+pub trait ParameterEarlyErrorsContext<'alloc> {
+    fn declare(&mut self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc>;
 }
 
 // ===========================================================================
@@ -55,14 +50,18 @@ pub trait ParameterEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct IdentifierEarlyErrorsContext {}
+pub struct IdentifierEarlyErrorsContext<'alloc> {
+    phantom: PhantomData<&'alloc ()>,
+}
 
-impl IdentifierEarlyErrorsContext {
+impl<'alloc> IdentifierEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            phantom: PhantomData,
+        }
     }
 
-    fn is_strict(&self) -> Result<bool, ParseError> {
+    fn is_strict(&self) -> Result<bool, ParseError<'alloc>> {
         Err(ParseError::NotImplemented(
             "strict-mode-only early error is not yet supported",
         ))
@@ -70,42 +69,41 @@ impl IdentifierEarlyErrorsContext {
 
     // Not used due to NotImplemented before the callsite.
     /*
-    fn is_module(&self) -> Result<bool, ParseError> {
+    fn is_module(&self) -> Result<bool, ParseError<'alloc>> {
         Err(ParseError::NotImplemented(
             "module-only early error is not yet supported",
         ))
     }
      */
 
-    fn is_arguments_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_arguments_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
         return (token.terminal_id == TerminalId::Name
             || token.terminal_id == TerminalId::NameWithEscape)
-            && token.value.as_atom() == CommonSourceAtomSetIndices::arguments();
+            && token.value.unwrap() == "arguments";
     }
 
-    fn is_eval_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_eval_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
         return (token.terminal_id == TerminalId::Name
             || token.terminal_id == TerminalId::NameWithEscape)
-            && token.value.as_atom() == CommonSourceAtomSetIndices::eval();
+            && token.value.unwrap() == "eval";
     }
 
-    fn is_yield_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_yield_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
         return token.terminal_id == TerminalId::Yield
             || (token.terminal_id == TerminalId::NameWithEscape
-                && token.value.as_atom() == CommonSourceAtomSetIndices::yield_());
+                && token.value.unwrap() == "yield");
     }
 
-    fn is_await_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_await_identifier(token: &arena::Box<'alloc, Token<'alloc>>) -> bool {
         return token.terminal_id == TerminalId::Await
             || (token.terminal_id == TerminalId::NameWithEscape
-                && token.value.as_atom() == CommonSourceAtomSetIndices::await_());
+                && token.value.unwrap() == "await");
     }
 
-    pub fn check_binding_identifier<'alloc>(
+    pub fn check_binding_identifier(
         &self,
-        token: &arena::Box<'alloc, Token>,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         if Self::is_arguments_identifier(token) || Self::is_eval_identifier(token) {
             // Static Semantics: Early Errors
             // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
@@ -116,7 +114,7 @@ impl IdentifierEarlyErrorsContext {
             //   production is contained in strict mode code and the
             //   StringValue of Identifier is "arguments" or "eval".
             if self.is_strict()? {
-                let name = atoms.get(token.value.as_atom());
+                let name = token.value.unwrap();
                 let offset = token.loc.start;
                 return Err(ParseError::InvalidIdentifier(name.clone(), offset));
             }
@@ -144,46 +142,43 @@ impl IdentifierEarlyErrorsContext {
             // return self.check_await_common();
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token)
     }
 
-    pub fn check_label_identifier<'alloc>(
+    pub fn check_label_identifier(
         &self,
-        token: &arena::Box<'alloc, Token>,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         if Self::is_yield_identifier(token) {
-            return self.check_yield_common(token, atoms);
+            return self.check_yield_common(token);
         }
 
         if Self::is_await_identifier(token) {
-            return self.check_await_common(token, atoms);
+            return self.check_await_common(token);
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token)
     }
 
-    pub fn check_identifier_reference<'alloc>(
+    pub fn check_identifier_reference(
         &self,
-        token: &arena::Box<'alloc, Token>,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         if Self::is_yield_identifier(token) {
-            return self.check_yield_common(token, atoms);
+            return self.check_yield_common(token);
         }
 
         if Self::is_await_identifier(token) {
-            return self.check_await_common(token, atoms);
+            return self.check_await_common(token);
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token)
     }
 
-    fn check_yield_common<'alloc>(
+    fn check_yield_common(
         &self,
-        _token: &arena::Box<'alloc, Token>,
-        _atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        _token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
         //
@@ -217,7 +212,7 @@ impl IdentifierEarlyErrorsContext {
         //
         // if self.is_strict()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         atoms.get(token.value.as_atom()),
+        //         token.value.unwrap().clone(),
         //         offset,
         //     ));
         // }
@@ -225,11 +220,10 @@ impl IdentifierEarlyErrorsContext {
         // Ok(())
     }
 
-    fn check_await_common<'alloc>(
+    fn check_await_common(
         &self,
-        _token: &arena::Box<'alloc, Token>,
-        _atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        _token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
         //
@@ -261,7 +255,7 @@ impl IdentifierEarlyErrorsContext {
         //
         // if self.is_module()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         atoms.get(token.value.as_atom()),
+        //         token.value.unwrap().clone(),
         //         offset,
         //     ));
         // }
@@ -269,91 +263,49 @@ impl IdentifierEarlyErrorsContext {
         // Ok(())
     }
 
-    fn is_contextual_keyword_excluding_yield(name: SourceAtomSetIndex) -> bool {
-        name == CommonSourceAtomSetIndices::implements()
-            || name == CommonSourceAtomSetIndices::interface()
-            || name == CommonSourceAtomSetIndices::let_()
-            || name == CommonSourceAtomSetIndices::package()
-            || name == CommonSourceAtomSetIndices::private()
-            || name == CommonSourceAtomSetIndices::protected()
-            || name == CommonSourceAtomSetIndices::public()
-            || name == CommonSourceAtomSetIndices::static_()
-    }
-
-    fn is_keyword(name: SourceAtomSetIndex) -> bool {
-        name == CommonSourceAtomSetIndices::break_()
-            || name == CommonSourceAtomSetIndices::case()
-            || name == CommonSourceAtomSetIndices::catch()
-            || name == CommonSourceAtomSetIndices::class()
-            || name == CommonSourceAtomSetIndices::const_()
-            || name == CommonSourceAtomSetIndices::continue_()
-            || name == CommonSourceAtomSetIndices::debugger()
-            || name == CommonSourceAtomSetIndices::default()
-            || name == CommonSourceAtomSetIndices::delete()
-            || name == CommonSourceAtomSetIndices::do_()
-            || name == CommonSourceAtomSetIndices::else_()
-            || name == CommonSourceAtomSetIndices::enum_()
-            || name == CommonSourceAtomSetIndices::export()
-            || name == CommonSourceAtomSetIndices::extends()
-            || name == CommonSourceAtomSetIndices::false_()
-            || name == CommonSourceAtomSetIndices::finally()
-            || name == CommonSourceAtomSetIndices::for_()
-            || name == CommonSourceAtomSetIndices::function()
-            || name == CommonSourceAtomSetIndices::if_()
-            || name == CommonSourceAtomSetIndices::import()
-            || name == CommonSourceAtomSetIndices::in_()
-            || name == CommonSourceAtomSetIndices::instanceof()
-            || name == CommonSourceAtomSetIndices::new_()
-            || name == CommonSourceAtomSetIndices::null()
-            || name == CommonSourceAtomSetIndices::return_()
-            || name == CommonSourceAtomSetIndices::super_()
-            || name == CommonSourceAtomSetIndices::switch()
-            || name == CommonSourceAtomSetIndices::this()
-            || name == CommonSourceAtomSetIndices::throw()
-            || name == CommonSourceAtomSetIndices::true_()
-            || name == CommonSourceAtomSetIndices::try_()
-            || name == CommonSourceAtomSetIndices::typeof_()
-            || name == CommonSourceAtomSetIndices::var()
-            || name == CommonSourceAtomSetIndices::void()
-            || name == CommonSourceAtomSetIndices::while_()
-            || name == CommonSourceAtomSetIndices::with()
-    }
-
-    fn check_identifier<'alloc>(
+    fn check_identifier(
         &self,
-        token: &arena::Box<'alloc, Token>,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+        token: &arena::Box<'alloc, Token<'alloc>>,
+    ) -> EarlyErrorsResult<'alloc> {
         match token.terminal_id {
             TerminalId::NameWithEscape => {
-                let name = token.value.as_atom();
-                if Self::is_contextual_keyword_excluding_yield(name) {
-                    // Identifier : IdentifierName but not ReservedWord
-                    //
-                    // * It is a Syntax Error if this phrase is contained
-                    //   in strict mode code and the StringValue of
-                    //   IdentifierName is:
-                    //   "implements", "interface", "let", "package",
-                    //   "private", "protected", "public", "static",
-                    //   or "yield".
-                    //
-                    // NOTE: "yield" case is handled in
-                    //       `check_yield_common`.
-                    if self.is_strict()? {
-                        let name = atoms.get(token.value.as_atom());
-                        let offset = token.loc.start;
-                        return Err(ParseError::InvalidIdentifier(name, offset));
+                let name = token.value.unwrap();
+                match name {
+                    "implements" | "interface" | "let" | "package" | "private" | "protected"
+                    | "public" | "static" => {
+                        // Identifier : IdentifierName but not ReservedWord
+                        //
+                        // * It is a Syntax Error if this phrase is contained
+                        //   in strict mode code and the StringValue of
+                        //   IdentifierName is:
+                        //   "implements", "interface", "let", "package",
+                        //   "private", "protected", "public", "static",
+                        //   or "yield".
+                        //
+                        // NOTE: "yield" case is handled in
+                        //       `check_yield_common`.
+                        if self.is_strict()? {
+                            let offset = token.loc.start;
+                            return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                        }
                     }
-                } else if Self::is_keyword(name) {
-                    // Identifier : IdentifierName but not ReservedWord
-                    //
-                    // * It is a Syntax Error if StringValue of
-                    //   IdentifierName is the same String value as the
-                    //   StringValue of any ReservedWord except for yield
-                    //   or await.
-                    let name = atoms.get(token.value.as_atom());
-                    let offset = token.loc.start;
-                    return Err(ParseError::InvalidIdentifier(name, offset));
+
+                    "break" | "case" | "catch" | "class" | "const" | "continue" | "debugger"
+                    | "default" | "delete" | "do" | "else" | "enum" | "export" | "extends"
+                    | "false" | "finally" | "for" | "function" | "if" | "import" | "in"
+                    | "instanceof" | "new" | "null" | "return" | "super" | "switch" | "this"
+                    | "throw" | "true" | "try" | "typeof" | "var" | "void" | "while" | "with" => {
+                        // Identifier : IdentifierName but not ReservedWord
+                        //
+                        // * It is a Syntax Error if StringValue of
+                        //   IdentifierName is the same String value as the
+                        //   StringValue of any ReservedWord except for yield
+                        //   or await.
+                        let offset = token.loc.start;
+                        return Err(ParseError::InvalidIdentifier(name.clone(), offset));
+                    }
+
+                    _ => {}
                 }
             }
             TerminalId::Implements
@@ -373,9 +325,9 @@ impl IdentifierEarlyErrorsContext {
                 //
                 // NOTE: "yield" case is handled in `check_yield_common`.
                 if self.is_strict()? {
-                    let name = atoms.get(token.value.as_atom());
+                    let name = token.value.unwrap();
                     let offset = token.loc.start;
-                    return Err(ParseError::InvalidIdentifier(name, offset));
+                    return Err(ParseError::InvalidIdentifier(name.clone(), offset));
                 }
             }
             _ => {}
@@ -391,12 +343,12 @@ impl IdentifierEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct BlockEarlyErrorsContext {
-    lex_names_of_stmt_list: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    var_names_of_stmt_list: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct BlockEarlyErrorsContext<'alloc> {
+    lex_names_of_stmt_list: HashMap<Name<'alloc>, DeclarationInfo>,
+    var_names_of_stmt_list: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl BlockEarlyErrorsContext {
+impl<'alloc> BlockEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             lex_names_of_stmt_list: HashMap::new(),
@@ -592,21 +544,20 @@ impl BlockEarlyErrorsContext {
         }
     }
 
-    fn is_strict(&self) -> Result<bool, ParseError> {
+    fn is_strict(&self) -> Result<bool, ParseError<'alloc>> {
         Err(ParseError::NotImplemented(
             "strict-mode-only early error is not yet supported",
         ))
     }
 }
 
-impl LexicalEarlyErrorsContext for BlockEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for BlockEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -632,9 +583,8 @@ impl LexicalEarlyErrorsContext for BlockEarlyErrorsContext {
                 && info.kind == DeclarationKind::LexicalFunction
                 && kind == DeclarationKind::LexicalFunction)
             {
-                let name = atoms.get(name);
                 return Err(ParseError::DuplicateBinding(
-                    name,
+                    name.clone(),
                     info.kind,
                     info.offset,
                     kind,
@@ -652,9 +602,8 @@ impl LexicalEarlyErrorsContext for BlockEarlyErrorsContext {
         //   of StatementList also occurs in the VarDeclaredNames of
         //   StatementList.
         if let Some(info) = self.var_names_of_stmt_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -669,14 +618,13 @@ impl LexicalEarlyErrorsContext for BlockEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for BlockEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for BlockEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         // Static Semantics: Early Errors
@@ -688,9 +636,8 @@ impl VarEarlyErrorsContext for BlockEarlyErrorsContext {
         //   of StatementList also occurs in the VarDeclaredNames of
         //   StatementList.
         if let Some(info) = self.lex_names_of_stmt_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -714,11 +661,11 @@ impl VarEarlyErrorsContext for BlockEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct LexicalForHeadEarlyErrorsContext {
-    bound_names_of_decl: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct LexicalForHeadEarlyErrorsContext<'alloc> {
+    bound_names_of_decl: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl LexicalForHeadEarlyErrorsContext {
+impl<'alloc> LexicalForHeadEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             bound_names_of_decl: HashMap::new(),
@@ -752,14 +699,13 @@ impl LexicalForHeadEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for LexicalForHeadEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for LexicalForHeadEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -790,9 +736,8 @@ impl LexicalEarlyErrorsContext for LexicalForHeadEarlyErrorsContext {
         // * It is a Syntax Error if the BoundNames of ForDeclaration contains
         //   any duplicate entries.
         if let Some(info) = self.bound_names_of_decl.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -808,11 +753,11 @@ impl LexicalEarlyErrorsContext for LexicalForHeadEarlyErrorsContext {
 }
 
 #[derive(Debug, PartialEq)]
-struct InternalForBodyEarlyErrorsContext {
-    var_names_of_stmt: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+struct InternalForBodyEarlyErrorsContext<'alloc> {
+    var_names_of_stmt: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl InternalForBodyEarlyErrorsContext {
+impl<'alloc> InternalForBodyEarlyErrorsContext<'alloc> {
     fn new() -> Self {
         Self {
             var_names_of_stmt: HashMap::new(),
@@ -831,14 +776,13 @@ impl InternalForBodyEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for InternalForBodyEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for InternalForBodyEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        _atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         self.var_names_of_stmt
@@ -849,13 +793,13 @@ impl VarEarlyErrorsContext for InternalForBodyEarlyErrorsContext {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct LexicalForBodyEarlyErrorsContext {
-    head: LexicalForHeadEarlyErrorsContext,
-    body: InternalForBodyEarlyErrorsContext,
+pub struct LexicalForBodyEarlyErrorsContext<'alloc> {
+    head: LexicalForHeadEarlyErrorsContext<'alloc>,
+    body: InternalForBodyEarlyErrorsContext<'alloc>,
 }
 
-impl LexicalForBodyEarlyErrorsContext {
-    pub fn new(head: LexicalForHeadEarlyErrorsContext) -> Self {
+impl<'alloc> LexicalForBodyEarlyErrorsContext<'alloc> {
+    pub fn new(head: LexicalForHeadEarlyErrorsContext<'alloc>) -> Self {
         Self {
             head,
             body: InternalForBodyEarlyErrorsContext::new(),
@@ -863,14 +807,13 @@ impl LexicalForBodyEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for LexicalForBodyEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for LexicalForBodyEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-for-statement-static-semantics-early-errors
         //
@@ -895,9 +838,8 @@ impl VarEarlyErrorsContext for LexicalForBodyEarlyErrorsContext {
         // * It is a Syntax Error if any element of the BoundNames of
         //   ForDeclaration also occurs in the VarDeclaredNames of Statement.
         if let Some(info) = self.head.bound_names_of_decl.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -905,7 +847,7 @@ impl VarEarlyErrorsContext for LexicalForBodyEarlyErrorsContext {
             ));
         }
 
-        self.body.declare_var(name, kind, offset, atoms)
+        self.body.declare_var(name, kind, offset)
     }
 }
 
@@ -915,12 +857,12 @@ impl VarEarlyErrorsContext for LexicalForBodyEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct CaseBlockEarlyErrorsContext {
-    lex_names_of_case_block: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    var_names_of_case_block: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct CaseBlockEarlyErrorsContext<'alloc> {
+    lex_names_of_case_block: HashMap<Name<'alloc>, DeclarationInfo>,
+    var_names_of_case_block: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl CaseBlockEarlyErrorsContext {
+impl<'alloc> CaseBlockEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             lex_names_of_case_block: HashMap::new(),
@@ -938,21 +880,20 @@ impl CaseBlockEarlyErrorsContext {
         BlockEarlyErrorsContext::is_supported_var(kind)
     }
 
-    fn is_strict(&self) -> Result<bool, ParseError> {
+    fn is_strict(&self) -> Result<bool, ParseError<'alloc>> {
         Err(ParseError::NotImplemented(
             "strict-mode-only early error is not yet supported",
         ))
     }
 }
 
-impl LexicalEarlyErrorsContext for CaseBlockEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for CaseBlockEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -976,9 +917,8 @@ impl LexicalEarlyErrorsContext for CaseBlockEarlyErrorsContext {
                 && info.kind == DeclarationKind::LexicalFunction
                 && kind == DeclarationKind::LexicalFunction)
             {
-                let name = atoms.get(name);
                 return Err(ParseError::DuplicateBinding(
-                    name,
+                    name.clone(),
                     info.kind,
                     info.offset,
                     kind,
@@ -995,9 +935,8 @@ impl LexicalEarlyErrorsContext for CaseBlockEarlyErrorsContext {
         // * It is a Syntax Error if any element of the LexicallyDeclaredNames
         //   of CaseBlock also occurs in the VarDeclaredNames of CaseBlock.
         if let Some(info) = self.var_names_of_case_block.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1012,14 +951,13 @@ impl LexicalEarlyErrorsContext for CaseBlockEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for CaseBlockEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for CaseBlockEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         // Static Semantics: Early Errors
@@ -1030,9 +968,8 @@ impl VarEarlyErrorsContext for CaseBlockEarlyErrorsContext {
         // * It is a Syntax Error if any element of the LexicallyDeclaredNames
         //   of CaseBlock also occurs in the VarDeclaredNames of CaseBlock.
         if let Some(info) = self.lex_names_of_case_block.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1053,12 +990,12 @@ impl VarEarlyErrorsContext for CaseBlockEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct CatchParameterEarlyErrorsContext {
-    bound_names_of_catch_param: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct CatchParameterEarlyErrorsContext<'alloc> {
+    bound_names_of_catch_param: HashMap<Name<'alloc>, DeclarationInfo>,
     is_simple: bool,
 }
 
-impl CatchParameterEarlyErrorsContext {
+impl<'alloc> CatchParameterEarlyErrorsContext<'alloc> {
     pub fn new_with_binding_identifier() -> Self {
         Self {
             bound_names_of_catch_param: HashMap::new(),
@@ -1074,13 +1011,8 @@ impl CatchParameterEarlyErrorsContext {
     }
 }
 
-impl ParameterEarlyErrorsContext for CatchParameterEarlyErrorsContext {
-    fn declare(
-        &mut self,
-        name: SourceAtomSetIndex,
-        offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+impl<'alloc> ParameterEarlyErrorsContext<'alloc> for CatchParameterEarlyErrorsContext<'alloc> {
+    fn declare(&mut self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc> {
         // BoundNames of CatchParameter
         //
         // CatchParameter => BindingIdentifier
@@ -1095,9 +1027,12 @@ impl ParameterEarlyErrorsContext for CatchParameterEarlyErrorsContext {
         // * It is a Syntax Error if BoundNames of CatchParameter contains any
         //   duplicate elements.
         if let Some(info) = self.bound_names_of_catch_param.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name, info.kind, offset, kind, offset,
+                name.clone(),
+                info.kind,
+                offset,
+                kind,
+                offset,
             ));
         }
 
@@ -1109,13 +1044,13 @@ impl ParameterEarlyErrorsContext for CatchParameterEarlyErrorsContext {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct CatchBlockEarlyErrorsContext {
-    param: CatchParameterEarlyErrorsContext,
-    block: BlockEarlyErrorsContext,
+pub struct CatchBlockEarlyErrorsContext<'alloc> {
+    param: CatchParameterEarlyErrorsContext<'alloc>,
+    block: BlockEarlyErrorsContext<'alloc>,
 }
 
-impl CatchBlockEarlyErrorsContext {
-    pub fn new(param: CatchParameterEarlyErrorsContext) -> Self {
+impl<'alloc> CatchBlockEarlyErrorsContext<'alloc> {
+    pub fn new(param: CatchParameterEarlyErrorsContext<'alloc>) -> Self {
         Self {
             param,
             block: BlockEarlyErrorsContext::new(),
@@ -1123,14 +1058,13 @@ impl CatchBlockEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for CatchBlockEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for CatchBlockEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-try-statement-static-semantics-early-errors
         //
@@ -1139,24 +1073,26 @@ impl LexicalEarlyErrorsContext for CatchBlockEarlyErrorsContext {
         // * It is a Syntax Error if any element of the BoundNames of
         //   CatchParameter also occurs in the LexicallyDeclaredNames of Block.
         if let Some(info) = self.param.bound_names_of_catch_param.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name, info.kind, offset, kind, offset,
+                name.clone(),
+                info.kind,
+                offset,
+                kind,
+                offset,
             ));
         }
 
-        self.block.declare_lex(name, kind, offset, atoms)
+        self.block.declare_lex(name, kind, offset)
     }
 }
 
-impl VarEarlyErrorsContext for CatchBlockEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for CatchBlockEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-try-statement-static-semantics-early-errors
         //
@@ -1175,9 +1111,8 @@ impl VarEarlyErrorsContext for CatchBlockEarlyErrorsContext {
             //   CatchParameter also occurs in the VarDeclaredNames of Block **
             //   unless CatchParameter is CatchParameter : BindingIdentifier **.
             if !self.param.is_simple {
-                let name = atoms.get(name);
                 return Err(ParseError::DuplicateBinding(
-                    name,
+                    name.clone(),
                     info.kind,
                     info.offset,
                     kind,
@@ -1186,7 +1121,7 @@ impl VarEarlyErrorsContext for CatchBlockEarlyErrorsContext {
             }
         }
 
-        self.block.declare_var(name, kind, offset, atoms)
+        self.block.declare_var(name, kind, offset)
     }
 }
 
@@ -1214,12 +1149,12 @@ impl VarEarlyErrorsContext for CatchBlockEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct FormalParametersEarlyErrorsContext {
-    bound_names_of_params: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct FormalParametersEarlyErrorsContext<'alloc> {
+    bound_names_of_params: HashMap<Name<'alloc>, DeclarationInfo>,
     is_simple: bool,
 }
 
-impl FormalParametersEarlyErrorsContext {
+impl<'alloc> FormalParametersEarlyErrorsContext<'alloc> {
     pub fn new_simple() -> Self {
         Self {
             bound_names_of_params: HashMap::new(),
@@ -1235,13 +1170,8 @@ impl FormalParametersEarlyErrorsContext {
     }
 }
 
-impl ParameterEarlyErrorsContext for FormalParametersEarlyErrorsContext {
-    fn declare(
-        &mut self,
-        name: SourceAtomSetIndex,
-        offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+impl<'alloc> ParameterEarlyErrorsContext<'alloc> for FormalParametersEarlyErrorsContext<'alloc> {
+    fn declare(&mut self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc> {
         // BoundNames of FormalParameterList
         //
         // Static Semantics: BoundNames
@@ -1276,9 +1206,8 @@ impl ParameterEarlyErrorsContext for FormalParametersEarlyErrorsContext {
         //   contains any duplicate elements.
         if let Some(info) = self.bound_names_of_params.get(&name) {
             if !self.is_simple {
-                let name = atoms.get(name);
                 return Err(ParseError::DuplicateBinding(
-                    name,
+                    name.clone(),
                     info.kind,
                     info.offset,
                     kind,
@@ -1295,11 +1224,11 @@ impl ParameterEarlyErrorsContext for FormalParametersEarlyErrorsContext {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct UniqueFormalParametersEarlyErrorsContext {
-    bound_names_of_params: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct UniqueFormalParametersEarlyErrorsContext<'alloc> {
+    bound_names_of_params: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl UniqueFormalParametersEarlyErrorsContext {
+impl<'alloc> UniqueFormalParametersEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             bound_names_of_params: HashMap::new(),
@@ -1307,13 +1236,10 @@ impl UniqueFormalParametersEarlyErrorsContext {
     }
 }
 
-impl ParameterEarlyErrorsContext for UniqueFormalParametersEarlyErrorsContext {
-    fn declare(
-        &mut self,
-        name: SourceAtomSetIndex,
-        offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+impl<'alloc> ParameterEarlyErrorsContext<'alloc>
+    for UniqueFormalParametersEarlyErrorsContext<'alloc>
+{
+    fn declare(&mut self, name: Name<'alloc>, offset: usize) -> EarlyErrorsResult<'alloc> {
         let kind = DeclarationKind::FormalParameter;
 
         // Static Semantics: Early Errors
@@ -1335,9 +1261,8 @@ impl ParameterEarlyErrorsContext for UniqueFormalParametersEarlyErrorsContext {
         // * It is a Syntax Error if BoundNames of PropertySetParameterList
         //   contains any duplicate elements.
         if let Some(info) = self.bound_names_of_params.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1353,12 +1278,12 @@ impl ParameterEarlyErrorsContext for UniqueFormalParametersEarlyErrorsContext {
 }
 
 #[derive(Debug, PartialEq)]
-struct InternalFunctionBodyEarlyErrorsContext {
-    lex_names_of_body: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    var_names_of_body: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+struct InternalFunctionBodyEarlyErrorsContext<'alloc> {
+    lex_names_of_body: HashMap<Name<'alloc>, DeclarationInfo>,
+    var_names_of_body: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl InternalFunctionBodyEarlyErrorsContext {
+impl<'alloc> InternalFunctionBodyEarlyErrorsContext<'alloc> {
     fn new() -> Self {
         Self {
             lex_names_of_body: HashMap::new(),
@@ -1465,14 +1390,13 @@ impl InternalFunctionBodyEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for InternalFunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -1483,9 +1407,8 @@ impl LexicalEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
         // * It is a Syntax Error if the LexicallyDeclaredNames of
         //   FunctionStatementList contains any duplicate entries.
         if let Some(info) = self.lex_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1502,9 +1425,8 @@ impl LexicalEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
         //   of FunctionStatementList also occurs in the VarDeclaredNames of
         //   FunctionStatementList.
         if let Some(info) = self.var_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1519,14 +1441,13 @@ impl LexicalEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for InternalFunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         // Static Semantics: Early Errors
@@ -1538,9 +1459,8 @@ impl VarEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
         //   of FunctionStatementList also occurs in the VarDeclaredNames of
         //   FunctionStatementList.
         if let Some(info) = self.lex_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1568,13 +1488,13 @@ impl VarEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
 //   * async function expression
 
 #[derive(Debug, PartialEq)]
-pub struct FunctionBodyEarlyErrorsContext {
-    param: FormalParametersEarlyErrorsContext,
-    body: InternalFunctionBodyEarlyErrorsContext,
+pub struct FunctionBodyEarlyErrorsContext<'alloc> {
+    param: FormalParametersEarlyErrorsContext<'alloc>,
+    body: InternalFunctionBodyEarlyErrorsContext<'alloc>,
 }
 
-impl FunctionBodyEarlyErrorsContext {
-    pub fn new(param: FormalParametersEarlyErrorsContext) -> Self {
+impl<'alloc> FunctionBodyEarlyErrorsContext<'alloc> {
+    pub fn new(param: FormalParametersEarlyErrorsContext<'alloc>) -> Self {
         Self {
             param,
             body: InternalFunctionBodyEarlyErrorsContext::new(),
@@ -1582,14 +1502,13 @@ impl FunctionBodyEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for FunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-function-definitions-static-semantics-early-errors
         //
@@ -1660,9 +1579,8 @@ impl LexicalEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
         //   FormalParameters also occurs in the LexicallyDeclaredNames of
         //   AsyncFunctionBody.
         if let Some(info) = self.param.bound_names_of_params.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1670,19 +1588,18 @@ impl LexicalEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
             ));
         }
 
-        self.body.declare_lex(name, kind, offset, atoms)
+        self.body.declare_lex(name, kind, offset)
     }
 }
 
-impl VarEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for FunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
-        self.body.declare_var(name, kind, offset, atoms)
+    ) -> EarlyErrorsResult<'alloc> {
+        self.body.declare_var(name, kind, offset)
     }
 }
 
@@ -1698,13 +1615,13 @@ impl VarEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
 //   * async arrow function
 
 #[derive(Debug, PartialEq)]
-pub struct UniqueFunctionBodyEarlyErrorsContext {
-    param: UniqueFormalParametersEarlyErrorsContext,
-    body: InternalFunctionBodyEarlyErrorsContext,
+pub struct UniqueFunctionBodyEarlyErrorsContext<'alloc> {
+    param: UniqueFormalParametersEarlyErrorsContext<'alloc>,
+    body: InternalFunctionBodyEarlyErrorsContext<'alloc>,
 }
 
-impl UniqueFunctionBodyEarlyErrorsContext {
-    pub fn new(param: UniqueFormalParametersEarlyErrorsContext) -> Self {
+impl<'alloc> UniqueFunctionBodyEarlyErrorsContext<'alloc> {
+    pub fn new(param: UniqueFormalParametersEarlyErrorsContext<'alloc>) -> Self {
         Self {
             param,
             body: InternalFunctionBodyEarlyErrorsContext::new(),
@@ -1712,14 +1629,13 @@ impl UniqueFunctionBodyEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for UniqueFunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-arrow-function-definitions-static-semantics-early-errors
         //
@@ -1804,9 +1720,8 @@ impl LexicalEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
         //   CoverCallExpressionAndAsyncArrowHead also occurs in the
         //   LexicallyDeclaredNames of AsyncConciseBody.
         if let Some(info) = self.param.bound_names_of_params.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1814,19 +1729,18 @@ impl LexicalEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
             ));
         }
 
-        self.body.declare_lex(name, kind, offset, atoms)
+        self.body.declare_lex(name, kind, offset)
     }
 }
 
-impl VarEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for UniqueFunctionBodyEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
-        self.body.declare_var(name, kind, offset, atoms)
+    ) -> EarlyErrorsResult<'alloc> {
+        self.body.declare_var(name, kind, offset)
     }
 }
 
@@ -1836,12 +1750,12 @@ impl VarEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct ScriptEarlyErrorsContext {
-    lex_names_of_body: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    var_names_of_body: HashMap<SourceAtomSetIndex, DeclarationInfo>,
+pub struct ScriptEarlyErrorsContext<'alloc> {
+    lex_names_of_body: HashMap<Name<'alloc>, DeclarationInfo>,
+    var_names_of_body: HashMap<Name<'alloc>, DeclarationInfo>,
 }
 
-impl ScriptEarlyErrorsContext {
+impl<'alloc> ScriptEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             lex_names_of_body: HashMap::new(),
@@ -1888,14 +1802,13 @@ impl ScriptEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for ScriptEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for ScriptEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -1906,9 +1819,8 @@ impl LexicalEarlyErrorsContext for ScriptEarlyErrorsContext {
         // * It is a Syntax Error if the LexicallyDeclaredNames of ScriptBody
         //   contains any duplicate entries.
         if let Some(info) = self.lex_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1924,9 +1836,8 @@ impl LexicalEarlyErrorsContext for ScriptEarlyErrorsContext {
         // * It is a Syntax Error if any element of the LexicallyDeclaredNames
         //   of ScriptBody also occurs in the VarDeclaredNames of ScriptBody.
         if let Some(info) = self.var_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1941,14 +1852,13 @@ impl LexicalEarlyErrorsContext for ScriptEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for ScriptEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for ScriptEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         // Static Semantics: Early Errors
@@ -1959,9 +1869,8 @@ impl VarEarlyErrorsContext for ScriptEarlyErrorsContext {
         // * It is a Syntax Error if any element of the LexicallyDeclaredNames
         //   of ScriptBody also occurs in the VarDeclaredNames of ScriptBody.
         if let Some(info) = self.lex_names_of_body.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -1982,14 +1891,14 @@ impl VarEarlyErrorsContext for ScriptEarlyErrorsContext {
 // ===========================================================================
 
 #[derive(Debug, PartialEq)]
-pub struct ModuleEarlyErrorsContext {
-    lex_names_of_item_list: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    var_names_of_item_list: HashMap<SourceAtomSetIndex, DeclarationInfo>,
-    exported_names_of_item_list: HashMap<SourceAtomSetIndex, usize>,
-    exported_bindings_of_item_list: HashMap<SourceAtomSetIndex, usize>,
+pub struct ModuleEarlyErrorsContext<'alloc> {
+    lex_names_of_item_list: HashMap<Name<'alloc>, DeclarationInfo>,
+    var_names_of_item_list: HashMap<Name<'alloc>, DeclarationInfo>,
+    exported_names_of_item_list: HashMap<Name<'alloc>, usize>,
+    exported_bindings_of_item_list: HashMap<Name<'alloc>, usize>,
 }
 
-impl ModuleEarlyErrorsContext {
+impl<'alloc> ModuleEarlyErrorsContext<'alloc> {
     pub fn new() -> Self {
         Self {
             lex_names_of_item_list: HashMap::new(),
@@ -2077,10 +1986,9 @@ impl ModuleEarlyErrorsContext {
     #[allow(dead_code)]
     pub fn add_exported_name(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-module-semantics-static-semantics-early-errors
         //
@@ -2089,9 +1997,8 @@ impl ModuleEarlyErrorsContext {
         // * It is a Syntax Error if the ExportedNames of ModuleItemList
         //   contains any duplicate entries.
         if let Some(prev_offset) = self.exported_names_of_item_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateExport(
-                name,
+                name.clone(),
                 prev_offset.clone(),
                 offset,
             ));
@@ -2103,12 +2010,12 @@ impl ModuleEarlyErrorsContext {
     }
 
     #[allow(dead_code)]
-    pub fn add_exported_binding(&mut self, name: SourceAtomSetIndex, offset: usize) {
+    pub fn add_exported_binding(&mut self, name: Name<'alloc>, offset: usize) {
         self.exported_bindings_of_item_list.insert(name, offset);
     }
 
     #[allow(dead_code)]
-    pub fn check_exported_name(&self, atoms: &SourceAtomSet) -> EarlyErrorsResult {
+    pub fn check_exported_name(&self) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
         // https://tc39.es/ecma262/#sec-module-semantics-static-semantics-early-errors
         //
@@ -2121,7 +2028,6 @@ impl ModuleEarlyErrorsContext {
             if !self.var_names_of_item_list.contains_key(name)
                 && !self.lex_names_of_item_list.contains_key(name)
             {
-                let name = atoms.get(*name);
                 return Err(ParseError::MissingExport(name, offset.clone()));
             }
         }
@@ -2130,14 +2036,13 @@ impl ModuleEarlyErrorsContext {
     }
 }
 
-impl LexicalEarlyErrorsContext for ModuleEarlyErrorsContext {
+impl<'alloc> LexicalEarlyErrorsContext<'alloc> for ModuleEarlyErrorsContext<'alloc> {
     fn declare_lex(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_lexical(kind));
 
         // Static Semantics: Early Errors
@@ -2158,9 +2063,8 @@ impl LexicalEarlyErrorsContext for ModuleEarlyErrorsContext {
         // * It is a Syntax Error if the BoundNames of ImportDeclaration
         //   contains any duplicate entries.
         if let Some(info) = self.lex_names_of_item_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -2178,9 +2082,8 @@ impl LexicalEarlyErrorsContext for ModuleEarlyErrorsContext {
         //   of ModuleItemList also occurs in the VarDeclaredNames of
         //   ModuleItemList.
         if let Some(info) = self.var_names_of_item_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,
@@ -2195,14 +2098,13 @@ impl LexicalEarlyErrorsContext for ModuleEarlyErrorsContext {
     }
 }
 
-impl VarEarlyErrorsContext for ModuleEarlyErrorsContext {
+impl<'alloc> VarEarlyErrorsContext<'alloc> for ModuleEarlyErrorsContext<'alloc> {
     fn declare_var(
         &mut self,
-        name: SourceAtomSetIndex,
+        name: Name<'alloc>,
         kind: DeclarationKind,
         offset: usize,
-        atoms: &SourceAtomSet,
-    ) -> EarlyErrorsResult {
+    ) -> EarlyErrorsResult<'alloc> {
         debug_assert!(Self::is_supported_var(kind));
 
         // Static Semantics: Early Errors
@@ -2214,9 +2116,8 @@ impl VarEarlyErrorsContext for ModuleEarlyErrorsContext {
         //   of ModuleItemList also occurs in the VarDeclaredNames of
         //   ModuleItemList.
         if let Some(info) = self.lex_names_of_item_list.get(&name) {
-            let name = atoms.get(name);
             return Err(ParseError::DuplicateBinding(
-                name,
+                name.clone(),
                 info.kind,
                 info.offset,
                 kind,

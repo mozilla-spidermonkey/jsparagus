@@ -18,4 +18,4 @@ pub use parser_tables_generated::{
     TerminalId, START_STATE_MODULE, START_STATE_SCRIPT, TABLES,
 };
 pub use stack_value_generated::StackValue;
-pub use token::{Token, TokenValue};
+pub use token::Token;

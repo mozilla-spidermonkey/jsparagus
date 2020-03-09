@@ -1,13 +1,11 @@
+use super::emitter::{AtomIndex, EmitError};
 use crate::ast_emitter::AstEmitter;
-use crate::emitter::EmitError;
-use crate::script_atom_set::ScriptAtomSetIndex;
-use ast::source_atom_set::SourceAtomSetIndex;
 
 #[derive(Debug, PartialEq)]
 enum AssignmentReferenceKind {
-    GlobalName(ScriptAtomSetIndex),
+    GlobalName(AtomIndex),
     #[allow(dead_code)]
-    Prop(ScriptAtomSetIndex),
+    Prop(AtomIndex),
     #[allow(dead_code)]
     Elem,
 }
@@ -53,10 +51,10 @@ impl CallReference {
 }
 
 // Struct for emitting bytecode for get `name` operation.
-pub struct GetNameEmitter {
-    pub name: SourceAtomSetIndex,
+pub struct GetNameEmitter<'alloc> {
+    pub name: &'alloc str,
 }
-impl GetNameEmitter {
+impl<'alloc> GetNameEmitter<'alloc> {
     pub fn emit(self, emitter: &mut AstEmitter) {
         let name_index = emitter.emit.get_atom_index(self.name);
 
@@ -69,14 +67,14 @@ impl GetNameEmitter {
 }
 
 // Struct for emitting bytecode for get `obj.key` operation.
-pub struct GetPropEmitter<F>
+pub struct GetPropEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub obj: F,
-    pub key: SourceAtomSetIndex,
+    pub key: &'alloc str,
 }
-impl<F> GetPropEmitter<F>
+impl<'alloc, F> GetPropEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
@@ -98,14 +96,14 @@ where
 }
 
 // Struct for emitting bytecode for get `super.key` operation.
-pub struct GetSuperPropEmitter<F>
+pub struct GetSuperPropEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub this: F,
-    pub key: SourceAtomSetIndex,
+    pub key: &'alloc str,
 }
-impl<F> GetSuperPropEmitter<F>
+impl<'alloc, F> GetSuperPropEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
@@ -207,10 +205,10 @@ where
 }
 
 // Struct for emitting bytecode for `name` reference.
-pub struct NameReferenceEmitter {
-    pub name: SourceAtomSetIndex,
+pub struct NameReferenceEmitter<'alloc> {
+    pub name: &'alloc str,
 }
-impl NameReferenceEmitter {
+impl<'alloc> NameReferenceEmitter<'alloc> {
     pub fn emit_for_call(self, emitter: &mut AstEmitter) -> CallReference {
         let name_index = emitter.emit.get_atom_index(self.name);
 
@@ -241,14 +239,14 @@ impl NameReferenceEmitter {
 }
 
 // Struct for emitting bytecode for `obj.key` reference.
-pub struct PropReferenceEmitter<F>
+pub struct PropReferenceEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub obj: F,
-    pub key: SourceAtomSetIndex,
+    pub key: &'alloc str,
 }
-impl<F> PropReferenceEmitter<F>
+impl<'alloc, F> PropReferenceEmitter<'alloc, F>
 where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {

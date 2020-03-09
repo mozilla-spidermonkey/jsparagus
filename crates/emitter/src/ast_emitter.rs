@@ -2,26 +2,23 @@
 //!
 //! Converts AST nodes to bytecode.
 
-use crate::compilation_info::CompilationInfo;
-use crate::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
-use crate::opcode::Opcode;
+use super::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
+use super::opcode::Opcode;
 use crate::reference_op_emitter::{
     AssignmentEmitter, CallEmitter, ElemReferenceEmitter, GetElemEmitter, GetNameEmitter,
     GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
     PropReferenceEmitter,
 };
-use ast::source_atom_set::SourceAtomSet;
 use ast::types::*;
 
 use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
 
 /// Emit a program, converting the AST directly to bytecode.
-pub fn emit_program<'alloc>(
-    ast: &Program,
-    options: &EmitOptions,
-    atoms: SourceAtomSet<'alloc>,
-) -> Result<EmitResult, EmitError> {
-    let mut emitter = AstEmitter::new(options, atoms);
+pub fn emit_program(ast: &Program, options: &EmitOptions) -> Result<EmitResult, EmitError> {
+    let mut emitter = AstEmitter {
+        emit: InstructionWriter::new(),
+        options,
+    };
 
     match ast {
         Program::Script(script) => emitter.emit_script(script)?,
@@ -30,24 +27,15 @@ pub fn emit_program<'alloc>(
         }
     }
 
-    Ok(emitter.emit.into_emit_result(emitter.compilation_info))
+    Ok(emitter.emit.into_emit_result())
 }
 
-pub struct AstEmitter<'alloc, 'opt> {
+pub struct AstEmitter<'alloc> {
     pub emit: InstructionWriter,
-    options: &'opt EmitOptions,
-    compilation_info: CompilationInfo<'alloc>,
+    options: &'alloc EmitOptions,
 }
 
-impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
-    fn new(options: &'opt EmitOptions, atoms: SourceAtomSet<'alloc>) -> Self {
-        Self {
-            emit: InstructionWriter::new(),
-            options,
-            compilation_info: CompilationInfo::new(atoms),
-        }
-    }
-
+impl<'alloc> AstEmitter<'alloc> {
     fn emit_script(&mut self, ast: &Script) -> Result<(), EmitError> {
         for statement in &ast.statements {
             self.emit_statement(statement)?;
@@ -205,7 +193,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
 
             Expression::LiteralStringExpression { value, .. } => {
-                let str_index = self.emit.get_atom_index(*value);
+                let str_index = self.emit.get_atom_index(value);
                 self.emit.string(str_index);
             }
 
@@ -449,7 +437,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
 
                 match property_name {
                     PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                        let name_index = self.emit.get_atom_index(*value);
+                        let name_index = self.emit.get_atom_index(value);
                         self.emit.init_prop(name_index);
                     }
                     PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
@@ -550,7 +538,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_identifier_expression(&mut self, ast: &IdentifierExpression) {
-        let name = ast.name.value;
+        let name = &ast.name.value;
         GetNameEmitter { name }.emit(self);
     }
 
@@ -582,7 +570,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 ..
             }) => GetPropEmitter {
                 obj: |emitter| emitter.emit_expression(object),
-                key: property.value,
+                key: &property.value,
             }
             .emit(self),
 
@@ -592,7 +580,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 ..
             }) => GetSuperPropEmitter {
                 this: |emitter| emitter.emit_this(),
-                key: property.value,
+                key: &property.value,
             }
             .emit(self),
 

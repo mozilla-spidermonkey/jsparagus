@@ -2,7 +2,6 @@
 
 pub mod arena;
 pub mod associated_data;
-pub mod source_atom_set;
 pub mod source_location;
 
 mod source_location_accessor_generated;

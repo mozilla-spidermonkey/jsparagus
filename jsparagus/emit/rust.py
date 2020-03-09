@@ -241,7 +241,7 @@ class RustParserWriter:
             return action
 
     def emit_special_cases(self):
-        self.write(0, "static SPECIAL_CASES: [fn(&Token) -> i64; {}] = [",
+        self.write(0, "static SPECIAL_CASES: [fn(&Token<'_>) -> i64; {}] = [",
                    len(self.special_cases))
         for i, code in enumerate(self.special_cases):
             self.write(1, "|token| {{ {} }},", code)
@@ -345,7 +345,7 @@ class RustParserWriter:
             assert not boxed
             rty = '()'
         elif ty == types.TokenType:
-            rty = "Token"
+            rty = "Token<'alloc>"
         elif ty.name == 'Option' and len(ty.args) == 1:
             # We auto-translate `Box<Option<T>>` to `Option<Box<T>>` since
             # that's basically the same thing but more efficient.
@@ -418,11 +418,11 @@ class RustParserWriter:
         self.write(0, "}")
         self.write(0, "")
         self.write(0, "pub trait ParserTrait<'alloc, Value> {")
-        self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<bool>;")
+        self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
         self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
         self.write(1, "fn epsilon(&mut self, state: usize);")
         self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
-        self.write(1, "fn check_not_on_new_line(&self, peek: usize) -> Result<bool>;")
+        self.write(1, "fn check_not_on_new_line(&self, peek: usize) -> Result<'alloc, bool>;")
         self.write(0, "}")
         self.write(0, "")
 
@@ -571,7 +571,7 @@ class RustParserWriter:
         # since every other data structure mentioned in this file lives in the arena.
         has_ast_builder = True
         traits = ["ParserTrait<'alloc, StackValue<'alloc>>", "AstBuilderDelegate<'alloc>"]
-        self.write(0, "pub fn actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<bool>")
+        self.write(0, "pub fn actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<'alloc, bool>")
         self.write(0, "where")
         self.write(1, "Handler: {}", ' + '.join(traits))
         self.write(0, "{")
@@ -605,7 +605,7 @@ class RustParserWriter:
         used_offsets = set()
         has_ast_builder = False
         traits = ["ParserTrait<'alloc, ()>"]
-        self.write(0, "pub fn noop_actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<bool>")
+        self.write(0, "pub fn noop_actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<'alloc, bool>")
         self.write(0, "where")
         self.write(1, "Handler: {}", ' + '.join(traits))
         self.write(0, "{")
@@ -645,7 +645,7 @@ class RustParserWriter:
         self.write(1, "handler: &mut AstBuilder<'alloc>,")
         self.write(1, "prod: usize,")
         self.write(1, "stack: &mut std::vec::Vec<StackValue<'alloc>>,")
-        self.write(0, ") -> Result<NonterminalId> {")
+        self.write(0, ") -> Result<'alloc, NonterminalId> {")
         self.write(1, "match prod {")
         for i, prod in enumerate(self.prods):
             # If prod.nt is not in nonterminals, that means it's a goal

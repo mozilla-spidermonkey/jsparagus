@@ -13,19 +13,19 @@
   },
   "Identifier": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "String"
   },
   "IdentifierName": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "String"
   },
   "PrivateIdentifier": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "String"
   },
   "Label": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "String"
   },
   "VariableDeclarationKind": {
     "_type": "enum",
@@ -200,7 +200,7 @@
       "value": "f64"
     },
     "LiteralRegExpExpression": {
-      "pattern": "SourceAtomSetIndex",
+      "pattern": "String",
       "global": "bool",
       "ignore_case": "bool",
       "multi_line": "bool",
@@ -208,7 +208,7 @@
       "unicode": "bool"
     },
     "LiteralStringExpression": {
-      "value": "SourceAtomSetIndex"
+      "value": "String"
     },
     "ArrayExpression": "ArrayExpression",
     "ArrowExpression": {
@@ -504,13 +504,13 @@
   },
   "Import": {
     "_type": "struct",
-    "module_specifier": "SourceAtomSetIndex",
+    "module_specifier": "String",
     "default_binding": "Option<BindingIdentifier>",
     "named_imports": "Vec<ImportSpecifier>"
   },
   "ImportNamespace": {
     "_type": "struct",
-    "module_specifier": "SourceAtomSetIndex",
+    "module_specifier": "String",
     "default_binding": "Option<BindingIdentifier>",
     "namespace_binding": "BindingIdentifier"
   },
@@ -521,12 +521,12 @@
   },
   "ExportAllFrom": {
     "_type": "struct",
-    "module_specifier": "SourceAtomSetIndex"
+    "module_specifier": "String"
   },
   "ExportFrom": {
     "_type": "struct",
     "named_exports": "Vec<ExportFromSpecifier>",
-    "module_specifier": "SourceAtomSetIndex"
+    "module_specifier": "String"
   },
   "ExportLocals": {
     "_type": "struct",
@@ -588,7 +588,7 @@
   },
   "StaticPropertyName": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "String"
   },
   "ArrayExpressionElement": {
     "_type": "enum",
@@ -651,7 +651,7 @@
   "Block": {
     "_type": "struct",
     "statements": "Vec<Statement>",
-    "declarations": "Option<Vec<SourceAtomSetIndex>>"
+    "declarations": "Option<Vec<String>>"
   },
   "CatchClause": {
     "_type": "struct",
@@ -660,7 +660,7 @@
   },
   "Directive": {
     "_type": "struct",
-    "raw_value": "SourceAtomSetIndex"
+    "raw_value": "String"
   },
   "FormalParameters": {
     "_type": "struct",
@@ -688,7 +688,7 @@
   },
   "TemplateElement": {
     "_type": "struct",
-    "raw_value": "SourceAtomSetIndex"
+    "raw_value": "String"
   },
   "VariableDeclaration": {
     "_type": "struct",
