@@ -4,6 +4,7 @@ mod dis;
 mod emitter;
 mod forward_jump_emitter;
 pub mod opcode;
+pub mod opcode_info;
 mod reference_op_emitter;
 mod script_atom_set;
 
