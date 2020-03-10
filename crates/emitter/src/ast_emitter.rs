@@ -196,8 +196,8 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 self.emit.null();
             }
 
-            Expression::LiteralNumericExpression { value, .. } => {
-                self.emit_numeric_expression(*value);
+            Expression::LiteralNumericExpression(num) => {
+                self.emit_numeric_expression(num.value);
             }
 
             Expression::LiteralRegExpExpression { .. } => {
@@ -444,19 +444,21 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                     expression,
                     ..
                 },
-            )) => {
-                self.emit_expression(expression)?;
-
-                match property_name {
-                    PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                        let name_index = self.emit.get_atom_index(*value);
-                        self.emit.init_prop(name_index);
-                    }
-                    PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
-                        return Err(EmitError::NotImplemented("TODO: computed property"))
-                    }
+            )) => match property_name {
+                PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
+                    self.emit_expression(expression)?;
+                    let name_index = self.emit.get_atom_index(*value);
+                    self.emit.init_prop(name_index);
                 }
-            }
+                PropertyName::StaticNumericPropertyName(NumericLiteral { value, .. }) => {
+                    self.emit.double_(*value);
+                    self.emit_expression(expression)?;
+                    self.emit.init_elem();
+                }
+                PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
+                    return Err(EmitError::NotImplemented("TODO: computed property"))
+                }
+            },
             _ => return Err(EmitError::NotImplemented("TODO: non data property")),
         }
 
