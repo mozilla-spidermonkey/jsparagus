@@ -159,7 +159,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
 
         if let Some(alternate) = &if_statement.alternate {
             let then_jump = ForwardJumpEmitter {
-                jump: JumpKind::IfEq,
+                jump: JumpKind::Goto,
             }
             .emit(self);
             // ^^ part of then branch
