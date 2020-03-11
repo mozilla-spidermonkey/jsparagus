@@ -4067,6 +4067,15 @@ impl<'alloc> AstBuilder<'alloc> {
         )
     }
 
+    // ClassElement : `static` MethodDefinition
+    pub fn class_element_static_field(
+        &self,
+        _static_token: arena::Box<'alloc, Token>,
+        _field: arena::Box<'alloc, ClassElement<'alloc>>,
+    ) -> Result<arena::Box<'alloc, Void>> {
+        Err(ParseError::NotImplemented("class static field"))
+    }
+
     // ClassElement : `;`
     pub fn class_element_empty(
         &self,
