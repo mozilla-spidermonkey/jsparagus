@@ -10,7 +10,7 @@ use crate::reference_op_emitter::{
     GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
     PropReferenceEmitter,
 };
-use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
+use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use ast::types::*;
 
 use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
@@ -446,9 +446,18 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 },
             )) => match property_name {
                 PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                    self.emit_expression(expression)?;
-                    let name_index = self.emit.get_atom_index(*value);
-                    self.emit.init_prop(name_index);
+                    match self.to_property_index(*value) {
+                        Some(value) => {
+                            self.emit.double_(value as f64);
+                            self.emit_expression(expression)?;
+                            self.emit.init_elem();
+                        }
+                        None => {
+                            self.emit_expression(expression)?;
+                            let name_index = self.emit.get_atom_index(*value);
+                            self.emit.init_prop(name_index);
+                        }
+                    }
                 }
                 PropertyName::StaticNumericPropertyName(NumericLiteral { value, .. }) => {
                     self.emit.double_(*value);
@@ -463,6 +472,11 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         }
 
         Ok(())
+    }
+
+    fn to_property_index(&self, index: SourceAtomSetIndex) -> Option<u32> {
+        let s = self.compilation_info.atoms.get(index);
+        s.parse::<u32>().ok()
     }
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
