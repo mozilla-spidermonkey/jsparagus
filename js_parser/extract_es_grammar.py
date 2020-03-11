@@ -263,7 +263,7 @@ def fragment_chunks(e, extra_rules={}):
         Put a postfix after the text
         value uses the same format as prefix
       * strip
-        True to strip whitespaces before/after element'stext
+        True to strip whitespaces before/after element's text
       * children_filter_factroy
         A function that receives `Element`, and returns a filter function or None
         The filter function receives a list of texts for child nodes, and
