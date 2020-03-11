@@ -10,7 +10,7 @@ use crate::reference_op_emitter::{
     GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter, NewEmitter,
     PropReferenceEmitter,
 };
-use ast::source_atom_set::SourceAtomSet;
+use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
 use ast::types::*;
 
 use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
@@ -637,6 +637,9 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             callee: |emitter| match callee {
                 ExpressionOrSuper::Expression(expr) => match &**expr {
                     Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
+                        if name.value == CommonSourceAtomSetIndices::eval() {
+                            return Err(EmitError::NotImplemented("TODO: direct eval"));
+                        }
                         Ok(NameReferenceEmitter { name: name.value }.emit_for_call(emitter))
                     }
 
