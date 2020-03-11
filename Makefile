@@ -27,8 +27,12 @@ init: init-venv
 ECMA262_SPEC_HTML = ../tc39/ecma262/spec.html
 STANDARD_ES_GRAMMAR_OUT = js_parser/es.esgrammar
 
+# List of files which have a grammar_extension! Rust macro. The macro content is
+# scrapped to patch the extracted grammar.
+EXTENSION_FILES = \
+
 # Incomplete list of files that contribute to the dump file.
-SOURCE_FILES = \
+SOURCE_FILES = $(EXTENSION_FILES) \
 jsparagus/gen.py \
 jsparagus/actions.py \
 jsparagus/types.py \
@@ -46,7 +50,7 @@ jsparagus/emit/rust.py
 DUMP_FILE = js_parser/parser_generated.jsparagus_dump
 
 $(DUMP_FILE): $(SOURCE_FILES)
-	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@
+	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(EXTENSION_FILES:%=--extend %)
 
 $(PY_OUT): $(EMIT_FILES) $(DUMP_FILE)
 	$(PYTHON) -m js_parser.generate_js_parser_tables --progress -o $@ $(DUMP_FILE)

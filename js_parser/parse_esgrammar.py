@@ -8,8 +8,8 @@ from jsparagus.ordered import OrderedFrozenSet
 
 ESGrammarLexer = LexicalGrammar(
     # the operators and keywords:
-    "[ ] { } , ~ + ? <! == != => ( ) @ < > "
-    "but empty here lookahead no not of one or returns through Some None",
+    "[ ] { } , ~ + ? <! = == != => ( ) @ < > ' ; "
+    "but empty here lookahead no not of one or returns through Some None impl for let",
 
     NL="\n",
 
@@ -43,6 +43,9 @@ ESGrammarLexer = LexicalGrammar(
 
     # expression denoting a matched terminal or nonterminal
     MATCH_REF=r'\$(?:0|[1-9][0-9]*)',
+
+    # the spec also gives a few productions names
+    RUSTCOMMENT=r'//\w*\n',
 )
 
 
@@ -86,6 +89,28 @@ class ESGrammarBuilder:
         if terminal_names is None:
             terminal_names = frozenset()
         self.terminal_names = terminal_names
+
+    def rust_edsl(self, impl, grammar):
+        return ("Extension", impl, grammar)
+
+    def rust_param_impl(self, trait, impl_type, param):
+        return ("RustImpl", param, trait, impl_type)
+
+    def rust_impl(self, trait, impl_type):
+        return self.rust_param_impl(trait, impl_type, [])
+
+    def rust_nt_def(self, lhs, rhs_line):
+        # Right now, only focus on the syntactic grammar.
+        return self.nt_def(None, lhs, ':', [rhs_line])
+
+    def rust_rhs_line(self, symbols):
+        return self.rhs_line(None, symbols, None, None)
+
+    def rust_expr(self, expr):
+        return ("Expr", expr)
+
+    def empty(self):
+        return []
 
     def single(self, x):
         return [x]
@@ -211,6 +236,9 @@ class ESGrammarBuilder:
 
     def simple_type(self, name):
         return types.Type(name)
+
+    def lifetime_type(self, name):
+        return types.Lifetime(name)
 
     def parameterized_type(self, name, args):
         return types.Type(name, args)
@@ -403,14 +431,22 @@ def parse_esgrammar(
         text,
         *,
         filename=None,
+        extensions=[],
         goals=None,
         terminal_names=None,
         synthetic_terminals=None,
         single_grammar=True):
-    parser = ESGrammarParser(builder=ESGrammarBuilder(terminal_names))
+    parser = ESGrammarParser(builder=ESGrammarBuilder(terminal_names), goal="grammar")
     lexer = ESGrammarLexer(parser, filename=filename)
     lexer.write(text)
     nt_defs = lexer.close()
+    for ext_filename, start_lineno, content in extensions:
+        parser = ESGrammarParser(builder=ESGrammarBuilder(terminal_names), goal="rust_edsl")
+        lexer = ESGrammarLexer(parser, filename=ext_filename)
+        lexer.start_lineno = start_lineno
+        lexer.write(content)
+        result = lexer.close()
+        raise ValueError("Not Implemented Yet: Merging grammar extensions.")
     return finish_grammar(
         nt_defs,
         goals=goals,

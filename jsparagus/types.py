@@ -17,6 +17,7 @@ import collections
 from . import grammar
 
 
+Lifetime = collections.namedtuple('Lifetime', 'name')
 TypeBase = collections.namedtuple('Type', 'name args')
 
 _all_types = {}
