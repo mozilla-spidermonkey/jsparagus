@@ -437,6 +437,15 @@ class RustParserWriter:
             return
         has_ast_builder = False
         used_offsets = set()
+        traits = []
+        def implement_trait(funcall):
+            "Returns True if this function call should be encoded"
+            ty = str(funcall.trait)
+            if ty == "AstBuilder":
+                return "AstBuilderDelegate<'alloc>" in traits
+            if ty in traits:
+                return True
+            return ty in (t.split('<')[0] for t in traits)
 
         def collect_offsets(act):
             # Given an action, returns the list of used stack slots.
@@ -453,7 +462,7 @@ class RustParserWriter:
                         elif isinstance(a, Some):
                             for offset in map_with_offset([a.inner]):
                                 yield offset
-                if has_ast_builder or act.method == "id":
+                if implement_trait(act):
                     for offset in map_with_offset(act.args):
                         yield offset
             elif isinstance(act, Seq):
@@ -504,6 +513,9 @@ class RustParserWriter:
                 raise ValueError("NYI: PushFlag action")
             elif isinstance(act, PopFlag):
                 raise ValueError("NYI: PopFlag action")
+            elif isinstance(act, FunCall) and not implement_trait(act):
+                if act.set_to == "value":
+                    self.write(indent, "let value = ();")
             elif isinstance(act, FunCall):
                 def no_unpack(val):
                     return val
@@ -537,19 +549,18 @@ class RustParserWriter:
                     assert len(act.args) == 0
                     self.write(indent, "return Ok(true);")
                     return False
-                elif has_ast_builder:
-                    # TODO: Check whether the function is implemented by the
-                    # given traits, to decide whether to implement it or not.
+                else:
+                    delegate = ""
+                    if str(act.trait) == "AstBuilder":
+                        delegate = "ast_builder_refmut()."
                     forward_errors = ""
                     if act.method in self.fallible_methods:
                         forward_errors = "?"
-                    self.write(indent, "let {} = parser.ast_builder_refmut().{}({}){};",
-                               act.set_to, act.method, ", ".join(map_with_offset(act.args, unpack)),
+                    self.write(indent, "let {} = parser.{}{}({}){};",
+                               act.set_to, delegate, act.method,
+                               ", ".join(map_with_offset(act.args, unpack)),
                                forward_errors)
                     is_packed[act.set_to] = False
-                else:
-                    if act.set_to == "value":
-                        self.write(indent, "let value = ();")
             elif isinstance(act, Seq):
                 # Do not pop any of the stack elements if the reduce action has
                 # an accept function call. Ideally we should be returning the

@@ -114,7 +114,6 @@ def load_syntactic_grammar(filename, extensions):
                     continue
                 if content is not None:
                     content += line
-    print(extensions_content)
 
     g = parse_esgrammar(
         grammar_text,

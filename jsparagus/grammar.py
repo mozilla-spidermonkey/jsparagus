@@ -56,7 +56,7 @@ def example_grammar():
 # `Production(["term"], 0)`.
 #
 # The production `expr ::= expr + term => add($0, $2)` is represented by
-# `Production(["expr", "+", "term"], CallMethod("add", (0, 2))`.
+# `Production(["expr", "+", "term"], CallMethod("add", (0, 2), "AstBuilder")`.
 #
 class Production:
     __slots__ = ['body', 'reducer', 'condition']
@@ -117,7 +117,20 @@ class Production:
 # used only in productions for init nonterminals, created automatically by
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
 #
-CallMethod = collections.namedtuple("CallMethod", "method args")
+
+class CallMethod(collections.namedtuple("CallMethod", "method args trait")):
+    """Express a method call, and give it a given set of arguments. A trait is
+    added as the parser should implement this trait to call this method."""
+    def __new__(cls, method, args, trait):
+        if isinstance(trait, str):
+            trait = types.Type(trait)
+        self = super(CallMethod, cls).__new__(cls, method, args, trait)
+        return self
+    def __eq__(self, other):
+        return isinstance(other, CallMethod) and super(CallMethod, self).__eq__(other)
+    def __hash__(self):
+        return super(CallMethod, self).__hash__()
+
 Some = collections.namedtuple("Some", "inner")
 
 
@@ -125,8 +138,8 @@ def expr_to_str(expr):
     if isinstance(expr, int):
         return "${}".format(expr)
     elif isinstance(expr, CallMethod):
-        return "{}({})".format(
-            expr.method,
+        return "{}::{}({})".format(
+            expr.trait, expr.method,
             ', '.join(expr_to_str(arg) for arg in expr.args))
     elif expr is None:
         return "None"
@@ -356,6 +369,8 @@ class Grammar:
                 return self.intern(e)
             elif e is NoLineTerminatorHere:
                 return e
+            elif isinstance(e, CallMethod):
+                return self.intern(e)
             else:
                 raise TypeError(
                     "invalid grammar: unrecognized element in production "
@@ -414,7 +429,7 @@ class Grammar:
                         method = nt
                     else:
                         method = '{}_{}'.format(nt, i)
-                    reducer = CallMethod(method, args=tuple(range(nargs)))
+                    reducer = CallMethod(method, tuple(range(nargs)), "AstBuilder")
                 rhs = Production(rhs, reducer)
 
             if not isinstance(rhs, Production):
@@ -595,6 +610,16 @@ class Grammar:
                     (), [Production([goal], 0), Production([init_nt, End()], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
+    def patch(self, extensions):
+        if extensions == []:
+            return
+        # Copy of nonterminals which would be mutated by the patches.
+        nonterminals = { nt: nt_def for nt, nt_def in self.nonterminals.items() }
+        for ext in extensions:
+            ext.apply_patch(self, nonterminals)
+        # Replace with the modified version of nonterminals
+        self.nonterminals = nonterminals
+
     def intern(self, obj):
         """Return a shared copy of the immutable object `obj`.
 
@@ -668,6 +693,8 @@ class Grammar:
             return "<END>"
         elif e is NoLineTerminatorHere:
             return "[no LineTerminator here]"
+        elif isinstance(e, CallMethod):
+            return "{{ {} }}".format(expr_to_str(e))
         else:
             return str(e)
 
@@ -757,6 +784,22 @@ class Grammar:
                   .format(name,
                           ", ".join(types.type_to_str(ty) for ty in mty.argument_types),
                           types.type_to_str(mty.return_type)))
+
+    def is_shifted_element(self, e):
+        if isinstance(e, Nt):
+            return True
+        elif self.is_terminal(e):
+            return True
+        elif isinstance(e, Optional):
+            return True
+        elif isinstance(e, LookaheadRule):
+            return False
+        elif isinstance(e, End):
+            return True
+        elif e is NoLineTerminatorHere:
+            return True
+        return False
+
 
 
 InitNt = collections.namedtuple("InitNt", "goal")

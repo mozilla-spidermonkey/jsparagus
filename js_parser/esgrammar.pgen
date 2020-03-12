@@ -80,8 +80,8 @@ nt rust_rhs_line {
 }
 
 nt rust_symbols {
-    rust_symbol => single($0);
-    rust_symbols rust_symbol => append($0, $1);
+    rust_symbol;
+    rust_symbols rust_symbol => concat($0, $1);
 }
 
 nt rust_symbol {

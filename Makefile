@@ -34,6 +34,9 @@ EXTENSION_FILES = \
 # Incomplete list of files that contribute to the dump file.
 SOURCE_FILES = $(EXTENSION_FILES) \
 jsparagus/gen.py \
+jsparagus/grammar.py \
+jsparagus/extension.py \
+jsparagus/utils.py \
 jsparagus/actions.py \
 jsparagus/types.py \
 js_parser/esgrammar.pgen \

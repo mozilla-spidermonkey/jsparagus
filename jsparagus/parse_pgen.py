@@ -26,8 +26,8 @@ pgen_lexer = LexicalGrammar(
 def list_of(e):
     nt = e + 's'
     return [
-        Production([e], CallMethod('single', (0,))),
-        Production([nt, e], CallMethod('append', (0, 1))),
+        Production([e], CallMethod('single', (0,), "AstBuilder")),
+        Production([nt, e], CallMethod('append', (0, 1), "AstBuilder")),
     ]
 
 
@@ -40,7 +40,7 @@ def call_method(name, body):
                 arg_indexes.append(current)
             current += 1
 
-    return CallMethod(name, tuple(arg_indexes))
+    return CallMethod(name, tuple(arg_indexes), "AstBuilder")
 
 
 def prod(body, reducer):
@@ -190,7 +190,7 @@ class AstBuilder:
         return int(match[1:])
 
     def expr_call(self, ident, args):
-        return CallMethod(ident, tuple(args or ()))
+        return CallMethod(ident, tuple(args or ()), "AstBuilder")
 
     def args_single(self, expr):
         return [expr]
