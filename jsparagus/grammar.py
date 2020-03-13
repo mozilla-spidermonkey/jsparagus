@@ -186,7 +186,9 @@ class Grammar:
             goal_nts=None,
             variable_terminals=(),
             synthetic_terminals=None,
-            method_types=None):
+            method_types=None,
+            exec_modes=None,
+            type_to_modes=None):
 
         # This constructor supports passing in a sort of jumbled blob of
         # strings, lists, and actual objects, and normalizes it all to a more
@@ -610,12 +612,23 @@ class Grammar:
                     (), [Production([goal], 0), Production([init_nt, End()], 'accept')], types.NoReturnType)
             self.init_nts.append(init_nt)
 
+        # Add the various execution backends which would rely on the same parse table.
+        self.exec_modes = exec_modes
+        self.type_to_modes = type_to_modes
+
     def patch(self, extensions):
+        assert self.type_to_modes is not None
+        assert self.exec_modes is not None
         if extensions == []:
             return
         # Copy of nonterminals which would be mutated by the patches.
         nonterminals = { nt: nt_def for nt, nt_def in self.nonterminals.items() }
         for ext in extensions:
+            # Add the given trait to the execution mode, depending on which
+            # type it got implemented for.
+            for mode in self.type_to_modes[ext.target.for_type]:
+                self.exec_modes[mode].add(ext.target.trait)
+            # Apply grammar transformations.
             ext.apply_patch(self, nonterminals)
         # Replace with the modified version of nonterminals
         self.nonterminals = nonterminals
@@ -668,7 +681,9 @@ class Grammar:
             goal_nts=self.goals(),
             variable_terminals=self.variable_terminals,
             synthetic_terminals=self.synthetic_terminals,
-            method_types=self.methods)
+            method_types=self.methods,
+            exec_modes=self.exec_modes,
+            type_to_modes=self.type_to_modes)
 
     # === A few methods for dumping pieces of grammar.
 

@@ -1,8 +1,8 @@
 use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
-    actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
-    StackValue, Term, TermValue, TerminalId, Token, TABLES,
+    full_actions, traits, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait,
+    Result, StackValue, Term, TermValue, TerminalId, Token, TABLES,
 };
 
 pub struct Parser<'alloc> {
@@ -47,7 +47,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             // Execute any actions, such as reduce actions ast builder actions.
             while state >= TABLES.shift_count {
                 assert!(state < TABLES.action_count + TABLES.shift_count);
-                if actions(self, state)? {
+                if full_actions(self, state)? {
                     return Ok(true);
                 }
                 state = self.state();

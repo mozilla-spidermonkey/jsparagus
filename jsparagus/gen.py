@@ -2112,6 +2112,12 @@ class ParseTable:
         # Carry the info to be used when generating debug_context. If False,
         # then no debug_context is ever produced.
         "debug_info",
+        # Execution modes are used by the code generator to decide which
+        # function is executed when. This is a dictionary of OrderedSet, where
+        # the keys are the various parsing modes, and the mapped set contains
+        # the list of traits which have to be implemented, and consequently
+        # which functions would be encoded.
+        "exec_modes"
     ]
 
     def __init__(self, grammar, verbose = False, progress = False, debug = False):
@@ -2122,6 +2128,7 @@ class ParseTable:
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
         self.debug_info = debug
+        self.exec_modes = grammar.grammar.exec_modes
         self.create_lr0_table(grammar, verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
@@ -3273,7 +3280,8 @@ def generate_parser_states(grammar, *, verbose=False, progress=False, debug=Fals
     return parse_table
 
 
-def generate_parser(out, source, *, verbose=False, progress=False, debug=False, target='python', handler_info=None):
+def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
+                    target='python', handler_info=None):
     assert target in ('python', 'rust')
 
     if isinstance(source, Grammar):

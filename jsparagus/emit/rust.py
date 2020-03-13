@@ -72,10 +72,10 @@ TERMINAL_NAMES = {
 }
 
 class RustParserWriter:
-    def __init__(self, out, pt, fallible_methods, parser_traits):
+    def __init__(self, out, pt, fallible_methods):
         self.out = out
         self.fallible_methods = fallible_methods
-        self.parser_traits = parser_traits
+        assert pt.exec_modes is not None
         self.parse_table = pt
         self.states = pt.states
         self.shift_count = pt.count_shift_states()
@@ -113,6 +113,18 @@ class RustParserWriter:
         self.write(0, "use crate::ast_builder::AstBuilderDelegate;")
         self.write(0, "use crate::stack_value_generated::{StackValue, TryIntoStack};")
         self.write(0, "use crate::error::Result;")
+        traits = OrderedSet()
+        for mode_traits in self.parse_table.exec_modes.values():
+            traits |= mode_traits
+        traits = list(traits)
+        traits = [ty for ty in traits if ty.name != "AstBuilderDelegate"]
+        traits = [ty for ty in traits if ty.name != "ParserTrait"]
+        if traits == []:
+            pass
+        elif len(traits) == 1:
+            self.write(0, "use crate::traits::{};", traits[0].name)
+        else:
+            self.write(0, "use crate::traits::{{{}}};", ", ".join(ty.name for ty in traits))
         self.write(0, "")
         self.write(0, "const ERROR: i64 = {};", hex(ERROR))
         self.write(0, "")
@@ -335,13 +347,16 @@ class RustParserWriter:
             visit_type(method.return_type)
         return names
 
-    def type_to_rust(self, ty, namespace, boxed=False):
+    def type_to_rust(self, ty, namespace="", boxed=False):
         """
         Convert a jsparagus type (see types.py) to Rust.
 
         Pass boxed=True if the type needs to be boxed.
         """
-        if ty == types.UnitType:
+        if isinstance(ty, types.Lifetime):
+            assert not boxed
+            rty = "'" + ty.name
+        elif ty == types.UnitType:
             assert not boxed
             rty = '()'
         elif ty == types.TokenType:
@@ -435,40 +450,46 @@ class RustParserWriter:
     def actions(self):
         if not self.parse_table:
             return
+        ast_builder = types.Type("AstBuilderDelegate", (types.Lifetime("alloc"),))
         has_ast_builder = False
-        used_offsets = set()
+        used_variables = set()
         traits = []
         def implement_trait(funcall):
             "Returns True if this function call should be encoded"
-            ty = str(funcall.trait)
-            if ty == "AstBuilder":
-                return "AstBuilderDelegate<'alloc>" in traits
+            ty = funcall.trait
+            if ty.name == "AstBuilder":
+                return "AstBuilderDelegate<'alloc>" in map(str, traits)
             if ty in traits:
                 return True
-            return ty in (t.split('<')[0] for t in traits)
+            if len(ty.args) == 0:
+                return ty.name in map(lambda t: t.name, traits)
+            return False
 
-        def collect_offsets(act):
+        def collect_uses(act):
             # Given an action, returns the list of used stack slots.
             assert isinstance(act, Action)
             if isinstance(act, Reduce):
+                yield "value"
                 for i in reversed(range(act.replay)):
-                    offset = i + 1
-                    yield offset
+                    var = i + 1
+                    yield var
             elif isinstance(act, FunCall):
                 def map_with_offset(args):
                     for a in args:
                         if isinstance(a, int):
                             yield a + act.offset
+                        if isinstance(a, str):
+                            yield a
                         elif isinstance(a, Some):
                             for offset in map_with_offset([a.inner]):
                                 yield offset
                 if implement_trait(act):
-                    for offset in map_with_offset(act.args):
-                        yield offset
+                    for var in map_with_offset(act.args):
+                        yield var
             elif isinstance(act, Seq):
                 for a in act.actions:
-                    for offset in collect_offsets(a):
-                        yield offset
+                    for var in collect_uses(a):
+                        yield var
 
         def write_action(indent, act, is_packed):
             # Compile function calls and reduce actions to Rust. Return whether
@@ -541,9 +562,12 @@ class RustParserWriter:
                         else:
                             raise ValueError(a)
                 packed = False
+                set_var = ""
+                if act.set_to in used_variables:
+                    set_var = "let {} = ".format(act.set_to)
                 if act.method == "id":
                     assert len(act.args) == 1
-                    self.write(indent, "let {} = {};", act.set_to, next(map_with_offset(act.args, no_unpack)))
+                    self.write(indent, "{}{};", set_var, next(map_with_offset(act.args, no_unpack)))
                     is_packed[act.set_to] = True
                 elif act.method == "accept":
                     assert len(act.args) == 0
@@ -556,8 +580,8 @@ class RustParserWriter:
                     forward_errors = ""
                     if act.method in self.fallible_methods:
                         forward_errors = "?"
-                    self.write(indent, "let {} = parser.{}{}({}){};",
-                               act.set_to, delegate, act.method,
+                    self.write(indent, "{}parser.{}{}({}){};",
+                               set_var, delegate, act.method,
                                ", ".join(map_with_offset(act.args, unpack)),
                                forward_errors)
                     is_packed[act.set_to] = False
@@ -574,7 +598,7 @@ class RustParserWriter:
                     depth = reducer.pop + reducer.replay
                     for i in range(depth):
                         name = 's'
-                        if i + 1 not in used_offsets:
+                        if i + 1 not in used_variables:
                             name = '_s'
                         self.write(indent, "let {}{} = parser.pop();", name, i + 1)
 
@@ -586,73 +610,43 @@ class RustParserWriter:
                 raise ValueError("Unknow action type")
             return True
 
-        # Note use of std::vec::Vec below: we have imported `arena::Vec` in this module,
-        # since every other data structure mentioned in this file lives in the arena.
-        has_ast_builder = True
-        traits = ["ParserTrait<'alloc, StackValue<'alloc>>", "AstBuilderDelegate<'alloc>"]
-        self.write(0, "pub fn actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<bool>")
-        self.write(0, "where")
-        self.write(1, "Handler: {}", ' + '.join(traits))
-        self.write(0, "{")
-        self.write(1, "match state {")
-        assert len(self.states[self.shift_count:]) == self.action_count
-        for state in self.states[self.shift_count:]:
-            self.write(2, "{} => {{", state.index)
-            for ctx in self.parse_table.debug_context(state.index, None):
-                self.write(3, "// {}", ctx)
-            for act, d in state.edges():
-                self.write(3, "// {} --> {}", repr(act), d)
-                is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
-                try:
-                    used_offsets = set(collect_offsets(act))
-                    fallthrough = write_action(3, act, is_packed)
-                except:
-                    print("Error while writing code for {}\n\n".format(state))
-                    self.parse_table.debug_info = True
-                    print(self.parse_table.debug_context(state.index, "\n", "# "))
-                    raise
-                if fallthrough:
-                    self.write(3, "parser.epsilon({});", d)
-                    self.write(3, "return Ok(false)")
-            self.write(2, "}")
-        self.write(2, '_ => panic!("no such state: {}", state),')
-        self.write(1, "}")
-        self.write(0, "}")
-        self.write(0, "")
-        # Add another implementation which is only reducing and not checking
-        # any values.
-        used_offsets = set()
-        has_ast_builder = False
-        traits = ["ParserTrait<'alloc, ()>"]
-        self.write(0, "pub fn noop_actions<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<bool>")
-        self.write(0, "where")
-        self.write(1, "Handler: {}", ' + '.join(traits))
-        self.write(0, "{")
-        self.write(1, "match state {")
-        assert len(self.states[self.shift_count:]) == self.action_count
-        for state in self.states[self.shift_count:]:
-            self.write(2, "{} => {{", state.index)
-            for ctx in self.parse_table.debug_context(state.index, None):
-                self.write(3, "// {}", ctx)
-            for act, d in state.edges():
-                self.write(3, "// {} --> {}", repr(act), d)
-                is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
-                try:
-                    used_offsets = set(collect_offsets(act))
-                    fallthrough = write_action(3, act, is_packed)
-                except:
-                    print("Error while writing code for {}\n\n".format(state))
-                    self.parse_table.debug_info = True
-                    print(self.parse_table.debug_context(state.index, "\n", "# "))
-                    raise
-                if fallthrough:
-                    self.write(3, "parser.epsilon({});", d)
-                    self.write(3, "return Ok(false)")
-            self.write(2, "}")
-        self.write(2, '_ => panic!("no such state: {}", state),')
-        self.write(1, "}")
-        self.write(0, "}")
-        self.write(0, "")
+        # For each execution mode, add a corresponding function which
+        # implements various traits. The trait list is used for filtering which
+        # function is added in the generated code.
+        for mode, mode_traits in self.parse_table.exec_modes.items():
+            used_variables = set()
+            traits = mode_traits
+            has_ast_builder = ast_builder in traits
+            self.write(0, "pub fn {}<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<bool>",
+                       mode)
+            self.write(0, "where")
+            self.write(1, "Handler: {}", ' + '.join(map(self.type_to_rust, traits)))
+            self.write(0, "{")
+            self.write(1, "match state {")
+            assert len(self.states[self.shift_count:]) == self.action_count
+            for state in self.states[self.shift_count:]:
+                self.write(2, "{} => {{", state.index)
+                for ctx in self.parse_table.debug_context(state.index, None):
+                    self.write(3, "// {}", ctx)
+                for act, d in state.edges():
+                    self.write(3, "// {} --> {}", repr(act), d)
+                    is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
+                    try:
+                        used_variables = set(collect_uses(act))
+                        fallthrough = write_action(3, act, is_packed)
+                    except:
+                        print("{}: Error while writing code for {}\n\n".format(mode, state))
+                        self.parse_table.debug_info = True
+                        print(self.parse_table.debug_context(state.index, "\n", "# "))
+                        raise
+                    if fallthrough:
+                        self.write(3, "parser.epsilon({});", d)
+                        self.write(3, "return Ok(false)")
+                self.write(2, "}")
+            self.write(2, '_ => panic!("no such state: {}", state),')
+            self.write(1, "}")
+            self.write(0, "}")
+            self.write(0, "")
 
 
     def reduce(self):
@@ -813,19 +807,13 @@ class RustParserWriter:
                        self.nonterminal_to_snake(init_nt).upper(), index)
             self.write(0, "")
 
-
-def write_rust_parser_states(out, parser_states, handler_info):
-    raise ValueError("Unsupported ParserStates")
-
 def write_rust_parse_table(out, parse_table, handler_info):
     if not handler_info:
         print("WARNING: info.json is not provided", file=sys.stderr)
         fallible_methods = []
-        parser_traits = []
     else:
         with open(handler_info, "r") as json_file:
             handler_info_json = json.load(json_file)
         fallible_methods = handler_info_json["fallible-methods"]
-        parser_traits = handler_info_json["parser-traits"]
 
-    RustParserWriter(out, parse_table, fallible_methods, parser_traits).emit()
+    RustParserWriter(out, parse_table, fallible_methods).emit()

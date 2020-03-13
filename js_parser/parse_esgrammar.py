@@ -1,9 +1,10 @@
 """Parse a grammar written in ECMArkup."""
 
 import os
+import collections
 from jsparagus import parse_pgen, gen, grammar, extension, types
 from jsparagus.lexer import LexicalGrammar
-from jsparagus.ordered import OrderedFrozenSet
+from jsparagus.ordered import OrderedSet, OrderedFrozenSet
 
 
 ESGrammarLexer = LexicalGrammar(
@@ -430,11 +431,45 @@ def finish_grammar(nt_defs, goals, variable_terminals, synthetic_terminals,
                 "grammar contains both a terminal `{}` and nonterminal {}"
                 .format(t, t))
 
+    # Add execution modes to generate the various functions needed to handle
+    # syntax parsing and full parsing execution modes.
+    exec_modes = collections.defaultdict(OrderedSet)
+    noop_parser = types.Type("ParserTrait", (types.Lifetime("alloc"), types.UnitType))
+    token_parser = types.Type("ParserTrait", (
+        types.Lifetime("alloc"), types.Type("StackValue", (types.Lifetime("alloc"),))))
+    ast_builder = types.Type("AstBuilderDelegate", (types.Lifetime("alloc"),))
+
+    # Full parsing takes token as input and build an AST.
+    exec_modes["full_actions"].extend([token_parser, ast_builder])
+
+    # Syntax parsing takes token as input but skip building the AST.
+    # TODO: The syntax parser is commented out for now, as we need something to
+    # be produced when we cannot call the AstBuilder for producing the values.
+
+    # No-op parsing is used for the simulator, which is so far used for
+    # querying whether we can end the incremental input and lookup if a state
+    # can accept some kind of tokens.
+    exec_modes["noop_actions"].add(noop_parser)
+
+    # Extensions are using an equivalent of Rust types to define the kind of
+    # parsers to be used, this map is used to convert these type names to the
+    # various execution modes.
+    full_parser = types.Type("FullParser")
+    syntax_parser = types.Type("SyntaxParser")
+    noop_parser = types.Type("NoopParser")
+    type_to_modes = {
+        noop_parser: ["noop_actions", "full_actions"],
+        syntax_parser: ["full_actions"],
+        full_parser: ["full_actions"],
+    }
+
     result = grammar.Grammar(
         nonterminals,
         goal_nts=goals,
         variable_terminals=variable_terminals,
-        synthetic_terminals=synthetic_terminals)
+        synthetic_terminals=synthetic_terminals,
+        exec_modes=exec_modes,
+        type_to_modes=type_to_modes)
     result.patch(extensions)
     return result
 
@@ -463,11 +498,11 @@ def parse_esgrammar(
         lexer.write(content)
         result = lexer.close()
         grammar_extensions.append(result)
+
     return finish_grammar(
         nt_defs,
         goals=goals,
         variable_terminals=set(terminal_names) - set(synthetic_terminals),
         synthetic_terminals=synthetic_terminals,
         single_grammar=single_grammar,
-        extensions=grammar_extensions
-    )
+        extensions=grammar_extensions)
