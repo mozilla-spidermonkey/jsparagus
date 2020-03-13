@@ -1005,9 +1005,15 @@ impl InstructionWriter {
         self.write_u24(slot);
     }
 
-    pub fn check_lexical(&mut self, name_index: ScriptAtomSetIndex) {
+    pub fn check_lexical(&mut self, localno: u24) {
         self.emit_op(Opcode::CheckLexical);
-        self.write_script_atom_set_index(name_index);
+        self.write_u24(localno);
+    }
+
+    pub fn check_aliased_lexical(&mut self, hops: u8, slot: u24) {
+        self.emit_op(Opcode::CheckAliasedLexical);
+        self.write_u8(hops);
+        self.write_u24(slot);
     }
 
     pub fn check_this(&mut self) {
