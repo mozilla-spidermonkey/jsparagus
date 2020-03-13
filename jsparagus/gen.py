@@ -2270,7 +2270,6 @@ class ParseTable:
         # the current state.
         _, init = zip(*self.named_goals)
         init = set(init)
-        check_set = maybe_unreachable_set
         while maybe_unreachable_set:
             next_set = set()
             for s in maybe_unreachable_set:
