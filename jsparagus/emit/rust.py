@@ -4,7 +4,6 @@ import json
 import re
 import unicodedata
 import sys
-import itertools
 
 from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
