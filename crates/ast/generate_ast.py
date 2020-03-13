@@ -854,7 +854,7 @@ class Enum(AggregateTypeDecl):
             elif isinstance(variant_type, dict):
                 write(3, "{}::{} {{ {}, .. }} => {{",
                       self.name, variant_name, ', '.join(variant_type.keys()))
-                emit_variant_dict_call(4, self.name, variant_name, variant_type);
+                emit_variant_dict_call(4, self.name, variant_name, variant_type)
                 write(3, "}")
             else:
                 write(3, "{}::{}(ast) => {{", self.name, variant_name)
