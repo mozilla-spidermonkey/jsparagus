@@ -5,6 +5,7 @@ from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, 
 from ..runtime import ErrorToken
 from ..ordered import OrderedSet
 
+
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
@@ -113,6 +114,7 @@ def write_python_parse_table(out, parse_table):
     out.write("]\n\n")
 
     out.write("error_codes = [\n")
+
     def repr_code(symb):
         if isinstance(symb, ErrorSymbol):
             return repr(symb.error_code)

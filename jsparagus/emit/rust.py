@@ -70,6 +70,7 @@ TERMINAL_NAMES = {
     '...': 'Ellipsis',
 }
 
+
 class RustParserWriter:
     def __init__(self, out, pt, fallible_methods):
         self.out = out
@@ -127,7 +128,6 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "const ERROR: i64 = {};", hex(ERROR))
         self.write(0, "")
-
 
     def terminal_name(self, value):
         if isinstance(value, End) or value is None:
@@ -198,6 +198,7 @@ class RustParserWriter:
         self.write(0, "#[rustfmt::skip]")
         width = len(self.terminals) + len(self.nonterminals)
         num_shifted_edges = 0
+
         def state_get(state, t):
             nonlocal num_shifted_edges
             res = state.get(t, "ERROR")
@@ -209,6 +210,7 @@ class RustParserWriter:
             else:
                 num_shifted_edges += 1
             return res
+
         self.write(0, "static SHIFT: [i64; {}] = [", self.shift_count * width)
         assert self.terminals[-1] == "ErrorToken"
         for i, state in enumerate(self.states[:self.shift_count]):
@@ -453,6 +455,7 @@ class RustParserWriter:
         has_ast_builder = False
         used_variables = set()
         traits = []
+
         def implement_trait(funcall):
             "Returns True if this function call should be encoded"
             ty = funcall.trait
@@ -539,6 +542,7 @@ class RustParserWriter:
             elif isinstance(act, FunCall):
                 def no_unpack(val):
                     return val
+
                 def unpack(val):
                     try:
                         packed = is_packed[val]
@@ -547,6 +551,7 @@ class RustParserWriter:
                     if packed:
                         return "{}.value.to_ast()?".format(val)
                     return val
+
                 def map_with_offset(args, unpack):
                     get_value = "s{}"
                     for a in args:
@@ -649,7 +654,6 @@ class RustParserWriter:
             self.write(1, "}")
             self.write(0, "}")
             self.write(0, "")
-
 
     def reduce(self):
         if self.parse_table:
@@ -808,6 +812,7 @@ class RustParserWriter:
             self.write(0, "pub static START_STATE_{}: usize = {};",
                        self.nonterminal_to_snake(init_nt).upper(), index)
             self.write(0, "")
+
 
 def write_rust_parse_table(out, parse_table, handler_info):
     if not handler_info:

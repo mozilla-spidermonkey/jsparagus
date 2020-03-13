@@ -256,7 +256,6 @@ def loc_trait(ast):
 
         extra_types = []
 
-
         def define_accessor(ty):
             if ty.name in ['Box', 'Token', 'Vec', 'Void']:
                 return
@@ -609,6 +608,7 @@ def type_id(ast):
             write(0, "}")
             write(0, "")
 
+
 def dump(ast):
     with open('src/dump_generated.rs', 'w+') as f:
         def write(*args):
@@ -898,6 +898,7 @@ class Enum(AggregateTypeDecl):
                 write(4, 'ast.dump_with_atoms_at(out, atoms, depth);')
                 write(3, '}')
         write(2, '}')
+
 
 class Ast:
     def __init__(self, ast_json):

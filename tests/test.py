@@ -591,9 +591,16 @@ class GenTestCase(unittest.TestCase):
                 ['IF', '(', 'X', ')', 'stmt', 'ELSE', 'stmt'],
             ],
         })
-        def stmt_0(): return ('stmt_0', 'OTHER', ';')
-        def stmt_1(t): return ('stmt_1', 'IF', '(', 'X', ')', t)
-        def stmt_2(t, e): return ('stmt_2', 'IF', '(', 'X', ')', t, 'ELSE', e)
+
+        def stmt_0():
+            return ('stmt_0', 'OTHER', ';')
+
+        def stmt_1(t):
+            return ('stmt_1', 'IF', '(', 'X', ')', t)
+
+        def stmt_2(t, e):
+            return ('stmt_2', 'IF', '(', 'X', ')', t, 'ELSE', e)
+
         self.compile(tokenize, grammar)
         self.assertParse('IF(X) OTHER;', stmt_1(stmt_0()))
         self.assertParse('IF(X) OTHER; ELSE OTHER;',

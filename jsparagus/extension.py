@@ -4,6 +4,7 @@ Rust code."""
 import collections
 from .utils import keep_until
 
+
 class ImplFor(collections.namedtuple("ImplFor", "param trait for_type")):
     def __new__(cls, param, trait, for_type):
         self = super(ImplFor, cls).__new__(cls, param, trait, for_type)
@@ -12,10 +13,12 @@ class ImplFor(collections.namedtuple("ImplFor", "param trait for_type")):
     def __eq__(self, other):
         return isinstance(other, ImplFor) and super(ImplFor, self).__eq__(other)
 
+
 def eq_productions(grammar, prod1, prod2):
     s1 = tuple(e for e in prod1.body if grammar.is_shifted_element(e))
     s2 = tuple(e for e in prod2.body if grammar.is_shifted_element(e))
     return s1 == s2
+
 
 def merge_productions(grammar, prod1, prod2):
     # Consider all shifted elements as non-moveable elements, and insert other
@@ -37,6 +40,7 @@ def merge_productions(grammar, prod1, prod2):
         else:
             raise ValueError("We do not know how to sort operations yet.")
     return prod1.copy_with(body=body)
+
 
 class ExtPatch(collections.namedtuple("ExtPatch", "prod")):
     "Patch an existing grammar rule by adding Code"
@@ -71,6 +75,7 @@ class ExtPatch(collections.namedtuple("ExtPatch", "prod")):
         result = gnt_def.with_rhs_list(new_rhs_list)
         nonterminals[name] = result
 
+
 class GrammarExtension:
     """A collection of grammar extensions, with added code, added traits for the
     action functions.
@@ -92,4 +97,3 @@ class GrammarExtension:
                 ext.apply_patch(self.filename, grammar, nonterminals)
             else:
                 raise ValueError("Extension of type {} not yet supported.".format(ext.__class__))
-

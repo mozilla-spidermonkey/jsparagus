@@ -134,6 +134,7 @@ class CallMethod(collections.namedtuple("CallMethod", "method args trait fallibl
     def __hash__(self):
         return super(CallMethod, self).__hash__()
 
+
 Some = collections.namedtuple("Some", "inner")
 
 
@@ -818,7 +819,6 @@ class Grammar:
         elif e is NoLineTerminatorHere:
             return True
         return False
-
 
 
 InitNt = collections.namedtuple("InitNt", "goal")
