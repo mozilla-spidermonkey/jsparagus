@@ -21,7 +21,7 @@ with open(read_filename, 'r') as f:
 # Write days since last fuzzbug
 
 def get_color(days):
-    if days_since == None or days_since > 100:
+    if days_since is None or days_since > 100:
         return "green"
     elif days_since > 10:
         return "yellow"
@@ -32,7 +32,7 @@ def get_color(days):
 data = {
     "schemaVersion": 1,
     "label": "Days since last FuzzBug",
-    "message": str(days_since) if days_since != None else "Forever",
+    "message": str(days_since) if days_since is not None else "Forever",
     "color": get_color(days_since),
 }
 
