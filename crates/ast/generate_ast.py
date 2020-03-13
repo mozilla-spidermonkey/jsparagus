@@ -291,7 +291,8 @@ def loc_trait(ast):
                         write(4, "loc.end = end.end;")
                         write(3, "}")
                     else:
-                        write(3, "{}::{}(content) => {{ content.set_loc(start, end) }}", ty.name, variant_name)
+                        write(3, "{}::{}(content) => {{ content.set_loc(start, end) }}",
+                              ty.name, variant_name)
                         if variant_ty not in extra_types and variant_ty not in types:
                             extra_types.append(variant_ty)
                 write(2, "}")
@@ -851,7 +852,8 @@ class Enum(AggregateTypeDecl):
                 emit_variant_none_call(4, self.name, variant_name)
                 write(3, "}")
             elif isinstance(variant_type, dict):
-                write(3, "{}::{} {{ {}, .. }} => {{", self.name, variant_name, ', '.join(variant_type.keys()))
+                write(3, "{}::{} {{ {}, .. }} => {{",
+                      self.name, variant_name, ', '.join(variant_type.keys()))
                 emit_variant_dict_call(4, self.name, variant_name, variant_type);
                 write(3, "}")
             else:
@@ -880,7 +882,8 @@ class Enum(AggregateTypeDecl):
                 write(4, 'write!(out, "{}").expect("failed to dump");'.format(variant_name))
                 write(3, '}')
             elif isinstance(variant_type, dict):
-                write(3, '{}::{} {{ {}, .. }} => {{', self.name, variant_name, ', '.join(variant_type.keys()))
+                write(3, '{}::{} {{ {}, .. }} => {{',
+                      self.name, variant_name, ', '.join(variant_type.keys()))
                 write(4, 'write!(out, "({}").expect("failed to dump");'.format(variant_name))
 
                 for field_name, field_ty in variant_type.items():

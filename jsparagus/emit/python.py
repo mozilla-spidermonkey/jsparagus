@@ -1,7 +1,8 @@
 """Emit code and parser tables in Python."""
 
 from ..grammar import Some, Nt, ErrorSymbol
-from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from ..actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag,
+                       FunCall, Seq)
 from ..runtime import ErrorToken
 from ..ordered import OrderedSet
 
@@ -9,7 +10,9 @@ from ..ordered import OrderedSet
 def write_python_parse_table(out, parse_table):
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
-        out.write("from jsparagus.runtime import Nt, InitNt, End, ErrorToken, StateTermValue, ShiftError, ShiftAccept\n")
+        out.write(
+            "from jsparagus.runtime import (Nt, InitNt, End, ErrorToken, StateTermValue,\n"
+            "                               ShiftError, ShiftAccept)\n")
     out.write("\n")
 
     methods = OrderedSet()

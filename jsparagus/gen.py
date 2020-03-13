@@ -2515,12 +2515,16 @@ class ParseTable:
                     # head, and the nonterminal `term.nt` is pushed, to resume
                     # in the state `to`.
 
-                    # print("Compare shifted path, with reduced path:\n\tshifted = {}\n\treduced = {}, \n\taction = {},\n\tnew_path = {}\n".format(
-                    #     " ".join(edge_str(e) for e in prev_sh),
-                    #     " ".join(edge_str(e) for e in path),
-                    #     str(a),
-                    #     " ".join(edge_str(e) for e in reduced_path),
-                    # ))
+                    # print(
+                    #    "Compare shifted path, with reduced path:\n"
+                    #    "\tshifted = {}\n\treduced = {},\n\taction = {},\n\tnew_path = {}\n"
+                    #    .format(
+                    #         " ".join(edge_str(e) for e in prev_sh),
+                    #         " ".join(edge_str(e) for e in path),
+                    #         str(a),
+                    #         " ".join(edge_str(e) for e in reduced_path),
+                    #     )
+                    # )
                     if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         # If the reduced production does not match the shifted
                         # state, then this reduction does not apply. This is
@@ -3187,7 +3191,8 @@ class ParseTable:
             hit = False
             for src, term in replace_edges:
                 src = self.states[src]
-                # print("replace {} -- {} --> {}, by {} -- {} --> {}".format(src.index, term, src[term], src.index, term, ref.index))
+                # print("replace {} -- {} --> {}, by {} -- {} --> {}"
+                #       .format(src.index, term, src[term], src.index, term, ref.index))
                 self.replace_edge(src, term, ref.index, maybe_unreachable)
                 hit = True
             return hit
