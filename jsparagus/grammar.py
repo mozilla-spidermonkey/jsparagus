@@ -56,7 +56,7 @@ def example_grammar():
 # `Production(["term"], 0)`.
 #
 # The production `expr ::= expr + term => add($0, $2)` is represented by
-# `Production(["expr", "+", "term"], CallMethod("add", (0, 2), "AstBuilder")`.
+# `Production(["expr", "+", "term"], CallMethod("add", (0, 2), "AstBuilder", False)`.
 #
 class Production:
     __slots__ = ['body', 'reducer', 'condition']
@@ -118,13 +118,13 @@ class Production:
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
 #
 
-class CallMethod(collections.namedtuple("CallMethod", "method args trait")):
+class CallMethod(collections.namedtuple("CallMethod", "method args trait fallible")):
     """Express a method call, and give it a given set of arguments. A trait is
     added as the parser should implement this trait to call this method."""
-    def __new__(cls, method, args, trait):
+    def __new__(cls, method, args, trait, fallible):
         if isinstance(trait, str):
             trait = types.Type(trait)
-        self = super(CallMethod, cls).__new__(cls, method, args, trait)
+        self = super(CallMethod, cls).__new__(cls, method, args, trait, fallible)
         return self
     def __eq__(self, other):
         return isinstance(other, CallMethod) and super(CallMethod, self).__eq__(other)
@@ -138,9 +138,10 @@ def expr_to_str(expr):
     if isinstance(expr, int):
         return "${}".format(expr)
     elif isinstance(expr, CallMethod):
-        return "{}::{}({})".format(
+        return "{}::{}({}){}".format(
             expr.trait, expr.method,
-            ', '.join(expr_to_str(arg) for arg in expr.args))
+            ', '.join(expr_to_str(arg) for arg in expr.args),
+            expr.fallible and '?' or '')
     elif expr is None:
         return "None"
     elif isinstance(expr, Some):
@@ -431,7 +432,7 @@ class Grammar:
                         method = nt
                     else:
                         method = '{}_{}'.format(nt, i)
-                    reducer = CallMethod(method, tuple(range(nargs)), "AstBuilder")
+                    reducer = CallMethod(method, tuple(range(nargs)), "AstBuilder", False)
                 rhs = Production(rhs, reducer)
 
             if not isinstance(rhs, Production):

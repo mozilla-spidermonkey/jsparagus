@@ -578,7 +578,10 @@ class RustParserWriter:
                     if str(act.trait) == "AstBuilder":
                         delegate = "ast_builder_refmut()."
                     forward_errors = ""
-                    if act.method in self.fallible_methods:
+                    # NOTE: Currently "AstBuilder" functions are made fallible
+                    # using the fallible_methods taken from some Rust code
+                    # which extract this information to produce a JSON file.
+                    if act.fallible or act.method in self.fallible_methods:
                         forward_errors = "?"
                     self.write(indent, "{}parser.{}{}({}){};",
                                set_var, delegate, act.method,
@@ -629,7 +632,7 @@ class RustParserWriter:
                 for ctx in self.parse_table.debug_context(state.index, None):
                     self.write(3, "// {}", ctx)
                 for act, d in state.edges():
-                    self.write(3, "// {} --> {}", repr(act), d)
+                    self.write(3, "// {} --> {}", str(act), d)
                     is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
                     try:
                         used_variables = set(collect_uses(act))

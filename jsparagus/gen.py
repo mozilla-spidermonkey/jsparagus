@@ -65,10 +65,10 @@ def empty_nt_set(grammar):
     that should be evaluated when reducing the empty string to nt.
     So, for example, if we have a production
 
-        a ::= b? c?  => CallMethod("a", [0, 1], "AstBuilder")
+        a ::= b? c?  => CallMethod("a", [0, 1], "AstBuilder", False)
 
     then the resulting dictionary will contain the entry
-    `("a", CallMethod("a", [None, None], "AstBuilder"))`.
+    `("a", CallMethod("a", [None, None], "AstBuilder", False))`.
     """
 
     empties = {}  # maps nts to reducers.
@@ -93,7 +93,8 @@ def empty_nt_set(grammar):
                 return CallMethod(
                     expr.method,
                     tuple(eval(arg_expr) for arg_expr in expr.args),
-                    expr.trait
+                    expr.trait,
+                    expr.fallible
                 )
             elif isinstance(expr, int):
                 e = stack[expr]
@@ -643,7 +644,8 @@ def expand_all_optional_elements(grammar):
                     elif isinstance(expr, CallMethod):
                         return CallMethod(expr.method, [adjust_reduce_expr(arg)
                                                         for arg in expr.args],
-                                          expr.trait
+                                          expr.trait,
+                                          expr.fallible
                         )
                     elif expr == 'accept':
                         # doesn't need to be adjusted because 'accept' isn't
@@ -1822,7 +1824,7 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
     if isinstance(expr, int):
         stack_index = pop - expr
         if depth == 0:
-            expr = FunCall(types.Type("AstBuilder"), "id", alias_set, alias_set, (stack_index,), ret)
+            expr = FunCall(types.Type("AstBuilder"), "id", False, alias_set, alias_set, (stack_index,), ret)
             funcalls.append(expr)
             return ret
         else:
@@ -1837,11 +1839,11 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
             for i, arg in enumerate(args):
                 yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
         args = tuple(convert_args(expr.args))
-        expr = FunCall(expr.trait, expr.method, alias_set, alias_set, args, ret)
+        expr = FunCall(expr.trait, expr.method, expr.fallible, alias_set, alias_set, args, ret)
         funcalls.append(expr)
         return ret
     elif expr == "accept":
-        expr = FunCall(types.Type("ParserTrait"), "accept", alias_set, alias_set, (), ret)
+        expr = FunCall(types.Type("ParserTrait"), "accept", False, alias_set, alias_set, (), ret)
         funcalls.append(expr)
         return ret
     else:

@@ -186,9 +186,13 @@ nt reducer {
 
 nt expr {
     MATCH_REF => expr_match_ref($0);
-    NT "(" expr_args? ")" => expr_call($0, $2);
+    NT "(" expr_args? ")" expr_try? => expr_call($0, $2, $4);
     "Some" "(" expr ")" => expr_some($2);
     "None" => expr_none();
+}
+
+nt expr_try {
+    "?";
 }
 
 nt expr_args {

@@ -211,23 +211,29 @@ class FunCall(Action):
     pushpathne non-terminal. The replay attribute of a reduce action correspond
     to the number of stack elements which would have to be popped and pushed
     again using the parser table after reducing this operation. """
-    __slots__ = 'trait', 'method', 'offset', 'args', 'set_to'
-    def __init__(self, trait, method, alias_read, alias_write, args, set_to = None, offset = 0):
+    __slots__ = 'trait', 'method', 'offset', 'args', 'fallible', 'set_to'
+    def __init__(self, trait, method, fallible, alias_read, alias_write, args, set_to = None, offset = 0):
         super().__init__(alias_read, alias_write)
         self.trait = trait       # Trait on which this method is implemented.
         self.method = method     # Method and argument to be read for calling it.
+        self.fallible = fallible # Whether the function call can fail.
         self.offset = offset     # Offset to add to each argument offset.
         self.args = args         # Tuple of arguments offsets.
         self.set_to = set_to     # Temporary variable name to set with the result.
     def __str__(self):
-        return "{} = {}::{}({}) [off: {}]".format(self.set_to, self.trait, self.method,
-                                                  ", ".join(map(str, self.args)), self.offset)
+        return "{} = {}::{}({}){} [off: {}]".format(
+            self.set_to, self.trait, self.method,
+            ", ".join(map(str, self.args)),
+            self.fallible and '?' or '',
+            self.offset)
     def __repr__(self):
-        return "FunCall({}, {}, {}, {}, {})".format(repr(self.trait), repr(self.method),
-                                                    repr(self.offset), repr(self.args),
-                                                    repr(self.set_to))
+        return "FunCall({})".format(', '.join(map(repr, [
+            self.trait, self.method, self.fallible, self.read, self.write,
+            self.args, self.set_to, self.offset
+        ])))
     def shifted_action(self, shifted_term):
-        return FunCall(self.trait, self.method, self.read, self.write,
+        return FunCall(self.trait, self.method, self.fallible,
+                       self.read, self.write,
                        self.args, self.set_to, offset = self.offset + 1)
 
 class Seq(Action):
@@ -244,6 +250,8 @@ class Seq(Action):
         assert all([not a.is_condition() for a in actions[1:]])
         assert all([not a.update_stack() for a in actions[:-1]])
     def __str__(self):
+        return "{{{}}}".format("; ".join(map(str, self.actions)))
+    def __repr__(self):
         return "Seq({})".format(repr(self.actions))
     def is_condition(self):
         return self.actions[0].is_condition()
