@@ -2361,7 +2361,7 @@ class ParseTable:
             if state != edge.src:
                 return False
             term = edge.term
-            if term == None and len(path) == 0:
+            if term is None and len(path) == 0:
                 return True
             try:
                 state = self.states[state][term]
@@ -2772,9 +2772,9 @@ class ParseTable:
                 if expr1.edge != expr2.edge:
                     # Different edges are ok, but produce no substituions.
                     return True
-                if expr1.flag_in == None and isinstance(expr2.flag_in, Var):
+                if expr1.flag_in is None and isinstance(expr2.flag_in, Var):
                     return SubSt(expr2.flag_in, None)
-                if expr1.flag_out == None and isinstance(expr2.flag_out, Var):
+                if expr1.flag_out is None and isinstance(expr2.flag_out, Var):
                     return SubSt(expr2.flag_out, None)
                 if expr1.flag_in == expr2.flag_in:
                     if isinstance(expr1.flag_out, Var):
@@ -2813,9 +2813,9 @@ class ParseTable:
                 subst = None
                 for rel in knowledge:
                     subst = unify_expr(rel, expr)
-                    if subst == False:
+                    if subst is False:
                         raise Error("Failed to find a coherent solution")
-                    if subst == True:
+                    if subst is True:
                         continue
                     break
                 else:
@@ -2854,7 +2854,7 @@ class ParseTable:
                 rule = Eq(flag_in, edge, Var(i))
                 rules, free_vars = unify_with(rule, rules, free_vars)
                 flag_in = Var(i)
-                if flag_in != None:
+                if flag_in is not None:
                     maybe_id_edges.add(Id(edge))
             edge = aps.stack[-1]
             nt = edge.term.reduce_with().nt
@@ -2900,7 +2900,7 @@ class ParseTable:
             if isinstance(rule, Id):
                 edge_rules[rule.edge] = None
             elif isinstance(rule, Eq):
-                if edge_rules[rule.edge] != None:
+                if edge_rules[rule.edge] is not None:
                     edge_rules[rule.edge].append(rule)
 
         maybe_unreachable_set = set()
@@ -2908,7 +2908,7 @@ class ParseTable:
         for edge, rules in edge_rules.items():
             # If the edge is an identity function, then skip doing any
             # modifications on it.
-            if rules == None:
+            if rules is None:
                 continue
             # Otherwise, create a new state and transition for each mapping.
             src = self.states[edge.src]
@@ -2920,11 +2920,11 @@ class ParseTable:
             for rule in OrderedFrozenSet(rules):
                 assert isinstance(rule, Eq)
                 seq = []
-                if rule.flag_in != None:
+                if rule.flag_in is not None:
                     seq.append(FilterFlag(flag_name, True))
                     if rule.flag_in != rule.flag_out:
                         seq.append(PopFlag(flag_name))
-                if rule.flag_out != None and rule.flag_in != rule.flag_out:
+                if rule.flag_out is not None and rule.flag_in != rule.flag_out:
                     seq.append(PushFlag(flag_name, rule.flag_out))
                 actions.append(Seq(seq))
             # Assert that we do not map flag_in more than once.
@@ -2974,10 +2974,10 @@ class ParseTable:
             accept = True
             for edge in actions:
                 new_term = edge.term.shifted_action(term)
-                if new_term == False:
+                if new_term is False:
                     accept = False
                     break
-                elif new_term == True:
+                elif new_term is True:
                     continue
                 new_actions.append(Edge(edge.src, new_term))
             if accept:
@@ -3301,7 +3301,7 @@ class ParseTable:
             )
             context.add(txt)
 
-        if split_txt == None:
+        if split_txt is None:
             return context
         return split_txt.join(txt for txt in sorted(context))
 
