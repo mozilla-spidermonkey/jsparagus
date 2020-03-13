@@ -454,7 +454,7 @@ def generate_ul_fragment_patch(e, depth):
 
     for item in e:
         if item.tag != '{http://www.w3.org/1999/xhtml}li':
-            raise ValueError("unrecognized element: " + child.tag)
+            raise ValueError("unrecognized element: " + item.tag)
 
         pairs = generate_fragment_patch(item,
                                         extra_rules=EXTRA_RULES_FOR_EE)
