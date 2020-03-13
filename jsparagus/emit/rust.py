@@ -226,7 +226,7 @@ class RustParserWriter:
                        ' '.join("{},".format(state_get(state, t)) for t in self.nonterminals))
             try:
                 assert sum(1 for _ in state.shifted_edges()) == num_shifted_edges
-            except:
+            except Exception:
                 print("Some edges are not encoded.")
                 print("List of terminals: {}".format(', '.join(map(repr, self.terminals))))
                 print("List of nonterminals: {}".format(', '.join(map(repr, self.nonterminals))))
@@ -502,9 +502,9 @@ class RustParserWriter:
             assert not act.is_inconsistent()
             if isinstance(act, Reduce):
                 value = "value"
-                try:
+                if value in is_packed:
                     packed = is_packed[value]
-                except:
+                else:
                     packed = False
                     value = "None"
                 if packed:
@@ -546,10 +546,7 @@ class RustParserWriter:
                     return val
 
                 def unpack(val):
-                    try:
-                        packed = is_packed[val]
-                    except:
-                        packed = True
+                    packed = is_packed.get(val, True)
                     if packed:
                         return "{}.value.to_ast()?".format(val)
                     return val
@@ -645,11 +642,11 @@ class RustParserWriter:
                     try:
                         used_variables = set(collect_uses(act))
                         fallthrough = write_action(3, act, is_packed)
-                    except:
+                    except Exception as exc:
                         print("{}: Error while writing code for {}\n\n".format(mode, state))
                         self.parse_table.debug_info = True
                         print(self.parse_table.debug_context(state.index, "\n", "# "))
-                        raise
+                        raise exc
                     if fallthrough:
                         self.write(3, "parser.epsilon({});", d)
                         self.write(3, "return Ok(false)")

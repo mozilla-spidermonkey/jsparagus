@@ -264,7 +264,7 @@ class Parser:
         sim = self.simulator_clone()
         try:
             sim.write_terminal(BogusLexer(), t)
-        except:
+        except Exception:
             return False
         return True
 

@@ -2236,11 +2236,11 @@ class ParseTable:
     def replace_edge(self, src, term, dest, maybe_unreachable_set):
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
-        try:
+
+        if term in src:
             old_dest = src[term]
             self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
-        except:
-            pass
+
         if isinstance(term, Action):
             src.epsilon = [(t, d) for t, d in src.epsilon if t != term]
             src.epsilon.append((term, dest))
@@ -2363,10 +2363,11 @@ class ParseTable:
             term = edge.term
             if term is None and len(path) == 0:
                 return True
-            try:
-                state = self.states[state][term]
-            except:
+
+            row = self.states[state]
+            if term not in row:
                 return False
+            state = row[term]
         return True
 
     def shifted_path_to(self, n, right_of):
@@ -2873,16 +2874,13 @@ class ParseTable:
             min_rules, min_vars = rules, free_vars
             for num_id_edges in reversed(range(len(maybe_id_edges))):
                 for id_edges in itertools.combinations(edges, num_id_edges):
-                    try:
-                        for edge in id_edges:
-                            new_rules, new_free_vars = unify_with(rule, rules, free_vars)
-                            if new_free_vars == []:
-                                return new_rules, new_free_vars
-                            if len(new_free_vars) < len(min_free_vars):
-                                min_vars = new_free_vars
-                                min_rules = new_rules
-                    except:
-                        pass
+                    for edge in id_edges:
+                        new_rules, new_free_vars = unify_with(rule, rules, free_vars)
+                        if new_free_vars == []:
+                            return new_rules, new_free_vars
+                        if len(new_free_vars) < len(min_free_vars):
+                            min_vars = new_free_vars
+                            min_rules = new_rules
             return rules, free_vars
 
         rules, free_vars = fill_with_id_functions(rules, free_vars, maybe_id_edges)
@@ -3133,13 +3131,13 @@ class ParseTable:
                         print("Fixing state {}\n".format(self.states[s]))
                     try:
                         self.fix_inconsistent_state(s, verbose)
-                    except:
+                    except Exception as exc:
                         self.debug_info = True
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
                             .format(self.states[s], self.debug_context(s, "\n", "\t"))
-                        )
+                        ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
                         if s.is_inconsistent()
