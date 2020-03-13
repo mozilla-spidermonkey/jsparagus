@@ -11,7 +11,7 @@ with open(read_filename, 'r') as f:
     count = len(filedata)
     # the last time we saw a fuzzbug regardless of status
     if count > 0:
-        dt_format =  "%Y-%m-%dT%H:%M:%SZ"
+        dt_format = "%Y-%m-%dT%H:%M:%SZ"
         fuzzbug_opened = filedata[0]["created_at"]
         fuzzbug_date = datetime.strptime(fuzzbug_opened, dt_format)
         today = datetime.today()

@@ -122,7 +122,7 @@ class Production:
 class CallMethod(collections.namedtuple("CallMethod", "method args trait fallible")):
     """Express a method call, and give it a given set of arguments. A trait is
     added as the parser should implement this trait to call this method."""
-    def __new__(cls, method, args, trait = types.Type("AstBuilder"), fallible = False):
+    def __new__(cls, method, args, trait=types.Type("AstBuilder"), fallible=False):
         if isinstance(trait, str):
             trait = types.Type(trait)
         self = super(CallMethod, cls).__new__(cls, method, args, trait, fallible)
@@ -550,12 +550,12 @@ class Grammar:
                 rhs_list = nt_def.rhs_list
                 g = nt.goal
                 if (rhs_list != [Production([g], 0),
-                                 Production([Nt(nt,()), End()], 'accept')]
+                                 Production([Nt(nt, ()), End()], 'accept')]
                     and rhs_list != [Production([Optional(g)], 0),
-                                     Production([Nt(nt,()), End()], 'accept')]
+                                     Production([Nt(nt, ()), End()], 'accept')]
                     and rhs_list != [Production([End()], 'accept'),
                                      Production([g, End()], 'accept'),
-                                     Production([Nt(nt,()), End()], 'accept')]):
+                                     Production([Nt(nt, ()), End()], 'accept')]):
                     raise ValueError(
                         "invalid grammar: grammar[{!r}] is not one of "
                         "the expected forms: got {!r}"

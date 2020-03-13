@@ -97,14 +97,14 @@ class Reduce(Action):
     number of stack elements which would have to be popped and pushed again
     using the parser table after reducing this operation. """
     __slots__ = 'nt', 'replay', 'pop'
-    def __init__(self, nt, pop, replay = 0):
+    def __init__(self, nt, pop, replay=0):
         name = nt.name
         if isinstance(name, InitNt):
             name = "Start_" + name.goal.name
         super().__init__([], ["nt_" + name])
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
-        self.replay = replay # List of terms to shift back
+        self.replay = replay  # List of terms to shift back
     def __str__(self):
         return "Reduce({}, {}, {})".format(self.nt, self.pop, self.replay)
     def update_stack(self):
@@ -112,7 +112,7 @@ class Reduce(Action):
     def reduce_with(self):
         return self
     def shifted_action(self, shifted_term):
-        return Reduce(self.nt, self.pop, replay = self.replay + 1)
+        return Reduce(self.nt, self.pop, replay=self.replay + 1)
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
@@ -147,7 +147,7 @@ class CheckNotOnNewLine(Action):
     not. If not this would produce an Error, otherwise this rule would be
     shifted."""
     __slots__ = 'offset',
-    def __init__(self, offset = 0):
+    def __init__(self, offset=0):
         # assert offset >= -1 and "Smaller offsets are not supported on all backends."
         super().__init__([], [])
         self.offset = offset
@@ -213,19 +213,19 @@ class FunCall(Action):
     again using the parser table after reducing this operation. """
     __slots__ = 'trait', 'method', 'offset', 'args', 'fallible', 'set_to'
     def __init__(self, method, args,
-                 trait = "AstBuilder",
-                 fallible = False,
-                 set_to = "val",
-                 offset = 0,
-                 alias_read = [],
-                 alias_write = []):
+                 trait="AstBuilder",
+                 fallible=False,
+                 set_to="val",
+                 offset=0,
+                 alias_read=[],
+                 alias_write=[]):
         super().__init__(alias_read, alias_write)
-        self.trait = trait       # Trait on which this method is implemented.
-        self.method = method     # Method and argument to be read for calling it.
-        self.fallible = fallible # Whether the function call can fail.
-        self.offset = offset     # Offset to add to each argument offset.
-        self.args = args         # Tuple of arguments offsets.
-        self.set_to = set_to     # Temporary variable name to set with the result.
+        self.trait = trait        # Trait on which this method is implemented.
+        self.method = method      # Method and argument to be read for calling it.
+        self.fallible = fallible  # Whether the function call can fail.
+        self.offset = offset      # Offset to add to each argument offset.
+        self.args = args          # Tuple of arguments offsets.
+        self.set_to = set_to      # Temporary variable name to set with the result.
     def __str__(self):
         return "{} = {}::{}({}){} [off: {}]".format(
             self.set_to, self.trait, self.method,
@@ -239,12 +239,12 @@ class FunCall(Action):
         ])))
     def shifted_action(self, shifted_term):
         return FunCall(self.method, self.args,
-                       trait = self.trait,
-                       fallible = self.fallible,
-                       set_to = self.set_to,
-                       offset = self.offset + 1,
-                       alias_read = self.read,
-                       alias_write = self.write)
+                       trait=self.trait,
+                       fallible=self.fallible,
+                       set_to=self.set_to,
+                       offset=self.offset + 1,
+                       alias_read=self.read,
+                       alias_write=self.write)
 
 class Seq(Action):
     """Aggregate multiple actions in one statement. Note, that the aggregated
@@ -253,8 +253,8 @@ class Seq(Action):
     __slots__ = 'actions',
     def __init__(self, actions):
         assert isinstance(actions, list)
-        read = [ rd for a in actions for rd in a.read ]
-        write = [ wr for a in actions for wr in a.write ]
+        read = [rd for a in actions for rd in a.read]
+        write = [wr for a in actions for wr in a.write]
         super().__init__(read, write)
         self.actions = tuple(actions)   # Ordered list of actions to execute.
         assert all([not a.is_condition() for a in actions[1:]])

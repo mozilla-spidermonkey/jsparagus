@@ -632,7 +632,7 @@ class RustParserWriter:
                     self.write(3, "// {}", ctx)
                 for act, d in state.edges():
                     self.write(3, "// {} --> {}", str(act), d)
-                    is_packed = {} # Map variable names to a boolean to know if the data is packed or not.
+                    is_packed = {}  # Map variable names to a boolean to know if the data is packed or not.
                     try:
                         used_variables = set(collect_uses(act))
                         fallthrough = write_action(3, act, is_packed)

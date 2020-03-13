@@ -698,7 +698,7 @@ class GenTestCase(unittest.TestCase):
         # not forward the restriction from producting a Function to the
         # Primitive rule. Therefore, `Function [lookahead: ;]` is incorrectly
         # reduced to a `Primitive [lookahead: ;]`
-        #self.assertNoParse("function x() {}++;", message="got ';'")
+        # self.assertNoParse("function x() {}++;", message="got ';'")
         self.assertParse("function x() {} ++x;")
 
     # XXX to test: combination of lookaheads, ++, +-, -+, --

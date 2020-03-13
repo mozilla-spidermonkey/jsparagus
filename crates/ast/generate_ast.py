@@ -474,7 +474,7 @@ def pass_(ast):
                               to_enter_enum_method_name(type_decl.name,
                                                         variant_name))
                         for field_name, field_ty in variant_type.items():
-                            write(3 , "{},", field_name)
+                            write(3, "{},", field_name)
                         write(2, ");")
 
                         type_decl.write_rust_pass_variant_dict_method_body(
