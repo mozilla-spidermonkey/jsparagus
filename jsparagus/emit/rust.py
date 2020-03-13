@@ -515,7 +515,6 @@ class RustParserWriter:
                     else:
                         value = "value"
 
-                replay_list = []
                 self.write(indent, "let term = Term::Nonterminal(NonterminalId::{});",
                            self.nonterminal_to_camel(act.nt))
                 if value != "value":
