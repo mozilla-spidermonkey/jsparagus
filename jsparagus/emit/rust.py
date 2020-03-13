@@ -8,8 +8,10 @@ import sys
 from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
-from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End, ErrorSymbol)
-from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
+from ..grammar import (CallMethod, Some, is_concrete_element, Nt, InitNt, Optional, End,
+                       ErrorSymbol)
+from ..actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag,
+                       FunCall, Seq)
 
 from .. import types
 
@@ -624,7 +626,9 @@ class RustParserWriter:
             used_variables = set()
             traits = mode_traits
             has_ast_builder = ast_builder in traits
-            self.write(0, "pub fn {}<'alloc, Handler>(parser: &mut Handler, state: usize) -> Result<'alloc, bool>",
+            self.write(0,
+                       "pub fn {}<'alloc, Handler>(parser: &mut Handler, state: usize) "
+                       "-> Result<'alloc, bool>",
                        mode)
             self.write(0, "where")
             self.write(1, "Handler: {}", ' + '.join(map(self.type_to_rust, traits)))
@@ -749,7 +753,8 @@ class RustParserWriter:
                             if is_discarding_reduction:
                                 self.write(3, "let x{} = stack.pop().unwrap();", index)
                             else:
-                                self.write(3, "let x{}: {} = stack.pop().unwrap().to_ast()?;", index, rust_ty)
+                                self.write(3, "let x{}: {} = stack.pop().unwrap().to_ast()?;",
+                                           index, rust_ty)
                         else:
                             self.write(3, "stack.pop();", index)
 
