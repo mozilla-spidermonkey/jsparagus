@@ -220,7 +220,7 @@ def stack_value(ast):
             write(0, "impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, {}> {{", rust_ty)
             write(1, "type Error = Infallible;")
             write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {{", rust_ty)
-            write(2, "Ok(StackValue::{}(self))".format(ty.rust_variant_name()))
+            write(2, "Ok(StackValue::{}(self))", ty.rust_variant_name())
             write(1, "}")
             write(0, "}")
             write(0, "")
@@ -784,14 +784,14 @@ class Struct(AggregateTypeDecl):
             emit_call(2, ty, "&mut ast.{}".format(name))
 
     def write_rust_dump_method_body(self, write):
-        write(2, 'write!(out, "({}").expect("failed to dump");'.format(self.name))
+        write(2, 'write!(out, "({}").expect("failed to dump");', self.name)
         for name, ty in self.fields.items():
             if len(self.fields.items()) > 1:
                 write(2, 'newline(out, depth + 1);')
             else:
                 write(2, 'write!(out, " ").expect("failed to dump");')
-            write(2, 'write!(out, "{}=").expect("failed to dump");'.format(name))
-            write(2, 'self.{}.dump_with_atoms_at(out, atoms, depth + 1);'.format(name))
+            write(2, 'write!(out, "{}=").expect("failed to dump");', name)
+            write(2, 'self.{}.dump_with_atoms_at(out, atoms, depth + 1);', name)
         write(2, 'write!(out, ")").expect("failed to dump");')
 
 
@@ -879,20 +879,20 @@ class Enum(AggregateTypeDecl):
         for variant_name, variant_type in self.variants.items():
             if variant_type is None:
                 write(3, '{}::{} {{ .. }} => {{', self.name, variant_name)
-                write(4, 'write!(out, "{}").expect("failed to dump");'.format(variant_name))
+                write(4, 'write!(out, "{}").expect("failed to dump");', variant_name)
                 write(3, '}')
             elif isinstance(variant_type, dict):
                 write(3, '{}::{} {{ {}, .. }} => {{',
                       self.name, variant_name, ', '.join(variant_type.keys()))
-                write(4, 'write!(out, "({}").expect("failed to dump");'.format(variant_name))
+                write(4, 'write!(out, "({}").expect("failed to dump");', variant_name)
 
                 for field_name, field_ty in variant_type.items():
                     if len(variant_type.items()) > 1:
                         write(4, 'newline(out, depth + 1);')
                     else:
                         write(4, 'write!(out, " ").expect("failed to dump");')
-                    write(4, 'write!(out, "{}=").expect("failed to dump");'.format(field_name))
-                    write(4, '{}.dump_with_atoms_at(out, atoms, depth + 1);'.format(field_name))
+                    write(4, 'write!(out, "{}=").expect("failed to dump");', field_name)
+                    write(4, '{}.dump_with_atoms_at(out, atoms, depth + 1);', field_name)
 
                 write(4, 'write!(out, ")").expect("failed to dump");')
                 write(3, '}')
