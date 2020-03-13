@@ -21,12 +21,16 @@ class Lifetime(collections.namedtuple('Lifetime', 'name')):
     def __new__(cls, name):
         self = super(Lifetime, cls).__new__(cls, name)
         return self
+
     def __eq__(self, other):
         return isinstance(other, Lifetime) and super(Lifetime, self).__eq__(other)
+
     def __hash__(self):
         return super(Lifetime, self).__hash__()
+
     def __str__(self):
         return "'" + self.name
+
 
 TypeBase = collections.namedtuple('Type', 'name args')
 

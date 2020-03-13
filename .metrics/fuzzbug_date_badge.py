@@ -17,6 +17,7 @@ with open(read_filename, 'r') as f:
         today = datetime.today()
         days_since = (today - fuzzbug_date).days
 
+
 # Write days since last fuzzbug
 
 def get_color(days):
@@ -26,6 +27,7 @@ def get_color(days):
         return "yellow"
     else:
         return "red"
+
 
 data = {
     "schemaVersion": 1,

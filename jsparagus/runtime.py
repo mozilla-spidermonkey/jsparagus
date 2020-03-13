@@ -23,6 +23,7 @@ ErrorToken = collections.namedtuple('ErrorToken', '')
 ErrorToken_default_eq = ErrorToken.__eq__
 ErrorToken.__eq__ = lambda x, y: x.__class__ == y.__class__ and ErrorToken_default_eq(x, y)
 
+
 def throw_syntax_error(actions, state, t, tokens):
     assert t is not None
     if isinstance(state, StateTermValue):
@@ -47,9 +48,17 @@ def throw_syntax_error(actions, state, t, tokens):
         tokens.throw("expected one of {!r}, got {!r}"
                      .format(sorted(expected), t))
 
+
 StateTermValue = collections.namedtuple("StateTermValue", "state term value new_line")
-class ShiftError(Exception): pass
-class ShiftAccept(Exception): pass
+
+
+class ShiftError(Exception):
+    pass
+
+
+class ShiftAccept(Exception):
+    pass
+
 
 class Parser:
     """Parser using jsparagus-generated tables.
@@ -242,10 +251,13 @@ class Parser:
         class BogusLexer:
             def throw_unexpected_end(self):
                 raise UnexpectedEndError("")
+
             def throw(self, message):
                 raise SyntaxError(message)
+
             def take(self):
                 return str(t)
+
             def saw_line_terminator(self):
                 return lexer.saw_line_terminator()
 
@@ -258,12 +270,14 @@ class Parser:
 
     def can_close(self):
         """Return True if self.close() would succeed."""
+
         # The easy case: no error, parsing just succeeds.
         # The hard case: maybe error-handling would succeed?
         # The easiest thing is simply to run the method.
         class BogusLexer:
             def throw_unexpected_end(self):
                 raise UnexpectedEndError("")
+
             def throw(self, message):
                 raise SyntaxError(message)
 
