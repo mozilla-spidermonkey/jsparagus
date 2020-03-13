@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import json
-import os.path
-from datetime import datetime
 
 read_filename = 'count/fuzzbug.json'
 write_count = 'badges/open-fuzzbug.json'

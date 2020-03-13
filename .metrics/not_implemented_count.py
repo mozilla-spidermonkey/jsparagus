@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import json
 import os.path
-import datetime
 
 filename = 'count/not-implemented.json'
 if not os.path.isfile(filename):

@@ -31,7 +31,6 @@ import io
 import pickle
 import sys
 import itertools
-import math
 
 from .ordered import OrderedSet, OrderedFrozenSet
 

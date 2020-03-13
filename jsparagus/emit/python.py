@@ -1,8 +1,8 @@
 """Emit code and parser tables in Python."""
 
-from ..grammar import InitNt, CallMethod, Some, is_concrete_element, Nt, ErrorSymbol
+from ..grammar import Some, Nt, ErrorSymbol
 from ..actions import Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag, PushFlag, PopFlag, FunCall, Seq
-from ..runtime import SPECIAL_CASE_TAG, ErrorToken
+from ..runtime import ErrorToken
 from ..ordered import OrderedSet
 
 def write_python_parse_table(out, parse_table):

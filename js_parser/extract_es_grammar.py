@@ -541,7 +541,6 @@ def extract(filename, unfiltered, target):
 
 
 if __name__ == '__main__':
-    import sys
     parser = argparse.ArgumentParser(
         description="Extract esgrammar from ECMAScript specifications.")
     parser.add_argument(
