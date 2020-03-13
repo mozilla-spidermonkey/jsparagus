@@ -134,7 +134,7 @@ def apply_prefix_postfix_rule(e, rule, name):
         return
 
     fix = rule.get(name)
-    if isinstance(fix, type(lambda: 0)):
+    if callable(fix):
         yield fix(e)
     elif isinstance(fix, list):
         for item in fix:
