@@ -1586,7 +1586,7 @@ class ParserStates:
 
 class CanonicalGrammar:
     __slots__ = "prods", "prods_with_indexes_by_nt", "grammar"
-    def __init__(self, grammar, old = False):
+    def __init__(self, grammar, old=False):
         assert isinstance(grammar, Grammar)
 
         # Step by step, we check the grammar and lower it to a more primitive form.
@@ -1631,22 +1631,23 @@ class StateAndTransitions:
     """
 
     __slots__ = [
-        "index",        # Numerical index of this state.
-        "terminals",    # Terminals map.
-        "nonterminals", # Non-terminals map.
-        "errors",       # List of error symbol transitions.
-        "epsilon",      # List of epsilon transitions with associated actions.
-        "locations",    # Ordered set of LRItems (grammar position).
-        "delayed_actions", # Ordered set of Actions which are pushed to the
-                        # next state after a conflict.
-        "backedges",    # Set of back edges and whether these are expected to
-                        # be on the parser stack or not.
-        "_hash",        # Hash to identify states which have to be merged. This
-                        # hash is composed of LRItems of the LR0 grammar, and
-                        # actions performed on it since.
+        "index",            # Numerical index of this state.
+        "terminals",        # Terminals map.
+        "nonterminals",     # Non-terminals map.
+        "errors",           # List of error symbol transitions.
+        "epsilon",          # List of epsilon transitions with associated
+                            # actions.
+        "locations",        # Ordered set of LRItems (grammar position).
+        "delayed_actions",  # Ordered set of Actions which are pushed to the
+                            # next state after a conflict.
+        "backedges",        # Set of back edges and whether these are expected
+                            # to be on the parser stack or not.
+        "_hash",            # Hash to identify states which have to be merged.
+                            # This hash is composed of LRItems of the LR0
+                            # grammar, and actions performed on it since.
     ]
 
-    def __init__(self, index, locations, delayed_actions = OrderedFrozenSet()):
+    def __init__(self, index, locations, delayed_actions=OrderedFrozenSet()):
         assert isinstance(locations, OrderedFrozenSet)
         assert isinstance(delayed_actions, OrderedFrozenSet)
         self.index = index
@@ -1823,9 +1824,9 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
     if isinstance(expr, int):
         stack_index = pop - expr
         if depth == 0:
-            expr = FunCall("id", (stack_index,), fallible = False,
-                           trait = types.Type("AstBuilder"), set_to = ret,
-                           alias_read = alias_set, alias_write = alias_set)
+            expr = FunCall("id", (stack_index,), fallible=False,
+                           trait=types.Type("AstBuilder"), set_to=ret,
+                           alias_read=alias_set, alias_write=alias_set)
             funcalls.append(expr)
             return ret
         else:
@@ -1841,20 +1842,20 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
                 yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
         args = tuple(convert_args(expr.args))
         expr = FunCall(expr.method, args,
-                       trait = expr.trait,
-                       fallible = expr.fallible,
-                       set_to = ret,
-                       alias_read = alias_set,
-                       alias_write = alias_set)
+                       trait=expr.trait,
+                       fallible=expr.fallible,
+                       set_to=ret,
+                       alias_read=alias_set,
+                       alias_write=alias_set)
         funcalls.append(expr)
         return ret
     elif expr == "accept":
         expr = FunCall("accept", (),
-                       trait = types.Type("ParserTrait"),
-                       fallible = False,
-                       set_to = ret,
-                       alias_read = alias_set,
-                       alias_write = alias_set)
+                       trait=types.Type("ParserTrait"),
+                       fallible=False,
+                       set_to=ret,
+                       alias_read=alias_set,
+                       alias_write=alias_set)
         funcalls.append(expr)
         return ret
     else:
@@ -1869,7 +1870,7 @@ class LR0Generator:
         "_hash",
     ]
 
-    def __init__(self, grammar, lr_items = []):
+    def __init__(self, grammar, lr_items=[]):
         self.grammar = grammar
         self.lr_items = OrderedFrozenSet(lr_items)
         # This is used to reuse states which have already been encoded.
@@ -1908,10 +1909,10 @@ class LR0Generator:
             for prod_index, _ in grammar.prods_with_indexes_by_nt[nt]:
                 assert isinstance(prod_index, int)
                 lr_items.append(LRItem(
-                    prod_index = prod_index,
-                    offset = 0,
-                    lookahead = None,
-                    followed_by = tuple(),
+                    prod_index=prod_index,
+                    offset=0,
+                    lookahead=None,
+                    followed_by=tuple(),
                 ))
 
                 prod = grammar.prods[prod_index]
@@ -1994,10 +1995,10 @@ class LR0Generator:
         # the next LR Item.
         new_transition = term not in followed_by
         followed_by[term].append(LRItem(
-            prod_index = lr_item.prod_index,
-            offset = lr_item.offset + 1,
-            lookahead = None,
-            followed_by = tuple(),
+            prod_index=lr_item.prod_index,
+            offset=lr_item.offset + 1,
+            lookahead=None,
+            followed_by=tuple(),
         ))
 
         # If the term is a non-terminal, then recursively add transitions from
@@ -2010,10 +2011,10 @@ class LR0Generator:
             for prod_index, _ in self.grammar.prods_with_indexes_by_nt[term]:
                 assert isinstance(prod_index, int)
                 self.item_transitions(LRItem(
-                    prod_index = prod_index,
-                    offset = 0,
-                    lookahead = None,
-                    followed_by = tuple(),
+                    prod_index=prod_index,
+                    offset=0,
+                    lookahead=None,
+                    followed_by=tuple(),
                 ), followed_by)
 
 # To fix inconsistencies of the grammar, we have to traverse the grammar both
@@ -2049,7 +2050,7 @@ class LR0Generator:
 #
 APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
 
-def aps_str(aps, name = "aps"):
+def aps_str(aps, name="aps"):
     return """{}.stack = [{}]
 {}.shift = [{}]
 {}.lookahead = [{}]
@@ -2063,7 +2064,7 @@ def aps_str(aps, name = "aps"):
         name, ", ".join(repr(e) for e in aps.replay)
     )
 
-def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
+def aps_lanes_str(aps_lanes, header="lanes:", name="\taps"):
     return "{}\n{}".format(header, "\n".join(aps_str(aps, name) for aps in aps_lanes))
 
 def is_valid_aps(aps):
@@ -2133,7 +2134,7 @@ class ParseTable:
         "exec_modes"
     ]
 
-    def __init__(self, grammar, verbose = False, progress = False, debug = False):
+    def __init__(self, grammar, verbose=False, progress=False, debug=False):
         self.actions = []
         self.states = []
         self.state_cache = {}
@@ -2175,7 +2176,7 @@ class ParseTable:
                 return True
         return False
 
-    def new_state(self, locations, delayed_actions = OrderedFrozenSet()):
+    def new_state(self, locations, delayed_actions=OrderedFrozenSet()):
         """Get or create state with an LR0 location and delayed actions. Returns a tuple
         where the first element is whether the element is newly created, and
         the second element is the State object."""
@@ -2188,7 +2189,7 @@ class ParseTable:
             self.states.append(state)
             return True, state
 
-    def get_state(self, locations, delayed_actions = OrderedFrozenSet()):
+    def get_state(self, locations, delayed_actions=OrderedFrozenSet()):
         """Like new_state(), but only returns the state without returning whether it is
         newly created or not."""
         _, state = self.new_state(locations, delayed_actions)
@@ -2228,7 +2229,7 @@ class ParseTable:
         except:
             pass
         if isinstance(term, Action):
-            src.epsilon = [ (t, d) for t, d in src.epsilon if t != term ]
+            src.epsilon = [(t, d) for t, d in src.epsilon if t != term]
             src.epsilon.append((term, dest))
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
@@ -2315,7 +2316,7 @@ class ParseTable:
         # sets of LR Items are discovered.
         def visit_grammar():
             while todo:
-                yield # progress bar.
+                yield  # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s_it, s = todo.popleft()
                 if verbose:
@@ -2335,7 +2336,7 @@ class ParseTable:
     def is_term_shifted(self, term):
         return not (isinstance(term, Action) and term.update_stack())
 
-    def is_valid_path(self, path, state = None):
+    def is_valid_path(self, path, state=None):
         """This function is used to check a list of edges and returns whether it
         corresponds to a valid path within the parse table. This is useful when
         merging sequences of edges from various locations."""
@@ -2441,7 +2442,7 @@ class ParseTable:
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
 
-    def aps_start(self, state, replay = []):
+    def aps_start(self, state, replay=[]):
         "Return a parser state only knowing the state at which we are currently."
         edge = Edge(state, None)
         return APS([edge], [edge], [], [], replay)
@@ -2539,7 +2540,7 @@ class ParseTable:
                     # `to` state, using the replayed terms.
                     new_replay = []
                     if reducer.replay > 0:
-                        new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
+                        new_replay = [edge.term for edge in path if self.term_is_stacked(edge.term)]
                         new_replay = new_replay[-reducer.replay:]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - reducer.replay, 0)]
@@ -2736,7 +2737,7 @@ class ParseTable:
 
         # Unify expression, and return one substitution if both expressions
         # can be unified.
-        def unify_expr(expr1, expr2, swapped = False):
+        def unify_expr(expr1, expr2, swapped=False):
             if isinstance(expr1, Eq) and isinstance(expr2, Id):
                 if expr1.edge != expr2.edge:
                     # Different edges are ok, but produce no substituions.
@@ -3042,7 +3043,7 @@ class ParseTable:
         if state is None or not state.is_inconsistent():
             return False
 
-        all_reduce = all( a.update_stack() for a, _ in state.epsilon )
+        all_reduce = all(a.update_stack() for a, _ in state.epsilon)
         any_shift = (len(state.terminals) + len(state.nonterminals) + len(state.errors)) > 0
         try_with_context = all_reduce and not any_shift
         try_with_lookahead = not try_with_context
@@ -3092,7 +3093,7 @@ class ParseTable:
             unreachable = []
             while todo:
                 while todo:
-                    yield # progress bar.
+                    yield  # progress bar.
                     # TODO: Compare stack / queue, for the traversal of the states.
                     s = todo.popleft()
                     if not self.is_reachable_state(s):
@@ -3148,7 +3149,7 @@ class ParseTable:
 
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]
-        state_map = { s.index: i for i, s in enumerate(self.states) }
+        state_map = {s.index: i for i, s in enumerate(self.states)}
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
@@ -3185,7 +3186,7 @@ class ParseTable:
         def visit_table():
             hit = True
             while hit:
-                yield # progress bar.
+                yield  # progress bar.
                 hit = rewrite_if_same_outedges(self.states)
         consume(visit_table(), progress)
 
@@ -3199,7 +3200,7 @@ class ParseTable:
         self.states = []
         self.states.extend(shift_states)
         self.states.extend(action_states)
-        state_map = { s.index: i for i, s in enumerate(self.states) }
+        state_map = {s.index: i for i, s in enumerate(self.states)}
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
@@ -3224,11 +3225,11 @@ class ParseTable:
                 for path, _ in self.reduce_path([Edge(s.index, t)]):
                     for i, edge in enumerate(path):
                         depths[edge.src].append(i + 1)
-        depths = { s: max(ds) for s, ds in depths.items() }
+        depths = {s: max(ds) for s, ds in depths.items()}
         return depths
 
 
-    def debug_context(self, state, split_txt = "; ", prefix = ""):
+    def debug_context(self, state, split_txt="; ", prefix=""):
         "Reconstruct the grammar production by traversing the parse table."
         assert isinstance(state, int)
         if self.debug_info is False:
@@ -3321,7 +3322,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
             raise ValueError("Unexpected parser_data kind")
 
 
-def compile(grammar, verbose = False):
+def compile(grammar, verbose=False):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
     generate_parser(out, grammar)
