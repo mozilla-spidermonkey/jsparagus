@@ -6,10 +6,15 @@
 #![allow(dead_code)]
 
 use crate::compilation_info::CompilationInfo;
+use crate::frame_slot::FrameSlot;
+use crate::gcthings::{GCThing, GCThingIndex, GCThingList};
 use crate::opcode::Opcode;
+use crate::scope::{ScopeData, ScopeIndex};
+use crate::scope_notes::{ScopeNote, ScopeNoteIndex, ScopeNoteList};
 use crate::script_atom_set::{ScriptAtomSet, ScriptAtomSetIndex};
 use ast::source_atom_set::SourceAtomSetIndex;
 use byteorder::{ByteOrder, LittleEndian};
+use std::cmp;
 use std::convert::TryInto;
 use std::fmt;
 
@@ -35,16 +40,36 @@ pub struct BytecodeOffset {
     pub offset: usize,
 }
 
+impl BytecodeOffset {
+    fn new(offset: usize) -> Self {
+        Self { offset }
+    }
+
+    pub fn into_raw(self) -> usize {
+        self.offset
+    }
+}
+
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
     atoms: ScriptAtomSet,
+
+    gcthings: GCThingList,
+    scope_notes: ScopeNoteList,
+
+    main_offset: BytecodeOffset,
+
+    /// The maximum number of fixed frame slots.
+    max_fixed_slots: FrameSlot,
 
     /// Stack depth after the instructions emitted so far.
     stack_depth: usize,
 
     /// Maximum stack_depth at any point in the instructions emitted so far.
     maximum_stack_depth: usize,
+
+    body_scope_index: Option<GCThingIndex>,
 
     /// Number of JOF_IC instructions emitted so far.
     num_ic_entries: usize,
@@ -71,13 +96,16 @@ pub struct EmitResult {
     pub bytecode: Vec<u8>,
     pub atoms: Vec<SourceAtomSetIndex>,
     pub all_atoms: Vec<String>,
+    pub gcthings: Vec<GCThing>,
+    pub scopes: Vec<ScopeData>,
+    pub scope_notes: Vec<ScopeNote>,
 
     // Line and column numbers for the first character of source.
     pub lineno: usize,
     pub column: usize,
 
     pub main_offset: usize,
-    pub max_fixed_slots: u32,
+    pub max_fixed_slots: FrameSlot,
     pub maximum_stack_depth: u32,
     pub body_scope_index: u32,
     pub num_ic_entries: u32,
@@ -113,8 +141,13 @@ impl InstructionWriter {
         Self {
             bytecode: Vec::new(),
             atoms: ScriptAtomSet::new(),
+            gcthings: GCThingList::new(),
+            scope_notes: ScopeNoteList::new(),
+            main_offset: BytecodeOffset::new(0),
+            max_fixed_slots: FrameSlot::new(0),
             stack_depth: 0,
             maximum_stack_depth: 0,
+            body_scope_index: None,
             num_ic_entries: 0,
             num_type_sets: 0,
         }
@@ -125,17 +158,25 @@ impl InstructionWriter {
             bytecode: self.bytecode,
             atoms: self.atoms.into_vec(),
             all_atoms: compilation_info.atoms.into_vec(),
+            gcthings: self.gcthings.into_vec(),
+            scopes: compilation_info.scope_data_map.into_vec(),
+            scope_notes: self.scope_notes.into_vec(),
 
             lineno: 1,
             column: 0,
 
-            main_offset: 0,
-            max_fixed_slots: 0,
+            main_offset: self.main_offset.into_raw(),
+            max_fixed_slots: self.max_fixed_slots,
 
             // These values probably can't be out of range for u32, as we would
             // have hit other limits first. Release-assert anyway.
             maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
-            body_scope_index: 0,
+            body_scope_index: self
+                .body_scope_index
+                .expect("body scope should be set")
+                .into_raw()
+                .try_into()
+                .unwrap(),
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
             num_type_sets: self.num_type_sets.try_into().unwrap(),
 
@@ -275,9 +316,7 @@ impl InstructionWriter {
     }
 
     pub fn bytecode_offset(&mut self) -> BytecodeOffset {
-        BytecodeOffset {
-            offset: self.bytecode.len(),
-        }
+        BytecodeOffset::new(self.bytecode.len())
     }
 
     pub fn stack_depth(&self) -> usize {
@@ -1270,4 +1309,41 @@ impl InstructionWriter {
     }
 
     // @@@@ END METHODS @@@@
+
+    fn update_max_frame_slots(&mut self, max_frame_slots: FrameSlot) {
+        self.max_fixed_slots = cmp::max(self.max_fixed_slots, max_frame_slots);
+    }
+
+    pub fn enter_global_scope(&mut self, scope_index: ScopeIndex) {
+        let index = self.gcthings.append_scope(scope_index);
+        self.body_scope_index = Some(index);
+    }
+
+    pub fn leave_global_scope(&self) {}
+
+    pub fn enter_lexical_scope(
+        &mut self,
+        scope_index: ScopeIndex,
+        parent_scope_note_index: Option<ScopeNoteIndex>,
+        next_frame_slot: FrameSlot,
+    ) -> ScopeNoteIndex {
+        self.update_max_frame_slots(next_frame_slot);
+
+        self.gcthings.append_scope(scope_index);
+        let offset = self.bytecode_offset();
+        let index = self
+            .scope_notes
+            .enter_scope(scope_index, offset, parent_scope_note_index);
+        index
+    }
+
+    pub fn leave_lexical_scope(&mut self, index: ScopeNoteIndex) {
+        self.debug_leave_lexical_env();
+        let offset = self.bytecode_offset();
+        self.scope_notes.leave_scope(index, offset);
+    }
+
+    pub fn switch_to_main(&mut self) {
+        self.main_offset = self.bytecode_offset();
+    }
 }
