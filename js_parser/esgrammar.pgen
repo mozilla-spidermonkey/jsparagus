@@ -50,7 +50,7 @@ token Let = "let";
 token SemiColon = ";";
 token Lifetime = "'";
 
-
+// Entry point for grammar_extension! macro's content.
 goal nt rust_edsl {
     rust_impl rust_nt_def_list => rust_edsl($0, $1);
 }
@@ -71,6 +71,7 @@ nt rust_nt_def_or_blank_line {
     rust_nt_def => nt_def_to_list($0);
 }
 
+// grammar extension syntax for adding/removing/extending the productions.
 nt rust_nt_def {
     "let" nt_lhs "=" "{" rust_rhs_line "}" ";" => rust_nt_def($1, $4);
 }
@@ -94,6 +95,7 @@ nt rust_expr {
     expr => rust_expr($0);
 }
 
+// Entry point for esgrammar files.
 goal nt grammar {
     nt_def_list;
 }
@@ -131,6 +133,7 @@ nt nt_type_line {
     "@" "returns" nt_type NL => $2;
 }
 
+// Define a type as understood by Rust type-system.
 nt nt_type {
    NT => simple_type($0);
    NTCALL "<" nt_type_params ">" => parameterized_type($0, $2);

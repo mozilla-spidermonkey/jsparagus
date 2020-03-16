@@ -8,6 +8,7 @@ class ImplFor(collections.namedtuple("ImplFor", "param trait for_type")):
     def __new__(cls, param, trait, for_type):
         self = super(ImplFor, cls).__new__(cls, param, trait, for_type)
         return self
+
     def __eq__(self, other):
         return isinstance(other, ImplFor) and super(ImplFor, self).__eq__(other)
 
@@ -34,9 +35,7 @@ def merge_productions(grammar, prod1, prod2):
         elif len(front2) == 1:
             body = body + front1
         else:
-            assert len(front1) == 1 or len(front2) == 1, """
-            We do not know how to sort operations yet.
-            """
+            raise ValueError("We do not know how to sort operations yet.")
     return prod1.copy_with(body=body)
 
 class ExtPatch(collections.namedtuple("ExtPatch", "prod")):
@@ -44,26 +43,31 @@ class ExtPatch(collections.namedtuple("ExtPatch", "prod")):
     def __new__(cls, prod):
         self = super(ExtPatch, cls).__new__(cls, prod)
         return self
+
     def __eq__(self, other):
         return isinstance(other, ExtPatch) and super(ExtPatch, self).__eq__(other)
 
     def apply_patch(self, filename, grammar, nonterminals):
-        (name, ns, nt_def) = self.prod
+        # - name: non-terminal.
+        # - namespace: ":" for syntactic or "::" for lexical. Always ":" as
+        #     defined by rust_nt_def.
+        # - nt_def: A single non-terminal definition with a single production.
+        (name, namespace, nt_def) = self.prod
         gnt_def = nonterminals[name]
         # Find a matching production in the grammar.
         assert nt_def.params == gnt_def.params
         new_rhs_list = []
         assert len(nt_def.rhs_list) == 1
-        pp = nt_def.rhs_list[0]
+        patch_prod = nt_def.rhs_list[0]
         applied = False
-        for gp in gnt_def.rhs_list:
-            if eq_productions(grammar, gp, pp):
-                gp = merge_productions(grammar, gp, pp)
+        for grammar_prod in gnt_def.rhs_list:
+            if eq_productions(grammar, grammar_prod, patch_prod):
+                grammar_prod = merge_productions(grammar, grammar_prod, patch_prod)
                 applied = True
-            new_rhs_list.append(gp)
+            new_rhs_list.append(grammar_prod)
         if not applied:
             raise ValueError("{}: Unable to find a matching production for {} in the grammar:\n {}"
-                             .format(filename, name, grammar.production_to_str(name, pp)))
+                             .format(filename, name, grammar.production_to_str(name, patch_prod)))
         result = gnt_def.with_rhs_list(new_rhs_list)
         nonterminals[name] = result
 
@@ -77,7 +81,7 @@ class GrammarExtension:
         self.target = target
         self.grammar = grammar
         self.filename = filename
-        pass
+
     def __repr__(self):
         return "GrammarExtension({}, {})".format(repr(self.target), repr(self.grammar))
 
@@ -86,4 +90,6 @@ class GrammarExtension:
         for ext in self.grammar:
             if isinstance(ext, ExtPatch):
                 ext.apply_patch(self.filename, grammar, nonterminals)
+            else:
+                raise ValueError("Extension of type {} not yet supported.".format(ext.__class__))
 

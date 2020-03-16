@@ -1,6 +1,7 @@
 """ Data structures for representing grammars. """
 
 import collections
+import copy
 from .ordered import OrderedSet, OrderedFrozenSet
 from . import types
 
@@ -56,7 +57,7 @@ def example_grammar():
 # `Production(["term"], 0)`.
 #
 # The production `expr ::= expr + term => add($0, $2)` is represented by
-# `Production(["expr", "+", "term"], CallMethod("add", (0, 2), "AstBuilder", False)`.
+# `Production(["expr", "+", "term"], CallMethod("add", (0, 2))`.
 #
 class Production:
     __slots__ = ['body', 'reducer', 'condition']
@@ -121,13 +122,15 @@ class Production:
 class CallMethod(collections.namedtuple("CallMethod", "method args trait fallible")):
     """Express a method call, and give it a given set of arguments. A trait is
     added as the parser should implement this trait to call this method."""
-    def __new__(cls, method, args, trait, fallible):
+    def __new__(cls, method, args, trait = types.Type("AstBuilder"), fallible = False):
         if isinstance(trait, str):
             trait = types.Type(trait)
         self = super(CallMethod, cls).__new__(cls, method, args, trait, fallible)
         return self
+
     def __eq__(self, other):
         return isinstance(other, CallMethod) and super(CallMethod, self).__eq__(other)
+
     def __hash__(self):
         return super(CallMethod, self).__hash__()
 
@@ -432,7 +435,7 @@ class Grammar:
                         method = nt
                     else:
                         method = '{}_{}'.format(nt, i)
-                    reducer = CallMethod(method, tuple(range(nargs)), "AstBuilder", False)
+                    reducer = CallMethod(method, tuple(range(nargs)))
                 rhs = Production(rhs, reducer)
 
             if not isinstance(rhs, Production):
@@ -623,7 +626,7 @@ class Grammar:
         if extensions == []:
             return
         # Copy of nonterminals which would be mutated by the patches.
-        nonterminals = { nt: nt_def for nt, nt_def in self.nonterminals.items() }
+        nonterminals = copy.copy(self.nonterminals)
         for ext in extensions:
             # Add the given trait to the execution mode, depending on which
             # type it got implemented for.

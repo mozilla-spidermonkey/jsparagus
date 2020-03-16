@@ -106,6 +106,9 @@ def load_syntactic_grammar(filename, extensions):
                 if line.startswith("grammar_extension!"):
                     assert line.endswith("{\n")
                     content = ""
+                    # +2: enumerate starts at 0, while the first line is 1.
+                    # Also, the first line added to the content variable is the
+                    # next one.
                     start_line = lineno + 2
                     continue
                 if line.startswith("}") and content:

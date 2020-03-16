@@ -75,6 +75,9 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
 	cargo build
 
+jsparagus/parse_pgen_generated.py:
+	$(PYTHON) -m jsparagus.parse_pgen --regenerate > $@
+
 check: all
 	./test.sh
 	cargo fmt && cargo test

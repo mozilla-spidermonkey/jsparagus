@@ -65,10 +65,10 @@ def empty_nt_set(grammar):
     that should be evaluated when reducing the empty string to nt.
     So, for example, if we have a production
 
-        a ::= b? c?  => CallMethod("a", [0, 1], "AstBuilder", False)
+        a ::= b? c?  => CallMethod("a", [0, 1])
 
     then the resulting dictionary will contain the entry
-    `("a", CallMethod("a", [None, None], "AstBuilder", False))`.
+    `("a", CallMethod("a", [None, None]))`.
     """
 
     empties = {}  # maps nts to reducers.
@@ -1824,7 +1824,9 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
     if isinstance(expr, int):
         stack_index = pop - expr
         if depth == 0:
-            expr = FunCall(types.Type("AstBuilder"), "id", False, alias_set, alias_set, (stack_index,), ret)
+            expr = FunCall("id", (stack_index,), fallible = False,
+                           trait = types.Type("AstBuilder"), set_to = ret,
+                           alias_read = alias_set, alias_write = alias_set)
             funcalls.append(expr)
             return ret
         else:
@@ -1839,11 +1841,21 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
             for i, arg in enumerate(args):
                 yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
         args = tuple(convert_args(expr.args))
-        expr = FunCall(expr.trait, expr.method, expr.fallible, alias_set, alias_set, args, ret)
+        expr = FunCall(expr.method, args,
+                       trait = expr.trait,
+                       fallible = expr.fallible,
+                       set_to = ret,
+                       alias_read = alias_set,
+                       alias_write = alias_set)
         funcalls.append(expr)
         return ret
     elif expr == "accept":
-        expr = FunCall(types.Type("ParserTrait"), "accept", False, alias_set, alias_set, (), ret)
+        expr = FunCall("accept", (),
+                       trait = types.Type("ParserTrait"),
+                       fallible = False,
+                       set_to = ret,
+                       alias_read = alias_set,
+                       alias_write = alias_set)
         funcalls.append(expr)
         return ret
     else:

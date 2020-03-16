@@ -94,6 +94,18 @@ class ESGrammarBuilder:
 
     def reset(self):
         self.lexer = None
+        # This is how full-parsing and lazy-parsing are implemented, using
+        # different traits.
+        #
+        # This field contains the Rust's trait used for calling the method.
+        # When a CallMethod is generated, it is assumed to be a function of
+        # this trait. The trait is used by the Rust backend to generate
+        # multiple backends which are implementing different set of traits.
+        # Having the trait on the function call is useful as a way to filter
+        # functions calls at code-generation time.
+        #
+        # This field is updated by the `rust_param_impl`, which is used in
+        # grammar extensions, and visited before producing any CallMethod.
         self.method_trait = "AstBuilder"
 
     def rust_edsl(self, impl, grammar):
