@@ -14,6 +14,7 @@ use crate::value::{to_boolean, to_number, JSValue};
 #[derive(Clone, Debug)]
 pub enum EvalError {
     NotImplemented(String),
+    VariableNotDefined(String),
     EmptyStack,
 }
 
@@ -21,6 +22,7 @@ impl fmt::Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EvalError::NotImplemented(message) => write!(f, "not implemented: {}", message),
+            EvalError::VariableNotDefined(name) => write!(f, "{} is not defined", name),
             EvalError::EmptyStack => write!(f, "trying to pop from empty stack"),
         }
     }
@@ -131,6 +133,11 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 continue;
             }
 
+            Opcode::DefVar => {
+                let atom = emit.read_atom(pc + 1);
+                global.borrow_mut().set(atom, JSValue::Undefined);
+            }
+
             Opcode::BindGName => {
                 // TODO: proper binding
                 stack.push(JSValue::Object(global.clone()))
@@ -138,6 +145,9 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
 
             Opcode::GetGName => {
                 let atom = emit.read_atom(pc + 1);
+                if !global.borrow().has(&atom) {
+                    return Err(EvalError::VariableNotDefined(atom));
+                }
                 stack.push(global.borrow().get(atom));
             }
 
