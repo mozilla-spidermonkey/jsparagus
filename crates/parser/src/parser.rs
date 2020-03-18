@@ -1,8 +1,8 @@
 use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
-    full_actions, traits, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait,
-    Result, StackValue, Term, TermValue, TerminalId, Token, TABLES,
+    full_actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
+    StackValue, Term, TermValue, TerminalId, Token, TABLES,
 };
 
 pub struct Parser<'alloc> {
