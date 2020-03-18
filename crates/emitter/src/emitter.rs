@@ -17,7 +17,6 @@ use byteorder::{ByteOrder, LittleEndian};
 use std::cmp;
 use std::convert::TryInto;
 use std::fmt;
-use std::marker::PhantomData;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ResumeKind {
@@ -98,7 +97,7 @@ impl EmitOptions {
 pub struct EmitResult<'alloc> {
     pub bytecode: Vec<u8>,
     pub atoms: Vec<SourceAtomSetIndex>,
-    pub all_atoms: Vec<String>,
+    pub all_atoms: Vec<&'alloc str>,
     pub gcthings: Vec<GCThing>,
     pub scopes: Vec<ScopeData>,
     pub scope_notes: Vec<ScopeNote>,
@@ -123,9 +122,6 @@ pub struct EmitResult<'alloc> {
     pub has_non_syntactic_scope: bool,
     pub needs_function_environment_objects: bool,
     pub has_module_goal: bool,
-
-    // NOTE: Removed in the next patch.
-    phantom: PhantomData<&'alloc ()>,
 }
 
 /// The error of bytecode-compilation.
@@ -195,9 +191,6 @@ impl InstructionWriter {
             has_non_syntactic_scope: false,
             needs_function_environment_objects: false,
             has_module_goal: false,
-
-            // NOTE: Removed in the next patch.
-            phantom: PhantomData,
         }
     }
 
