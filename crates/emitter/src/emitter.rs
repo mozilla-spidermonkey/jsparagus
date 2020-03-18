@@ -44,9 +44,11 @@ impl BytecodeOffset {
     fn new(offset: usize) -> Self {
         Self { offset }
     }
+}
 
-    pub fn into_raw(self) -> usize {
-        self.offset
+impl From<BytecodeOffset> for usize {
+    fn from(offset: BytecodeOffset) -> usize {
+        offset.offset
     }
 }
 
@@ -156,25 +158,22 @@ impl InstructionWriter {
     pub fn into_emit_result(self, compilation_info: CompilationInfo) -> EmitResult {
         EmitResult {
             bytecode: self.bytecode,
-            atoms: self.atoms.into_vec(),
-            all_atoms: compilation_info.atoms.into_vec(),
-            gcthings: self.gcthings.into_vec(),
-            scopes: compilation_info.scope_data_map.into_vec(),
-            scope_notes: self.scope_notes.into_vec(),
+            atoms: self.atoms.into(),
+            all_atoms: compilation_info.atoms.into(),
+            gcthings: self.gcthings.into(),
+            scopes: compilation_info.scope_data_map.into(),
+            scope_notes: self.scope_notes.into(),
 
             lineno: 1,
             column: 0,
 
-            main_offset: self.main_offset.into_raw(),
+            main_offset: self.main_offset.into(),
             max_fixed_slots: self.max_fixed_slots,
 
             // These values probably can't be out of range for u32, as we would
             // have hit other limits first. Release-assert anyway.
             maximum_stack_depth: self.maximum_stack_depth.try_into().unwrap(),
-            body_scope_index: self
-                .body_scope_index
-                .expect("body scope should be set")
-                .into_raw()
+            body_scope_index: usize::from(self.body_scope_index.expect("body scope should be set"))
                 .try_into()
                 .unwrap(),
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
@@ -219,7 +218,7 @@ impl InstructionWriter {
     }
 
     fn write_script_atom_set_index(&mut self, atom_index: ScriptAtomSetIndex) {
-        self.write_u32(atom_index.into_raw());
+        self.write_u32(atom_index.into());
     }
 
     fn write_offset(&mut self, offset: i32) {

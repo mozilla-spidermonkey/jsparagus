@@ -186,7 +186,7 @@ impl EmitterScopeStack {
         emit.uninitialized();
         let mut slot = slot_start;
         while slot < slot_end {
-            emit.init_lexical(slot.into_raw());
+            emit.init_lexical(slot.into());
             slot.next();
         }
         emit.pop();

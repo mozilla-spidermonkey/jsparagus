@@ -31,9 +31,11 @@ impl ScopeNoteIndex {
     fn new(index: usize) -> Self {
         Self { index }
     }
+}
 
-    pub fn into_raw(self) -> usize {
-        self.index
+impl From<ScopeNoteIndex> for usize {
+    fn from(index: ScopeNoteIndex) -> usize {
+        index.index
     }
 }
 
@@ -61,10 +63,12 @@ impl ScopeNoteList {
     }
 
     pub fn leave_scope(&mut self, index: ScopeNoteIndex, offset: BytecodeOffset) {
-        self.notes[index.into_raw()].end = offset;
+        self.notes[usize::from(index)].end = offset;
     }
+}
 
-    pub fn into_vec(self) -> Vec<ScopeNote> {
-        self.notes
+impl From<ScopeNoteList> for Vec<ScopeNote> {
+    fn from(list: ScopeNoteList) -> Vec<ScopeNote> {
+        list.notes
     }
 }
