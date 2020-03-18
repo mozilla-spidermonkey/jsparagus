@@ -135,8 +135,10 @@ fn handle_script<'alloc>(
             println!("\n{:#?}", emit_result);
             println!("\n{}", emitter::dis(&emit_result.bytecode));
 
-            let eval_result = evaluate(&emit_result, global);
-            println!("{:?}", eval_result);
+            match evaluate(&emit_result, global) {
+                Err(err) => print!("error: {}", err),
+                Ok(value) => println!("{:?}", value),
+            }
         }
     }
 }
