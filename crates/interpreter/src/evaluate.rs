@@ -7,7 +7,6 @@ use std::convert::TryInto;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::globals::create_global;
 use crate::object::Object;
 use crate::value::{to_boolean, to_number, JSValue};
 
@@ -58,12 +57,10 @@ impl Helpers for EmitResult {
     }
 }
 
-pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
+pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
-
-    let global = create_global();
 
     loop {
         let op = match Opcode::try_from(emit.bytecode[pc]) {

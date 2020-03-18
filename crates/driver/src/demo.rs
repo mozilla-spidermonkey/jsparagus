@@ -17,6 +17,7 @@ use ast::dump::ASTDump;
 use ast::source_atom_set::SourceAtomSet;
 use ast::types::{Program, Script};
 use bumpalo::Bump;
+use interpreter::{create_global, evaluate, Object};
 use parser::{is_partial_script, parse_script, ParseOptions};
 
 use rustyline::error::ReadlineError;
@@ -118,7 +119,11 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
     }
 }
 
-fn handle_script<'alloc>(script: Script<'alloc>, atoms: SourceAtomSet<'alloc>) {
+fn handle_script<'alloc>(
+    script: Script<'alloc>,
+    atoms: SourceAtomSet<'alloc>,
+    global: Rc<RefCell<Object>>,
+) {
     script.dump_with_atoms(&mut io::stderr(), &atoms);
     let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
@@ -130,7 +135,7 @@ fn handle_script<'alloc>(script: Script<'alloc>, atoms: SourceAtomSet<'alloc>) {
             println!("\n{:#?}", emit_result);
             println!("\n{}", emitter::dis(&emit_result.bytecode));
 
-            let eval_result = interpreter::evaluate(&emit_result);
+            let eval_result = evaluate(&emit_result, global);
             println!("{:?}", eval_result);
         }
     }
@@ -157,6 +162,8 @@ pub fn read_print_loop() {
     let mut rl = Editor::new();
     rl.set_helper(Some(h));
 
+    let global = create_global();
+
     loop {
         let input = rl.readline("> ");
         if let Err(err) = input {
@@ -178,6 +185,7 @@ pub fn read_print_loop() {
                 handle_script(
                     script.unbox(),
                     atoms.replace(SourceAtomSet::new_uninitialized()),
+                    global.clone(),
                 );
             }
         }
