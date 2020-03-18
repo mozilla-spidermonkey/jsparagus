@@ -102,7 +102,7 @@ impl GetNameEmitter {
                 //      [stack] VAL
             }
             NameLocation::FrameSlot(slot, _kind) => {
-                emitter.emit.get_local(slot.into_raw());
+                emitter.emit.get_local(slot.into());
                 //      [stack] VAL
             }
         }
@@ -274,7 +274,7 @@ impl NameReferenceEmitter {
                 //      [stack] CALLEE THIS
             }
             NameLocation::FrameSlot(slot, _kind) => {
-                emitter.emit.get_local(slot.into_raw());
+                emitter.emit.get_local(slot.into());
                 //      [stack] CALLEE
 
                 emitter.emit.undefined();
@@ -588,7 +588,7 @@ where
             AssignmentReferenceKind::FrameSlot(slot) => {
                 //      [stack] VAL
 
-                emitter.emit.set_local(slot.into_raw());
+                emitter.emit.set_local(slot.into());
                 //      [stack] VAL
             }
             AssignmentReferenceKind::Prop(key_index) => {
@@ -648,7 +648,7 @@ where
             DeclarationReferenceKind::FrameSlot(slot) => {
                 //      [stack] VAL
 
-                emitter.emit.init_lexical(slot.into_raw());
+                emitter.emit.init_lexical(slot.into());
                 //      [stack] VAL
             }
         }

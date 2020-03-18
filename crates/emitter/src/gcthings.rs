@@ -17,9 +17,11 @@ impl GCThingIndex {
     fn new(index: usize) -> Self {
         Self { index }
     }
+}
 
-    pub fn into_raw(self) -> usize {
-        self.index
+impl From<GCThingIndex> for usize {
+    fn from(index: GCThingIndex) -> usize {
+        index.index
     }
 }
 
@@ -41,8 +43,10 @@ impl GCThingList {
         self.things.push(GCThing::Scope(scope_index));
         GCThingIndex::new(index)
     }
+}
 
-    pub fn into_vec(self) -> Vec<GCThing> {
-        self.things
+impl From<GCThingList> for Vec<GCThing> {
+    fn from(list: GCThingList) -> Vec<GCThing> {
+        list.things
     }
 }

@@ -12,8 +12,10 @@ impl FrameSlot {
     pub fn next(&mut self) {
         self.slot += 1;
     }
+}
 
-    pub fn into_raw(self) -> u32 {
-        self.slot
+impl From<FrameSlot> for u32 {
+    fn from(slot: FrameSlot) -> u32 {
+        slot.slot
     }
 }

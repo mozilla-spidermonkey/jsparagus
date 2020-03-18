@@ -223,9 +223,11 @@ impl ScopeIndex {
     fn new(index: usize) -> Self {
         Self { index }
     }
+}
 
-    pub fn into_raw(self) -> usize {
-        self.index
+impl From<ScopeIndex> for usize {
+    fn from(index: ScopeIndex) -> usize {
+        index.index
     }
 }
 
@@ -255,24 +257,26 @@ impl ScopeDataList {
     }
 
     pub fn populate(&mut self, index: ScopeIndex, scope: ScopeData) {
-        self.scopes[index.into_raw()].replace(scope);
+        self.scopes[usize::from(index)].replace(scope);
     }
 
     fn get(&self, index: ScopeIndex) -> &ScopeData {
-        self.scopes[index.into_raw()]
+        self.scopes[usize::from(index)]
             .as_ref()
             .expect("Should be populated")
     }
 
     fn get_mut(&mut self, index: ScopeIndex) -> &mut ScopeData {
-        self.scopes[index.into_raw()]
+        self.scopes[usize::from(index)]
             .as_mut()
             .expect("Should be populated")
     }
+}
 
-    pub fn into_vec(mut self) -> Vec<ScopeData> {
-        self.scopes
-            .drain(..)
+impl From<ScopeDataList> for Vec<ScopeData> {
+    fn from(list: ScopeDataList) -> Vec<ScopeData> {
+        list.scopes
+            .into_iter()
             .map(|g| g.expect("Should be populated"))
             .collect()
     }
@@ -326,8 +330,10 @@ impl ScopeDataMap {
             _ => panic!("Unexpected scope data for lexical"),
         }
     }
+}
 
-    pub fn into_vec(self) -> Vec<ScopeData> {
-        self.scopes.into_vec()
+impl From<ScopeDataMap> for Vec<ScopeData> {
+    fn from(map: ScopeDataMap) -> Vec<ScopeData> {
+        map.scopes.into()
     }
 }
