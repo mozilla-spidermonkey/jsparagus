@@ -14,4 +14,6 @@ extern crate jsparagus_ast as ast;
 extern crate jsparagus_parser as parser;
 
 pub use evaluate::{evaluate, EvalError};
+pub use globals::create_global;
+pub use object::Object;
 pub use value::JSValue;
