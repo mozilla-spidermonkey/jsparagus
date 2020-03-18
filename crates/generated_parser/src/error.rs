@@ -1,7 +1,6 @@
 use crate::stack_value_generated::AstError;
 use crate::DeclarationKind;
 use crate::Token;
-use std::marker::PhantomData;
 use std::{convert::Infallible, error::Error, fmt};
 
 #[derive(Debug)]
@@ -22,7 +21,7 @@ pub enum ParseError<'alloc> {
     UnexpectedEnd,
     InvalidAssignmentTarget,
     InvalidParameter,
-    InvalidIdentifier(String, usize),
+    InvalidIdentifier(&'alloc str, usize),
     AstError(String),
 
     // Destructuring errors
@@ -36,17 +35,14 @@ pub enum ParseError<'alloc> {
     ArrowHeadInvalid,
     ArrowParametersWithNonFinalRest,
 
-    DuplicateBinding(String, DeclarationKind, usize, DeclarationKind, usize),
-    DuplicateExport(String, usize, usize),
-    MissingExport(String, usize),
+    DuplicateBinding(&'alloc str, DeclarationKind, usize, DeclarationKind, usize),
+    DuplicateExport(&'alloc str, usize, usize),
+    MissingExport(&'alloc str, usize),
 
     // Annex B. FunctionDeclarations in IfStatement Statement Clauses
     // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
     FunctionDeclInSingleStatement,
     LabelledFunctionDeclInSingleStatement,
-
-    // NOTE: Removed in the next patch.
-    Phantom(PhantomData<&'alloc ()>),
 }
 
 impl<'alloc> ParseError<'alloc> {
@@ -110,8 +106,6 @@ impl<'alloc> ParseError<'alloc> {
             ParseError::LabelledFunctionDeclInSingleStatement => format!(
                 "functions can only be labelled inside blocks"
             ),
-            // NOTE: Removed in the next patch.
-            ParseError::Phantom(_) => panic!("should not happen"),
         }
     }
 }

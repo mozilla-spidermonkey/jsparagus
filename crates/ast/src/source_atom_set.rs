@@ -160,7 +160,7 @@ for_all_common_atoms!(define_struct);
 /// WARNING: This set itself does *NOT* map to JSScript::atoms().
 #[derive(Debug)]
 pub struct SourceAtomSet<'alloc> {
-    atoms: Vec<String>,
+    atoms: Vec<&'alloc str>,
 
     /// Cache for the case the same string is inserted multiple times.
     atom_indices: HashMap<&'alloc str, SourceAtomSetIndex>,
@@ -183,7 +183,7 @@ impl<'alloc> SourceAtomSet<'alloc> {
             ($self: ident,
              $(($s:tt, $method:ident, $variant:ident),)*) => {
                 $(
-                    $self.atoms.push($s.to_string());
+                    $self.atoms.push($s);
                     $self
                         .atom_indices
                         .insert($s, CommonSourceAtomSetIndices::$method());
@@ -211,19 +211,19 @@ impl<'alloc> SourceAtomSet<'alloc> {
         }
 
         let index = self.atoms.len();
-        self.atoms.push(s.to_string());
+        self.atoms.push(s);
         let result = SourceAtomSetIndex::new(index);
         self.atom_indices.insert(s, result);
         result
     }
 
-    pub fn get(&self, index: SourceAtomSetIndex) -> String {
+    pub fn get(&self, index: SourceAtomSetIndex) -> &'alloc str {
         self.atoms[usize::from(index)].clone()
     }
 }
 
-impl<'alloc> From<SourceAtomSet<'alloc>> for Vec<String> {
-    fn from(set: SourceAtomSet<'alloc>) -> Vec<String> {
+impl<'alloc> From<SourceAtomSet<'alloc>> for Vec<&'alloc str> {
+    fn from(set: SourceAtomSet<'alloc>) -> Vec<&'alloc str> {
         set.atoms
     }
 }
