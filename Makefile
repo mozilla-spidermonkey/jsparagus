@@ -73,7 +73,7 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
 rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
-	cargo build
+	cargo build --features full
 
 jsparagus/parse_pgen_generated.py:
 	$(PYTHON) -m jsparagus.parse_pgen --regenerate > $@
