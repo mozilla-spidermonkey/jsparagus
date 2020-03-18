@@ -1,10 +1,11 @@
 use crate::stack_value_generated::AstError;
 use crate::DeclarationKind;
 use crate::Token;
+use std::marker::PhantomData;
 use std::{convert::Infallible, error::Error, fmt};
 
 #[derive(Debug)]
-pub enum ParseError {
+pub enum ParseError<'alloc> {
     // Lexical errors
     IllegalCharacter(char),
     InvalidEscapeSequence,
@@ -43,9 +44,12 @@ pub enum ParseError {
     // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
     FunctionDeclInSingleStatement,
     LabelledFunctionDeclInSingleStatement,
+
+    // NOTE: Removed in the next patch.
+    Phantom(PhantomData<&'alloc ()>),
 }
 
-impl ParseError {
+impl<'alloc> ParseError<'alloc> {
     pub fn message(&self) -> String {
         match self {
             ParseError::IllegalCharacter(c) => format!("illegal character: {:?}", c),
@@ -106,34 +110,36 @@ impl ParseError {
             ParseError::LabelledFunctionDeclInSingleStatement => format!(
                 "functions can only be labelled inside blocks"
             ),
+            // NOTE: Removed in the next patch.
+            ParseError::Phantom(_) => panic!("should not happen"),
         }
     }
 }
 
-impl PartialEq for ParseError {
+impl<'alloc> PartialEq for ParseError<'alloc> {
     fn eq(&self, other: &ParseError) -> bool {
         format!("{:?}", self) == format!("{:?}", other)
     }
 }
 
-impl fmt::Display for ParseError {
+impl<'alloc> fmt::Display for ParseError<'alloc> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.message())
     }
 }
 
-impl From<Infallible> for ParseError {
-    fn from(err: Infallible) -> ParseError {
+impl<'alloc> From<Infallible> for ParseError<'alloc> {
+    fn from(err: Infallible) -> ParseError<'alloc> {
         match err {}
     }
 }
 
-impl From<AstError> for ParseError {
-    fn from(err: AstError) -> ParseError {
+impl<'alloc> From<AstError> for ParseError<'alloc> {
+    fn from(err: AstError) -> ParseError<'alloc> {
         ParseError::AstError(err)
     }
 }
 
-impl Error for ParseError {}
+impl<'alloc> Error for ParseError<'alloc> {}
 
-pub type Result<T> = std::result::Result<T, ParseError>;
+pub type Result<'alloc, T> = std::result::Result<T, ParseError<'alloc>>;
