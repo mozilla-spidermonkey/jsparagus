@@ -1,0 +1,6 @@
+[package]
+name = "jsparagus-structured"
+version = "0.1.0"
+authors = ["Nicolas B. Pierron <nicolas.b.pierron@nbp.name>"]
+edition = "2018"
+license = "MIT/Apache-2.0"
