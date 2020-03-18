@@ -35,7 +35,7 @@ trait Helpers {
     fn read_atom(&self, offset: usize) -> String;
 }
 
-impl Helpers for EmitResult {
+impl<'alloc> Helpers for EmitResult<'alloc> {
     fn read_u16(&self, offset: usize) -> u16 {
         u16::from_le_bytes(self.bytecode[offset..offset + 2].try_into().unwrap())
     }
