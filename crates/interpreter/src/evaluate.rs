@@ -166,6 +166,10 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 stack.push(value);
             }
 
+            Opcode::DebugLeaveLexicalEnv => {
+                // This opcode should not be necessary for the debugger.
+            }
+
             Opcode::InitProp => {
                 let value = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
