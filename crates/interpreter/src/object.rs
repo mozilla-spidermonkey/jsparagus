@@ -18,6 +18,10 @@ impl Object {
         self.properties.insert(name, value);
     }
 
+    pub fn has(&self, name: &str) -> bool {
+        self.properties.contains_key(name)
+    }
+
     pub fn get(&self, name: String) -> JSValue {
         self.properties
             .get(&name)

@@ -1,7 +1,7 @@
 use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
-    actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
+    full_actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
     StackValue, Term, TermValue, TerminalId, Token, TABLES,
 };
 use log::trace;
@@ -26,7 +26,7 @@ impl<'alloc> AstBuilderDelegate<'alloc> for Parser<'alloc> {
 }
 
 impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
-    fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<bool> {
+    fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
         // Shift the new terminal/nonterminal and its associated value.
         structured!(trace! { enter : "{:?}" = "shift" });
         let mut state = self.state();
@@ -57,7 +57,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             while state >= TABLES.shift_count {
                 assert!(state < TABLES.action_count + TABLES.shift_count);
                 structured!(trace! { action  : "{}"= state });
-                if actions(self, state)? {
+                if full_actions(self, state)? {
                     return Ok(true);
                 }
                 state = self.state();
@@ -82,7 +82,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
         self.state_stack.pop().unwrap();
         self.node_stack.pop().unwrap()
     }
-    fn check_not_on_new_line(&mut self, peek: usize) -> Result<bool> {
+    fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool> {
         let sv = &self.node_stack[self.node_stack.len() - peek].value;
         if let StackValue::Token(ref token) = sv {
             if !token.is_on_new_line {
@@ -114,7 +114,7 @@ impl<'alloc> Parser<'alloc> {
         *self.state_stack.last().unwrap()
     }
 
-    pub fn write_token(&mut self, token: &Token) -> Result<()> {
+    pub fn write_token(&mut self, token: &Token) -> Result<'alloc, ()> {
         structured!(trace! {
             method : "{:?}" = "write_token",
             is_on_new_line : "{:?}" = token.is_on_new_line,
@@ -132,7 +132,7 @@ impl<'alloc> Parser<'alloc> {
         Ok(())
     }
 
-    pub fn close(&mut self, position: usize) -> Result<StackValue<'alloc>> {
+    pub fn close(&mut self, position: usize) -> Result<'alloc, StackValue<'alloc>> {
         // Shift the End terminal with the associated StackValue.
         structured!(trace! {
             method : "{:?}" = "close",
@@ -159,7 +159,7 @@ impl<'alloc> Parser<'alloc> {
         Ok(self.node_stack.pop().unwrap().value)
     }
 
-    pub(crate) fn parse_error(t: &Token) -> ParseError {
+    pub(crate) fn parse_error(t: &Token) -> ParseError<'alloc> {
         if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
@@ -167,7 +167,7 @@ impl<'alloc> Parser<'alloc> {
         }
     }
 
-    fn try_error_handling(&mut self, t: TermValue<StackValue<'alloc>>) -> Result<bool> {
+    fn try_error_handling(&mut self, t: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
         structured!(trace! { try_error_handling_term : "{:?}" = {
             let s : &'static str = t.term.into();
             s
@@ -204,7 +204,7 @@ impl<'alloc> Parser<'alloc> {
         Err(ParseError::ParserCannotUnpackToken)
     }
 
-    pub(crate) fn recover(t: &Token, error_code: ErrorCode) -> Result<()> {
+    pub(crate) fn recover(t: &Token, error_code: ErrorCode) -> Result<'alloc, ()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.is_on_new_line

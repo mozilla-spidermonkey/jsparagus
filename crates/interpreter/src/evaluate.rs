@@ -7,7 +7,6 @@ use std::convert::TryInto;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::globals::create_global;
 use crate::object::Object;
 use crate::value::{to_boolean, to_number, JSValue};
 
@@ -15,6 +14,7 @@ use crate::value::{to_boolean, to_number, JSValue};
 #[derive(Clone, Debug)]
 pub enum EvalError {
     NotImplemented(String),
+    VariableNotDefined(String),
     EmptyStack,
 }
 
@@ -22,6 +22,7 @@ impl fmt::Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EvalError::NotImplemented(message) => write!(f, "not implemented: {}", message),
+            EvalError::VariableNotDefined(name) => write!(f, "{} is not defined", name),
             EvalError::EmptyStack => write!(f, "trying to pop from empty stack"),
         }
     }
@@ -35,7 +36,7 @@ trait Helpers {
     fn read_atom(&self, offset: usize) -> String;
 }
 
-impl Helpers for EmitResult {
+impl<'alloc> Helpers for EmitResult<'alloc> {
     fn read_u16(&self, offset: usize) -> u16 {
         u16::from_le_bytes(self.bytecode[offset..offset + 2].try_into().unwrap())
     }
@@ -54,16 +55,14 @@ impl Helpers for EmitResult {
 
     fn read_atom(&self, offset: usize) -> String {
         let index = self.atoms[self.read_i32(offset) as usize];
-        self.all_atoms[index.into_raw()].clone()
+        self.all_atoms[usize::from(index)].to_string()
     }
 }
 
-pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
+pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
-
-    let global = create_global();
 
     loop {
         let op = match Opcode::try_from(emit.bytecode[pc]) {
@@ -134,6 +133,11 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 continue;
             }
 
+            Opcode::DefVar => {
+                let atom = emit.read_atom(pc + 1);
+                global.borrow_mut().set(atom, JSValue::Undefined);
+            }
+
             Opcode::BindGName => {
                 // TODO: proper binding
                 stack.push(JSValue::Object(global.clone()))
@@ -141,6 +145,9 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
 
             Opcode::GetGName => {
                 let atom = emit.read_atom(pc + 1);
+                if !global.borrow().has(&atom) {
+                    return Err(EvalError::VariableNotDefined(atom));
+                }
                 stack.push(global.borrow().get(atom));
             }
 
@@ -157,6 +164,10 @@ pub fn evaluate(emit: &EmitResult) -> Result<JSValue, EvalError> {
                 }
 
                 stack.push(value);
+            }
+
+            Opcode::DebugLeaveLexicalEnv => {
+                // This opcode should not be necessary for the debugger.
             }
 
             Opcode::InitProp => {
