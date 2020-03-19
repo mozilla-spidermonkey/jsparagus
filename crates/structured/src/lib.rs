@@ -5,13 +5,13 @@ pub use std::{concat, stringify};
 ///
 /// Thus instead of writting:
 ///
-/// ```
+/// ```ignored
 ///   println!("{{ \"name\" = {:?} }}", value);
 /// ```
 ///
 /// The structured macro allow to write it as follow:
 ///
-/// ```
+/// ```ignored
 ///   structured!(println!{
 ///     name : "{:?}" = value,
 ///   });
@@ -43,64 +43,37 @@ macro_rules! structured {
     }
 }
 
-/// This macro is similar to the format! macro except that it accept a
-/// structured input.
-#[macro_export(local_inner_macros)]
-macro_rules! sformat {
-    ( $($key:ident : $pat:literal = $val:expr),* ) => {
-        structured!(format!{ $($key : $pat = $val),* })
-    };
-    ( $($key:ident : $pat:literal = $val:expr,)* ) => {
-        structured!(format!{ $($key : $pat = $val,)* })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::format;
 
     #[test]
     fn single_entry() {
-        assert_eq!(sformat! { a : "{}" = 1 }, "{ \"a\" = 1 }");
         assert_eq!(
             structured!(format! { b : "{:?}" = "2" }),
-            "{ \"b\" = \"2\" }"
+            "{ \"b\": \"2\" }"
         );
     }
 
     #[test]
     fn multiple_entry_sep_comma() {
         assert_eq!(
-            sformat! {
-                a : "{}" = 1,
-                b : "{:?}" = "2"
-            },
-            "{ \"a\" = 1, \"b\" = \"2\" }"
-        );
-        assert_eq!(
             structured!(format! {
                 c : "{}" = 1,
                 d : "{:?}" = "2"
             }),
-            "{ \"c\" = 1, \"d\" = \"2\" }"
+            "{ \"c\": 1, \"d\": \"2\" }"
         );
     }
 
     #[test]
     fn multiple_entry_end_comma() {
         assert_eq!(
-            sformat! {
-                a : "{}" = 1,
-                b : "{:?}" = "2",
-            },
-            "{ \"a\" = 1, \"b\" = \"2\" }"
-        );
-        assert_eq!(
             structured!(format! {
                 c : "{}" = 1,
                 d : "{:?}" = "2",
             }),
-            "{ \"c\" = 1, \"d\" = \"2\" }"
+            "{ \"c\": 1, \"d\": \"2\" }"
         );
     }
 }
