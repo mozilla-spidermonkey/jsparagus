@@ -73,14 +73,15 @@ $(STANDARD_ES_GRAMMAR_OUT): $(ECMA262_SPEC_HTML)
 	$(PYTHON) -m js_parser.extract_es_grammar $(ECMA262_SPEC_HTML) > $@ || rm $@
 
 rust: $(RS_AST_OUT) $(RS_TABLES_OUT)
-	cargo build --features full
+	cargo build --all
 
 jsparagus/parse_pgen_generated.py:
 	$(PYTHON) -m jsparagus.parse_pgen --regenerate > $@
 
 check: all
 	./test.sh
-	cargo fmt && cargo test
+	cargo fmt
+	cargo test --all
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it
