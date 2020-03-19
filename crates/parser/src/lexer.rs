@@ -1,7 +1,7 @@
 //! JavaScript lexer.
 
 use crate::parser::Parser;
-use ast::source_atom_set::SourceAtomSet;
+use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
 use ast::SourceLocation;
 use bumpalo::{collections::String, Bump};
 use generated_parser::{ParseError, Result, TerminalId, Token, TokenValue};
@@ -384,94 +384,262 @@ impl<'alloc> Lexer<'alloc> {
         // keywords in the grammar match literal sequences of specific
         // SourceCharacter elements. A code point in a keyword cannot be
         // expressed by a `\` UnicodeEscapeSequence.
-        let id = if has_different {
+        let (id, value) = if has_different {
             // Always return `NameWithEscape`.
             //
             // Error check against reserved word should be handled in the
             // consumer.
-            TerminalId::NameWithEscape
+            (TerminalId::NameWithEscape, self.string_to_token_value(text))
         } else {
             match &text as &str {
-                "as" => TerminalId::As,
+                "as" => (
+                    TerminalId::As,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::as_()),
+                ),
                 "async" => {
-                    //TerminalId::Async
+                    /*
+                    (
+                        TerminalId::Async,
+                        TokenValue::Atom(CommonSourceAtomSetIndices::async_()),
+                    ),
+                    */
                     return Err(ParseError::NotImplemented(
                         "async cannot be handled in parser due to multiple lookahead",
                     ));
                 }
                 "await" => {
-                    //TerminalId::Await
+                    /*
+                    (
+                        TerminalId::Await,
+                        TokenValue::Atom(CommonSourceAtomSetIndices::await_()),
+                    ),
+                     */
                     return Err(ParseError::NotImplemented(
                         "await cannot be handled in parser",
                     ));
                 }
-                "break" => TerminalId::Break,
-                "case" => TerminalId::Case,
-                "catch" => TerminalId::Catch,
-                "class" => TerminalId::Class,
-                "const" => TerminalId::Const,
-                "continue" => TerminalId::Continue,
-                "debugger" => TerminalId::Debugger,
-                "default" => TerminalId::Default,
-                "delete" => TerminalId::Delete,
-                "do" => TerminalId::Do,
-                "else" => TerminalId::Else,
-                "enum" => TerminalId::Enum,
-                "export" => TerminalId::Export,
-                "extends" => TerminalId::Extends,
-                "finally" => TerminalId::Finally,
-                "for" => TerminalId::For,
-                "from" => TerminalId::From,
-                "function" => TerminalId::Function,
-                "get" => TerminalId::Get,
-                "if" => TerminalId::If,
-                "implements" => TerminalId::Implements,
-                "import" => TerminalId::Import,
-                "in" => TerminalId::In,
-                "instanceof" => TerminalId::Instanceof,
-                "interface" => TerminalId::Interface,
+                "break" => (
+                    TerminalId::Break,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::break_()),
+                ),
+                "case" => (
+                    TerminalId::Case,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::case()),
+                ),
+                "catch" => (
+                    TerminalId::Catch,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::catch()),
+                ),
+                "class" => (
+                    TerminalId::Class,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::class()),
+                ),
+                "const" => (
+                    TerminalId::Const,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::const_()),
+                ),
+                "continue" => (
+                    TerminalId::Continue,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::continue_()),
+                ),
+                "debugger" => (
+                    TerminalId::Debugger,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::debugger()),
+                ),
+                "default" => (
+                    TerminalId::Default,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::default()),
+                ),
+                "delete" => (
+                    TerminalId::Delete,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::delete()),
+                ),
+                "do" => (
+                    TerminalId::Do,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::do_()),
+                ),
+                "else" => (
+                    TerminalId::Else,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::else_()),
+                ),
+                "enum" => (
+                    TerminalId::Enum,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::enum_()),
+                ),
+                "export" => (
+                    TerminalId::Export,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::export()),
+                ),
+                "extends" => (
+                    TerminalId::Extends,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::extends()),
+                ),
+                "finally" => (
+                    TerminalId::Finally,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::finally()),
+                ),
+                "for" => (
+                    TerminalId::For,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::for_()),
+                ),
+                "from" => (
+                    TerminalId::From,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::from()),
+                ),
+                "function" => (
+                    TerminalId::Function,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::function()),
+                ),
+                "get" => (
+                    TerminalId::Get,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::get()),
+                ),
+                "if" => (
+                    TerminalId::If,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::if_()),
+                ),
+                "implements" => (
+                    TerminalId::Implements,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::implements()),
+                ),
+                "import" => (
+                    TerminalId::Import,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::import()),
+                ),
+                "in" => (
+                    TerminalId::In,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::in_()),
+                ),
+                "instanceof_" => (
+                    TerminalId::Instanceof,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::instanceof()),
+                ),
+                "interface" => (
+                    TerminalId::Interface,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::interface()),
+                ),
                 "let" => {
-                    //TerminalId::Let,
+                    /*
+                    (
+                        TerminalId::Let,
+                        TokenValue::Atom(CommonSourceAtomSetIndices::let_()),
+                    ),
+                    */
                     return Err(ParseError::NotImplemented(
                         "let cannot be handled in parser due to multiple lookahead",
                     ));
                 }
-                "new" => TerminalId::New,
-                "of" => TerminalId::Of,
-                "package" => TerminalId::Package,
-                "private" => TerminalId::Private,
-                "protected" => TerminalId::Protected,
-                "public" => TerminalId::Public,
-                "return" => TerminalId::Return,
-                "set" => TerminalId::Set,
-                "static" => TerminalId::Static,
-                "super" => TerminalId::Super,
-                "switch" => TerminalId::Switch,
-                "target" => TerminalId::Target,
-                "this" => TerminalId::This,
-                "throw" => TerminalId::Throw,
-                "try" => TerminalId::Try,
-                "typeof" => TerminalId::Typeof,
-                "var" => TerminalId::Var,
-                "void" => TerminalId::Void,
-                "while" => TerminalId::While,
-                "with" => TerminalId::With,
+                "new" => (
+                    TerminalId::New,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::new_()),
+                ),
+                "of" => (
+                    TerminalId::Of,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::of()),
+                ),
+                "package" => (
+                    TerminalId::Package,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::package()),
+                ),
+                "private" => (
+                    TerminalId::Private,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::private()),
+                ),
+                "protected" => (
+                    TerminalId::Protected,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::protected()),
+                ),
+                "public" => (
+                    TerminalId::Public,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::public()),
+                ),
+                "return" => (
+                    TerminalId::Return,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::return_()),
+                ),
+                "set" => (
+                    TerminalId::Set,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::set()),
+                ),
+                "static" => (
+                    TerminalId::Static,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::static_()),
+                ),
+                "super" => (
+                    TerminalId::Super,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::super_()),
+                ),
+                "switch" => (
+                    TerminalId::Switch,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::switch()),
+                ),
+                "target" => (
+                    TerminalId::Target,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::target()),
+                ),
+                "this" => (
+                    TerminalId::This,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::this()),
+                ),
+                "throw" => (
+                    TerminalId::Throw,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::throw()),
+                ),
+                "try" => (
+                    TerminalId::Try,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::try_()),
+                ),
+                "typeof" => (
+                    TerminalId::Typeof,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::typeof_()),
+                ),
+                "var" => (
+                    TerminalId::Var,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::var()),
+                ),
+                "void" => (
+                    TerminalId::Void,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::void()),
+                ),
+                "while" => (
+                    TerminalId::While,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::while_()),
+                ),
+                "with" => (
+                    TerminalId::With,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::with()),
+                ),
                 "yield" => {
-                    //TerminalId::Yield
+                    /*
+                    (
+                        TerminalId::Yield,
+                        TokenValue::Atom(CommonSourceAtomSetIndices::yield_()),
+                    ),
+                     */
                     return Err(ParseError::NotImplemented(
                         "yield cannot be handled in parser",
                     ));
                 }
-                "null" => TerminalId::NullLiteral,
-                "true" | "false" => TerminalId::BooleanLiteral,
-                _ => TerminalId::Name,
+                "null" => (
+                    TerminalId::NullLiteral,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::null()),
+                ),
+                "true" => (
+                    TerminalId::BooleanLiteral,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::true_()),
+                ),
+                "false" => (
+                    TerminalId::BooleanLiteral,
+                    TokenValue::Atom(CommonSourceAtomSetIndices::false_()),
+                ),
+                _ => (TerminalId::Name, self.string_to_token_value(text)),
             }
         };
 
         Ok(AdvanceResult {
             terminal_id: id,
             loc: SourceLocation::new(start, self.offset()),
-            value: self.string_to_token_value(text),
+            value,
         })
     }
 
