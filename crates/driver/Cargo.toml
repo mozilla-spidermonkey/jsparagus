@@ -19,3 +19,6 @@ env_logger = "0.7.1"
 # jemalloc is temporarily disabled due to a known upstream bug (macOS crashes
 # in release builds): <https://github.com/gnzlbg/jemallocator/issues/136>
 # jemallocator = "0.3.2"
+
+[features]
+logging = ["jsparagus-parser/logging"]

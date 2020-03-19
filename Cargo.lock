@@ -366,8 +366,8 @@ dependencies = [
  "jsparagus-emitter",
  "jsparagus-generated-parser",
  "jsparagus-interpreter",
+ "jsparagus-json-log",
  "jsparagus-parser",
- "jsparagus-structured",
 ]
 
 [[package]]
@@ -425,6 +425,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsparagus-json-log"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "serde_json",
+]
+
+[[package]]
 name = "jsparagus-parser"
 version = "0.1.0"
 dependencies = [
@@ -432,14 +440,9 @@ dependencies = [
  "criterion",
  "jsparagus-ast",
  "jsparagus-generated-parser",
- "jsparagus-structured",
- "log",
+ "jsparagus-json-log",
  "unic-ucd-ident",
 ]
-
-[[package]]
-name = "jsparagus-structured"
-version = "0.1.0"
 
 [[package]]
 name = "lazy_static"
