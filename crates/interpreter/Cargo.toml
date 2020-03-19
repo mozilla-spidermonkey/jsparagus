@@ -12,3 +12,6 @@ jsparagus-emitter = { path = "../emitter" }
 bumpalo = "2.6.0"
 jsparagus-ast = { path = "../ast" }
 jsparagus-parser = { path = "../parser" }
+
+[features]
+logging = ["jsparagus-parser/logging"]
