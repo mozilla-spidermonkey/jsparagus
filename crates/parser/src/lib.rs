@@ -9,6 +9,8 @@ mod tests;
 
 extern crate jsparagus_ast as ast;
 extern crate jsparagus_generated_parser as generated_parser;
+extern crate jsparagus_structured as structured;
+extern crate log;
 
 use crate::parser::Parser;
 use ast::{
@@ -22,8 +24,10 @@ use generated_parser::{
 };
 pub use generated_parser::{ParseError, Result};
 use lexer::Lexer;
+use log::debug;
 use std::cell::RefCell;
 use std::rc::Rc;
+use structured::structured;
 
 pub struct ParseOptions {}
 impl ParseOptions {
@@ -38,6 +42,7 @@ pub fn parse_script<'alloc>(
     _options: &ParseOptions,
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
 ) -> Result<'alloc, arena::Box<'alloc, Script<'alloc>>> {
+    structured!(debug! { parse : "{:?}" = "script" });
     Ok(parse(allocator, source, START_STATE_SCRIPT, atoms)?.to_ast()?)
 }
 
@@ -47,6 +52,7 @@ pub fn parse_module<'alloc>(
     _options: &ParseOptions,
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
 ) -> Result<'alloc, arena::Box<'alloc, Module<'alloc>>> {
+    structured!(debug! { parse : "{:?}" = "module" });
     Ok(parse(allocator, source, START_STATE_MODULE, atoms)?.to_ast()?)
 }
 

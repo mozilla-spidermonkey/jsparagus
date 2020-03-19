@@ -1,5 +1,6 @@
 mod demo;
 
+use env_logger;
 use std::env;
 
 // jemalloc is temporarily disabled due to a known upstream bug (macOS crashes
@@ -11,6 +12,7 @@ use std::env;
 // static ALLOC: Jemalloc = Jemalloc;
 
 fn main() {
+    env_logger::init();
     let args: Vec<String> = env::args().collect();
     match args.len() {
         1 => demo::read_print_loop(),

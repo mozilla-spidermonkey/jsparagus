@@ -13,6 +13,7 @@ edition = "2018"
 [lib]
 
 [dependencies]
+jsparagus-structured = { path = "crates/structured" }
 jsparagus-ast = { path = "crates/ast" }
 jsparagus-driver = { path = "crates/driver", optional = true }
 jsparagus-emitter = { path = "crates/emitter" }
