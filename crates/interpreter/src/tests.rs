@@ -132,3 +132,11 @@ fn test_call() {
         _ => panic!("wrong result"),
     }
 }
+
+#[test]
+fn test_file() {
+    match try_evaluate(include_str!("tests.js")) {
+        Ok(JSValue::Undefined) => (),
+        _ => panic!("rval of tests.js should be 'undefined'"),
+    }
+}
