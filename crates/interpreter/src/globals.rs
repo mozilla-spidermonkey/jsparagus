@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::object::Object;
-use crate::value::{to_number, JSValue};
+use crate::value::{to_number, strict_equality, JSValue};
 
 fn print(_this_value: JSValue, args: &[JSValue]) -> JSValue {
     println!("{:?}", args);
@@ -12,6 +12,18 @@ fn print(_this_value: JSValue, args: &[JSValue]) -> JSValue {
 fn sqrt(_this_value: JSValue, args: &[JSValue]) -> JSValue {
     let n = to_number(args.first().unwrap_or(&JSValue::Undefined));
     JSValue::Number(n.sqrt())
+}
+
+fn assert_eq(_this_value: JSValue, args: &[JSValue]) -> JSValue {
+    if args.len() != 2 {
+        panic!("assertEq expects exactly two arguments");
+    }
+
+    if !strict_equality(&args[0], &args[1]) {
+        panic!("{:?} is not equal to {:?}", args[0], args[1]);
+    }
+
+    JSValue::Undefined
 }
 
 pub fn create_global() -> Rc<RefCell<Object>> {
@@ -30,6 +42,10 @@ pub fn create_global() -> Rc<RefCell<Object>> {
     global
         .borrow_mut()
         .set("Math".to_owned(), JSValue::Object(math));
+
+    global
+        .borrow_mut()
+        .set("assertEq".to_owned(), JSValue::NativeFunction(assert_eq));
 
     global
 }
