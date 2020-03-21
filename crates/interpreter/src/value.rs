@@ -58,3 +58,16 @@ pub fn to_boolean(v: &JSValue) -> bool {
         JSValue::Object(_) | JSValue::NativeFunction(_) => true,
     }
 }
+
+pub fn strict_equality(x: &JSValue, y: &JSValue) -> bool {
+    match (x, y) {
+        (JSValue::Undefined, JSValue::Undefined) => true,
+        (JSValue::Null, JSValue::Null) => true,
+        (JSValue::Boolean(a), JSValue::Boolean(b)) => a == b,
+        (JSValue::Number(a), JSValue::Number(b)) => a == b,
+        (JSValue::String(ref a), JSValue::String(ref b)) => a == b,
+        (JSValue::Object(ref a), JSValue::Object(ref b)) => a.as_ptr() == b.as_ptr(),
+        (JSValue::NativeFunction(a), JSValue::NativeFunction(b)) => std::ptr::eq(a, b),
+        _ => false
+    }
+}
