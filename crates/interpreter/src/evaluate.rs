@@ -8,7 +8,7 @@ use std::fmt;
 use std::rc::Rc;
 
 use crate::object::Object;
-use crate::value::{to_boolean, to_number, JSValue};
+use crate::value::*;
 
 /// The error of evaluating JS bytecode.
 #[derive(Clone, Debug)]
@@ -99,6 +99,12 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::Neg => {
                 let v = stack.pop().ok_or(EvalError::EmptyStack)?;
                 stack.push(JSValue::Number(-to_number(&v)));
+            }
+
+            Opcode::StrictEq => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Boolean(strict_equality(&lhs, &rhs)))
             }
 
             Opcode::Void => {
