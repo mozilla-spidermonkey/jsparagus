@@ -119,12 +119,29 @@ pub fn parse_file_or_dir(filename: &impl AsRef<OsStr>) -> io::Result<DemoStats> 
     }
 }
 
+/// Control level of stdio logging
+pub struct Verbosity {
+    /// Print AST
+    pub ast: bool,
+
+    /// Disassemble bytecode
+    pub bytecode: bool,
+
+    /// Debug print EmitResult
+    pub emit_result: bool
+}
+
+
 fn handle_script<'alloc>(
+    verbosity: &Verbosity,
     script: Script<'alloc>,
     atoms: SourceAtomSet<'alloc>,
     global: Rc<RefCell<Object>>,
 ) {
-    script.dump_with_atoms(&mut io::stderr(), &atoms);
+    if verbosity.ast {
+        script.dump_with_atoms(&mut io::stderr(), &atoms);
+    }
+
     let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
     match emitter::emit(&mut program, &options, atoms) {
@@ -132,8 +149,12 @@ fn handle_script<'alloc>(
             eprintln!("error: {}", err);
         }
         Ok(emit_result) => {
-            println!("\n{:#?}", emit_result);
-            println!("\n{}", emitter::dis(&emit_result.bytecode));
+            if verbosity.emit_result {
+                println!("\n{:#?}", emit_result);
+            }
+            if verbosity.bytecode {
+                println!("\n{}", emitter::dis(&emit_result.bytecode));
+            }
 
             match evaluate(&emit_result, global) {
                 Err(err) => print!("error: {}", err),
@@ -159,7 +180,7 @@ impl Validator for InputValidator {
     }
 }
 
-pub fn read_print_loop() {
+pub fn read_print_loop(verbosity: Verbosity) {
     let h = InputValidator {};
     let mut rl = Editor::new();
     rl.set_helper(Some(h));
@@ -185,6 +206,7 @@ pub fn read_print_loop() {
             }
             Ok(script) => {
                 handle_script(
+                    &verbosity,
                     script.unbox(),
                     atoms.replace(SourceAtomSet::new_uninitialized()),
                     global.clone(),
