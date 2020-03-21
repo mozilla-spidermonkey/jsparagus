@@ -14,3 +14,6 @@ if (1 < 100) {
 assertEq(x, 42)
 
 assertEq(Math.sqrt(36), 6);
+
+assertEq(4 * 5, 20);
+assertEq(20 / 4, 5);

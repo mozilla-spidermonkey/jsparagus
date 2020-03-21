@@ -95,6 +95,18 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 stack.push(JSValue::Number(to_number(&lhs) - to_number(&rhs)))
             }
 
+            Opcode::Mul => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Number(to_number(&lhs) * to_number(&rhs)))
+            }
+
+            Opcode::Div => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Number(to_number(&lhs) / to_number(&rhs)))
+            }
+
             Opcode::Pos => {
                 let v = stack.pop().ok_or(EvalError::EmptyStack)?;
                 stack.push(JSValue::Number(to_number(&v)));
