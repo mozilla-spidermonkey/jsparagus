@@ -59,6 +59,10 @@ impl<'alloc> Helpers for EmitResult<'alloc> {
     }
 }
 
+/// This functions can partially interpreter the bytecode shared with SpiderMonkey.
+///
+/// Note: This is not meant to be a spec compliant implementation of ECMAScript,
+/// instead the goal is to make basic programs testable with pure Rust.
 pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
@@ -105,6 +109,32 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
                 stack.push(JSValue::Boolean(strict_equality(&lhs, &rhs)))
+            }
+
+            Opcode::Lt => {
+                // TODO: This and below does not actually implement
+                // "Abstract Relational Comparison".
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Boolean(to_number(&lhs) < to_number(&rhs)))
+            }
+
+            Opcode::Le => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Boolean(to_number(&lhs) <= to_number(&rhs)))
+            }
+
+            Opcode::Gt => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Boolean(to_number(&lhs) > to_number(&rhs)))
+            }
+
+            Opcode::Ge => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                stack.push(JSValue::Boolean(to_number(&lhs) >= to_number(&rhs)))
             }
 
             Opcode::Void => {
