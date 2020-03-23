@@ -301,7 +301,7 @@ impl GlobalContext {
         }
     }
 
-    fn declare_var<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_var(&mut self, binding: &BindingIdentifier) {
         // Runtime Semantics: GlobalDeclarationInstantiation ( script, env )
         // https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
         //
@@ -326,7 +326,7 @@ impl GlobalContext {
         self.declared_var_names.insert(binding.name.value);
     }
 
-    fn declare_let<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_let(&mut self, binding: &BindingIdentifier) {
         // Runtime Semantics: GlobalDeclarationInstantiation ( script, env )
         // https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
         //
@@ -335,7 +335,7 @@ impl GlobalContext {
         self.let_names.push(binding.name.value);
     }
 
-    fn declare_const<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_const(&mut self, binding: &BindingIdentifier) {
         // Runtime Semantics: GlobalDeclarationInstantiation ( script, env )
         // https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
         //
@@ -344,7 +344,7 @@ impl GlobalContext {
         self.const_names.push(binding.name.value);
     }
 
-    fn declare_function<'alloc>(&mut self, fun: &Function) {
+    fn declare_function(&mut self, fun: &Function) {
         // Step 10. For each d in varDeclarations, in reverse list order, do
         // Step 10.a. If d is neither a VariableDeclaration nor a ForBinding
         //            nor a BindingIdentifier, then
@@ -469,7 +469,7 @@ impl BlockContext {
         }
     }
 
-    fn declare_let<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_let(&mut self, binding: &BindingIdentifier) {
         // https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
         // Runtime Semantics: BlockDeclarationInstantiation ( code, env )
         //
@@ -477,7 +477,7 @@ impl BlockContext {
         self.let_names.push(binding.name.value);
     }
 
-    fn declare_const<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_const(&mut self, binding: &BindingIdentifier) {
         // https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
         // Runtime Semantics: BlockDeclarationInstantiation ( code, env )
         //
@@ -485,7 +485,7 @@ impl BlockContext {
         self.const_names.push(binding.name.value);
     }
 
-    fn declare_function<'alloc>(&mut self, fun: &Function) {
+    fn declare_function(&mut self, fun: &Function) {
         // https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
         // Runtime Semantics: BlockDeclarationInstantiation ( code, env )
         //
