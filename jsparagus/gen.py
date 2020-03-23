@@ -2732,8 +2732,8 @@ class ParseTable:
         self.aps_visitor(self.aps_start(state), visit)
         return record
 
-    # def fix_with_context(self, s, aps_lanes):
-    #     raise ValueError("fix_with_context: Not Implemented")
+    def fix_with_context(self, s, aps_lanes):
+        raise ValueError("fix_with_context: Not Implemented")
     #     # This strategy is about using context information. By using chains of
     #     # reduce actions, we are able to increase the knowledge of the stack
     #     # content. The stack content is the context which can be used to
