@@ -14,7 +14,6 @@ use std::marker::PhantomData;
 ///
 /// This enum isn't actually used, but just for simplifying comment in
 /// ScopeKind.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 enum VarScopedDeclarationsItemKind {
     /// Static Semantics: VarScopedDeclarations
@@ -29,6 +28,7 @@ enum VarScopedDeclarationsItemKind {
     /// 1. Let declarations be VarScopedDeclarations of VariableDeclarationList.
     /// 2. Append VariableDeclaration to declarations.
     /// 3. Return declarations.
+    #[allow(dead_code)]
     VariableDeclaration,
 
     /// Static Semantics: VarScopedDeclarations
@@ -43,6 +43,7 @@ enum VarScopedDeclarationsItemKind {
     /// 2. Append to declarations the elements of the VarScopedDeclarations of
     ///    Statement.
     /// 3. Return declarations.
+    #[allow(dead_code)]
     ForBinding,
 
     /// Static Semantics: VarScopedDeclarations
@@ -75,21 +76,25 @@ enum VarScopedDeclarationsItemKind {
     /// HoistableDeclaration : FunctionDeclaration
     ///
     /// 1. Return FunctionDeclaration.
+    #[allow(dead_code)]
     FunctionDeclaration,
 
     /// HoistableDeclaration : GeneratorDeclaration
     ///
     /// 1. Return GeneratorDeclaration.
+    #[allow(dead_code)]
     GeneratorDeclaration,
 
     /// HoistableDeclaration : AsyncFunctionDeclaration
     ///
     /// 1. Return AsyncFunctionDeclaration.
+    #[allow(dead_code)]
     AsyncFunctionDeclaration,
 
     /// HoistableDeclaration : AsyncGeneratorDeclaration
     ///
     /// 1. Return AsyncGeneratorDeclaration.
+    #[allow(dead_code)]
     AsyncGeneratorDeclaration,
 
     /// Static Semantics: TopLevelVarScopedDeclarations
@@ -110,6 +115,7 @@ enum VarScopedDeclarationsItemKind {
     /// 2. Append to declarations the elements of the VarScopedDeclarations of
     ///    Statement.
     /// 3. Return declarations.
+    #[allow(dead_code)]
     BindingIdentifier,
 }
 
@@ -117,7 +123,6 @@ enum VarScopedDeclarationsItemKind {
 ///
 /// This enum isn't actually used, but just for simplifying comment in
 /// ScopeKind.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 enum LexicallyScopedDeclarations {
     /// Static Semantics: LexicallyScopedDeclarations
@@ -133,32 +138,39 @@ enum LexicallyScopedDeclarations {
     /// HoistableDeclaration : FunctionDeclaration
     ///
     /// 1. Return FunctionDeclaration.
+    #[allow(dead_code)]
     FunctionDeclaration,
 
     /// HoistableDeclaration : GeneratorDeclaration
     ///
     /// 1. Return GeneratorDeclaration.
+    #[allow(dead_code)]
     GeneratorDeclaration,
 
     /// HoistableDeclaration : AsyncFunctionDeclaration
     ///
     /// 1. Return AsyncFunctionDeclaration.
+    #[allow(dead_code)]
     AsyncFunctionDeclaration,
 
     /// HoistableDeclaration : AsyncGeneratorDeclaration
     ///
     /// 1. Return AsyncGeneratorDeclaration.
+    #[allow(dead_code)]
     AsyncGeneratorDeclaration,
 
     /// Declaration : ClassDeclaration
     ///
     /// 1. Return ClassDeclaration.
+    #[allow(dead_code)]
     ClassDeclaration,
 
     /// Declaration : LexicalDeclaration
     ///
     /// 1. Return LexicalDeclaration.
+    #[allow(dead_code)]
     LexicalDeclarationWithLet,
+    #[allow(dead_code)]
     LexicalDeclarationWithConst,
 
     /// Static Semantics: LexicallyScopedDeclarations
@@ -211,6 +223,7 @@ enum LexicallyScopedDeclarations {
     /// ExportDeclaration : export default AssignmentExpression ;
     ///
     /// 1. Return a new List containing this ExportDeclaration.
+    #[allow(dead_code)]
     ExportDeclarationWithAssignmentExpression,
 }
 
