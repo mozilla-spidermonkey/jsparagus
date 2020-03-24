@@ -1,5 +1,6 @@
 from .ordered import OrderedFrozenSet
 from .grammar import InitNt, Nt
+from . import types
 
 
 class Action:
@@ -254,7 +255,7 @@ class FunCall(Action):
     __slots__ = 'trait', 'method', 'offset', 'args', 'fallible', 'set_to'
 
     def __init__(self, method, args,
-                 trait="AstBuilder",
+                 trait=types.Type("AstBuilder"),
                  fallible=False,
                  set_to="val",
                  offset=0,

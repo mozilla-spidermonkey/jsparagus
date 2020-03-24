@@ -123,8 +123,7 @@ class CallMethod(collections.namedtuple("CallMethod", "method args trait fallibl
     """Express a method call, and give it a given set of arguments. A trait is
     added as the parser should implement this trait to call this method."""
     def __new__(cls, method, args, trait=types.Type("AstBuilder"), fallible=False):
-        if isinstance(trait, str):
-            trait = types.Type(trait)
+        assert isinstance(trait, types.Type)
         self = super(CallMethod, cls).__new__(cls, method, args, trait, fallible)
         return self
 
