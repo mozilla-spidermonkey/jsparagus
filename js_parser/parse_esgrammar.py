@@ -295,7 +295,7 @@ class ESGrammarBuilder:
         # information to produce a JSON file.
         if self.method_trait == "AstBuilder":
             fallible = None
-        return grammar.CallMethod(method, args or (), self.method_trait,
+        return grammar.CallMethod(method, args or (), types.Type(self.method_trait),
                                   fallible is not None)
 
     def expr_some(self, expr):
