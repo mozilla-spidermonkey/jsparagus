@@ -47,6 +47,7 @@ from . import emit
 from .runtime import ACCEPT, ErrorToken
 from .utils import keep_until
 from . import types
+from .aps import Edge, APS
 
 # *** Operations on grammars **************************************************
 
@@ -1601,24 +1602,6 @@ class CanonicalGrammar:
         self.prods_with_indexes_by_nt = prods_with_indexes_by_nt
         self.grammar = grammar
 
-# An edge in a Parse table is a tuple of a source state and the term followed
-# to exit this state. The destination is not saved here as it can easily be
-# inferred by looking it up in the parse table.
-#
-# Note, the term might be `None` if no term is specified yet. This is useful
-# when manipulating a list of edges and we know that we are taking transitions
-# from a given state, but not yet with which term.
-#
-#   state: Index of the state from which this directed edge is coming from.
-#
-#   term: Edge transition value, this can be a terminal, non-terminal or an
-#       action to be executed on an epsilon transition.
-Edge = collections.namedtuple("Edge", "src term")
-
-def edge_str(edge):
-    assert isinstance(edge, (Edge, Edge))
-    return "{} -- {} -->".format(edge.src, str(edge.term))
-
 # Structure used to report conflict while creating or merging states.
 class Conflict(Exception):
     pass
@@ -2017,66 +2000,6 @@ class LR0Generator:
                     followed_by = tuple(),
                 ), followed_by)
 
-# To fix inconsistencies of the grammar, we have to traverse the grammar both
-# forward by using the lookahead and backward by using the parser's emulated
-# stack recovered from reduce actions.
-#
-# To do so we define the notion of abstract parser state (APS), which is a
-# tuple which represent the known state of the parser, as:
-#   (stack, shift, lookahead, actions)
-#
-#   stack: This is the stack at the location where we started investigating.
-#          Which means that the last element of the stack would be the location
-#          where we started.
-#
-#   shift: This is the stack computed after the traversal of edges. It is
-#          reduced each time a reduce action is encountered, and the rest of
-#          the production content is added back to the stack, as newly acquired
-#          context. The last element is the last state reached through the
-#          sequence of lookahead and actions.
-#
-#   lookahead: This is the list of terminals encountered while pushing edges
-#          through the list of terminals.
-#
-#   actions: This is the list of actions that would be executed as we push
-#          edges. Maybe we should rename this history. This is a list of edges
-#          taken, which helps tracking which state got visited since we
-#          started.
-#
-#   replay: This is the list of lookahead terminals and non-terminals which
-#          remains to be executed. This represents the fact that reduce actions
-#          are popping elements which are below the top of the stack, and add
-#          them back to the stack.
-#
-APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
-
-def aps_str(aps, name = "aps"):
-    return """{}.stack = [{}]
-{}.shift = [{}]
-{}.lookahead = [{}]
-{}.actions = [{}]
-{}.replay = [{}]
-    """.format(
-        name, " ".join(edge_str(e) for e in aps.stack),
-        name, " ".join(edge_str(e) for e in aps.shift),
-        name, ", ".join(repr(e) for e in aps.lookahead),
-        name, " ".join(edge_str(e) for e in aps.actions),
-        name, ", ".join(repr(e) for e in aps.replay)
-    )
-
-def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
-    return "{}\n{}".format(header, "\n".join(aps_str(aps, name) for aps in aps_lanes))
-
-def is_valid_aps(aps):
-    "Returns whether an APS contains the right content."
-    check = True
-    check &= all(isinstance(st, Edge) for st in aps.stack)
-    check &= all(isinstance(sh, Edge) for sh in aps.shift)
-    check &= all(not isinstance(la, Action) for la in aps.lookahead)
-    check &= all(isinstance(ac, Edge) for ac in aps.actions)
-    check &= all(not isinstance(rp, Action) for rp in aps.replay)
-    return check
-
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
     side we have the current state, and on the other we have the expected
@@ -2442,113 +2365,6 @@ class ParseTable:
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
 
-    def aps_start(self, state, replay = []):
-        "Return a parser state only knowing the state at which we are currently."
-        edge = Edge(state, None)
-        return APS([edge], [edge], [], [], replay)
-
-    def aps_next(self, aps):
-        """Visit all the states of the parse table, as-if we were running a
-        Generalized LR parser.
-
-        However, instead parsing content, we use this algorithm to generate
-        both the content which remains to be parsed as well as the context
-        which might lead us to be in the state which from which we started.
-
-        This algorithm takes an APS (Abstract Parser State), and consider all
-        edges of the parse table, unless restricted by one of the previously
-        encountered actions. These restrictions, such as replayed lookahead or
-        the path which might be reduced are used for filtering out states which
-        are not handled by this parse table.
-
-        For each edge, this functions recursively calls it-self and calls the
-        visit functions to know whether to stop or continue, and to capture the
-        result.
-
-        """
-        assert is_valid_aps(aps)
-        st, sh, la, ac, rp = aps
-        last_edge = sh[-1]
-        state = self.states[last_edge.src]
-        if aps.replay == []:
-            for term, to in state.shifted_edges():
-                edge = Edge(last_edge.src, term)
-                new_sh = aps.shift[:-1] + [edge]
-                to = Edge(to, None)
-                yield APS(st, new_sh + [to], la + [term], ac + [edge], rp)
-        else:
-            term = aps.replay[0]
-            rp = aps.replay[1:]
-            if term in state:
-                edge = Edge(last_edge.src, term)
-                new_sh = aps.shift[:-1] + [edge]
-                to = state[term]
-                to = Edge(to, None)
-                yield APS(st, new_sh + [to], la, ac + [edge], rp)
-
-        term = None
-        rp = aps.replay
-        for a, to in state.epsilon:
-            edge = Edge(last_edge.src, a)
-            prev_sh = aps.shift[:-1] + [edge]
-            # TODO: Add support for Lookahead and flag manipulation rules, as
-            # both of these would invalide potential reduce paths.
-            if a.update_stack():
-                reducer = a.reduce_with()
-                for path, reduced_path in self.reduce_path(prev_sh):
-                    # reduce_paths contains the chains of state shifted,
-                    # including epsilon transitions, in order to reduce the
-                    # nonterminal. When reducing, the stack is resetted to
-                    # head, and the nonterminal `term.nt` is pushed, to resume
-                    # in the state `to`.
-
-                    # print("Compare shifted path, with reduced path:\n\tshifted = {}\n\treduced = {}, \n\taction = {},\n\tnew_path = {}\n".format(
-                    #     " ".join(edge_str(e) for e in prev_sh),
-                    #     " ".join(edge_str(e) for e in path),
-                    #     str(a),
-                    #     " ".join(edge_str(e) for e in reduced_path),
-                    # ))
-                    if prev_sh[-len(path):] != path[-len(prev_sh):]:
-                        # If the reduced production does not match the shifted
-                        # state, then this reduction does not apply. This is
-                        # the equivalent result as splitting the parse table
-                        # based on the predecessor.
-                        continue
-
-                    # The stack corresponds to the stack present at the
-                    # starting point. The shift list correspond to the actual
-                    # parser stack as we iterate through the state machine.
-                    # Each time we consume all the shift list, this implies
-                    # that we had extra stack elements which were not present
-                    # initially, and therefore we are learning about the
-                    # context.
-                    new_st = path[:max(len(path) - len(prev_sh), 0)] + st
-                    assert self.is_valid_path(new_st)
-
-                    # The shift list corresponds to the stack which is used in
-                    # an LR parser, in addition to all the states which are
-                    # epsilon transitions. We pop from this list the reduced
-                    # path, as long as it matches. Then all popped elements are
-                    # replaced by the state that we visit after replaying the
-                    # non-terminal reduced by this action.
-                    new_sh = prev_sh[:-len(path)] + reduced_path
-                    assert self.is_valid_path(new_sh)
-
-                    # When reducing, we replay terms which got previously
-                    # pushed on the stack as our lookahead. These terms are
-                    # computed here such that we can traverse the graph from
-                    # `to` state, using the replayed terms.
-                    new_replay = []
-                    if reducer.replay > 0:
-                        new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
-                        new_replay = new_replay[-reducer.replay:]
-                    new_replay = new_replay + rp
-                    new_la = la[:max(len(la) - reducer.replay, 0)]
-                    yield APS(new_st, new_sh, new_la, ac + [edge], new_replay)
-            else:
-                to = Edge(to, None)
-                yield APS(st, prev_sh + [to], la, ac + [edge], rp)
-
     def aps_visitor(self, aps, visit):
         todo = []
         todo.append(aps)
@@ -2557,7 +2373,7 @@ class ParseTable:
             cont = visit(aps)
             if not cont:
                 continue
-            todo.extend(self.aps_next(aps))
+            todo.extend(aps.shift_next(self))
 
     def lanes(self, state):
         """Compute the lanes from the amount of lookahead available. Only consider
@@ -2577,7 +2393,7 @@ class ParseTable:
                 print(aps_str(aps, "\trecord"))
                 record.append(aps)
             return not stop
-        self.aps_visitor(self.aps_start(state), visit)
+        self.aps_visitor(APS.start(state), visit)
         return record
 
     def context_lanes(self, state):
@@ -2595,7 +2411,7 @@ class ParseTable:
         enough context to disambiguate the inconsistency of the given state."""
         assert isinstance(state, int)
         def not_interesting(aps):
-            reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
+            reduce_list = [e for e in aps.history if self.is_term_shifted(e.term)]
             has_reduce_loop = len(reduce_list) != len(set(reduce_list))
             return has_reduce_loop
 
@@ -2605,7 +2421,7 @@ class ParseTable:
         context = collections.defaultdict(lambda: [])
         def has_enough_context(aps):
             try:
-                assert aps.actions[0] in context[tuple(aps.stack)]
+                assert aps.history[0] in context[tuple(aps.stack)]
                 # Check the number of different actions which can reach this
                 # location. If there is more than 1, then we do not have enough
                 # context.
@@ -2613,7 +2429,7 @@ class ParseTable:
             except IndexError:
                 return False
 
-        collect = [self.aps_start(state)]
+        collect = [APS.start(state)]
         enough_context = False
         while not enough_context:
             # print("collect.len = {}".format(len(collect)))
@@ -2624,10 +2440,10 @@ class ParseTable:
             while collect:
                 aps = collect.pop()
                 recurse.append(aps)
-                if aps.actions == []:
+                if aps.history == []:
                     continue
                 for i in range(len(aps.stack)):
-                    context[tuple(aps.stack[i:])].append(aps.actions[0])
+                    context[tuple(aps.stack[i:])].append(aps.history[0])
             assert collect == []
 
             # print("recurse.len = {}".format(len(recurse)))
@@ -2653,7 +2469,7 @@ class ParseTable:
                     return True, []
                 enough_context = False
                 # print("extend starting at:\n{}".format(aps_str(aps, "\tcontext")))
-                collect.extend(self.aps_next(aps))
+                collect.extend(aps.shift_next(self))
             assert recurse == []
 
         # print("context_lanes:")
@@ -2663,7 +2479,7 @@ class ParseTable:
         return False, collect
 
         def visit(aps):
-            reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
+            reduce_list = [e for e in aps.history if self.is_term_shifted(e.term)]
             has_reduce_loop = len(reduce_list) != len(set(reduce_list))
             has_lookahead = len(aps.lookahead) >= 1
             stop = has_shift_loop or has_stack_loop or has_lookahead
@@ -2675,7 +2491,7 @@ class ParseTable:
                 print(aps_str(aps, "\trecord"))
                 record.append(aps)
             return not stop
-        self.aps_visitor(self.aps_start(state), visit)
+        self.aps_visitor(APS.start(state), visit)
         return record
 
     def lookahead_lanes(self, state):
@@ -2695,9 +2511,9 @@ class ParseTable:
         def visit(aps):
             # Note, this suppose that we are not considering flags when
             # computing, as flag might prevent some lookahead investigations.
-            first_reduce = next((e for e in aps.actions[:-1] if not self.is_term_shifted(e.term)), None)
+            first_reduce = next((e for e in aps.history[:-1] if not self.is_term_shifted(e.term)), None)
             if first_reduce:
-                reduce_key = (first_reduce, aps.shift[0].src, aps.actions[-1].term)
+                reduce_key = (first_reduce, aps.shift[0].src, aps.history[-1].term)
             has_seen_edge_after_reduce = first_reduce and reduce_key in seen_edge_after_reduce
             has_lookahead = len(aps.lookahead) >= 1
             stop = has_seen_edge_after_reduce or has_lookahead
@@ -2708,7 +2524,7 @@ class ParseTable:
             if first_reduce:
                 seen_edge_after_reduce.add(reduce_key)
             return not stop
-        self.aps_visitor(self.aps_start(state), visit)
+        self.aps_visitor(APS.start(state), visit)
         return record
 
     def fix_with_context(self, s, aps_lanes):
@@ -2934,7 +2750,7 @@ class ParseTable:
         # would have to be executed.
         shift_map = collections.defaultdict(lambda: [])
         for aps in aps_lanes:
-            actions = aps.actions
+            actions = aps.history
             assert isinstance(actions[-1], Edge)
             assert actions[-1].term == aps.lookahead[0]
             src = actions[-1].src
@@ -3239,9 +3055,9 @@ class ParseTable:
         record = []
         def visit(aps):
             # Stop after reducing once.
-            if aps.actions == []:
+            if aps.history == []:
                 return True
-            last = aps.actions[-1].term
+            last = aps.history[-1].term
             is_reduce = not self.is_term_shifted(last)
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             can_reduce_later = True
@@ -3253,20 +3069,20 @@ class ParseTable:
             # Record state which are reducing at most all the shifted states.
             save = stop and len(aps.shift) == 2
             save = save and isinstance(aps.shift[0].term, Nt)
-            save = save and not self.is_term_shifted(aps.actions[-1].term)
+            save = save and not self.is_term_shifted(aps.history[-1].term)
             if save:
                 record.append(aps)
             return not stop
-        self.aps_visitor(self.aps_start(state), visit)
+        self.aps_visitor(APS.start(state), visit)
 
         context = OrderedSet()
         for aps in record:
-            assert aps.actions != []
-            assert aps.actions[-1].term.update_stack()
-            reducer = aps.actions[-1].term.reduce_with()
+            assert aps.history != []
+            assert aps.history[-1].term.update_stack()
+            reducer = aps.history[-1].term.reduce_with()
             replay = reducer.replay
             before = [repr(e.term) for e in aps.stack[:-1]]
-            after = [repr(e.term) for e in aps.actions[:-1]]
+            after = [repr(e.term) for e in aps.history[:-1]]
             prod = before + ["\N{MIDDLE DOT}"] + after
             if replay < len(after) and replay > 0:
                 del prod[-replay:]
@@ -3277,7 +3093,7 @@ class ParseTable:
                 prod = prod[:-replay] + ["[lookahead:"] + prod[-replay:] + ["]"]
             txt = "{}{} ::= {}".format(
                 prefix,
-                repr(aps.actions[-1].term.reduce_with().nt),
+                repr(aps.history[-1].term.reduce_with().nt),
                 " ".join(prod)
             )
             context.add(txt)
