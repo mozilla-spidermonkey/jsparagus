@@ -24,6 +24,64 @@ fn try_evaluate(source: &str) -> Result<JSValue, EvalError> {
 }
 
 #[test]
+fn test_numeric() {
+    match try_evaluate("0") {
+        Ok(JSValue::Number(n)) if n == 0.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("1") {
+        Ok(JSValue::Number(n)) if n == 1.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("2") {
+        Ok(JSValue::Number(n)) if n == 2.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("127") {
+        Ok(JSValue::Number(n)) if n == 127.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("128") {
+        Ok(JSValue::Number(n)) if n == 128.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("65535") {
+        Ok(JSValue::Number(n)) if n == 65535.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("65536") {
+        Ok(JSValue::Number(n)) if n == 65536.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("16777215") {
+        Ok(JSValue::Number(n)) if n == 16777215.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("16777216") {
+        Ok(JSValue::Number(n)) if n == 16777216.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("2147483647") {
+        Ok(JSValue::Number(n)) if n == 2147483647.0 => (),
+        _ => panic!("wrong result"),
+    }
+
+    match try_evaluate("2147483648") {
+        Ok(JSValue::Number(n)) if n == 2147483648.0 => (),
+        _ => panic!("wrong result"),
+    }
+}
+
+#[test]
 fn test_arithmetic() {
     match try_evaluate("1 + 1") {
         Ok(JSValue::Number(n)) if n == 2.0 => (),

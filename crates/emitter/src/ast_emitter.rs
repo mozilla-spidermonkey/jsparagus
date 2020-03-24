@@ -268,7 +268,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
 
             Expression::LiteralNumericExpression(num) => {
-                self.emit_numeric_expression(num.value);
+                self.emit.numeric(num.value);
             }
 
             Expression::LiteralRegExpExpression { .. } => {
@@ -481,20 +481,6 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         self.emit_expression(right)?;
         jump.patch_merge(self);
         return Ok(());
-    }
-
-    fn emit_numeric_expression(&mut self, value: f64) {
-        if value.is_finite() && value.fract() == 0.0 {
-            if i8::min_value() as f64 <= value && value <= i8::max_value() as f64 {
-                self.emit.int8(value as i8);
-                return;
-            }
-            if i32::min_value() as f64 <= value && value <= i32::max_value() as f64 {
-                self.emit.int32(value as i32);
-                return;
-            }
-        }
-        self.emit.double_(value);
     }
 
     fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
