@@ -86,7 +86,7 @@ where
 
         match self.state.0 {
             ArrayEmitterStateInternal::BeforeSpread { index } => {
-                emitter.emit.double_(index as f64);
+                emitter.emit.numeric(index as f64);
             }
             _ => {}
         }

@@ -30,7 +30,9 @@ impl fmt::Display for EvalError {
 
 trait Helpers {
     fn read_u16(&self, offset: usize) -> u16;
+    fn read_u24(&self, offset: usize) -> u32;
     fn read_i32(&self, offset: usize) -> i32;
+    fn read_double(&self, offset: usize) -> f64;
     fn read_u32(&self, offset: usize) -> u32;
     fn read_offset(&self, offset: usize) -> isize;
     fn read_atom(&self, offset: usize) -> String;
@@ -41,12 +43,20 @@ impl<'alloc> Helpers for EmitResult<'alloc> {
         u16::from_le_bytes(self.bytecode[offset..offset + 2].try_into().unwrap())
     }
 
+    fn read_u24(&self, offset: usize) -> u32 {
+        u32::from_le_bytes(self.bytecode[offset - 1..offset + 3].try_into().unwrap()) >> 8
+    }
+
     fn read_i32(&self, offset: usize) -> i32 {
         i32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
     }
 
     fn read_u32(&self, offset: usize) -> u32 {
         u32::from_le_bytes(self.bytecode[offset..offset + 4].try_into().unwrap())
+    }
+
+    fn read_double(&self, offset: usize) -> f64 {
+        f64::from_le_bytes(self.bytecode[offset..offset + 8].try_into().unwrap())
     }
 
     fn read_offset(&self, offset: usize) -> isize {
@@ -80,7 +90,25 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
         };
 
         match op {
+            Opcode::Zero => stack.push(JSValue::Number(0.0)),
+            Opcode::One => stack.push(JSValue::Number(1.0)),
             Opcode::Int8 => stack.push(JSValue::Number(emit.bytecode[pc + 1] as f64)),
+            Opcode::Uint16 => {
+                let value = emit.read_u16(pc + 1);
+                stack.push(JSValue::Number(value as f64))
+            }
+            Opcode::Uint24 => {
+                let value = emit.read_u24(pc + 1);
+                stack.push(JSValue::Number(value as f64))
+            }
+            Opcode::Int32 => {
+                let value = emit.read_i32(pc + 1);
+                stack.push(JSValue::Number(value as f64))
+            }
+            Opcode::Double => {
+                let value = emit.read_double(pc + 1);
+                stack.push(JSValue::Number(value))
+            }
 
             Opcode::Add => {
                 let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;

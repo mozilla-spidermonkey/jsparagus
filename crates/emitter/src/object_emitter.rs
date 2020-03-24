@@ -73,7 +73,7 @@ where
     pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
         //              [stack] OBJ
 
-        emitter.emit.double_(self.key);
+        emitter.emit.numeric(self.key);
         //              [stack] OBJ KEY
 
         (self.value)(emitter)?;
