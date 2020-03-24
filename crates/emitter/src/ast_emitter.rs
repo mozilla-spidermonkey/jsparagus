@@ -6,6 +6,7 @@ use crate::array_emitter::*;
 use crate::compilation_info::CompilationInfo;
 use crate::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use crate::emitter_scope::{EmitterScopeStack, NameLocation};
+use crate::expression_emitter::*;
 use crate::object_emitter::*;
 use crate::opcode::Opcode;
 use crate::reference_op_emitter::{
@@ -40,7 +41,7 @@ pub fn emit_program<'alloc>(
 
 pub struct AstEmitter<'alloc, 'opt> {
     pub emit: InstructionWriter,
-    options: &'opt EmitOptions,
+    pub options: &'opt EmitOptions,
     pub compilation_info: CompilationInfo<'alloc>,
     scope_stack: EmitterScopeStack,
 }
@@ -111,12 +112,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
-                self.emit_expression(ast)?;
-                if self.options.no_script_rval {
-                    self.emit.pop();
-                } else {
-                    self.emit.set_rval();
+                ExpressionEmitter {
+                    expr: |emitter| emitter.emit_expression(ast),
                 }
+                .emit(self)?;
             }
             Statement::ForInStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForInStatement"));
