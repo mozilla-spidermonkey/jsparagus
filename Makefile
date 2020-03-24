@@ -38,6 +38,7 @@ jsparagus/grammar.py \
 jsparagus/extension.py \
 jsparagus/utils.py \
 jsparagus/actions.py \
+jsparagus/aps.py \
 jsparagus/types.py \
 js_parser/esgrammar.pgen \
 js_parser/generate_js_parser_tables.py \
