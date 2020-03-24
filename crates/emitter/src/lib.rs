@@ -4,6 +4,7 @@ mod compilation_info;
 mod dis;
 mod emitter;
 mod emitter_scope;
+mod expression_emitter;
 mod forward_jump_emitter;
 mod frame_slot;
 mod free_name_tracker;
