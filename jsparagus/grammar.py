@@ -1,7 +1,11 @@
 """ Data structures for representing grammars. """
 
+from __future__ import annotations
+
 import collections
 import copy
+import typing
+from dataclasses import dataclass
 from .ordered import OrderedSet, OrderedFrozenSet
 from . import types
 
@@ -48,6 +52,8 @@ def example_grammar():
     return Grammar(rules, goal_nts=['expr'], variable_terminals=['NUM', 'VAR'])
 
 
+Condition = typing.Tuple[str, bool]
+
 # A production consists of a left side, an optional condition, a right side,
 # and a reducer. A `Production` object includes everything except the left
 # side. Incorporating reducers lets us transform a grammar while preserving
@@ -59,20 +65,17 @@ def example_grammar():
 # The production `expr ::= expr + term => add($0, $2)` is represented by
 # `Production(["expr", "+", "term"], CallMethod("add", (0, 2))`.
 #
+@dataclass
 class Production:
     __slots__ = ['body', 'reducer', 'condition']
+    body: typing.List[Element]
+    reducer: ReduceExprOrAccept
+    condition: typing.Optional[Condition]
 
     def __init__(self, body, reducer, *, condition=None):
         self.body = body
         self.reducer = reducer
         self.condition = condition
-
-    def __eq__(self, other):
-        return (self.body == other.body
-                and self.reducer == other.reducer
-                and self.condition == other.condition)
-
-    __hash__ = None
 
     def __repr__(self):
         if self.condition is None:
@@ -117,24 +120,26 @@ class Production:
 # In addition, the special reducer 'accept' means stop parsing. This is
 # used only in productions for init nonterminals, created automatically by
 # Grammar.__init__(). It's not a reduce expression, so it can't be nested.
-#
 
-class CallMethod(collections.namedtuple("CallMethod", "method args trait fallible")):
+
+@dataclass(frozen=True)
+class CallMethod:
     """Express a method call, and give it a given set of arguments. A trait is
     added as the parser should implement this trait to call this method."""
-    def __new__(cls, method, args, trait=types.Type("AstBuilder"), fallible=False):
-        assert isinstance(trait, types.Type)
-        self = super(CallMethod, cls).__new__(cls, method, args, trait, fallible)
-        return self
 
-    def __eq__(self, other):
-        return isinstance(other, CallMethod) and super(CallMethod, self).__eq__(other)
-
-    def __hash__(self):
-        return super(CallMethod, self).__hash__()
+    method: str
+    args: typing.Tuple[ReduceExpr, ...]
+    trait: types.Type = types.Type("AstBuilder")
+    fallible: bool = False
 
 
-Some = collections.namedtuple("Some", "inner")
+@dataclass(frozen=True)
+class Some:
+    inner: ReduceExpr
+
+
+ReduceExpr = typing.Union[int, CallMethod, None, Some]
+ReduceExprOrAccept = typing.Union[ReduceExpr, str]
 
 
 def expr_to_str(expr):
@@ -820,20 +825,21 @@ class Grammar:
         return False
 
 
-InitNt = collections.namedtuple("InitNt", "goal")
-InitNt.__doc__ = """\
-InitNt(goal) is the name of the init nonterminal for the given goal.
+@dataclass(frozen=True)
+class InitNt:
+    """InitNt(goal) is the name of the init nonterminal for the given goal.
 
-One init nonterminal is created internally for each goal symbol in the grammar.
+    One init nonterminal is created internally for each goal symbol in the grammar.
 
-The idea is to have a nonterminal that the user has no control over, that is
-never used in any production, but *only* as an entry point for the grammar,
-that always has a single production "init_nt ::= goal_nt". This predictable
-structure makes it easier to get into and out of parsing at run time.
+    The idea is to have a nonterminal that the user has no control over, that is
+    never used in any production, but *only* as an entry point for the grammar,
+    that always has a single production "init_nt ::= goal_nt". This predictable
+    structure makes it easier to get into and out of parsing at run time.
 
-When an init nonterminal is matched, we take the "accept" action rather than
-a "reduce" action.
-"""
+    When an init nonterminal is matched, we take the "accept" action rather than
+    a "reduce" action.
+    """
+    goal: Nt
 
 
 # *** Elements ****************************************************************
@@ -923,34 +929,47 @@ class Nt:
                                          for name, value in self.args))
 
 
-# Optional elements. These are expanded out before states are calculated,
-# so the core of the algorithm never sees them.
-Optional = collections.namedtuple("Optional", "inner")
-Optional.__doc__ = """Optional(nt) matches either nothing or the given nt."""
+@dataclass(frozen=True)
+class Optional:
+    """Optional(nt) matches either nothing or the given nt.
+
+    Optional elements are expanded out before states are calculated, so the
+    core of the algorithm never sees them.
+    """
+    inner: Element
 
 
-# Literal elements. These are sequences of characters which are expected as
-# input.
-Literal = collections.namedtuple("Literal", "text")
-Literal.__doc__ = """Literal(str) matches a sequence of characters."""
+@dataclass(frozen=True)
+class Literal:
+    """Literal(str) matches a sequence of characters.
+
+    Literal elements are sequences of characters which are expected to appear
+    verbatim in the input.
+    """
+    text: str
 
 
-# UnicodeCategory elements. These are a set of literal elements which
-# correspond to a given unicode cat_prefix.
-UnicodeCategory = collections.namedtuple("UnicodeCategory", "cat_prefix")
-UnicodeCategory.__doc__ = """UnicodeCategory(str) matches any character with
-a category matching the cat_prefix."""
+@dataclass(frozen=True)
+class UnicodeCategory:
+    """UnicodeCategory(str) matches any character with a category matching
+    the cat_prefix.
+
+    UnicodeCategory elements are a set of literal elements which correspond to a
+    given unicode cat_prefix.
+    """
+    cat_prefix: str
 
 
-# Lookahead restrictions stay with us throughout the algorithm.
-LookaheadRule = collections.namedtuple("LookaheadRule", "set positive")
-LookaheadRule.__doc__ = """\
-LookaheadRule(set, pos) imposes a lookahead restriction on whatever follows.
+@dataclass(frozen=True)
+class LookaheadRule:
+    """LookaheadRule(set, pos) imposes a lookahead restriction on whatever follows.
 
-It never consumes any tokens itself. Instead, the right-hand side
-[LookaheadRule(frozenset(['a', 'b']), False), 'Thing']
-matches a Thing that does not start with the token `a` or `b`.
-"""
+    It never consumes any tokens itself. Instead, the right-hand side
+    [LookaheadRule(frozenset(['a', 'b']), False), 'Thing']
+    matches a Thing that does not start with the token `a` or `b`.
+    """
+    set: typing.FrozenSet[str]
+    positive: bool
 
 
 # A lookahead restriction really just specifies a set of allowed terminals.
@@ -994,26 +1013,45 @@ class NoLineTerminatorHereClass:
 
 NoLineTerminatorHere = NoLineTerminatorHereClass()
 
+
 # Optional elements. These are expanded out before states are calculated,
 # so the core of the algorithm never sees them.
-Exclude = collections.namedtuple("Exclude", "inner exclusion_list")
-Exclude.__doc__ = """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."""
+@dataclass(frozen=True)
+class Exclude:
+    """Exclude(nt1, nt2) matches if nt1 matches and nt2 does not."""
+    inner: Element
+    exclusion_list: typing.Tuple[Element, ...]
+
 
 # End. This is used to represent the terminal which is infinitely produced by
 # the lexer when input end is reached.
-End = collections.namedtuple("End", "")
-End.__doc__ = """End() represent the end of the input content."""
-End_default_eq = End.__eq__
-End.__eq__ = lambda x, y: x.__class__ == y.__class__ and End_default_eq(x, y)
+@dataclass(frozen=True)
+class End:
+    """End() represents the end of the input content."""
+
 
 # Special grammar symbol that can be consumed to handle a syntax error.
 #
 # The error code is passed to an error-handling routine at run time which
 # decides if the error is recoverable or not.
-ErrorSymbol = collections.namedtuple("ErrorSymbol", "error_code")
-ErrorSymbol.__doc__ = """Special grammar symbol that can be consumed to handle a syntax error."""
-ErrorSymbol_default_eq = ErrorSymbol.__eq__
-ErrorSymbol.__eq__ = lambda x, y: x.__class__ == y.__class__ and ErrorSymbol_default_eq(x, y)
+@dataclass(frozen=True)
+class ErrorSymbol:
+    """Special grammar symbol that can be consumed to handle a syntax error."""
+    error_code: int
+
+
+Element = typing.Union[
+    str,
+    Optional,
+    Literal,
+    UnicodeCategory,
+    Exclude,
+    Nt,
+    LookaheadRule,
+    End,
+    ErrorSymbol,
+    NoLineTerminatorHereClass,
+    CallMethod]
 
 
 class NtDef:

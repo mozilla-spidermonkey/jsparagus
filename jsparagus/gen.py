@@ -30,11 +30,14 @@ import collections
 import io
 import pickle
 import sys
+import typing
+from dataclasses import dataclass
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
+                      ReduceExprOrAccept,
                       is_concrete_element,
                       Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
                       End, NoLineTerminatorHere, ErrorSymbol,
@@ -540,7 +543,12 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 #
 # There may be many productions in a grammar that all have the same `nt` and
 # `index` because they were all produced from the same source production.
-Prod = collections.namedtuple("Prod", "nt index rhs reducer")
+@dataclass
+class Prod:
+    nt: str
+    index: int
+    rhs: typing.List
+    reducer: ReduceExprOrAccept
 
 
 def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
