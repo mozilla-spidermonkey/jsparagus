@@ -1,4 +1,5 @@
 __pycache__/
+.mypy_cache/
 target/
 jsparagus_build_venv/
 example_pgen.rs
