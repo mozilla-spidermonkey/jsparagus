@@ -68,6 +68,6 @@ pub fn strict_equality(x: &JSValue, y: &JSValue) -> bool {
         (JSValue::String(ref a), JSValue::String(ref b)) => a == b,
         (JSValue::Object(ref a), JSValue::Object(ref b)) => a.as_ptr() == b.as_ptr(),
         (JSValue::NativeFunction(a), JSValue::NativeFunction(b)) => std::ptr::eq(a, b),
-        _ => false
+        _ => false,
     }
 }

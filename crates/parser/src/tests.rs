@@ -298,14 +298,32 @@ fn test_numbers() {
     assert_error_eq(".0e+", ParseError::UnexpectedEnd);
     assert_error_eq(".0e-", ParseError::UnexpectedEnd);
 
+    assert_parses("1.0E0");
+    assert_parses("1.E0");
+    assert_parses(".0E0");
+
+    assert_parses("1.0E+0");
+    assert_parses("1.E+0");
+    assert_parses(".0E+0");
+
+    assert_parses("1.0E-0");
+    assert_parses("1.E-0");
+    assert_parses(".0E-0");
+
+    assert_error_eq("1.0E", ParseError::UnexpectedEnd);
+    assert_error_eq("1.E", ParseError::UnexpectedEnd);
+    assert_error_eq(".0E", ParseError::UnexpectedEnd);
+
+    assert_error_eq("1.0E+", ParseError::UnexpectedEnd);
+    assert_error_eq("1.0E-", ParseError::UnexpectedEnd);
+    assert_error_eq(".0E+", ParseError::UnexpectedEnd);
+    assert_error_eq(".0E-", ParseError::UnexpectedEnd);
+
     assert_parses(".0");
     assert_parses("");
 
-    // FIXME: NYI: non-decimal literal
-    // assert_parses("0b0");
-    assert_not_implemented("0b0");
+    assert_parses("0b0");
 
-    /*
     assert_parses("0b1");
     assert_parses("0B01");
     assert_error_eq("0b", ParseError::UnexpectedEnd);
@@ -326,9 +344,75 @@ fn test_numbers() {
     assert_error_eq("0x", ParseError::UnexpectedEnd);
     assert_error_eq("0x ", ParseError::IllegalCharacter(' '));
     assert_error_eq("0xg", ParseError::IllegalCharacter('g'));
-     */
 
     assert_parses("1..x");
+
+    assert_parses("1_1");
+    assert_parses("0b1_1");
+    assert_parses("0o1_1");
+    assert_parses("0x1_1");
+
+    assert_parses("1_1.1_1");
+    assert_parses("1_1.1_1e+1_1");
+
+    assert_error_eq("1_", ParseError::UnexpectedEnd);
+    assert_error_eq("1._1", ParseError::IllegalCharacter('_'));
+    assert_error_eq("1.1_", ParseError::UnexpectedEnd);
+    assert_error_eq("1.1e1_", ParseError::UnexpectedEnd);
+    assert_error_eq("1.1e_1", ParseError::IllegalCharacter('_'));
+}
+
+#[test]
+fn test_bigint() {
+    assert_not_implemented("0n");
+    /*
+        assert_parses("0n");
+        assert_parses("1n");
+        assert_parses("10n");
+
+        assert_error_eq("0na", ParseError::IllegalCharacter('a'));
+        assert_error_eq("1na", ParseError::IllegalCharacter('a'));
+
+        assert_error_eq("1.0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq(".0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1.n", ParseError::IllegalCharacter('n'));
+
+        assert_error_eq("1e0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1e+0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1e-0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1E0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1E+0n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1E-0n", ParseError::IllegalCharacter('n'));
+
+        assert_parses("0b0n");
+
+        assert_parses("0b1n");
+        assert_parses("0B01n");
+        assert_error_eq("0bn", ParseError::IllegalCharacter('n'));
+
+        assert_parses("0o0n");
+        assert_parses("0o7n");
+        assert_parses("0O01234567n");
+        assert_error_eq("0on", ParseError::IllegalCharacter('n'));
+
+        assert_parses("0x0n");
+        assert_parses("0xfn");
+        assert_parses("0X0123456789abcdefn");
+        assert_parses("0X0123456789ABCDEFn");
+        assert_error_eq("0xn", ParseError::IllegalCharacter('n'));
+
+        assert_parses("1_1n");
+        assert_parses("0b1_1n");
+        assert_parses("0o1_1n");
+        assert_parses("0x1_1n");
+
+        assert_error_eq("1_1.1_1n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1_1.1_1e1_1n", ParseError::IllegalCharacter('n'));
+
+        assert_error_eq("1_n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1.1_n", ParseError::IllegalCharacter('n'));
+        assert_error_eq("1.1e1_n", ParseError::IllegalCharacter('n'));
+    */
 }
 
 #[test]

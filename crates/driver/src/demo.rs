@@ -128,9 +128,8 @@ pub struct Verbosity {
     pub bytecode: bool,
 
     /// Debug print EmitResult
-    pub emit_result: bool
+    pub emit_result: bool,
 }
-
 
 fn handle_script<'alloc>(
     verbosity: &Verbosity,

@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "unstable", feature(test))]
 
 mod lexer;
+pub mod numeric_value;
 mod parser;
 mod simulator;
 

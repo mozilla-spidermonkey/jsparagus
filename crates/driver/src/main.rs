@@ -29,9 +29,8 @@ struct Opt {
 
     /// JavaScript (.js) file or directory to execute
     #[structopt(name = "PATH", parse(from_os_str))]
-    path: Option<PathBuf>
+    path: Option<PathBuf>,
 }
-
 
 fn main() {
     env_logger::init();
@@ -53,6 +52,6 @@ fn main() {
     demo::read_print_loop(demo::Verbosity {
         ast: opt.ast,
         bytecode: opt.bytecode,
-        emit_result: opt.emit_result
+        emit_result: opt.emit_result,
     });
 }
