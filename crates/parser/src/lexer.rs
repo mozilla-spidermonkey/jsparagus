@@ -1,5 +1,6 @@
 //! JavaScript lexer.
 
+use crate::numeric_value::{parse_float, parse_int, NumericLiteralBase};
 use crate::parser::Parser;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
 use ast::SourceLocation;
@@ -25,6 +26,17 @@ pub struct Lexer<'alloc> {
     is_on_new_line: bool,
 
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+}
+
+enum NumericResult {
+    Int {
+        base: NumericLiteralBase,
+    },
+    Float,
+    BigInt {
+        #[allow(dead_code)]
+        base: NumericLiteralBase,
+    },
 }
 
 impl<'alloc> Lexer<'alloc> {
@@ -696,17 +708,11 @@ impl<'alloc> Lexer<'alloc> {
     }
 }
 
-enum NumericType {
-    Normal,
-    BigInt,
-}
-
 impl<'alloc> Lexer<'alloc> {
     // ------------------------------------------------------------------------
     // 11.8.3 Numeric Literals
 
-    /// Advance over decimal digits in the input, returning true if any were
-    /// found.
+    /// Advance over decimal digits in the input.
     ///
     /// ```text
     /// NumericLiteralSeparator::
@@ -719,15 +725,26 @@ impl<'alloc> Lexer<'alloc> {
     /// DecimalDigit :: one of
     ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9`
     /// ```
-    fn decimal_digits(&mut self) -> Result<'alloc, bool> {
+    fn decimal_digits(&mut self) -> Result<'alloc, ()> {
         if let Some('0'..='9') = self.peek() {
             self.chars.next();
         } else {
-            return Ok(false);
+            return Err(self.unexpected_err());
         }
 
         self.decimal_digits_after_first_digit()?;
-        Ok(true)
+        Ok(())
+    }
+
+    fn optional_decimal_digits(&mut self) -> Result<'alloc, ()> {
+        if let Some('0'..='9') = self.peek() {
+            self.chars.next();
+        } else {
+            return Ok(());
+        }
+
+        self.decimal_digits_after_first_digit()?;
+        Ok(())
     }
 
     fn decimal_digits_after_first_digit(&mut self) -> Result<'alloc, ()> {
@@ -765,18 +782,23 @@ impl<'alloc> Lexer<'alloc> {
     ///     `+` DecimalDigits
     ///     `-` DecimalDigits
     /// ```
-    fn optional_exponent(&mut self) -> Result<'alloc, ()> {
+    fn optional_exponent(&mut self) -> Result<'alloc, bool> {
         if let Some('e') | Some('E') = self.peek() {
             self.chars.next();
-
-            if let Some('+') | Some('-') = self.peek() {
-                self.chars.next();
-            }
-            if !self.decimal_digits()? {
-                // require at least one digit
-                return Err(self.unexpected_err());
-            }
+            self.decimal_exponent()?;
+            return Ok(true);
         }
+
+        Ok(false)
+    }
+
+    fn decimal_exponent(&mut self) -> Result<'alloc, ()> {
+        if let Some('+') | Some('-') = self.peek() {
+            self.chars.next();
+        }
+
+        self.decimal_digits()?;
+
         Ok(())
     }
 
@@ -869,7 +891,8 @@ impl<'alloc> Lexer<'alloc> {
     /// BigIntLiteralSuffix ::
     ///     `n`
     /// ```
-    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, NumericType> {
+    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, NumericResult> {
+        let mut base = NumericLiteralBase::Decimal;
         match self.peek() {
             // BinaryIntegerLiteral ::
             //     `0b` BinaryDigits
@@ -883,6 +906,8 @@ impl<'alloc> Lexer<'alloc> {
             //     `0` `1`
             Some('b') | Some('B') => {
                 self.chars.next();
+
+                base = NumericLiteralBase::Binary;
 
                 if let Some('0'..='1') = self.peek() {
                     self.chars.next();
@@ -911,7 +936,7 @@ impl<'alloc> Lexer<'alloc> {
                 if let Some('n') = self.peek() {
                     self.chars.next();
                     self.check_after_numeric_literal()?;
-                    return Ok(NumericType::BigInt);
+                    return Ok(NumericResult::BigInt { base });
                 }
             }
 
@@ -928,6 +953,8 @@ impl<'alloc> Lexer<'alloc> {
             //
             Some('o') | Some('O') => {
                 self.chars.next();
+
+                base = NumericLiteralBase::Octal;
 
                 if let Some('0'..='7') = self.peek() {
                     self.chars.next();
@@ -956,7 +983,7 @@ impl<'alloc> Lexer<'alloc> {
                 if let Some('n') = self.peek() {
                     self.chars.next();
                     self.check_after_numeric_literal()?;
-                    return Ok(NumericType::BigInt);
+                    return Ok(NumericResult::BigInt { base });
                 }
             }
 
@@ -972,6 +999,8 @@ impl<'alloc> Lexer<'alloc> {
             //     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
             Some('x') | Some('X') => {
                 self.chars.next();
+
+                base = NumericLiteralBase::Hex;
 
                 if let Some('0'..='9') | Some('a'..='f') | Some('A'..='F') = self.peek() {
                     self.chars.next();
@@ -1001,18 +1030,25 @@ impl<'alloc> Lexer<'alloc> {
                 if let Some('n') = self.peek() {
                     self.chars.next();
                     self.check_after_numeric_literal()?;
-                    return Ok(NumericType::BigInt);
+                    return Ok(NumericResult::BigInt { base });
                 }
             }
 
-            Some('.') | Some('e') | Some('E') => {
-                return self.decimal_literal();
+            Some('.') => {
+                self.chars.next();
+                return self.decimal_literal_after_decimal_point_after_digits();
+            }
+
+            Some('e') | Some('E') => {
+                self.chars.next();
+                self.decimal_exponent()?;
+                return Ok(NumericResult::Float);
             }
 
             Some('n') => {
                 self.chars.next();
                 self.check_after_numeric_literal()?;
-                return Ok(NumericType::BigInt);
+                return Ok(NumericResult::BigInt { base });
             }
 
             Some('0'..='9') => {
@@ -1058,11 +1094,12 @@ impl<'alloc> Lexer<'alloc> {
         }
 
         self.check_after_numeric_literal()?;
-        Ok(NumericType::Normal)
+        Ok(NumericResult::Int { base })
     }
 
-    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1).
-    fn decimal_literal(&mut self) -> Result<'alloc, NumericType> {
+    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
+    /// having already consumed the first character, which is a decimal digit.
+    fn decimal_literal_after_first_digit(&mut self) -> Result<'alloc, NumericResult> {
         // DecimalLiteral ::
         //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
         //     `.` DecimalDigits ExponentPart?
@@ -1078,33 +1115,59 @@ impl<'alloc> Lexer<'alloc> {
         // NonZeroDigit :: one of
         //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
 
-        self.decimal_digits()?;
-        self.decimal_literal_after_digits()
-    }
-
-    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
-    /// having already consumed the first character, which is a decimal digit.
-    fn decimal_literal_after_first_digit(&mut self) -> Result<'alloc, NumericType> {
         self.decimal_digits_after_first_digit()?;
-        self.decimal_literal_after_digits()
-    }
-
-    fn decimal_literal_after_digits(&mut self) -> Result<'alloc, NumericType> {
         match self.peek() {
             Some('.') => {
                 self.chars.next();
-                self.decimal_digits()?;
+                return self.decimal_literal_after_decimal_point_after_digits();
             }
             Some('n') => {
                 self.chars.next();
                 self.check_after_numeric_literal()?;
-                return Ok(NumericType::BigInt);
+                return Ok(NumericResult::BigInt {
+                    base: NumericLiteralBase::Decimal,
+                });
             }
             _ => {}
         }
+
+        let has_exponent = self.optional_exponent()?;
+        self.check_after_numeric_literal()?;
+
+        let result = if has_exponent {
+            NumericResult::Float
+        } else {
+            NumericResult::Int {
+                base: NumericLiteralBase::Decimal,
+            }
+        };
+
+        Ok(result)
+    }
+
+    fn decimal_literal_after_decimal_point(&mut self) -> Result<'alloc, NumericResult> {
+        // The parts after `.` in
+        //
+        //     `.` DecimalDigits ExponentPart?
+        self.decimal_digits()?;
         self.optional_exponent()?;
         self.check_after_numeric_literal()?;
-        Ok(NumericType::Normal)
+
+        Ok(NumericResult::Float)
+    }
+
+    fn decimal_literal_after_decimal_point_after_digits(
+        &mut self,
+    ) -> Result<'alloc, NumericResult> {
+        // The parts after `.` in
+        //
+        // DecimalLiteral ::
+        //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
+        self.optional_decimal_digits()?;
+        self.optional_exponent()?;
+        self.check_after_numeric_literal()?;
+
+        Ok(NumericResult::Float)
     }
 
     fn check_after_numeric_literal(&self) -> Result<'alloc, ()> {
@@ -1587,41 +1650,13 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '0' => {
-                    match self.numeric_literal_starting_with_zero()? {
-                        NumericType::Normal => {
-                            return Ok(AdvanceResult {
-                                terminal_id: TerminalId::NumericLiteral,
-                                loc: SourceLocation::new(start, self.offset()),
-                                value: self.numeric_literal_to_token_value(builder.finish(&self))?,
-                            });
-                        }
-                        NumericType::BigInt => {
-                            return Ok(AdvanceResult {
-                                terminal_id: TerminalId::BigIntLiteral,
-                                loc: SourceLocation::new(start, self.offset()),
-                                value: self.string_to_token_value(builder.finish_without_push(&self)),
-                            });
-                        }
-                    }
+                    let result = self.numeric_literal_starting_with_zero()?;
+                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
                 }
 
                 '1'..='9' => {
-                    match self.decimal_literal_after_first_digit()? {
-                        NumericType::Normal => {
-                            return Ok(AdvanceResult {
-                                terminal_id: TerminalId::NumericLiteral,
-                                loc: SourceLocation::new(start, self.offset()),
-                                value: self.numeric_literal_to_token_value(builder.finish(&self))?,
-                            });
-                        }
-                        NumericType::BigInt => {
-                            return Ok(AdvanceResult {
-                                terminal_id: TerminalId::BigIntLiteral,
-                                loc: SourceLocation::new(start, self.offset()),
-                                value: self.string_to_token_value(builder.finish_without_push(&self)),
-                            });
-                        }
-                    }
+                    let result = self.decimal_literal_after_first_digit()?;
+                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
                 }
 
                 '"' | '\'' => {
@@ -1804,23 +1839,8 @@ impl<'alloc> Lexer<'alloc> {
                         }
                     }
                     Some('0'..='9') => {
-                        self.decimal_digits()?;
-                        self.optional_exponent()?;
-
-                        // The SourceCharacter immediately following a
-                        // NumericLiteral must not be an IdentifierStart or
-                        // DecimalDigit. (11.8.3)
-                        if let Some(ch) = self.peek() {
-                            if is_identifier_start(ch) || ch.is_digit(10) {
-                                return Err(ParseError::IllegalCharacter(ch));
-                            }
-                        }
-
-                        return Ok(AdvanceResult {
-                            terminal_id: TerminalId::NumericLiteral,
-                            loc: SourceLocation::new(start, self.offset()),
-                            value: self.numeric_literal_to_token_value(builder.finish(&self))?,
-                        });
+                        let result = self.decimal_literal_after_decimal_point()?;
+                        return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
                     }
                     _ => return Ok(AdvanceResult {
                         terminal_id: TerminalId::Dot,
@@ -2181,12 +2201,32 @@ impl<'alloc> Lexer<'alloc> {
         TokenValue::Atom(index)
     }
 
-    fn numeric_literal_to_token_value(&mut self, s: &str) -> Result<'alloc, TokenValue> {
-        // FIXME: Not all syntax is supported yet (issue #340)
-        let n = s
-            .parse::<f64>()
-            .map_err(|_| ParseError::NotImplemented("Cannot parse numeric literal"))?;
-        Ok(TokenValue::Number(n))
+    fn numeric_result_to_advance_result(
+        &mut self,
+        s: &'alloc str,
+        start: usize,
+        result: NumericResult,
+    ) -> AdvanceResult {
+        let (terminal_id, value) = match result {
+            NumericResult::Int { base } => {
+                let n = parse_int(s, base);
+                (TerminalId::NumericLiteral, TokenValue::Number(n))
+            }
+            NumericResult::Float => {
+                let n = parse_float(s);
+                (TerminalId::NumericLiteral, TokenValue::Number(n))
+            }
+            NumericResult::BigInt { .. } => {
+                // FIXME
+                (TerminalId::BigIntLiteral, self.string_to_token_value(s))
+            }
+        };
+
+        AdvanceResult {
+            terminal_id,
+            loc: SourceLocation::new(start, self.offset()),
+            value,
+        }
     }
 }
 

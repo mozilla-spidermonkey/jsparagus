@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::object::Object;
-use crate::value::{to_number, strict_equality, JSValue};
+use crate::value::{strict_equality, to_number, JSValue};
 
 fn print(_this_value: JSValue, args: &[JSValue]) -> JSValue {
     println!("{:?}", args);
