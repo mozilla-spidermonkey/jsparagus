@@ -14,19 +14,13 @@ See infer_types() for more.
 """
 
 import collections
+from dataclasses import dataclass
 from . import grammar
 
 
-class Lifetime(collections.namedtuple('Lifetime', 'name')):
-    def __new__(cls, name):
-        self = super(Lifetime, cls).__new__(cls, name)
-        return self
-
-    def __eq__(self, other):
-        return isinstance(other, Lifetime) and super(Lifetime, self).__eq__(other)
-
-    def __hash__(self):
-        return super(Lifetime, self).__hash__()
+@dataclass(frozen=True)
+class Lifetime:
+    name: str
 
     def __str__(self):
         return "'" + self.name

@@ -4,6 +4,8 @@
 from .grammar import Nt, InitNt, End
 from .lexer import UnexpectedEndError
 import collections
+from dataclasses import dataclass
+
 
 __all__ = ['ACCEPT', 'ERROR', 'Nt', 'InitNt', 'End', 'Parser', 'ErrorToken']
 
@@ -19,9 +21,10 @@ SPECIAL_CASE_TAG = -0x8000_0000_0000_0000
 ACCEPT = 0x_bfff_ffff_ffff_ffff - (1 << 64)
 ERROR = ACCEPT - 1
 
-ErrorToken = collections.namedtuple('ErrorToken', '')
-ErrorToken_default_eq = ErrorToken.__eq__
-ErrorToken.__eq__ = lambda x, y: x.__class__ == y.__class__ and ErrorToken_default_eq(x, y)
+
+@dataclass(frozen=True)
+class ErrorToken:
+    pass
 
 
 def throw_syntax_error(actions, state, t, tokens):

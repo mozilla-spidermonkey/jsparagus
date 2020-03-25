@@ -3,15 +3,15 @@ Rust code."""
 
 import collections
 from .utils import keep_until
+from dataclasses import dataclass
 
 
-class ImplFor(collections.namedtuple("ImplFor", "param trait for_type")):
-    def __new__(cls, param, trait, for_type):
-        self = super(ImplFor, cls).__new__(cls, param, trait, for_type)
-        return self
-
-    def __eq__(self, other):
-        return isinstance(other, ImplFor) and super(ImplFor, self).__eq__(other)
+@dataclass(frozen=True)
+class ImplFor:
+    __slots__ = ['param', 'trait', 'for_type']
+    param: str
+    trait: str
+    for_type: str
 
 
 def eq_productions(grammar, prod1, prod2):
