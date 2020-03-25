@@ -8,6 +8,9 @@ from ..ordered import OrderedSet
 
 
 def write_python_parse_table(out, parse_table):
+    # Disable MyPy type checking for everything in this module.
+    out.write("# type: ignore\n\n")
+
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
         out.write(

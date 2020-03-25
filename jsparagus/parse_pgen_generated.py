@@ -1,3 +1,5 @@
+# type: ignore
+
 from jsparagus import runtime
 from jsparagus.runtime import (Nt, InitNt, End, ErrorToken, StateTermValue,
                                ShiftError, ShiftAccept)
