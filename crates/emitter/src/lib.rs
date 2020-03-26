@@ -1,3 +1,4 @@
+mod array_emitter;
 mod ast_emitter;
 mod compilation_info;
 mod dis;
