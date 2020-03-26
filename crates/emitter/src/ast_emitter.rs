@@ -2,6 +2,7 @@
 //!
 //! Converts AST nodes to bytecode.
 
+use crate::array_emitter::*;
 use crate::compilation_info::CompilationInfo;
 use crate::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use crate::emitter_scope::{EmitterScopeStack, NameLocation};
@@ -551,36 +552,37 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
-        // Initialize the array to its minimum possible length.
-        let min_length = array
-            .elements
-            .iter()
-            .map(|e| match e {
-                ArrayExpressionElement::Expression(_) => 1,
-                ArrayExpressionElement::Elision { .. } => 1,
-                ArrayExpressionElement::SpreadElement { .. } => 0,
-            })
-            .sum::<u32>();
-
-        self.emit.new_array(min_length);
-
-        for (index, element) in array.elements.iter().enumerate() {
-            match element {
-                ArrayExpressionElement::Expression(expr) => {
-                    self.emit_expression(&expr)?;
-                    self.emit.init_elem_array(index as u32);
+        ArrayEmitter {
+            elements: array.elements.iter(),
+            elem_kind: |e| match e {
+                ArrayExpressionElement::Expression(..) => ArrayElementKind::Normal,
+                ArrayExpressionElement::Elision { .. } => ArrayElementKind::Elision,
+                ArrayExpressionElement::SpreadElement(..) => ArrayElementKind::Spread,
+            },
+            elem: |emitter, state, elem| {
+                match elem {
+                    ArrayExpressionElement::Expression(expr) => {
+                        ArrayElementEmitter {
+                            state,
+                            elem: |emitter| emitter.emit_expression(expr),
+                        }
+                        .emit(emitter)?;
+                    }
+                    ArrayExpressionElement::Elision { .. } => {
+                        ArrayElisionEmitter { state }.emit(emitter);
+                    }
+                    ArrayExpressionElement::SpreadElement(expr) => {
+                        ArraySpreadEmitter {
+                            state,
+                            elem: |emitter| emitter.emit_expression(expr),
+                        }
+                        .emit(emitter)?;
+                    }
                 }
-                ArrayExpressionElement::Elision { .. } => {
-                    self.emit.hole();
-                    self.emit.init_elem_array(index as u32);
-                }
-                ArrayExpressionElement::SpreadElement { .. } => {
-                    return Err(EmitError::NotImplemented("TODO: SpreadElement"));
-                }
-            }
+                Ok(())
+            },
         }
-
-        Ok(())
+        .emit(self)
     }
 
     fn emit_conditional_expression(
