@@ -567,8 +567,13 @@ class RustParserWriter:
                     set_var = "let {} = ".format(act.set_to)
                 if act.method == "id":
                     assert len(act.args) == 1
+                    if isinstance(act.args[0], str):
+                        packed = is_packed[act.args[0]]
+                    else:
+                        assert isinstance(act.args[0], int)
+                        packed = True
                     self.write(indent, "{}{};", set_var, next(map_with_offset(act.args, no_unpack)))
-                    is_packed[act.set_to] = True
+                    is_packed[act.set_to] = packed
                 elif act.method == "accept":
                     assert len(act.args) == 0
                     self.write(indent, "return Ok(true);")

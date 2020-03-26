@@ -42,7 +42,7 @@ from .grammar import (Grammar,
                       End, NoLineTerminatorHere, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
-                      PushFlag, PopFlag, FunCall, Seq)
+                      PushFlag, PopFlag, FunCall, Seq, SeqBuilder)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
 from .utils import keep_until
@@ -2071,7 +2071,9 @@ class ParseTable:
         # TODO: Optimize chains of actions into sequences.
         # Optimize by removing unused states.
         self.remove_all_unreachable_state(verbose, progress)
-        # TODO: Statically compute replayed terms. (maybe?)
+        # Fold sequences of unconditional reduce actions, and remove unused
+        # non-terminals.
+        self.fold_reduce_cascade(verbose, progress)
         # Fold paths which have the same ending.
         self.fold_identical_endings(verbose, progress)
         # Split shift states from epsilon states.
@@ -2161,6 +2163,20 @@ class ParseTable:
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
+
+    def remove_edge(self, src, term, maybe_unreachable_set):
+        assert isinstance(src, StateAndTransitions)
+        if term in src:
+            old_dest = src[term]
+            self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
+        if isinstance(term, Action):
+            src.epsilon = [ (t, d) for t, d in src.epsilon if t != term ]
+        elif isinstance(term, Nt):
+            del src.nonterminals[term]
+        elif isinstance(term, ErrorSymbol):
+            del src.errors[term]
+        else:
+            del src.terminals[term]
 
     def clear_edges(self, src, maybe_unreachable_set):
         """Remove all existing edges, in order to replace them by new one. This is used
@@ -2968,6 +2984,99 @@ class ParseTable:
         state_map = { s.index: i for i, s in enumerate(self.states) }
         for s in self.states:
             s.rewrite_state_indexes(state_map)
+
+    def fold_reduce_cascade(self, verbose, progress):
+        # Reduce actions, especially with lookahead tokens, have a tendency of
+        # reducing more than one non-terminal in cascade as it reduces multiple
+        # productions. This function is here to avoid these intermediate reduce
+        # actions and only keep the last one with all the intermediate actions
+        # squashed in the same sequence.
+        def collect_common_history(history, aps_list):
+            "Collect the list of futures which are accepting the same terms."
+
+            # Recall the history to be returned, if it reduces at least the
+            # same tokens as the initial reduce action. Otherwise, we might be
+            # visiting reduce actions which are reducing the lookahead tokens,
+            # which is not yet handled by the backend, as we have no shift
+            # actions to emulate what the shifting would have accomplished.
+            last_edge = aps_list[0].history[-1]
+            if not self.is_term_shifted(last_edge.term) \
+               and last_edge.term.contains_accept():
+                return history
+            if not self.is_term_shifted(last_edge.term) \
+               and len(aps_list[0].shift) <= 2:
+                history = aps_list[0].history
+
+            # Investigate future paths, and continue as long as they are all
+            # following the same terminals, non-terminals and actions
+            # sequences. Otherwise, returns the currently known history
+            aps_next_list = []
+            for aps in aps_list:
+                aps_next_list.extend(aps.shift_next(self))
+            if aps_next_list == []:
+                return history
+            # TODO: We could remove this condition if we were to add the
+            # support for adding extra lookahead terms.
+            if any(aps.lookahead != [] for aps in aps_next_list):
+                return history
+            common_term = aps_next_list[0].history[-1].term
+            if not all(common_term == aps.history[-1].term for aps in aps_next_list):
+                return history
+            return collect_common_history(history, aps_next_list)
+
+        def capture_reduce_actions():
+            "Yield reduce action and the matching APS"
+            for s in self.states:
+                if not s.epsilon:
+                    continue
+                aps = APS.start(s.index)
+                aps_by_term = collections.defaultdict(list)
+                for aps_next in aps.shift_next(self):
+                    edge = aps_next.history[0]
+                    if self.is_term_shifted(edge.term):
+                        continue
+                    aps_by_term[edge.term].append(aps_next)
+                for aps_term_list in aps_by_term.values():
+                    yield collect_common_history([], aps_term_list)
+
+        replace_list = []
+        def visit_candidate():
+            for history in capture_reduce_actions():
+                # Knowing that the history starts on a reduce action and ends
+                # on a reduce action, if it has more than 2 elements, then it
+                # is worth folding.
+                if len(history) < 2:
+                    continue
+                assert not self.is_term_shifted(history[-1].term)
+                yield # progress bar
+                head = history[0]
+                if verbose:
+                    print("history: {}".format(" ".join(map(lambda e: "{} -- {} -->".format(e.src, str(e.term)), history))))
+                seq_builder = SeqBuilder()
+                # Build a sequence and rewrite offsets of function calls to
+                # accomodate for "inlined" reduce actions.
+                for edge in history:
+                    if not seq_builder.can_shift(edge.term):
+                        break
+                    seq_builder.shift(edge.term)
+                seq = seq_builder.finish()
+                if seq == head.term:
+                    continue
+                if verbose:
+                    print("Replaced by: {}".format(str(seq)))
+                replace_list.append((head.src, head.term, seq, self.states[head.src][head.term]))
+
+
+        if verbose or progress:
+            print("Fold Reduce action sequences.")
+
+        consume(visit_candidate(), progress)
+
+        maybe_unreachable_set = set()
+        for src, old_term, new_term, dest in replace_list:
+            src = self.states[src]
+            self.remove_edge(src, old_term, maybe_unreachable_set)
+            self.add_edge(src, new_term, dest)
 
     def fold_identical_endings(self, verbose, progress):
         # If 2 states have the same outgoing edges, then we can merge the 2
