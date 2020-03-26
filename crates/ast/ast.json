@@ -198,7 +198,7 @@
     "LiteralNullExpression": null,
     "LiteralNumericExpression": "NumericLiteral",
     "LiteralRegExpExpression": {
-      "pattern": "SourceAtomSetIndex",
+      "pattern": "SourceSliceIndex",
       "global": "bool",
       "ignore_case": "bool",
       "multi_line": "bool",

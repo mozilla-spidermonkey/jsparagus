@@ -15,6 +15,7 @@ extern crate jsparagus_parser as parser;
 
 use ast::dump::ASTDump;
 use ast::source_atom_set::SourceAtomSet;
+use ast::source_slice_list::SourceSliceList;
 use ast::types::{Program, Script};
 use bumpalo::Bump;
 use interpreter::{create_global, evaluate, Object};
@@ -71,7 +72,8 @@ fn parse_file(path: &Path, size_bytes: u64) -> io::Result<DemoStats> {
     let allocator = &Bump::new();
     let options = ParseOptions::new();
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-    let result = parse_script(allocator, &contents, &options, atoms);
+    let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let result = parse_script(allocator, &contents, &options, atoms, slices);
     let stats = DemoStats::new_single(size_bytes, result.is_ok());
     match result {
         Ok(_ast) => println!(" ok"),
@@ -135,15 +137,16 @@ fn handle_script<'alloc>(
     verbosity: &Verbosity,
     script: Script<'alloc>,
     atoms: SourceAtomSet<'alloc>,
+    slices: SourceSliceList<'alloc>,
     global: Rc<RefCell<Object>>,
 ) {
     if verbosity.ast {
-        script.dump_with_atoms(&mut io::stderr(), &atoms);
+        script.dump_with_atoms(&mut io::stderr(), &atoms, &slices);
     }
 
     let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
-    match emitter::emit(&mut program, &options, atoms) {
+    match emitter::emit(&mut program, &options, atoms, slices) {
         Err(err) => {
             eprintln!("error: {}", err);
         }
@@ -170,7 +173,8 @@ impl Validator for InputValidator {
     fn validate(&self, ctx: &mut ValidationContext) -> Result<ValidationResult, ReadlineError> {
         let allocator = &Bump::new();
         let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-        match is_partial_script(allocator, ctx.input(), atoms) {
+        let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+        match is_partial_script(allocator, ctx.input(), atoms, slices) {
             Ok(true) => Ok(ValidationResult::Incomplete),
             // We treat ParseErrors as "valid" so that they
             // can be handled by the REPL function.
@@ -198,7 +202,14 @@ pub fn read_print_loop(verbosity: Verbosity) {
 
         let allocator = &Bump::new();
         let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-        let script = parse_script(allocator, &input, &ParseOptions::new(), atoms.clone());
+        let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+        let script = parse_script(
+            allocator,
+            &input,
+            &ParseOptions::new(),
+            atoms.clone(),
+            slices.clone(),
+        );
         match script {
             Err(err) => {
                 eprintln!("error: {}", err);
@@ -208,6 +219,7 @@ pub fn read_print_loop(verbosity: Verbosity) {
                     &verbosity,
                     script.unbox(),
                     atoms.replace(SourceAtomSet::new_uninitialized()),
+                    slices.replace(SourceSliceList::new()),
                     global.clone(),
                 );
             }

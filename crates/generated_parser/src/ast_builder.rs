@@ -6,6 +6,7 @@ use ast::{
     arena,
     source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex},
     source_location_accessor::SourceLocationAccessor,
+    source_slice_list::SourceSliceList,
     types::*,
     SourceLocation,
 };
@@ -92,6 +93,9 @@ pub struct AstBuilder<'alloc> {
     bindings: Vec<BindingInfo>,
 
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+
+    #[allow(dead_code)]
+    slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 }
 
 pub trait AstBuilderDelegate<'alloc> {
@@ -99,11 +103,16 @@ pub trait AstBuilderDelegate<'alloc> {
 }
 
 impl<'alloc> AstBuilder<'alloc> {
-    pub fn new(allocator: &'alloc Bump, atoms: Rc<RefCell<SourceAtomSet<'alloc>>>) -> Self {
+    pub fn new(
+        allocator: &'alloc Bump,
+        atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+        slices: Rc<RefCell<SourceSliceList<'alloc>>>,
+    ) -> Self {
         Self {
             allocator,
             bindings: Vec::new(),
             atoms,
+            slices,
         }
     }
 
@@ -235,7 +244,7 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        let pattern = token.value.as_atom();
+        let pattern = token.value.as_slice();
         let global: bool = false;
         let ignore_case: bool = false;
         let multi_line: bool = false;

@@ -15,6 +15,7 @@ use crate::reference_op_emitter::{
     NewEmitter, PropReferenceEmitter,
 };
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
+use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
 use scope::data::ScopeDataMap;
 
@@ -25,9 +26,10 @@ pub fn emit_program<'alloc>(
     ast: &Program,
     options: &EmitOptions,
     atoms: SourceAtomSet<'alloc>,
+    slices: SourceSliceList<'alloc>,
     scope_data_map: ScopeDataMap,
 ) -> Result<EmitResult<'alloc>, EmitError> {
-    let mut emitter = AstEmitter::new(options, atoms, scope_data_map);
+    let mut emitter = AstEmitter::new(options, atoms, slices, scope_data_map);
 
     match ast {
         Program::Script(script) => emitter.emit_script(script)?,
@@ -50,12 +52,13 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     fn new(
         options: &'opt EmitOptions,
         atoms: SourceAtomSet<'alloc>,
+        slices: SourceSliceList<'alloc>,
         scope_data_map: ScopeDataMap,
     ) -> Self {
         Self {
             emit: InstructionWriter::new(),
             options,
-            compilation_info: CompilationInfo::new(atoms, scope_data_map),
+            compilation_info: CompilationInfo::new(atoms, slices, scope_data_map),
             scope_stack: EmitterScopeStack::new(),
         }
     }

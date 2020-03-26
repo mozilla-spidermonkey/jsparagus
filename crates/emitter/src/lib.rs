@@ -23,14 +23,16 @@ pub use crate::scope_notes::ScopeNote;
 pub use dis::dis;
 
 use ast::source_atom_set::SourceAtomSet;
+use ast::source_slice_list::SourceSliceList;
 
 pub fn emit<'alloc>(
     ast: &mut ast::types::Program,
     options: &EmitOptions,
     atoms: SourceAtomSet<'alloc>,
+    slices: SourceSliceList<'alloc>,
 ) -> Result<EmitResult<'alloc>, EmitError> {
     let scope_data_map = scope::generate_scope_data(ast);
-    ast_emitter::emit_program(ast, options, atoms, scope_data_map)
+    ast_emitter::emit_program(ast, options, atoms, slices, scope_data_map)
 }
 
 #[cfg(test)]
@@ -41,6 +43,7 @@ mod tests {
     use crate::dis::*;
     use crate::opcode::*;
     use ast::source_atom_set::SourceAtomSet;
+    use ast::source_slice_list::SourceSliceList;
     use bumpalo::Bump;
     use parser::{parse_script, ParseOptions};
     use std::cell::RefCell;
@@ -50,8 +53,10 @@ mod tests {
         let alloc = &Bump::new();
         let parse_options = ParseOptions::new();
         let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+        let slices = Rc::new(RefCell::new(SourceSliceList::new()));
         let parse_result =
-            parse_script(alloc, source, &parse_options, atoms.clone()).expect("Failed to parse");
+            parse_script(alloc, source, &parse_options, atoms.clone(), slices.clone())
+                .expect("Failed to parse");
         // println!("{:?}", parse_result);
 
         let emit_options = EmitOptions::new();
@@ -59,6 +64,7 @@ mod tests {
             &mut ast::types::Program::Script(parse_result.unbox()),
             &emit_options,
             atoms.replace(SourceAtomSet::new_uninitialized()),
+            slices.replace(SourceSliceList::new()),
         )
         .expect("Should work!")
         .bytecode;
