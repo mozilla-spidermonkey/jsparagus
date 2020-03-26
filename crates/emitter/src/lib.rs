@@ -11,6 +11,7 @@ mod object_emitter;
 pub mod opcode;
 pub mod opcode_info;
 mod reference_op_emitter;
+mod regexp;
 mod scope_notes;
 mod script_atom_set;
 
