@@ -84,7 +84,7 @@ check: all static-check
 	cargo test --all
 
 static-check:
-	$(VENV_BIN_DIR)/mypy -m jsparagus.ordered
+	$(VENV_BIN_DIR)/mypy -p jsparagus -p tests -p js_parser
 
 jsdemo: $(PY_OUT)
 	$(PYTHON) -m js_parser.try_it

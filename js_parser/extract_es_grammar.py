@@ -20,7 +20,7 @@ You can also use this script on a random HTTPS URL, like:
 
 import argparse
 import urllib
-import html5lib
+import html5lib  # type: ignore
 import re
 from textwrap import dedent
 
