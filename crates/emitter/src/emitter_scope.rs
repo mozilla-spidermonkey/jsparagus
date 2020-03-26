@@ -1,8 +1,8 @@
 use crate::emitter::InstructionWriter;
-use crate::frame_slot::FrameSlot;
-use crate::scope::{BindingKind, GlobalScopeData, LexicalScopeData, ScopeDataMap, ScopeIndex};
 use crate::scope_notes::ScopeNoteIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
+use scope::data::{BindingKind, GlobalScopeData, LexicalScopeData, ScopeDataMap, ScopeIndex};
+use scope::frame_slot::FrameSlot;
 use std::collections::HashMap;
 
 /// Corresponds to js::frontend::NameLocation in

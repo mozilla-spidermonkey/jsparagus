@@ -14,9 +14,9 @@ use crate::reference_op_emitter::{
     GetNameEmitter, GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter,
     NewEmitter, PropReferenceEmitter,
 };
-use crate::scope::ScopeDataMap;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use ast::types::*;
+use scope::data::ScopeDataMap;
 
 use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
 

@@ -20,6 +20,7 @@ jsparagus-generated-parser = { path = "crates/generated_parser" }
 jsparagus-interpreter = { path = "crates/interpreter", optional = true  }
 jsparagus-json-log = { path = "crates/json-log"  }
 jsparagus-parser = { path = "crates/parser" }
+jsparagus-scope = { path = "crates/scope" }
 
 [features]
 default = []

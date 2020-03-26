@@ -1,5 +1,5 @@
 use crate::emitter::BytecodeOffset;
-use crate::scope::ScopeIndex;
+use scope::data::ScopeIndex;
 
 /// Maps to js::ScopeNote in m-c/js/src/vm//JSScript.h.
 #[derive(Debug)]

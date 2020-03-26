@@ -1,5 +1,5 @@
-use crate::scope::ScopeDataMap;
 use ast::source_atom_set::SourceAtomSet;
+use scope::data::ScopeDataMap;
 
 pub struct CompilationInfo<'alloc> {
     pub atoms: SourceAtomSet<'alloc>,
