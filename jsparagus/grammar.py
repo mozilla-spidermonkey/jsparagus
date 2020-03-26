@@ -159,6 +159,9 @@ def expr_to_str(expr):
         raise ValueError("unrecognized expression: {!r}".format(expr))
 
 
+SyntheticTerminalsDict = typing.Dict[str, OrderedFrozenSet[str]]
+
+
 class Grammar:
     """A collection of productions.
 
