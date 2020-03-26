@@ -14,6 +14,7 @@ use crate::reference_op_emitter::{
     GetNameEmitter, GetPropEmitter, GetSuperElemEmitter, GetSuperPropEmitter, NameReferenceEmitter,
     NewEmitter, PropReferenceEmitter,
 };
+use crate::regexp::RegExpItem;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
@@ -273,8 +274,28 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 self.emit.numeric(num.value);
             }
 
-            Expression::LiteralRegExpExpression { .. } => {
-                return Err(EmitError::NotImplemented("TODO: LiteralRegExpExpression"));
+            Expression::LiteralRegExpExpression {
+                pattern,
+                global,
+                ignore_case,
+                multi_line,
+                dot_all,
+                sticky,
+                unicode,
+                ..
+            } => {
+                let item = RegExpItem {
+                    pattern: *pattern,
+                    global: *global,
+                    ignore_case: *ignore_case,
+                    multi_line: *multi_line,
+                    dot_all: *dot_all,
+                    sticky: *sticky,
+                    unicode: *unicode,
+                };
+                // FIXME: Fix reg_exp method parameter type (after issue #393)
+                let index: usize = self.emit.get_regexp_gcthing_index(item).into();
+                self.emit.reg_exp(index as u32);
             }
 
             Expression::LiteralStringExpression { value, .. } => {

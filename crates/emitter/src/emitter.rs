@@ -8,6 +8,7 @@
 use crate::compilation_info::CompilationInfo;
 use crate::gcthings::{GCThing, GCThingIndex, GCThingList};
 use crate::opcode::Opcode;
+use crate::regexp::{RegExpItem, RegExpList};
 use crate::scope_notes::{ScopeNote, ScopeNoteIndex, ScopeNoteList};
 use crate::script_atom_set::{ScriptAtomSet, ScriptAtomSetIndex};
 use ast::source_atom_set::SourceAtomSetIndex;
@@ -124,6 +125,8 @@ pub struct InstructionWriter {
     gcthings: GCThingList,
     scope_notes: ScopeNoteList,
 
+    regexps: RegExpList,
+
     main_offset: BytecodeOffset,
 
     /// The maximum number of fixed frame slots.
@@ -163,6 +166,7 @@ pub struct EmitResult<'alloc> {
     pub atoms: Vec<SourceAtomSetIndex>,
     pub all_atoms: Vec<&'alloc str>,
     pub slices: Vec<&'alloc str>,
+    pub regexps: Vec<RegExpItem>,
     pub gcthings: Vec<GCThing>,
     pub scopes: Vec<ScopeData>,
     pub scope_notes: Vec<ScopeNote>,
@@ -210,6 +214,7 @@ impl InstructionWriter {
             atoms: ScriptAtomSet::new(),
             gcthings: GCThingList::new(),
             scope_notes: ScopeNoteList::new(),
+            regexps: RegExpList::new(),
             main_offset: BytecodeOffset::new(0),
             max_fixed_slots: FrameSlot::new(0),
             stack_depth: 0,
@@ -229,6 +234,7 @@ impl InstructionWriter {
             atoms: self.atoms.into(),
             all_atoms: compilation_info.atoms.into(),
             slices: compilation_info.slices.into(),
+            regexps: self.regexps.into(),
             gcthings: self.gcthings.into(),
             scopes: compilation_info.scope_data_map.into(),
             scope_notes: self.scope_notes.into(),
@@ -1404,6 +1410,11 @@ impl InstructionWriter {
     }
 
     // @@@@ END METHODS @@@@
+
+    pub fn get_regexp_gcthing_index(&mut self, regexp: RegExpItem) -> GCThingIndex {
+        let regexp_index = self.regexps.append(regexp);
+        self.gcthings.append_regexp(regexp_index)
+    }
 
     fn update_max_frame_slots(&mut self, max_frame_slots: FrameSlot) {
         self.max_fixed_slots = cmp::max(self.max_fixed_slots, max_frame_slots);
