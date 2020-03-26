@@ -7,6 +7,7 @@ mod forward_jump_emitter;
 mod frame_slot;
 mod free_name_tracker;
 mod gcthings;
+mod object_emitter;
 pub mod opcode;
 pub mod opcode_info;
 mod reference_op_emitter;

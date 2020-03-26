@@ -5,6 +5,7 @@
 use crate::compilation_info::CompilationInfo;
 use crate::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use crate::emitter_scope::{EmitterScopeStack, NameLocation};
+use crate::object_emitter::*;
 use crate::opcode::Opcode;
 use crate::reference_op_emitter::{
     AssignmentEmitter, CallEmitter, DeclarationEmitter, ElemReferenceEmitter, GetElemEmitter,
@@ -39,7 +40,7 @@ pub fn emit_program<'alloc>(
 pub struct AstEmitter<'alloc, 'opt> {
     pub emit: InstructionWriter,
     options: &'opt EmitOptions,
-    compilation_info: CompilationInfo<'alloc>,
+    pub compilation_info: CompilationInfo<'alloc>,
     scope_stack: EmitterScopeStack,
 }
 
@@ -496,56 +497,57 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_object_expression(&mut self, object: &ObjectExpression) -> Result<(), EmitError> {
-        self.emit.new_init();
-
-        for property in object.properties.iter() {
-            self.emit_object_property(property)?;
+        ObjectEmitter {
+            properties: object.properties.iter(),
+            prop: |emitter, state, prop| emitter.emit_object_property(state, prop),
         }
-
-        Ok(())
+        .emit(self)
     }
 
-    fn emit_object_property(&mut self, property: &ObjectProperty) -> Result<(), EmitError> {
+    fn emit_object_property(
+        &mut self,
+        state: &mut ObjectEmitterState,
+        property: &ObjectProperty,
+    ) -> Result<(), EmitError> {
         match property {
             ObjectProperty::NamedObjectProperty(NamedObjectProperty::DataProperty(
                 DataProperty {
                     property_name,
-                    expression,
+                    expression: prop_value,
                     ..
                 },
             )) => match property_name {
                 PropertyName::StaticPropertyName(StaticPropertyName { value, .. }) => {
-                    match self.to_property_index(*value) {
-                        Some(value) => {
-                            self.emit.double_(value as f64);
-                            self.emit_expression(expression)?;
-                            self.emit.init_elem();
-                        }
-                        None => {
-                            self.emit_expression(expression)?;
-                            let name_index = self.emit.get_atom_index(*value);
-                            self.emit.init_prop(name_index);
-                        }
+                    NamePropertyEmitter {
+                        state,
+                        key: *value,
+                        value: |emitter| emitter.emit_expression(prop_value),
                     }
+                    .emit(self)?;
                 }
                 PropertyName::StaticNumericPropertyName(NumericLiteral { value, .. }) => {
-                    self.emit.double_(*value);
-                    self.emit_expression(expression)?;
-                    self.emit.init_elem();
+                    IndexPropertyEmitter {
+                        state,
+                        key: *value,
+                        value: |emitter| emitter.emit_expression(prop_value),
+                    }
+                    .emit(self)?;
                 }
-                PropertyName::ComputedPropertyName(ComputedPropertyName { .. }) => {
-                    return Err(EmitError::NotImplemented("TODO: computed property"))
+                PropertyName::ComputedPropertyName(ComputedPropertyName {
+                    expression: prop_key,
+                    ..
+                }) => {
+                    ComputedPropertyEmitter {
+                        state,
+                        key: |emitter| emitter.emit_expression(prop_key),
+                        value: |emitter| emitter.emit_expression(prop_value),
+                    }
+                    .emit(self)?;
                 }
             },
             _ => return Err(EmitError::NotImplemented("TODO: non data property")),
         }
-
         Ok(())
-    }
-
-    fn to_property_index(&self, index: SourceAtomSetIndex) -> Option<u32> {
-        let s = self.compilation_info.atoms.get(index);
-        s.parse::<u32>().ok()
     }
 
     fn emit_array_expression(&mut self, array: &ArrayExpression) -> Result<(), EmitError> {
