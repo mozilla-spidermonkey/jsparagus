@@ -202,6 +202,7 @@
       "global": "bool",
       "ignore_case": "bool",
       "multi_line": "bool",
+      "dot_all": "bool",
       "sticky": "bool",
       "unicode": "bool"
     },
