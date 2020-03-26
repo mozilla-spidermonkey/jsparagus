@@ -5,6 +5,7 @@ mod emitter;
 mod emitter_scope;
 mod forward_jump_emitter;
 mod frame_slot;
+mod free_name_tracker;
 mod gcthings;
 pub mod opcode;
 pub mod opcode_info;

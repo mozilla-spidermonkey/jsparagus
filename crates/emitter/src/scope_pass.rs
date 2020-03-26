@@ -1,6 +1,7 @@
 //! Collect bindings and generate scope data from AST.
 //! The information is used while emitting bytecode.
 
+use crate::free_name_tracker::FreeNameTracker;
 use crate::scope::{
     BindingName, GlobalScopeData, LexicalScopeData, ScopeData, ScopeDataList, ScopeDataMap,
     ScopeIndex,
@@ -300,6 +301,8 @@ struct GlobalContext {
     const_names: Vec<SourceAtomSetIndex>,
 
     scope_index: ScopeIndex,
+
+    name_tracker: FreeNameTracker,
     // FIXME: Step 8. Let functionsToInitialize be a new empty List.
 }
 
@@ -311,6 +314,7 @@ impl GlobalContext {
             let_names: Vec::new(),
             const_names: Vec::new(),
             scope_index,
+            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -424,7 +428,8 @@ impl GlobalContext {
         // Step 18. For each String vn in declaredVarNames, in list order, do
         for n in &self.declared_var_names {
             // 18.a. Perform ? envRec.CreateGlobalVarBinding(vn, false).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         // Step 17. For each Parse Node f in functionsToInitialize, do
@@ -436,7 +441,9 @@ impl GlobalContext {
             //            ? envRec.CreateGlobalFunctionBinding(fn, fo, false).
             //
             // FIXME: for Annex B functions, use `new`.
-            data.bindings.push(BindingName::new_top_level_function(*n));
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings
+                .push(BindingName::new_top_level_function(*n, is_closed_over));
         }
 
         // Step 15. Let lexDeclarations be the LexicallyScopedDeclarations of
@@ -446,12 +453,14 @@ impl GlobalContext {
         for n in &self.let_names {
             // Step 16.b.ii. Else,
             // Step 16.b.ii.1. Perform ? envRec.CreateMutableBinding(dn, false).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             // Step 16.b.i. If IsConstantDeclaration of d is true, then
             // Step 16.b.i.1. Perform ? envRec.CreateImmutableBinding(dn, true).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Global(data)
@@ -470,6 +479,7 @@ struct BlockContext {
 
     /// Scope associated to this context.
     scope_index: ScopeIndex,
+    name_tracker: FreeNameTracker,
 }
 
 impl BlockContext {
@@ -479,6 +489,7 @@ impl BlockContext {
             fun_names: Vec::new(),
             const_names: Vec::new(),
             scope_index,
+            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -534,7 +545,8 @@ impl BlockContext {
         for n in &self.let_names {
             // Step 4.a.ii. Else,
             // Step 4.a.ii.1. Perform ! envRec.CreateMutableBinding(dn, false).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.fun_names {
             // Step 4.b. If d is a FunctionDeclaration, a GeneratorDeclaration,
@@ -544,12 +556,14 @@ impl BlockContext {
             // Step 4.b.ii. Let fo be InstantiateFunctionObject of d with
             //              argument env.
             // Step 4.b.iii. Perform envRec.InitializeBinding(fn, fo).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             // Step 4.a.i. If IsConstantDeclaration of d is true, then
             // Step 4.a.i.1. Perform ! envRec.CreateImmutableBinding(dn, true).
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Lexical(data)
@@ -567,6 +581,47 @@ impl Context {
         match self {
             Context::Global(context) => context.scope_index,
             Context::Block(context) => context.scope_index,
+        }
+    }
+
+    fn declare_var(&mut self, binding: &BindingIdentifier) {
+        self.name_tracker_mut().note_def(binding.name.value);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_var(binding),
+            _ => panic!("unexpected var context"),
+        }
+    }
+
+    fn declare_let(&mut self, binding: &BindingIdentifier) {
+        self.name_tracker_mut().note_def(binding.name.value);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_let(binding),
+            Context::Block(ref mut context) => context.declare_let(binding),
+        }
+    }
+
+    fn declare_const(&mut self, binding: &BindingIdentifier) {
+        self.name_tracker_mut().note_def(binding.name.value);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_const(binding),
+            Context::Block(ref mut context) => context.declare_const(binding),
+        }
+    }
+
+    pub fn name_tracker(&self) -> &FreeNameTracker {
+        match self {
+            Context::Global(context) => &context.name_tracker,
+            Context::Block(context) => &context.name_tracker,
+        }
+    }
+
+    pub fn name_tracker_mut(&mut self) -> &mut FreeNameTracker {
+        match self {
+            Context::Global(context) => &mut context.name_tracker,
+            Context::Block(context) => &mut context.name_tracker,
         }
     }
 }
@@ -644,8 +699,8 @@ impl ContextStack {
     }
 
     fn pop_global(&mut self) -> GlobalContext {
-        match self.stack.pop() {
-            Some(Context::Global(context)) => context,
+        match self.pop() {
+            Context::Global(context) => context,
             _ => panic!("unmatching context"),
         }
     }
@@ -655,10 +710,31 @@ impl ContextStack {
     }
 
     fn pop_block(&mut self) -> BlockContext {
-        match self.stack.pop() {
-            Some(Context::Block(context)) => context,
+        match self.pop() {
+            Context::Block(context) => context,
             _ => panic!("unmatching context"),
         }
+    }
+
+    /// Pop the current scope, propagating names to outer scope.
+    fn pop(&mut self) -> Context {
+        let inner = self.stack.pop().expect("unmatching context");
+        match self.stack.last_mut() {
+            Some(outer) => {
+                let inner_tracker = inner.name_tracker();
+                let outer_tracker = outer.name_tracker_mut();
+                match inner {
+                    Context::Global(_) => {
+                        panic!("Global shouldn't be enclosed by other scope");
+                    }
+                    Context::Block(_) => {
+                        outer_tracker.propagate_from_inner_non_script(inner_tracker)
+                    }
+                }
+            }
+            None => {}
+        }
+        inner
     }
 }
 
@@ -855,20 +931,23 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         }
 
         match self.scope_kind_stack.innermost() {
-            ScopeKind::Var => match self.context_stack.innermost_var() {
-                Context::Global(ref mut context) => context.declare_var(ast),
-                _ => panic!("unexpected var context"),
-            },
-            ScopeKind::Let => match self.context_stack.innermost_lexical() {
-                Context::Global(ref mut context) => context.declare_let(ast),
-                Context::Block(ref mut context) => context.declare_let(ast),
-            },
-            ScopeKind::Const => match self.context_stack.innermost_lexical() {
-                Context::Global(ref mut context) => context.declare_const(ast),
-                Context::Block(ref mut context) => context.declare_const(ast),
-            },
+            ScopeKind::Var => self.context_stack.innermost_var().declare_var(ast),
+            ScopeKind::Let => self.context_stack.innermost_lexical().declare_let(ast),
+            ScopeKind::Const => self.context_stack.innermost_lexical().declare_const(ast),
             _ => panic!("Not implemeneted"),
         }
+    }
+
+    // Given we override `visit_binding_identifier` above,
+    // visit_identifier is not called for Identifier inside BindingIdentifier,
+    // and this is called only for references, either
+    // IdentifierExpression or AssignmentTargetIdentifier.
+    fn visit_identifier(&mut self, ast: &mut Identifier) {
+        let atom = ast.value;
+        self.context_stack
+            .innermost_lexical()
+            .name_tracker_mut()
+            .note_use(atom);
     }
 
     fn enter_enum_statement_variant_function_declaration(&mut self, ast: &mut Function<'alloc>) {
