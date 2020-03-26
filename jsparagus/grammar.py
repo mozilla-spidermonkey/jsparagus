@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import collections
 import copy
 import typing
 from dataclasses import dataclass
@@ -1130,7 +1129,8 @@ class NtDef:
         return NtDef(self.params, new_rhs_list, self.type)
 
 
-Var = collections.namedtuple("Var", "name")
-Var.__doc__ = """\
-Var(name) represents the run-time value of the parameter with the given name.
-"""
+@dataclass(frozen=True)
+class Var:
+    """Var(name) represents the run-time value of the parameter with the given name."""
+
+    name: str
