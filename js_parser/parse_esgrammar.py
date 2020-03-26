@@ -263,7 +263,7 @@ class ESGrammarBuilder:
         return types.Lifetime(name)
 
     def parameterized_type(self, name, args):
-        return types.Type(name, args)
+        return types.Type(name, tuple(args))
 
     def t_list_line(self, terminals):
         return terminals
