@@ -1056,6 +1056,7 @@ Element = typing.Union[
     CallMethod]
 
 
+@dataclass
 class NtDef:
     """Definition of a nonterminal.
 
@@ -1112,23 +1113,11 @@ class NtDef:
 
     __slots__ = ['params', 'rhs_list', 'type']
 
-    def __init__(self, params, rhs_list, type):
-        assert isinstance(params, tuple)
-        self.params = params
-        self.rhs_list = rhs_list
-        self.type = type
+    params: typing.Tuple[str, ...]
+    rhs_list: typing.List[Production]
+    type: typing.Optional[types.Type]
 
-    def __eq__(self, other):
-        return (isinstance(other, NtDef)
-                and ((self.params, self.rhs_list, self.type)
-                     == (other.params, other.rhs_list, other.type)))
-
-    __hash__ = None
-
-    def __repr__(self):
-        return "NtDef({!r}, {!r}, {!r})".format(self.params, self.rhs_list, self.type)
-
-    def with_rhs_list(self, new_rhs_list):
+    def with_rhs_list(self, new_rhs_list: typing.List[Production]) -> NtDef:
         return NtDef(self.params, new_rhs_list, self.type)
 
 
