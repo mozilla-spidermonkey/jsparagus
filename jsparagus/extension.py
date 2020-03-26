@@ -1,9 +1,9 @@
 """Data structure extracted from parsing the EDSL which are added within the
 Rust code."""
 
-import collections
-from .utils import keep_until
 from dataclasses import dataclass
+from .utils import keep_until
+from . import grammar
 
 
 @dataclass(frozen=True)
@@ -42,14 +42,11 @@ def merge_productions(grammar, prod1, prod2):
     return prod1.copy_with(body=body)
 
 
-class ExtPatch(collections.namedtuple("ExtPatch", "prod")):
+@dataclass(frozen=True)
+class ExtPatch:
     "Patch an existing grammar rule by adding Code"
-    def __new__(cls, prod):
-        self = super(ExtPatch, cls).__new__(cls, prod)
-        return self
 
-    def __eq__(self, other):
-        return isinstance(other, ExtPatch) and super(ExtPatch, self).__eq__(other)
+    prod: grammar.NtDef
 
     def apply_patch(self, filename, grammar, nonterminals):
         # - name: non-terminal.

@@ -26,6 +26,8 @@ For very basic needs, see `lexer.LexicalGrammar`.
 
 """
 
+from __future__ import annotations
+
 import collections
 import io
 import pickle
@@ -819,33 +821,38 @@ def find_path(start_set, successors, test):
 # can do instead is generate a parser table.
 
 
-# An LRItem is a snapshot of progress through a single specific production.
-#
-# *   `prod_index` identifies the production. (Every production in the grammar
-#     gets a unique index; see the loop that computes
-#     prods_with_indexes_by_nt.)
-#
-# *   `offset` is the position of the cursor within the production.
-#
-# `lookahead` and `followed_by` are two totally different kinds of lookahead.
-#
-# *   `lookahead` is the LookaheadRule, if any, that applies to the immediately
-#     upcoming input. It is present only if this LRItem is subject to a
-#     `[lookahead]` restriction; otherwise it's None. These restrictions can't
-#     extend beyond the end of a production, or else the grammar is invalid.
-#     This implements the lookahead restrictions in the ECMAScript grammar.
-#     It is not part of any account of LR I've seen.
-#
-# *   `followed_by` is a completely different kind of lookahead restriction.
-#     This is the kind of lookahead that is a central part of canonical LR
-#     table generation.  It applies to the token *after* the whole current
-#     production, so `followed_by` always applies to completely different and
-#     later tokens than `lookahead`.  `followed_by` is a set of terminals; if
-#     `None` is in this set, it means `END`, not that the LRItem is
-#     unrestricted.
-#
-LRItem = collections.namedtuple(
-    "LRItem", "prod_index offset lookahead followed_by")
+@dataclass(frozen=True, order=True)
+class LRItem:
+    """A snapshot of progress through a single specific production.
+
+    *   `prod_index` identifies the production. (Every production in the grammar
+        gets a unique index; see the loop that computes
+        prods_with_indexes_by_nt.)
+
+    *   `offset` is the position of the cursor within the production.
+
+    `lookahead` and `followed_by` are two totally different kinds of lookahead.
+
+    *   `lookahead` is the LookaheadRule, if any, that applies to the immediately
+        upcoming input. It is present only if this LRItem is subject to a
+        `[lookahead]` restriction; otherwise it's None. These restrictions can't
+        extend beyond the end of a production, or else the grammar is invalid.
+        This implements the lookahead restrictions in the ECMAScript grammar.
+        It is not part of any account of LR I've seen.
+
+    *   `followed_by` is a completely different kind of lookahead restriction.
+        This is the kind of lookahead that is a central part of canonical LR
+        table generation.  It applies to the token *after* the whole current
+        production, so `followed_by` always applies to completely different and
+        later tokens than `lookahead`.  `followed_by` is a set of terminals; if
+        `None` is in this set, it means `END`, not that the LRItem is
+        unrestricted.
+    """
+
+    prod_index: int
+    offset: int
+    lookahead: typing.Optional[LookaheadRule]
+    followed_by: typing.Set[typing.Optional[str]]
 
 
 def assert_items_are_compatible(grammar, prods, items):
@@ -1610,23 +1617,27 @@ class CanonicalGrammar:
         self.grammar = grammar
 
 
-# An edge in a Parse table is a tuple of a source state and the term followed
-# to exit this state. The destination is not saved here as it can easily be
-# inferred by looking it up in the parse table.
-#
-# Note, the term might be `None` if no term is specified yet. This is useful
-# when manipulating a list of edges and we know that we are taking transitions
-# from a given state, but not yet with which term.
-#
-#   state: Index of the state from which this directed edge is coming from.
-#
-#   term: Edge transition value, this can be a terminal, non-terminal or an
-#       action to be executed on an epsilon transition.
-Edge = collections.namedtuple("Edge", "src term")
+@dataclass(frozen=True)
+class Edge:
+    """An edge in a Parse table is a tuple of a source state and the term followed
+    to exit this state. The destination is not saved here as it can easily be
+    inferred by looking it up in the parse table.
+
+    Note, the term might be `None` if no term is specified yet. This is useful
+    when manipulating a list of edges and we know that we are taking transitions
+    from a given state, but not yet with which term.
+
+      src: Index of the state from which this directed edge is coming from.
+
+      term: Edge transition value, this can be a terminal, non-terminal or an
+          action to be executed on an epsilon transition.
+    """
+    src: int
+    term: typing.Union[str, Nt, Action]
 
 
 def edge_str(edge):
-    assert isinstance(edge, (Edge, Edge))
+    assert isinstance(edge, Edge)
     return "{} -- {} -->".format(edge.src, str(edge.term))
 
 
@@ -1750,7 +1761,7 @@ class StateAndTransitions:
             (k, state_map[s]) for k, s in self.epsilon
         ]
         self.backedges = set(
-            Edge(state_map[s], k) for s, k in self.backedges
+            Edge(state_map[edge.src], edge.term) for edge in self.backedges
         )
 
     def get_error_symbol(self):
@@ -2033,38 +2044,46 @@ class LR0Generator:
                 ), followed_by)
 
 
-# To fix inconsistencies of the grammar, we have to traverse the grammar both
-# forward by using the lookahead and backward by using the parser's emulated
-# stack recovered from reduce actions.
-#
-# To do so we define the notion of abstract parser state (APS), which is a
-# tuple which represent the known state of the parser, as:
-#   (stack, shift, lookahead, actions)
-#
-#   stack: This is the stack at the location where we started investigating.
-#          Which means that the last element of the stack would be the location
-#          where we started.
-#
-#   shift: This is the stack computed after the traversal of edges. It is
-#          reduced each time a reduce action is encountered, and the rest of
-#          the production content is added back to the stack, as newly acquired
-#          context. The last element is the last state reached through the
-#          sequence of lookahead and actions.
-#
-#   lookahead: This is the list of terminals encountered while pushing edges
-#          through the list of terminals.
-#
-#   actions: This is the list of actions that would be executed as we push
-#          edges. Maybe we should rename this history. This is a list of edges
-#          taken, which helps tracking which state got visited since we
-#          started.
-#
-#   replay: This is the list of lookahead terminals and non-terminals which
-#          remains to be executed. This represents the fact that reduce actions
-#          are popping elements which are below the top of the stack, and add
-#          them back to the stack.
-#
-APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
+@dataclass(frozen=True)
+class APS:
+    """Abstract parser state.
+
+    To fix inconsistencies of the grammar, we have to traverse the grammar both
+    forward by using the lookahead and backward by using the parser's emulated
+    stack recovered from reduce actions.
+
+    To do so we define the notion of abstract parser state (APS), which is a
+    tuple which represent the known state of the parser, as:
+      (stack, shift, lookahead, actions)
+
+      stack: This is the stack at the location where we started investigating.
+             Which means that the last element of the stack would be the location
+             where we started.
+
+      shift: This is the stack computed after the traversal of edges. It is
+             reduced each time a reduce action is encountered, and the rest of
+             the production content is added back to the stack, as newly acquired
+             context. The last element is the last state reached through the
+             sequence of lookahead and actions.
+
+      lookahead: This is the list of terminals encountered while pushing edges
+             through the list of terminals.
+
+      actions: This is the list of actions that would be executed as we push
+             edges. Maybe we should rename this history. This is a list of edges
+             taken, which helps tracking which state got visited since we
+             started.
+
+      replay: This is the list of lookahead terminals and non-terminals which
+             remains to be executed. This represents the fact that reduce actions
+             are popping elements which are below the top of the stack, and add
+             them back to the stack.
+    """
+    stack: typing.List[Edge]
+    shift: typing.List[Edge]
+    lookahead: typing.List[str]
+    actions: typing.List[Edge]
+    replay: typing.List[typing.Union[str, Nt]]
 
 
 def aps_str(aps, name="aps"):
@@ -2297,9 +2316,9 @@ class ParseTable:
         while todo:
             s = todo.pop()
             reachable_back.add(s)
-            for s, _ in self.states[s].backedges:
-                if s not in reachable_back:
-                    todo.append(s)
+            for edge in self.states[s].backedges:
+                if edge.src not in reachable_back:
+                    todo.append(edge.src)
         for _, s in self.named_goals:
             if s in reachable_back:
                 return True
@@ -2487,7 +2506,12 @@ class ParseTable:
 
         """
         assert is_valid_aps(aps)
-        st, sh, la, ac, rp = aps
+        st = aps.stack
+        sh = aps.shift
+        la = aps.lookahead
+        ac = aps.actions
+        rp = aps.replay
+
         last_edge = sh[-1]
         state = self.states[last_edge.src]
         if aps.replay == []:
@@ -3193,11 +3217,11 @@ class ParseTable:
             ref = state_list[0]
             replace_edges = [e for s in state_list[1:] for e in s.backedges]
             hit = False
-            for src, term in replace_edges:
-                src = self.states[src]
+            for edge in replace_edges:
+                src = self.states[edge.src]
                 # print("replace {} -- {} --> {}, by {} -- {} --> {}"
                 #       .format(src.index, term, src[term], src.index, term, ref.index))
-                self.replace_edge(src, term, ref.index, maybe_unreachable)
+                self.replace_edge(src, edge.term, ref.index, maybe_unreachable)
                 hit = True
             return hit
 
