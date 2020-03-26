@@ -1409,17 +1409,10 @@ impl<'alloc> Lexer<'alloc> {
     // ------------------------------------------------------------------------
     // 11.8.5 Regular Expression Literals
 
-    fn regular_expression_backslash_sequence(
-        &mut self,
-        text: &mut String<'alloc>,
-    ) -> Result<'alloc, ()> {
-        text.push('\\');
+    fn regular_expression_backslash_sequence(&mut self) -> Result<'alloc, ()> {
         match self.chars.next() {
             None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => Err(ParseError::UnterminatedRegExp),
-            Some(c) => {
-                text.push(c);
-                Ok(())
-            }
+            Some(_) => Ok(()),
         }
     }
 
@@ -1440,7 +1433,6 @@ impl<'alloc> Lexer<'alloc> {
                 }
                 Some('[') => {
                     // RegularExpressionClass.
-                    builder.push_matching('[');
                     loop {
                         match self.chars.next() {
                             None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => {
@@ -1450,32 +1442,23 @@ impl<'alloc> Lexer<'alloc> {
                                 break;
                             }
                             Some('\\') => {
-                                let text = builder.get_mut_string_without_current_ascii_char(&self);
-                                self.regular_expression_backslash_sequence(text)?;
+                                self.regular_expression_backslash_sequence()?;
                             }
-                            Some(ch) => {
-                                builder.push_matching(ch);
-                            }
+                            Some(_) => {}
                         }
                     }
-                    builder.push_matching(']');
                 }
                 Some('\\') => {
-                    let text = builder.get_mut_string_without_current_ascii_char(&self);
-                    self.regular_expression_backslash_sequence(text)?;
+                    self.regular_expression_backslash_sequence()?;
                 }
-                Some(ch) => {
-                    builder.push_matching(ch);
-                }
+                Some(_) => {}
             }
         }
-        builder.push_matching('/');
         let mut flag_text = AutoCow::new(&self);
         while let Some(ch) = self.peek() {
             match ch {
                 '$' | '_' | 'a'..='z' | 'A'..='Z' | '0'..='9' => {
                     self.chars.next();
-                    builder.push_matching(ch);
                     flag_text.push_matching(ch);
                 }
                 _ => break,
@@ -1887,7 +1870,6 @@ impl<'alloc> Lexer<'alloc> {
                                 }),
                             }
                         }
-                        builder.push_matching('/');
                         return self.regular_expression_literal(&mut builder);
                     }
                 },

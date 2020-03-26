@@ -94,7 +94,6 @@ pub struct AstBuilder<'alloc> {
 
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
 
-    #[allow(dead_code)]
     slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 }
 
@@ -244,18 +243,49 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
-        let pattern = token.value.as_slice();
-        let global: bool = false;
-        let ignore_case: bool = false;
-        let multi_line: bool = false;
-        let sticky: bool = false;
-        let unicode: bool = false;
+        let source = self.slices.borrow().get(token.value.as_slice());
+
+        debug_assert!(source.chars().nth(0).unwrap() == '/');
+
+        let end = source.rfind('/').unwrap();
+
+        let pattern = self.slices.borrow_mut().insert(&source[1..end]);
+        let flags = &source[end + 1..];
+
+        let mut global: bool = false;
+        let mut ignore_case: bool = false;
+        let mut multi_line: bool = false;
+        let mut dot_all: bool = false;
+        let mut unicode: bool = false;
+        let mut sticky: bool = false;
+        for c in flags.chars() {
+            if c == 'g' {
+                global = true;
+            }
+            if c == 'i' {
+                ignore_case = true;
+            }
+            if c == 'm' {
+                multi_line = true;
+            }
+            if c == 's' {
+                dot_all = true;
+            }
+            if c == 'u' {
+                unicode = true;
+            }
+            if c == 'y' {
+                sticky = true;
+            }
+        }
+
         let loc = token.loc;
         self.alloc(Expression::LiteralRegExpExpression {
             pattern,
             global,
             ignore_case,
             multi_line,
+            dot_all,
             sticky,
             unicode,
             loc,
