@@ -6,23 +6,19 @@ mod emitter;
 mod emitter_scope;
 mod expression_emitter;
 mod forward_jump_emitter;
-mod frame_slot;
-mod free_name_tracker;
 mod gcthings;
 mod object_emitter;
 pub mod opcode;
 pub mod opcode_info;
 mod reference_op_emitter;
-mod scope;
 mod scope_notes;
-mod scope_pass;
 mod script_atom_set;
 
 extern crate jsparagus_ast as ast;
+extern crate jsparagus_scope as scope;
 
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use crate::gcthings::GCThing;
-pub use crate::scope::{BindingName, ScopeData};
 pub use crate::scope_notes::ScopeNote;
 pub use dis::dis;
 
@@ -33,7 +29,7 @@ pub fn emit<'alloc>(
     options: &EmitOptions,
     atoms: SourceAtomSet<'alloc>,
 ) -> Result<EmitResult<'alloc>, EmitError> {
-    let scope_data_map = scope_pass::generate_scope_data(ast);
+    let scope_data_map = scope::generate_scope_data(ast);
     ast_emitter::emit_program(ast, options, atoms, scope_data_map)
 }
 

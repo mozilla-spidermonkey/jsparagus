@@ -6,14 +6,14 @@
 #![allow(dead_code)]
 
 use crate::compilation_info::CompilationInfo;
-use crate::frame_slot::FrameSlot;
 use crate::gcthings::{GCThing, GCThingIndex, GCThingList};
 use crate::opcode::Opcode;
-use crate::scope::{ScopeData, ScopeIndex};
 use crate::scope_notes::{ScopeNote, ScopeNoteIndex, ScopeNoteList};
 use crate::script_atom_set::{ScriptAtomSet, ScriptAtomSetIndex};
 use ast::source_atom_set::SourceAtomSetIndex;
 use byteorder::{ByteOrder, LittleEndian};
+use scope::data::{ScopeData, ScopeIndex};
+use scope::frame_slot::FrameSlot;
 use std::cmp;
 use std::convert::TryInto;
 use std::fmt;

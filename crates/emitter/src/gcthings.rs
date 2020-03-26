@@ -1,4 +1,4 @@
-use crate::scope::ScopeIndex;
+use scope::data::ScopeIndex;
 
 /// Corresponds to js::frontend::GCThingList::ListType
 /// in m-c/js/src/frontend/BytecodeSection.h.
