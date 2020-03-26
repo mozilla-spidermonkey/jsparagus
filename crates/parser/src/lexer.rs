@@ -3,6 +3,7 @@
 use crate::numeric_value::{parse_float, parse_int, NumericLiteralBase};
 use crate::parser::Parser;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
+use ast::source_slice_list::SourceSliceList;
 use ast::SourceLocation;
 use bumpalo::{collections::String, Bump};
 use generated_parser::{ParseError, Result, TerminalId, Token, TokenValue};
@@ -26,6 +27,8 @@ pub struct Lexer<'alloc> {
     is_on_new_line: bool,
 
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+
+    slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 }
 
 enum NumericResult {
@@ -44,8 +47,9 @@ impl<'alloc> Lexer<'alloc> {
         allocator: &'alloc Bump,
         chars: Chars<'alloc>,
         atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+        slices: Rc<RefCell<SourceSliceList<'alloc>>>,
     ) -> Lexer<'alloc> {
-        Self::with_offset(allocator, chars, 0, atoms)
+        Self::with_offset(allocator, chars, 0, atoms, slices)
     }
 
     /// Create a lexer for a part of a JS script or module. `offset` is the
@@ -56,6 +60,7 @@ impl<'alloc> Lexer<'alloc> {
         chars: Chars<'alloc>,
         offset: usize,
         atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
+        slices: Rc<RefCell<SourceSliceList<'alloc>>>,
     ) -> Lexer<'alloc> {
         let source_length = offset + chars.as_str().len();
         Lexer {
@@ -64,6 +69,7 @@ impl<'alloc> Lexer<'alloc> {
             chars,
             is_on_new_line: true,
             atoms,
+            slices,
         }
     }
 
@@ -1511,7 +1517,7 @@ impl<'alloc> Lexer<'alloc> {
         Ok(AdvanceResult {
             terminal_id: TerminalId::RegularExpressionLiteral,
             loc: SourceLocation::new(offset, self.offset()),
-            value: self.string_to_token_value(literal),
+            value: self.slice_to_token_value(literal),
         })
     }
 
@@ -2199,6 +2205,11 @@ impl<'alloc> Lexer<'alloc> {
     fn string_to_token_value(&mut self, s: &'alloc str) -> TokenValue {
         let index = self.atoms.borrow_mut().insert(s);
         TokenValue::Atom(index)
+    }
+
+    fn slice_to_token_value(&mut self, s: &'alloc str) -> TokenValue {
+        let index = self.slices.borrow_mut().insert(s);
+        TokenValue::Slice(index)
     }
 
     fn numeric_result_to_advance_result(

@@ -380,6 +380,8 @@ def pass_(ast):
                 pass
             elif ty.name == "SourceAtomSetIndex":
                 pass
+            elif ty.name == "SourceSliceIndex":
+                pass
             elif ty.name == 'Box':
                 write(indent, "self.{}({});", to_method_name(ty.params[0].name), var)
             else:
@@ -411,6 +413,7 @@ def pass_(ast):
         write(0, "")
         write(0, "use crate::arena;")
         write(0, "use crate::source_atom_set::SourceAtomSetIndex;")
+        write(0, "use crate::source_slice_list::SourceSliceIndex;")
         write(0, "use crate::types::*;")
         write(0, "")
         write(0, "pub trait Pass<'alloc> {")
@@ -565,6 +568,7 @@ def ast_(ast):
         write(0, "use crate::source_location::SourceLocation;")
         write(0, "use crate::arena;")
         write(0, "use crate::source_atom_set::SourceAtomSetIndex;")
+        write(0, "use crate::source_slice_list::SourceSliceIndex;")
         write(0, "")
         for type_decl in ast.type_decls.values():
             type_decl.write_rust_type_decl(ast, write)
@@ -621,6 +625,7 @@ def dump(ast):
         write(0, '')
         write(0, 'use crate::arena;')
         write(0, 'use crate::source_atom_set::{SourceAtomSet, SourceAtomSetIndex};')
+        write(0, "use crate::source_slice_list::{SourceSliceList, SourceSliceIndex};")
         write(0, 'use crate::types::*;')
         write(0, 'use std::ops::Deref;')
         write(0, 'use std::io;')
@@ -635,13 +640,13 @@ def dump(ast):
         write(0, '}')
         write(0, '')
         write(0, 'pub trait ASTDump {')
-        write(1, 'fn dump_with_atoms<W>(&self, out: &mut W, atoms: &SourceAtomSet)')
+        write(1, 'fn dump_with_atoms<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList)')
         write(2, 'where W: io::Write')
         write(1, '{')
-        write(2, 'self.dump_with_atoms_at(out, atoms, 0);')
+        write(2, 'self.dump_with_atoms_at(out, atoms, slices, 0);')
         write(2, 'writeln!(out, "").expect("failed to dump");')
         write(1, '}')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write;')
         write(0, '}')
         write(0, '')
@@ -653,7 +658,7 @@ def dump(ast):
             write(0, 'impl<\'alloc> ASTDump for {}{} {{',
                   type_decl.name,
                   type_decl.lifetime_params())
-            write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+            write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
             write(2, 'where W: io::Write')
             write(1, '{')
 
@@ -665,14 +670,14 @@ def dump(ast):
         write(0, 'impl<\'alloc, T> ASTDump for arena::Vec<\'alloc, T>')
         write(1, 'where T: ASTDump')
         write(0, '{')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
         write(2, 'write!(out, "[").expect("failed to dump");')
         write(2, 'if self.len() > 0 {')
         write(3, 'for item in self {')
         write(4, 'newline(out, depth + 1);')
-        write(4, 'item.dump_with_atoms_at(out, atoms, depth + 1);')
+        write(4, 'item.dump_with_atoms_at(out, atoms, slices, depth + 1);')
         write(3, '}')
         write(3, 'newline(out, depth);')
         write(2, '}')
@@ -684,12 +689,12 @@ def dump(ast):
         write(0, 'impl<T> ASTDump for Option<T>')
         write(1, 'where T: ASTDump')
         write(0, '{')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
         write(2, 'match self {')
         write(3, 'Some(v) => {')
-        write(4, 'v.dump_with_atoms_at(out, atoms, depth);')
+        write(4, 'v.dump_with_atoms_at(out, atoms, slices, depth);')
         write(3, '}')
         write(3, 'None => {')
         write(4, 'write!(out, "None").expect("failed to dump");')
@@ -702,16 +707,16 @@ def dump(ast):
         write(0, 'impl<\'alloc, T> ASTDump for arena::Box<\'alloc, T>')
         write(1, 'where T: ASTDump')
         write(0, '{')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
-        write(2, 'self.deref().dump_with_atoms_at(out, atoms, depth);')
+        write(2, 'self.deref().dump_with_atoms_at(out, atoms, slices, depth);')
         write(1, '}')
         write(0, '}')
         write(0, '')
 
         write(0, 'impl ASTDump for bool {')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
         write(2, 'if *self {')
@@ -724,15 +729,23 @@ def dump(ast):
         write(0, '')
 
         write(0, 'impl ASTDump for SourceAtomSetIndex {')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
         write(2, 'write!(out, "{:?}", atoms.get(self.clone())).expect("failed to dump");')
         write(1, '}')
         write(0, '}')
 
+        write(0, 'impl ASTDump for SourceSliceIndex {')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
+        write(2, 'where W: io::Write')
+        write(1, '{')
+        write(2, 'write!(out, "{:?}", slices.get(self.clone())).expect("failed to dump");')
+        write(1, '}')
+        write(0, '}')
+
         write(0, 'impl ASTDump for f64 {')
-        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, depth: usize)')
+        write(1, 'fn dump_with_atoms_at<W>(&self, out: &mut W, atoms: &SourceAtomSet, slices: &SourceSliceList, depth: usize)')
         write(2, 'where W: io::Write')
         write(1, '{')
         write(2, 'write!(out, "{}", self).expect("failed to dump");')
@@ -791,7 +804,7 @@ class Struct(AggregateTypeDecl):
             else:
                 write(2, 'write!(out, " ").expect("failed to dump");')
             write(2, 'write!(out, "{}=").expect("failed to dump");', name)
-            write(2, 'self.{}.dump_with_atoms_at(out, atoms, depth + 1);', name)
+            write(2, 'self.{}.dump_with_atoms_at(out, atoms, slices, depth + 1);', name)
         write(2, 'write!(out, ")").expect("failed to dump");')
 
 
@@ -892,13 +905,13 @@ class Enum(AggregateTypeDecl):
                     else:
                         write(4, 'write!(out, " ").expect("failed to dump");')
                     write(4, 'write!(out, "{}=").expect("failed to dump");', field_name)
-                    write(4, '{}.dump_with_atoms_at(out, atoms, depth + 1);', field_name)
+                    write(4, '{}.dump_with_atoms_at(out, atoms, slices, depth + 1);', field_name)
 
                 write(4, 'write!(out, ")").expect("failed to dump");')
                 write(3, '}')
             else:
                 write(3, '{}::{}(ast) => {{', self.name, variant_name)
-                write(4, 'ast.dump_with_atoms_at(out, atoms, depth);')
+                write(4, 'ast.dump_with_atoms_at(out, atoms, slices, depth);')
                 write(3, '}')
         write(2, '}')
 

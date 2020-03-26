@@ -4,6 +4,7 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::{parse_script, ParseOptions};
 use ast::source_atom_set::SourceAtomSet;
+use ast::source_slice_list::SourceSliceList;
 use ast::{arena, source_location::SourceLocation, types::*};
 use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
@@ -70,7 +71,8 @@ where
     let buf = arena::alloc_str(allocator, &chunks_to_string(code));
     let options = ParseOptions::new();
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-    parse_script(allocator, &buf, &options, atoms.clone())
+    let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    parse_script(allocator, &buf, &options, atoms, slices)
 }
 
 fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
@@ -132,19 +134,38 @@ fn assert_incomplete<'alloc, T: IntoChunks<'alloc>>(code: T) {
 // same sequence of tokens (although possibly at different offsets).
 fn assert_same_tokens<'alloc>(left: &str, right: &str) {
     let allocator = &Bump::new();
-    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-    let mut left_lexer = Lexer::new(allocator, left.chars(), atoms.clone());
-    let mut right_lexer = Lexer::new(allocator, right.chars(), atoms.clone());
+    let left_atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    let left_slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let right_atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    let right_slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let mut left_lexer = Lexer::new(
+        allocator,
+        left.chars(),
+        left_atoms.clone(),
+        left_slices.clone(),
+    );
+    let mut right_lexer = Lexer::new(
+        allocator,
+        right.chars(),
+        right_atoms.clone(),
+        right_slices.clone(),
+    );
 
-    let mut parser = Parser::new(
-        AstBuilder::new(allocator, atoms.clone()),
+    let mut left_parser = Parser::new(
+        AstBuilder::new(allocator, left_atoms, left_slices),
+        generated_parser::START_STATE_MODULE,
+    );
+    let mut right_parser = Parser::new(
+        AstBuilder::new(allocator, right_atoms, right_slices),
         generated_parser::START_STATE_MODULE,
     );
 
     loop {
-        let left_token = left_lexer.next(&parser).expect("error parsing left string");
+        let left_token = left_lexer
+            .next(&left_parser)
+            .expect("error parsing left string");
         let right_token = right_lexer
-            .next(&parser)
+            .next(&right_parser)
             .expect("error parsing right string");
         assert_eq!(
             left_token.terminal_id, right_token.terminal_id,
@@ -160,18 +181,21 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
         if left_token.terminal_id == TerminalId::End {
             break;
         }
-        parser.write_token(&left_token).unwrap();
+        left_parser.write_token(&left_token).unwrap();
+        right_parser.write_token(&right_token).unwrap();
     }
-    parser.close(left_lexer.offset()).unwrap();
+    left_parser.close(left_lexer.offset()).unwrap();
+    right_parser.close(left_lexer.offset()).unwrap();
 }
 
 fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     let buf = chunks_to_string(code);
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-    let mut lexer = Lexer::new(allocator, buf.chars(), atoms.clone());
+    let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let mut lexer = Lexer::new(allocator, buf.chars(), atoms.clone(), slices.clone());
     let mut parser = Parser::new(
-        AstBuilder::new(allocator, atoms.clone()),
+        AstBuilder::new(allocator, atoms, slices),
         generated_parser::START_STATE_SCRIPT,
     );
     loop {

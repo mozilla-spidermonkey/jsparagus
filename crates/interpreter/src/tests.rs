@@ -1,4 +1,5 @@
 use ast::source_atom_set::SourceAtomSet;
+use ast::source_slice_list::SourceSliceList;
 use bumpalo::Bump;
 use emitter::{emit, EmitOptions};
 use parser::{parse_script, ParseOptions};
@@ -11,13 +12,15 @@ fn try_evaluate(source: &str) -> Result<JSValue, EvalError> {
     let alloc = &Bump::new();
     let parse_options = ParseOptions::new();
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
-    let parse_result =
-        parse_script(alloc, source, &parse_options, atoms.clone()).expect("Failed to parse");
+    let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let parse_result = parse_script(alloc, source, &parse_options, atoms.clone(), slices.clone())
+        .expect("Failed to parse");
     let emit_options = EmitOptions::new();
     let emit_result = emit(
         &mut ast::types::Program::Script(parse_result.unbox()),
         &emit_options,
         atoms.replace(SourceAtomSet::new_uninitialized()),
+        slices.replace(SourceSliceList::new()),
     )
     .expect("Should work!");
     evaluate(&emit_result, create_global())
