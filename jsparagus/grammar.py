@@ -439,7 +439,7 @@ class Grammar:
                     # nonterminal has exactly one production, there's no need
                     # to include the production index `i` to the method name.
                     if sole_production:
-                        method = nt
+                        method = str(nt)
                     else:
                         method = '{}_{}'.format(nt, i)
                     reducer = CallMethod(method, tuple(range(nargs)))
