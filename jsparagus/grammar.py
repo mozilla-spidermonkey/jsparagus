@@ -741,8 +741,6 @@ class Grammar:
                     condition = "{} == {!r}".format(param, value)
                 prefix = "#[if {}] ".format(condition)
             return prefix + self.rhs_to_str(rhs.body)
-        elif isinstance(rhs, Production):
-            return self.rhs_to_str(rhs.body)
         elif len(rhs) == 0:
             return "[empty]"
         else:
