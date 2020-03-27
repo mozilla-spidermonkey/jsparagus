@@ -155,12 +155,15 @@ class Parser:
             state = goto
             self.stack.append(StateTermValue(state, stv.term, stv.value, stv.new_line))
             action = self.actions[state]
-            while not isinstance(action, dict):  # Action
+            if not isinstance(action, dict):  # Action
                 if self.debug:
                     self._dbg_where("(action {})".format(state))
                 action(self, lexer)
                 state = self.stack[-1].state
                 action = self.actions[state]
+                # Actions should always unwind or do an epsilon transition to a
+                # shift state.
+                assert isinstance(action, dict)
             if self.replay != []:
                 stv = self.replay.pop()
                 if self.debug:

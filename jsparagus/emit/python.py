@@ -11,6 +11,8 @@ def write_python_parse_table(out, parse_table):
     # Disable MyPy type checking for everything in this module.
     out.write("# type: ignore\n\n")
 
+    shift_count = parse_table.count_shift_states()
+    action_count = parse_table.count_action_states()
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
         out.write(
@@ -76,8 +78,8 @@ def write_python_parse_table(out, parse_table):
         if isinstance(act, Seq):
             res = True
             for a in act.actions:
-                indent, res = write_action(a, indent)
-            return indent, res
+                indent, fallthrough = write_action(a, indent)
+            return indent, fallthrough
         raise ValueError("Unknown action type")
 
     # Write code correspond to each action which has to be performed.
@@ -90,17 +92,23 @@ def write_python_parse_table(out, parse_table):
         out.write("    value = None\n")
         for term, dest in state.edges():
             try:
-                indent, res = write_action(term, "    ")
+                indent, fallthrough = write_action(term, "    ")
             except Exception:
                 print("Error while writing code for {}\n\n".format(state))
                 parse_table.debug_info = True
                 print(parse_table.debug_context(state.index, "\n", "# "))
                 raise
-            if res:
-                out.write("{}top = parser.stack.pop()\n".format(indent))
-                out.write("{}top = StateTermValue({}, top.term, top.value, top.new_line)\n"
-                          .format(indent, dest))
-                out.write("{}parser.stack.append(top)\n".format(indent))
+            if fallthrough:
+                if dest >= shift_count:
+                    assert dest < shift_count + action_count
+                    # This is a transition to an action.
+                    out.write("{}state_{}_actions(parser, lexer)\n".format(indent, dest))
+                else:
+                    # This is a transition to a shift.
+                    out.write("{}top = parser.stack.pop()\n".format(indent))
+                    out.write("{}top = StateTermValue({}, top.term, top.value, top.new_line)\n"
+                              .format(indent, dest))
+                    out.write("{}parser.stack.append(top)\n".format(indent))
             out.write("{}return\n".format(indent))
         out.write("\n")
 
