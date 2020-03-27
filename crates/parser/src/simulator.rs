@@ -53,7 +53,7 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
             self.sim_state_stack.push(state);
             self.sim_node_stack.push(tv);
             // Execute any actions, such as reduce actions.
-            while state >= TABLES.shift_count {
+            if state >= TABLES.shift_count {
                 assert!(state < TABLES.action_count + TABLES.shift_count);
                 if noop_actions(self, state)? {
                     return Ok(true);
