@@ -191,7 +191,7 @@ class Grammar:
 
     *   self.type_to_mods - {Type: [str]} or None - ?
 
-    *   self._cache - {object: object} - Cache of immutable objects used by
+    *   self._cache - {Any: Any} - Cache of immutable objects used by
         Grammar.intern().
     """
 
@@ -203,7 +203,7 @@ class Grammar:
     init_nts: typing.List[typing.Union[Nt, InitNt]]
     exec_modes: typing.Optional[typing.DefaultDict[str, OrderedSet[types.Type]]]
     type_to_modes: typing.Optional[typing.Mapping[types.Type, typing.List[str]]]
-    _cache: typing.Dict[object, object]
+    _cache: typing.Dict[typing.Any, typing.Any]
 
     def __init__(
             self,
@@ -707,9 +707,7 @@ class Grammar:
         equality testing.
         """
         try:
-            # mypy doesn't have enough dependent-typing fanciness to say what
-            # self._cache is and get this return statement to type-check.
-            return self._cache[obj]  # type: ignore
+            return self._cache[obj]
         except KeyError:
             self._cache[obj] = obj
             return obj
