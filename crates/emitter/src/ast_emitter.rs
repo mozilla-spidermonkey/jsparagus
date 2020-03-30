@@ -22,7 +22,7 @@ use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
 use scope::data::ScopeDataMap;
 
-use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
+use crate::control_structures::{BreakEmitter, ForwardJumpEmitter, JumpKind, LoopStack};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program<'alloc>(
@@ -49,6 +49,7 @@ pub struct AstEmitter<'alloc, 'opt> {
     pub options: &'opt EmitOptions,
     pub compilation_info: CompilationInfo<'alloc>,
     pub scope_stack: EmitterScopeStack,
+    pub loop_stack: LoopStack,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
@@ -63,6 +64,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             options,
             compilation_info: CompilationInfo::new(atoms, slices, scope_data_map),
             scope_stack: EmitterScopeStack::new(),
+            loop_stack: LoopStack::new(),
         }
     }
 
@@ -92,7 +94,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 .emit(self)?;
             }
             Statement::BreakStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: BreakStatement"));
+                BreakEmitter {
+                    jump: JumpKind::Goto,
+                }
+                .emit(self);
             }
             Statement::ContinueStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
@@ -100,8 +105,21 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
-            Statement::DoWhileStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: DoWhileStatement"));
+            Statement::DoWhileStatement { block, test, .. } => {
+                self.loop_stack.open_loop(&mut self.emit);
+
+                self.emit_statement(block)?;
+
+                self.emit_expression(test)?;
+
+                BreakEmitter {
+                    jump: JumpKind::IfEq,
+                }
+                .emit(self);
+
+                // TODO: emit continue
+                // Merge point after cond fails
+                self.loop_stack.close_loop(&mut self.emit);
             }
             Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
@@ -116,8 +134,58 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::ForOfStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForOfStatement"));
             }
-            Statement::ForStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ForStatement"));
+            Statement::ForStatement {
+                init,
+                test,
+                update,
+                block,
+                ..
+            } => {
+                // TODO: implement offsets
+                // Parameters are the offset in the source code for each
+                // character below:
+                //
+                //   for ( x = 10 ; x < 20 ; x ++ ) { f(x); }
+                //   ^     ^        ^        ^
+                //   |     |        |        |
+                //   |     |        |        updatePos
+                //   |     |        |
+                //   |     |        condPos
+                //   |     |
+                //   |     initPos
+                //   |
+                //   forPos
+
+                if let Some(value) = init {
+                    match value {
+                        VariableDeclarationOrExpression::VariableDeclaration(ast) => {
+                            self.emit_variable_declaration_statement(ast)?;
+                        }
+                        VariableDeclarationOrExpression::Expression(expr) => {
+                            self.emit_expression(expr)?
+                        }
+                    }
+                }
+                self.loop_stack.open_loop(&mut self.emit);
+
+                if let Some(expr) = test {
+                    self.emit_expression(expr)?;
+                }
+
+                BreakEmitter {
+                    jump: JumpKind::IfEq,
+                }
+                .emit(self);
+
+                if let Some(expr) = update {
+                    self.emit_expression(expr)?;
+                }
+
+                self.emit_statement(block)?;
+
+                // loop_stack.emit_continue(emitter);
+                // Merge point after cond fails
+                self.loop_stack.close_loop(&mut self.emit);
             }
             Statement::IfStatement(if_statement) => {
                 self.emit_if(if_statement)?;
@@ -149,8 +217,35 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::VariableDeclarationStatement(ast) => {
                 self.emit_variable_declaration_statement(ast)?;
             }
-            Statement::WhileStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: WhileStatement"));
+            Statement::WhileStatement { test, block, .. } => {
+                // TODO: Set postions
+                // Parameters are the offset in the source code for each
+                // character below:
+                //
+                //   while ( x < 20 ) { ... }
+                //   ^       ^              ^
+                //   |       |              |
+                //   |       |              endPos_
+                //   |       |
+                //   |       condPos_
+                //   |
+                //   whilePos_
+
+                self.loop_stack.open_loop(&mut self.emit);
+
+                self.emit_expression(test)?;
+
+                BreakEmitter {
+                    jump: JumpKind::IfEq,
+                }
+                .emit(self);
+
+                self.emit_statement(block)?;
+
+                // TODO: emit continue here
+
+                // Merge point
+                self.loop_stack.close_loop(&mut self.emit);
             }
             Statement::WithStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WithStatement"));
