@@ -186,6 +186,63 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 stack.pop().ok_or(EvalError::EmptyStack)?;
             }
 
+            Opcode::Eq => {
+                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                // TODO: Add is special, i.e. string concat
+
+                match lval {
+                    JSValue::Number(lval) => stack.push(JSValue::Boolean(lval == to_number(&rval))),
+                    JSValue::String(_lval) => {
+                        // TODO: compare strings
+                        return Err(EvalError::NotImplemented(
+                            "compare strings with ==".to_owned(),
+                        ));
+                    }
+                    JSValue::Boolean(lval) => {
+                        stack.push(JSValue::Boolean(lval == to_boolean(&rval)))
+                    }
+                    _ => stack.push(JSValue::Boolean(to_boolean(&lval) == to_boolean(&rval))),
+                }
+            }
+
+            Opcode::Ne => {
+                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                match lval {
+                    JSValue::Number(lval) => stack.push(JSValue::Boolean(lval != to_number(&rval))),
+                    JSValue::String(_lval) => {
+                        // TODO: compare strings
+                        return Err(EvalError::NotImplemented(
+                            "compare strings with ==".to_owned(),
+                        ));
+                    }
+                    JSValue::Boolean(lval) => {
+                        stack.push(JSValue::Boolean(lval != to_boolean(&rval)))
+                    }
+                    _ => stack.push(JSValue::Boolean(to_boolean(&lval) != to_boolean(&rval))),
+                }
+            }
+
+            Opcode::StrictNe => {
+                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                match (lval, rval) {
+                    (JSValue::Number(lval), JSValue::Number(rval)) => {
+                        stack.push(JSValue::Boolean(lval != rval))
+                    }
+                    (JSValue::String(lval), JSValue::String(rval)) => {
+                        stack.push(JSValue::Boolean(lval != rval))
+                    }
+                    (JSValue::Boolean(lval), JSValue::Boolean(rval)) => {
+                        stack.push(JSValue::Boolean(lval != rval))
+                    }
+                    _ => stack.push(JSValue::Boolean(false)),
+                }
+            }
+
             Opcode::SetRval => {
                 rval = stack.pop().ok_or(EvalError::EmptyStack)?;
             }
@@ -361,6 +418,8 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
 
             Opcode::JumpTarget => {}
 
+            Opcode::LoopHead => {}
+
             Opcode::Dup => {
                 stack.push(stack.last().ok_or(EvalError::EmptyStack)?.clone());
             }
@@ -389,8 +448,9 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::CheckGlobalOrEvalDecl => {
                 // FIXME: Port CheckGlobalOrEvalDeclarationConflicts
                 //        from js/src/vm/EnvironmentObject.cpp.
-            }
+            },
 
+            Opcode::Nop => {},
             _ => return Err(EvalError::NotImplemented(format!("{:?}", op))),
         }
 
