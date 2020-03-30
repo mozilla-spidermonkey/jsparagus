@@ -385,6 +385,10 @@ def generate_emit_methods(out_f, opcodes, types):
             assert int(opcode.nuses) == -1
             method = 'emit_pop_n_op'
             extra_args = ', {}'.format(params[0][1])
+        elif op == 'RegExp':
+            assert len(params) == 1
+            assert params[0][0] == 'u32'
+            params[0] = ('GCThingIndex', params[0][1])
         else:
             assert int(opcode.nuses) != -1
 

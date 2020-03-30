@@ -293,9 +293,8 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                     sticky: *sticky,
                     unicode: *unicode,
                 };
-                // FIXME: Fix reg_exp method parameter type (after issue #393)
-                let index: usize = self.emit.get_regexp_gcthing_index(item).into();
-                self.emit.reg_exp(index as u32);
+                let index = self.emit.get_regexp_gcthing_index(item);
+                self.emit.reg_exp(index);
             }
 
             Expression::LiteralStringExpression { value, .. } => {
