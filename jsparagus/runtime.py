@@ -209,6 +209,9 @@ class Parser:
             assert isinstance(self.stack[1].term, Nt)
             return self.stack[1].value
 
+    def top_state(self):
+        return self.stack[-1].state
+
     def check_not_on_new_line(self, lexer, peek):
         if peek <= 0:
             raise ValueError("check_not_on_new_line got an impossible peek offset")

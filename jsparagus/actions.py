@@ -4,6 +4,7 @@ from __future__ import annotations
 import typing
 import dataclasses
 
+from .ordered import OrderedFrozenSet
 from .grammar import Element, ErrorSymbol, InitNt, Nt
 from . import types, grammar
 
@@ -64,6 +65,16 @@ class Action:
         "Return the conditional action."
         raise TypeError("Action.condition not implemented")
 
+    def check_same_variable(self, other: Action) -> bool:
+        "Return whether both conditionals are checking the same variable."
+        assert self.is_condition()
+        raise TypeError("Action.check_same_variable not implemented")
+
+    def check_different_values(self, other: Action) -> bool:
+        "Return whether these 2 conditions are mutually exclusive."
+        assert self.is_condition()
+        raise TypeError("Action.check_different_values not implemented")
+
     def follow_edge(self) -> bool:
         """Whether the execution of this action resume following the epsilon transition
         (True) or if it breaks the graph epsilon transition (False) and returns
@@ -78,7 +89,7 @@ class Action:
         """Returns a StackDiff which represents the mutation to be applied to the
         parser stack."""
         assert self.update_stack()
-        raise TypeError("Action::update_stack_with not implemented")
+        raise TypeError("Action.update_stack_with not implemented")
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         """Transpose this action with shifting the given terminal or Nt.
@@ -235,7 +246,8 @@ class Lookahead(Action):
 
     def is_inconsistent(self) -> bool:
         # A lookahead restriction cannot be encoded in code, it has to be
-        # solved using fix_with_lookahead.
+        # solved using fix_with_lookahead, which encodes the lookahead
+        # resolution in the generated parse table.
         return True
 
     def is_condition(self) -> bool:
@@ -243,6 +255,12 @@ class Lookahead(Action):
 
     def condition(self) -> Lookahead:
         return self
+
+    def check_same_variable(self, other: Action) -> bool:
+        raise TypeError("Lookahead.check_same_variables: Lookahead are always inconsistent")
+
+    def check_different_values(self, other: Action) -> bool:
+        raise TypeError("Lookahead.check_different_values: Lookahead are always inconsistent")
 
     def __str__(self) -> str:
         return "Lookahead({}, {})".format(self.terms, self.accept)
@@ -281,6 +299,12 @@ class CheckNotOnNewLine(Action):
     def condition(self) -> CheckNotOnNewLine:
         return self
 
+    def check_same_variable(self, other: Action) -> bool:
+        return isinstance(other, CheckNotOnNewLine) and self.offset == other.offset
+
+    def check_different_values(self, other: Action) -> bool:
+        return False
+
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
             return True
@@ -288,6 +312,39 @@ class CheckNotOnNewLine(Action):
 
     def __str__(self) -> str:
         return "CheckNotOnNewLine({})".format(self.offset)
+
+
+class FilterStates(Action):
+    """Check whether the stack at a given depth match the state value, if so
+    transition to the destination, otherwise check other states."""
+    __slots__ = ['states']
+
+    states: OrderedFrozenSet[StateId]
+
+    def __init__(self, states: typing.Iterable[StateId]):
+        super().__init__()
+        # Set of states which can follow this transition.
+        self.states = OrderedFrozenSet(sorted(states))
+
+    def is_condition(self) -> bool:
+        return True
+
+    def condition(self) -> FilterStates:
+        return self
+
+    def check_same_variable(self, other: Action) -> bool:
+        return isinstance(other, FilterStates)
+
+    def check_different_values(self, other: Action) -> bool:
+        assert isinstance(other, FilterStates)
+        return self.states.is_disjoint(other.states)
+
+    def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> FilterStates:
+        states = list(state_map[s] for s in self.states)
+        return FilterStates(states)
+
+    def __str__(self) -> str:
+        return "FilterStates({})".format(self.states)
 
 
 class FilterFlag(Action):
@@ -308,6 +365,13 @@ class FilterFlag(Action):
 
     def condition(self) -> FilterFlag:
         return self
+
+    def check_same_variable(self, other: Action) -> bool:
+        return isinstance(other, FilterFlag) and self.flag == other.flag
+
+    def check_different_values(self, other: Action) -> bool:
+        assert isinstance(other, FilterFlag)
+        return self.value != other.value
 
     def __str__(self) -> str:
         return "FilterFlag({}, {})".format(self.flag, self.value)

@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import typing
 from dataclasses import dataclass
-from .grammar import Nt
 from .lr0 import ShiftedTerm, Term
-from .actions import Action
+from .actions import Action, FilterStates
 
 # Avoid circular reference between this module and parse_table.py
 if typing.TYPE_CHECKING:
@@ -191,6 +190,7 @@ class APS:
         st, sh, la, rp, hs = self.stack, self.shift, self.lookahead, self.replay, self.history
         last_edge = sh[-1]
         state = pt.states[last_edge.src]
+        state_match_shift_end = True
         if self.replay == []:
             for term, to in state.shifted_edges():
                 edge = Edge(last_edge.src, term)
@@ -288,6 +288,22 @@ class APS:
                     new_rp = new_rp + rp
                     new_la = la[:max(len(la) - replay, 0)]
                     yield APS(new_st, new_sh, new_la, new_rp, hs + [edge], True)
+            elif isinstance(a, FilterStates):
+                # FilterStates is added by the graph transformation and is
+                # expected to be added after the replacement of
+                # Reduce(Unwind(...)) by Unwind, FilterStates and Replay
+                # actions. Thus, at the time when FilterStates is encountered,
+                # we do not expect `self.states` to match the last element of
+                # the `shift` list to match.
+                assert not state_match_shift_end
+
+                # Emulate FilterStates condition, which is to branch to the
+                # destination if the state value from the top of the stack is
+                # in the list of states of this condition.
+                if self.shift[-1].src in a.states:
+                    # TODO: add the to-state destination common to all actions
+                    # which are following edges.
+                    yield APS(st, sh, la, rp, hs + [edge], self.reducing)
             else:
                 edge_to = Edge(to, None)
                 yield APS(st, prev_sh + [edge_to], la, rp, hs + [edge], self.reducing)
