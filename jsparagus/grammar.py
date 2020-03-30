@@ -810,16 +810,22 @@ class Grammar:
         else:
             return self.symbols_to_str(rhs)
 
+    def nt_to_str(self, nt: LenientNt) -> str:
+        if isinstance(nt, Nt):
+            return self.element_to_str(nt)
+        else:
+            return str(nt)
+
     def production_to_str(
             self,
-            nt: typing.Union[str, Nt],
+            nt: LenientNt,
             rhs: LenientProduction,
             *reducer: ReduceExpr
     ) -> str:
         # As we have two ways of representing productions at the moment, just
         # take multiple arguments :(
         return "{} ::= {}{}".format(
-            self.element_to_str(nt),
+            self.nt_to_str(nt),
             self.rhs_to_str(rhs),
             "".join(" => " + expr_to_str(expr) for expr in reducer))
 
