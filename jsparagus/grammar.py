@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import typing
+import dataclasses
 from dataclasses import dataclass
 from .ordered import OrderedSet, OrderedFrozenSet
 from . import types
@@ -88,9 +89,7 @@ class Production:
                     .format(self.body, self.reducer, self.condition))
 
     def copy_with(self, **kwargs) -> Production:
-        return Production(body=kwargs.get('body', self.body),
-                          reducer=kwargs.get('reducer', self.reducer),
-                          condition=kwargs.get('condition', self.condition))
+        return dataclasses.replace(self, **kwargs)
 
 
 # *** Reduce expressions ******************************************************
@@ -1207,7 +1206,7 @@ class NtDef:
     type: typing.Optional[types.Type]
 
     def with_rhs_list(self, new_rhs_list: typing.List[Production]) -> NtDef:
-        return NtDef(self.params, new_rhs_list, self.type)
+        return dataclasses.replace(self, rhs_list=new_rhs_list)
 
 
 @dataclass(frozen=True)
