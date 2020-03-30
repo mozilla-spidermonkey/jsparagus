@@ -18,11 +18,7 @@ pub struct JumpPatchEmitter {
 }
 impl JumpPatchEmitter {
     pub fn patch_merge(self, emitter: &mut AstEmitter) {
-        // TODO: if multiple jumps arrive at same point, only single JumpTarget
-        // should be emitted. See:
-        // https://searchfox.org/mozilla-central/rev/49ed791eec93335abfe6c2880f84c324e73e47e6/js/src/frontend/BytecodeEmitter.cpp#371-377
-        emitter.emit.patch_jump_target(vec![self.offset]);
-        emitter.emit.jump_target();
+        emitter.emit.patch_and_emit_jump_target(vec![self.offset]);
 
         // If the previous opcode fall-through, it should have the same stack
         // depth.
@@ -30,11 +26,7 @@ impl JumpPatchEmitter {
     }
 
     pub fn patch_not_merge(self, emitter: &mut AstEmitter) {
-        // TODO: if multiple jumps arrive at same point, only single JumpTarget
-        // should be emitted. See:
-        // https://searchfox.org/mozilla-central/rev/49ed791eec93335abfe6c2880f84c324e73e47e6/js/src/frontend/BytecodeEmitter.cpp#371-377
-        emitter.emit.patch_jump_target(vec![self.offset]);
-        emitter.emit.jump_target();
+        emitter.emit.patch_and_emit_jump_target(vec![self.offset]);
 
         // If the previous opcode doesn't fall-through, overwrite the stack
         // depth.

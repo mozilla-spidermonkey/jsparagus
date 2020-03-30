@@ -16,6 +16,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use scope::data::{ScopeData, ScopeIndex};
 use scope::frame_slot::FrameSlot;
 use std::cmp;
+use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
 
@@ -127,6 +128,8 @@ pub struct InstructionWriter {
 
     regexps: RegExpList,
 
+    last_jump_offset: BytecodeOffset,
+
     main_offset: BytecodeOffset,
 
     /// The maximum number of fixed frame slots.
@@ -215,6 +218,7 @@ impl InstructionWriter {
             gcthings: GCThingList::new(),
             scope_notes: ScopeNoteList::new(),
             regexps: RegExpList::new(),
+            last_jump_offset: BytecodeOffset::new(0),
             main_offset: BytecodeOffset::new(0),
             max_fixed_slots: FrameSlot::new(0),
             stack_depth: 0,
@@ -376,17 +380,33 @@ impl InstructionWriter {
         }
     }
 
+    fn set_jump_target_offset(&mut self, target: BytecodeOffset) {
+        self.last_jump_offset = target;
+    }
+
     pub fn get_atom_index(&mut self, value: SourceAtomSetIndex) -> ScriptAtomSetIndex {
         self.atoms.insert(value)
     }
 
-    pub fn patch_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
-        let target = self.bytecode_offset();
-        for jump in jumplist {
-            let new_target = (target.offset - jump.offset) as i32;
-            let index = jump.offset + 1;
-            LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
+    pub fn patch_and_emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
+        let mut target = self.bytecode_offset();
+        let target_opcode = Opcode::try_from(self.bytecode[self.last_jump_offset.offset]).unwrap();
+        let last_jump = self.last_jump_offset;
+        if !target_opcode.is_jump_target() || last_jump.offset + 7 != target.offset {
+            self.set_jump_target_offset(target);
+            self.jump_target();
+        } else {
+            target = last_jump;
         }
+        for jump in jumplist {
+            self.patch_jump_to_target(target, jump);
+        }
+    }
+
+    pub fn patch_jump_to_target(&mut self, target: BytecodeOffset, jump: BytecodeOffset) {
+        let new_target = (target.offset as f64 - jump.offset as f64) as i32;
+        let index = jump.offset + 1;
+        LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
     }
 
     pub fn bytecode_offset(&mut self) -> BytecodeOffset {
