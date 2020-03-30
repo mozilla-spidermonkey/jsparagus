@@ -124,7 +124,7 @@ def write_python_parse_table(out, parse_table):
             row = {term: dest for term, dest in state.edges()}
             for err, dest in state.errors.items():
                 del row[err]
-                row[ErrorToken()] = dest
+                row[ErrorToken] = dest
             out.write("    " + repr(row) + ",\n")
         else:
             out.write("    state_{}_actions,\n".format(i))
