@@ -30,5 +30,6 @@ pub trait ParserTrait<'alloc, Value> {
     fn pop(&mut self) -> TermValue<Value>;
     fn replay(&mut self, tv: TermValue<Value>);
     fn epsilon(&mut self, state: usize);
+    fn top_state(&self) -> usize;
     fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool>;
 }
