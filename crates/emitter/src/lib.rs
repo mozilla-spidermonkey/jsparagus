@@ -20,6 +20,7 @@ extern crate jsparagus_scope as scope;
 
 pub use crate::emitter::{EmitError, EmitOptions, EmitResult};
 pub use crate::gcthings::GCThing;
+pub use crate::regexp::RegExpItem;
 pub use crate::scope_notes::ScopeNote;
 pub use dis::dis;
 

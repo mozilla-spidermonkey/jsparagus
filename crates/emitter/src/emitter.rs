@@ -292,6 +292,10 @@ impl InstructionWriter {
         self.bytecode.extend_from_slice(&value.to_le_bytes());
     }
 
+    fn write_g_c_thing_index(&mut self, value: GCThingIndex) {
+        self.write_u32(usize::from(value) as u32);
+    }
+
     fn write_script_atom_set_index(&mut self, atom_index: ScriptAtomSetIndex) {
         self.write_u32(atom_index.into());
     }
@@ -800,9 +804,9 @@ impl InstructionWriter {
         self.write_u32(object_index);
     }
 
-    pub fn reg_exp(&mut self, regexp_index: u32) {
+    pub fn reg_exp(&mut self, regexp_index: GCThingIndex) {
         self.emit_op(Opcode::RegExp);
-        self.write_u32(regexp_index);
+        self.write_g_c_thing_index(regexp_index);
     }
 
     pub fn lambda(&mut self, func_index: u32) {
