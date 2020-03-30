@@ -29,6 +29,7 @@ For very basic needs, see `lexer.LexicalGrammar`.
 from __future__ import annotations
 
 import collections
+import dataclasses
 import io
 import pickle
 import sys
@@ -96,11 +97,9 @@ def empty_nt_set(grammar):
             elif isinstance(expr, Some):
                 return Some(eval(expr.inner))
             elif isinstance(expr, CallMethod):
-                return CallMethod(
-                    expr.method,
-                    tuple(eval(arg_expr) for arg_expr in expr.args),
-                    expr.trait,
-                    expr.fallible
+                return dataclasses.replace(
+                    expr,
+                    args=tuple(eval(arg_expr) for arg_expr in expr.args)
                 )
             elif isinstance(expr, int):
                 e = stack[expr]
@@ -653,10 +652,11 @@ def expand_all_optional_elements(grammar):
                     elif isinstance(expr, Some):
                         return Some(adjust_reduce_expr(expr.inner))
                     elif isinstance(expr, CallMethod):
-                        return CallMethod(expr.method, [adjust_reduce_expr(arg)
-                                                        for arg in expr.args],
-                                          expr.trait,
-                                          expr.fallible)
+                        return dataclasses.replace(
+                            expr,
+                            args=tuple(adjust_reduce_expr(arg)
+                                       for arg in expr.args)
+                        )
                     elif expr == 'accept':
                         # doesn't need to be adjusted because 'accept' isn't
                         # turned into code downstream.
