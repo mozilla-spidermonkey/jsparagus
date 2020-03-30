@@ -43,11 +43,11 @@ from .grammar import (Grammar,
                       is_concrete_element,
                       Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
                       End, NoLineTerminatorHere, ErrorSymbol,
-                      LookaheadRule, lookahead_contains, lookahead_intersect)
+                      LookaheadRule)
 from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
                       FunCall, Seq)
 from . import emit
-from .runtime import ACCEPT, ErrorToken
+from .runtime import ErrorToken
 from .utils import keep_until
 from . import types
 from .aps import Edge, APS

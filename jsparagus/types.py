@@ -15,7 +15,6 @@ See infer_types() for more.
 
 from __future__ import annotations
 
-import collections
 from dataclasses import dataclass
 import typing
 from . import grammar
