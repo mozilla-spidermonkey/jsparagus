@@ -23,8 +23,12 @@ ERROR = ACCEPT - 1
 
 
 @dataclass(frozen=True)
-class ErrorToken:
-    pass
+class ErrorTokenClass:
+    def __repr__(self):
+        return 'ErrorToken'
+
+
+ErrorToken = ErrorTokenClass()
 
 
 def throw_syntax_error(actions, state, t, tokens):
@@ -38,12 +42,12 @@ def throw_syntax_error(actions, state, t, tokens):
     if End() in expected:
         expected.remove(End())
         expected.add("end of input")
-    if ErrorToken() in expected:
+    if ErrorToken in expected:
         # This is possible because we restore the stack in _try_error_handling
         # after reducing and then failing to find a recovery rule after all.
         # But don't tell people in error messages that an error is one of the
         # things we expect. It makes no sense.
-        expected.remove(ErrorToken())
+        expected.remove(ErrorToken)
 
     if len(expected) < 2:
         tokens.throw("expected {!r}, got {!r}".format(list(expected)[0], t))
@@ -219,7 +223,7 @@ class Parser:
     def _try_error_handling(self, lexer, stv):
         # Error recovery version of the code in write_terminal. Three differences
         # between this and write_terminal are commented below.
-        if isinstance(stv.term, ErrorToken):
+        if stv.term is ErrorToken:
             if stv.value == End():
                 lexer.throw_unexpected_end()
                 raise
@@ -231,7 +235,7 @@ class Parser:
         if error_code is not None:
             self.on_recover(error_code, lexer, stv)
             self.replay.append(stv)
-            self.replay.append(StateTermValue(0, ErrorToken(), stv.value, stv.new_line))
+            self.replay.append(StateTermValue(0, ErrorToken, stv.value, stv.new_line))
         elif stv.term == End():
             lexer.throw_unexpected_end()
             raise
