@@ -846,7 +846,7 @@ class LRItem:
     prod_index: int
     offset: int
     lookahead: typing.Optional[LookaheadRule]
-    followed_by: typing.Set[typing.Optional[str]]
+    followed_by: OrderedFrozenSet[typing.Optional[str]]
 
 
 def consume(iterator, progress):
@@ -1157,7 +1157,16 @@ class LR0Generator:
         "_hash",
     ]
 
-    def __init__(self, grammar, lr_items=[]):
+    grammar: CanonicalGrammar
+    lr_items: OrderedFrozenSet[LRItem]
+    key: str
+    _hash: int
+
+    def __init__(
+            self,
+            grammar: CanonicalGrammar,
+            lr_items: typing.Iterable[LRItem] = ()
+    ) -> None:
         self.grammar = grammar
         self.lr_items = OrderedFrozenSet(lr_items)
         # This is used to reuse states which have already been encoded.
@@ -1165,13 +1174,13 @@ class LR0Generator:
                            for item in sorted(self.lr_items))
         self._hash = hash(self.key)
 
-    def __eq__(self, other):
-        return self.key == other.key
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, LR0Generator) and self.key == other.key
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._hash
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = ""
         for lr_item in self.lr_items:
             s += self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item)
@@ -1185,13 +1194,11 @@ class LR0Generator:
         return OrderedFrozenSet(sorted(locations))
 
     @staticmethod
-    def start(grammar, nt):
-        assert isinstance(grammar, CanonicalGrammar)
-        assert isinstance(grammar.grammar, Grammar)
-        lr_items = []
+    def start(grammar: CanonicalGrammar, nt: Nt) -> LR0Generator:
+        lr_items: typing.List[LRItem] = []
         # Visit the initial non-terminal, as well as all the non-terminals
         # which are at the left of each productions.
-        todo = collections.deque()
+        todo: typing.Deque[Nt] = collections.deque()
         visited_nts = []
         todo.append(nt)
         while todo:
@@ -1205,7 +1212,7 @@ class LR0Generator:
                     prod_index=prod_index,
                     offset=0,
                     lookahead=None,
-                    followed_by=tuple(),
+                    followed_by=OrderedFrozenSet(),
                 ))
 
                 prod = grammar.prods[prod_index]
@@ -1290,7 +1297,7 @@ class LR0Generator:
             prod_index=lr_item.prod_index,
             offset=lr_item.offset + 1,
             lookahead=None,
-            followed_by=tuple(),
+            followed_by=OrderedFrozenSet(),
         ))
 
         # If the term is a non-terminal, then recursively add transitions from
@@ -1306,7 +1313,7 @@ class LR0Generator:
                     prod_index=prod_index,
                     offset=0,
                     lookahead=None,
-                    followed_by=tuple(),
+                    followed_by=OrderedFrozenSet(),
                 ), followed_by)
 
 
@@ -2446,15 +2453,27 @@ class ParseTable:
         return split_txt.join(txt for txt in sorted(context))
 
 
-def generate_parser_states(grammar, *, verbose=False, progress=False, debug=False):
-    assert isinstance(grammar, Grammar)
-    grammar = CanonicalGrammar(grammar)
-    parse_table = ParseTable(grammar, verbose, progress, debug)
+def generate_parser_states(
+        grammar: Grammar,
+        *,
+        verbose: bool = False,
+        progress: bool = False,
+        debug: bool = False
+) -> ParseTable:
+    parse_table = ParseTable(CanonicalGrammar(grammar), verbose, progress, debug)
     return parse_table
 
 
-def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
-                    target='python', handler_info=None):
+def generate_parser(
+        out: io.TextIOBase,
+        source: Grammar,
+        *,
+        verbose: bool = False,
+        progress: bool = False,
+        debug: bool = False,
+        target: str = 'python',
+        handler_info: typing.Any = None
+) -> None:
     assert target in ('python', 'rust')
 
     if isinstance(source, Grammar):
