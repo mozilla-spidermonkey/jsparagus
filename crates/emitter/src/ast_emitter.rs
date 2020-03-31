@@ -3,6 +3,7 @@
 //! Converts AST nodes to bytecode.
 
 use crate::array_emitter::*;
+use crate::block_emitter::BlockEmitter;
 use crate::compilation_info::CompilationInfo;
 use crate::emitter::{EmitError, EmitOptions, EmitResult, InstructionWriter};
 use crate::emitter_scope::{EmitterScopeStack, NameLocation};
@@ -83,19 +84,12 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 return Err(EmitError::NotImplemented("TODO: ClassDeclaration"));
             }
             Statement::BlockStatement { block, .. } => {
-                let scope_data_index = self.compilation_info.scope_data_map.get_index(block);
-
-                self.scope_stack.enter_lexical(
-                    &mut self.emit,
-                    &mut self.compilation_info.scope_data_map,
-                    scope_data_index,
-                );
-
-                for statement in &block.statements {
-                    self.emit_statement(statement)?;
+                BlockEmitter {
+                    scope_index: self.compilation_info.scope_data_map.get_index(block),
+                    statements: block.statements.iter(),
+                    statement: |emitter, statement| emitter.emit_statement(statement),
                 }
-
-                self.scope_stack.leave_lexical(&mut self.emit);
+                .emit(self)?;
             }
             Statement::BreakStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: BreakStatement"));
