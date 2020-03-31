@@ -20,7 +20,7 @@ def keep_until(
             return
 
 
-def consume(iterator, progress):
+def consume(iterator: typing.Iterable[T], progress: bool) -> None:
     """Drain the iterator. If progress is true, print dots on stdout."""
     i = 0
     to_feed = str(i)
