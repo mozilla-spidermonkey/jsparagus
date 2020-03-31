@@ -43,6 +43,27 @@ pub fn to_number(v: &JSValue) -> f64 {
     }
 }
 
+pub fn to_string(v: &JSValue) -> String {
+    match v {
+        JSValue::Boolean(true) => "true".to_string(),
+        JSValue::Boolean(false) => "false".to_string(),
+        JSValue::Number(n) => n.to_string(),
+        JSValue::String(ref s) => s.to_string(),
+        JSValue::Object(_) => "[object Object]".to_string(),
+        JSValue::NativeFunction(_) => "function toString() {\n    [native code]\n}".to_string(), // TODO: implement function toString
+        JSValue::Undefined => "undefined".to_string(),
+        JSValue::Null => "null".to_string(),
+    }
+}
+
+pub fn is_nullish(x: &JSValue) -> bool {
+    match x {
+        JSValue::Undefined => true,
+        JSValue::Null => true,
+        _ => false,
+    }
+}
+
 pub fn to_boolean(v: &JSValue) -> bool {
     match v {
         JSValue::Null | JSValue::Undefined => false,
@@ -67,6 +88,21 @@ pub fn strict_equality(x: &JSValue, y: &JSValue) -> bool {
         (JSValue::Number(a), JSValue::Number(b)) => a == b,
         (JSValue::String(ref a), JSValue::String(ref b)) => a == b,
         (JSValue::Object(ref a), JSValue::Object(ref b)) => a.as_ptr() == b.as_ptr(),
+        (JSValue::NativeFunction(a), JSValue::NativeFunction(b)) => std::ptr::eq(a, b),
+        _ => false,
+    }
+}
+
+pub fn equality(x: &JSValue, y: &JSValue) -> bool {
+    match (x, y) {
+        (JSValue::Undefined, b) => is_nullish(b),
+        (JSValue::Null, b) => is_nullish(b),
+        (JSValue::Boolean(a), b) => a == &to_boolean(b),
+        (JSValue::Number(a), b) => a == &to_number(b),
+        (JSValue::String(ref a), b) => a == &to_string(b),
+        // TODO: fix this
+        (JSValue::Object(ref a), JSValue::Object(ref b)) => a.as_ptr() == b.as_ptr(),
+        // TODO: fix this
         (JSValue::NativeFunction(a), JSValue::NativeFunction(b)) => std::ptr::eq(a, b),
         _ => false,
     }

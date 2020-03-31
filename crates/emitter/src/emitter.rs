@@ -110,6 +110,11 @@ impl BytecodeOffset {
     fn new(offset: usize) -> Self {
         Self { offset }
     }
+
+    pub fn end(self, emit: &InstructionWriter) -> usize {
+        let target_opcode = Opcode::try_from(emit.bytecode[self.offset]).unwrap();
+        self.offset + target_opcode.instruction_length()
+    }
 }
 
 impl From<BytecodeOffset> for usize {
@@ -128,7 +133,7 @@ pub struct InstructionWriter {
 
     regexps: RegExpList,
 
-    last_jump_offset: BytecodeOffset,
+    last_jump_target_offset: Option<BytecodeOffset>,
 
     main_offset: BytecodeOffset,
 
@@ -218,7 +223,7 @@ impl InstructionWriter {
             gcthings: GCThingList::new(),
             scope_notes: ScopeNoteList::new(),
             regexps: RegExpList::new(),
-            last_jump_offset: BytecodeOffset::new(0),
+            last_jump_target_offset: None,
             main_offset: BytecodeOffset::new(0),
             max_fixed_slots: FrameSlot::new(0),
             stack_depth: 0,
@@ -381,7 +386,7 @@ impl InstructionWriter {
     }
 
     fn set_jump_target_offset(&mut self, target: BytecodeOffset) {
-        self.last_jump_offset = target;
+        self.last_jump_target_offset = Some(target);
     }
 
     pub fn get_atom_index(&mut self, value: SourceAtomSetIndex) -> ScriptAtomSetIndex {
@@ -390,13 +395,18 @@ impl InstructionWriter {
 
     pub fn patch_and_emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
         let mut target = self.bytecode_offset();
-        let target_opcode = Opcode::try_from(self.bytecode[self.last_jump_offset.offset]).unwrap();
-        let last_jump = self.last_jump_offset;
-        if !target_opcode.is_jump_target() || last_jump.offset + 7 != target.offset {
-            self.set_jump_target_offset(target);
-            self.jump_target();
+        let last_jump = self.last_jump_target_offset;
+
+        if let Some(offset) = last_jump {
+            if offset.end(self) != target.offset {
+                self.jump_target();
+                self.set_jump_target_offset(target);
+            } else {
+                target = offset;
+            }
         } else {
-            target = last_jump;
+            self.jump_target();
+            self.set_jump_target_offset(target);
         }
         for jump in jumplist {
             self.patch_jump_to_target(target, jump);
@@ -406,6 +416,7 @@ impl InstructionWriter {
     pub fn patch_jump_to_target(&mut self, target: BytecodeOffset, jump: BytecodeOffset) {
         let new_target = (target.offset as f64 - jump.offset as f64) as i32;
         let index = jump.offset + 1;
+        // FIXME: Use native endian instead of little endian
         LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
     }
 

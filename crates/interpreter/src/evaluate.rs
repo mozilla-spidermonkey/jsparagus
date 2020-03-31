@@ -151,6 +151,13 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 stack.push(JSValue::Boolean(strict_equality(&lhs, &rhs)))
             }
 
+            Opcode::StrictNe => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                stack.push(JSValue::Boolean(!strict_equality(&lhs, &rhs)))
+            }
+
             Opcode::Lt => {
                 // TODO: This and below does not actually implement
                 // "Abstract Relational Comparison".
@@ -189,58 +196,15 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::Eq => {
                 let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
-                // TODO: Add is special, i.e. string concat
 
-                match lval {
-                    JSValue::Number(lval) => stack.push(JSValue::Boolean(lval == to_number(&rval))),
-                    JSValue::String(_lval) => {
-                        // TODO: compare strings
-                        return Err(EvalError::NotImplemented(
-                            "compare strings with ==".to_owned(),
-                        ));
-                    }
-                    JSValue::Boolean(lval) => {
-                        stack.push(JSValue::Boolean(lval == to_boolean(&rval)))
-                    }
-                    _ => stack.push(JSValue::Boolean(to_boolean(&lval) == to_boolean(&rval))),
-                }
+                stack.push(JSValue::Boolean(equality(&rval, &lval)))
             }
 
             Opcode::Ne => {
                 let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
 
-                match lval {
-                    JSValue::Number(lval) => stack.push(JSValue::Boolean(lval != to_number(&rval))),
-                    JSValue::String(_lval) => {
-                        // TODO: compare strings
-                        return Err(EvalError::NotImplemented(
-                            "compare strings with ==".to_owned(),
-                        ));
-                    }
-                    JSValue::Boolean(lval) => {
-                        stack.push(JSValue::Boolean(lval != to_boolean(&rval)))
-                    }
-                    _ => stack.push(JSValue::Boolean(to_boolean(&lval) != to_boolean(&rval))),
-                }
-            }
-
-            Opcode::StrictNe => {
-                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
-                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
-
-                match (lval, rval) {
-                    (JSValue::Number(lval), JSValue::Number(rval)) => {
-                        stack.push(JSValue::Boolean(lval != rval))
-                    }
-                    (JSValue::String(lval), JSValue::String(rval)) => {
-                        stack.push(JSValue::Boolean(lval != rval))
-                    }
-                    (JSValue::Boolean(lval), JSValue::Boolean(rval)) => {
-                        stack.push(JSValue::Boolean(lval != rval))
-                    }
-                    _ => stack.push(JSValue::Boolean(false)),
-                }
+                stack.push(JSValue::Boolean(!equality(&rval, &lval)))
             }
 
             Opcode::SetRval => {

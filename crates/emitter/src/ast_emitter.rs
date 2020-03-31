@@ -93,7 +93,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 }
                 .emit(self)?;
             }
-            Statement::BreakStatement { .. } => {
+            Statement::BreakStatement { label, .. } => {
+                if let Some(_label) = label {
+                    return Err(EmitError::NotImplemented("TODO: Labeled BreakStatement"));
+                }
                 BreakEmitter {
                     jump: JumpKind::Goto,
                 }
@@ -168,8 +171,13 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 }
                 self.loop_stack.open_loop(&mut self.emit);
 
-                if let Some(expr) = test {
-                    self.emit_expression(expr)?;
+                match test {
+                    Some(expr) => {
+                        self.emit_expression(expr)?;
+                    }
+                    None => {
+                        self.emit.emit_boolean(true);
+                    }
                 }
 
                 BreakEmitter {
@@ -181,7 +189,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                     self.emit_expression(expr)?;
                 }
 
-                self.emit_statement(block)?;
+                ExpressionEmitter {
+                    expr: |emitter| emitter.emit_statement(block),
+                }
+                .emit(self)?;
 
                 // loop_stack.emit_continue(emitter);
                 // Merge point after cond fails

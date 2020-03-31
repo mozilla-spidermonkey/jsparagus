@@ -23,8 +23,12 @@ trait Jump {
         // condition doesn't met, the execution goes to the next opcode
         // instead of the target of the jump.
         match self.jump_kind() {
+            JumpKind::Coalesce { .. }
+            | JumpKind::LogicalOr { .. }
+            | JumpKind::LogicalAnd { .. }
+            | JumpKind::IfEq { .. } => true,
+
             JumpKind::Goto { .. } => false,
-            _ => true,
         }
     }
 
@@ -50,6 +54,12 @@ trait Jump {
             JumpKind::Goto { .. } => {
                 emitter.emit.goto_(placeholder_offset);
             }
+        }
+
+        // The JITs rely on a jump target being emitted after the
+        // conditional jump
+        if self.should_fallthrough() {
+            emitter.emit.jump_target();
         }
     }
 }
@@ -95,11 +105,6 @@ impl ForwardJumpEmitter {
         self.emit_jump(emitter);
         let depth = emitter.emit.stack_depth();
 
-        // The JITs rely on a jump target being emitted after the
-        // conditional jump
-        if self.should_fallthrough() {
-            emitter.emit.jump_target();
-        }
         JumpPatchEmitter { offsets, depth }
     }
 }
@@ -107,8 +112,6 @@ impl ForwardJumpEmitter {
 // Compared to C++ impl, this uses explicit stack struct,
 // given Rust cannot store a reference of stack-allocated object into
 // another object that has longer-lifetime.
-//
-// Some methods are implemented here, instead of each EmitterScope.
 pub struct LoopStack {
     loop_stack: Vec<LoopControl>,
 }
@@ -154,6 +157,9 @@ pub struct LoopControl {
 
 impl LoopControl {
     pub fn new(emit: &mut InstructionWriter, depth: u8) -> Self {
+        // Insert a Nop if needed to ensure the script does not start with a
+        // JSOp::LoopHead. This avoids JIT issues with prologue code + try notes
+        // or OSR. See bug 1602390 and bug 1602681.
         let mut offset = emit.bytecode_offset();
         if offset.offset == 0 {
             emit.nop();
@@ -169,6 +175,8 @@ impl LoopControl {
     }
 
     pub fn register_break(&mut self, offset: BytecodeOffset) {
+        // offset points to the location of the jump, which will need to be updated
+        // once we emit the jump target in patch_and_emit_jump_target
         self.breaks.push(offset);
     }
 
@@ -188,7 +196,7 @@ impl LoopControl {
     }
 }
 
-// Struct for multiple jumps that point to the same target. Examples are breaks and continues.
+// Struct for multiple jumps that point to the same target. Examples are breaks and loop conditions.
 pub struct BreakEmitter {
     pub jump: JumpKind,
 }
@@ -204,17 +212,8 @@ impl BreakEmitter {
         // break { control, jumpkind }.emit(self)
         //      -> register break
         //      -> jump
-        //      -> emit fallthrough
         let offset = emitter.emit.bytecode_offset();
         emitter.loop_stack.register_break(offset);
-
         self.emit_jump(emitter);
-
-        // The JITs rely on a jump target being emitted after the
-        // conditional jump
-        if self.should_fallthrough() {
-            emitter.emit.jump_target();
-        }
-        emitter.loop_stack.register_break(offset);
     }
 }
