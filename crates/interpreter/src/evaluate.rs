@@ -386,6 +386,11 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::Undefined => stack.push(JSValue::Undefined),
             Opcode::Null => stack.push(JSValue::Null),
 
+            Opcode::CheckGlobalOrEvalDecl => {
+                // FIXME: Port CheckGlobalOrEvalDeclarationConflicts
+                //        from js/src/vm/EnvironmentObject.cpp.
+            }
+
             _ => return Err(EvalError::NotImplemented(format!("{:?}", op))),
         }
 

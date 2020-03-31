@@ -15,6 +15,7 @@ use crate::reference_op_emitter::{
     NewEmitter, PropReferenceEmitter,
 };
 use crate::regexp::RegExpItem;
+use crate::script_emitter::ScriptEmitter;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
@@ -46,7 +47,7 @@ pub struct AstEmitter<'alloc, 'opt> {
     pub emit: InstructionWriter,
     pub options: &'opt EmitOptions,
     pub compilation_info: CompilationInfo<'alloc>,
-    scope_stack: EmitterScopeStack,
+    pub scope_stack: EmitterScopeStack,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
@@ -69,17 +70,11 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_script(&mut self, ast: &Script) -> Result<(), EmitError> {
-        self.scope_stack
-            .enter_global(&mut self.emit, &self.compilation_info.scope_data_map);
-
-        for statement in &ast.statements {
-            self.emit_statement(statement)?;
+        ScriptEmitter {
+            statements: ast.statements.iter(),
+            statement: |emitter, statement| emitter.emit_statement(statement),
         }
-        self.emit.ret_rval();
-
-        self.scope_stack.leave_global(&mut self.emit);
-
-        Ok(())
+        .emit(self)
     }
 
     fn emit_statement(&mut self, ast: &Statement) -> Result<(), EmitError> {
