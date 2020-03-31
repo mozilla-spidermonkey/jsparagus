@@ -1,5 +1,6 @@
 mod array_emitter;
 mod ast_emitter;
+mod block_emitter;
 mod compilation_info;
 mod dis;
 mod emitter;
