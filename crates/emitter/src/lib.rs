@@ -14,6 +14,7 @@ mod reference_op_emitter;
 mod regexp;
 mod scope_notes;
 mod script_atom_set;
+mod script_emitter;
 
 extern crate jsparagus_ast as ast;
 extern crate jsparagus_scope as scope;

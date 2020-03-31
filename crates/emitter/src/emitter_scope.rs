@@ -139,6 +139,10 @@ impl EmitterScopeStack {
         let scope_index = scope_data_map.get_global_index();
         let scope_data = scope_data_map.get_global_at(scope_index);
 
+        if scope_data.bindings.len() > 0 {
+            emit.check_global_or_eval_decl();
+        }
+
         for item in scope_data.iter() {
             let name_index = emit.get_atom_index(item.name());
 
