@@ -41,15 +41,15 @@ from .ordered import OrderedSet, OrderedFrozenSet
 
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
-                      ReduceExprOrAccept,
-                      is_concrete_element,
+                      ReduceExpr, ReduceExprOrAccept,
+                      Element, is_concrete_element,
                       Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
                       End, NoLineTerminatorHere, ErrorSymbol,
-                      LookaheadRule)
+                      LookaheadRule, LenientNt)
 from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
                       FunCall, Seq)
 from . import emit
-from .runtime import ErrorToken
+from .runtime import ErrorToken, ErrorTokenClass
 from .utils import keep_until
 from . import types
 from .aps import Edge, APS
@@ -57,8 +57,10 @@ from .aps import Edge, APS
 
 # *** Operations on grammars **************************************************
 
+T = typing.TypeVar("T")
 
-def fix(f, start):
+
+def fix(f: typing.Callable[[T], T], start: T) -> T:
     """Compute a fixed point of `f`, the hard way, starting from `start`."""
     prev, current = start, f(start)
     while current != prev:
@@ -66,7 +68,7 @@ def fix(f, start):
     return current
 
 
-def empty_nt_set(grammar):
+def empty_nt_set(grammar: Grammar) -> typing.Dict[LenientNt, ReduceExprOrAccept]:
     """Determine which nonterminals in `grammar` can produce the empty string.
 
     Return a dict {nt: expr} that maps each such nonterminal to the expr
@@ -79,20 +81,22 @@ def empty_nt_set(grammar):
     `("a", CallMethod("a", [None, None]))`.
     """
 
-    empties = {}  # maps nts to reducers.
+    empties: typing.Dict[LenientNt, ReduceExprOrAccept] = {}
 
-    def production_is_empty(nt, p):
+    def production_is_empty(p: Production) -> bool:
         return all(isinstance(e, LookaheadRule)
                    or isinstance(e, Optional)
                    or (isinstance(e, Nt) and e in empties)
                    or e is NoLineTerminatorHere
                    for e in p.body)
 
-    def evaluate_reducer_with_empty_matches(p):
+    def evaluate_reducer_with_empty_matches(p: Production) -> ReduceExprOrAccept:
         # partial evaluation of p.reducer
         stack = [e for e in p.body if is_concrete_element(e)]
 
-        def eval(expr):
+        Expr = typing.TypeVar("Expr", ReduceExpr, ReduceExprOrAccept)
+
+        def eval(expr: Expr) -> Expr:
             if expr is None:
                 return None
             elif isinstance(expr, Some):
@@ -108,7 +112,9 @@ def empty_nt_set(grammar):
                     return None
                 else:
                     assert isinstance(e, Nt)
-                    return empties[e]
+                    result = empties[e]
+                    assert not isinstance(result, str)
+                    return result
             elif expr == 'accept':
                 # Hmm, this is not ideal! Maybe 'accept' needs to take an
                 # argument so that the normal case is Accept(0) and this case
@@ -127,7 +133,7 @@ def empty_nt_set(grammar):
         for nt, nt_def in grammar.nonterminals.items():
             if nt not in empties:
                 for p in nt_def.rhs_list:
-                    if production_is_empty(nt, p):
+                    if production_is_empty(p):
                         if nt in empties:
                             raise ValueError(
                                 "ambiguous grammar: multiple productions for "
@@ -138,21 +144,20 @@ def empty_nt_set(grammar):
     return empties
 
 
-def check_cycle_free(grammar):
+def check_cycle_free(grammar: Grammar) -> None:
     """Throw an exception if any nonterminal in `grammar` produces itself
     via a cycle of 1 or more productions.
     """
-    assert isinstance(grammar, Grammar)
     empties = empty_nt_set(grammar)
 
     # OK, first find out which nonterminals directly produce which other
     # nonterminals (after possibly erasing some optional/empty nts).
-    direct_produces = {}
+    direct_produces: typing.Dict[LenientNt, typing.Set[Nt]] = {}
     for orig in grammar.nonterminals:
         direct_produces[orig] = set()
         for source_production in grammar.nonterminals[orig].rhs_list:
             for rhs, _r in expand_optional_symbols_in_rhs(source_production.body, grammar, empties):
-                result = []
+                result: typing.List[Nt] = []
                 all_possibly_empty_so_far = True
                 # If we break out of the following loop, that means it turns
                 # out that this production does not produce *any* strings that
@@ -212,7 +217,9 @@ def check_cycle_free(grammar):
                     # nt can definitely produce all the nonterminals in result.
                     direct_produces[orig] |= set(result)
 
-    def step(produces):
+    def step(
+            produces: typing.Dict[LenientNt, typing.Set[Nt]]
+    ) -> typing.Dict[LenientNt, typing.Set[Nt]]:
         return {
             orig: dest | set(b for a in dest for b in produces[a])
             for orig, dest in produces.items()
@@ -226,7 +233,7 @@ def check_cycle_free(grammar):
                 .format(nt))
 
 
-def check_lookahead_rules(grammar):
+def check_lookahead_rules(grammar: Grammar) -> None:
     """Check that no LookaheadRule appears at the end of a production (or before
     elements that can produce the empty string).
 
@@ -250,10 +257,10 @@ def check_lookahead_rules(grammar):
                         .format(grammar.production_to_str(nt, body)))
 
 
-def check_no_line_terminator_here(grammar):
+def check_no_line_terminator_here(grammar: Grammar) -> None:
     empties = empty_nt_set(grammar)
 
-    def check(e, nt, body):
+    def check(e: Element, nt: LenientNt, body: typing.List[Element]) -> None:
         if grammar.is_terminal(e):
             pass
         elif isinstance(e, Nt):
@@ -281,7 +288,7 @@ def check_no_line_terminator_here(grammar):
                     check(body[i + 1], nt, body)
 
 
-def expand_parameterized_nonterminals(grammar):
+def expand_parameterized_nonterminals(grammar: Grammar):
     """Replace parameterized nonterminals with specialized copies.
 
     For example, a single pair `nt_name: NtDef(params=('A', 'B'), ...)` in
@@ -298,7 +305,7 @@ def expand_parameterized_nonterminals(grammar):
     todo = collections.deque(grammar.goals())
     new_nonterminals = {}
 
-    def expand(nt):
+    def expand(nt: Nt) -> NtDef:
         """Expand grammar.nonterminals[nt](**args).
 
         Returns the expanded NtDef, which contains no conditional
@@ -316,7 +323,7 @@ def expand_parameterized_nonterminals(grammar):
             else:
                 return arg
 
-        def expand_element(e):
+        def expand_element(e: Element) -> Element:
             if isinstance(e, Optional):
                 return Optional(expand_element(e.inner))
             elif isinstance(e, Exclude):
@@ -331,12 +338,12 @@ def expand_parameterized_nonterminals(grammar):
             else:
                 return e
 
-        def expand_production(p):
+        def expand_production(p: Production) -> Production:
             return p.copy_with(
                 body=[expand_element(e) for e in p.body],
                 condition=None)
 
-        def expand_productions(nt_def):
+        def expand_productions(nt_def: NtDef) -> NtDef:
             result = []
             for p in nt_def.rhs_list:
                 if p.condition is None:
@@ -357,13 +364,19 @@ def expand_parameterized_nonterminals(grammar):
         if nt not in new_nonterminals:  # not already expanded
             new_nonterminals[nt] = expand(nt)
 
-    return grammar.with_nonterminals(new_nonterminals)
+    # "type: ignore" because this runs afoul of Python's covariance rules for
+    # Mapping; but it conforms to the intended type.
+    return grammar.with_nonterminals(new_nonterminals)  # type: ignore
 
 
 # *** Start sets and follow sets **********************************************
 
 EMPTY = "(empty)"
 END = None
+
+TerminalOrEmpty = str
+TerminalOrEmptyOrErrorToken = typing.Union[str, ErrorTokenClass]
+StartSets = typing.Dict[Nt, OrderedFrozenSet[TerminalOrEmpty]]
 
 
 def start_sets(grammar):
@@ -404,14 +417,19 @@ def start_sets(grammar):
     return start
 
 
-def seq_start(grammar, start, seq):
+def seq_start(
+        grammar: Grammar,
+        start: StartSets,
+        seq: typing.List[Element]
+) -> OrderedFrozenSet[TerminalOrEmptyOrErrorToken]:
     """Compute the start set for a sequence of elements."""
-    s = OrderedSet([EMPTY])
+    s: OrderedSet[TerminalOrEmptyOrErrorToken] = OrderedSet([EMPTY])
     for i, e in enumerate(seq):
         if EMPTY not in s:  # preceding elements never match the empty string
             break
         s.remove(EMPTY)
         if grammar.is_terminal(e):
+            assert isinstance(e, str)
             s.add(e)
         elif isinstance(e, ErrorSymbol):
             s.add(ErrorToken)
@@ -430,7 +448,14 @@ def seq_start(grammar, start, seq):
     return OrderedFrozenSet(s)
 
 
-def make_start_set_cache(grammar, prods, start):
+StartSetCache = typing.List[typing.List[OrderedFrozenSet[TerminalOrEmptyOrErrorToken]]]
+
+
+def make_start_set_cache(
+        grammar: Grammar,
+        prods: typing.List[Prod],
+        start: StartSets
+) -> StartSetCache:
     """Compute start sets for all suffixes of productions in the grammar.
 
     Returns a list of lists `cache` such that
@@ -440,10 +465,15 @@ def make_start_set_cache(grammar, prods, start):
     times.)
     """
 
-    def suffix_start_list(rhs):
+    def suffix_start_list(
+            rhs: typing.List[Element]
+    ) -> typing.List[OrderedFrozenSet[TerminalOrEmptyOrErrorToken]]:
+        sets: typing.List[OrderedFrozenSet[TerminalOrEmptyOrErrorToken]]
         sets = [OrderedFrozenSet([EMPTY])]
         for e in reversed(rhs):
+            s: OrderedFrozenSet[TerminalOrEmptyOrErrorToken]
             if grammar.is_terminal(e):
+                assert isinstance(e, str)
                 s = OrderedFrozenSet([e])
             elif isinstance(e, ErrorSymbol):
                 s = OrderedFrozenSet([ErrorToken])
@@ -548,13 +578,18 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 # `index` because they were all produced from the same source production.
 @dataclass
 class Prod:
-    nt: str
+    nt: LenientNt
     index: int
     rhs: typing.List
     reducer: ReduceExprOrAccept
 
 
-def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
+def expand_optional_symbols_in_rhs(
+        rhs: typing.List[Element],
+        grammar: Grammar,
+        empties: typing.Dict[LenientNt, ReduceExprOrAccept],
+        start_index: int = 0
+) -> typing.Iterable[typing.Tuple[typing.List[Element], typing.Dict[int, ReduceExpr]]]:
     """Expand a sequence with optional symbols into sequences that have none.
 
     rhs is a list of symbols, possibly containing optional elements. This
@@ -568,6 +603,7 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
     yields the two pairs `(["if"], [1])` and `["if", "else"], []`.
     """
 
+    replacement: ReduceExpr
     for i in range(start_index, len(rhs)):
         e = rhs[i]
         if isinstance(e, Optional):
@@ -582,14 +618,19 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
             replacement = None
             break
         elif isinstance(e, Nt) and e in empties:
-            replacement = empties[e]
+            empty_expr = empties[e]
+            # The replacement can't be 'accept' because that only happens with
+            # InitNt nonterminals, which are never used in productions.
+            assert not isinstance(empty_expr, str)
+            replacement = empty_expr
             break
     else:
         yield rhs[start_index:], {}
         return
 
     for expanded, r in expand_optional_symbols_in_rhs(rhs, grammar, empties, i + 1):
-        rhs_inner = rhs[i].inner if isinstance(rhs[i], Optional) else rhs[i]
+        e = rhs[i]
+        rhs_inner = e.inner if isinstance(e, Optional) else e
         # without rhs[i]
         r2 = r.copy()
         r2[i] = replacement
@@ -598,14 +639,18 @@ def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
         yield rhs[start_index:i] + [rhs_inner] + expanded, r
 
 
-def expand_all_optional_elements(grammar):
+def expand_all_optional_elements(grammar: Grammar) -> typing.Tuple[
+        Grammar,
+        typing.List[Prod],
+        typing.DefaultDict[LenientNt, typing.List[typing.Tuple[int, typing.List[Element]]]]
+]:
     """Expand optional elements in the grammar.
 
     We replace each production that contains an optional element with two
     productions: one with and one without. Downstream of this step, we can
     ignore the possibility of optional elements.
     """
-    expanded_grammar = {}
+    expanded_grammar: typing.Dict[LenientNt, NtDef] = {}
 
     # This was capturing the set of empty production to simplify the work of
     # the previous algorithm which was trying to determine the lookahead.
@@ -614,12 +659,14 @@ def expand_all_optional_elements(grammar):
     # properly fixed by adding lookahead information where needed, and without
     # bugs!
     # empties = empty_nt_set(grammar)
-    empties = {}
+    empties: typing.Dict[LenientNt, ReduceExprOrAccept] = {}
 
     # Put all the productions in one big list, so each one has an index. We
     # will use the indices in the action table (as reduce action payloads).
-    prods = []
-    prods_with_indexes_by_nt = collections.defaultdict(list)
+    prods: typing.List[Prod] = []
+    prods_with_indexes_by_nt: \
+        typing.DefaultDict[LenientNt, typing.List[typing.Tuple[int, typing.List[Element]]]] = \
+        collections.defaultdict(list)
 
     for nt, nt_def in grammar.nonterminals.items():
         prods_expanded = []
@@ -637,7 +684,9 @@ def expand_all_optional_elements(grammar):
             for pair in expand_optional_symbols_in_rhs(p.body, grammar, empties):
                 expanded_rhs, removals = pair
 
-                def adjust_reduce_expr(expr):
+                Expr = typing.TypeVar("Expr", ReduceExpr, ReduceExprOrAccept)
+
+                def adjust_reduce_expr(expr: Expr) -> Expr:
                     if isinstance(expr, int):
                         i = reduce_expr_to_offset[expr]
                         if i in removals:
@@ -1259,6 +1308,7 @@ class LR0Generator:
                     lookahead=None,
                     followed_by=tuple(),
                 ), followed_by)
+
 
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one

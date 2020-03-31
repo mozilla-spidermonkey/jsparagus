@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from .grammar import Nt
 from .actions import Action
 
+
+# Hack to avoid circular reference between this module and gen.py.
+StateAndTransition = typing.Any
+
+
 @dataclass(frozen=True)
 class Edge:
     """An edge in a Parse table is a tuple of a source state and the term followed
@@ -194,7 +199,7 @@ class APS:
                 to = Edge(to, None)
                 yield APS(st, prev_sh + [to], la, rp, hs + [edge], self.reducing)
 
-    def stable_str(self, states, name = "aps"):
+    def stable_str(self, states: typing.List[StateAndTransition], name: str = "aps") -> str:
         return """{}.stack = [{}]
 {}.shift = [{}]
 {}.lookahead = [{}]
@@ -210,7 +215,7 @@ class APS:
             name, self.reducing
         )
 
-    def string(self, name = "aps"):
+    def string(self, name: str = "aps") -> str:
         return """{}.stack = [{}]
 {}.shift = [{}]
 {}.lookahead = [{}]
@@ -226,12 +231,14 @@ class APS:
             name, self.reducing
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.string()
 
-def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
-    return "{}\n{}".format(header, "\n".join(aps.string(name) for aps in aps_lanes))
 
-def stable_aps_lanes_str(aps_lanes, states, header = "lanes:", name = "\taps"):
+def stable_aps_lanes_str(
+        aps_lanes: typing.List[APS],
+        states: typing.List[StateAndTransition],
+        header: str = "lanes:",
+        name: str = "\taps"
+) -> str:
     return "{}\n{}".format(header, "\n".join(aps.stable_str(states, name) for aps in aps_lanes))
-
