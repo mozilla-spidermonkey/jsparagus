@@ -32,7 +32,6 @@ import collections
 import dataclasses
 import io
 import pickle
-import sys
 import hashlib
 import typing
 from dataclasses import dataclass
@@ -50,7 +49,7 @@ from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
                       FunCall, Seq)
 from . import emit
 from .runtime import ErrorToken, ErrorTokenClass
-from .utils import keep_until
+from .utils import keep_until, consume
 from . import types
 from .aps import Edge, APS
 
@@ -847,29 +846,6 @@ class LRItem:
     offset: int
     lookahead: typing.Optional[LookaheadRule]
     followed_by: OrderedFrozenSet[typing.Optional[str]]
-
-
-def consume(iterator, progress):
-    """Drain the iterator. If progress is true, print dots on stdout."""
-    i = 0
-    to_feed = str(i)
-    try:
-        for _ in iterator:
-            if progress:
-                if len(to_feed) > 0:
-                    sys.stdout.write(to_feed[0])
-                    to_feed = to_feed[1:]
-                else:
-                    sys.stdout.write(".")
-                i += 1
-                if i % 100 == 0:
-                    sys.stdout.write("\n")
-                    to_feed = str(i)
-                sys.stdout.flush()
-    finally:
-        if progress and i != 0:
-            sys.stdout.write("\n")
-            sys.stdout.flush()
 
 
 class CanonicalGrammar:
