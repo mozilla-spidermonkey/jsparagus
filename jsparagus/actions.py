@@ -6,6 +6,8 @@ import typing
 from .grammar import Element, InitNt, Nt
 from . import types, grammar
 
+StateId = int
+
 
 class Action:
     __slots__ = ["_hash"]
@@ -61,6 +63,11 @@ class Action:
     def contains_accept(self) -> bool:
         "Returns whether the current action stops the parser."
         return False
+
+    def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> Action:
+        """If the action contains any state index, use the map to map the old index to
+        the new indexes"""
+        return self
 
     def __eq__(self, other: object) -> bool:
         if self.__class__ != other.__class__:
@@ -148,6 +155,7 @@ class Accept(Action):
 
     def shifted_action(self, shifted_term: Element) -> Accept:
         return Accept()
+
 
 class Lookahead(Action):
     """Define a Lookahead assertion which is meant to either accept or reject
@@ -385,3 +393,7 @@ class Seq(Action):
 
     def contains_accept(self) -> bool:
         return any(a.contains_accept() for a in self.actions)
+
+    def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> Seq:
+        actions = list(map(lambda a: a.rewrite_state_indexes(state_map), self.actions))
+        return Seq(actions)

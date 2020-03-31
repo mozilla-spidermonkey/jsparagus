@@ -160,6 +160,12 @@ class StateAndTransitions:
             self,
             state_map: typing.Dict[StateId, StateId]
     ) -> None:
+        def apply_on_term(term: typing.Union[Term, None]) -> Term:
+            assert term is not None
+            if isinstance(term, Action):
+                return term.rewrite_state_indexes(state_map)
+            return term
+
         self.index = state_map[self.index]
         self.terminals = {
             k: state_map[s] for k, s in self.terminals.items()
@@ -171,10 +177,11 @@ class StateAndTransitions:
             k: state_map[s] for k, s in self.errors.items()
         }
         self.epsilon = [
-            (k, state_map[s]) for k, s in self.epsilon
+            (k.rewrite_state_indexes(state_map), state_map[s]) for k, s in self.epsilon
         ]
         self.backedges = OrderedSet(
-            Edge(state_map[edge.src], edge.term) for edge in self.backedges
+            Edge(state_map[edge.src], apply_on_term(edge.term))
+            for edge in self.backedges
         )
 
     def get_error_symbol(self) -> typing.Optional[ErrorSymbol]:
