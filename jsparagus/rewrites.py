@@ -1,6 +1,7 @@
 """Early-pipeline operations that error-check and lower grammars."""
 
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
 
 import collections
 import dataclasses
@@ -249,7 +250,7 @@ def check_no_line_terminator_here(grammar: Grammar) -> None:
                     check(body[i + 1], nt, body)
 
 
-def expand_parameterized_nonterminals(grammar: Grammar):
+def expand_parameterized_nonterminals(grammar: Grammar) -> Grammar:
     """Replace parameterized nonterminals with specialized copies.
 
     For example, a single pair `nt_name: NtDef(params=('A', 'B'), ...)` in
@@ -337,14 +338,15 @@ END = None
 
 TerminalOrEmpty = str
 TerminalOrEmptyOrErrorToken = typing.Union[str, ErrorTokenClass]
-StartSets = typing.Dict[Nt, OrderedFrozenSet[TerminalOrEmpty]]
+StartSets = typing.Dict[Nt, OrderedFrozenSet[TerminalOrEmptyOrErrorToken]]
 
 
-def start_sets(grammar):
+def start_sets(grammar: Grammar) -> StartSets:
     """Compute the start sets for nonterminals in a grammar.
 
     A nonterminal's start set is the set of tokens that a match for that
-    nonterminal may start with, plus EMPTY if it can match the empty string.
+    nonterminal may start with, plus EMPTY if it can match the empty string
+    and ErrorToken if it can start with an error.
     """
 
     # How this works: Note that we can replace the words "match" and "start
@@ -363,11 +365,14 @@ def start_sets(grammar):
     # start sets satisfying these rules, and we get that by iterating to a
     # fixed point.
 
-    start = {nt: OrderedFrozenSet() for nt in grammar.nonterminals}
+    assert all(isinstance(nt, Nt) for nt in grammar.nonterminals)
+    start: StartSets
+    start = {typing.cast(Nt, nt): OrderedFrozenSet() for nt in grammar.nonterminals}
     done = False
     while not done:
         done = True
         for nt, nt_def in grammar.nonterminals.items():
+            assert isinstance(nt, Nt)
             # Compute start set for each `prod` based on `start` so far.
             # Could be incomplete, but we'll ratchet up as we iterate.
             nt_start = OrderedFrozenSet(
@@ -461,7 +466,18 @@ def make_start_set_cache(
     return [suffix_start_list(prod.rhs) for prod in prods]
 
 
-def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
+FollowSet = OrderedSet[typing.Union[TerminalOrEmptyOrErrorToken, None]]
+FollowSets = typing.DefaultDict[Nt, FollowSet]
+
+
+def follow_sets(
+        grammar: Grammar,
+        prods_with_indexes_by_nt: typing.DefaultDict[
+            LenientNt,
+            typing.List[typing.Tuple[int, typing.List[Element]]]
+        ],
+        start_set_cache: StartSetCache
+) -> FollowSets:
     """Compute all follow sets for nonterminals in a grammar.
 
     The follow set for a nonterminal `A`, as defined in the book, is "the set
@@ -479,20 +495,22 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 
     # The results. By definition, nonterminals that are not reachable from the
     # goal nt have empty follow sets.
-    follow = collections.defaultdict(OrderedSet)
+    follow: FollowSets = collections.defaultdict(OrderedSet)
 
     # If `(x, y) in subsumes_relation`, then x can appear at the end of a
     # production of y, and therefore follow[x] should be <= follow[y].
     # (We could maintain that invariant throughout, but at present we
     # brute-force iterate to a fixed point at the end.)
+    subsumes_relation: OrderedSet[typing.Tuple[Nt, Nt]]
     subsumes_relation = OrderedSet()
 
     # `END` is $. It is, of course, in follow[each goal nonterminal]. It gets
     # into other nonterminals' follow sets through the subsumes relation.
     for init_nt in grammar.init_nts:
+        assert isinstance(init_nt, Nt)
         follow[init_nt].add(END)
 
-    def visit(nt):
+    def visit(nt: Nt) -> None:
         if nt in visited:
             return
         visited.add(nt)
@@ -507,6 +525,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
                     follow[symbol] |= after
 
     for nt in grammar.init_nts:
+        assert isinstance(nt, Nt)
         visit(nt)
 
     # Now iterate to a fixed point on the subsumes relation.
@@ -539,7 +558,7 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 # `index` because they were all produced from the same source production.
 @dataclass
 class Prod:
-    nt: LenientNt
+    nt: Nt
     index: int
     rhs: typing.List
     reducer: ReduceExprOrAccept
@@ -630,6 +649,7 @@ def expand_all_optional_elements(grammar: Grammar) -> typing.Tuple[
         collections.defaultdict(list)
 
     for nt, nt_def in grammar.nonterminals.items():
+        assert isinstance(nt, Nt)
         prods_expanded = []
         for prod_index, p in enumerate(nt_def.rhs_list):
             # Aggravatingly, a reduce-expression that's an int is not
@@ -693,11 +713,15 @@ def expand_all_optional_elements(grammar: Grammar) -> typing.Tuple[
 
 
 class CanonicalGrammar:
-    __slots__ = "prods", "prods_with_indexes_by_nt", "grammar"
+    __slots__ = ["prods", "prods_with_indexes_by_nt", "grammar"]
 
-    def __init__(self, grammar, old=False):
-        assert isinstance(grammar, Grammar)
+    prods: typing.List[Prod]
+    prods_with_indexes_by_nt: typing.Mapping[
+        LenientNt,
+        typing.List[typing.Tuple[int, typing.List[Element]]]]
+    grammar: Grammar
 
+    def __init__(self, grammar: Grammar) -> None:
         # Step by step, we check the grammar and lower it to a more primitive form.
         grammar = expand_parameterized_nonterminals(grammar)
         check_cycle_free(grammar)
