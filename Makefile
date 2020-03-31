@@ -35,6 +35,9 @@ EXTENSION_FILES = \
 SOURCE_FILES = $(EXTENSION_FILES) \
 jsparagus/gen.py \
 jsparagus/grammar.py \
+jsparagus/rewrites.py \
+jsparagus/lr0.py \
+jsparagus/parse_table.py \
 jsparagus/extension.py \
 jsparagus/utils.py \
 jsparagus/actions.py \
