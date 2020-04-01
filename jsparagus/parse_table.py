@@ -248,8 +248,6 @@ class ParseTable:
         "terminals",
         # List of non-terminals.
         "nonterminals",
-        # Set of existing flags.
-        "flags",
         # Carry the info to be used when generating debug_context. If False,
         # then no debug_context is ever produced.
         "debug_info",
@@ -424,11 +422,6 @@ class ParseTable:
         temp = sorted(temp, key=lambda s: s.stable_hash)
         for s in temp:
             print(s.stable_str(self.states))
-
-    def get_flag_for(self, nts):
-        nts = OrderedFrozenSet(nts)
-        self.flags.add(nts)
-        return "_".join(["flag", *nts])
 
     def create_lr0_table(self, grammar, verbose, progress):
         if verbose or progress:
