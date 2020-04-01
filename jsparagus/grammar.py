@@ -961,25 +961,37 @@ def is_concrete_element(e: Element) -> bool:
     return not isinstance(e, (LookaheadRule, ErrorSymbol, NoLineTerminatorHereClass))
 
 
+# Nonterminals in the ECMAScript grammar can be parameterized; NtParameter is
+# the type of the parameters.
+#
+# For example, `BindingIdentifier[?Yield, ?Await]` is represented as
+# `Nt('BindingIdentifier', (('Yield', Var('Yield')), ('Await', Var('Await'))))`.
+#
+# A nonterminal-parameter-expression is represented by either a Var object or
+# the actual value, a boolean. (In theory, parameters don't *have* to be
+# boolean; all the code would probably work for anything hashable. In practice,
+# all parameters in the ECMAScript grammar are boolean.)
+NtParameter = typing.Hashable
+
+
 class Nt:
     """Nt(name, ((param0, arg0), ...)) - An invocation of a nonterminal.
 
     Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
     NtDef which has 0 or more parameters.
 
-    Parameter names are strings. The arguments are typically booleans. They can be
-    whatever you want, but each function nonterminal gets expanded into a set of
-    productions, one for every different argument tuple that is ever passed to it.
+    Parameter names `param0...` are strings. The actual arguments `arg0...` are
+    NtParameters (see above).
     """
 
     __slots__ = ['name', 'args']
 
     name: typing.Union[str, InitNt]
-    args: typing.Tuple[typing.Tuple[str, typing.Hashable], ...]
+    args: typing.Tuple[typing.Tuple[str, NtParameter], ...]
 
     def __init__(self,
                  name: typing.Union[str, InitNt],
-                 args: typing.Tuple[typing.Tuple[str, typing.Hashable], ...] = ()):
+                 args: typing.Tuple[typing.Tuple[str, NtParameter], ...] = ()):
         self.name = name
         self.args = args
 
@@ -1001,7 +1013,7 @@ class Nt:
 
         Also used in debug/verbose output.
         """
-        def arg_to_str(name: str, value: typing.Hashable) -> str:
+        def arg_to_str(name: str, value: NtParameter) -> str:
             if value is True:
                 return '+' + name
             elif value is False:
