@@ -1,6 +1,8 @@
 """ Deterministic data structures. """
 
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
+
 from typing import (AbstractSet, Dict, Generic, Iterable, Iterator, List,
                     MutableSet, Optional, TypeVar, Union)
 
