@@ -1,6 +1,7 @@
 """ Data structures for representing grammars. """
 
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
 
 import copy
 import typing
@@ -54,6 +55,7 @@ def example_grammar() -> Grammar:
 
 Condition = typing.Tuple[str, bool]
 
+
 # A production consists of a left side, an optional condition, a right side,
 # and a reducer. A `Production` object includes everything except the left
 # side. Incorporating reducers lets us transform a grammar while preserving
@@ -88,7 +90,7 @@ class Production:
             return ("Production({!r}, reducer={!r}, condition={!r})"
                     .format(self.body, self.reducer, self.condition))
 
-    def copy_with(self, **kwargs) -> Production:
+    def copy_with(self, **kwargs: typing.Any) -> Production:
         return dataclasses.replace(self, **kwargs)
 
 
@@ -211,7 +213,7 @@ class Grammar:
             *,
             goal_nts: typing.Optional[typing.Iterable[LenientNt]] = None,
             variable_terminals: typing.Iterable[str] = (),
-            synthetic_terminals: typing.Dict[str, OrderedFrozenSet] = None,
+            synthetic_terminals: SyntheticTerminalsDict = None,
             method_types: typing.Optional[typing.Dict[str, types.MethodType]] = None,
             exec_modes: typing.Optional[typing.DefaultDict[str, OrderedSet[types.Type]]] = None,
             type_to_modes: typing.Optional[typing.Mapping[types.Type, typing.List[str]]] = None):
@@ -791,7 +793,7 @@ class Grammar:
     def symbols_to_str(self, rhs: typing.Iterable[Element]) -> str:
         return " ".join(self.element_to_str(e) for e in rhs)
 
-    def rhs_to_str(self, rhs: LenientProduction):
+    def rhs_to_str(self, rhs: LenientProduction) -> str:
         if isinstance(rhs, Production):
             if rhs.condition is None:
                 prefix = ''
@@ -829,9 +831,9 @@ class Grammar:
             self.rhs_to_str(rhs),
             "".join(" => " + expr_to_str(expr) for expr in reducer))
 
-    # The type of `item` is `gen.LRItem`. No annotation because this module
-    # does not import `gen`. It would be a cyclic dependency.
-    def lr_item_to_str(self, prods: typing.List, item) -> str:
+    # The type of `item` is `lr0.LRItem`. No annotation because this module
+    # does not import `lr0`. It would be a cyclic dependency.
+    def lr_item_to_str(self, prods: typing.List, item: typing.Any) -> str:
         prod = prods[item.prod_index]
         if item.lookahead is None:
             la = []
@@ -877,9 +879,9 @@ class Grammar:
         return (len(seq1) == len(seq1)
                 and all(self.compatible_elements(e1, e2) for e1, e2 in zip(seq1, seq2)))
 
-    def dump(self):
+    def dump(self) -> None:
         for nt, nt_def in self.nonterminals.items():
-            left_side = self.element_to_str(nt)
+            left_side = self.nt_to_str(nt)
             if nt_def.params:
                 left_side += "[" + ", ".join(nt_def.params) + "]"
             print(left_side + " ::=")
@@ -887,14 +889,14 @@ class Grammar:
                 print("   ", self.rhs_to_str(rhs))
             print()
 
-    def dump_type_info(self):
+    def dump_type_info(self) -> None:
         for nt, nt_def in self.nonterminals.items():
             print(nt, nt_def.type)
         for name, mty in self.methods.items():
             print("fn {}({}) -> {}"
                   .format(name,
-                          ", ".join(types.type_to_str(ty) for ty in mty.argument_types),
-                          types.type_to_str(mty.return_type)))
+                          ", ".join(str(ty) for ty in mty.argument_types),
+                          str(mty.return_type)))
 
     def is_shifted_element(self, e: Element) -> bool:
         if isinstance(e, Nt):
@@ -984,7 +986,7 @@ class Nt:
     def __hash__(self) -> int:
         return hash(('nt', self.name, self.args))
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (isinstance(other, Nt)
                 and (self.name, self.args) == (other.name, other.args))
 
@@ -999,7 +1001,7 @@ class Nt:
 
         Also used in debug/verbose output.
         """
-        def arg_to_str(name, value):
+        def arg_to_str(name: str, value: typing.Hashable) -> str:
             if value is True:
                 return '+' + name
             elif value is False:
@@ -1072,7 +1074,7 @@ class LookaheadRule:
 # -   A negative lookahead restriction instead specifies the set of all tokens
 #     except a few.
 #
-def lookahead_contains(rule: typing.Optional[LookaheadRule], t: str):
+def lookahead_contains(rule: typing.Optional[LookaheadRule], t: str) -> bool:
     """True if the given lookahead restriction `rule` allows the terminal `t`."""
     return (rule is None
             or (t in rule.set if rule.positive
@@ -1101,7 +1103,7 @@ def lookahead_intersect(
 
 
 class NoLineTerminatorHereClass:
-    def __str__(self):
+    def __str__(self) -> str:
         return 'NoLineTerminatorHere'
 
 
