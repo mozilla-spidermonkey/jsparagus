@@ -5,15 +5,18 @@ ParseTable before a parser can be generated.
 """
 
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
 
 import collections
 from dataclasses import dataclass
 import typing
 
-from .actions import Action, CheckNotOnNewLine, FunCall, Lookahead, Reduce, Seq
+from .actions import (Action, CheckNotOnNewLine, FunCall, Lookahead,
+                      OutputExpr, Reduce, Seq)
 from .ordered import OrderedFrozenSet
-from .grammar import (CallMethod, End, ErrorSymbol, LookaheadRule,
-                      NoLineTerminatorHere, Nt, Some)
+from .grammar import (CallMethod, Element, End, ErrorSymbol, Grammar,
+                      LookaheadRule, NoLineTerminatorHere, Nt, ReduceExpr,
+                      ReduceExprOrAccept, Some)
 from .rewrites import CanonicalGrammar, Prod
 from . import types
 
@@ -140,7 +143,7 @@ class LRItem:
 Term = typing.Union[str, Nt, Action, ErrorSymbol]
 
 
-def on_stack(grammar, term):
+def on_stack(grammar: Grammar, term: Element) -> bool:
     """Returns whether an element of a production is consuming stack space or
     not."""
     if isinstance(term, Nt):
@@ -163,45 +166,58 @@ def on_stack(grammar, term):
     raise ValueError(term)
 
 
-def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
+def callmethods_to_funcalls(
+        expr: ReduceExprOrAccept,
+        pop: int,
+        ret: str,
+        depth: int,
+        funcalls: typing.List[FunCall]
+) -> OutputExpr:
+    """Lower a reduce-expression to the OutputExpr language.
+
+    CallMethod expressions are replaced with FunCalls; all new FunCalls created
+    in this way are appended to `funcalls`.
+    """
+
     # TODO: find a way to carry alias sets to here.
     alias_set = ["parser"]
     if isinstance(expr, int):
         stack_index = pop - expr
         if depth == 0:
-            expr = FunCall("id", (stack_index,), fallible=False,
+            call = FunCall("id", (stack_index,), fallible=False,
                            trait=types.Type("AstBuilder"), set_to=ret,
                            alias_read=alias_set, alias_write=alias_set)
-            funcalls.append(expr)
+            funcalls.append(call)
             return ret
         else:
             return stack_index
     elif isinstance(expr, Some):
         res = callmethods_to_funcalls(expr.inner, pop, ret, depth, funcalls)
-        return Some(res)
+        # "type: ignore" because Some is not generic, unfortunately.
+        return Some(res)  # type: ignore
     elif expr is None:
         return None
     elif isinstance(expr, CallMethod):
-        def convert_args(args):
+        def convert_args(args: typing.Iterable[ReduceExpr]) -> typing.Iterator[OutputExpr]:
             for i, arg in enumerate(args):
                 yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
         args = tuple(convert_args(expr.args))
-        expr = FunCall(expr.method, args,
+        call = FunCall(expr.method, args,
                        trait=expr.trait,
                        fallible=expr.fallible,
                        set_to=ret,
                        alias_read=alias_set,
                        alias_write=alias_set)
-        funcalls.append(expr)
+        funcalls.append(call)
         return ret
     elif expr == "accept":
-        expr = FunCall("accept", (),
+        call = FunCall("accept", (),
                        trait=types.Type("ParserTrait"),
                        fallible=False,
                        set_to=ret,
                        alias_read=alias_set,
                        alias_write=alias_set)
-        funcalls.append(expr)
+        funcalls.append(call)
         return ret
     else:
         raise ValueError(expr)
@@ -246,7 +262,7 @@ class LR0Generator:
             s += "\n"
         return s
 
-    def stable_locations(self):
+    def stable_locations(self) -> OrderedFrozenSet[str]:
         locations = []
         for lr_item in self.lr_items:
             locations.append(self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item))
@@ -284,21 +300,24 @@ class LR0Generator:
                     pass
         return LR0Generator(grammar, lr_items)
 
-    def transitions(self):
+    def transitions(self) -> typing.Dict[Term, LR0Generator]:
         """Returns the dictionary which maps the state transitions with the next
         LR0Generators. This can be used to generate the states and the
         transitions between the states of an LR0 parse table."""
-        followed_by = collections.defaultdict(lambda: [])
+        followed_by: typing.DefaultDict[Term, typing.List[LRItem]]
+        followed_by = collections.defaultdict(list)
         for lr_item in self.lr_items:
             self.item_transitions(lr_item, followed_by)
 
-        for k, lr_items in followed_by.items():
-            followed_by[k] = LR0Generator(self.grammar, lr_items)
+        return {k: LR0Generator(self.grammar, lr_items)
+                for k, lr_items in followed_by.items()}
 
-        return followed_by
-
-    def item_transitions(self, lr_item, followed_by):
-        """Given one LR Item, register all the transitions and LR Items reachables
+    def item_transitions(
+            self,
+            lr_item: LRItem,
+            followed_by: typing.DefaultDict[Term, typing.List[LRItem]]
+    ) -> None:
+        """Given one LRItem, register all the transitions and LR Items reachable
         through these transitions."""
         prod = self.grammar.prods[lr_item.prod_index]
         assert isinstance(prod, Prod)
@@ -329,7 +348,7 @@ class LR0Generator:
                 # terminal offset.
                 term = CheckNotOnNewLine()
             elif isinstance(term, CallMethod):
-                funcalls = []
+                funcalls: typing.List[FunCall] = []
                 pop = sum(1 for e in prod.rhs[:lr_item.offset] if on_stack(self.grammar.grammar, e))
                 callmethods_to_funcalls(term, pop, "expr", 0, funcalls)
                 term = Seq(funcalls)
