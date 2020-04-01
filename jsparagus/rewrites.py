@@ -9,9 +9,9 @@ import typing
 
 from .grammar import (CallMethod, Element, End, ErrorSymbol, Exclude, Grammar,
                       LenientNt, Literal, LookaheadRule, Optional,
-                      NoLineTerminatorHere, Nt, NtDef, Production, ReduceExpr,
-                      ReduceExprOrAccept, Some, UnicodeCategory, Var,
-                      is_concrete_element)
+                      NoLineTerminatorHere, Nt, NtDef, NtParameter, Production,
+                      ReduceExpr, ReduceExprOrAccept, Some, UnicodeCategory,
+                      Var, is_concrete_element)
 from .ordered import OrderedFrozenSet, OrderedSet
 from .runtime import ErrorToken, ErrorTokenClass
 
@@ -278,7 +278,7 @@ def expand_parameterized_nonterminals(grammar: Grammar):
         else:
             args_dict = dict(nt.args)
 
-        def evaluate_arg(arg):
+        def evaluate_arg(arg: NtParameter) -> NtParameter:
             if isinstance(arg, Var):
                 return args_dict[arg.name]
             else:
