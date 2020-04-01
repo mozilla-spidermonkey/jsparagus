@@ -10,7 +10,7 @@ import collections
 from dataclasses import dataclass
 import typing
 
-from .actions import CheckNotOnNewLine, FunCall, Lookahead, Reduce, Seq
+from .actions import Action, CheckNotOnNewLine, FunCall, Lookahead, Reduce, Seq
 from .ordered import OrderedFrozenSet
 from .grammar import (CallMethod, End, ErrorSymbol, LookaheadRule,
                       NoLineTerminatorHere, Nt, Some)
@@ -132,6 +132,12 @@ class LRItem:
     offset: int
     lookahead: typing.Optional[LookaheadRule]
     followed_by: OrderedFrozenSet[typing.Optional[str]]
+
+
+# A Term is the label on an edge from one state to another. It's normally a
+# terminal, nonterminal, or epsilon action. A state can also have a special
+# catchall edge, labeled with an ErrorSymbol.
+Term = typing.Union[str, Nt, Action, ErrorSymbol]
 
 
 def on_stack(grammar, term):

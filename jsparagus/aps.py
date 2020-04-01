@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from .grammar import Nt
 from .actions import Action
 
+StateId = int
 
 # Hack to avoid circular reference between this module and gen.py.
 StateAndTransition = typing.Any
@@ -24,7 +25,7 @@ class Edge:
       term: Edge transition value, this can be a terminal, non-terminal or an
           action to be executed on an epsilon transition.
     """
-    src: int
+    src: StateId
     term: typing.Union[str, Nt, Action]
 
     def stable_str(self, states):
