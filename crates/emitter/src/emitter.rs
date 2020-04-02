@@ -18,17 +18,81 @@ use std::cmp;
 use std::convert::TryInto;
 use std::fmt;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum ResumeKind {
-    Normal = 0,
-    Throw = 1,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+// @@@@ BEGIN TYPES @@@@
 pub enum AsyncFunctionResolveKind {
     Fulfill = 0,
     Reject = 1,
 }
+
+pub enum CheckIsCallableKind {
+    IteratorReturn = 0,
+}
+
+pub enum CheckIsObjectKind {
+    IteratorNext = 0,
+    IteratorReturn = 1,
+    IteratorThrow = 2,
+    GetIterator = 3,
+    GetAsyncIterator = 4,
+}
+
+pub enum FunctionPrefixKind {
+    None = 0,
+    Get = 1,
+    Set = 2,
+}
+
+pub enum GeneratorResumeKind {
+    Next = 0,
+    Throw = 1,
+    Return = 2,
+}
+
+pub enum ThrowMsgKind {
+    AssignToCall = 0,
+    IteratorNoThrow = 1,
+    CantDeleteSuper = 2,
+}
+
+pub enum TryNoteKind {
+    Catch = 0,
+    Finally = 1,
+    ForIn = 2,
+    Destructuring = 3,
+    ForOf = 4,
+    ForOfIterClose = 5,
+    Loop = 6,
+}
+
+pub enum SymbolCode {
+    IsConcatSpreadable = 0,
+    Iterator = 1,
+    Match = 2,
+    Replace = 3,
+    Search = 4,
+    Species = 5,
+    HasInstance = 6,
+    Split = 7,
+    ToPrimitive = 8,
+    ToStringTag = 9,
+    Unscopables = 10,
+    AsyncIterator = 11,
+    MatchAll = 12,
+}
+
+pub enum SrcNoteType {
+    Null = 0,
+    AssignOp = 1,
+    ColSpan = 2,
+    NewLine = 3,
+    SetLine = 4,
+    Breakpoint = 5,
+    StepSep = 6,
+    Unused7 = 7,
+    XDelta = 8,
+}
+
+// @@@@ END TYPES @@@@
 
 #[allow(non_camel_case_types)]
 pub type u24 = u32;
@@ -231,10 +295,6 @@ impl InstructionWriter {
     fn write_f64(&mut self, val: f64) {
         self.bytecode
             .extend_from_slice(&val.to_bits().to_le_bytes());
-    }
-
-    fn write_resume_kind(&mut self, resume_kind: ResumeKind) {
-        self.write_u8(resume_kind as u8);
     }
 
     fn write_ic_index(&mut self) {
@@ -687,14 +747,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::EndIter);
     }
 
-    pub fn check_is_obj(&mut self, kind: u8) {
+    pub fn check_is_obj(&mut self, kind: CheckIsObjectKind) {
         self.emit_op(Opcode::CheckIsObj);
-        self.write_u8(kind);
+        self.write_u8(kind as u8);
     }
 
-    pub fn check_is_callable(&mut self, kind: u8) {
+    pub fn check_is_callable(&mut self, kind: CheckIsCallableKind) {
         self.emit_op(Opcode::CheckIsCallable);
-        self.write_u8(kind);
+        self.write_u8(kind as u8);
     }
 
     pub fn check_obj_coercible(&mut self) {
@@ -747,9 +807,9 @@ impl InstructionWriter {
         self.write_u32(func_index);
     }
 
-    pub fn set_fun_name(&mut self, prefix_kind: u8) {
+    pub fn set_fun_name(&mut self, prefix_kind: FunctionPrefixKind) {
         self.emit_op(Opcode::SetFunName);
-        self.write_u8(prefix_kind);
+        self.write_u8(prefix_kind as u8);
     }
 
     pub fn init_home_object(&mut self) {
@@ -779,9 +839,8 @@ impl InstructionWriter {
         self.write_u32(source_end);
     }
 
-    pub fn builtin_proto(&mut self, kind: u8) {
-        self.emit_op(Opcode::BuiltinProto);
-        self.write_u8(kind);
+    pub fn function_proto(&mut self) {
+        self.emit_op(Opcode::FunctionProto);
     }
 
     pub fn call(&mut self, argc: u16) {
@@ -911,9 +970,9 @@ impl InstructionWriter {
         self.emit_op(Opcode::AsyncAwait);
     }
 
-    pub fn async_resolve(&mut self, fulfill_or_reject: u8) {
+    pub fn async_resolve(&mut self, fulfill_or_reject: AsyncFunctionResolveKind) {
         self.emit_op(Opcode::AsyncResolve);
-        self.write_u8(fulfill_or_reject);
+        self.write_u8(fulfill_or_reject as u8);
     }
 
     pub fn await_(&mut self, resume_index: u24) {
@@ -925,9 +984,9 @@ impl InstructionWriter {
         self.emit_op(Opcode::TrySkipAwait);
     }
 
-    pub fn resume_kind(&mut self, resume_kind: ResumeKind) {
+    pub fn resume_kind(&mut self, resume_kind: GeneratorResumeKind) {
         self.emit_op(Opcode::ResumeKind);
-        self.write_resume_kind(resume_kind);
+        self.write_u8(resume_kind as u8);
     }
 
     pub fn check_resume_kind(&mut self) {
@@ -1013,9 +1072,9 @@ impl InstructionWriter {
         self.emit_op(Opcode::Throw);
     }
 
-    pub fn throw_msg(&mut self, msg_number: u16) {
+    pub fn throw_msg(&mut self, msg_number: ThrowMsgKind) {
         self.emit_op(Opcode::ThrowMsg);
-        self.write_u16(msg_number);
+        self.write_u8(msg_number as u8);
     }
 
     pub fn throw_set_const(&mut self, name_index: ScriptAtomSetIndex) {
@@ -1246,6 +1305,10 @@ impl InstructionWriter {
     pub fn def_const(&mut self, name_index: ScriptAtomSetIndex) {
         self.emit_op(Opcode::DefConst);
         self.write_script_atom_set_index(name_index);
+    }
+
+    pub fn check_global_or_eval_decl(&mut self) {
+        self.emit_op(Opcode::CheckGlobalOrEvalDecl);
     }
 
     pub fn del_name(&mut self, name_index: ScriptAtomSetIndex) {
