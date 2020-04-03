@@ -528,7 +528,7 @@ impl<'alloc> Lexer<'alloc> {
                     TerminalId::In,
                     TokenValue::Atom(CommonSourceAtomSetIndices::in_()),
                 ),
-                "instanceof_" => (
+                "instanceof" => (
                     TerminalId::Instanceof,
                     TokenValue::Atom(CommonSourceAtomSetIndices::instanceof()),
                 ),
