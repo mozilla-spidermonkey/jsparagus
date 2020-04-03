@@ -36,11 +36,13 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
     def write_action(act: Action, indent: str = "") -> typing.Tuple[str, bool]:
         assert not act.is_inconsistent()
         if isinstance(act, Reduce):
-            out.write("{}replay = [StateTermValue(0, {}, value, False)]\n".format(indent, repr(act.nt)))
-            if act.replay > 0:
-                out.write("{}replay = replay + parser.stack[-{}:]\n".format(indent, act.replay))
-            if act.replay + act.pop > 0:
-                out.write("{}del parser.stack[-{}:]\n".format(indent, act.replay + act.pop))
+            stack_diff = act.update_stack_with()
+            out.write("{}replay = [StateTermValue(0, {}, value, False)]\n"
+                      .format(indent, repr(stack_diff.nt)))
+            if stack_diff.replay > 0:
+                out.write("{}replay = replay + parser.stack[-{}:]\n".format(indent, stack_diff.replay))
+            if stack_diff.replay + stack_diff.pop > 0:
+                out.write("{}del parser.stack[-{}:]\n".format(indent, stack_diff.replay + stack_diff.pop))
             out.write("{}parser.shift_list(replay, lexer)\n".format(indent))
             return indent, False
         if isinstance(act, Accept):

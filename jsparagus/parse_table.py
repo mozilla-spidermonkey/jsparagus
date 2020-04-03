@@ -949,7 +949,7 @@ class ParseTable:
     #             if flag_in is not None:
     #                 maybe_id_edges.add(Id(edge))
     #         edge = aps.stack[-1]
-    #         nt = edge.term.reduce_with().nt
+    #         nt = edge.term.update_stack_with().nt
     #         rule = Eq(nt, edge, None)
     #         rules, free_vars = unify_with(rule, rules, free_vars)
     #         nts.add(nt)
@@ -1398,20 +1398,20 @@ class ParseTable:
             if aps.history == []:
                 return True
             last = aps.history[-1].term
-            is_reduce = not self.term_is_shifted(last)
+            is_unwind = isinstance(last, Action) and last.update_stack()
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             can_reduce_later = True
             try:
                 can_reduce_later = debug_info[aps.shift[-1].src] >= len(aps.shift)
             except KeyError:
                 can_reduce_later = False
-            stop = is_reduce or has_shift_loop or not can_reduce_later
+            stop = is_unwind or has_shift_loop or not can_reduce_later
             # Record state which are reducing at most all the shifted states.
             save = stop and len(aps.shift) == 1
-            save = save and is_reduce
+            save = save and is_unwind
             if save:
                 assert isinstance(last, Action)
-                save = last.reduce_with().nt in self.states[aps.shift[0].src]
+                save = last.update_stack_with().nt in self.states[aps.shift[0].src]
             if save:
                 record.append(aps)
             return not stop
@@ -1424,8 +1424,8 @@ class ParseTable:
             action = aps.history[-1].term
             assert isinstance(action, Action)
             assert action.update_stack()
-            reducer = action.reduce_with()
-            replay = reducer.replay
+            stack_diff = action.update_stack_with()
+            replay = stack_diff.replay
             before = [repr(e.term) for e in aps.stack[:-1]]
             after = [repr(e.term) for e in aps.history[:-1]]
             prod = before + ["\N{MIDDLE DOT}"] + after
@@ -1436,11 +1436,7 @@ class ParseTable:
                 replay += 1
             if replay > 0:
                 prod = prod[:-replay] + ["[lookahead:"] + prod[-replay:] + ["]"]
-            txt = "{}{} ::= {}".format(
-                prefix,
-                repr(action.reduce_with().nt),
-                " ".join(prod)
-            )
+            txt = "{}{} ::= {}".format(prefix, repr(stack_diff.nt), " ".join(prod))
             context.add(txt)
 
         if split_txt is None:

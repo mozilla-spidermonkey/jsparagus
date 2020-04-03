@@ -189,25 +189,25 @@ class RustActionWriter:
         assert isinstance(act, Action)
         assert not act.is_condition()
         is_packed = {}
-        if isinstance(act, Seq):
-            # Do not pop any of the stack elements if the reduce action has
-            # an accept function call. Ideally we should be returning the
-            # result instead of keeping it on the parser stack.
-            if act.update_stack() and not act.contains_accept():
-                assert not act.contains_accept()
-                reducer = act.reduce_with()
-                start = 0
-                depth = reducer.pop
-                if reducer.replay > 0:
-                    self.write("parser.rewind({});", reducer.replay)
-                    start = reducer.replay
-                    depth += start
-                for i in range(start, depth):
-                    name = 's'
-                    if i + 1 not in self.used_variables:
-                        name = '_s'
-                    self.write("let {}{} = parser.pop();", name, i + 1)
 
+        # Do not pop any of the stack elements if the reduce action has an
+        # accept function call. Ideally we should be returning the result
+        # instead of keeping it on the parser stack.
+        if act.update_stack() and not act.contains_accept():
+            stack_diff = act.update_stack_with()
+            start = 0
+            depth = stack_diff.pop
+            if stack_diff.replay > 0:
+                self.write("parser.rewind({});", stack_diff.replay)
+                start = stack_diff.replay
+                depth += start
+            for i in range(start, depth):
+                name = 's'
+                if i + 1 not in self.used_variables:
+                    name = '_s'
+                self.write("let {}{} = parser.pop();", name, i + 1)
+
+        if isinstance(act, Seq):
             for a in act.actions:
                 self.write_single_action(a, is_packed)
                 if a.contains_accept():
@@ -217,7 +217,7 @@ class RustActionWriter:
 
         # If we fallthrough the execution of the action, then generate an
         # epsilon transition.
-        if not act.update_stack() and not act.contains_accept():
+        if act.follow_edge() and not act.contains_accept():
             assert 0 <= dest < self.writer.shift_count + self.writer.action_count
             self.write_epsilon_transition(dest)
 
@@ -254,8 +254,9 @@ class RustActionWriter:
             # Convert into a StackValue (when no ast-builder)
             value = "value"
 
+        stack_diff = act.update_stack_with()
         self.write("let term = NonterminalId::{}.into();",
-                   self.writer.nonterminal_to_camel(act.nt))
+                   self.writer.nonterminal_to_camel(stack_diff.nt))
         if value != "value":
             self.write("let value = {};", value)
         self.write("parser.replay(TermValue { term, value });")
