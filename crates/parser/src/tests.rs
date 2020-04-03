@@ -723,6 +723,35 @@ fn test_async_arrows() {
 }
 
 #[test]
+fn test_binary() {
+    assert_parses("1 == 2");
+    assert_parses("1 != 2");
+    assert_parses("1 === 2");
+    assert_parses("1 !== 2");
+    assert_parses("1 < 2");
+    assert_parses("1 <= 2");
+    assert_parses("1 > 2");
+    assert_parses("1 >= 2");
+    assert_parses("1 in 2");
+    assert_parses("1 instanceof 2");
+    assert_parses("1 << 2");
+    assert_parses("1 >> 2");
+    assert_parses("1 >>> 2");
+    assert_parses("1 + 2");
+    assert_parses("1 - 2");
+    assert_parses("1 * 2");
+    assert_parses("1 / 2");
+    assert_parses("1 % 2");
+    assert_parses("1 ** 2");
+    assert_parses("1 , 2");
+    assert_parses("1 || 2");
+    assert_parses("1 && 2");
+    assert_parses("1 | 2");
+    assert_parses("1 ^ 2");
+    assert_parses("1 & 2");
+}
+
+#[test]
 fn test_coalesce() {
     assert_parses("const f = options.prop ?? 0;");
     assert_syntax_error("if (options.prop ?? 0 || options.prop > 1000) {}");
