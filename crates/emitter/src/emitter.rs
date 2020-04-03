@@ -1439,12 +1439,12 @@ impl InstructionWriter {
     ) -> ScopeNoteIndex {
         self.update_max_frame_slots(next_frame_slot);
 
-        self.gcthings.append_scope(scope_index);
+        let gcthing_index = self.gcthings.append_scope(scope_index);
         let offset = self.bytecode_offset();
-        let index = self
-            .scope_notes
-            .enter_scope(scope_index, offset, parent_scope_note_index);
-        index
+        let note_index =
+            self.scope_notes
+                .enter_scope(gcthing_index, offset, parent_scope_note_index);
+        note_index
     }
 
     pub fn leave_lexical_scope(&mut self, index: ScopeNoteIndex) {
