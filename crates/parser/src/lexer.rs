@@ -1640,12 +1640,12 @@ impl<'alloc> Lexer<'alloc> {
 
                 '0' => {
                     let result = self.numeric_literal_starting_with_zero()?;
-                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
+                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result)?);
                 }
 
                 '1'..='9' => {
                     let result = self.decimal_literal_after_first_digit()?;
-                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
+                    return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result)?);
                 }
 
                 '"' | '\'' => {
@@ -1829,7 +1829,7 @@ impl<'alloc> Lexer<'alloc> {
                     }
                     Some('0'..='9') => {
                         let result = self.decimal_literal_after_decimal_point()?;
-                        return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result));
+                        return Ok(self.numeric_result_to_advance_result(builder.finish(&self), start, result)?);
                     }
                     _ => return Ok(AdvanceResult {
                         terminal_id: TerminalId::Dot,
@@ -2199,10 +2199,10 @@ impl<'alloc> Lexer<'alloc> {
         s: &'alloc str,
         start: usize,
         result: NumericResult,
-    ) -> AdvanceResult {
+    ) -> Result<'alloc, AdvanceResult> {
         let (terminal_id, value) = match result {
             NumericResult::Int { base } => {
-                let n = parse_int(s, base);
+                let n = parse_int(s, base).map_err(|s| ParseError::NotImplemented(s))?;
                 (TerminalId::NumericLiteral, TokenValue::Number(n))
             }
             NumericResult::Float => {
@@ -2215,11 +2215,11 @@ impl<'alloc> Lexer<'alloc> {
             }
         };
 
-        AdvanceResult {
+        Ok(AdvanceResult {
             terminal_id,
             loc: SourceLocation::new(start, self.offset()),
             value,
-        }
+        })
     }
 }
 
