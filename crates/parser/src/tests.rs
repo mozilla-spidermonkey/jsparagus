@@ -208,6 +208,20 @@ fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     assert!(parser.can_close());
 }
 
+fn assert_same_number(code: &str, expected: f64) {
+    let allocator = &Bump::new();
+    let script = try_parse(allocator, code).unwrap().unbox();
+    match &script.statements[0] {
+        Statement::ExpressionStatement(expression) => match &**expression {
+            Expression::LiteralNumericExpression(num) => {
+                assert_eq!(num.value, expected, "{}", code);
+            }
+            _ => panic!("expected LiteralNumericExpression"),
+        },
+        _ => panic!("expected ExpressionStatement"),
+    }
+}
+
 #[test]
 fn test_asi_at_end() {
     assert_parses("3 + 4");
@@ -286,9 +300,9 @@ fn test_lexer_decimal() {
 
 #[test]
 fn test_numbers() {
-    assert_parses("0");
-    assert_parses("1");
-    assert_parses("10");
+    assert_same_number("0", 0.0);
+    assert_same_number("1", 1.0);
+    assert_same_number("10", 10.0);
 
     assert_error_eq("0a", ParseError::IllegalCharacter('a'));
     assert_error_eq("1a", ParseError::IllegalCharacter('a'));
@@ -297,21 +311,21 @@ fn test_numbers() {
     assert_error_eq(".0a", ParseError::IllegalCharacter('a'));
     assert_error_eq("1.a", ParseError::IllegalCharacter('a'));
 
-    assert_parses("1.0");
-    assert_parses("1.");
-    assert_parses("0.");
+    assert_same_number("1.0", 1.0);
+    assert_same_number("1.", 1.0);
+    assert_same_number("0.", 0.0);
 
-    assert_parses("1.0e0");
-    assert_parses("1.e0");
-    assert_parses(".0e0");
+    assert_same_number("1.0e0", 1.0);
+    assert_same_number("1.e0", 1.0);
+    assert_same_number(".0e0", 0.0);
 
-    assert_parses("1.0e+0");
-    assert_parses("1.e+0");
-    assert_parses(".0e+0");
+    assert_same_number("1.0e+0", 1.0);
+    assert_same_number("1.e+0", 1.0);
+    assert_same_number(".0e+0", 0.0);
 
-    assert_parses("1.0e-0");
-    assert_parses("1.e-0");
-    assert_parses(".0e-0");
+    assert_same_number("1.0e-0", 1.0);
+    assert_same_number("1.e-0", 1.0);
+    assert_same_number(".0e-0", 0.0);
 
     assert_error_eq("1.0e", ParseError::UnexpectedEnd);
     assert_error_eq("1.e", ParseError::UnexpectedEnd);
@@ -322,17 +336,17 @@ fn test_numbers() {
     assert_error_eq(".0e+", ParseError::UnexpectedEnd);
     assert_error_eq(".0e-", ParseError::UnexpectedEnd);
 
-    assert_parses("1.0E0");
-    assert_parses("1.E0");
-    assert_parses(".0E0");
+    assert_same_number("1.0E0", 1.0);
+    assert_same_number("1.E0", 1.0);
+    assert_same_number(".0E0", 0.0);
 
-    assert_parses("1.0E+0");
-    assert_parses("1.E+0");
-    assert_parses(".0E+0");
+    assert_same_number("1.0E+0", 1.0);
+    assert_same_number("1.E+0", 1.0);
+    assert_same_number(".0E+0", 0.0);
 
-    assert_parses("1.0E-0");
-    assert_parses("1.E-0");
-    assert_parses(".0E-0");
+    assert_same_number("1.0E-0", 1.0);
+    assert_same_number("1.E-0", 1.0);
+    assert_same_number(".0E-0", 0.0);
 
     assert_error_eq("1.0E", ParseError::UnexpectedEnd);
     assert_error_eq("1.E", ParseError::UnexpectedEnd);
@@ -343,47 +357,77 @@ fn test_numbers() {
     assert_error_eq(".0E+", ParseError::UnexpectedEnd);
     assert_error_eq(".0E-", ParseError::UnexpectedEnd);
 
-    assert_parses(".0");
+    assert_same_number(".0", 0.0);
     assert_parses("");
 
-    assert_parses("0b0");
+    assert_same_number("0b0", 0.0);
 
-    assert_parses("0b1");
-    assert_parses("0B01");
+    assert_same_number("0b1", 1.0);
+    assert_same_number("0B01", 1.0);
     assert_error_eq("0b", ParseError::UnexpectedEnd);
     assert_error_eq("0b ", ParseError::IllegalCharacter(' '));
     assert_error_eq("0b2", ParseError::IllegalCharacter('2'));
 
-    assert_parses("0o0");
-    assert_parses("0o7");
-    assert_parses("0O01234567");
+    assert_same_number("0o0", 0.0);
+    assert_same_number("0o7", 7.0);
+    assert_same_number("0O01234567", 0o01234567 as f64);
     assert_error_eq("0o", ParseError::UnexpectedEnd);
     assert_error_eq("0o ", ParseError::IllegalCharacter(' '));
     assert_error_eq("0o8", ParseError::IllegalCharacter('8'));
 
-    assert_parses("0x0");
-    assert_parses("0xf");
-    assert_parses("0X0123456789abcdef");
-    assert_parses("0X0123456789ABCDEF");
+    assert_same_number("0x0", 0.0);
+    assert_same_number("0xf", 15.0);
+    assert_not_implemented("0X0123456789abcdef");
+    assert_not_implemented("0X0123456789ABCDEF");
     assert_error_eq("0x", ParseError::UnexpectedEnd);
     assert_error_eq("0x ", ParseError::IllegalCharacter(' '));
     assert_error_eq("0xg", ParseError::IllegalCharacter('g'));
 
     assert_parses("1..x");
 
-    assert_parses("1_1");
-    assert_parses("0b1_1");
-    assert_parses("0o1_1");
-    assert_parses("0x1_1");
+    assert_same_number("1_1", 11.0);
+    assert_same_number("0b1_1", 3.0);
+    assert_same_number("0o1_1", 9.0);
+    assert_same_number("0x1_1", 17.0);
 
-    assert_parses("1_1.1_1");
-    assert_parses("1_1.1_1e+1_1");
+    assert_same_number("1_1.1_1", 11.11);
+    assert_same_number("1_1.1_1e+1_1", 11.11e11);
 
     assert_error_eq("1_", ParseError::UnexpectedEnd);
     assert_error_eq("1._1", ParseError::IllegalCharacter('_'));
     assert_error_eq("1.1_", ParseError::UnexpectedEnd);
     assert_error_eq("1.1e1_", ParseError::UnexpectedEnd);
     assert_error_eq("1.1e_1", ParseError::IllegalCharacter('_'));
+}
+
+#[test]
+fn test_numbers_large() {
+    assert_same_number("4294967295", 4294967295.0);
+    assert_same_number("4294967296", 4294967296.0);
+    assert_same_number("4294967297", 4294967297.0);
+
+    assert_same_number("9007199254740991", 9007199254740991.0);
+    assert_same_number("9007199254740992", 9007199254740992.0);
+    assert_same_number("9007199254740993", 9007199254740992.0);
+
+    assert_same_number("18446744073709553664", 18446744073709552000.0);
+    assert_same_number("18446744073709553665", 18446744073709556000.0);
+
+    assert_same_number("0b11111111111111111111111111111111", 4294967295.0);
+    assert_same_number("0b100000000000000000000000000000000", 4294967296.0);
+    assert_same_number("0b100000000000000000000000000000001", 4294967297.0);
+
+    assert_same_number(
+        "0b11111111111111111111111111111111111111111111111111111",
+        9007199254740991.0,
+    );
+    assert_not_implemented("0b100000000000000000000000000000000000000000000000000000");
+
+    assert_same_number("0o77777777777777777", 2251799813685247.0);
+    assert_not_implemented("0o100000000000000000");
+
+    assert_same_number("0xfffffffffffff", 4503599627370495.0);
+    assert_not_implemented("0x10000000000000");
 }
 
 #[test]
