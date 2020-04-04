@@ -2206,7 +2206,7 @@ impl<'alloc> Lexer<'alloc> {
                 (TerminalId::NumericLiteral, TokenValue::Number(n))
             }
             NumericResult::Float => {
-                let n = parse_float(s);
+                let n = parse_float(s).map_err(|s| ParseError::NotImplemented(s))?;
                 (TerminalId::NumericLiteral, TokenValue::Number(n))
             }
             NumericResult::BigInt { .. } => {
