@@ -1,6 +1,6 @@
 //! Parse NumericLiteral.
 
-pub type ParseIntResult = Result<f64, &'static str>;
+pub type ParseNumberResult = Result<f64, &'static str>;
 
 #[derive(Debug)]
 pub enum NumericLiteralBase {
@@ -23,7 +23,7 @@ const F64_INT_HEX_DIGITS_MAX_LEN: usize = 14;
 // To avoid allocating extra buffer when '_' is present, integer cases are
 // handled without Rust standard `parse` function, as long as the value
 // won't overflow the integer part of f64.
-fn parse_decimal_int(s: &str) -> f64 {
+fn parse_decimal_int(s: &str) -> ParseNumberResult {
     debug_assert!(!s.is_empty());
 
     // NOTE: Maximum length cannot be handled.
@@ -45,15 +45,15 @@ fn parse_decimal_int(s: &str) -> f64 {
             _ => panic!("invalid syntax"),
         }
     }
-    result
+    Ok(result)
 }
 
-fn parse_binary(s: &str) -> ParseIntResult {
+fn parse_binary(s: &str) -> ParseNumberResult {
     debug_assert!(!s.is_empty());
 
     // NOTE: Maximum length can be handled.
     if s.len() > F64_INT_BIN_DIGITS_MAX_LEN {
-        return Err("too big binary literal");
+        return Err("too long binary literal");
     }
 
     let src = s.as_bytes();
@@ -72,12 +72,12 @@ fn parse_binary(s: &str) -> ParseIntResult {
     Ok(result)
 }
 
-fn parse_octal(s: &str) -> ParseIntResult {
+fn parse_octal(s: &str) -> ParseNumberResult {
     debug_assert!(!s.is_empty());
 
     // NOTE: Maximum length cannot be handled.
     if s.len() >= F64_INT_OCT_DIGITS_MAX_LEN {
-        return Err("too big octal literal");
+        return Err("too long octal literal");
     }
 
     let src = s.as_bytes();
@@ -96,12 +96,12 @@ fn parse_octal(s: &str) -> ParseIntResult {
     Ok(result)
 }
 
-fn parse_hex(s: &str) -> ParseIntResult {
+fn parse_hex(s: &str) -> ParseNumberResult {
     debug_assert!(!s.is_empty());
 
     // NOTE: Maximum length cannot be handled.
     if s.len() >= F64_INT_HEX_DIGITS_MAX_LEN {
-        return Err("too big hex literal");
+        return Err("too long hex literal");
     }
 
     let src = s.as_bytes();
@@ -133,28 +133,28 @@ fn parse_hex(s: &str) -> ParseIntResult {
 /// NonDecimalIntegerLiteral should contain the leading '0x' etc.
 ///
 /// FIXME: LegacyOctalIntegerLiteral is not supported.
-pub fn parse_int<'alloc>(s: &str, kind: NumericLiteralBase) -> ParseIntResult {
+pub fn parse_int<'alloc>(s: &str, kind: NumericLiteralBase) -> ParseNumberResult {
     match kind {
-        NumericLiteralBase::Decimal => Ok(parse_decimal_int(s)),
+        NumericLiteralBase::Decimal => parse_decimal_int(s),
         NumericLiteralBase::Binary => parse_binary(&s[2..]),
         NumericLiteralBase::Octal => parse_octal(&s[2..]),
         NumericLiteralBase::Hex => parse_hex(&s[2..]),
     }
 }
 
-fn parse_float_with_underscore(s: &str) -> f64 {
+fn parse_float_with_underscore(s: &str) -> ParseNumberResult {
     let filtered: String = s.chars().filter(|c| *c != '_').collect();
 
     filtered
         .parse::<f64>()
-        .expect("DecimalLiteral should be accepted")
+        .map_err(|_| "too long decimal literal")
 }
 
 /// Parse non-integer NumericLiteral.
-pub fn parse_float(s: &str) -> f64 {
+pub fn parse_float(s: &str) -> ParseNumberResult {
     if s.contains('_') {
         return parse_float_with_underscore(s);
     }
 
-    s.parse::<f64>().expect("DecimalLiteral should be accepted")
+    s.parse::<f64>().map_err(|_| "too long decimal literal")
 }
