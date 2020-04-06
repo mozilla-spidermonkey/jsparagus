@@ -1194,16 +1194,10 @@ LazyArrowFunction :
         def try_it(goals):
             self.compile_as_js(grammar_source, goals=goals)
             self.assertParse("? ? ^ =>", goal='Script')
-            try:
-                self.assertParse("? ? ^ of", goal='Script')
-            except jsparagus.lexer.SyntaxError:
-                return 'fail'
-            else:
-                return 'pass'
+            self.assertParse("? ? ^ of", goal='Script')
 
-        # Assert the bad status quo. This is issue #464.
-        self.assertEqual(try_it(['Script', 'LazyArrowFunction']), 'fail')
-        self.assertEqual(try_it(['Script']), 'pass')
+        try_it(['Script', 'LazyArrowFunction'])
+        try_it(['Script'])
 
 if __name__ == '__main__':
     unittest.main()
