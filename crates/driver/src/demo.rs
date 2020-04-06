@@ -13,10 +13,11 @@ extern crate jsparagus_emitter as emitter;
 extern crate jsparagus_interpreter as interpreter;
 extern crate jsparagus_parser as parser;
 
+use ast::arena;
 use ast::dump::ASTDump;
 use ast::source_atom_set::SourceAtomSet;
 use ast::source_slice_list::SourceSliceList;
-use ast::types::{Program, Script};
+use ast::types::Program;
 use bumpalo::Bump;
 use interpreter::{create_global, evaluate, Object};
 use parser::{is_partial_script, parse_script, ParseOptions};
@@ -135,18 +136,17 @@ pub struct Verbosity {
 
 fn handle_script<'alloc>(
     verbosity: &Verbosity,
-    script: Script<'alloc>,
+    program: &'alloc Program<'alloc>,
     atoms: SourceAtomSet<'alloc>,
     slices: SourceSliceList<'alloc>,
     global: Rc<RefCell<Object>>,
 ) {
     if verbosity.ast {
-        script.dump_with_atoms(&mut io::stderr(), &atoms, &slices);
+        program.dump_with_atoms(&mut io::stderr(), &atoms, &slices);
     }
 
-    let mut program = Program::Script(script);
     let options = emitter::EmitOptions::new();
-    match emitter::emit(&mut program, &options, atoms, slices) {
+    match emitter::emit(program, &options, atoms, slices) {
         Err(err) => {
             eprintln!("error: {}", err);
         }
@@ -215,9 +215,11 @@ pub fn read_print_loop(verbosity: Verbosity) {
                 eprintln!("error: {}", err);
             }
             Ok(script) => {
+                let program = arena::alloc(allocator, Program::Script(script.unbox()));
+
                 handle_script(
                     &verbosity,
-                    script.unbox(),
+                    &program.unbox(),
                     atoms.replace(SourceAtomSet::new_uninitialized()),
                     slices.replace(SourceSliceList::new()),
                     global.clone(),

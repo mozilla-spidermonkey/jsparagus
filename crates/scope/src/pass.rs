@@ -20,23 +20,23 @@ impl<'alloc> ScopePass<'alloc> {
 }
 
 impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
-    fn enter_script(&mut self, _ast: &mut Script<'alloc>) {
+    fn enter_script(&mut self, _ast: &'alloc Script<'alloc>) {
         self.context.before_script();
     }
 
-    fn leave_script(&mut self, _ast: &mut Script<'alloc>) {
+    fn leave_script(&mut self, _ast: &'alloc Script<'alloc>) {
         self.context.after_script();
     }
 
-    fn enter_enum_statement_variant_block_statement(&mut self, block: &mut Block<'alloc>) {
+    fn enter_enum_statement_variant_block_statement(&mut self, block: &'alloc Block<'alloc>) {
         self.context.before_block_statement(block);
     }
 
-    fn leave_enum_statement_variant_block_statement(&mut self, _block: &mut Block<'alloc>) {
+    fn leave_enum_statement_variant_block_statement(&mut self, _block: &'alloc Block<'alloc>) {
         self.context.after_block_statement();
     }
 
-    fn enter_variable_declaration(&mut self, ast: &mut VariableDeclaration<'alloc>) {
+    fn enter_variable_declaration(&mut self, ast: &'alloc VariableDeclaration<'alloc>) {
         match ast.kind {
             VariableDeclarationKind::Var { .. } => {
                 self.context.before_var_declaration();
@@ -50,7 +50,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         }
     }
 
-    fn leave_variable_declaration(&mut self, ast: &mut VariableDeclaration<'alloc>) {
+    fn leave_variable_declaration(&mut self, ast: &'alloc VariableDeclaration<'alloc>) {
         match ast.kind {
             VariableDeclarationKind::Var { .. } => {
                 self.context.after_var_declaration();
@@ -64,7 +64,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         }
     }
 
-    fn visit_binding_identifier(&mut self, ast: &mut BindingIdentifier) {
+    fn visit_binding_identifier(&mut self, ast: &'alloc BindingIdentifier) {
         // NOTE: The following should be handled at the parent node,
         // without visiting BindingIdentifier field:
         //   * Function.name
@@ -81,11 +81,11 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
     // visit_identifier is not called for Identifier inside BindingIdentifier,
     // and this is called only for references, either
     // IdentifierExpression or AssignmentTargetIdentifier.
-    fn visit_identifier(&mut self, ast: &mut Identifier) {
+    fn visit_identifier(&mut self, ast: &'alloc Identifier) {
         self.context.on_non_binding_identifier(ast.value);
     }
 
-    fn enter_enum_statement_variant_function_declaration(&mut self, ast: &mut Function<'alloc>) {
+    fn enter_enum_statement_variant_function_declaration(&mut self, ast: &'alloc Function<'alloc>) {
         let name = if let Some(ref name) = ast.name {
             name.name.value
         } else {

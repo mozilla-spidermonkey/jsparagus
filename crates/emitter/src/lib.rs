@@ -28,7 +28,7 @@ use ast::source_atom_set::SourceAtomSet;
 use ast::source_slice_list::SourceSliceList;
 
 pub fn emit<'alloc>(
-    ast: &mut ast::types::Program,
+    ast: &'alloc ast::types::Program<'alloc>,
     options: &EmitOptions,
     atoms: SourceAtomSet<'alloc>,
     slices: SourceSliceList<'alloc>,
