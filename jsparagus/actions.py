@@ -18,6 +18,37 @@ class StackDiff:
     """
     __slots__ = ['pop', 'nt', 'replay']
 
+    # Example: We have shifted `b * c X Y`. We want to reduce `b * c` to Mul.
+    #
+    # In the initial LR0 pass over the grammar, this produces a Reduce edge.
+    #
+    # action         pop          replay
+    # -------------- ------       ---------
+    # Reduce         3 (`b * c`)  2 (`X Y`)
+    #   The parser moves `X Y` to the replay queue, pops `b * c`, creates the
+    #   new `Mul` nonterminal, consults the stack and parse table to determine
+    #   the new state id, then replays the new nonterminal. Reduce leaves `X Y`
+    #   on the runtime replay queue. It's the runtime's responsibility to
+    #   notice that they are there and replay them.
+    #
+    # Later, the Reduce edge might be lowered into an [Unwind; FilterState;
+    # Replay] sequence, which encode both the Reduce action, and the expected
+    # behavior of the runtime.
+    #
+    # action         pop          replay
+    # -------------- ------       ---------
+    # Unwind         3            2
+    #   The parser moves `X Y` to the replay queue, pops `b * c`, creates the
+    #   new `Mul` nonterminal, and inserts it at the front of the replay queue.
+    #
+    # FilterState    ---          ---
+    #   Determines the new state id, if it's context-dependent.
+    #   This doesn't touch the stack, so no StackDiff.
+    #
+    # Replay         0            -3
+    #   Shift the three elements we left on the replay queue back to the stack:
+    #   `(b*c) X Y`.
+
     # Number of elements to be popped from the stack, this is used when
     # reducing the stack with a non-terminal.
     #
@@ -29,15 +60,19 @@ class StackDiff:
     # by reducing the action.
     nt: typing.Union[Nt, ErrorSymbol, None]
 
+    # Number of terms this action moves from the stack to the runtime replay
+    # queue (not counting `self.nt`), or from the replay queue to the stack if
+    # negative.
+    #
     # When executing actions, some lookahead might have been used to make the
     # parse table consistent. Replayed terms are popped before popping any
     # elements from the stack, and they are added in reversed order in the
-    # replay list, such that they would be shifted after shfting the `reduced`
+    # replay list, such that they would be shifted after shifting the `reduced`
     # non-terminal.
     #
     # This number might also be negative, in which case some lookahead terms
     # are expected to exists in the replay list, and they are shifted back.
-    # This case can should only exists when follow_edge is True.
+    # This must happen only follow_edge is True.
     replay: int
 
 
@@ -149,6 +184,32 @@ class Action:
 
 
 ShiftedAction = typing.Union[Action, bool]
+
+
+class Replay(Action):
+    """Replay a term which was previously saved by the Unwind function. Note that
+    this does not Shift a term given as argument as the replay action should
+    always be garanteed and that we want to maximize the sharing of code when
+    possible."""
+    __slots__ = ['replay_dest']
+
+    replay_steps: typing.Tuple[StateId, ...]
+
+    def __init__(self, replay_steps: typing.Iterable[StateId]):
+        super().__init__()
+        self.replay_steps = tuple(replay_steps)
+
+    def update_stack(self) -> bool:
+        return True
+
+    def update_stack_with(self) -> StackDiff:
+        return StackDiff(0, None, -len(self.replay_steps))
+
+    def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> Replay:
+        return Replay(map(lambda s: state_map[s], self.replay_steps))
+
+    def __str__(self) -> str:
+        return "Replay({})".format(str(self.replay_steps))
 
 
 class Unwind(Action):

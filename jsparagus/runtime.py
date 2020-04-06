@@ -175,6 +175,21 @@ class Parser:
             else:
                 break
 
+    def replay_action(self, dest):
+        # This code emulates the code which would be executed by the shift
+        # function, if we were to return to this shift function instead of
+        # staying within the action functions. The destination provided as
+        # argument should match the content of the parse table, otherwise this
+        # would imply that the replay action does not encode a transition from
+        # the parse table.
+        state = self.stack[-1].state
+        stv = self.replay.pop()
+        if self.debug:
+            self._dbg_where("(inline-replay: {})".format(repr(stv.term)))
+        goto = self.actions[state].get(stv.term, ERROR)
+        assert goto == dest
+        self.stack.append(StateTermValue(dest, stv.term, stv.value, stv.new_line))
+
     def shift_list(self, stv_list, lexer):
         self.replay.extend(reversed(stv_list))
 
