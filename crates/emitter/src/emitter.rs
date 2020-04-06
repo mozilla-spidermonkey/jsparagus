@@ -396,18 +396,21 @@ impl InstructionWriter {
     pub fn patch_and_emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
         let mut target = self.bytecode_offset();
         let last_jump = self.last_jump_target_offset;
-
-        if let Some(offset) = last_jump {
-            if offset.end(self) != target.offset {
+        match last_jump {
+            Some(offset) => {
+                if offset.end(self) != target.offset {
+                    self.jump_target();
+                    self.set_jump_target_offset(target);
+                } else {
+                    target = offset;
+                }
+            },
+            None => {
                 self.jump_target();
                 self.set_jump_target_offset(target);
-            } else {
-                target = offset;
             }
-        } else {
-            self.jump_target();
-            self.set_jump_target_offset(target);
         }
+
         for jump in jumplist {
             self.patch_jump_to_target(target, jump);
         }
