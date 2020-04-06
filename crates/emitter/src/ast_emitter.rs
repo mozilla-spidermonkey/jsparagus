@@ -22,7 +22,10 @@ use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
 use scope::data::ScopeDataMap;
 
-use crate::control_structures::{BreakEmitter, ForwardJumpEmitter, JumpKind, LoopStack};
+use crate::control_structures::{
+    BreakEmitter, DoWhileEmitter, ForCEmitter, ForwardJumpEmitter, JumpKind, LoopStack,
+    WhileEmitter,
+};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program<'alloc>(
@@ -109,20 +112,11 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
             Statement::DoWhileStatement { block, test, .. } => {
-                self.loop_stack.open_loop(&mut self.emit);
-
-                self.emit_statement(block)?;
-
-                self.emit_expression(test)?;
-
-                BreakEmitter {
-                    jump: JumpKind::IfEq,
+                DoWhileEmitter {
+                    block: |emitter| emitter.emit_statement(block),
+                    test: |emitter| emitter.emit_expression(test),
                 }
-                .emit(self);
-
-                // TODO: emit continue
-                // Merge point after cond fails
-                self.loop_stack.close_loop(&mut self.emit);
+                .emit(self)?;
             }
             Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
@@ -144,59 +138,46 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 block,
                 ..
             } => {
-                // TODO: implement offsets
-                // Parameters are the offset in the source code for each
-                // character below:
-                //
-                //   for ( x = 10 ; x < 20 ; x ++ ) { f(x); }
-                //   ^     ^        ^        ^
-                //   |     |        |        |
-                //   |     |        |        updatePos
-                //   |     |        |
-                //   |     |        condPos
-                //   |     |
-                //   |     initPos
-                //   |
-                //   forPos
-
-                if let Some(value) = init {
-                    match value {
-                        VariableDeclarationOrExpression::VariableDeclaration(ast) => {
-                            self.emit_variable_declaration_statement(ast)?;
+                ForCEmitter {
+                    init: |emitter| {
+                        if let Some(value) = init {
+                            match value {
+                                VariableDeclarationOrExpression::VariableDeclaration(ast) => {
+                                    emitter.emit_variable_declaration_statement(ast)?;
+                                }
+                                VariableDeclarationOrExpression::Expression(expr) => {
+                                    emitter.emit_expression(expr)?
+                                }
+                            }
+                            emitter.emit.pop();
                         }
-                        VariableDeclarationOrExpression::Expression(expr) => {
-                            self.emit_expression(expr)?
+                        Ok(())
+                    },
+                    test: |emitter| {
+                        match test {
+                            Some(expr) => {
+                                emitter.emit_expression(expr)?;
+                            }
+                            None => {
+                                emitter.emit.emit_boolean(true);
+                            }
                         }
-                    }
-                }
-                self.loop_stack.open_loop(&mut self.emit);
-
-                match test {
-                    Some(expr) => {
-                        self.emit_expression(expr)?;
-                    }
-                    None => {
-                        self.emit.emit_boolean(true);
-                    }
-                }
-
-                BreakEmitter {
-                    jump: JumpKind::IfEq,
-                }
-                .emit(self);
-
-                if let Some(expr) = update {
-                    self.emit_expression(expr)?;
-                }
-
-                ExpressionEmitter {
-                    expr: |emitter| emitter.emit_statement(block),
+                        Ok(())
+                    },
+                    block: |emitter| {
+                        emitter.emit_statement(block)?;
+                        //emitter.emit.pop();
+                        Ok(())
+                    },
+                    update: |emitter| {
+                        if let Some(expr) = update {
+                            emitter.emit_expression(expr)?;
+                            emitter.emit.pop();
+                        }
+                        Ok(())
+                    },
                 }
                 .emit(self)?;
-
-                // loop_stack.emit_continue(emitter);
-                // Merge point after cond fails
-                self.loop_stack.close_loop(&mut self.emit);
             }
             Statement::IfStatement(if_statement) => {
                 self.emit_if(if_statement)?;
@@ -229,34 +210,11 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 self.emit_variable_declaration_statement(ast)?;
             }
             Statement::WhileStatement { test, block, .. } => {
-                // TODO: Set postions
-                // Parameters are the offset in the source code for each
-                // character below:
-                //
-                //   while ( x < 20 ) { ... }
-                //   ^       ^              ^
-                //   |       |              |
-                //   |       |              endPos_
-                //   |       |
-                //   |       condPos_
-                //   |
-                //   whilePos_
-
-                self.loop_stack.open_loop(&mut self.emit);
-
-                self.emit_expression(test)?;
-
-                BreakEmitter {
-                    jump: JumpKind::IfEq,
+                WhileEmitter {
+                    test: |emitter| emitter.emit_expression(test),
+                    block: |emitter| emitter.emit_statement(block),
                 }
-                .emit(self);
-
-                self.emit_statement(block)?;
-
-                // TODO: emit continue here
-
-                // Merge point
-                self.loop_stack.close_loop(&mut self.emit);
+                .emit(self)?;
             }
             Statement::WithStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WithStatement"));

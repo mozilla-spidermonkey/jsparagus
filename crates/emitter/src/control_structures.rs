@@ -1,5 +1,6 @@
 use super::emitter::BytecodeOffset;
 use crate::ast_emitter::AstEmitter;
+use crate::emitter::EmitError;
 use crate::emitter::InstructionWriter;
 
 // Control structures
@@ -215,5 +216,141 @@ impl BreakEmitter {
         let offset = emitter.emit.bytecode_offset();
         emitter.loop_stack.register_break(offset);
         self.emit_jump(emitter);
+    }
+}
+
+pub struct WhileEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub test: F1,
+    pub block: F2,
+}
+impl<F1, F2> WhileEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+        // TODO: Set postions
+        // Parameters are the offset in the source code for each
+        // character below:
+        //
+        //   while ( x < 20 ) { ... }
+        //   ^       ^              ^
+        //   |       |              |
+        //   |       |              endPos_
+        //   |       |
+        //   |       condPos_
+        //   |
+        //   whilePos_
+
+        emitter.loop_stack.open_loop(&mut emitter.emit);
+
+        (self.test)(emitter)?;
+
+        BreakEmitter {
+            jump: JumpKind::IfEq,
+        }
+        .emit(emitter);
+
+        (self.block)(emitter)?;
+        //self.emit_statement(block)?;
+
+        // TODO: emit continue here
+
+        // Merge point
+        emitter.loop_stack.close_loop(&mut emitter.emit);
+        Ok(())
+    }
+}
+
+pub struct DoWhileEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub block: F2,
+    pub test: F1,
+}
+impl<F1, F2> DoWhileEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+        emitter.loop_stack.open_loop(&mut emitter.emit);
+
+        (self.block)(emitter)?;
+
+        (self.test)(emitter)?;
+
+        BreakEmitter {
+            jump: JumpKind::IfEq,
+        }
+        .emit(emitter);
+
+        // TODO: emit continue
+        // Merge point after cond fails
+        emitter.loop_stack.close_loop(&mut emitter.emit);
+        Ok(())
+    }
+}
+
+pub struct ForCEmitter<F1, F2, F3, F4>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F3: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F4: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub init: F1,
+    pub test: F2,
+    pub update: F3,
+    pub block: F4,
+}
+impl<F1, F2, F3, F4> ForCEmitter<F1, F2, F3, F4>
+where
+    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F3: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    F4: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+        // TODO: implement offsets
+        // Parameters are the offset in the source code for each
+        // character below:
+        //
+        //   for ( x = 10 ; x < 20 ; x ++ ) { f(x); }
+        //   ^     ^        ^        ^
+        //   |     |        |        |
+        //   |     |        |        updatePos
+        //   |     |        |
+        //   |     |        condPos
+        //   |     |
+        //   |     initPos
+        //   |
+        //   forPos
+
+        (self.init)(emitter)?;
+
+        emitter.loop_stack.open_loop(&mut emitter.emit);
+
+        (self.test)(emitter)?;
+
+        BreakEmitter {
+            jump: JumpKind::IfEq,
+        }
+        .emit(emitter);
+
+        (self.block)(emitter)?;
+
+        (self.update)(emitter)?;
+
+        // loop_stack.emit_continue(emitter);
+        // Merge point after cond fails
+        emitter.loop_stack.close_loop(&mut emitter.emit);
+        Ok(())
     }
 }

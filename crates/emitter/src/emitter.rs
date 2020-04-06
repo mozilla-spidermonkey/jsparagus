@@ -404,7 +404,7 @@ impl InstructionWriter {
                 } else {
                     target = offset;
                 }
-            },
+            }
             None => {
                 self.jump_target();
                 self.set_jump_target_offset(target);
