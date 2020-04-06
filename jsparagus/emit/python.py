@@ -7,7 +7,7 @@ import typing
 
 from ..grammar import ErrorSymbol, Nt, Some
 from ..actions import (Accept, Action, CheckNotOnNewLine, FilterFlag, FilterStates, FunCall,
-                       Lookahead, OutputExpr, PopFlag, PushFlag, Reduce, Seq)
+                       Lookahead, OutputExpr, PopFlag, PushFlag, Reduce, Replay, Seq, Unwind)
 from ..runtime import ErrorToken, ErrorTokenClass
 from ..ordered import OrderedSet
 from ..lr0 import Term
@@ -44,7 +44,11 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
 
     def write_action(act: Action, indent: str = "") -> typing.Tuple[str, bool]:
         assert not act.is_inconsistent()
-        if isinstance(act, Reduce):
+        if isinstance(act, Replay):
+            for s in act.replay_steps:
+                out.write("{}parser.replay_action({})\n".format(indent, s))
+            return indent, True
+        if isinstance(act, (Unwind, Reduce)):
             stack_diff = act.update_stack_with()
             out.write("{}replay = [StateTermValue(0, {}, value, False)]\n"
                       .format(indent, repr(stack_diff.nt)))
@@ -53,7 +57,7 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
             if stack_diff.replay + stack_diff.pop > 0:
                 out.write("{}del parser.stack[-{}:]\n".format(indent, stack_diff.replay + stack_diff.pop))
             out.write("{}parser.shift_list(replay, lexer)\n".format(indent))
-            return indent, False
+            return indent, act.follow_edge()
         if isinstance(act, Accept):
             out.write("{}raise ShiftAccept()\n".format(indent))
             return indent, False

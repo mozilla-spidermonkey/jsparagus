@@ -21,6 +21,7 @@ pub struct TermValue<Value> {
 /// with variable lookahead which can be replayed.
 pub trait ParserTrait<'alloc, Value> {
     fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;
+    fn shift_replayed(&mut self, state: usize);
     fn unshift(&mut self);
     fn rewind(&mut self, n: usize) {
         for _ in 0..n {

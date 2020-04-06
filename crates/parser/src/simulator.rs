@@ -68,6 +68,11 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
         }
         Ok(false)
     }
+    fn shift_replayed(&mut self, state: usize) {
+        let tv = self.replay_stack.pop().unwrap();
+        self.sim_state_stack.push(state);
+        self.sim_node_stack.push(tv);
+    }
     fn unshift(&mut self) {
         let tv = self.pop();
         self.replay(tv)
