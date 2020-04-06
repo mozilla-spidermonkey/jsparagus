@@ -422,7 +422,7 @@ def pass_(ast):
                 # Hack in a quick fix
                 continue
 
-            write(1, "fn {}(&mut self, ast: &mut {}) {{",
+            write(1, "fn {}(&mut self, ast: &'alloc {}) {{",
                   to_method_name(type_decl.name), Type(name).to_rust_type(ast))
 
             write(2, "self.{}(ast);",
@@ -439,13 +439,13 @@ def pass_(ast):
             write(1, "}")
             write(0, "")
 
-            write(1, "fn {}(&mut self, ast: &mut {}) {{",
+            write(1, "fn {}(&mut self, ast: &'alloc {}) {{",
                   to_enter_method_name(type_decl.name),
                   Type(name).to_rust_type(ast))
             write(1, "}")
             write(0, "")
 
-            write(1, "fn {}(&mut self, ast: &mut {}) {{",
+            write(1, "fn {}(&mut self, ast: &'alloc {}) {{",
                   to_leave_method_name(type_decl.name),
                   Type(name).to_rust_type(ast))
             write(1, "}")
@@ -463,7 +463,7 @@ def pass_(ast):
                         def write_field_params(indent, write, variant_type,
                                                ast):
                             for field_name, field_ty in variant_type.items():
-                                write(2, "{}: &mut {},",
+                                write(2, "{}: &'alloc {},",
                                       field_name, field_ty.to_rust_type(ast))
 
                         write(1, "fn {}(",
@@ -513,7 +513,7 @@ def pass_(ast):
                     else:
                         def write_field_params(indent, write, variant_type,
                                                ast):
-                            write(2, "ast: &mut {},",
+                            write(2, "ast: &'alloc {},",
                                   variant_type.to_rust_type(ast))
 
                         write(1, "fn {}(",
@@ -794,7 +794,7 @@ class Struct(AggregateTypeDecl):
                                     emit_variant_tuple_call,
                                     emit_variant_none_call):
         for name, ty in self.fields.items():
-            emit_call(2, ty, "&mut ast.{}".format(name))
+            emit_call(2, ty, "&ast.{}".format(name))
 
     def write_rust_dump_method_body(self, write):
         write(2, 'write!(out, "({}").expect("failed to dump");', self.name)
@@ -879,7 +879,7 @@ class Enum(AggregateTypeDecl):
                                                  variant_type):
         for field_name, field_ty in variant_type.items():
             if field_ty.name == 'Vec':
-                emit_call(2, field_ty, '{}.iter_mut()'.format(field_name))
+                emit_call(2, field_ty, '{}.iter()'.format(field_name))
             else:
                 emit_call(2, field_ty, field_name)
 
