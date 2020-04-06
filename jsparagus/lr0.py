@@ -140,7 +140,8 @@ class LRItem:
 # A Term is the label on an edge from one state to another. It's normally a
 # terminal, nonterminal, or epsilon action. A state can also have a special
 # catchall edge, labeled with an ErrorSymbol.
-Term = typing.Union[str, Nt, Action, ErrorSymbol]
+ShiftedTerm = typing.Union[str, Nt, ErrorSymbol]
+Term = typing.Union[ShiftedTerm, Action]
 
 
 def on_stack(grammar: Grammar, term: Element) -> bool:

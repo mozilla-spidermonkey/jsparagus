@@ -1,8 +1,9 @@
-import collections
+from __future__ import annotations
+
 import typing
 from dataclasses import dataclass
 from .grammar import Nt
-from .actions import Action
+from .lr0 import ShiftedTerm, Term
 
 StateId = int
 
@@ -17,8 +18,7 @@ class Edge:
     inferred by looking it up in the parse table.
 
     Note, the term might be `None` if no term is specified yet. This is useful
-    when manipulating a list of edges and we know that we are taking transitions
-    from a given state, but not yet with which term.
+    for specifying the last state in a Path.
 
       src: Index of the state from which this directed edge is coming from.
 
@@ -26,13 +26,21 @@ class Edge:
           action to be executed on an epsilon transition.
     """
     src: StateId
-    term: typing.Union[str, Nt, Action]
+    term: typing.Optional[Term]
 
     def stable_str(self, states):
         return "{} -- {} -->".format(states[self.src].stable_hash, str(self.term))
 
     def __str__(self):
         return "{} -- {} -->".format(self.src, str(self.term))
+
+
+# A path through the state graph.
+#
+# `e.src for e in path` is the sequence of states visited, and
+# `e.term for e in path[:-1]` is the sequence of edges traversed.
+# `path[-1].term` should be ignored and is often None.
+Path = typing.List[Edge]
 
 
 @dataclass(frozen=True)
@@ -60,15 +68,15 @@ class APS:
     # As more history is discovered by resolving unwind actions, this stack
     # would be filled with the predecessors which have been visited before
     # reaching the starting state.
-    stack: typing.List[Edge]
+    stack: Path
 
     # This is the stack as manipulated by an LR parser. States are shifted to
     # it, including actions, and popped from it when visiting a unwind action.
-    shift: typing.List[Edge]
+    shift: Path
 
     # This is the list of terminals and non-terminals encountered by shifting
     # edges which are not replying tokens.
-    lookahead: typing.List[typing.Union[str, Nt]]
+    lookahead: typing.List[ShiftedTerm]
 
     # This is the list of lookahead terminals and non-terminals which remains
     # to be shifted. This list corresponds to terminals and non-terminals which
@@ -77,7 +85,7 @@ class APS:
     replay: typing.List[typing.Union[str, Nt]]
 
     # This is the list of edges visited since the starting state.
-    history: typing.List[Edge]
+    history: Path
 
     # This is a flag which is used to distinguish whether the next term to be
     # replayed is the result of a Reduce action or not. When reducing, epsilon
@@ -86,12 +94,12 @@ class APS:
     reducing: bool
 
     @staticmethod
-    def start(state):
+    def start(state: StateId) -> APS:
         "Return an Abstract Parser State starting at a given state of a parse table"
         edge = Edge(state, None)
         return APS([edge], [edge], [], [], [], False)
 
-    def shift_next(self, pt):
+    def shift_next(self, pt: typing.Any) -> typing.Iterator[APS]:
         """Yield an APS for each state reachable from this APS in a single step,
         by handling a single term (terminal, nonterminal, or action).
 
@@ -107,8 +115,11 @@ class APS:
         For example, we cannot reduce to a path which is different than what is
         already present in the `shift` list, or shift a term different than the
         next term to be shifted from the `replay` list.
-
         """
+
+        # The actual type of parameter `pt` is ParseTable, but this would
+        # require a cyclic dependency, so we bail out of the type system using
+        # typing.Any.
 
         st, sh, la, rp, hs = self.stack, self.shift, self.lookahead, self.replay, self.history
         last_edge = sh[-1]

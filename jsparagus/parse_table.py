@@ -1,16 +1,20 @@
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
 
 import collections
 import hashlib
+import os
 import pickle
+import typing
 
+from . import types
+from .utils import consume, keep_until
 from .ordered import OrderedSet, OrderedFrozenSet
 from .actions import Action, Reduce, FilterFlag
-from .grammar import ErrorSymbol, Grammar, InitNt, Nt
+from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
-from .lr0 import LR0Generator
-from .aps import Edge, APS
-from .utils import consume, keep_until
+from .lr0 import LR0Generator, LRItem, Term
+from .aps import APS, Edge, Path, StateId
 
 
 class StateAndTransitions:
@@ -21,30 +25,52 @@ class StateAndTransitions:
     such as reduce actions and any others actions.
     """
 
-    __slots__ = [
-        "index",            # Numerical index of this state.
-        "terminals",        # Terminals map.
-        "nonterminals",     # Non-terminals map.
-        "errors",           # List of error symbol transitions.
-        "epsilon",          # List of epsilon transitions with associated
-                            # actions.
-        "locations",        # Ordered set of LRItems (grammar position).
-        "delayed_actions",  # Ordered set of Actions which are pushed to the
-                            # next state after a conflict.
-        "backedges",        # Set of back edges and whether these are expected
-                            # to be on the parser stack or not.
-        "_hash",            # Hash to identify states which have to be merged.
-                            # This hash is composed of LRItems of the LR0
-                            # grammar, and actions performed on it since. This
-                            # hash is sued for python internals such as
-                            # dictionary and sets.
-        "stable_hash",      # Hash computed the same way as the previous one,
-                            # but used only for human readbale output. The
-                            # stability is useful to match states across
-                            # grammar modifications.
-    ]
+    __slots__ = ["index", "locations", "terminals", "nonterminals", "errors",
+                 "epsilon", "delayed_actions", "backedges", "_hash",
+                 "stable_hash"]
 
-    def __init__(self, index, locations, delayed_actions=OrderedFrozenSet()):
+    # Numerical index of this state.
+    index: StateId
+
+    # The stable_str of each LRItem we could be parsing in this state: the
+    # places in grammar productions that tell what we've already parsed,
+    # i.e. how we got to this state.
+    locations: OrderedFrozenSet[str]
+
+    # Outgoing edges taken when shifting terminals.
+    terminals: typing.Dict[str, StateId]
+
+    # Outgoing edges taken when shifting nonterminals after reducing.
+    nonterminals: typing.Dict[Nt, StateId]
+
+    # Error symbol transitions.
+    errors: typing.Dict[ErrorSymbol, StateId]
+
+    # List of epsilon transitions with associated actions.
+    epsilon: typing.List[typing.Tuple[Action, StateId]]
+
+    # Ordered set of Actions which are pushed to the next state after a
+    # conflict.
+    delayed_actions: OrderedFrozenSet[Action]
+
+    # Set of edges that lead to this state.
+    backedges: OrderedSet[Edge]
+
+    # Cached hash code. This class implements __hash__ and __eq__ in order to
+    # help detect equivalent states (which must be merged, for correctness).
+    _hash: int
+
+    # A hash code computed the same way as _hash, but used only for
+    # human-readable output. The stability is useful for debugging, to match
+    # states across multiple runs of the parser generator.
+    stable_hash: str
+
+    def __init__(
+            self,
+            index: StateId,
+            locations: OrderedFrozenSet[str],
+            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+    ) -> None:
         assert isinstance(locations, OrderedFrozenSet)
         assert isinstance(delayed_actions, OrderedFrozenSet)
         self.index = index
@@ -58,7 +84,7 @@ class StateAndTransitions:
 
         # NOTE: The hash of a state depends on its location in the LR0
         # parse-table, as well as the actions which have not yet been executed.
-        def hashed_content():
+        def hashed_content() -> typing.Iterator[object]:
             for item in sorted(self.locations):
                 yield item
                 yield "\n"
@@ -71,7 +97,7 @@ class StateAndTransitions:
         h.update("".join(map(str, hashed_content())).encode())
         self.stable_hash = h.hexdigest()[:6]
 
-    def is_inconsistent(self):
+    def is_inconsistent(self) -> bool:
         "Returns True if the state transitions are inconsistent."
         # TODO: We could easily allow having a state with non-terminal
         # transition and other epsilon transitions, as the non-terminal shift
@@ -93,9 +119,11 @@ class StateAndTransitions:
                 return True
             if any(not isinstance(k.condition(), FilterFlag) for k, s in self.epsilon):
                 return True
-            if len(set(k.condition().flag for k, s in self.epsilon)) > 1:
+            # "type: ignore" because mypy does not see that the preceding if-statement
+            # means all k.condition() actions are FilterFlags.
+            if len(set(k.condition().flag for k, s in self.epsilon)) > 1:  # type: ignore
                 return True
-            if len(self.epsilon) != len(set(k.condition().value for k, s in self.epsilon)):
+            if len(self.epsilon) != len(set(k.condition().value for k, s in self.epsilon)):  # type: ignore
                 return True
         else:
             try:
@@ -104,7 +132,11 @@ class StateAndTransitions:
                 return True
         return False
 
-    def shifted_edges(self):
+    def shifted_edges(self) -> typing.Iterator[
+            typing.Tuple[typing.Union[str, Nt, ErrorSymbol], StateId]
+    ]:
+        k: Term
+        s: StateId
         for k, s in self.terminals.items():
             yield (k, s)
         for k, s in self.nonterminals.items():
@@ -112,7 +144,9 @@ class StateAndTransitions:
         for k, s in self.errors.items():
             yield (k, s)
 
-    def edges(self):
+    def edges(self) -> typing.Iterator[typing.Tuple[Term, StateId]]:
+        k: Term
+        s: StateId
         for k, s in self.terminals.items():
             yield (k, s)
         for k, s in self.nonterminals.items():
@@ -122,7 +156,10 @@ class StateAndTransitions:
         for k, s in self.epsilon:
             yield (k, s)
 
-    def rewrite_state_indexes(self, state_map):
+    def rewrite_state_indexes(
+            self,
+            state_map: typing.Dict[StateId, StateId]
+    ) -> None:
         self.index = state_map[self.index]
         self.terminals = {
             k: state_map[s] for k, s in self.terminals.items()
@@ -136,17 +173,17 @@ class StateAndTransitions:
         self.epsilon = [
             (k, state_map[s]) for k, s in self.epsilon
         ]
-        self.backedges = set(
+        self.backedges = OrderedSet(
             Edge(state_map[edge.src], edge.term) for edge in self.backedges
         )
 
-    def get_error_symbol(self):
+    def get_error_symbol(self) -> typing.Optional[ErrorSymbol]:
         if len(self.errors) > 1:
             raise ValueError("More than one error symbol on the same state.")
         else:
             return next(iter(self.errors), None)
 
-    def __contains__(self, term):
+    def __contains__(self, term: object) -> bool:
         if isinstance(term, Action):
             for t, s in self.epsilon:
                 if t == term:
@@ -159,7 +196,7 @@ class StateAndTransitions:
         else:
             return term in self.terminals
 
-    def __getitem__(self, term):
+    def __getitem__(self, term: Term) -> StateId:
         if isinstance(term, Action):
             for t, s in self.epsilon:
                 if t == term:
@@ -172,36 +209,36 @@ class StateAndTransitions:
         else:
             return self.terminals[term]
 
-    def get(self, term, default):
+    def get(self, term: Term, default: object) -> object:
         try:
             return self.__getitem__(term)
         except KeyError:
             return default
 
-    def stable_str(self, states):
+    def stable_str(self, states: typing.List[StateAndTransitions]) -> str:
         conflict = ""
         if self.is_inconsistent():
             conflict = " (inconsistent)"
         return "{}{}:\n{}".format(self.stable_hash, conflict, "\n".join([
             "\t{} --> {}".format(k, states[s].stable_hash) for k, s in self.edges()]))
 
-    def __str__(self):
+    def __str__(self) -> str:
         conflict = ""
         if self.is_inconsistent():
             conflict = " (inconsistent)"
         return "{}{}:\n{}".format(self.index, conflict, "\n".join([
             "\t{} --> {}".format(k, s) for k, s in self.edges()]))
 
-    def __eq__(self, other):
-        assert isinstance(other, StateAndTransitions)
-        if sorted(self.locations) != sorted(other.locations):
-            return False
-        if sorted(self.delayed_actions) != sorted(other.delayed_actions):
-            return False
-        return True
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, StateAndTransitions)
+                and sorted(self.locations) == sorted(other.locations)
+                and sorted(self.delayed_actions) == sorted(other.delayed_actions))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._hash
+
+
+DebugInfo = typing.Dict[StateId, int]
 
 
 class ParseTable:
@@ -235,41 +272,63 @@ class ParseTable:
     """
 
     __slots__ = [
-        # Map of actions identifier to the corresponding object.
-        "actions",
-        # Map of state identifier to the corresponding object.
-        "states",
-        # Map of state object to the corresponding identifer.
-        "state_cache",
-        # List of (Nt, states) tuples which are the entry point of the state
-        # machine.
-        "named_goals",
-        # List of terminals.
-        "terminals",
-        # List of non-terminals.
-        "nonterminals",
-        # Carry the info to be used when generating debug_context. If False,
-        # then no debug_context is ever produced.
-        "debug_info",
-        # Execution modes are used by the code generator to decide which
-        # function is executed when. This is a dictionary of OrderedSet, where
-        # the keys are the various parsing modes, and the mapped set contains
-        # the list of traits which have to be implemented, and consequently
-        # which functions would be encoded.
-        "exec_modes",
-        # Boolean flag which assume whether or not the parse table is
-        # inconsistent. This is used for adding extra assertion when computing
-        # the reduce path.
-        "assume_inconsistent",
+        "actions", "states", "state_cache", "named_goals", "terminals",
+        "nonterminals", "debug_info", "exec_modes", "assume_inconsistent"
     ]
 
-    def __init__(self, grammar, verbose=False, progress=False, debug=False):
+    # Map of actions identifier to the corresponding object.
+    actions: typing.List[Action]
+
+    # Map of state identifier to the corresponding object.
+    states: typing.List[StateAndTransitions]
+
+    # Hash table of state objects, ensuring we never have two equal states.
+    state_cache: typing.Dict[StateAndTransitions, StateAndTransitions]
+
+    # List of (Nt, states) tuples which are the entry point of the state
+    # machine.
+    named_goals: typing.List[typing.Tuple[Nt, StateId]]
+
+    # Set of all terminals.
+    terminals: OrderedFrozenSet[typing.Union[str, End]]
+
+    # List of non-terminals.
+    nonterminals: typing.List[Nt]
+
+    # Carry the info to be used when generating debug_context. If False,
+    # then no debug_context is ever produced.
+    debug_info: typing.Union[bool, DebugInfo]
+
+    # Execution modes are used by the code generator to decide which
+    # function is executed when. This is a dictionary of OrderedSet, where
+    # the keys are the various parsing modes, and the mapped set contains
+    # the list of traits which have to be implemented, and consequently
+    # which functions would be encoded.
+    exec_modes: typing.Optional[typing.DefaultDict[str, OrderedSet[types.Type]]]
+
+    # True if the parse table might be inconsistent. When this is False, we add
+    # extra assertions when computing the reduce path.
+    assume_inconsistent: bool
+
+    def __init__(
+            self,
+            grammar: CanonicalGrammar,
+            verbose: bool = False,
+            progress: bool = False,
+            debug: bool = False
+    ) -> None:
         self.actions = []
         self.states = []
         self.state_cache = {}
         self.named_goals = []
         self.terminals = grammar.grammar.terminals
-        self.nonterminals = list(grammar.grammar.nonterminals.keys())
+        self.nonterminals = typing.cast(
+            typing.List[Nt],
+            list(grammar.grammar.nonterminals.keys()))
+
+        # typing.cast() doesn't actually check at run time, so let's do that:
+        assert all(isinstance(nt, Nt) for nt in self.nonterminals)
+
         self.debug_info = debug
         self.exec_modes = grammar.grammar.exec_modes
         self.assume_inconsistent = True
@@ -284,12 +343,12 @@ class ParseTable:
         # Split shift states from epsilon states.
         self.group_epsilon_states(verbose, progress)
 
-    def save(self, filename):
+    def save(self, filename: os.PathLike) -> None:
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename: os.PathLike) -> ParseTable:
         with open(filename, 'rb') as f:
             obj = pickle.load(f)
             if len(f.read()) != 0:
@@ -299,14 +358,18 @@ class ParseTable:
                             .format(cls.__name__, obj.__class__.__name__))
         return obj
 
-    def is_inconsistent(self):
+    def is_inconsistent(self) -> bool:
         "Returns True if the grammar contains any inconsistent state."
         for s in self.states:
             if s is not None and s.is_inconsistent():
                 return True
         return False
 
-    def new_state(self, locations, delayed_actions=OrderedFrozenSet()):
+    def new_state(
+            self,
+            locations: OrderedFrozenSet[str],
+            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+    ) -> typing.Tuple[bool, StateAndTransitions]:
         """Get or create state with an LR0 location and delayed actions. Returns a tuple
         where the first element is whether the element is newly created, and
         the second element is the State object."""
@@ -319,23 +382,34 @@ class ParseTable:
             self.states.append(state)
             return True, state
 
-    def get_state(self, locations, delayed_actions=OrderedFrozenSet()):
+    def get_state(
+            self,
+            locations: OrderedFrozenSet[str],
+            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+    ) -> StateAndTransitions:
         """Like new_state(), but only returns the state without returning whether it is
         newly created or not."""
         _, state = self.new_state(locations, delayed_actions)
         return state
 
-    def remove_state(self, s, maybe_unreachable_set):
+    def remove_state(self, s: StateId, maybe_unreachable_set: OrderedSet[StateId]) -> None:
         state = self.states[s]
         # print("Remove state {}".format(state))
         self.clear_edges(state, maybe_unreachable_set)
         del self.state_cache[state]
-        self.states[s] = None
 
-    def add_edge(self, src, term, dest):
-        assert isinstance(src, StateAndTransitions)
+        # "type: ignore" because the type annotation on `states` doesn't allow
+        # entries to be `None`.
+        self.states[s] = None  # type: ignore
+
+    def add_edge(
+            self,
+            src: StateAndTransitions,
+            term: Term,
+            dest: StateId
+    ) -> None:
         assert term not in src
-        assert isinstance(dest, int) and dest < len(self.states)
+        assert dest < len(self.states)
         if isinstance(term, Action):
             src.epsilon.append((term, dest))
         elif isinstance(term, Nt):
@@ -346,11 +420,23 @@ class ParseTable:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def remove_backedge(self, src, term, dest, maybe_unreachable_set):
+    def remove_backedge(
+            self,
+            src: StateAndTransitions,
+            term: Term,
+            dest: StateId,
+            maybe_unreachable_set: OrderedSet[StateId]
+    ) -> None:
         self.states[dest].backedges.remove(Edge(src.index, term))
         maybe_unreachable_set.add(dest)
 
-    def replace_edge(self, src, term, dest, maybe_unreachable_set):
+    def replace_edge(
+            self,
+            src: StateAndTransitions,
+            term: Term,
+            dest: StateId,
+            maybe_unreachable_set: OrderedSet[StateId]
+    ) -> None:
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
 
@@ -369,7 +455,11 @@ class ParseTable:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
 
-    def clear_edges(self, src, maybe_unreachable_set):
+    def clear_edges(
+            self,
+            src: StateAndTransitions,
+            maybe_unreachable_set: OrderedSet[StateId]
+    ) -> None:
         """Remove all existing edges, in order to replace them by new one. This is used
         when resolving shift-reduce conflicts."""
         assert isinstance(src, StateAndTransitions)
@@ -380,16 +470,19 @@ class ParseTable:
         src.errors = {}
         src.epsilon = []
 
-    def remove_unreachable_states(self, maybe_unreachable_set):
+    def remove_unreachable_states(
+            self,
+            maybe_unreachable_set: OrderedSet[StateId]
+    ) -> None:
         # TODO: This function is incomplete in case of loops, some cycle might
         # remain isolated while not being reachable from the init states. We
         # should maintain a notion of depth per-state, such that we can
         # identify loops by noticing the all backedges have a larger depth than
         # the current state.
-        _, init = zip(*self.named_goals)
-        init = set(init)
+        init: OrderedSet[StateId]
+        init = OrderedSet(goal for name, goal in self.named_goals)
         while maybe_unreachable_set:
-            next_set = set()
+            next_set: OrderedSet[StateId] = OrderedSet()
             for s in maybe_unreachable_set:
                 # Check if the state is reachable, if not remove the state and
                 # fill the next_set with all outgoing edges.
@@ -397,12 +490,11 @@ class ParseTable:
                     self.remove_state(s, next_set)
             maybe_unreachable_set = next_set
 
-    def is_reachable_state(self, s):
+    def is_reachable_state(self, s: StateId) -> bool:
         """Check whether the current state is reachable or not."""
-        assert isinstance(s, int)
         if self.states[s] is None:
             return False
-        reachable_back = set()
+        reachable_back: OrderedSet[StateId] = OrderedSet()
         todo = [s]
         while todo:
             s = todo.pop()
@@ -415,7 +507,7 @@ class ParseTable:
                 return True
         return False
 
-    def debug_dump(self):
+    def debug_dump(self) -> None:
         # Sort the grammar by state hash, such that it can be compared
         # before/after grammar modifications.
         temp = [s for s in self.states if s is not None]
@@ -423,18 +515,22 @@ class ParseTable:
         for s in temp:
             print(s.stable_str(self.states))
 
-    def create_lr0_table(self, grammar, verbose, progress):
+    def create_lr0_table(
+            self,
+            grammar: CanonicalGrammar,
+            verbose: bool,
+            progress: bool
+    ) -> None:
         if verbose or progress:
             print("Create LR(0) parse table.")
-        assert isinstance(grammar, CanonicalGrammar)
-        assert isinstance(grammar.grammar, Grammar)
 
         goals = grammar.grammar.goals()
         self.named_goals = []
 
-        # Temporarily record tuples of (LR0Generator, StateAndTransition)
-        # objects used for visiting the grammar.
+        # Temporary work queue.
+        todo: typing.Deque[typing.Tuple[LR0Generator, StateAndTransitions]]
         todo = collections.deque()
+
         # Record the starting goals in the todo list.
         for nt in goals:
             init_nt = Nt(InitNt(nt), ())
@@ -446,7 +542,7 @@ class ParseTable:
         # Iterate the grammar with sets of LR Items abstracted by the
         # LR0Generator, and create new states in the parse table as long as new
         # sets of LR Items are discovered.
-        def visit_grammar():
+        def visit_grammar() -> typing.Iterator[None]:
             while todo:
                 yield  # progress bar.
                 # TODO: Compare stack / queue, for the traversal of the states.
@@ -463,16 +559,21 @@ class ParseTable:
 
                     # Add the edge from s to sk with k.
                     self.add_edge(s, k, sk.index)
+
         consume(visit_grammar(), progress)
 
         if verbose:
             print("Create LR(0) Table Result:")
             self.debug_dump()
 
-    def is_term_shifted(self, term):
+    def is_term_shifted(self, term: typing.Optional[Term]) -> bool:
         return not (isinstance(term, Action) and term.update_stack())
 
-    def is_valid_path(self, path, state=None):
+    def is_valid_path(
+            self,
+            path: typing.Sequence[Edge],
+            state: typing.Optional[StateId] = None
+    ) -> bool:
         """This function is used to check a list of edges and returns whether it
         corresponds to a valid path within the parse table. This is useful when
         merging sequences of edges from various locations."""
@@ -483,6 +584,8 @@ class ParseTable:
             path = path[1:]
             if state != edge.src:
                 return False
+            assert isinstance(state, StateId)
+
             term = edge.term
             if term is None and len(path) == 0:
                 return True
@@ -490,10 +593,11 @@ class ParseTable:
             row = self.states[state]
             if term not in row:
                 return False
+            assert term is not None
             state = row[term]
         return True
 
-    def shifted_path_to(self, n, right_of):
+    def shifted_path_to(self, n: int, right_of: Path) -> typing.Iterator[Path]:
         "Compute all paths with n shifted terms, ending with right_of."
         assert isinstance(right_of, list) and len(right_of) >= 1
         if n == 0:
@@ -515,12 +619,13 @@ class ParseTable:
             for path in self.shifted_path_to(s_n, [from_edge] + right_of):
                 yield path
 
-    def reduce_path(self, shifted):
+    def reduce_path(self, shifted: Path) -> typing.Iterator[Path]:
         """Compute all paths which might be reduced by a given action. This function
         assumes that the state is reachable from the starting goals, and that
         the depth which is being queried has valid answers."""
         assert len(shifted) >= 1
         action = shifted[-1].term
+        assert isinstance(action, Action)
         assert action.update_stack()
         reducer = action.reduce_with()
         assert isinstance(reducer, Reduce)
@@ -557,10 +662,14 @@ class ParseTable:
             assert self.assume_inconsistent or nt in self.states[path[0].src].nonterminals
             yield path
 
-    def term_is_stacked(self, term):
+    def term_is_stacked(self, term: typing.Optional[Term]) -> bool:
+        # The `term` argument is annotated as Optional because `Edge.term` is a
+        # common argument. If it's ever None in practice, the caller has a bug.
+        assert term is not None
+
         return not isinstance(term, Action)
 
-    def aps_visitor(self, aps, visit):
+    def aps_visitor(self, aps: APS, visit: typing.Callable[[APS], bool]) -> None:
         """Visit all the states of the parse table, as-if we were running a
         Generalized LR parser.
 
@@ -579,8 +688,7 @@ class ParseTable:
         argument to be used for other analysis.
 
         """
-        todo = []
-        todo.append(aps)
+        todo = [aps]
         while todo:
             aps = todo.pop()
             cont = visit(aps)
@@ -588,13 +696,12 @@ class ParseTable:
                 continue
             todo.extend(aps.shift_next(self))
 
-    def lanes(self, state):
+    def lanes(self, state: StateId) -> typing.List[APS]:
         """Compute the lanes from the amount of lookahead available. Only consider
         context when reduce states are encountered."""
-        assert isinstance(state, int)
         record = []
 
-        def visit(aps):
+        def visit(aps: APS) -> bool:
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
             has_lookahead = len(aps.lookahead) >= 1
@@ -607,10 +714,11 @@ class ParseTable:
                 print(aps.string("\trecord"))
                 record.append(aps)
             return not stop
+
         self.aps_visitor(APS.start(state), visit)
         return record
 
-    def context_lanes(self, state):
+    def context_lanes(self, state: StateId) -> typing.Tuple[bool, typing.List[APS]]:
         """Compute lanes, such that each reduce action can have set of unique stack to
         reach the given state. The stacks are assumed to be loop-free by
         reducing edges at most once.
@@ -624,9 +732,7 @@ class ParseTable:
         lookahead, and the second is the list of APS lanes which are providing
         enough context to disambiguate the inconsistency of the given state."""
 
-        assert isinstance(state, int)
-
-        def not_interesting(aps):
+        def not_interesting(aps: APS) -> bool:
             reduce_list = [e for e in aps.history if self.is_term_shifted(e.term)]
             has_reduce_loop = len(reduce_list) != len(set(reduce_list))
             return has_reduce_loop
@@ -634,9 +740,10 @@ class ParseTable:
         # The context is a dictionary which maps all stack suffixes from an APS
         # stack. It is mapped to a list of tuples, where the each tuple is the
         # index with the APS stack and the APS action used to follow this path.
+        context: typing.DefaultDict[typing.Tuple[Edge, ...], typing.List[Edge]]
         context = collections.defaultdict(lambda: [])
 
-        def has_enough_context(aps):
+        def has_enough_context(aps: APS) -> bool:
             try:
                 assert aps.history[0] in context[tuple(aps.stack)]
                 # Check the number of different actions which can reach this
@@ -695,12 +802,12 @@ class ParseTable:
 
         return False, collect
 
-    def lookahead_lanes(self, state):
+    def lookahead_lanes(self, state: StateId) -> typing.List[APS]:
         """Compute lanes to collect all lookahead symbols available. After each reduce
         action, there is no need to consider the same non-terminal multiple
         times, we are only interested in lookahead token and not in the context
         information provided by reducing action."""
-        assert isinstance(state, int)
+
         record = []
         # After the first reduce action, we do not want to spend too much
         # resource visiting edges which would give us the same information.
@@ -708,21 +815,26 @@ class ParseTable:
         # skip looking for lookahead that we already visited.
         #
         # Set of (first-reduce-edge, reducing-base, last-reduce-edge)
+        seen_edge_after_reduce: typing.Set[typing.Tuple[Edge, StateId, typing.Optional[Term]]]
         seen_edge_after_reduce = set()
 
-        def find_first_reduce(edges):
+        def find_first_reduce(
+                edges: Path
+        ) -> typing.Tuple[int, typing.Optional[Edge]]:
             for i, edge in enumerate(edges):
                 if not self.is_term_shifted(edge.term):
                     return i, edge
             return 0, None
 
-        def find_last_reduce(edges):
+        def find_last_reduce(
+                edges: Path
+        ) -> typing.Tuple[int, typing.Optional[Edge]]:
             for i, edge in zip(reversed(range(len(edges))), reversed(edges)):
                 if not self.is_term_shifted(edge.term):
                     return i, edge
             return 0, None
 
-        def visit(aps):
+        def visit(aps: APS) -> bool:
             # Note, this suppose that we are not considering flags when
             # computing, as flag might prevent some lookahead investigations.
             reduce_key = None
@@ -744,10 +856,11 @@ class ParseTable:
             if reduce_key:
                 seen_edge_after_reduce.add(reduce_key)
             return not stop
+
         self.aps_visitor(APS.start(state), visit)
         return record
 
-    def fix_with_context(self, s, aps_lanes):
+    def fix_with_context(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         raise ValueError("fix_with_context: Not Implemented")
     #     # This strategy is about using context information. By using chains of
     #     # reduce actions, we are able to increase the knowledge of the stack
@@ -958,24 +1071,31 @@ class ParseTable:
     #     self.remove_unreachable_states(maybe_unreachable_set)
     #     pass
 
-    def fix_with_lookahead(self, s, aps_lanes):
+    def fix_with_lookahead(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         # Find the list of terminals following each actions (even reduce
         # actions).
         assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
         if self.debug_info:
             for aps in aps_lanes:
                 print(str(aps))
-        maybe_unreachable_set = set()
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+
         # For each shifted term, associate a set of state and actions which
         # would have to be executed.
+        shift_map: typing.DefaultDict[
+            Term,
+            typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+        ]
         shift_map = collections.defaultdict(lambda: [])
         for aps in aps_lanes:
             actions = aps.history
             assert isinstance(actions[-1], Edge)
-            assert actions[-1].term == aps.lookahead[0]
             src = actions[-1].src
             term = actions[-1].term
-            # No need to consider any action behind the first reduced action
+            assert term == aps.lookahead[0]
+            assert isinstance(term, (str, End, ErrorSymbol, Nt))
+
+            # No need to consider any action beyind the first reduced action
             # since the reduced action is in charge of replaying the lookahead
             # terms.
             actions = list(keep_until(actions[:-1], lambda edge: not self.is_term_shifted(edge.term)))
@@ -991,22 +1111,31 @@ class ParseTable:
             new_actions = []
             accept = True
             for edge in actions:
-                new_term = edge.term.shifted_action(term)
-                if new_term is False:
-                    accept = False
-                    break
-                elif new_term is True:
-                    continue
+                edge_term = edge.term
+                assert isinstance(edge_term, Action)
+                new_term = edge_term.shifted_action(term)
+                if isinstance(new_term, bool):
+                    if new_term is False:
+                        accept = False
+                        break
+                    else:
+                        continue
                 new_actions.append(Edge(edge.src, new_term))
             if accept:
-                target = self.states[src][term]
-                target = self.states[target]
+                target_id = self.states[src][term]
+                target = self.states[target_id]
                 shift_map[term].append((target, new_actions))
 
         # Restore the new state machine based on a given state to use as a base
         # and the shift_map corresponding to edges.
-        def restore_edges(state, shift_map, depth):
-            assert isinstance(state, StateAndTransitions)
+        def restore_edges(
+                state: StateAndTransitions,
+                shift_map: typing.DefaultDict[
+                    Term,
+                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+                ],
+                depth: str
+        ) -> None:
             # print("{}starting with {}\n".format(depth, state))
             edges = {}
             for term, actions_list in shift_map.items():
@@ -1014,8 +1143,12 @@ class ParseTable:
                 # Collect all the states reachable after shifting the term.
                 # Compute the unique name, based on the locations and actions
                 # which are delayed.
-                locations = OrderedSet()
-                delayed = OrderedSet()
+                locations: OrderedSet[str] = OrderedSet()
+                delayed: OrderedSet[Action] = OrderedSet()
+                new_shift_map: typing.DefaultDict[
+                    Term,
+                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+                ]
                 new_shift_map = collections.defaultdict(lambda: [])
                 recurse = False
                 if not self.is_term_shifted(term):
@@ -1030,18 +1163,21 @@ class ParseTable:
                         edge = actions[0]
                         assert isinstance(edge, Edge)
                         for action in actions:
-                            delayed.add(action.term)
-                        new_shift_map[edge.term].append((target, actions[1:]))
+                            action_term = action.term
+                            assert isinstance(action_term, Action)
+                            delayed.add(action_term)
+                        edge_term = edge.term
+                        assert edge_term is not None
+                        new_shift_map[edge_term].append((target, actions[1:]))
                         recurse = True
                     else:
                         # Pull edges, as a copy of existing edges.
-                        for next_term, next_dest in target.edges():
-                            next_dest = self.states[next_dest]
+                        for next_term, next_dest_id in target.edges():
+                            next_dest = self.states[next_dest_id]
                             new_shift_map[next_term].append((next_dest, []))
 
-                locations = OrderedFrozenSet(locations)
-                delayed = OrderedFrozenSet(delayed)
-                is_new, new_target = self.new_state(locations, delayed)
+                is_new, new_target = self.new_state(
+                    OrderedFrozenSet(locations), OrderedFrozenSet(delayed))
                 edges[term] = new_target.index
                 if self.debug_info:
                     print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
@@ -1051,8 +1187,8 @@ class ParseTable:
                     restore_edges(new_target, new_shift_map, depth + "  ")
 
             self.clear_edges(state, maybe_unreachable_set)
-            for term, target in edges.items():
-                self.add_edge(state, term, target)
+            for term, target_id in edges.items():
+                self.add_edge(state, term, target_id)
             if self.debug_info:
                 print("{}replaced by {}\n".format(depth, state))
 
@@ -1060,7 +1196,7 @@ class ParseTable:
         restore_edges(state, shift_map, "")
         self.remove_unreachable_states(maybe_unreachable_set)
 
-    def fix_inconsistent_state(self, s, verbose):
+    def fix_inconsistent_state(self, s: StateId, verbose: bool) -> bool:
         # Fix inconsistent states works one state at a time. The goal is to
         # achieve the same method as the Lane Tracer, but instead of building a
         # table to then mutate the parse state, we mutate the parse state
@@ -1104,7 +1240,7 @@ class ParseTable:
             self.fix_with_lookahead(s, aps_lanes)
         return True
 
-    def fix_inconsistent_table(self, verbose, progress):
+    def fix_inconsistent_table(self, verbose: bool, progress: bool) -> None:
         """The parse table might be inconsistent. We fix the parse table by looking
         around the inconsistent states for more context. Either by looking at the
         potential stack state which might lead to the inconsistent state, or by
@@ -1113,7 +1249,7 @@ class ParseTable:
         if verbose or progress:
             print("Fix parse table inconsistencies.")
 
-        todo = collections.deque()
+        todo: typing.Deque[StateId] = collections.deque()
         for state in self.states:
             if state.is_inconsistent():
                 todo.append(state.index)
@@ -1127,7 +1263,7 @@ class ParseTable:
 
         count = 0
 
-        def visit_table():
+        def visit_table() -> typing.Iterator[None]:
             nonlocal count
             unreachable = []
             while todo:
@@ -1191,21 +1327,21 @@ class ParseTable:
             print("Fix Inconsistent Table Result:")
             self.debug_dump()
 
-    def remove_all_unreachable_state(self, verbose, progress):
+    def remove_all_unreachable_state(self, verbose: bool, progress: bool) -> None:
         self.states = [s for s in self.states if s is not None]
         state_map = {s.index: i for i, s in enumerate(self.states)}
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
-    def fold_identical_endings(self, verbose, progress):
+    def fold_identical_endings(self, verbose: bool, progress: bool) -> None:
         # If 2 states have the same outgoing edges, then we can merge the 2
         # states into a single state, and rewrite all the backedges leading to
         # these states to be replaced by edges going to the reference state.
         if verbose or progress:
             print("Fold identical endings.")
-        maybe_unreachable = set()
+        maybe_unreachable: OrderedSet[StateId] = OrderedSet()
 
-        def rewrite_backedges(state_list):
+        def rewrite_backedges(state_list: typing.List[StateAndTransitions]) -> bool:
             # All states have the same outgoing edges. Thus we replace all of
             # them by a single state.
             ref = state_list[0]
@@ -1215,11 +1351,13 @@ class ParseTable:
                 src = self.states[edge.src]
                 # print("replace {} -- {} --> {}, by {} -- {} --> {}"
                 #       .format(src.index, term, src[term], src.index, term, ref.index))
-                self.replace_edge(src, edge.term, ref.index, maybe_unreachable)
+                edge_term = edge.term
+                assert edge_term is not None
+                self.replace_edge(src, edge_term, ref.index, maybe_unreachable)
                 hit = True
             return hit
 
-        def rewrite_if_same_outedges(state_list):
+        def rewrite_if_same_outedges(state_list: typing.List[StateAndTransitions]) -> bool:
             outedges = collections.defaultdict(lambda: [])
             for s in state_list:
                 outedges[tuple(s.edges())].append(s)
@@ -1229,17 +1367,18 @@ class ParseTable:
                     hit = rewrite_backedges(same) or hit
             return hit
 
-        def visit_table():
+        def visit_table() -> typing.Iterator[None]:
             hit = True
             while hit:
                 yield  # progress bar.
                 hit = rewrite_if_same_outedges(self.states)
+
         consume(visit_table(), progress)
 
         self.remove_unreachable_states(maybe_unreachable)
         self.remove_all_unreachable_state(verbose, progress)
 
-    def group_epsilon_states(self, verbose, progress):
+    def group_epsilon_states(self, verbose: bool, progress: bool) -> None:
         shift_states = [s for s in self.states if len(s.epsilon) == 0]
         action_states = [s for s in self.states if len(s.epsilon) > 0]
         self.states = []
@@ -1249,13 +1388,13 @@ class ParseTable:
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
-    def count_shift_states(self):
-        return sum(1 for s in self.states if len(s.epsilon) == 0)
+    def count_shift_states(self) -> int:
+        return sum(1 for s in self.states if s is not None and len(s.epsilon) == 0)
 
-    def count_action_states(self):
-        return sum(1 for s in self.states if len(s.epsilon) > 0)
+    def count_action_states(self) -> int:
+        return sum(1 for s in self.states if s is not None and len(s.epsilon) > 0)
 
-    def prepare_debug_context(self):
+    def prepare_debug_context(self) -> DebugInfo:
         """To better filter out the traversal of the grammar in debug context, we
         pre-compute for each state the maximal depth of each state within a
         production. Therefore, if visiting a state no increases the reducing
@@ -1271,19 +1410,24 @@ class ParseTable:
                     continue
                 for i, edge in enumerate(aps_next.stack):
                     depths[edge.src].append(i + 1)
-        depths = { s: max(ds) for s, ds in depths.items() }
-        return depths
+        return {s: max(ds) for s, ds in depths.items()}
 
-    def debug_context(self, state, split_txt="; ", prefix=""):
-        "Reconstruct the grammar production by traversing the parse table."
-        assert isinstance(state, int)
+    def debug_context(
+            self,
+            state: StateId,
+            split_txt: str = "; ",
+            prefix: str = ""
+    ) -> str:
+        """Reconstruct the grammar production by traversing the parse table."""
         if self.debug_info is False:
             return ""
         if self.debug_info is True:
             self.debug_info = self.prepare_debug_context()
+        debug_info = typing.cast(typing.Dict[StateId, int], self.debug_info)
+
         record = []
 
-        def visit(aps):
+        def visit(aps: APS) -> bool:
             # Stop after reducing once.
             if aps.history == []:
                 return True
@@ -1292,24 +1436,29 @@ class ParseTable:
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             can_reduce_later = True
             try:
-                can_reduce_later = self.debug_info[aps.shift[-1].src] >= len(aps.shift)
+                can_reduce_later = debug_info[aps.shift[-1].src] >= len(aps.shift)
             except KeyError:
                 can_reduce_later = False
             stop = is_reduce or has_shift_loop or not can_reduce_later
             # Record state which are reducing at most all the shifted states.
             save = stop and len(aps.shift) == 1
             save = save and is_reduce
-            save = save and last.reduce_with().nt in self.states[aps.shift[0].src]
+            if save:
+                assert isinstance(last, Action)
+                save = last.reduce_with().nt in self.states[aps.shift[0].src]
             if save:
                 record.append(aps)
             return not stop
+
         self.aps_visitor(APS.start(state), visit)
 
-        context = OrderedSet()
+        context: OrderedSet[str] = OrderedSet()
         for aps in record:
             assert aps.history != []
-            assert aps.history[-1].term.update_stack()
-            reducer = aps.history[-1].term.reduce_with()
+            action = aps.history[-1].term
+            assert isinstance(action, Action)
+            assert action.update_stack()
+            reducer = action.reduce_with()
             replay = reducer.replay
             before = [repr(e.term) for e in aps.stack[:-1]]
             after = [repr(e.term) for e in aps.history[:-1]]
@@ -1323,7 +1472,7 @@ class ParseTable:
                 prod = prod[:-replay] + ["[lookahead:"] + prod[-replay:] + ["]"]
             txt = "{}{} ::= {}".format(
                 prefix,
-                repr(aps.history[-1].term.reduce_with().nt),
+                repr(action.reduce_with().nt),
                 " ".join(prod)
             )
             context.add(txt)
