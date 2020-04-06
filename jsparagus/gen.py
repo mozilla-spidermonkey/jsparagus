@@ -1314,7 +1314,11 @@ class ParseTable:
         # the keys are the various parsing modes, and the mapped set contains
         # the list of traits which have to be implemented, and consequently
         # which functions would be encoded.
-        "exec_modes"
+        "exec_modes",
+        # Boolean flag which assume whether or not the parse table is
+        # inconsistent. This is used for adding extra assertion when computing
+        # the reduce path.
+        "assume_inconsistent",
     ]
 
     def __init__(self, grammar, verbose=False, progress=False, debug=False):
@@ -1326,6 +1330,7 @@ class ParseTable:
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
         self.debug_info = debug
         self.exec_modes = grammar.grammar.exec_modes
+        self.assume_inconsistent = True
         self.create_lr0_table(grammar, verbose, progress)
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
@@ -1552,7 +1557,7 @@ class ParseTable:
         return True
 
     def shifted_path_to(self, n, right_of):
-        "Compute all paths with n shifted terms, ending with state."
+        "Compute all paths with n shifted terms, ending with right_of."
         assert isinstance(right_of, list) and len(right_of) >= 1
         if n == 0:
             yield right_of
@@ -1582,9 +1587,10 @@ class ParseTable:
         assert action.update_stack()
         reducer = action.reduce_with()
         assert isinstance(reducer, Reduce)
+        nt = reducer.nt
         depth = reducer.pop + reducer.replay
         if depth > 0:
-            # We are readucing at least one element from the stack.
+            # We are reducing at least one element from the stack.
             stacked = [i for i, e in enumerate(shifted) if self.term_is_stacked(e.term)]
             if len(stacked) < depth:
                 # We have not shifted enough elements to cover the full reduce
@@ -1601,38 +1607,18 @@ class ParseTable:
         else:
             # We are reducing no element from the stack.
             shifted_end = shifted[-1:]
-        error_paths = []
-        success_paths = []
         for path in self.shifted_path_to(depth, shifted_end):
-            head = self.states[path[0].src]
-            if reducer.nt not in head.nonterminals:
-                error_paths.append(path)
-                continue
-            success_paths.append(path)
-            assert reducer.nt in head.nonterminals
-            to = head.nonterminals[reducer.nt]
-            yield path, [Edge(path[0].src, reducer.nt), Edge(to, None)]
-        # When dealing with inconsistent states, we have to walk epsilon
-        # backedges. This can lead us to have path where the head is not
-        # reducing, increasing the number of error_paths.
-        assert success_paths != []
-        if error_paths:
-            def stacked_path(path):
-                return tuple(e for e in path if self.term_is_stacked(e.term))
-            stack_success_paths = set(map(stacked_path, success_paths))
-            for path in error_paths:
-                if stacked_path(path) not in stack_success_paths:
-                    for p in success_paths:
-                        print("Success path: {}".format(" ".join(map(edge_str, p))))
-                    head = self.states[path[0].src]
-                    print("\n".join([
-                        "Reduce path does not start with a state capable of shifting the non-terminal {}.",
-                        "The Reduce path is: {}",
-                        "The starting state is {}",
-                        "{} backedges are: {}"
-                    ]).format(reducer.nt, " ".join(map(edge_str, path)), head,
-                              len(head.backedges), ", ".join(map(edge_str, head.backedges))))
-                    assert reducer.nt in head.nonterminals
+            # NOTE: When reducing, we might be tempted to verify that the
+            # reduced non-terminal is part of the state we are reducing to, and
+            # it surely is for one of the shifted path. However, this would be
+            # an error in an inconsistent grammar. (see issue #464)
+            #
+            # Thus, we might yield plenty of path which are not reducing the
+            # expected non-terminal, but these are expected to be filtered out
+            # by the APS, as the inability of shifting these non-terminals
+            # would remove these cases.
+            assert self.assume_inconsistent or nt in self.states[path[0].src].nonterminals
+            yield path
 
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
@@ -1784,23 +1770,41 @@ class ParseTable:
         # Therefore, if we already reduce an action to a given state, then we
         # skip looking for lookahead that we already visited.
         #
-        # Set of (first-reduce-action, reducing-base, last-edge)
+        # Set of (first-reduce-edge, reducing-base, last-reduce-edge)
         seen_edge_after_reduce = set()
+
+        def find_first_reduce(edges):
+            for i, edge in enumerate(edges):
+                if not self.is_term_shifted(edge.term):
+                    return i, edge
+            return 0, None
+
+        def find_last_reduce(edges):
+            for i, edge in zip(reversed(range(len(edges))), reversed(edges)):
+                if not self.is_term_shifted(edge.term):
+                    return i, edge
+            return 0, None
 
         def visit(aps):
             # Note, this suppose that we are not considering flags when
             # computing, as flag might prevent some lookahead investigations.
-            first_reduce = next((e for e in aps.history[:-1] if not self.is_term_shifted(e.term)), None)
-            if first_reduce:
-                reduce_key = (first_reduce, aps.shift[0].src, aps.history[-1].term)
-            has_seen_edge_after_reduce = first_reduce and reduce_key in seen_edge_after_reduce
+            reduce_key = None
+            first_index, first_reduce = find_first_reduce(aps.history)
+            last_index, last_reduce = find_last_reduce(aps.history)
+            if first_index != last_index and first_reduce and last_reduce:
+                if not isinstance(aps.history[-1].term, Action):
+                    reduce_key = (first_reduce, aps.shift[0].src, last_reduce.term)
+            has_seen_edge_after_reduce = reduce_key and reduce_key in seen_edge_after_reduce
             has_lookahead = len(aps.lookahead) >= 1
             stop = has_seen_edge_after_reduce or has_lookahead
-            # print(aps_str(aps, "\tvisitor"))
+            # print("stop: {}, size lookahead: {}, seen_edge_after_reduce: {}".format(
+            #     stop, len(aps.lookahead), repr(reduce_key)
+            # ))
+            # print(aps.string("\tvisitor"))
             if stop:
                 if has_lookahead:
                     record.append(aps)
-            if first_reduce:
+            if reduce_key:
                 seen_edge_after_reduce.add(reduce_key)
             return not stop
         self.aps_visitor(APS.start(state), visit)
@@ -2021,6 +2025,9 @@ class ParseTable:
         # Find the list of terminals following each actions (even reduce
         # actions).
         assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
+        if self.debug_info:
+            for aps in aps_lanes:
+                print(str(aps))
         maybe_unreachable_set = set()
         # For each shifted term, associate a set of state and actions which
         # would have to be executed.
@@ -2031,7 +2038,7 @@ class ParseTable:
             assert actions[-1].term == aps.lookahead[0]
             src = actions[-1].src
             term = actions[-1].term
-            # No need to consider any action beyind the first reduced action
+            # No need to consider any action behind the first reduced action
             # since the reduced action is in charge of replaying the lookahead
             # terms.
             actions = list(keep_until(actions[:-1], lambda edge: not self.is_term_shifted(edge.term)))
@@ -2098,17 +2105,19 @@ class ParseTable:
                 locations = OrderedFrozenSet(locations)
                 delayed = OrderedFrozenSet(delayed)
                 is_new, new_target = self.new_state(locations, delayed)
-                # print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
-                # print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
                 edges[term] = new_target.index
-                # print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
+                if self.debug_info:
+                    print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
+                    print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
+                    print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
                 if is_new or recurse:
                     restore_edges(new_target, new_shift_map, depth + "  ")
 
             self.clear_edges(state, maybe_unreachable_set)
             for term, target in edges.items():
                 self.add_edge(state, term, target)
-            # print("{}replaced by {}\n".format(depth, state))
+            if self.debug_info:
+                print("{}replaced by {}\n".format(depth, state))
 
         state = self.states[s]
         restore_edges(state, shift_map, "")
@@ -2163,6 +2172,7 @@ class ParseTable:
         around the inconsistent states for more context. Either by looking at the
         potential stack state which might lead to the inconsistent state, or by
         increasing the lookahead."""
+        self.assume_inconsistent = True
         if verbose or progress:
             print("Fix parse table inconsistencies.")
 
@@ -2238,6 +2248,7 @@ class ParseTable:
                 "\tNumber of inconsistencies solved = {}"]).format(
                     len(self.states), count))
         assert not self.is_inconsistent()
+        self.assume_inconsistent = False
 
         if verbose:
             print("Fix Inconsistent Table Result:")
@@ -2315,15 +2326,15 @@ class ParseTable:
         stop going deeper, as we entered a different production. """
         depths = collections.defaultdict(lambda: [])
         for s in self.states:
-            if s is None:
+            if s is None or not s.epsilon:
                 continue
-            for t, d in s.epsilon:
-                if self.is_term_shifted(t):
+            aps = APS.start(s.index)
+            for aps_next in aps.shift_next(self):
+                if not aps_next.reducing:
                     continue
-                for path, _ in self.reduce_path([Edge(s.index, t)]):
-                    for i, edge in enumerate(path):
-                        depths[edge.src].append(i + 1)
-        depths = {s: max(ds) for s, ds in depths.items()}
+                for i, edge in enumerate(aps_next.stack):
+                    depths[edge.src].append(i + 1)
+        depths = { s: max(ds) for s, ds in depths.items() }
         return depths
 
     def debug_context(self, state, split_txt="; ", prefix=""):
@@ -2349,9 +2360,9 @@ class ParseTable:
                 can_reduce_later = False
             stop = is_reduce or has_shift_loop or not can_reduce_later
             # Record state which are reducing at most all the shifted states.
-            save = stop and len(aps.shift) == 2
-            save = save and isinstance(aps.shift[0].term, Nt)
-            save = save and not self.is_term_shifted(aps.history[-1].term)
+            save = stop and len(aps.shift) == 1
+            save = save and is_reduce
+            save = save and last.reduce_with().nt in self.states[aps.shift[0].src]
             if save:
                 record.append(aps)
             return not stop
@@ -2399,7 +2410,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
     if isinstance(source, Grammar):
         grammar = CanonicalGrammar(source)
         parser_data = generate_parser_states(
-            source, verbose=verbose, progress=progress)
+            source, verbose=verbose, progress=progress, debug=debug)
     elif isinstance(source, ParseTable):
         parser_data = source
         parser_data.debug_info = debug
@@ -2418,10 +2429,10 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
             raise ValueError("Unexpected parser_data kind")
 
 
-def compile(grammar, verbose=False):
+def compile(grammar, verbose=False, debug=False):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
-    generate_parser(out, grammar, verbose=verbose)
+    generate_parser(out, grammar, verbose=verbose, debug=debug)
     scope = {}
     if verbose:
         with open("parse_with_python.py", "w") as f:
