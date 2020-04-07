@@ -124,6 +124,17 @@ impl From<BytecodeOffset> for usize {
     }
 }
 
+pub struct BytecodeOffsetDiff {
+    pub diff: i32,
+}
+
+impl BytecodeOffsetDiff {
+    pub fn new(offset1: BytecodeOffset, offset2: BytecodeOffset) -> Self {
+        let diff = (offset1.offset as f64 - offset2.offset as f64) as i32;
+        Self { diff }
+    }
+}
+
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
     bytecode: Vec<u8>,
@@ -418,10 +429,10 @@ impl InstructionWriter {
     }
 
     pub fn patch_jump_to_target(&mut self, target: BytecodeOffset, jump: BytecodeOffset) {
-        let new_target = (target.offset as f64 - jump.offset as f64) as i32;
+        let diff = BytecodeOffsetDiff::new(target, jump).diff as i32;
         let index = jump.offset + 1;
         // FIXME: Use native endian instead of little endian
-        LittleEndian::write_i32(&mut self.bytecode[index..index + 4], new_target);
+        LittleEndian::write_i32(&mut self.bytecode[index..index + 4], diff);
     }
 
     pub fn bytecode_offset(&mut self) -> BytecodeOffset {
@@ -1055,34 +1066,34 @@ impl InstructionWriter {
         self.write_u8(depth_hint);
     }
 
-    pub fn goto_(&mut self, offset: i32) {
+    pub fn goto_(&mut self, offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Goto);
-        self.write_i32(offset);
+        self.write_i32(offset.diff);
     }
 
-    pub fn if_eq(&mut self, forward_offset: i32) {
+    pub fn if_eq(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::IfEq);
-        self.write_i32(forward_offset);
+        self.write_i32(forward_offset.diff);
     }
 
-    pub fn if_ne(&mut self, offset: i32) {
+    pub fn if_ne(&mut self, offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::IfNe);
-        self.write_i32(offset);
+        self.write_i32(offset.diff);
     }
 
-    pub fn and_(&mut self, forward_offset: i32) {
+    pub fn and_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::And);
-        self.write_i32(forward_offset);
+        self.write_i32(forward_offset.diff);
     }
 
-    pub fn or_(&mut self, forward_offset: i32) {
+    pub fn or_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Or);
-        self.write_i32(forward_offset);
+        self.write_i32(forward_offset.diff);
     }
 
-    pub fn coalesce(&mut self, forward_offset: i32) {
+    pub fn coalesce(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Coalesce);
-        self.write_i32(forward_offset);
+        self.write_i32(forward_offset.diff);
     }
 
     pub fn case_(&mut self, forward_offset: i32) {
