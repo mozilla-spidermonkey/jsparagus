@@ -43,27 +43,6 @@ pub fn to_number(v: &JSValue) -> f64 {
     }
 }
 
-pub fn to_string(v: &JSValue) -> String {
-    match v {
-        JSValue::Boolean(true) => "true".to_string(),
-        JSValue::Boolean(false) => "false".to_string(),
-        JSValue::Number(n) => n.to_string(),
-        JSValue::String(ref s) => s.to_string(),
-        JSValue::Object(_) => "[object Object]".to_string(),
-        JSValue::NativeFunction(_) => "function toString() {\n    [native code]\n}".to_string(), // TODO: implement function toString
-        JSValue::Undefined => "undefined".to_string(),
-        JSValue::Null => "null".to_string(),
-    }
-}
-
-pub fn is_nullish(x: &JSValue) -> bool {
-    match x {
-        JSValue::Undefined => true,
-        JSValue::Null => true,
-        _ => false,
-    }
-}
-
 pub fn to_boolean(v: &JSValue) -> bool {
     match v {
         JSValue::Null | JSValue::Undefined => false,
@@ -81,6 +60,7 @@ pub fn to_boolean(v: &JSValue) -> bool {
 }
 
 pub fn strict_equality(x: &JSValue, y: &JSValue) -> bool {
+    // Specification: https://tc39.es/ecma262/#sec-strict-equality-comparison
     match (x, y) {
         (JSValue::Undefined, JSValue::Undefined) => true,
         (JSValue::Null, JSValue::Null) => true,
@@ -94,16 +74,46 @@ pub fn strict_equality(x: &JSValue, y: &JSValue) -> bool {
 }
 
 pub fn equality(x: &JSValue, y: &JSValue) -> bool {
+    // Specification: https://tc39.es/ecma262/#sec-abstract-equality-comparison
     match (x, y) {
-        (JSValue::Undefined, b) => is_nullish(b),
-        (JSValue::Null, b) => is_nullish(b),
-        (JSValue::Boolean(a), b) => a == &to_boolean(b),
-        (JSValue::Number(a), b) => a == &to_number(b),
-        (JSValue::String(ref a), b) => a == &to_string(b),
-        // TODO: fix this
-        (JSValue::Object(ref a), JSValue::Object(ref b)) => a.as_ptr() == b.as_ptr(),
-        // TODO: fix this
-        (JSValue::NativeFunction(a), JSValue::NativeFunction(b)) => std::ptr::eq(a, b),
-        _ => false,
+        // 1. If Type(x) is the same as Type(y), then
+        //     Return the result of performing Strict Equality Comparison x === y.
+        (JSValue::Undefined, JSValue::Undefined)
+        | (JSValue::Null, JSValue::Null)
+        | (JSValue::Boolean(_), JSValue::Boolean(_))
+        | (JSValue::Number(_), JSValue::Number(_))
+        | (JSValue::String(_), JSValue::String(_))
+        | (JSValue::Object(_), JSValue::Object(_))
+        | (JSValue::NativeFunction(_), JSValue::NativeFunction(_)) => strict_equality(x, y),
+
+        // 2. If x is null and y is undefined, return true.
+        (JSValue::Undefined, JSValue::Null) => true,
+        // 3. If x is undefined and y is null, return true.
+        (JSValue::Null, JSValue::Undefined) => true,
+        // 4. If Type(x) is Number and Type(y) is String, return the result of the comparison x == ! ToNumber(y).
+        (JSValue::Number(a), JSValue::String(_)) => a == &to_number(y),
+        // 5. If Type(x) is String and Type(y) is Number, return the result of the comparison ! ToNumber(x) == y.
+        (JSValue::String(_), JSValue::Number(b)) => &to_number(x) == b,
+        // TODO: 6. If Type(x) is BigInt and Type(y) is String, then
+        //           Let n be ! StringToBigInt(y).
+        //           If n is NaN, return false.
+        //           Return the result of the comparison x == n.
+        // TODO: 7. If Type(x) is String and Type(y) is BigInt, return the result of the comparison
+        //       y == x.
+        // 8. If Type(x) is Boolean, return the result of the comparison ! ToNumber(x) == y.
+        (JSValue::Boolean(_), _) => equality(&JSValue::Number(to_number(x)), y),
+        // 9. If Type(y) is Boolean, return the result of the comparison x == ! ToNumber(y).
+        (_, JSValue::Boolean(_)) => equality(x, &JSValue::Number(to_number(y))),
+        // TODO: 10. If Type(x) is either String, Number, BigInt, or Symbol and Type(y) is Object, return the
+        //       result of the comparison x == ToPrimitive(y).
+        // TODO: 11. If Type(x) is Object and Type(y) is either String, Number, BigInt, or Symbol,
+        //       return the result of the comparison ToPrimitive(x) == y.
+        // TODO: 12. If Type(x) is BigInt and Type(y) is Number, or if Type(x) is Number and
+        //       Type(y) is BigInt, then
+        //            If x or y are any of NaN, +∞, or -∞, return false.
+        //            If the mathematical value of x is equal to the mathematical value of y,
+        //                 return true; otherwise return false.
+        // 13. Return false.
+        (_, _) => false,
     }
 }

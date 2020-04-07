@@ -23,7 +23,7 @@ use ast::types::*;
 use scope::data::ScopeDataMap;
 
 use crate::control_structures::{
-    BreakEmitter, DoWhileEmitter, ForCEmitter, ForwardJumpEmitter, JumpKind, LoopStack,
+    BreakEmitter, CForEmitter, DoWhileEmitter, ForwardJumpEmitter, JumpKind, LoopStack,
     WhileEmitter,
 };
 
@@ -138,44 +138,21 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 block,
                 ..
             } => {
-                ForCEmitter {
-                    init: |emitter| {
-                        if let Some(value) = init {
-                            match value {
-                                VariableDeclarationOrExpression::VariableDeclaration(ast) => {
-                                    emitter.emit_variable_declaration_statement(ast)?;
-                                }
-                                VariableDeclarationOrExpression::Expression(expr) => {
-                                    emitter.emit_expression(expr)?
-                                }
-                            }
-                            emitter.emit.pop();
+                CForEmitter {
+                    maybe_init: init,
+                    maybe_test: test,
+                    maybe_update: update,
+                    init: |emitter, val| match val {
+                        VariableDeclarationOrExpression::VariableDeclaration(ast) => {
+                            emitter.emit_variable_declaration_statement(ast)
                         }
-                        Ok(())
-                    },
-                    test: |emitter| {
-                        match test {
-                            Some(expr) => {
-                                emitter.emit_expression(expr)?;
-                            }
-                            None => {
-                                emitter.emit.emit_boolean(true);
-                            }
+                        VariableDeclarationOrExpression::Expression(expr) => {
+                            emitter.emit_expression(expr)
                         }
-                        Ok(())
                     },
-                    block: |emitter| {
-                        emitter.emit_statement(block)?;
-                        //emitter.emit.pop();
-                        Ok(())
-                    },
-                    update: |emitter| {
-                        if let Some(expr) = update {
-                            emitter.emit_expression(expr)?;
-                            emitter.emit.pop();
-                        }
-                        Ok(())
-                    },
+                    test: |emitter, expr| emitter.emit_expression(expr),
+                    update: |emitter, expr| emitter.emit_expression(expr),
+                    block: |emitter| emitter.emit_statement(block),
                 }
                 .emit(self)?;
             }

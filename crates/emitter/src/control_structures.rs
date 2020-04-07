@@ -74,7 +74,7 @@ pub struct JumpPatchEmitter {
 
 impl JumpPatchEmitter {
     pub fn patch_merge(self, emitter: &mut AstEmitter) {
-        emitter.emit.patch_and_emit_jump_target(self.offsets);
+        emitter.emit.emit_jump_target_and_patch(self.offsets);
 
         // If the previous opcode fall-through, it should have the same stack
         // depth.
@@ -82,7 +82,7 @@ impl JumpPatchEmitter {
     }
 
     pub fn patch_not_merge(self, emitter: &mut AstEmitter) {
-        emitter.emit.patch_and_emit_jump_target(self.offsets);
+        emitter.emit.emit_jump_target_and_patch(self.offsets);
         // If the previous opcode doesn't fall-through, overwrite the stack
         // depth.
         emitter.emit.set_stack_depth(self.depth);
@@ -177,23 +177,19 @@ impl LoopControl {
 
     pub fn register_break(&mut self, offset: BytecodeOffset) {
         // offset points to the location of the jump, which will need to be updated
-        // once we emit the jump target in patch_and_emit_jump_target
+        // once we emit the jump target in emit_jump_target_and_patch
         self.breaks.push(offset);
     }
 
     // TODO: fix continues so that they work with scopes correctly
-    // pub fn emit_continue_target(&mut self, emit: &mut InstructionWriter) {
-    //     if self.continues.len() > 0 {
-    //         emit.patch_and_emit_jump_target((*self.continues).to_vec());
-    //     }
-    // }
 
     pub fn emit_end_target(self, emit: &mut InstructionWriter) {
         let offset = emit.bytecode_offset();
-        emit.goto_(self.head.offset as i32);
+        // FIXME: we should only need goto_ here
+        emit.goto_(0 as i32);
         emit.patch_jump_to_target(self.head, offset);
 
-        emit.patch_and_emit_jump_target(self.breaks);
+        emit.emit_jump_target_and_patch(self.breaks);
     }
 }
 
@@ -233,19 +229,6 @@ where
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        // TODO: Set postions
-        // Parameters are the offset in the source code for each
-        // character below:
-        //
-        //   while ( x < 20 ) { ... }
-        //   ^       ^              ^
-        //   |       |              |
-        //   |       |              endPos_
-        //   |       |
-        //   |       condPos_
-        //   |
-        //   whilePos_
-
         emitter.loop_stack.open_loop(&mut emitter.emit);
 
         (self.test)(emitter)?;
@@ -256,7 +239,6 @@ where
         .emit(emitter);
 
         (self.block)(emitter)?;
-        //self.emit_statement(block)?;
 
         // TODO: emit continue here
 
@@ -298,55 +280,52 @@ where
     }
 }
 
-pub struct ForCEmitter<F1, F2, F3, F4>
+pub struct CForEmitter<'a, CondT, ExprT, InitFn, TestFn, UpdateFn, BlockFn>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F3: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F4: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    InitFn: Fn(&mut AstEmitter, &CondT) -> Result<(), EmitError>,
+    TestFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
+    UpdateFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
+    BlockFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    pub init: F1,
-    pub test: F2,
-    pub update: F3,
-    pub block: F4,
+    pub maybe_init: &'a Option<CondT>,
+    pub maybe_test: &'a Option<ExprT>,
+    pub maybe_update: &'a Option<ExprT>,
+    pub init: InitFn,
+    pub test: TestFn,
+    pub update: UpdateFn,
+    pub block: BlockFn,
 }
-impl<F1, F2, F3, F4> ForCEmitter<F1, F2, F3, F4>
+impl<'a, CondT, ExprT, InitFn, TestFn, UpdateFn, BlockFn>
+    CForEmitter<'a, CondT, ExprT, InitFn, TestFn, UpdateFn, BlockFn>
 where
-    F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F3: Fn(&mut AstEmitter) -> Result<(), EmitError>,
-    F4: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    InitFn: Fn(&mut AstEmitter, &CondT) -> Result<(), EmitError>,
+    TestFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
+    UpdateFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
+    BlockFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        // TODO: implement offsets
-        // Parameters are the offset in the source code for each
-        // character below:
-        //
-        //   for ( x = 10 ; x < 20 ; x ++ ) { f(x); }
-        //   ^     ^        ^        ^
-        //   |     |        |        |
-        //   |     |        |        updatePos
-        //   |     |        |
-        //   |     |        condPos
-        //   |     |
-        //   |     initPos
-        //   |
-        //   forPos
-
-        (self.init)(emitter)?;
+        if let Some(init) = self.maybe_init {
+            (self.init)(emitter, init)?;
+            emitter.emit.pop();
+        }
 
         emitter.loop_stack.open_loop(&mut emitter.emit);
 
-        (self.test)(emitter)?;
+        if let Some(test) = self.maybe_test {
+            (self.test)(emitter, &test)?;
 
-        BreakEmitter {
-            jump: JumpKind::IfEq,
+            BreakEmitter {
+                jump: JumpKind::IfEq,
+            }
+            .emit(emitter);
         }
-        .emit(emitter);
 
         (self.block)(emitter)?;
 
-        (self.update)(emitter)?;
+        if let Some(update) = self.maybe_update {
+            (self.update)(emitter, &update)?;
+            emitter.emit.pop();
+        }
 
         // loop_stack.emit_continue(emitter);
         // Merge point after cond fails

@@ -112,6 +112,7 @@ impl BytecodeOffset {
     }
 
     pub fn end(self, emit: &InstructionWriter) -> usize {
+        // find the offset after the end of bytecode associated with this offset.
         let target_opcode = Opcode::try_from(emit.bytecode[self.offset]).unwrap();
         self.offset + target_opcode.instruction_length()
     }
@@ -385,7 +386,7 @@ impl InstructionWriter {
         }
     }
 
-    fn set_jump_target_offset(&mut self, target: BytecodeOffset) {
+    fn set_last_jump_target_offset(&mut self, target: BytecodeOffset) {
         self.last_jump_target_offset = Some(target);
     }
 
@@ -393,21 +394,21 @@ impl InstructionWriter {
         self.atoms.insert(value)
     }
 
-    pub fn patch_and_emit_jump_target(&mut self, jumplist: Vec<BytecodeOffset>) {
+    pub fn emit_jump_target_and_patch(&mut self, jumplist: Vec<BytecodeOffset>) {
         let mut target = self.bytecode_offset();
         let last_jump = self.last_jump_target_offset;
         match last_jump {
             Some(offset) => {
                 if offset.end(self) != target.offset {
                     self.jump_target();
-                    self.set_jump_target_offset(target);
+                    self.set_last_jump_target_offset(target);
                 } else {
                     target = offset;
                 }
             }
             None => {
                 self.jump_target();
-                self.set_jump_target_offset(target);
+                self.set_last_jump_target_offset(target);
             }
         }
 
