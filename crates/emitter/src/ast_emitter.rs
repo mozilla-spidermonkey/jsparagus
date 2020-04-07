@@ -22,7 +22,10 @@ use ast::source_slice_list::SourceSliceList;
 use ast::types::*;
 use scope::data::ScopeDataMap;
 
-use crate::forward_jump_emitter::{ForwardJumpEmitter, JumpKind};
+use crate::control_structures::{
+    BreakEmitter, CForEmitter, DoWhileEmitter, ForwardJumpEmitter, JumpKind, LoopStack,
+    WhileEmitter,
+};
 
 /// Emit a program, converting the AST directly to bytecode.
 pub fn emit_program<'alloc>(
@@ -49,6 +52,7 @@ pub struct AstEmitter<'alloc, 'opt> {
     pub options: &'opt EmitOptions,
     pub compilation_info: CompilationInfo<'alloc>,
     pub scope_stack: EmitterScopeStack,
+    pub loop_stack: LoopStack,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
@@ -63,6 +67,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             options,
             compilation_info: CompilationInfo::new(atoms, slices, scope_data_map),
             scope_stack: EmitterScopeStack::new(),
+            loop_stack: LoopStack::new(),
         }
     }
 
@@ -91,8 +96,14 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 }
                 .emit(self)?;
             }
-            Statement::BreakStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: BreakStatement"));
+            Statement::BreakStatement { label, .. } => {
+                if let Some(_label) = label {
+                    return Err(EmitError::NotImplemented("TODO: Labeled BreakStatement"));
+                }
+                BreakEmitter {
+                    jump: JumpKind::Goto,
+                }
+                .emit(self);
             }
             Statement::ContinueStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
@@ -100,8 +111,12 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
-            Statement::DoWhileStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: DoWhileStatement"));
+            Statement::DoWhileStatement { block, test, .. } => {
+                DoWhileEmitter {
+                    block: |emitter| emitter.emit_statement(block),
+                    test: |emitter| emitter.emit_expression(test),
+                }
+                .emit(self)?;
             }
             Statement::EmptyStatement { .. } => (),
             Statement::ExpressionStatement(ast) => {
@@ -116,8 +131,30 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::ForOfStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ForOfStatement"));
             }
-            Statement::ForStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ForStatement"));
+            Statement::ForStatement {
+                init,
+                test,
+                update,
+                block,
+                ..
+            } => {
+                CForEmitter {
+                    maybe_init: init,
+                    maybe_test: test,
+                    maybe_update: update,
+                    init: |emitter, val| match val {
+                        VariableDeclarationOrExpression::VariableDeclaration(ast) => {
+                            emitter.emit_variable_declaration_statement(ast)
+                        }
+                        VariableDeclarationOrExpression::Expression(expr) => {
+                            emitter.emit_expression(expr)
+                        }
+                    },
+                    test: |emitter, expr| emitter.emit_expression(expr),
+                    update: |emitter, expr| emitter.emit_expression(expr),
+                    block: |emitter| emitter.emit_statement(block),
+                }
+                .emit(self)?;
             }
             Statement::IfStatement(if_statement) => {
                 self.emit_if(if_statement)?;
@@ -149,8 +186,12 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::VariableDeclarationStatement(ast) => {
                 self.emit_variable_declaration_statement(ast)?;
             }
-            Statement::WhileStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: WhileStatement"));
+            Statement::WhileStatement { test, block, .. } => {
+                WhileEmitter {
+                    test: |emitter| emitter.emit_expression(test),
+                    block: |emitter| emitter.emit_statement(block),
+                }
+                .emit(self)?;
             }
             Statement::WithStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WithStatement"));

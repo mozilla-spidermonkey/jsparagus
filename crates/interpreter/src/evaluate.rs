@@ -151,6 +151,13 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 stack.push(JSValue::Boolean(strict_equality(&lhs, &rhs)))
             }
 
+            Opcode::StrictNe => {
+                let rhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lhs = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                stack.push(JSValue::Boolean(!strict_equality(&lhs, &rhs)))
+            }
+
             Opcode::Lt => {
                 // TODO: This and below does not actually implement
                 // "Abstract Relational Comparison".
@@ -184,6 +191,20 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
 
             Opcode::Pop => {
                 stack.pop().ok_or(EvalError::EmptyStack)?;
+            }
+
+            Opcode::Eq => {
+                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                stack.push(JSValue::Boolean(equality(&rval, &lval)))
+            }
+
+            Opcode::Ne => {
+                let rval = stack.pop().ok_or(EvalError::EmptyStack)?;
+                let lval = stack.pop().ok_or(EvalError::EmptyStack)?;
+
+                stack.push(JSValue::Boolean(!equality(&rval, &lval)))
             }
 
             Opcode::SetRval => {
@@ -361,6 +382,8 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
 
             Opcode::JumpTarget => {}
 
+            Opcode::LoopHead => {}
+
             Opcode::Dup => {
                 stack.push(stack.last().ok_or(EvalError::EmptyStack)?.clone());
             }
@@ -389,8 +412,9 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::CheckGlobalOrEvalDecl => {
                 // FIXME: Port CheckGlobalOrEvalDeclarationConflicts
                 //        from js/src/vm/EnvironmentObject.cpp.
-            }
+            },
 
+            Opcode::Nop => {},
             _ => return Err(EvalError::NotImplemented(format!("{:?}", op))),
         }
 

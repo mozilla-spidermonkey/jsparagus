@@ -450,6 +450,19 @@ impl Opcode {
             || self == Opcode::Mod
             || self == Opcode::Pow
     }
+
+    pub fn is_jump_target(self) -> bool {
+        self == Opcode::JumpTarget || self == Opcode::LoopHead || self == Opcode::AfterYield
+    }
+
+    pub fn is_jump(self) -> bool {
+        self == Opcode::Goto
+            || self == Opcode::IfEq
+            || self == Opcode::IfNe
+            || self == Opcode::Or
+            || self == Opcode::And
+            || self == Opcode::Coalesce
+    }
 }
 
 impl TryFrom<u8> for Opcode {
