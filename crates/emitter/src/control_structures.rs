@@ -135,6 +135,16 @@ impl LoopStack {
         innermost.register_break(offset);
     }
 
+    pub fn register_continue(&mut self, offset: BytecodeOffset) {
+        let innermost = self.innermost();
+        innermost.register_continue(offset);
+    }
+
+    pub fn emit_continue_target(&mut self, emit: &mut InstructionWriter) {
+        let innermost = self.innermost();
+        innermost.emit_continue_target(emit);
+    }
+
     pub fn close_loop(&mut self, emit: &mut InstructionWriter) {
         let innermost = self
             .loop_stack
@@ -151,8 +161,8 @@ impl LoopStack {
 }
 
 pub struct LoopControl {
-    pub breaks: Vec<BytecodeOffset>,
-    pub continues: Vec<BytecodeOffset>,
+    breaks: Vec<BytecodeOffset>,
+    continues: Vec<BytecodeOffset>,
     head: BytecodeOffset,
 }
 
@@ -181,7 +191,15 @@ impl LoopControl {
         self.breaks.push(offset);
     }
 
-    // TODO: fix continues so that they work with scopes correctly
+    pub fn register_continue(&mut self, offset: BytecodeOffset) {
+        // offset points to the location of the jump, which will need to be updated
+        // once we emit the jump target in emit_jump_target_and_patch
+        self.continues.push(offset);
+    }
+
+    pub fn emit_continue_target(&mut self, emit: &mut InstructionWriter) {
+        emit.emit_jump_target_and_patch((*self.continues).to_vec());
+    }
 
     pub fn emit_end_target(self, emit: &mut InstructionWriter) {
         let offset = emit.bytecode_offset();
@@ -206,11 +224,30 @@ impl Jump for BreakEmitter {
 
 impl BreakEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        // break { control, jumpkind }.emit(self)
-        //      -> register break
-        //      -> jump
+        // TODO: For 'break' statements in non local loops, we need to emit some extra bytecode.
+        // see https://searchfox.org/mozilla-central/rev/a707541ff423ade0d81cef6488e6ecfa09273886/js/src/frontend/BytecodeEmitter.cpp#702-840
         let offset = emitter.emit.bytecode_offset();
         emitter.loop_stack.register_break(offset);
+        self.emit_jump(emitter);
+    }
+}
+
+pub struct ContinueEmitter {
+    pub jump: JumpKind,
+}
+
+impl Jump for ContinueEmitter {
+    fn jump_kind(&mut self) -> &JumpKind {
+        &self.jump
+    }
+}
+
+impl ContinueEmitter {
+    pub fn emit(&mut self, emitter: &mut AstEmitter) {
+        // TODO: For 'continue' statements in non local loops, we need to emit some extra bytecode.
+        // see https://searchfox.org/mozilla-central/rev/a707541ff423ade0d81cef6488e6ecfa09273886/js/src/frontend/BytecodeEmitter.cpp#702-840
+        let offset = emitter.emit.bytecode_offset();
+        emitter.loop_stack.register_continue(offset);
         self.emit_jump(emitter);
     }
 }
@@ -240,7 +277,7 @@ where
 
         (self.block)(emitter)?;
 
-        // TODO: emit continue here
+        emitter.loop_stack.emit_continue_target(&mut emitter.emit);
 
         // Merge point
         emitter.loop_stack.close_loop(&mut emitter.emit);
@@ -266,6 +303,8 @@ where
 
         (self.block)(emitter)?;
 
+        emitter.loop_stack.emit_continue_target(&mut emitter.emit);
+
         (self.test)(emitter)?;
 
         BreakEmitter {
@@ -273,7 +312,6 @@ where
         }
         .emit(emitter);
 
-        // TODO: emit continue
         // Merge point after cond fails
         emitter.loop_stack.close_loop(&mut emitter.emit);
         Ok(())
@@ -304,13 +342,17 @@ where
     BlockFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+        // Initialize the variable either by running an expression or assigning
+        // ie) for(foo(); <test>; <update>) or for(var x = 0; <test>; <update)
         if let Some(init) = self.maybe_init {
             (self.init)(emitter, init)?;
             emitter.emit.pop();
         }
 
+        // Emit loop head
         emitter.loop_stack.open_loop(&mut emitter.emit);
 
+        // if there is a test condition (ie x < 3) emit it
         if let Some(test) = self.maybe_test {
             (self.test)(emitter, &test)?;
 
@@ -320,15 +362,19 @@ where
             .emit(emitter);
         }
 
+        // emit the body of the for loop.
         (self.block)(emitter)?;
+
+        // emit the target for any continues emitted in the body before evaluating
+        // the update (if there is one) and continuing from the top of the loop.
+        emitter.loop_stack.emit_continue_target(&mut emitter.emit);
 
         if let Some(update) = self.maybe_update {
             (self.update)(emitter, &update)?;
             emitter.emit.pop();
         }
 
-        // loop_stack.emit_continue(emitter);
-        // Merge point after cond fails
+        // Merge point after test fails (or there is a break statement)
         emitter.loop_stack.close_loop(&mut emitter.emit);
         Ok(())
     }
