@@ -23,8 +23,8 @@ use ast::types::*;
 use scope::data::ScopeDataMap;
 
 use crate::control_structures::{
-    BreakEmitter, CForEmitter, DoWhileEmitter, ForwardJumpEmitter, JumpKind, LoopStack,
-    WhileEmitter,
+    BreakEmitter, CForEmitter, ContinueEmitter, DoWhileEmitter, ForwardJumpEmitter, JumpKind,
+    LoopStack, WhileEmitter,
 };
 
 /// Emit a program, converting the AST directly to bytecode.
@@ -105,8 +105,14 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 }
                 .emit(self);
             }
-            Statement::ContinueStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: ContinueStatement"));
+            Statement::ContinueStatement { label, .. } => {
+                if let Some(_label) = label {
+                    return Err(EmitError::NotImplemented("TODO: Labeled ContinueStatement"));
+                }
+                ContinueEmitter {
+                    jump: JumpKind::Goto,
+                }
+                .emit(self);
             }
             Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));

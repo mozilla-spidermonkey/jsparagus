@@ -135,6 +135,16 @@ impl LoopStack {
         innermost.register_break(offset);
     }
 
+    pub fn register_continue(&mut self, offset: BytecodeOffset) {
+        let innermost = self.innermost();
+        innermost.register_continue(offset);
+    }
+
+    pub fn emit_continue_target(&mut self, emit: &mut InstructionWriter) {
+        let innermost = self.innermost();
+        innermost.emit_continue_target(emit);
+    }
+
     pub fn close_loop(&mut self, emit: &mut InstructionWriter) {
         let innermost = self
             .loop_stack
@@ -151,8 +161,8 @@ impl LoopStack {
 }
 
 pub struct LoopControl {
-    pub breaks: Vec<BytecodeOffset>,
-    pub continues: Vec<BytecodeOffset>,
+    breaks: Vec<BytecodeOffset>,
+    continues: Vec<BytecodeOffset>,
     head: BytecodeOffset,
 }
 
@@ -181,7 +191,15 @@ impl LoopControl {
         self.breaks.push(offset);
     }
 
-    // TODO: fix continues so that they work with scopes correctly
+    pub fn register_continue(&mut self, offset: BytecodeOffset) {
+        // offset points to the location of the jump, which will need to be updated
+        // once we emit the jump target in emit_jump_target_and_patch
+        self.continues.push(offset);
+    }
+
+    pub fn emit_continue_target(&mut self, emit: &mut InstructionWriter) {
+        emit.emit_jump_target_and_patch((*self.continues).to_vec());
+    }
 
     pub fn emit_end_target(self, emit: &mut InstructionWriter) {
         let offset = emit.bytecode_offset();
@@ -215,6 +233,27 @@ impl BreakEmitter {
     }
 }
 
+pub struct ContinueEmitter {
+    pub jump: JumpKind,
+}
+
+impl Jump for ContinueEmitter {
+    fn jump_kind(&mut self) -> &JumpKind {
+        &self.jump
+    }
+}
+
+impl ContinueEmitter {
+    pub fn emit(&mut self, emitter: &mut AstEmitter) {
+        // break { control, jumpkind }.emit(self)
+        //      -> register break
+        //      -> jump
+        let offset = emitter.emit.bytecode_offset();
+        emitter.loop_stack.register_continue(offset);
+        self.emit_jump(emitter);
+    }
+}
+
 pub struct WhileEmitter<F1, F2>
 where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
@@ -241,6 +280,7 @@ where
         (self.block)(emitter)?;
 
         // TODO: emit continue here
+        emitter.loop_stack.emit_continue_target(&mut emitter.emit);
 
         // Merge point
         emitter.loop_stack.close_loop(&mut emitter.emit);
