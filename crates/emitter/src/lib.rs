@@ -1,6 +1,7 @@
 mod array_emitter;
 mod ast_emitter;
 mod block_emitter;
+mod bytecode_offset;
 mod compilation_info;
 mod control_structures;
 mod dis;

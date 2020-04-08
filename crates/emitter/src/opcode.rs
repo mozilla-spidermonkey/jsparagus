@@ -27,7 +27,7 @@ macro_rules! using_opcode_database {
                 (Void, void_, NULL, 1, 1, 1, JOF_BYTE),
                 (Typeof, typeof_, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
                 (TypeofExpr, typeof_expr, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
-                (Pos, pos, "+ ", 1, 1, 1, JOF_BYTE),
+                (Pos, pos, "+ ", 1, 1, 1, JOF_BYTE|JOF_IC),
                 (Neg, neg, "- ", 1, 1, 1, JOF_BYTE|JOF_IC),
                 (BitNot, bit_not, "~", 1, 1, 1, JOF_BYTE|JOF_IC),
                 (Not, not_, "!", 1, 1, 1, JOF_BYTE|JOF_IC),
