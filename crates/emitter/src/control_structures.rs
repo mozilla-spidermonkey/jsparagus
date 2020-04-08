@@ -1,6 +1,5 @@
-use super::emitter::BytecodeOffset;
-use super::emitter::BytecodeOffsetDiff;
 use crate::ast_emitter::AstEmitter;
+use crate::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
 use crate::emitter::EmitError;
 use crate::emitter::InstructionWriter;
 
@@ -39,7 +38,7 @@ trait Jump {
         // and four bytes are used in order to save memory. We are not using that
         // here, so instead we are using a placeholder offset set to 0, which will
         // be updated later in patch_and_emit_jump_target.
-        let placeholder_offset = BytecodeOffsetDiff{ diff: 0 };
+        let placeholder_offset = BytecodeOffsetDiff::uninitialized();
         match self.jump_kind() {
             JumpKind::Coalesce { .. } => {
                 emitter.emit.coalesce(placeholder_offset);
@@ -186,7 +185,7 @@ impl LoopControl {
 
     pub fn emit_end_target(self, emit: &mut InstructionWriter) {
         let offset = emit.bytecode_offset();
-        let diff = BytecodeOffsetDiff::new(self.head, offset);
+        let diff = self.head.diff_from(offset);
 
         emit.goto_(diff);
 

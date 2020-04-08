@@ -5,6 +5,7 @@
 // Most of this functionality isn't used yet.
 #![allow(dead_code)]
 
+use crate::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
 use crate::compilation_info::CompilationInfo;
 use crate::gcthings::{GCThing, GCThingIndex, GCThingList};
 use crate::opcode::Opcode;
@@ -98,42 +99,6 @@ pub enum SrcNoteType {
 
 #[allow(non_camel_case_types)]
 pub type u24 = u32;
-
-/// For tracking bytecode offsets in jumps
-#[derive(Clone, Copy, PartialEq, Debug)]
-#[must_use]
-pub struct BytecodeOffset {
-    pub offset: usize,
-}
-
-impl BytecodeOffset {
-    fn new(offset: usize) -> Self {
-        Self { offset }
-    }
-
-    pub fn end(self, emit: &InstructionWriter) -> usize {
-        // find the offset after the end of bytecode associated with this offset.
-        let target_opcode = Opcode::try_from(emit.bytecode[self.offset]).unwrap();
-        self.offset + target_opcode.instruction_length()
-    }
-}
-
-impl From<BytecodeOffset> for usize {
-    fn from(offset: BytecodeOffset) -> usize {
-        offset.offset
-    }
-}
-
-pub struct BytecodeOffsetDiff {
-    pub diff: i32,
-}
-
-impl BytecodeOffsetDiff {
-    pub fn new(offset1: BytecodeOffset, offset2: BytecodeOffset) -> Self {
-        let diff = (offset1.offset as f64 - offset2.offset as f64) as i32;
-        Self { diff }
-    }
-}
 
 /// Low-level bytecode emitter.
 pub struct InstructionWriter {
@@ -236,7 +201,7 @@ impl InstructionWriter {
             scope_notes: ScopeNoteList::new(),
             regexps: RegExpList::new(),
             last_jump_target_offset: None,
-            main_offset: BytecodeOffset::new(0),
+            main_offset: BytecodeOffset::from(0usize),
             max_fixed_slots: FrameSlot::new(0),
             stack_depth: 0,
             maximum_stack_depth: 0,
@@ -325,6 +290,10 @@ impl InstructionWriter {
         self.write_i32(offset);
     }
 
+    fn write_bytecode_offset_diff(&mut self, offset: BytecodeOffsetDiff) {
+        self.write_i32(i32::from(offset));
+    }
+
     fn write_f64(&mut self, val: f64) {
         self.bytecode
             .extend_from_slice(&val.to_bits().to_le_bytes());
@@ -401,6 +370,12 @@ impl InstructionWriter {
         self.last_jump_target_offset = Some(target);
     }
 
+    fn get_end_of_bytecode(&mut self, offset: BytecodeOffset) -> usize {
+        // find the offset after the end of bytecode associated with this offset.
+        let target_opcode = Opcode::try_from(self.bytecode[offset.offset]).unwrap();
+        offset.offset + target_opcode.instruction_length()
+    }
+
     pub fn get_atom_index(&mut self, value: SourceAtomSetIndex) -> ScriptAtomSetIndex {
         self.atoms.insert(value)
     }
@@ -410,7 +385,7 @@ impl InstructionWriter {
         let last_jump = self.last_jump_target_offset;
         match last_jump {
             Some(offset) => {
-                if offset.end(self) != target.offset {
+                if self.get_end_of_bytecode(offset) != target.offset {
                     self.jump_target();
                     self.set_last_jump_target_offset(target);
                 } else {
@@ -429,14 +404,14 @@ impl InstructionWriter {
     }
 
     pub fn patch_jump_to_target(&mut self, target: BytecodeOffset, jump: BytecodeOffset) {
-        let diff = BytecodeOffsetDiff::new(target, jump).diff as i32;
+        let diff = target.diff_from(jump).into();
         let index = jump.offset + 1;
         // FIXME: Use native endian instead of little endian
         LittleEndian::write_i32(&mut self.bytecode[index..index + 4], diff);
     }
 
     pub fn bytecode_offset(&mut self) -> BytecodeOffset {
-        BytecodeOffset::new(self.bytecode.len())
+        BytecodeOffset::from(self.bytecode.len())
     }
 
     pub fn stack_depth(&self) -> usize {
@@ -1068,42 +1043,42 @@ impl InstructionWriter {
 
     pub fn goto_(&mut self, offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Goto);
-        self.write_i32(offset.diff);
+        self.write_bytecode_offset_diff(offset);
     }
 
     pub fn if_eq(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::IfEq);
-        self.write_i32(forward_offset.diff);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
     pub fn if_ne(&mut self, offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::IfNe);
-        self.write_i32(offset.diff);
+        self.write_bytecode_offset_diff(offset);
     }
 
     pub fn and_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::And);
-        self.write_i32(forward_offset.diff);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
     pub fn or_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Or);
-        self.write_i32(forward_offset.diff);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
     pub fn coalesce(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Coalesce);
-        self.write_i32(forward_offset.diff);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
-    pub fn case_(&mut self, forward_offset: i32) {
+    pub fn case_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Case);
-        self.write_i32(forward_offset);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
-    pub fn default_(&mut self, forward_offset: i32) {
+    pub fn default_(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Default);
-        self.write_i32(forward_offset);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
     pub fn return_(&mut self) {
@@ -1158,9 +1133,9 @@ impl InstructionWriter {
         self.write_u24(resume_index);
     }
 
-    pub fn gosub(&mut self, forward_offset: i32) {
+    pub fn gosub(&mut self, forward_offset: BytecodeOffsetDiff) {
         self.emit_op(Opcode::Gosub);
-        self.write_i32(forward_offset);
+        self.write_bytecode_offset_diff(forward_offset);
     }
 
     pub fn finally(&mut self) {
