@@ -412,9 +412,9 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::CheckGlobalOrEvalDecl => {
                 // FIXME: Port CheckGlobalOrEvalDeclarationConflicts
                 //        from js/src/vm/EnvironmentObject.cpp.
-            },
+            }
 
-            Opcode::Nop => {},
+            Opcode::Nop => {}
             _ => return Err(EvalError::NotImplemented(format!("{:?}", op))),
         }
 

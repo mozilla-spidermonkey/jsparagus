@@ -28,6 +28,7 @@ pub use dis::dis;
 
 use ast::source_atom_set::SourceAtomSet;
 use ast::source_slice_list::SourceSliceList;
+use scope::ScopeDataMapAndFunctionMap;
 
 pub fn emit<'alloc>(
     ast: &'alloc ast::types::Program<'alloc>,
@@ -35,7 +36,7 @@ pub fn emit<'alloc>(
     atoms: SourceAtomSet<'alloc>,
     slices: SourceSliceList<'alloc>,
 ) -> Result<EmitResult<'alloc>, EmitError> {
-    let scope_data_map = scope::generate_scope_data(ast);
+    let ScopeDataMapAndFunctionMap { scope_data_map, .. } = scope::generate_scope_data(ast);
     ast_emitter::emit_program(ast, options, atoms, slices, scope_data_map)
 }
 
