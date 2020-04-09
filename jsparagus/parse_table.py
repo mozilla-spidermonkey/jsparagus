@@ -420,7 +420,6 @@ class ParseTable:
 
     def remove_state(self, s: StateId, maybe_unreachable_set: OrderedSet[StateId]) -> None:
         state = self.states[s]
-        # print("Remove state {}".format(state))
         self.clear_edges(state, maybe_unreachable_set)
         del self.state_cache[state]
 
@@ -455,6 +454,7 @@ class ParseTable:
     ) -> None:
         self.states[dest].backedges.remove(Edge(src.index, term))
         maybe_unreachable_set.add(dest)
+        self.assert_state_invariants(src)
 
     def replace_edge(
             self,
@@ -463,10 +463,10 @@ class ParseTable:
             dest: StateId,
             maybe_unreachable_set: OrderedSet[StateId]
     ) -> None:
-        assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
 
-        if term in src:
+        edge_existed = term in src
+        if edge_existed:
             old_dest = src[term]
             self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
 
@@ -480,6 +480,34 @@ class ParseTable:
         else:
             src.terminals[term] = dest
         self.states[dest].backedges.add(Edge(src.index, term))
+
+        self.assert_state_invariants(src)
+        self.assert_state_invariants(dest)
+        if edge_existed:
+            self.assert_state_invariants(old_dest)
+
+    def remove_edge(
+            self,
+            src: StateAndTransitions,
+            term: Term,
+            maybe_unreachable_set: OrderedSet[StateId]
+    ) -> None:
+        edge_existed = term in src
+        if edge_existed:
+            old_dest = src[term]
+            self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
+        if isinstance(term, Action):
+            src.epsilon = [(t, d) for t, d in src.epsilon if t != term]
+        elif isinstance(term, Nt):
+            del src.nonterminals[term]
+        elif isinstance(term, ErrorSymbol):
+            del src.errors[term]
+        else:
+            del src.terminals[term]
+
+        self.assert_state_invariants(src)
+        if edge_existed:
+            self.assert_state_invariants(old_dest)
 
     def clear_edges(
             self,
@@ -495,6 +523,18 @@ class ParseTable:
         src.nonterminals = {}
         src.errors = {}
         src.epsilon = []
+
+    def assert_state_invariants(self, src: typing.Union[StateId, StateAndTransitions]) -> None:
+        if not self.debug_info:
+            return
+        if isinstance(src, int):
+            src = self.states[src]
+        assert isinstance(src, StateAndTransitions)
+        for term, dest in src.edges():
+            assert Edge(src.index, term) in self.states[dest].backedges
+        for e in src.backedges:
+            assert e.term is not None
+            assert self.states[e.src][e.term] == src.index
 
     def remove_unreachable_states(
             self,
