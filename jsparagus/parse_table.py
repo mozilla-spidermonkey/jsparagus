@@ -1296,32 +1296,43 @@ class ParseTable:
         # these states to be replaced by edges going to the reference state.
         if verbose or progress:
             print("Fold identical endings.")
-        maybe_unreachable: OrderedSet[StateId] = OrderedSet()
 
-        def rewrite_backedges(state_list: typing.List[StateAndTransitions]) -> bool:
+        def rewrite_backedges(state_list: typing.List[StateAndTransitions],
+                              state_map: typing.Dict[StateId, StateId],
+                              maybe_unreachable: OrderedSet[StateId]) -> bool:
             # All states have the same outgoing edges. Thus we replace all of
-            # them by a single state.
-            ref = state_list[0]
-            replace_edges = [e for s in state_list[1:] for e in s.backedges]
+            # them by a single state. We do that by replacing edges of which
+            # are targeting the state in the state_list by edges targetting the
+            # ref state.
+            ref = state_list.pop()
+            replace_edges = [e for s in state_list for e in s.backedges]
             hit = False
             for edge in replace_edges:
-                src = self.states[edge.src]
-                # print("replace {} -- {} --> {}, by {} -- {} --> {}"
-                #       .format(src.index, term, src[term], src.index, term, ref.index))
                 edge_term = edge.term
                 assert edge_term is not None
+                src = self.states[edge.src]
+                old_dest = src[edge_term]
+                # print("replace {} -- {} --> {}, by {} -- {} --> {}"
+                #       .format(src.index, term, src[term], src.index, term, ref.index))
                 self.replace_edge(src, edge_term, ref.index, maybe_unreachable)
+                state_map[old_dest] = ref.index
                 hit = True
             return hit
 
         def rewrite_if_same_outedges(state_list: typing.List[StateAndTransitions]) -> bool:
+            maybe_unreachable: OrderedSet[StateId] = OrderedSet()
             outedges = collections.defaultdict(lambda: [])
             for s in state_list:
                 outedges[tuple(s.edges())].append(s)
             hit = False
+            state_map = {i: i for i, _ in enumerate(self.states)}
             for same in outedges.values():
                 if len(same) > 1:
-                    hit = rewrite_backedges(same) or hit
+                    hit = rewrite_backedges(same, state_map, maybe_unreachable) or hit
+            if hit:
+                self.remove_unreachable_states(maybe_unreachable)
+                self.rewrite_state_indexes(state_map)
+                self.remove_all_unreachable_state(verbose, progress)
             return hit
 
         def visit_table() -> typing.Iterator[None]:
@@ -1331,9 +1342,6 @@ class ParseTable:
                 hit = rewrite_if_same_outedges(self.states)
 
         consume(visit_table(), progress)
-
-        self.remove_unreachable_states(maybe_unreachable)
-        self.remove_all_unreachable_state(verbose, progress)
 
     def group_epsilon_states(self, verbose: bool, progress: bool) -> None:
         shift_states = [s for s in self.states if len(s.epsilon) == 0]
