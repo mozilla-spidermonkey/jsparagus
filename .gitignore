@@ -3,6 +3,7 @@ __pycache__/
 target/
 jsparagus_build_venv/
 example_pgen.rs
+parse_with_python.py
 js_parser/parser_tables.py
 jsparagus/emit/collect_handler_info/info.json
 jsparagus/emit/collect_handler_info/target
