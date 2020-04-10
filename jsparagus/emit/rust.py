@@ -437,15 +437,15 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "pub trait ParserTrait<'alloc, Value> {")
         self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
-        self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
+        self.write(1, "fn unshift(&mut self);")
         self.write(1, "fn rewind(&mut self, n: usize) {")
         self.write(2, "for _ in 0..n {")
-        self.write(3, "let tv = self.pop();")
-        self.write(3, "self.replay(tv);")
+        self.write(3, "self.unshift();")
         self.write(2, "}")
         self.write(1, "}")
-        self.write(1, "fn epsilon(&mut self, state: usize);")
         self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
+        self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
+        self.write(1, "fn epsilon(&mut self, state: usize);")
         self.write(1, "fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool>;")
         self.write(0, "}")
         self.write(0, "")
@@ -474,9 +474,6 @@ class RustParserWriter:
             assert isinstance(act, Action)
             if isinstance(act, Reduce):
                 yield "value"
-                for i in reversed(range(act.replay)):
-                    var = i + 1
-                    yield var
             elif isinstance(act, FunCall):
                 def map_with_offset(args):
                     for a in args:
@@ -519,8 +516,6 @@ class RustParserWriter:
                            self.nonterminal_to_camel(act.nt))
                 if value != "value":
                     self.write(indent, "let value = {};", value)
-                for i in range(act.replay):
-                    self.write(indent, "parser.replay(s{});", i + 1)
                 self.write(indent, "parser.replay(TermValue { term, value });")
                 self.write(indent, "Ok(false)")
                 return False
@@ -600,8 +595,10 @@ class RustParserWriter:
                 )
                 if act.update_stack() and not has_accept:
                     reducer = act.reduce_with()
+                    if reducer.replay > 0:
+                        self.write(indent, "parser.rewind({});", reducer.replay)
                     depth = reducer.pop + reducer.replay
-                    for i in range(depth):
+                    for i in range(reducer.replay, depth):
                         name = 's'
                         if i + 1 not in used_variables:
                             name = '_s'
