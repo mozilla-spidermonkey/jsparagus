@@ -1,4 +1,5 @@
 from __future__ import annotations
+# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
 
 import typing
 from dataclasses import dataclass
@@ -28,10 +29,10 @@ class Edge:
     src: StateId
     term: typing.Optional[Term]
 
-    def stable_str(self, states):
+    def stable_str(self, states: typing.List[StateAndTransition]) -> str:
         return "{} -- {} -->".format(states[self.src].stable_hash, str(self.term))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{} -- {} -->".format(self.src, str(self.term))
 
 
