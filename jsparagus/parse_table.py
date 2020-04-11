@@ -601,10 +601,10 @@ class ParseTable:
             stop = has_shift_loop or has_stack_loop or has_lookahead
             # print("\t{} = {} or {} or {}".format(
             #     stop, has_shift_loop, has_stack_loop, has_lookahead))
-            # print(aps_str(aps, "\tvisitor"))
+            # print(aps.string("\tvisitor"))
             if stop:
                 print("lanes_visit stop:")
-                print(aps_str(aps, "\trecord"))
+                print(aps.string("\trecord"))
                 record.append(aps)
             return not stop
         self.aps_visitor(APS.start(state), visit)
@@ -671,7 +671,7 @@ class ParseTable:
                 aps = recurse.pop()
                 if not_interesting(aps):
                     # print("discard uninteresting context lane:")
-                    # print(aps_str(aps, "\tcontext"))
+                    # print(aps.string("\tcontext"))
                     continue
                 if has_enough_context(aps):
                     collect.append(aps)
@@ -682,16 +682,16 @@ class ParseTable:
                 if len(aps.lookahead) >= 1:
                     # print("discard context_lanes due to lookahead:")
                     # for aps in itertools.chain(collect, recurse, [aps]):
-                    #     print(aps_str(aps, "\tcontext"))
+                    #     print(aps.string("\tcontext"))
                     return True, []
                 enough_context = False
-                # print("extend starting at:\n{}".format(aps_str(aps, "\tcontext")))
+                # print("extend starting at:\n{}".format(aps.string("\tcontext")))
                 collect.extend(aps.shift_next(self))
             assert recurse == []
 
         # print("context_lanes:")
         # for aps in collect:
-        #     print(aps_str(aps, "\tcontext"))
+        #     print(aps.string("\tcontext"))
 
         return False, collect
 
