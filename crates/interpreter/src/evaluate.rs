@@ -1,5 +1,5 @@
 use emitter::opcode::Opcode;
-use emitter::EmitResult;
+use emitter::{EmitResult, ScriptStencil};
 
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -28,17 +28,17 @@ impl fmt::Display for EvalError {
     }
 }
 
-trait Helpers {
+trait Helpers<'alloc> {
     fn read_u16(&self, offset: usize) -> u16;
     fn read_u24(&self, offset: usize) -> u32;
     fn read_i32(&self, offset: usize) -> i32;
     fn read_double(&self, offset: usize) -> f64;
     fn read_u32(&self, offset: usize) -> u32;
     fn read_offset(&self, offset: usize) -> isize;
-    fn read_atom(&self, offset: usize) -> String;
+    fn read_atom(&self, offset: usize, atoms: &Vec<&'alloc str>) -> String;
 }
 
-impl<'alloc> Helpers for EmitResult<'alloc> {
+impl<'alloc> Helpers<'alloc> for ScriptStencil {
     fn read_u16(&self, offset: usize) -> u16 {
         u16::from_le_bytes(self.bytecode[offset..offset + 2].try_into().unwrap())
     }
@@ -63,9 +63,9 @@ impl<'alloc> Helpers for EmitResult<'alloc> {
         self.read_i32(offset) as isize
     }
 
-    fn read_atom(&self, offset: usize) -> String {
+    fn read_atom(&self, offset: usize, atoms: &Vec<&'alloc str>) -> String {
         let index = self.atoms[self.read_i32(offset) as usize];
-        self.all_atoms[usize::from(index)].to_string()
+        atoms[usize::from(index)].to_string()
     }
 }
 
@@ -73,18 +73,21 @@ impl<'alloc> Helpers for EmitResult<'alloc> {
 ///
 /// Note: This is not meant to be a spec compliant implementation of ECMAScript,
 /// instead the goal is to make basic programs testable with pure Rust.
-pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValue, EvalError> {
+pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValue, EvalError> {
     let mut pc = 0;
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
 
+    let script = &result.scripts[0];
+    let atoms = &result.atoms;
+
     loop {
-        let op = match Opcode::try_from(emit.bytecode[pc]) {
+        let op = match Opcode::try_from(script.bytecode[pc]) {
             Ok(op) => op,
             Err(_) => {
                 return Err(EvalError::NotImplemented(format!(
                     "{} is not an opcode",
-                    emit.bytecode[pc]
+                    script.bytecode[pc]
                 )))
             }
         };
@@ -92,21 +95,21 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
         match op {
             Opcode::Zero => stack.push(JSValue::Number(0.0)),
             Opcode::One => stack.push(JSValue::Number(1.0)),
-            Opcode::Int8 => stack.push(JSValue::Number(emit.bytecode[pc + 1] as f64)),
+            Opcode::Int8 => stack.push(JSValue::Number(script.bytecode[pc + 1] as f64)),
             Opcode::Uint16 => {
-                let value = emit.read_u16(pc + 1);
+                let value = script.read_u16(pc + 1);
                 stack.push(JSValue::Number(value as f64))
             }
             Opcode::Uint24 => {
-                let value = emit.read_u24(pc + 1);
+                let value = script.read_u24(pc + 1);
                 stack.push(JSValue::Number(value as f64))
             }
             Opcode::Int32 => {
-                let value = emit.read_i32(pc + 1);
+                let value = script.read_i32(pc + 1);
                 stack.push(JSValue::Number(value as f64))
             }
             Opcode::Double => {
-                let value = emit.read_double(pc + 1);
+                let value = script.read_double(pc + 1);
                 stack.push(JSValue::Number(value))
             }
 
@@ -218,20 +221,20 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::IfEq => {
                 let b = to_boolean(&stack.pop().ok_or(EvalError::EmptyStack)?);
                 if !b {
-                    let offset = emit.read_offset(pc + 1);
+                    let offset = script.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
                     continue;
                 }
             }
 
             Opcode::Goto => {
-                let offset = emit.read_offset(pc + 1);
+                let offset = script.read_offset(pc + 1);
                 pc = (pc as isize + offset) as usize;
                 continue;
             }
 
             Opcode::DefVar => {
-                let atom = emit.read_atom(pc + 1);
+                let atom = script.read_atom(pc + 1, atoms);
                 global.borrow_mut().set(atom, JSValue::Undefined);
             }
 
@@ -241,7 +244,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             }
 
             Opcode::GetGName => {
-                let atom = emit.read_atom(pc + 1);
+                let atom = script.read_atom(pc + 1, atoms);
                 if !global.borrow().has(&atom) {
                     return Err(EvalError::VariableNotDefined(atom));
                 }
@@ -252,7 +255,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 let value = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
-                let atom = emit.read_atom(pc + 1);
+                let atom = script.read_atom(pc + 1, atoms);
                 match obj {
                     JSValue::Object(ref obj) => {
                         obj.borrow_mut().set(atom, value.clone());
@@ -271,7 +274,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 let value = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
-                let atom = emit.read_atom(pc + 1);
+                let atom = script.read_atom(pc + 1, atoms);
                 match obj {
                     JSValue::Object(ref obj) => {
                         obj.borrow_mut().set(atom, value);
@@ -286,7 +289,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 let value = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
-                let index = emit.read_u32(pc + 1);
+                let index = script.read_u32(pc + 1);
                 match obj {
                     JSValue::Object(ref obj) => {
                         obj.borrow_mut().set(index.to_string(), value);
@@ -300,7 +303,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::GetProp | Opcode::CallProp => {
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
-                let atom = emit.read_atom(pc + 1);
+                let atom = script.read_atom(pc + 1, atoms);
                 match obj {
                     JSValue::Object(ref obj) => {
                         stack.push(obj.borrow().get(atom));
@@ -332,7 +335,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             }
 
             Opcode::Call => {
-                let argc = emit.read_u16(pc + 1) as usize;
+                let argc = script.read_u16(pc + 1) as usize;
 
                 if stack.len() < argc {
                     return Err(EvalError::EmptyStack);
@@ -353,7 +356,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::And => {
                 let cond = to_boolean(stack.last().ok_or(EvalError::EmptyStack)?);
                 if !cond {
-                    let offset = emit.read_offset(pc + 1);
+                    let offset = script.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
                     continue;
                 }
@@ -362,7 +365,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             Opcode::Or => {
                 let cond = to_boolean(stack.last().ok_or(EvalError::EmptyStack)?);
                 if cond {
-                    let offset = emit.read_offset(pc + 1);
+                    let offset = script.read_offset(pc + 1);
                     pc = (pc as isize + offset) as usize;
                     continue;
                 }
@@ -373,7 +376,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
                 match last {
                     JSValue::Null | JSValue::Undefined => {}
                     _ => {
-                        let offset = emit.read_offset(pc + 1);
+                        let offset = script.read_offset(pc + 1);
                         pc = (pc as isize + offset) as usize;
                         continue;
                     }
@@ -401,7 +404,7 @@ pub fn evaluate(emit: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSValu
             }
 
             Opcode::String => {
-                stack.push(JSValue::String(emit.read_atom(pc + 1)));
+                stack.push(JSValue::String(script.read_atom(pc + 1, atoms)));
             }
 
             Opcode::True => stack.push(JSValue::Boolean(true)),

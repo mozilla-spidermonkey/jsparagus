@@ -19,14 +19,14 @@ fn try_evaluate(source: &str) -> Result<JSValue, EvalError> {
     let emit_options = EmitOptions::new();
     let script = parse_result.unbox();
     let program = arena::alloc(alloc, ast::types::Program::Script(script)).unbox();
-    let emit_result = emit(
+    let result = emit(
         &program,
         &emit_options,
         atoms.replace(SourceAtomSet::new_uninitialized()),
         slices.replace(SourceSliceList::new()),
     )
     .expect("Should work!");
-    evaluate(&emit_result, create_global())
+    evaluate(&result, create_global())
 }
 
 #[test]

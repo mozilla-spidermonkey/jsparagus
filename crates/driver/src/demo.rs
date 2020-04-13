@@ -150,15 +150,17 @@ fn handle_script<'alloc>(
         Err(err) => {
             eprintln!("error: {}", err);
         }
-        Ok(emit_result) => {
+        Ok(result) => {
+            let script = &result.scripts[0];
+
             if verbosity.emit_result {
-                println!("\n{:#?}", emit_result);
+                println!("\n{:#?}", script);
             }
             if verbosity.bytecode {
-                println!("\n{}", emitter::dis(&emit_result.bytecode));
+                println!("\n{}", emitter::dis(&script.bytecode));
             }
 
-            match evaluate(&emit_result, global) {
+            match evaluate(&result, global) {
                 Err(err) => print!("error: {}", err),
                 Ok(value) => println!("{:?}", value),
             }
