@@ -697,28 +697,6 @@ class ParseTable:
                 continue
             todo.extend(aps.shift_next(self))
 
-    def lanes(self, state: StateId) -> typing.List[APS]:
-        """Compute the lanes from the amount of lookahead available. Only consider
-        context when reduce states are encountered."""
-        record = []
-
-        def visit(aps: APS) -> bool:
-            has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
-            has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
-            has_lookahead = len(aps.lookahead) >= 1
-            stop = has_shift_loop or has_stack_loop or has_lookahead
-            # print("\t{} = {} or {} or {}".format(
-            #     stop, has_shift_loop, has_stack_loop, has_lookahead))
-            # print(aps.string("\tvisitor"))
-            if stop:
-                print("lanes_visit stop:")
-                print(aps.string("\trecord"))
-                record.append(aps)
-            return not stop
-
-        self.aps_visitor(APS.start(state), visit)
-        return record
-
     def context_lanes(self, state: StateId) -> typing.Tuple[bool, typing.List[APS]]:
         """Compute lanes, such that each reduce action can have set of unique stack to
         reach the given state. The stacks are assumed to be loop-free by
