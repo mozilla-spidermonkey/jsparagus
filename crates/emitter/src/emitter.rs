@@ -1362,8 +1362,8 @@ impl InstructionWriter {
     // @@@@ END METHODS @@@@
 
     pub fn get_regexp_gcthing_index(&mut self, regexp: RegExpItem) -> GCThingIndex {
-        let regexp_index = self.regexps.append(regexp);
-        self.gcthings.append_regexp(regexp_index)
+        let regexp_index = self.regexps.push(regexp);
+        self.gcthings.push_regexp(regexp_index)
     }
 
     fn update_max_frame_slots(&mut self, max_frame_slots: FrameSlot) {
@@ -1371,7 +1371,7 @@ impl InstructionWriter {
     }
 
     pub fn enter_global_scope(&mut self, scope_index: ScopeIndex) {
-        let index = self.gcthings.append_scope(scope_index);
+        let index = self.gcthings.push_scope(scope_index);
         self.body_scope_index = Some(index);
     }
 
@@ -1385,7 +1385,7 @@ impl InstructionWriter {
     ) -> ScopeNoteIndex {
         self.update_max_frame_slots(next_frame_slot);
 
-        let gcthing_index = self.gcthings.append_scope(scope_index);
+        let gcthing_index = self.gcthings.push_scope(scope_index);
         let offset = self.bytecode_offset();
         let note_index =
             self.scope_notes

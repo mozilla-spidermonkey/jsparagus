@@ -249,7 +249,7 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let end = source.rfind('/').unwrap();
 
-        let pattern = self.slices.borrow_mut().insert(&source[1..end]);
+        let pattern = self.slices.borrow_mut().push(&source[1..end]);
         let flags = &source[end + 1..];
 
         let mut global: bool = false;
