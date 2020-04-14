@@ -9,7 +9,7 @@ pub enum GCThing {
     Scope(ScopeIndex),
 }
 
-/// Index into GCThingList.atoms.
+/// Index into GCThingList.things.
 #[derive(Debug, Clone, Copy)]
 pub struct GCThingIndex {
     index: usize,

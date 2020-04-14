@@ -17,7 +17,7 @@ use crate::reference_op_emitter::{
 };
 use crate::regexp::RegExpItem;
 use crate::script_emitter::ScriptEmitter;
-use crate::stencil::{EmitResult, ScriptStencil};
+use crate::stencil::{EmitResult, ScriptStencilIndex, ScriptStencilList};
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSetIndex};
 use ast::types::*;
 
@@ -32,17 +32,19 @@ pub fn emit_program<'alloc>(
     options: &EmitOptions,
     mut compilation_info: CompilationInfo<'alloc>,
 ) -> Result<EmitResult<'alloc>, EmitError> {
-    let mut scripts: Vec<ScriptStencil> = Vec::new();
+    let mut scripts = ScriptStencilList::new();
     let emitter = AstEmitter::new(options, &mut compilation_info, &mut scripts);
 
     match ast {
-        Program::Script(script) => emitter.emit_script(script)?,
+        Program::Script(script) => {
+            emitter.emit_script(script)?;
+        }
         _ => {
             return Err(EmitError::NotImplemented("TODO: modules"));
         }
     }
 
-    Ok(EmitResult::new(compilation_info, scripts))
+    Ok(EmitResult::new(compilation_info, scripts.into()))
 }
 
 pub struct AstEmitter<'alloc, 'opt> {
@@ -51,14 +53,14 @@ pub struct AstEmitter<'alloc, 'opt> {
     pub loop_stack: LoopStack,
     pub options: &'opt EmitOptions,
     pub compilation_info: &'opt mut CompilationInfo<'alloc>,
-    pub scripts: &'opt mut Vec<ScriptStencil>,
+    pub scripts: &'opt mut ScriptStencilList,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     fn new(
         options: &'opt EmitOptions,
         compilation_info: &'opt mut CompilationInfo<'alloc>,
-        scripts: &'opt mut Vec<ScriptStencil>,
+        scripts: &'opt mut ScriptStencilList,
     ) -> Self {
         Self {
             emit: InstructionWriter::new(),
@@ -74,7 +76,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         self.scope_stack.lookup_name(name)
     }
 
-    fn emit_script(mut self, ast: &Script) -> Result<(), EmitError> {
+    fn emit_script(mut self, ast: &Script) -> Result<ScriptStencilIndex, EmitError> {
         let scope_data_map = &self.compilation_info.scope_data_map;
         let function_map = &self.compilation_info.function_map;
 
@@ -95,9 +97,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         }
         .emit(&mut self)?;
 
-        self.scripts.push(self.emit.into());
-
-        Ok(())
+        Ok(self.scripts.push(self.emit.into()))
     }
 
     fn emit_top_level_function_declaration(&mut self, fun: &Function) -> Result<(), EmitError> {

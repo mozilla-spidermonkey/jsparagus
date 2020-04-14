@@ -62,3 +62,47 @@ pub struct ScriptStencil {
     pub needs_function_environment_objects: bool,
     pub has_module_goal: bool,
 }
+
+/// Index into ScriptStencilList.scripts.
+#[derive(Debug, Clone, Copy)]
+pub struct ScriptStencilIndex {
+    index: usize,
+}
+
+impl ScriptStencilIndex {
+    fn new(index: usize) -> Self {
+        Self { index }
+    }
+}
+
+impl From<ScriptStencilIndex> for usize {
+    fn from(index: ScriptStencilIndex) -> usize {
+        index.index
+    }
+}
+
+/// List of stencil scripts.
+#[derive(Debug)]
+pub struct ScriptStencilList {
+    scripts: Vec<ScriptStencil>,
+}
+
+impl ScriptStencilList {
+    pub fn new() -> Self {
+        Self {
+            scripts: Vec::new(),
+        }
+    }
+
+    pub fn push(&mut self, script: ScriptStencil) -> ScriptStencilIndex {
+        let index = self.scripts.len();
+        self.scripts.push(script);
+        ScriptStencilIndex::new(index)
+    }
+}
+
+impl From<ScriptStencilList> for Vec<ScriptStencil> {
+    fn from(list: ScriptStencilList) -> Vec<ScriptStencil> {
+        list.scripts
+    }
+}
