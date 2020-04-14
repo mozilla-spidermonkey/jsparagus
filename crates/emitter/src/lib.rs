@@ -29,6 +29,8 @@ pub use crate::scope_notes::ScopeNote;
 pub use crate::stencil::{EmitResult, ScriptStencil};
 pub use dis::dis;
 
+use crate::compilation_info::CompilationInfo;
+
 use ast::source_atom_set::SourceAtomSet;
 use ast::source_slice_list::SourceSliceList;
 use scope::ScopeDataMapAndFunctionMap;
@@ -39,8 +41,12 @@ pub fn emit<'alloc>(
     atoms: SourceAtomSet<'alloc>,
     slices: SourceSliceList<'alloc>,
 ) -> Result<EmitResult<'alloc>, EmitError> {
-    let ScopeDataMapAndFunctionMap { scope_data_map, .. } = scope::generate_scope_data(ast);
-    ast_emitter::emit_program(ast, options, atoms, slices, scope_data_map)
+    let ScopeDataMapAndFunctionMap {
+        scope_data_map,
+        function_map,
+    } = scope::generate_scope_data(ast);
+    let compilation_info = CompilationInfo::new(atoms, slices, scope_data_map, function_map);
+    ast_emitter::emit_program(ast, options, compilation_info)
 }
 
 #[cfg(test)]
