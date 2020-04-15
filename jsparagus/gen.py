@@ -33,6 +33,7 @@ import dataclasses
 import io
 import pickle
 import sys
+import hashlib
 import typing
 from dataclasses import dataclass
 
@@ -881,13 +882,25 @@ class StateAndTransitions:
         # parse-table, as well as the actions which have not yet been executed.
         def hashed_content():
             for item in sorted(self.locations):
-                yield item.prod_index
-                yield item.offset
+                yield item
+                yield "\n"
             yield "delayed_actions"
-            for action in sorted(delayed_actions):
+            for action in self.delayed_actions:
                 yield hash(action)
 
         self._hash = hash(tuple(hashed_content()))
+
+    def stable_hash(self, state_hash):
+        def hashed_content():
+            for item in sorted(self.locations):
+                yield item
+                yield b'\n'
+            yield b"delayed_actions"
+            for action in self.delayed_actions:
+                yield action.stable_str(state_hash)
+        h = hashlib.md5()
+        h.update("".join(map(str, hashed_content())).encode())
+        return h.hexdigest()[:6]
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
@@ -995,6 +1008,13 @@ class StateAndTransitions:
             return self.__getitem__(term)
         except KeyError:
             return default
+
+    def stable_str(self, state_hash):
+        conflict = ""
+        if self.is_inconsistent():
+            conflict = " (inconsistent)"
+        return "{}{}:\n{}".format(state_hash[self.index], conflict, "\n".join([
+            "\t{} --> {}".format(k, state_hash[s]) for k, s in self.edges()]))
 
     def __str__(self):
         conflict = ""
@@ -1111,6 +1131,12 @@ class LR0Generator:
             s += self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item)
             s += "\n"
         return s
+
+    def stable_locations(self):
+        locations = []
+        for lr_item in self.lr_items:
+            locations.append(self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item))
+        return OrderedFrozenSet(sorted(locations))
 
     @staticmethod
     def start(grammar, nt):
@@ -1274,6 +1300,8 @@ class ParseTable:
         "states",
         # Map of state object to the corresponding identifer.
         "state_cache",
+        # Map of state identifier to the corresponding printable hashes.
+        "state_hash",
         # List of (Nt, states) tuples which are the entry point of the state
         # machine.
         "named_goals",
@@ -1298,6 +1326,7 @@ class ParseTable:
         self.actions = []
         self.states = []
         self.state_cache = {}
+        self.state_hash = []
         self.named_goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
@@ -1347,6 +1376,7 @@ class ParseTable:
         except KeyError:
             self.state_cache[state] = state
             self.states.append(state)
+            self.state_hash.append(state.stable_hash(self.state_hash))
             return True, state
 
     def get_state(self, locations, delayed_actions=OrderedFrozenSet()):
@@ -1466,7 +1496,7 @@ class ParseTable:
         for nt in goals:
             init_nt = Nt(InitNt(nt), ())
             it = LR0Generator.start(grammar, init_nt)
-            s = self.get_state(it.lr_items)
+            s = self.get_state(it.stable_locations())
             todo.append((it, s))
             self.named_goals.append((nt, s.index))
 
@@ -1479,9 +1509,9 @@ class ParseTable:
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s_it, s = todo.popleft()
                 if verbose:
-                    print("\nVisiting:\n{}".format(s_it))
+                    print("\nMapping state {} to LR0:\n{}".format(self.state_hash[s.index], s_it))
                 for k, sk_it in s_it.transitions().items():
-                    locations = sk_it.lr_items
+                    locations = sk_it.stable_locations()
                     if not self.is_term_shifted(k):
                         locations = OrderedFrozenSet()
                     is_new, sk = self.new_state(locations)
@@ -2165,7 +2195,7 @@ class ParseTable:
                     start_len = len(self.states)
                     if verbose:
                         count = count + 1
-                        print("Fixing state {}\n".format(self.states[s]))
+                        print("Fixing state {}\n".format(self.states[s].stable_str(self.state_hash)))
                     try:
                         self.fix_inconsistent_state(s, verbose)
                     except Exception as exc:
@@ -2173,7 +2203,7 @@ class ParseTable:
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
-                            .format(self.states[s], self.debug_context(s, "\n", "\t"))
+                            .format(self.states[s].stable_str(self.state_hash), self.debug_context(s, "\n", "\t"))
                         ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
@@ -2207,6 +2237,7 @@ class ParseTable:
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]
         state_map = {s.index: i for i, s in enumerate(self.states)}
+        self.state_hash = [self.state_hash[s.index] for s in self.states]
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
@@ -2259,6 +2290,7 @@ class ParseTable:
         self.states.extend(shift_states)
         self.states.extend(action_states)
         state_map = {s.index: i for i, s in enumerate(self.states)}
+        self.state_hash = [self.state_hash[s.index] for s in self.states]
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
