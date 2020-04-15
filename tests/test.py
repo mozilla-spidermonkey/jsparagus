@@ -7,6 +7,7 @@ import jsparagus
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Nt,
                                Optional, LookaheadRule, NtDef, Var)
+from js_parser.parse_esgrammar import parse_esgrammar
 
 
 LispTokenizer = lexer.LexicalGrammar("( )", SYMBOL=r'[!%&*+:<=>?@A-Z^_a-z~]+')
@@ -55,16 +56,18 @@ class GenTestCase(unittest.TestCase):
             lambda: self.parse(s, **kwargs))
 
     def testSimple(self):
-        grammar = Grammar({
-            'expr': [
-                ['SYMBOL'],
-                ['(', 'tail'],
-            ],
-            'tail': [
-                [')'],
-                ['expr', 'tail'],
-            ],
-        })
+        grammar = parse_esgrammar(
+            """
+            expr :
+                SYMBOL  => $0
+                `(` tail
+
+            tail :
+                `)`  => $0
+                expr tail
+            """,
+            terminal_names=["SYMBOL"]
+        )
         self.compile(LispTokenizer, grammar)
 
         self.assertParse(

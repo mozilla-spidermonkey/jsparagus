@@ -7,6 +7,10 @@ from ..runtime import ErrorToken
 from ..ordered import OrderedSet
 
 
+def method_name_to_python(name: str) -> str:
+    return name.replace(" ", "_")
+
+
 def write_python_parse_table(out, parse_table):
     # Disable MyPy type checking for everything in this module.
     out.write("# type: ignore\n\n")
@@ -71,7 +75,7 @@ def write_python_parse_table(out, parse_table):
             else:
                 methods.add(act)
                 out.write("{}{} = parser.methods.{}({})\n".format(
-                    indent, act.set_to, act.method,
+                    indent, act.set_to, method_name_to_python(act.method),
                     ", ".join(map_with_offset(act.args))
                 ))
             return indent, True
@@ -155,8 +159,9 @@ def write_python_parse_table(out, parse_table):
     for act in methods:
         assert isinstance(act, FunCall)
         args = ", ".join("x{}".format(i) for i in range(len(act.args)))
-        out.write("    def {}(self, {}):\n".format(act.method, args))
-        out.write("        return ({}, {})\n".format(repr(act.method), args))
+        name = method_name_to_python(act.method)
+        out.write("    def {}(self, {}):\n".format(name, args))
+        out.write("        return ({}, {})\n".format(repr(name), args))
     if not methods:
         out.write("    pass\n")
     out.write("\n")
