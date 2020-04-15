@@ -79,8 +79,9 @@ class RustActionWriter:
     """Write epsilon state transitions for a given action function."""
     ast_builder = types.Type("AstBuilderDelegate", (types.Lifetime("alloc"),))
 
-    def __init__(self, writer, traits, indent):
+    def __init__(self, writer, mode, traits, indent):
         self.writer = writer
+        self.mode = mode
         self.traits = traits
         self.indent = indent
         self.has_ast_builder = self.ast_builder in traits
@@ -153,10 +154,10 @@ class RustActionWriter:
     def write_epsilon_transition(self, dest):
         self.write("// --> {}", dest)
         if dest >= self.writer.shift_count:
-            self.write("state = {}", dest)
+            self.write("{}_{}(parser)", self.mode, dest)
         else:
             self.write("parser.epsilon({});", dest)
-            self.write("return Ok(false)")
+            self.write("Ok(false)")
 
     def write_condition(self, state, first_act):
         "Write code to test a conditions, and dispatch to the matching destination"
@@ -671,7 +672,7 @@ class RustParserWriter:
         # implements various traits. The trait list is used for filtering which
         # function is added in the generated code.
         for mode, traits in self.parse_table.exec_modes.items():
-            action_writer = RustActionWriter(self, traits, 4)
+            action_writer = RustActionWriter(self, mode, traits, 2)
             self.write(0,
                        "pub fn {}<'alloc, Handler>(parser: &mut Handler, state: usize) "
                        "-> Result<'alloc, bool>",
@@ -679,19 +680,27 @@ class RustParserWriter:
             self.write(0, "where")
             self.write(1, "Handler: {}", ' + '.join(map(self.type_to_rust, traits)))
             self.write(0, "{")
-            self.write(1, "let mut state = state;")
-            self.write(1, "loop {")
-            self.write(2, "match state {")
+            self.write(1, "match state {")
             assert len(self.states[self.shift_count:]) == self.action_count
             for state in self.states[self.shift_count:]:
-                self.write(3, "{} => {{", state.index)
-                action_writer.write_state_transitions(state)
-                self.write(3, "}")
-            self.write(3, '_ => panic!("no such state: {}", state),')
-            self.write(2, "}")
+                if all(isinstance(e.term, Action) for e in state.backedges):
+                    continue
+                self.write(2, "{} => {}_{}(parser),", state.index, mode, state.index)
+            self.write(2, '_ => panic!("no such state: {}", state),')
             self.write(1, "}")
             self.write(0, "}")
             self.write(0, "")
+            for state in self.states[self.shift_count:]:
+                self.write(0, "#[allow(unused)]")
+                self.write(0,
+                           "pub fn {}_{}<'alloc, Handler>(parser: &mut Handler) "
+                           "-> Result<'alloc, bool>",
+                           mode, state.index)
+                self.write(0, "where")
+                self.write(1, "Handler: {}", ' + '.join(map(self.type_to_rust, traits)))
+                self.write(0, "{")
+                action_writer.write_state_transitions(state)
+                self.write(0, "}")
 
     def entry(self):
         self.write(0, "#[derive(Clone, Copy)]")
