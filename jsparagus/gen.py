@@ -1475,6 +1475,16 @@ class ParseTable:
                 return True
         return False
 
+    def debug_dump(self):
+        # Sort the grammar by state hash, such that it can be compared
+        # before/after grammar modifications.
+        temp = sorted(enumerate(self.state_hash), key=lambda x: x[1])
+        for i, _ in temp:
+            s = self.states[i]
+            if s is None:
+                continue
+            print(s.stable_str(self.state_hash))
+
     def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
         self.flags.add(nts)
@@ -1521,6 +1531,10 @@ class ParseTable:
                     # Add the edge from s to sk with k.
                     self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
+
+        if verbose:
+            print("Create LR(0) Table Result:")
+            self.debug_dump()
 
     def is_term_shifted(self, term):
         return not (isinstance(term, Action) and term.update_stack())
@@ -2233,6 +2247,10 @@ class ParseTable:
                 "\tNumber of inconsistencies solved = {}"]).format(
                     len(self.states), count))
         assert not self.is_inconsistent()
+
+        if verbose:
+            print("Fix Inconsistent Table Result:")
+            self.debug_dump()
 
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]
