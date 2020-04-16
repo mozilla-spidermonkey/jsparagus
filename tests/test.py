@@ -3,6 +3,8 @@
 import io
 import re
 import unittest
+import typing
+
 import jsparagus
 from jsparagus import gen, lexer
 from jsparagus.grammar import (Grammar, Production, CallMethod, Nt,
@@ -1122,6 +1124,85 @@ class GenTestCase(unittest.TestCase):
         self.compile(tokenize, grammar)
         self.assertParse("{}", ('goal', '{', ('xlist_0',), '}'))
 
+    def compile_as_js(
+            self,
+            grammar_source: str,
+            goals: typing.Optional[typing.Iterable[str]] = None
+    ) -> None:
+        """Like self.compile(), but generate a parser from ESGrammar,
+        with ASI support, using the JS lexer.
+        """
+        from js_parser.lexer import JSLexer
+        from js_parser import load_es_grammar
+        from js_parser import generate_js_parser_tables
+
+        grammar = parse_esgrammar(
+            grammar_source,
+            filename="es-simplified.esgrammar",
+            extensions=[],
+            goals=goals,
+            synthetic_terminals=load_es_grammar.ECMASCRIPT_SYNTHETIC_TERMINALS,
+            terminal_names=load_es_grammar.TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR)
+        grammar = generate_js_parser_tables.hack_grammar(grammar)
+        base_parser_class = gen.compile(grammar)
+
+        # "type: ignore" because poor mypy can't cope with the runtime codegen
+        # we're doing here.
+        class JSParser(base_parser_class):  # type: ignore
+            def __init__(self, goal='Script', builder=None):
+                super().__init__(goal, builder)
+                self._goal = goal
+                #self.debug = True
+
+            def clone(self):
+                return JSParser(self._goal, self.methods)
+
+            def on_recover(self, error_code, lexer, stv):
+                """Check that ASI error recovery is really acceptable."""
+                if error_code == 'asi':
+                    if not self.closed and stv.term != '}' and not lexer.saw_line_terminator():
+                        lexer.throw("missing semicolon")
+                else:
+                    assert error_code == 'do_while_asi'
+
+        self.tokenize = JSLexer
+        self.parser_class = JSParser
+
+    def testExtraGoal(self):
+
+        grammar_source = """
+StuffToIgnore_ThisWorksAroundAnUnrelatedBug:
+  Identifier
+  IdentifierName
+
+Hat :
+  `^`
+
+ArrowFunction :
+  `^` `=>`
+  Hat `*` `=>`
+
+Script :
+  `?` `?` ArrowFunction
+  `?` `?` [lookahead <! {`async`} ] Hat `of`
+
+LazyArrowFunction :
+  ArrowFunction
+            """
+
+        def try_it(goals):
+            self.compile_as_js(grammar_source, goals=goals)
+            self.assertParse("? ? ^ =>", goal='Script')
+            try:
+                self.assertParse("? ? ^ of", goal='Script')
+            except jsparagus.lexer.SyntaxError:
+                return 'fail'
+            else:
+                return 'pass'
+
+        # Assert the bad status quo. This is issue #464.
+        self.assertEqual(try_it(['Script', 'LazyArrowFunction']), 'fail')
+        self.assertEqual(try_it(['Script']), 'pass')
 
 if __name__ == '__main__':
     unittest.main()
