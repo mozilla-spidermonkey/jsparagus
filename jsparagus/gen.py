@@ -2421,7 +2421,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
 def compile(grammar, verbose=False):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
-    generate_parser(out, grammar)
+    generate_parser(out, grammar, verbose=verbose)
     scope = {}
     if verbose:
         with open("parse_with_python.py", "w") as f:

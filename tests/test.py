@@ -1127,7 +1127,8 @@ class GenTestCase(unittest.TestCase):
     def compile_as_js(
             self,
             grammar_source: str,
-            goals: typing.Optional[typing.Iterable[str]] = None
+            goals: typing.Optional[typing.Iterable[str]] = None,
+            verbose: bool = False,
     ) -> None:
         """Like self.compile(), but generate a parser from ESGrammar,
         with ASI support, using the JS lexer.
@@ -1144,7 +1145,7 @@ class GenTestCase(unittest.TestCase):
             synthetic_terminals=load_es_grammar.ECMASCRIPT_SYNTHETIC_TERMINALS,
             terminal_names=load_es_grammar.TERMINAL_NAMES_FOR_SYNTACTIC_GRAMMAR)
         grammar = generate_js_parser_tables.hack_grammar(grammar)
-        base_parser_class = gen.compile(grammar)
+        base_parser_class = gen.compile(grammar, verbose=verbose)
 
         # "type: ignore" because poor mypy can't cope with the runtime codegen
         # we're doing here.
