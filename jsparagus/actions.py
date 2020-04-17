@@ -100,6 +100,9 @@ class Action:
     def __repr__(self):
         return str(self)
 
+    def stable_str(self, states):
+        return str(self)
+
 
 class Reduce(Action):
     """Define a reduce operation which pops N elements of he stack and pushes one

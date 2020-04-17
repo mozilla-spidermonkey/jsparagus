@@ -33,6 +33,7 @@ import dataclasses
 import io
 import pickle
 import sys
+import hashlib
 import typing
 from dataclasses import dataclass
 
@@ -862,7 +863,13 @@ class StateAndTransitions:
                             # to be on the parser stack or not.
         "_hash",            # Hash to identify states which have to be merged.
                             # This hash is composed of LRItems of the LR0
-                            # grammar, and actions performed on it since.
+                            # grammar, and actions performed on it since. This
+                            # hash is sued for python internals such as
+                            # dictionary and sets.
+        "stable_hash",      # Hash computed the same way as the previous one,
+                            # but used only for human readbale output. The
+                            # stability is useful to match states across
+                            # grammar modifications.
     ]
 
     def __init__(self, index, locations, delayed_actions=OrderedFrozenSet()):
@@ -881,13 +888,16 @@ class StateAndTransitions:
         # parse-table, as well as the actions which have not yet been executed.
         def hashed_content():
             for item in sorted(self.locations):
-                yield item.prod_index
-                yield item.offset
+                yield item
+                yield "\n"
             yield "delayed_actions"
-            for action in sorted(delayed_actions):
+            for action in self.delayed_actions:
                 yield hash(action)
 
         self._hash = hash(tuple(hashed_content()))
+        h = hashlib.md5()
+        h.update("".join(map(str, hashed_content())).encode())
+        self.stable_hash = h.hexdigest()[:6]
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
@@ -995,6 +1005,13 @@ class StateAndTransitions:
             return self.__getitem__(term)
         except KeyError:
             return default
+
+    def stable_str(self, states):
+        conflict = ""
+        if self.is_inconsistent():
+            conflict = " (inconsistent)"
+        return "{}{}:\n{}".format(self.stable_hash, conflict, "\n".join([
+            "\t{} --> {}".format(k, states[s].stable_hash) for k, s in self.edges()]))
 
     def __str__(self):
         conflict = ""
@@ -1111,6 +1128,12 @@ class LR0Generator:
             s += self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item)
             s += "\n"
         return s
+
+    def stable_locations(self):
+        locations = []
+        for lr_item in self.lr_items:
+            locations.append(self.grammar.grammar.lr_item_to_str(self.grammar.prods, lr_item))
+        return OrderedFrozenSet(sorted(locations))
 
     @staticmethod
     def start(grammar, nt):
@@ -1445,6 +1468,14 @@ class ParseTable:
                 return True
         return False
 
+    def debug_dump(self):
+        # Sort the grammar by state hash, such that it can be compared
+        # before/after grammar modifications.
+        temp = [s for s in self.states if s is not None]
+        temp = sorted(temp, key=lambda s: s.stable_hash)
+        for s in temp:
+            print(s.stable_str(self.states))
+
     def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
         self.flags.add(nts)
@@ -1466,7 +1497,7 @@ class ParseTable:
         for nt in goals:
             init_nt = Nt(InitNt(nt), ())
             it = LR0Generator.start(grammar, init_nt)
-            s = self.get_state(it.lr_items)
+            s = self.get_state(it.stable_locations())
             todo.append((it, s))
             self.named_goals.append((nt, s.index))
 
@@ -1479,9 +1510,9 @@ class ParseTable:
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s_it, s = todo.popleft()
                 if verbose:
-                    print("\nVisiting:\n{}".format(s_it))
+                    print("\nMapping state {} to LR0:\n{}".format(s.stable_hash, s_it))
                 for k, sk_it in s_it.transitions().items():
-                    locations = sk_it.lr_items
+                    locations = sk_it.stable_locations()
                     if not self.is_term_shifted(k):
                         locations = OrderedFrozenSet()
                     is_new, sk = self.new_state(locations)
@@ -1491,6 +1522,10 @@ class ParseTable:
                     # Add the edge from s to sk with k.
                     self.add_edge(s, k, sk.index)
         consume(visit_grammar(), progress)
+
+        if verbose:
+            print("Create LR(0) Table Result:")
+            self.debug_dump()
 
     def is_term_shifted(self, term):
         return not (isinstance(term, Action) and term.update_stack())
@@ -2165,7 +2200,7 @@ class ParseTable:
                     start_len = len(self.states)
                     if verbose:
                         count = count + 1
-                        print("Fixing state {}\n".format(self.states[s]))
+                        print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
                     try:
                         self.fix_inconsistent_state(s, verbose)
                     except Exception as exc:
@@ -2173,7 +2208,7 @@ class ParseTable:
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
-                            .format(self.states[s], self.debug_context(s, "\n", "\t"))
+                            .format(self.states[s].stable_str(self.states), self.debug_context(s, "\n", "\t"))
                         ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
@@ -2203,6 +2238,10 @@ class ParseTable:
                 "\tNumber of inconsistencies solved = {}"]).format(
                     len(self.states), count))
         assert not self.is_inconsistent()
+
+        if verbose:
+            print("Fix Inconsistent Table Result:")
+            self.debug_dump()
 
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]

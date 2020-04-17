@@ -22,8 +22,11 @@ class Edge:
     src: int
     term: typing.Union[str, Nt, Action]
 
+    def stable_str(self, states):
+        return "{} -- {} -->".format(states[self.src].stable_hash, str(self.term))
+
     def __str__(self):
-        return "{} -- {} -->".format(edge.src, str(edge.term))
+        return "{} -- {} -->".format(self.src, str(self.term))
 
 
 @dataclass(frozen=True)
@@ -177,6 +180,20 @@ class APS:
                 to = Edge(to, None)
                 yield APS(st, prev_sh + [to], la, rp, hs + [edge])
 
+    def stable_str(self, states, name = "aps"):
+        return """{}.stack = [{}]
+{}.shift = [{}]
+{}.lookahead = [{}]
+{}.replay = [{}]
+{}.history = [{}]
+        """.format(
+            name, " ".join(e.stable_str(states) for e in self.stack),
+            name, " ".join(e.stable_str(states) for e in self.shift),
+            name, ", ".join(repr(e) for e in self.lookahead),
+            name, ", ".join(repr(e) for e in self.replay),
+            name, " ".join(e.stable_str(states) for e in self.history)
+        )
+
     def string(self, name = "aps"):
         return """{}.stack = [{}]
 {}.shift = [{}]
@@ -196,4 +213,7 @@ class APS:
 
 def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
     return "{}\n{}".format(header, "\n".join(aps.string(name) for aps in aps_lanes))
+
+def stable_aps_lanes_str(aps_lanes, states, header = "lanes:", name = "\taps"):
+    return "{}\n{}".format(header, "\n".join(aps.stable_str(states, name) for aps in aps_lanes))
 
