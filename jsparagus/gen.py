@@ -863,7 +863,13 @@ class StateAndTransitions:
                             # to be on the parser stack or not.
         "_hash",            # Hash to identify states which have to be merged.
                             # This hash is composed of LRItems of the LR0
-                            # grammar, and actions performed on it since.
+                            # grammar, and actions performed on it since. This
+                            # hash is sued for python internals such as
+                            # dictionary and sets.
+        "stable_hash",      # Hash computed the same way as the previous one,
+                            # but used only for human readbale output. The
+                            # stability is useful to match states across
+                            # grammar modifications.
     ]
 
     def __init__(self, index, locations, delayed_actions=OrderedFrozenSet()):
@@ -889,18 +895,9 @@ class StateAndTransitions:
                 yield hash(action)
 
         self._hash = hash(tuple(hashed_content()))
-
-    def stable_hash(self, state_hash):
-        def hashed_content():
-            for item in sorted(self.locations):
-                yield item
-                yield b'\n'
-            yield b"delayed_actions"
-            for action in self.delayed_actions:
-                yield action.stable_str(state_hash)
         h = hashlib.md5()
         h.update("".join(map(str, hashed_content())).encode())
-        return h.hexdigest()[:6]
+        self.stable_hash = h.hexdigest()[:6]
 
     def is_inconsistent(self):
         "Returns True if the state transitions are inconsistent."
@@ -1009,12 +1006,12 @@ class StateAndTransitions:
         except KeyError:
             return default
 
-    def stable_str(self, state_hash):
+    def stable_str(self, states):
         conflict = ""
         if self.is_inconsistent():
             conflict = " (inconsistent)"
-        return "{}{}:\n{}".format(state_hash[self.index], conflict, "\n".join([
-            "\t{} --> {}".format(k, state_hash[s]) for k, s in self.edges()]))
+        return "{}{}:\n{}".format(self.stable_hash, conflict, "\n".join([
+            "\t{} --> {}".format(k, states[s].stable_hash) for k, s in self.edges()]))
 
     def __str__(self):
         conflict = ""
@@ -1300,8 +1297,6 @@ class ParseTable:
         "states",
         # Map of state object to the corresponding identifer.
         "state_cache",
-        # Map of state identifier to the corresponding printable hashes.
-        "state_hash",
         # List of (Nt, states) tuples which are the entry point of the state
         # machine.
         "named_goals",
@@ -1326,7 +1321,6 @@ class ParseTable:
         self.actions = []
         self.states = []
         self.state_cache = {}
-        self.state_hash = []
         self.named_goals = []
         self.terminals = grammar.grammar.terminals
         self.nonterminals = list(grammar.grammar.nonterminals.keys())
@@ -1376,7 +1370,6 @@ class ParseTable:
         except KeyError:
             self.state_cache[state] = state
             self.states.append(state)
-            self.state_hash.append(state.stable_hash(self.state_hash))
             return True, state
 
     def get_state(self, locations, delayed_actions=OrderedFrozenSet()):
@@ -1478,12 +1471,10 @@ class ParseTable:
     def debug_dump(self):
         # Sort the grammar by state hash, such that it can be compared
         # before/after grammar modifications.
-        temp = sorted(enumerate(self.state_hash), key=lambda x: x[1])
-        for i, _ in temp:
-            s = self.states[i]
-            if s is None:
-                continue
-            print(s.stable_str(self.state_hash))
+        temp = [s for s in self.states if s is not None]
+        temp = sorted(temp, key=lambda s: s.stable_hash)
+        for s in temp:
+            print(s.stable_str(self.states))
 
     def get_flag_for(self, nts):
         nts = OrderedFrozenSet(nts)
@@ -1519,7 +1510,7 @@ class ParseTable:
                 # TODO: Compare stack / queue, for the traversal of the states.
                 s_it, s = todo.popleft()
                 if verbose:
-                    print("\nMapping state {} to LR0:\n{}".format(self.state_hash[s.index], s_it))
+                    print("\nMapping state {} to LR0:\n{}".format(s.stable_hash, s_it))
                 for k, sk_it in s_it.transitions().items():
                     locations = sk_it.stable_locations()
                     if not self.is_term_shifted(k):
@@ -2209,7 +2200,7 @@ class ParseTable:
                     start_len = len(self.states)
                     if verbose:
                         count = count + 1
-                        print("Fixing state {}\n".format(self.states[s].stable_str(self.state_hash)))
+                        print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
                     try:
                         self.fix_inconsistent_state(s, verbose)
                     except Exception as exc:
@@ -2217,7 +2208,7 @@ class ParseTable:
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
-                            .format(self.states[s].stable_str(self.state_hash), self.debug_context(s, "\n", "\t"))
+                            .format(self.states[s].stable_str(self.states), self.debug_context(s, "\n", "\t"))
                         ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
@@ -2255,7 +2246,6 @@ class ParseTable:
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]
         state_map = {s.index: i for i, s in enumerate(self.states)}
-        self.state_hash = [self.state_hash[s.index] for s in self.states]
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
@@ -2308,7 +2298,6 @@ class ParseTable:
         self.states.extend(shift_states)
         self.states.extend(action_states)
         state_map = {s.index: i for i, s in enumerate(self.states)}
-        self.state_hash = [self.state_hash[s.index] for s in self.states]
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 

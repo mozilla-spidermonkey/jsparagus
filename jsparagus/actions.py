@@ -100,10 +100,7 @@ class Action:
     def __repr__(self):
         return str(self)
 
-    def __str__(self):
-        return repr(self)
-
-    def stable_str(self, state_hash):
+    def stable_str(self, states):
         return str(self)
 
 
