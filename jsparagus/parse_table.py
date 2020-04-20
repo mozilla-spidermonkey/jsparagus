@@ -1226,7 +1226,8 @@ class ParseTable:
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
-                            .format(self.states[s].stable_str(self.states), self.debug_context(s, "\n", "\t"))
+                            .format(self.states[s].stable_str(self.states),
+                                    self.debug_context(s, "\n", "\t"))
                         ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
