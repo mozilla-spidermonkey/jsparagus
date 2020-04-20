@@ -5,11 +5,81 @@ import typing
 from dataclasses import dataclass
 from .grammar import Nt
 from .lr0 import ShiftedTerm, Term
+from .actions import Action, Reduce
+
 
 StateId = int
 
-# Hack to avoid circular reference between this module and gen.py.
+# Hack to avoid circular reference between this module and parse_table.py
 StateAndTransition = typing.Any
+ParseTable = typing.Any
+
+
+def shifted_path_to(pt: ParseTable, n: int, right_of: Path) -> typing.Iterator[Path]:
+    "Compute all paths with n shifted terms, ending with right_of."
+    assert isinstance(right_of, list) and len(right_of) >= 1
+    if n == 0:
+        yield right_of
+    state = right_of[0].src
+    assert isinstance(state, int)
+    for edge in pt.states[state].backedges:
+        if not pt.is_term_shifted(edge.term):
+            print(repr(edge))
+            print(pt.states[edge.src])
+        assert pt.is_term_shifted(edge.term)
+        if pt.term_is_stacked(edge.term):
+            s_n = n - 1
+            if n == 0:
+                continue
+        else:
+            s_n = n
+        from_edge = Edge(edge.src, edge.term)
+        for path in shifted_path_to(pt, s_n, [from_edge] + right_of):
+            yield path
+
+
+def reduce_path(pt: ParseTable, shifted: Path) -> typing.Iterator[Path]:
+    """Compute all paths which might be reduced by a given action. This function
+    assumes that the state is reachable from the starting goals, and that
+    the depth which is being queried has valid answers."""
+    assert len(shifted) >= 1
+    action = shifted[-1].term
+    assert isinstance(action, Action)
+    assert action.update_stack()
+    reducer = action.reduce_with()
+    assert isinstance(reducer, Reduce)
+    nt = reducer.nt
+    depth = reducer.pop + reducer.replay
+    if depth > 0:
+        # We are reducing at least one element from the stack.
+        stacked = [i for i, e in enumerate(shifted) if pt.term_is_stacked(e.term)]
+        if len(stacked) < depth:
+            # We have not shifted enough elements to cover the full reduce
+            # rule, start looking for context using backedges.
+            shifted_from = 0
+            depth -= len(stacked)
+        else:
+            # We shifted much more elements than necessary for reducing,
+            # just start from the first stacked element which correspond to
+            # consuming all stack element reduced.
+            shifted_from = stacked[-depth]
+            depth = 0
+        shifted_end = shifted[shifted_from:]
+    else:
+        # We are reducing no element from the stack.
+        shifted_end = shifted[-1:]
+    for path in shifted_path_to(pt, depth, shifted_end):
+        # NOTE: When reducing, we might be tempted to verify that the
+        # reduced non-terminal is part of the state we are reducing to, and
+        # it surely is for one of the shifted path. However, this would be
+        # an error in an inconsistent grammar. (see issue #464)
+        #
+        # Thus, we might yield plenty of path which are not reducing the
+        # expected non-terminal, but these are expected to be filtered out
+        # by the APS, as the inability of shifting these non-terminals
+        # would remove these cases.
+        assert pt.assume_inconsistent or nt in pt.states[path[0].src].nonterminals
+        yield path
 
 
 @dataclass(frozen=True)
@@ -100,7 +170,7 @@ class APS:
         edge = Edge(state, None)
         return APS([edge], [edge], [], [], [], False)
 
-    def shift_next(self, pt: typing.Any) -> typing.Iterator[APS]:
+    def shift_next(self, pt: ParseTable) -> typing.Iterator[APS]:
         """Yield an APS for each state reachable from this APS in a single step,
         by handling a single term (terminal, nonterminal, or action).
 
@@ -156,7 +226,7 @@ class APS:
                     # the expected behaviour of the parser.
                     continue
                 reducer = a.reduce_with()
-                for path in pt.reduce_path(prev_sh):
+                for path in reduce_path(pt, prev_sh):
                     # The reduced path contains the chains of state shifted,
                     # including epsilon transitions, such that it consume as
                     # many shifted terms as is expected to be replayed and

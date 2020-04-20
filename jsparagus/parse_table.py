@@ -10,10 +10,10 @@ import typing
 from . import types
 from .utils import consume, keep_until
 from .ordered import OrderedSet, OrderedFrozenSet
-from .actions import Action, Reduce, FilterFlag
+from .actions import Action, FilterFlag
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
-from .lr0 import LR0Generator, LRItem, Term
+from .lr0 import LR0Generator, Term
 from .aps import APS, Edge, Path, StateId
 
 
@@ -596,71 +596,6 @@ class ParseTable:
             assert term is not None
             state = row[term]
         return True
-
-    def shifted_path_to(self, n: int, right_of: Path) -> typing.Iterator[Path]:
-        "Compute all paths with n shifted terms, ending with right_of."
-        assert isinstance(right_of, list) and len(right_of) >= 1
-        if n == 0:
-            yield right_of
-        state = right_of[0].src
-        assert isinstance(state, int)
-        for edge in self.states[state].backedges:
-            if not self.is_term_shifted(edge.term):
-                print(repr(edge))
-                print(self.states[edge.src])
-            assert self.is_term_shifted(edge.term)
-            if self.term_is_stacked(edge.term):
-                s_n = n - 1
-                if n == 0:
-                    continue
-            else:
-                s_n = n
-            from_edge = Edge(edge.src, edge.term)
-            for path in self.shifted_path_to(s_n, [from_edge] + right_of):
-                yield path
-
-    def reduce_path(self, shifted: Path) -> typing.Iterator[Path]:
-        """Compute all paths which might be reduced by a given action. This function
-        assumes that the state is reachable from the starting goals, and that
-        the depth which is being queried has valid answers."""
-        assert len(shifted) >= 1
-        action = shifted[-1].term
-        assert isinstance(action, Action)
-        assert action.update_stack()
-        reducer = action.reduce_with()
-        assert isinstance(reducer, Reduce)
-        nt = reducer.nt
-        depth = reducer.pop + reducer.replay
-        if depth > 0:
-            # We are reducing at least one element from the stack.
-            stacked = [i for i, e in enumerate(shifted) if self.term_is_stacked(e.term)]
-            if len(stacked) < depth:
-                # We have not shifted enough elements to cover the full reduce
-                # rule, start looking for context using backedges.
-                shifted_from = 0
-                depth -= len(stacked)
-            else:
-                # We shifted much more elements than necessary for reducing,
-                # just start from the first stacked element which correspond to
-                # consuming all stack element reduced.
-                shifted_from = stacked[-depth]
-                depth = 0
-            shifted_end = shifted[shifted_from:]
-        else:
-            # We are reducing no element from the stack.
-            shifted_end = shifted[-1:]
-        for path in self.shifted_path_to(depth, shifted_end):
-            # NOTE: When reducing, we might be tempted to verify that the
-            # reduced non-terminal is part of the state we are reducing to, and
-            # it surely is for one of the shifted path. However, this would be
-            # an error in an inconsistent grammar. (see issue #464)
-            #
-            # Thus, we might yield plenty of path which are not reducing the
-            # expected non-terminal, but these are expected to be filtered out
-            # by the APS, as the inability of shifting these non-terminals
-            # would remove these cases.
-            assert self.assume_inconsistent or nt in self.states[path[0].src].nonterminals
-            yield path
 
     def term_is_stacked(self, term: typing.Optional[Term]) -> bool:
         # The `term` argument is annotated as Optional because `Edge.term` is a
