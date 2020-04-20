@@ -234,12 +234,17 @@ class APS:
                     # that the path will come back to an edge which can consume
                     # the non-terminal.
 
-                    # print("Compare shifted path, with reduced path:\n\tshifted = {}\n\treduced = {}, \n\taction = {},\n\tnew_path = {}\n".format(
-                    #     " ".join(edge_str(e) for e in prev_sh),
-                    #     " ".join(edge_str(e) for e in path),
-                    #     str(a),
-                    #     " ".join(edge_str(e) for e in reduced_path),
-                    # ))
+                    # print(
+                    #     "Compare shifted path, with reduced path:\n"
+                    #     "\tshifted = {},\n"
+                    #     "\treduced = {},\n"
+                    #     "\taction = {},\n"
+                    #     "\tnew_path = {}\n"
+                    #     .format(
+                    #         " ".join(edge_str(e) for e in prev_sh),
+                    #         " ".join(edge_str(e) for e in path),
+                    #         str(a),
+                    #         " ".join(edge_str(e) for e in reduced_path)))
                     if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         # If the reduced production does not match the shifted
                         # state, then this reduction does not apply. This is
@@ -273,7 +278,7 @@ class APS:
                     replay = reducer.replay
                     new_rp = [reducer.nt]
                     if replay > 0:
-                        stacked_terms = [ edge.term for edge in path if pt.term_is_stacked(edge.term) ]
+                        stacked_terms = [edge.term for edge in path if pt.term_is_stacked(edge.term)]
                         new_rp = new_rp + stacked_terms[-replay:]
                     new_rp = new_rp + rp
                     new_la = la[:max(len(la) - replay, 0)]

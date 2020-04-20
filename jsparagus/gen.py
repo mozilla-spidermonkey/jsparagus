@@ -29,7 +29,6 @@ For very basic needs, see `lexer.LexicalGrammar`.
 from __future__ import annotations
 
 import io
-import hashlib
 import typing
 
 from .grammar import Grammar
