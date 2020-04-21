@@ -365,7 +365,6 @@ class RustParserWriter:
         self.shift()
         self.error_codes()
         self.check_camel_case()
-        self.parser_trait()
         self.actions()
         self.entry()
 
@@ -381,6 +380,7 @@ class RustParserWriter:
         self.write(0, "")
         self.write(0, "use crate::ast_builder::AstBuilderDelegate;")
         self.write(0, "use crate::stack_value_generated::{StackValue, TryIntoStack};")
+        self.write(0, "use crate::traits::{TermValue, ParserTrait};")
         self.write(0, "use crate::error::Result;")
         traits = OrderedSet()
         for mode_traits in self.parse_table.exec_modes.values():
@@ -646,28 +646,6 @@ class RustParserWriter:
             return "Box<'alloc, {}>".format(rty)
         else:
             return rty
-
-    def parser_trait(self):
-        self.write(0, "#[derive(Debug)]")
-        self.write(0, "pub struct TermValue<Value> {")
-        self.write(1, "pub term: Term,")
-        self.write(1, "pub value: Value,")
-        self.write(0, "}")
-        self.write(0, "")
-        self.write(0, "pub trait ParserTrait<'alloc, Value> {")
-        self.write(1, "fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;")
-        self.write(1, "fn unshift(&mut self);")
-        self.write(1, "fn rewind(&mut self, n: usize) {")
-        self.write(2, "for _ in 0..n {")
-        self.write(3, "self.unshift();")
-        self.write(2, "}")
-        self.write(1, "}")
-        self.write(1, "fn pop(&mut self) -> TermValue<Value>;")
-        self.write(1, "fn replay(&mut self, tv: TermValue<Value>);")
-        self.write(1, "fn epsilon(&mut self, state: usize);")
-        self.write(1, "fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool>;")
-        self.write(0, "}")
-        self.write(0, "")
 
     def actions(self):
         # For each execution mode, add a corresponding function which
