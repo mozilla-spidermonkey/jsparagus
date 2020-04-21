@@ -56,6 +56,11 @@ enum BindingKind {
 
     // BindingIdentifier is the name of ClassDeclaration.
     Class,
+
+    // BindingIdentifier is the name of LabelIdentifier.
+    // Only used to track which labels have been seen for duplicate labels. See
+    // 'on_label_identifier' for more information
+    Label,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -82,15 +87,23 @@ pub struct AstBuilder<'alloc> {
     // EarlyErrorsContext to detect Early Errors.
     //
     // When leaving a context that is not one of script/module/function,
-    // lexical items (`kind != BindingKind::Var`) in the corresponding range
-    // are removed, while non-lexical items (`kind == BindingKind::Var`) are
-    // left there, so that VariableDeclarations are propagated to the enclosing
-    // context.
+    // lexical items (`kind != BindingKind::Var && kind != BindingKind::Label`)
+    // in the corresponding range are removed, while non-lexical items
+    // (`kind == BindingKind::Var || kind == BindingKind::Label`) are
+    // left there, so that VariableDeclarations and labels are propagated to the
+    // enclosing context.
     //
     // FIXME: Once the context stack gets implemented, this structure and
     //        related methods should be removed and each declaration should be
     //        fed directly to EarlyErrorsContext.
     bindings: Vec<BindingInfo>,
+
+    // Track continues and breaks without the use of a context stack.
+    //
+    // FIXME: Once th context stack geets implmentd, this structure and
+    //        related metehods should be removed, and each break/continue should be
+    //        fed directly to EarlyErrorsContext.
+    breaks_and_continues: Vec<ControlInfo>,
 
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
 
@@ -110,6 +123,7 @@ impl<'alloc> AstBuilder<'alloc> {
         Self {
             allocator,
             bindings: Vec::new(),
+            breaks_and_continues: Vec::new(),
             atoms,
             slices,
         }
@@ -213,7 +227,7 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // LabelIdentifier : Identifier
     pub fn label_identifier(
-        &self,
+        &mut self,
         token: arena::Box<'alloc, Token>,
     ) -> Result<'alloc, arena::Box<'alloc, Label>> {
         self.on_label_identifier(&token)?;
@@ -2836,7 +2850,7 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // IterationStatement : `do` Statement `while` `(` Expression `)` `;`
     pub fn do_while_statement(
-        &self,
+        &mut self,
         do_token: arena::Box<'alloc, Token>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
         test: arena::Box<'alloc, Expression<'alloc>>,
@@ -2844,6 +2858,7 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         self.check_single_statement(&stmt)?;
 
+        self.pop_unlabelled_breaks_and_continues_from(do_token.loc.start);
         Ok(self.alloc_with(|| Statement::DoWhileStatement {
             block: stmt,
             test,
@@ -2853,7 +2868,7 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // IterationStatement : `while` `(` Expression `)` Statement
     pub fn while_statement(
-        &self,
+        &mut self,
         while_token: arena::Box<'alloc, Token>,
         test: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
@@ -2861,6 +2876,7 @@ impl<'alloc> AstBuilder<'alloc> {
         self.check_single_statement(&stmt)?;
 
         let stmt_loc = stmt.get_loc();
+        self.pop_unlabelled_breaks_and_continues_from(stmt_loc.start);
         Ok(self.alloc_with(|| Statement::WhileStatement {
             test,
             block: stmt,
@@ -2871,7 +2887,7 @@ impl<'alloc> AstBuilder<'alloc> {
     // IterationStatement : `for` `(` [lookahead != 'let'] Expression? `;` Expression? `;` Expression? `)` Statement
     // IterationStatement : `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement
     pub fn for_statement(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         init: Option<VariableDeclarationOrExpression<'alloc>>,
         test: Option<arena::Box<'alloc, Expression<'alloc>>>,
@@ -2897,7 +2913,7 @@ impl<'alloc> AstBuilder<'alloc> {
     }
 
     pub fn for_statement_common(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         init: Option<VariableDeclarationOrExpression<'alloc>>,
         test: Option<arena::Box<'alloc, Expression<'alloc>>>,
@@ -2905,6 +2921,7 @@ impl<'alloc> AstBuilder<'alloc> {
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let stmt_loc = stmt.get_loc();
+        self.pop_unlabelled_breaks_and_continues_from(stmt_loc.start);
         Ok(self.alloc_with(|| Statement::ForStatement {
             init,
             test,
@@ -2956,7 +2973,7 @@ impl<'alloc> AstBuilder<'alloc> {
     //
     // IterationStatement :  `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement
     pub fn for_in_statement(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
@@ -2980,13 +2997,14 @@ impl<'alloc> AstBuilder<'alloc> {
     }
 
     pub fn for_in_statement_common(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let stmt_loc = stmt.get_loc();
+        self.pop_unlabelled_breaks_and_continues_from(stmt_loc.start);
         Ok(self.alloc_with(|| Statement::ForInStatement {
             left,
             right,
@@ -3040,7 +3058,7 @@ impl<'alloc> AstBuilder<'alloc> {
     // IterationStatement : `for` `(` [lookahead != 'let'] LeftHandSideExpression `of` AssignmentExpression `)` Statement
     // IterationStatement : `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement
     pub fn for_of_statement(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
@@ -3064,13 +3082,14 @@ impl<'alloc> AstBuilder<'alloc> {
     }
 
     pub fn for_of_statement_common(
-        &self,
+        &mut self,
         for_token: arena::Box<'alloc, Token>,
         left: VariableDeclarationOrAssignmentTarget<'alloc>,
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let stmt_loc = stmt.get_loc();
+        self.pop_unlabelled_breaks_and_continues_from(stmt_loc.start);
         Ok(self.alloc_with(|| Statement::ForOfStatement {
             left,
             right,
@@ -3160,37 +3179,70 @@ impl<'alloc> AstBuilder<'alloc> {
     // ContinueStatement : `continue` `;`
     // ContinueStatement : `continue` LabelIdentifier `;`
     pub fn continue_statement(
-        &self,
+        &mut self,
         continue_token: arena::Box<'alloc, Token>,
         label: Option<arena::Box<'alloc, Label>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let info = match label {
+            Some(ref label) => {
+                // Label is used both for LabelledStatement and for labelled
+                // ContinueStatements. A label will be noted in bindings whenever we hit
+                // a label, as is the case for ContinueStatements. These bindings are
+                // not necessary, and are at the end of the bindings stack. To keep things
+                // clean, we will pop the last element (the label we just added) off the stack.
+                let index = self.find_first_binding(continue_token.loc.start);
+                self.pop_bindings_from(index);
+
+                ControlInfo::new_continue(continue_token.loc.start, Some(label.value))
+            }
+            None => ControlInfo::new_continue(continue_token.loc.start, None),
+        };
+
+        self.breaks_and_continues.push(info);
+
         let continue_loc = continue_token.loc;
         let loc = match label {
             Some(ref label) => SourceLocation::from_parts(continue_loc, label.loc),
             None => continue_loc,
         };
-        self.alloc_with(|| Statement::ContinueStatement {
+        Ok(self.alloc_with(|| Statement::ContinueStatement {
             label: label.map(|boxed| boxed.unbox()),
             loc,
-        })
+        }))
     }
 
     // BreakStatement : `break` `;`
     // BreakStatement : `break` LabelIdentifier `;`
     pub fn break_statement(
-        &self,
+        &mut self,
         break_token: arena::Box<'alloc, Token>,
         label: Option<arena::Box<'alloc, Label>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
+        let info = match label {
+            Some(ref label) => {
+                // Label is used both for LabeledStatement and for labelled
+                // BreakStatements. A label will be noted in bindings whenever we hit
+                // a label, as is the case for BreakStatements. These bindings are
+                // not necessary, and are at the end of the bindings stack. To keep things
+                // clean, we will pop the last element (the label we just added) off the stack.
+                let index = self.find_first_binding(label.loc.start);
+                self.pop_bindings_from(index);
+
+                ControlInfo::new_break(break_token.loc.start, Some(label.value))
+            }
+            None => ControlInfo::new_break(break_token.loc.start, None),
+        };
+
+        self.breaks_and_continues.push(info);
         let break_loc = break_token.loc;
         let loc = match label {
             Some(ref label) => SourceLocation::from_parts(break_loc, label.loc),
             None => break_loc,
         };
-        self.alloc_with(|| Statement::BreakStatement {
+        Ok(self.alloc_with(|| Statement::BreakStatement {
             label: label.map(|boxed| boxed.unbox()),
             loc,
-        })
+        }))
     }
 
     // ReturnStatement : `return` `;`
@@ -3384,17 +3436,18 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // LabelledStatement : LabelIdentifier `:` LabelledItem
     pub fn labelled_statement(
-        &self,
+        &mut self,
         label: arena::Box<'alloc, Label>,
         body: arena::Box<'alloc, Statement<'alloc>>,
-    ) -> arena::Box<'alloc, Statement<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let label_loc = label.loc;
         let body_loc = body.get_loc();
-        self.alloc_with(|| Statement::LabeledStatement {
+        self.check_labelled_statement(&label, &body)?;
+        Ok(self.alloc_with(|| Statement::LabeledStatement {
             label: label.unbox(),
             body,
             loc: SourceLocation::from_parts(label_loc, body_loc),
-        })
+        }))
     }
 
     // ThrowStatement : `throw` Expression `;`
@@ -4560,9 +4613,31 @@ impl<'alloc> AstBuilder<'alloc> {
         context.check_identifier_reference(token, &self.atoms.borrow())
     }
 
-    // Check Early Error for LabelIdentifier.
-    fn on_label_identifier(&self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+    // Check Early Error for LabelIdentifier and note binding info to the
+    // stack
+    fn on_label_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
+
+        let name = token.value.as_atom();
+        let offset = token.loc.start;
+
+        if let Some(info) = self.bindings.last() {
+            debug_assert!(info.offset < offset);
+        }
+
+        // Labels are not usually considered bindings, but we are using bindings
+        // in order to track duplicate label information. See `check_labelled_statement` for
+        // more information about how this is used.
+        //
+        // If the label is attached to a continue or break statement, its binding info
+        // is popped from the stack. See `continue_statement` and `break_statement` for more
+        // information.
+        self.bindings.push(BindingInfo {
+            name,
+            offset,
+            kind: BindingKind::Label,
+        });
+
         context.check_label_identifier(token, &self.atoms.borrow())
     }
 
@@ -4621,7 +4696,9 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let mut j = i;
         while j < len {
-            if self.bindings[j].kind == BindingKind::Var {
+            if self.bindings[j].kind == BindingKind::Var
+                || self.bindings[j].kind == BindingKind::Label
+            {
                 self.bindings[i] = self.bindings[j];
                 i += 1;
             }
@@ -4629,6 +4706,83 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         self.bindings.truncate(i)
+    }
+
+    // Returns the index of the first break or continue at/after `offset` source position.
+    fn find_first_break_or_continue(&mut self, offset: usize) -> BreakOrContinueIndex {
+        let mut i = self.breaks_and_continues.len();
+        for info in self.breaks_and_continues.iter_mut().rev() {
+            if info.offset < offset {
+                break;
+            }
+            i -= 1;
+        }
+        BreakOrContinueIndex::new(i)
+    }
+
+    fn pop_labelled_breaks_and_continues_from_index(
+        &mut self,
+        index: BreakOrContinueIndex,
+        name: SourceAtomSetIndex,
+    ) {
+        let len = self.breaks_and_continues.len();
+        let mut i = index.index;
+
+        let mut j = i;
+        while j < len {
+            let label = self.breaks_and_continues[j].label;
+            if label.is_none() || label.unwrap() != name {
+                self.breaks_and_continues[i] = self.breaks_and_continues[j];
+                i += 1;
+            }
+            j += 1;
+        }
+
+        self.breaks_and_continues.truncate(i)
+    }
+
+    fn pop_unlabelled_breaks_and_continues_from(&mut self, offset: usize) {
+        let len = self.breaks_and_continues.len();
+        let index = self.find_first_break_or_continue(offset);
+        let mut i = index.index;
+
+        while i < len && self.breaks_and_continues[i].label.is_some() {
+            i += 1;
+        }
+
+        let mut j = i;
+        while j < len {
+            if self.breaks_and_continues[j].label.is_some() {
+                self.breaks_and_continues[i] = self.breaks_and_continues[j];
+                i += 1;
+            }
+            j += 1;
+        }
+
+        self.breaks_and_continues.truncate(i)
+    }
+
+    fn pop_unlabelled_breaks_from(&mut self, offset: usize) {
+        let len = self.breaks_and_continues.len();
+        let index = self.find_first_break_or_continue(offset);
+        let mut i = index.index;
+
+        while i < len && self.breaks_and_continues[i].label.is_some() {
+            i += 1;
+        }
+
+        let mut j = i;
+        while j < len {
+            if self.breaks_and_continues[j].label.is_some()
+                || self.breaks_and_continues[j].kind == ControlKind::Continue
+            {
+                self.breaks_and_continues[i] = self.breaks_and_continues[j];
+                i += 1;
+            }
+            j += 1;
+        }
+
+        self.breaks_and_continues.truncate(i)
     }
 
     // Declare bindings to Block-like context, where function declarations
@@ -4687,6 +4841,16 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
+                // Do nothing for Labels, as they have to be nested for
+                // a syntax error to occur.
+                //
+                // We do not have the nesting information at the
+                // script/block/function level so we cannot reuse the mechanism
+                // used for checking duplicate bindings in those error contexts.
+                // We only know that the label occurred somewhere in the block,
+                // and that it might occur more than once, not how it occurs.
+                // This is handled in check_labelled_statement.
+                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4756,6 +4920,16 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
+                // Do nothing for Labels, as they have to be nested for
+                // a syntax error to occur
+                //
+                // We do not have the nesting information at the
+                // script/block/function level so we cannot reuse the mechanism
+                // used for checking duplicate bindings in those error contexts.
+                // We only know that the label occurred somewhere in the block,
+                // and that it might occur more than once, not how it occurs.
+                // This is handled in check_labelled_statement.
+                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4785,7 +4959,11 @@ impl<'alloc> AstBuilder<'alloc> {
         let mut context = CaseBlockEarlyErrorsContext::new();
 
         let index = self.find_first_binding(start_of_block_offset);
+        // Check bindings in CaseBlock of switch-statement.
         self.declare_block(&mut context, index)?;
+
+        self.pop_unlabelled_breaks_from(index);
+
         self.pop_lexical_bindings_from(index);
 
         Ok(())
@@ -4838,6 +5016,38 @@ impl<'alloc> AstBuilder<'alloc> {
         Ok(())
     }
 
+    fn check_unhandled_break_or_continue<T>(
+        &mut self,
+        context: T,
+        offset: usize,
+    ) -> Result<'alloc, ()>
+    where
+        T: ControlEarlyErrorsContext,
+    {
+        let index = self.find_first_break_or_continue(offset);
+        if let Some(info) = self.find_break_or_continue_at(index) {
+            context.on_unhandled_break_or_continue(info)?;
+        }
+
+        Ok(())
+    }
+
+    fn check_unhandled_continue(
+        &mut self,
+        context: LabelledStatementEarlyErrorsContext,
+        index: &BreakOrContinueIndex,
+    ) -> Result<'alloc, ()> {
+        for info in self.breaks_and_continues.iter().skip(index.index) {
+            context.check_labelled_continue_to_non_loop(info)?;
+        }
+
+        Ok(())
+    }
+
+    fn find_break_or_continue_at(&self, index: BreakOrContinueIndex) -> Option<&ControlInfo> {
+        self.breaks_and_continues.get(index.index)
+    }
+
     // Declare bindings to script-or-function-like context, where function
     // declarations are body-level.
     fn declare_script_or_function<T>(&self, context: &mut T, index: usize) -> Result<'alloc, ()>
@@ -4886,6 +5096,16 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
+                // Do nothing for Labels, as they have to be nested for
+                // a syntax error to occur
+                //
+                // We do not have the nesting information at the
+                // script/block/function level so we cannot reuse the mechanism
+                // used for checking duplicate bindings in those error contexts.
+                // We only know that the label occurred somewhere in the block,
+                // and that it might occur more than once, not how it occurs.
+                // This is handled in check_labelled_statement.
+                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4914,6 +5134,9 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let mut body_context = FunctionBodyEarlyErrorsContext::new(param_context);
         self.declare_script_or_function(&mut body_context, body_index)?;
+
+        self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
+
         self.pop_bindings_from(param_index);
 
         Ok(())
@@ -4935,6 +5158,8 @@ impl<'alloc> AstBuilder<'alloc> {
         self.declare_script_or_function(&mut body_context, body_index)?;
         self.pop_bindings_from(param_index);
 
+        self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
+
         Ok(())
     }
 
@@ -4944,6 +5169,8 @@ impl<'alloc> AstBuilder<'alloc> {
         self.declare_script_or_function(&mut context, 0)?;
         self.pop_bindings_from(0);
 
+        self.check_unhandled_break_or_continue(context, 0)?;
+
         Ok(())
     }
 
@@ -4952,6 +5179,8 @@ impl<'alloc> AstBuilder<'alloc> {
         let mut context = ModuleEarlyErrorsContext::new();
         self.declare_script_or_function(&mut context, 0)?;
         self.pop_bindings_from(0);
+
+        self.check_unhandled_break_or_continue(context, 0)?;
 
         Ok(())
     }
@@ -5017,5 +5246,36 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         false
+    }
+
+    fn check_labelled_statement(
+        &mut self,
+        label: &arena::Box<'alloc, Label>,
+        body: &Statement<'alloc>,
+    ) -> Result<'alloc, ()> {
+        let start_label_offset = label.loc.start;
+        let end_label_offset = label.loc.end;
+        let name = label.value;
+        let is_loop = match body {
+            Statement::ForStatement { .. }
+            | Statement::ForOfStatement { .. }
+            | Statement::ForInStatement { .. }
+            | Statement::WhileStatement { .. }
+            | Statement::DoWhileStatement { .. } => true,
+            _ => false,
+        };
+
+        let context = LabelledStatementEarlyErrorsContext::new(name, is_loop);
+
+        let binding_index = self.find_first_binding(end_label_offset);
+        for info in self.bindings.iter().skip(binding_index) {
+            context.check_duplicate_label(info.name)?;
+        }
+
+        let label_index = self.find_first_break_or_continue(start_label_offset);
+        self.check_unhandled_continue(context, &label_index)?;
+
+        self.pop_labelled_breaks_and_continues_from_index(label_index, name);
+        Ok(())
     }
 }
