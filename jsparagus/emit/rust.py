@@ -350,6 +350,7 @@ class RustParserWriter:
         self.states = pt.states
         self.shift_count = pt.count_shift_states()
         self.action_count = pt.count_action_states()
+        self.action_from_shift_count = pt.count_action_from_shift_states()
         self.init_state_map = pt.named_goals
         self.terminals = list(OrderedSet(pt.terminals))
         # This extra terminal is used to represent any ErrorySymbol transition,
@@ -674,21 +675,35 @@ class RustParserWriter:
         # function is added in the generated code.
         for mode, traits in self.parse_table.exec_modes.items():
             action_writer = RustActionWriter(self, mode, traits, 2)
+            start_at = self.shift_count
+            end_at = start_at + self.action_from_shift_count
+            assert len(self.states[self.shift_count:]) == self.action_count
+            traits_text = ' + '.join(map(self.type_to_rust, traits))
+            table_holder_name = self.to_camel_case(mode)
+            table_holder_type = table_holder_name + "<'alloc, Handler>"
+            self.write(0, "struct {} {{", table_holder_type)
+            self.write(1, "fns: [fn(&mut Handler) -> Result<'alloc, bool>; {}]", self.action_from_shift_count)
+            self.write(0, "}")
+            self.write(0, "impl<'alloc, Handler> {}", table_holder_type)
+            self.write(0, "where")
+            self.write(1, "Handler: {}", traits_text)
+            self.write(0, "{")
+            self.write(1, "const TABLE : {} = {} {{", table_holder_type, table_holder_name)
+            self.write(2, "fns: [")
+            for state in self.states[start_at:end_at]:
+                self.write(3, "{}_{},", mode, state.index)
+            self.write(2, "],")
+            self.write(1, "};")
+            self.write(0, "}")
+            self.write(0, "")
             self.write(0,
                        "pub fn {}<'alloc, Handler>(parser: &mut Handler, state: usize) "
                        "-> Result<'alloc, bool>",
                        mode)
             self.write(0, "where")
-            self.write(1, "Handler: {}", ' + '.join(map(self.type_to_rust, traits)))
+            self.write(1, "Handler: {}", traits_text)
             self.write(0, "{")
-            self.write(1, "match state {")
-            assert len(self.states[self.shift_count:]) == self.action_count
-            for state in self.states[self.shift_count:]:
-                if all(isinstance(e.term, Action) for e in state.backedges):
-                    continue
-                self.write(2, "{} => {}_{}(parser),", state.index, mode, state.index)
-            self.write(2, '_ => panic!("no such state: {}", state),')
-            self.write(1, "}")
+            self.write(1, "{}::<'alloc, Handler>::TABLE.fns[state - {}](parser)", table_holder_name, start_at)
             self.write(0, "}")
             self.write(0, "")
             for state in self.states[self.shift_count:]:
@@ -709,6 +724,7 @@ class RustParserWriter:
         self.write(0, "pub struct ParseTable<'a> {")
         self.write(1, "pub shift_count: usize,")
         self.write(1, "pub action_count: usize,")
+        self.write(1, "pub action_from_shift_count: usize,")
         self.write(1, "pub shift_table: &'a [i64],")
         self.write(1, "pub shift_width: usize,")
         self.write(1, "pub error_codes: &'a [Option<ErrorCode>],")
@@ -728,6 +744,7 @@ class RustParserWriter:
         self.write(0, "pub static TABLES: ParseTable<'static> = ParseTable {")
         self.write(1, "shift_count: {},", self.shift_count)
         self.write(1, "action_count: {},", self.action_count)
+        self.write(1, "action_from_shift_count: {},", self.action_from_shift_count)
         self.write(1, "shift_table: &SHIFT,")
         self.write(1, "shift_width: {},", len(self.terminals) + len(self.nonterminals))
         self.write(1, "error_codes: &STATE_TO_ERROR_CODE,")
