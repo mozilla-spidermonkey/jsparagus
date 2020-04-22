@@ -219,7 +219,7 @@ def stack_value(ast):
             rust_ty = ty.to_rust_type(ast)
             write(0, "impl<'alloc> TryIntoStack<'alloc> for arena::Box<'alloc, {}> {{", rust_ty)
             write(1, "type Error = Infallible;")
-            write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {{", rust_ty)
+            write(1, "fn try_into_stack(self) -> Result<StackValue<'alloc>, Infallible> {")
             write(2, "Ok(StackValue::{}(self))", ty.rust_variant_name())
             write(1, "}")
             write(0, "}")
@@ -310,7 +310,8 @@ def loc_trait(ast):
                         write(4, "*loc")
                         write(3, "}")
                     else:
-                        write(3, "{}::{}(content) => {{ content.get_loc() }}", ty.name, variant_name)
+                        write(3, "{}::{}(content) => {{ content.get_loc() }}",
+                              ty.name, variant_name)
                 write(2, "}")
                 write(1, "}")
             else:
