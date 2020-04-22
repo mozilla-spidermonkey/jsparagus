@@ -3220,7 +3220,7 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let info = match label {
             Some(ref label) => {
-                // Label is used both for LabeledStatement and for labelled
+                // Label is used both for LabelledStatement and for labelled
                 // BreakStatements. A label will be noted in bindings whenever we hit
                 // a label, as is the case for BreakStatements. These bindings are
                 // not necessary, and are at the end of the bindings stack. To keep things
@@ -3443,7 +3443,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let label_loc = label.loc;
         let body_loc = body.get_loc();
         self.check_labelled_statement(&label, &body)?;
-        Ok(self.alloc_with(|| Statement::LabeledStatement {
+        Ok(self.alloc_with(|| Statement::LabelledStatement {
             label: label.unbox(),
             body,
             loc: SourceLocation::from_parts(label_loc, body_loc),
@@ -5230,7 +5230,7 @@ impl<'alloc> AstBuilder<'alloc> {
     //       should contain this information.
     fn is_labelled_function(&self, mut stmt: &Statement<'alloc>) -> bool {
         // Step 1. If stmt is not a LabelledStatement , return false.
-        while let Statement::LabeledStatement { ref body, .. } = stmt {
+        while let Statement::LabelledStatement { ref body, .. } = stmt {
             // Step 2. Let item be the LabelledItem of stmt.
             let item: &Statement<'alloc> = body;
 

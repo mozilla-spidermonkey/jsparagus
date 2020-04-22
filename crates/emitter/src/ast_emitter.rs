@@ -191,7 +191,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::IfStatement(if_statement) => {
                 self.emit_if(if_statement)?;
             }
-            Statement::LabeledStatement { label, body, .. } => {
+            Statement::LabelledStatement { label, body, .. } => {
                 LabelEmitter {
                     name: label.value,
                     body: |emitter| emitter.emit_statement(body),
