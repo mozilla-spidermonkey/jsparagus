@@ -8,7 +8,7 @@ import pickle
 import typing
 
 from . import types
-from .utils import consume, keep_until
+from .utils import consume, keep_until, split
 from .ordered import OrderedSet, OrderedFrozenSet
 from .actions import Action, FilterFlag
 from .grammar import End, ErrorSymbol, InitNt, Nt
@@ -1347,11 +1347,14 @@ class ParseTable:
         consume(visit_table(), progress)
 
     def group_epsilon_states(self, verbose: bool, progress: bool) -> None:
-        shift_states = [s for s in self.states if len(s.epsilon) == 0]
-        action_states = [s for s in self.states if len(s.epsilon) > 0]
+        def all_action_inedges(s: StateAndTransitions) -> bool:
+            return all(isinstance(e.term, Action) for e in s.backedges)
+        shift_states, action_states = split(self.states, lambda s: len(s.epsilon) == 0)
+        from_act_action_states, from_shf_action_states = split(action_states, all_action_inedges)
         self.states = []
         self.states.extend(shift_states)
-        self.states.extend(action_states)
+        self.states.extend(from_shf_action_states)
+        self.states.extend(from_act_action_states)
         self.rewrite_reordered_state_indexes()
 
     def count_shift_states(self) -> int:
@@ -1359,6 +1362,12 @@ class ParseTable:
 
     def count_action_states(self) -> int:
         return sum(1 for s in self.states if s is not None and len(s.epsilon) > 0)
+
+    def count_action_from_shift_states(self) -> int:
+        def from_shift_states(s: StateAndTransitions) -> bool:
+            return any(not isinstance(e.term, Action) for e in s.backedges)
+
+        return sum(1 for s in self.states if len(s.epsilon) > 0 and from_shift_states(s))
 
     def prepare_debug_context(self) -> DebugInfo:
         """To better filter out the traversal of the grammar in debug context, we
