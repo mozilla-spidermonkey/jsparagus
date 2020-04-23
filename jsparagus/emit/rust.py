@@ -99,6 +99,14 @@ def extract_ranges(iterator):
     for l in ranges.values():
         yield (l[0], l[-1])
 
+def rust_range(riter):
+    def minmax_join(rmin, rmax):
+        if rmin == rmax:
+            return str(rmin)
+        else:
+            return "{}..={}".format(rmin, rmax)
+    return " | ".join(minmax_join(rmin, rmax) for rmin, rmax in riter)
+
 class RustActionWriter:
     """Write epsilon state transitions for a given action function."""
     ast_builder = types.Type("AstBuilderDelegate", (types.Lifetime("alloc"),))
@@ -210,24 +218,33 @@ class RustActionWriter:
             if len(state.epsilon) == 1:
                 # This is an attempt to avoid huge unending compilations.
                 _, dest = next(iter(state.epsilon), (None, None))
-                self.write("// parser.top_state() in [{}]", " | ".join(map(str, first_act.states)))
+                pattern = rust_range(extract_ranges(first_act.states))
+                self.write("// parser.top_state() in ({})", pattern)
                 self.write_epsilon_transition(dest)
             else:
                 self.write("match parser.top_state() {")
                 with indent(self):
+                    max_weight = max(len(act.states) for act, dest in state.edges())
+                    max_states = []
+                    max_dest = None
                     for act, dest in state.edges():
                         assert first_act.check_same_variable(act)
-                        ranges = []
-                        for smin, smax in extract_ranges(act.states):
-                            if smin == smax:
-                                ranges.append(str(smin))
-                            else:
-                                ranges.append("{}..={}".format(smin, smax))
-                        self.write("{} => {{", " | ".join(ranges))
+                        if max_dest is None and max_weight == len(act.states):
+                            max_states = act.states
+                            max_dest = dest
+                            continue
+                        pattern = rust_range(extract_ranges(act.states))
+                        self.write("{} => {{", pattern)
                         with indent(self):
                             self.write_epsilon_transition(dest)
                         self.write("}")
-                    self.write("_ => panic!(\"Unexpected state value.\")")
+                    # self.write("_ => panic!(\"Unexpected state value.\")")
+                    self.write("_ => {")
+                    with indent(self):
+                        pattern = rust_range(extract_ranges(max_states))
+                        self.write("// {}", pattern)
+                        self.write_epsilon_transition(max_dest)
+                    self.write("}")
                 self.write("}")
         else:
             raise ValueError("Unexpected action type")
