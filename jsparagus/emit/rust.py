@@ -4,6 +4,8 @@ import json
 import re
 import unicodedata
 import sys
+import itertools
+import collections
 from contextlib import contextmanager
 
 from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
@@ -88,6 +90,14 @@ def indent(writer):
     yield None
     writer.indent -= 1
 
+def extract_ranges(iterator):
+    """Given a sorted iterator of integer, yield the contiguous ranges"""
+    # Identify contiguous ranges of states.
+    ranges = collections.defaultdict(list)
+    for i, v in enumerate(iterator):
+        ranges[v - i].append(v)
+    for l in ranges.values():
+        yield (l[0], l[-1])
 
 class RustActionWriter:
     """Write epsilon state transitions for a given action function."""
@@ -207,7 +217,13 @@ class RustActionWriter:
                 with indent(self):
                     for act, dest in state.edges():
                         assert first_act.check_same_variable(act)
-                        self.write("{} => {{", " | ".join(map(str, act.states)))
+                        ranges = []
+                        for smin, smax in extract_ranges(act.states):
+                            if smin == smax:
+                                ranges.append(str(smin))
+                            else:
+                                ranges.append("{}..={}".format(smin, smax))
+                        self.write("{} => {{", " | ".join(ranges))
                         with indent(self):
                             self.write_epsilon_transition(dest)
                         self.write("}")
