@@ -691,6 +691,7 @@ class RustParserWriter:
             self.write(0, "}")
             self.write(0, "")
             for state in self.states[self.shift_count:]:
+                self.write(0, "#[inline]")
                 self.write(0, "#[allow(unused)]")
                 self.write(0,
                            "pub fn {}_{}<'alloc, Handler>(parser: &mut Handler) "
