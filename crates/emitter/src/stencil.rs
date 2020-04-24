@@ -1,6 +1,7 @@
 //! The result of emitter
 
 use crate::compilation_info::CompilationInfo;
+use crate::function::FunctionCreationData;
 use crate::gcthings::GCThing;
 use crate::regexp::RegExpItem;
 use crate::scope_notes::ScopeNote;
@@ -41,7 +42,9 @@ pub struct ScriptStencil {
     pub regexps: Vec<RegExpItem>,
     pub gcthings: Vec<GCThing>,
     pub scope_notes: Vec<ScopeNote>,
-    // Line and column numbers for the first character of source.
+    pub inner_functions: Vec<FunctionCreationData>,
+
+    /// Line and column numbers for the first character of source.
     pub lineno: usize,
     pub column: usize,
 
