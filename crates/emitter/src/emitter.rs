@@ -322,7 +322,7 @@ impl InstructionWriter {
         self.atoms.insert(value)
     }
 
-    pub fn emit_jump_target_and_patch(&mut self, jumplist: Vec<BytecodeOffset>) {
+    pub fn emit_jump_target_and_patch(&mut self, jumplist: &Vec<BytecodeOffset>) {
         let mut target = self.bytecode_offset();
         let last_jump = self.last_jump_target_offset;
         match last_jump {
@@ -341,7 +341,7 @@ impl InstructionWriter {
         }
 
         for jump in jumplist {
-            self.patch_jump_to_target(target, jump);
+            self.patch_jump_to_target(target, *jump);
         }
     }
 

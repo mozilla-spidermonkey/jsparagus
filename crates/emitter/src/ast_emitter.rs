@@ -22,8 +22,8 @@ use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSetIndex};
 use ast::types::*;
 
 use crate::control_structures::{
-    BreakEmitter, CForEmitter, ContinueEmitter, DoWhileEmitter, ForwardJumpEmitter, JumpKind,
-    LoopStack, WhileEmitter,
+    BreakEmitter, CForEmitter, ContinueEmitter, ControlStructureStack, DoWhileEmitter,
+    ForwardJumpEmitter, JumpKind, LabelEmitter, WhileEmitter,
 };
 
 /// Emit a program, converting the AST directly to bytecode.
@@ -50,10 +50,10 @@ pub fn emit_program<'alloc>(
 pub struct AstEmitter<'alloc, 'opt> {
     pub emit: InstructionWriter,
     pub scope_stack: EmitterScopeStack,
-    pub loop_stack: LoopStack,
     pub options: &'opt EmitOptions,
     pub compilation_info: &'opt mut CompilationInfo<'alloc>,
     pub scripts: &'opt mut ScriptStencilList,
+    pub control_stack: ControlStructureStack,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
@@ -65,10 +65,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         Self {
             emit: InstructionWriter::new(),
             scope_stack: EmitterScopeStack::new(),
-            loop_stack: LoopStack::new(),
             options,
             compilation_info,
             scripts,
+            control_stack: ControlStructureStack::new(),
         }
     }
 
@@ -127,20 +127,16 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 .emit(self)?;
             }
             Statement::BreakStatement { label, .. } => {
-                if let Some(_label) = label {
-                    return Err(EmitError::NotImplemented("TODO: Labeled BreakStatement"));
-                }
                 BreakEmitter {
                     jump: JumpKind::Goto,
+                    label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
             }
             Statement::ContinueStatement { label, .. } => {
-                if let Some(_label) = label {
-                    return Err(EmitError::NotImplemented("TODO: Labeled ContinueStatement"));
-                }
                 ContinueEmitter {
                     jump: JumpKind::Goto,
+                    label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
             }
@@ -195,8 +191,12 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::IfStatement(if_statement) => {
                 self.emit_if(if_statement)?;
             }
-            Statement::LabeledStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: LabeledStatement"));
+            Statement::LabelledStatement { label, body, .. } => {
+                LabelEmitter {
+                    name: label.value,
+                    body: |emitter| emitter.emit_statement(body),
+                }
+                .emit(self)?;
             }
             Statement::ReturnStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: ReturnStatement"));
