@@ -1,3 +1,24 @@
+//! Data collection.
+//!
+//! `ScopeContext` is the entry point of this module.
+//!
+//! Each AST node that will hold bindings (global, block, function, etc.) has a
+//! corresponding context type defined in this module: currently `GlobalContext`
+//! and `BlockContext`.
+//!
+//! Fields in the context types mostly correspond to local variables in spec
+//! algorithms.  For example, `GlobalContext` has fields named
+//! `functions_to_initialize`, `declared_function_names`, and
+//! `declared_var_names` which correspond to the
+//! [GlobalDeclarationInstantiation][1] algorithm's local variables
+//! *functionsToInitialize*, *declaredFunctionNames*, and *declaredVarNames*.
+//!
+//! This module performs some steps of those algorithms -- the parts that can
+//! be done at compile time. The results are passed along to the emitter and
+//! ultimately the JS runtime.
+//!
+//! [1]: https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
+
 use crate::data::{
     BindingName, GlobalScopeData, LexicalScopeData, ScopeData, ScopeDataList, ScopeDataMap,
     ScopeIndex,
@@ -630,14 +651,14 @@ impl Context {
         }
     }
 
-    pub fn name_tracker(&self) -> &FreeNameTracker {
+    fn name_tracker(&self) -> &FreeNameTracker {
         match self {
             Context::Global(context) => &context.name_tracker,
             Context::Block(context) => &context.name_tracker,
         }
     }
 
-    pub fn name_tracker_mut(&mut self) -> &mut FreeNameTracker {
+    fn name_tracker_mut(&mut self) -> &mut FreeNameTracker {
         match self {
             Context::Global(context) => &mut context.name_tracker,
             Context::Block(context) => &mut context.name_tracker,
@@ -757,6 +778,13 @@ impl ContextStack {
     }
 }
 
+/// Receives method calls telling about a JS script and builds a
+/// `ScopeDataMap`.
+///
+/// Usage: This struct's public methods must be called for each scope,
+/// declaration, and identifier in a JS script, in source order. Then use
+/// `ScopeDataMap::from()` to extract the results. Currently this object is
+/// driven by method calls from a `pass::ScopePass`.
 #[derive(Debug)]
 pub struct ScopeContext {
     scope_kind_stack: ScopeKindStack,
