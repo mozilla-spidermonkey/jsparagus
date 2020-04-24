@@ -1,10 +1,16 @@
+//! Types for the output of scope analysis.
+//!
+//! The top-level output of this analysis is the `ScopeDataMap`, which holds a
+//! `LexicalScopeData` for each scope in the AST, plus a `GlobalScopeData` for
+//! the global scope. Each scope contains a list of bindings (`BindingName`).
+
 use crate::frame_slot::FrameSlot;
 use ast::associated_data::{AssociatedData, Key as AssociatedDataKey};
 use ast::source_atom_set::SourceAtomSetIndex;
 use ast::source_location_accessor::SourceLocationAccessor;
 use ast::type_id::NodeTypeIdAccessor;
 
-/// Corrsponds to js::BindingKind in m-c/js/src/vm/Scope.h,
+/// Corresponds to js::BindingKind in m-c/js/src/vm/Scope.h.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BindingKind {
     Var,
@@ -12,7 +18,9 @@ pub enum BindingKind {
     Const,
 }
 
-/// Maps to js::BindingName in m-c/js/src/vm/Scope.h.
+/// Information about a single binding in a JS script.
+///
+/// Corresponds to `js::BindingName` in m-c/js/src/vm/Scope.h.
 #[derive(Debug)]
 pub struct BindingName {
     pub name: SourceAtomSetIndex,
@@ -38,8 +46,8 @@ impl BindingName {
     }
 }
 
-/// Corresponds to the accessor part of js::BindingIter
-/// in m-c/js/src/vm/Scope.h.
+/// Corresponds to the accessor part of `js::BindingIter` in
+/// m-c/js/src/vm/Scope.h.
 pub struct BindingIterItem<'a> {
     name: &'a BindingName,
     kind: BindingKind,
@@ -71,10 +79,16 @@ pub struct GlobalScopeData {
     pub let_start: usize,
     pub const_start: usize,
 
-    /// Corrsponds to GlobalScope::Data.{length, trailingNames}.
+    /// Corresponds to `GlobalScope::Data.{length, trailingNames}.`
+    ///
+    /// Bindings are sorted by kind:
+    ///
+    /// * `bindings[0..let_start]` - `var`s
+    /// * `bindings[let_start..const_start]` - `let`s
+    /// * `bindings[const_start..]` - `const`s
     pub bindings: Vec<BindingName>,
 
-    /// Functions in this scope.
+    /// The global functions in this script.
     pub functions: Vec<AssociatedDataKey>,
 }
 
@@ -249,10 +263,12 @@ impl From<ScopeIndex> for usize {
     }
 }
 
-/// The list of all scope data.
+/// A vector of scopes, incrementally populated during analysis.
+/// The goal is to build a `Vec<ScopeData>`.
 #[derive(Debug)]
 pub struct ScopeDataList {
-    /// Uses Option to make this populated later.
+    /// Uses Option to allow `allocate()` and `populate()` to be called
+    /// separately.
     scopes: Vec<Option<ScopeData>>,
 }
 
@@ -299,11 +315,14 @@ impl From<ScopeDataList> for Vec<ScopeData> {
     }
 }
 
-/// Scope data associated with AST node.
+/// The collection of all scope data associated with bindings and scopes in the
+/// AST.
 #[derive(Debug)]
 pub struct ScopeDataMap {
     scopes: ScopeDataList,
     global: ScopeIndex,
+
+    /// Associates every AST node that's a scope with an index into `scopes`.
     non_global: AssociatedData<ScopeIndex>,
 }
 

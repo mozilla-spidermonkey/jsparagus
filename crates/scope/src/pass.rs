@@ -1,15 +1,28 @@
+//! Code to traverse the AST and drive the rest of scope analysis.
+//!
+//! This module is responsible for walking the AST. Other modules do the actual
+//! analysis.
+//!
+//! Scope analysis is currently a second pass, after parsing, using the AST,
+//! but the goal is to do this analysis as part of the parse phase, even when
+//! no AST is built. So we try to keep AST use separate from the analysis code.
+
 use crate::context::ScopeContext;
 use crate::data::ScopeDataMap;
 use ast::associated_data::AssociatedData;
 use ast::{types::*, visit::Pass};
 
+/// The result of scope analysis.
 pub struct ScopeDataMapAndFunctionMap<'alloc> {
     pub scope_data_map: ScopeDataMap,
     pub function_map: AssociatedData<&'alloc Function<'alloc>>,
 }
 
-/// Visit all nodes in the AST, and invoke ScopeContext methods.
-/// FIXME: This should be rewritten with grammar extension.
+/// The top-level struct responsible for extracting the necessary information
+/// from the AST. The analysis itself is done mainly by the `ScopeContext`,
+/// which has very limited interaction with the AST.
+///
+/// FIXME: This should be rewritten as a grammar extension.
 #[derive(Debug)]
 pub struct ScopePass<'alloc> {
     context: ScopeContext,
