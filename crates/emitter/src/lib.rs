@@ -8,6 +8,7 @@ mod dis;
 mod emitter;
 mod emitter_scope;
 mod expression_emitter;
+mod function;
 mod gcthings;
 mod object_emitter;
 pub mod opcode;

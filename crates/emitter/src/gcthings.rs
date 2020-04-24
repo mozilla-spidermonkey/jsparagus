@@ -1,3 +1,4 @@
+use crate::function::FunctionCreationDataIndex;
 use crate::regexp::RegExpIndex;
 use scope::data::ScopeIndex;
 
@@ -5,6 +6,7 @@ use scope::data::ScopeIndex;
 /// in m-c/js/src/frontend/BytecodeSection.h.
 #[derive(Debug)]
 pub enum GCThing {
+    Function(FunctionCreationDataIndex),
     RegExp(RegExpIndex),
     Scope(ScopeIndex),
 }
@@ -38,6 +40,12 @@ pub struct GCThingList {
 impl GCThingList {
     pub fn new() -> Self {
         Self { things: Vec::new() }
+    }
+
+    pub fn push_function(&mut self, fun_index: FunctionCreationDataIndex) -> GCThingIndex {
+        let index = self.things.len();
+        self.things.push(GCThing::Function(fun_index));
+        GCThingIndex::new(index)
     }
 
     pub fn push_regexp(&mut self, regexp_index: RegExpIndex) -> GCThingIndex {
