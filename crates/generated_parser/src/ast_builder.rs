@@ -5269,7 +5269,9 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let binding_index = self.find_first_binding(end_label_offset);
         for info in self.bindings.iter().skip(binding_index) {
-            context.check_duplicate_label(info.name)?;
+            if info.kind == BindingKind::Label {
+                context.check_duplicate_label(info.name)?;
+            }
         }
 
         let label_index = self.find_first_break_or_continue(start_label_offset);
