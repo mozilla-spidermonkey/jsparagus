@@ -126,6 +126,12 @@ class Action:
         assert self.update_stack()
         raise TypeError("Action.update_stack_with not implemented")
 
+    def unshift_action(self, num: int) -> Action:
+        """When manipulating stack operation, we have the option to unshift some
+        replayed token which were shifted to disambiguate the grammar. However,
+        they might no longer be needed in some cases."""
+        return self
+
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         """Transpose this action with shifting the given terminal or Nt.
 
@@ -247,6 +253,10 @@ class Unwind(Action):
     def update_stack_with(self) -> StackDiff:
         return StackDiff(self.pop, self.nt, self.replay)
 
+    def unshift_action(self, num: int) -> Unwind:
+        assert self.replay >= num
+        return Unwind(self.nt, self.pop, replay=self.replay - num)
+
     def shifted_action(self, shifted_term: Element) -> Unwind:
         return Unwind(self.nt, self.pop, replay=self.replay + 1)
 
@@ -276,6 +286,10 @@ class Reduce(Action):
 
     def update_stack_with(self) -> StackDiff:
         return self.unwind.update_stack_with()
+
+    def unshift_action(self, num: int) -> Reduce:
+        unwind = self.unwind.unshift_action(num)
+        return Reduce(unwind)
 
     def shifted_action(self, shifted_term: Element) -> Reduce:
         unwind = self.unwind.shifted_action(shifted_term)
@@ -335,6 +349,9 @@ class Lookahead(Action):
     def __str__(self) -> str:
         return "Lookahead({}, {})".format(self.terms, self.accept)
 
+    def unshift_action(self, num: int) -> Action:
+        raise TypeError("Lookahead cannot be unshifted")
+
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
             return True
@@ -374,6 +391,9 @@ class CheckNotOnNewLine(Action):
 
     def check_different_values(self, other: Action) -> bool:
         return False
+
+    def unshift_action(self, num: int) -> Action:
+        raise TypeError("CheckNotOnNewLine cannot be unshifted")
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
@@ -421,6 +441,9 @@ class FilterStates(Action):
                 return actions
             states.extend(a.states)
         return [FilterStates(states)]
+
+    def unshift_action(self, num: int) -> Action:
+        raise TypeError("FilterStates cannot be unshifted")
 
     def __str__(self) -> str:
         return "FilterStates({})".format(self.states)
@@ -544,6 +567,14 @@ class FunCall(Action):
             self.args, self.set_to, self.offset
         ])))
 
+    def unshift_action(self, num: int) -> FunCall:
+        assert self.offset >= num
+        return FunCall(self.method, self.args,
+                       trait=self.trait,
+                       fallible=self.fallible,
+                       set_to=self.set_to,
+                       offset=self.offset - num)
+
     def shifted_action(self, shifted_term: Element) -> FunCall:
         return FunCall(self.method,
                        self.args,
@@ -583,6 +614,10 @@ class Seq(Action):
 
     def update_stack_with(self) -> StackDiff:
         return self.actions[-1].update_stack_with()
+
+    def unshift_action(self, num: int) -> Seq:
+        actions = list(map(lambda a: a.unshift_action(num), self.actions))
+        return Seq(actions)
 
     def shifted_action(self, shift: Element) -> ShiftedAction:
         actions: typing.List[Action] = []
