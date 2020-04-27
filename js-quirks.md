@@ -7,6 +7,8 @@ from scratch.
 With apologies to the generous people who work on the standard. Thanks
 for doing that—better you than me.
 
+Thanks to @mathiasbynens for pointing out an additional quirk.
+
 Problems are rated in terms of difficulty, from `(*)` = easy to `(***)`
 = hard. We’ll start with the easiest problems.
 
@@ -115,7 +117,7 @@ in this section is easy to deal with, but #4 is special.
 For another ambiguity, see "Slashes" below.
 
 
-### Legacy octal literals (*)
+### Legacy octal literals and escape sequences (*)
 
 This is more funny than difficult.
 
@@ -130,6 +132,17 @@ number. Otherwise, hilariously, it's octal.
 js> [067, 068, 069, 070]
 [55, 68, 69, 56]
 ```
+
+There are also legacy octal escape sequences in strings, and these have
+their own quirks. `'\07' === '\u{7}'`, but `'\08' !== '\u{8}'` since 8
+is not an octal digit. Instead `'\08' === '\0' + '8'`, because `\0`
+followed by `8` or `9` is a legacy octal escape sequence representing
+the null character. (Not to be confused with `\0` in strict code, not
+followed by a digit, which still represents the null character, but
+doesn't count as octal.)
+
+None of this is hard to implement, but figuring out what the spec says
+is hard.
 
 
 ### Strict mode (*)
