@@ -498,8 +498,8 @@ that are covered adequately elsewhere:
 
 *   `const x;` without an initializer is a Syntax Error.
 
-*   A direct substatement of an `if` statement, loop statement, can’t be a labelled
-    `function`.
+*   A direct substatement of an `if` statement, loop statement, or
+    `with` statement can’t be a labelled `function`.
 
 *   Early errors are used to hook up cover grammars.
 
