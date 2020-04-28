@@ -1,5 +1,5 @@
 use crate::context_stack::{
-    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, ControlInfo,
+    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, ControlInfo, LabelInfo, LabelKind, LabelIndex
 };
 use crate::declaration_kind::DeclarationKind;
 use crate::early_errors::*;
@@ -3125,8 +3125,8 @@ impl<'alloc> AstBuilder<'alloc> {
                 // clean, we will pop the last element (the label we just added) off the stack.
                 let index = self
                     .context_metadata
-                    .find_first_binding(continue_token.loc.start);
-                self.context_metadata.pop_bindings_from(index);
+                    .find_first_label(label.loc.start);
+                self.context_metadata.pop_labels_from(index);
 
                 ControlInfo::new_continue(continue_token.loc.start, Some(label.value))
             }
@@ -3160,8 +3160,10 @@ impl<'alloc> AstBuilder<'alloc> {
                 // a label, as is the case for BreakStatements. These bindings are
                 // not necessary, and are at the end of the bindings stack. To keep things
                 // clean, we will pop the last element (the label we just added) off the stack.
-                let index = self.context_metadata.find_first_binding(label.loc.start);
-                self.context_metadata.pop_bindings_from(index);
+                let index = self
+                    .context_metadata
+                    .find_first_label(label.loc.start);
+                self.context_metadata.pop_labels_from(index);
 
                 ControlInfo::new_break(break_token.loc.start, Some(label.value))
             }
@@ -3505,6 +3507,9 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn function_expr(&mut self, f: Function<'alloc>) -> arena::Box<'alloc, Expression<'alloc>> {
         let index = self.context_metadata.find_first_binding(f.loc.start);
         self.context_metadata.pop_bindings_from(index);
+
+        let label_index = self.context_metadata.find_first_label(f.loc.start);
+        self.context_metadata.pop_labels_from(label_index);
 
         self.alloc_with(|| Expression::FunctionExpression(f))
     }
@@ -4019,10 +4024,14 @@ impl<'alloc> AstBuilder<'alloc> {
         name: Option<arena::Box<'alloc, BindingIdentifier>>,
         mut tail: arena::Box<'alloc, ClassExpression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
+        let offset = class_token.loc.start;
         let index = self
             .context_metadata
-            .find_first_binding(class_token.loc.start);
+            .find_first_binding(offset);
         self.context_metadata.pop_bindings_from(index);
+
+        let label_index = self.context_metadata.find_first_label(offset);
+        self.context_metadata.pop_labels_from(label_index);
 
         tail.name = name.map(|boxed| boxed.unbox());
         tail.loc.start = class_token.loc.start;
@@ -4572,10 +4581,10 @@ impl<'alloc> AstBuilder<'alloc> {
         // If the label is attached to a continue or break statement, its binding info
         // is popped from the stack. See `continue_statement` and `break_statement` for more
         // information.
-        self.context_metadata.push_binding(BindingInfo {
+        self.context_metadata.push_label(LabelInfo {
             name,
             offset,
-            kind: BindingKind::Label,
+            kind: LabelKind::Other,
         });
 
         context.check_label_identifier(token, &self.atoms.borrow())
@@ -4637,16 +4646,6 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
-                // Do nothing for Labels, as they have to be nested for
-                // a syntax error to occur.
-                //
-                // We do not have the nesting information at the
-                // script/block/function level so we cannot reuse the mechanism
-                // used for checking duplicate bindings in those error contexts.
-                // We only know that the label occurred somewhere in the block,
-                // and that it might occur more than once, not how it occurs.
-                // This is handled in check_labelled_statement.
-                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4718,16 +4717,6 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
-                // Do nothing for Labels, as they have to be nested for
-                // a syntax error to occur
-                //
-                // We do not have the nesting information at the
-                // script/block/function level so we cannot reuse the mechanism
-                // used for checking duplicate bindings in those error contexts.
-                // We only know that the label occurred somewhere in the block,
-                // and that it might occur more than once, not how it occurs.
-                // This is handled in check_labelled_statement.
-                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4901,16 +4890,6 @@ impl<'alloc> AstBuilder<'alloc> {
                         &self.atoms.borrow(),
                     )?;
                 }
-                // Do nothing for Labels, as they have to be nested for
-                // a syntax error to occur
-                //
-                // We do not have the nesting information at the
-                // script/block/function level so we cannot reuse the mechanism
-                // used for checking duplicate bindings in those error contexts.
-                // We only know that the label occurred somewhere in the block,
-                // and that it might occur more than once, not how it occurs.
-                // This is handled in check_labelled_statement.
-                BindingKind::Label => {}
                 _ => {
                     panic!("Unexpected binding found {:?}", info);
                 }
@@ -4947,6 +4926,8 @@ impl<'alloc> AstBuilder<'alloc> {
         self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
 
         self.context_metadata.pop_bindings_from(param_index);
+        let label_index = self.context_metadata.find_first_label(start_of_param_offset);
+        self.context_metadata.pop_labels_from(label_index);
 
         Ok(())
     }
@@ -4971,6 +4952,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.declare_script_or_function(&mut body_context, body_index)?;
         self.context_metadata.pop_bindings_from(param_index);
 
+        let label_index = self.context_metadata.find_first_label(start_of_param_offset);
+        self.context_metadata.pop_labels_from(label_index);
+
         self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
 
         Ok(())
@@ -4983,6 +4967,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.declare_script_or_function(&mut context, index)?;
         self.context_metadata.pop_bindings_from(index);
 
+        let label_index = LabelIndex { index: 0 };
+        self.context_metadata.pop_labels_from(label_index);
+
         self.check_unhandled_break_or_continue(context, 0)?;
 
         Ok(())
@@ -4994,6 +4981,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let index = BindingsIndex { index: 0 };
         self.declare_script_or_function(&mut context, index)?;
         self.context_metadata.pop_bindings_from(index);
+
+        let label_index = LabelIndex { index: 0 };
+        self.context_metadata.pop_labels_from(label_index);
 
         self.check_unhandled_break_or_continue(context, 0)?;
 
@@ -5082,20 +5072,18 @@ impl<'alloc> AstBuilder<'alloc> {
 
         let context = LabelledStatementEarlyErrorsContext::new(name, is_loop);
 
-        let binding_index = self.context_metadata.find_first_binding(end_label_offset);
-        for info in self.context_metadata.bindings_from(binding_index) {
-            if info.kind == BindingKind::Label {
-                context.check_duplicate_label(info.name)?;
-            }
+        let label_index = self.context_metadata.find_first_label(end_label_offset);
+        for info in self.context_metadata.labels_from(label_index) {
+            context.check_duplicate_label(info.name)?;
         }
 
-        let label_index = self
+        let break_or_continue_index = self
             .context_metadata
             .find_first_break_or_continue(start_label_offset);
-        self.check_unhandled_continue(context, label_index)?;
+        self.check_unhandled_continue(context, break_or_continue_index)?;
 
         self.context_metadata
-            .pop_labelled_breaks_and_continues_from_index(label_index, name);
+            .pop_labelled_breaks_and_continues_from_index(break_or_continue_index, name);
         Ok(())
     }
 }
