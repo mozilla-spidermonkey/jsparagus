@@ -39,6 +39,7 @@ impl ControlInfo {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct BreakOrContinueIndex {
     pub index: usize,
 }

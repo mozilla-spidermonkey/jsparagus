@@ -12,7 +12,9 @@ use ast::{
 };
 use bumpalo::{vec, Bump};
 use std::cell::RefCell;
+use std::iter::{Skip, Take};
 use std::rc::Rc;
+use std::slice::Iter;
 
 // The kind of BindingIdentifier found while parsing.
 //
@@ -69,6 +71,11 @@ struct BindingInfo {
     // The offset of the BindingIdentifier in the source.
     offset: usize,
     kind: BindingKind,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct BindingsIndex {
+    pub index: usize,
 }
 
 pub struct AstBuilder<'alloc> {
@@ -4663,8 +4670,23 @@ impl<'alloc> AstBuilder<'alloc> {
         }
     }
 
+    fn bindings_from(&self, index: BindingsIndex) -> Skip<Iter<'_, BindingInfo>> {
+        self.bindings.iter().skip(index.index)
+    }
+
+    fn bindings_from_to(
+        &self,
+        from: BindingsIndex,
+        to: BindingsIndex,
+    ) -> Take<Skip<Iter<'_, BindingInfo>>> {
+        self.bindings
+            .iter()
+            .skip(from.index)
+            .take(to.index - from.index)
+    }
+
     // Returns the index of the first binding at/after `offset` source position.
-    fn find_first_binding(&mut self, offset: usize) -> usize {
+    fn find_first_binding(&mut self, offset: usize) -> BindingsIndex {
         let mut i = self.bindings.len();
         for info in self.bindings.iter_mut().rev() {
             if info.offset < offset {
@@ -4672,23 +4694,23 @@ impl<'alloc> AstBuilder<'alloc> {
             }
             i -= 1;
         }
-        i
+        BindingsIndex { index: i }
     }
 
     // Remove all bindings after `index`-th item.
     //
     // This should be called when leaving function/script/module.
-    fn pop_bindings_from(&mut self, index: usize) {
-        self.bindings.truncate(index)
+    fn pop_bindings_from(&mut self, index: BindingsIndex) {
+        self.bindings.truncate(index.index)
     }
 
     // Remove lexical bindings after `index`-th item,
     // while keeping var bindings.
     //
     // This should be called when leaving block.
-    fn pop_lexical_bindings_from(&mut self, index: usize) {
+    fn pop_lexical_bindings_from(&mut self, index: BindingsIndex) {
         let len = self.bindings.len();
-        let mut i = index;
+        let mut i = index.index;
 
         while i < len && self.bindings[i].kind == BindingKind::Var {
             i += 1;
@@ -4706,6 +4728,13 @@ impl<'alloc> AstBuilder<'alloc> {
         }
 
         self.bindings.truncate(i)
+    }
+
+    fn breaks_and_continues_from(
+        &self,
+        index: BreakOrContinueIndex,
+    ) -> Skip<Iter<'_, ControlInfo>> {
+        self.breaks_and_continues.iter().skip(index.index)
     }
 
     // Returns the index of the first break or continue at/after `offset` source position.
@@ -4787,11 +4816,11 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // Declare bindings to Block-like context, where function declarations
     // are lexical.
-    fn declare_block<T>(&self, context: &mut T, index: usize) -> Result<'alloc, ()>
+    fn declare_block<T>(&self, context: &mut T, index: BindingsIndex) -> Result<'alloc, ()>
     where
         T: LexicalEarlyErrorsContext + VarEarlyErrorsContext,
     {
-        for info in self.bindings.iter().skip(index) {
+        for info in self.bindings_from(index) {
             match info.kind {
                 BindingKind::Var => {
                     context.declare_var(
@@ -4874,10 +4903,10 @@ impl<'alloc> AstBuilder<'alloc> {
     fn declare_lexical_for_head(
         &self,
         context: &mut LexicalForHeadEarlyErrorsContext,
-        from: usize,
-        to: usize,
+        from: BindingsIndex,
+        to: BindingsIndex,
     ) -> Result<'alloc, ()> {
-        for info in self.bindings.iter().skip(from).take(to - from) {
+        for info in self.bindings_from_to(to, from) {
             match info.kind {
                 BindingKind::Let => {
                     context.declare_lex(
@@ -4908,9 +4937,9 @@ impl<'alloc> AstBuilder<'alloc> {
     fn declare_lexical_for_body(
         &self,
         context: &mut LexicalForBodyEarlyErrorsContext,
-        index: usize,
+        index: BindingsIndex,
     ) -> Result<'alloc, ()> {
-        for info in self.bindings.iter().skip(index) {
+        for info in self.bindings_from(index) {
             match info.kind {
                 BindingKind::Var => {
                     context.declare_var(
@@ -4961,20 +4990,24 @@ impl<'alloc> AstBuilder<'alloc> {
         let index = self.find_first_binding(start_of_block_offset);
         // Check bindings in CaseBlock of switch-statement.
         self.declare_block(&mut context, index)?;
-
-        self.pop_unlabelled_breaks_from(index);
-
         self.pop_lexical_bindings_from(index);
+
+        self.pop_unlabelled_breaks_from(start_of_block_offset);
 
         Ok(())
     }
 
     // Declare bindings to the parameter of function or catch.
-    fn declare_param<T>(&self, context: &mut T, from: usize, to: usize) -> Result<'alloc, ()>
+    fn declare_param<T>(
+        &self,
+        context: &mut T,
+        from: BindingsIndex,
+        to: BindingsIndex,
+    ) -> Result<'alloc, ()>
     where
         T: ParameterEarlyErrorsContext,
     {
-        for info in self.bindings.iter().skip(from).take(to - from) {
+        for info in self.bindings_from_to(from, to) {
             context.declare(info.name, info.offset, &self.atoms.borrow())?;
         }
 
@@ -5035,9 +5068,9 @@ impl<'alloc> AstBuilder<'alloc> {
     fn check_unhandled_continue(
         &mut self,
         context: LabelledStatementEarlyErrorsContext,
-        index: &BreakOrContinueIndex,
+        index: BreakOrContinueIndex,
     ) -> Result<'alloc, ()> {
-        for info in self.breaks_and_continues.iter().skip(index.index) {
+        for info in self.breaks_and_continues_from(index) {
             context.check_labelled_continue_to_non_loop(info)?;
         }
 
@@ -5050,11 +5083,15 @@ impl<'alloc> AstBuilder<'alloc> {
 
     // Declare bindings to script-or-function-like context, where function
     // declarations are body-level.
-    fn declare_script_or_function<T>(&self, context: &mut T, index: usize) -> Result<'alloc, ()>
+    fn declare_script_or_function<T>(
+        &self,
+        context: &mut T,
+        index: BindingsIndex,
+    ) -> Result<'alloc, ()>
     where
         T: LexicalEarlyErrorsContext + VarEarlyErrorsContext,
     {
-        for info in self.bindings.iter().skip(index) {
+        for info in self.bindings_from(index) {
             match info.kind {
                 BindingKind::Var => {
                     context.declare_var(
@@ -5166,8 +5203,9 @@ impl<'alloc> AstBuilder<'alloc> {
     // Check bindings in Script.
     fn check_script_bindings(&mut self) -> Result<'alloc, ()> {
         let mut context = ScriptEarlyErrorsContext::new();
-        self.declare_script_or_function(&mut context, 0)?;
-        self.pop_bindings_from(0);
+        let index = BindingsIndex { index: 0 };
+        self.declare_script_or_function(&mut context, index)?;
+        self.pop_bindings_from(index);
 
         self.check_unhandled_break_or_continue(context, 0)?;
 
@@ -5177,8 +5215,9 @@ impl<'alloc> AstBuilder<'alloc> {
     // Check bindings in Module.
     fn check_module_bindings(&mut self) -> Result<'alloc, ()> {
         let mut context = ModuleEarlyErrorsContext::new();
-        self.declare_script_or_function(&mut context, 0)?;
-        self.pop_bindings_from(0);
+        let index = BindingsIndex { index: 0 };
+        self.declare_script_or_function(&mut context, index)?;
+        self.pop_bindings_from(index);
 
         self.check_unhandled_break_or_continue(context, 0)?;
 
@@ -5268,14 +5307,14 @@ impl<'alloc> AstBuilder<'alloc> {
         let context = LabelledStatementEarlyErrorsContext::new(name, is_loop);
 
         let binding_index = self.find_first_binding(end_label_offset);
-        for info in self.bindings.iter().skip(binding_index) {
+        for info in self.bindings_from(binding_index) {
             if info.kind == BindingKind::Label {
                 context.check_duplicate_label(info.name)?;
             }
         }
 
         let label_index = self.find_first_break_or_continue(start_label_offset);
-        self.check_unhandled_continue(context, &label_index)?;
+        self.check_unhandled_continue(context, label_index)?;
 
         self.pop_labelled_breaks_and_continues_from_index(label_index, name);
         Ok(())
