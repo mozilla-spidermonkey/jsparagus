@@ -1,5 +1,9 @@
 ## JS syntactic quirks
 
+> *To make a labyrinth, it takes*
+> *Some good intentions, some mistakes.*
+> —A. E. Stallings, “Daedal”
+
 JavaScript is rather hard to parse. Here is an in-depth accounting of
 its syntactic quirks, with an eye toward actually implementing a parser
 from scratch.
@@ -1018,3 +1022,15 @@ though syntactic rules are applied after the fact:
 
     ["a", "b", "c"]++;  // same
     ```
+
+
+## Conclusion
+
+What have we learned today?
+
+*   Do not write a JS parser.
+
+*   JavaScript has some syntactic horrors in it. But hey, you don't
+    make the world's most widely used programming language by avoiding
+    all mistakes. You do it by shipping a serviceable tool, in the right
+    circumstances, for the right users.
