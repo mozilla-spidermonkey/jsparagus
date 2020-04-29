@@ -31,15 +31,22 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
 
     methods: OrderedSet[FunCall] = OrderedSet()
 
-    def write_epsilon_transition(indent: str, dest: StateId):
-        if parse_table.states[dest].epsilon != []:
+    def write_epsilon_transition(indent: str, dest_idx: StateId):
+        dest = parse_table.states[dest_idx]
+        if dest.epsilon != []:
+            assert dest.index < len(parse_table.states)
             # This is a transition to an action.
-            out.write("{}state_{}_actions(parser, lexer)\n".format(indent, dest))
+            args = ""
+            for i in range(dest.arguments):
+                out.write("{}r{} = parser.replay.pop()\n".format(indent, i))
+                args += ", r{}".format(i)
+            out.write("{}state_{}_actions(parser, lexer{})\n".format(indent, dest.index, args))
         else:
             # This is a transition to a shift.
+            assert dest.arguments == 0
             out.write("{}top = parser.stack.pop()\n".format(indent))
             out.write("{}top = StateTermValue({}, top.term, top.value, top.new_line)\n"
-                      .format(indent, dest))
+                      .format(indent, dest.index))
             out.write("{}parser.stack.append(top)\n".format(indent))
 
     def write_action(act: Action, indent: str = "") -> typing.Tuple[str, bool]:
@@ -118,7 +125,13 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
         assert i == state.index
         if state.epsilon == []:
             continue
-        out.write("def state_{}_actions(parser, lexer):\n".format(i))
+        args = []
+        for j in range(state.arguments):
+            args.append("a{}".format(j))
+        out.write("def state_{}_actions(parser, lexer{}):\n".format(
+            i, "".join(map(lambda s: ", " + s, args))))
+        if state.arguments > 0:
+            out.write("    parser.replay.extend([{}])\n".format(", ".join(reversed(args))))
         out.write("{}\n".format(parse_table.debug_context(i, "\n", "    # ")))
         out.write("    value = None\n")
         for action, dest in state.edges():
@@ -180,10 +193,10 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
     out.write("class DefaultMethods:\n")
     for act in methods:
         assert isinstance(act, FunCall)
-        args = ", ".join("x{}".format(i) for i in range(len(act.args)))
+        state_args = ", ".join("x{}".format(i) for i in range(len(act.args)))
         name = method_name_to_python(act.method)
-        out.write("    def {}(self, {}):\n".format(name, args))
-        out.write("        return ({}, {})\n".format(repr(name), args))
+        out.write("    def {}(self, {}):\n".format(name, state_args))
+        out.write("        return ({}, {})\n".format(repr(name), state_args))
     if not methods:
         out.write("    pass\n")
     out.write("\n")
