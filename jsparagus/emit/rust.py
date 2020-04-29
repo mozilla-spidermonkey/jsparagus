@@ -148,10 +148,14 @@ class RustActionWriter:
         if isinstance(act, (Reduce, Unwind)):
             yield "value"
         elif isinstance(act, FunCall):
+            arg_offset = act.offset
+            if arg_offset < 0:
+                # See write_funcall.
+                arg_offset = 0
             def map_with_offset(args):
                 for a in args:
                     if isinstance(a, int):
-                        yield a + act.offset
+                        yield a + arg_offset
                     if isinstance(a, str):
                         yield a
                     elif isinstance(a, Some):
@@ -396,6 +400,16 @@ class RustActionWriter:
         self.write("return Ok(true);")
 
     def write_funcall(self, act, is_packed):
+        arg_offset = act.offset
+        if arg_offset < 0:
+            # NOTE: When replacing replayed stack elements by arguments, the
+            # offset is reduced by -1, and can become negative for cases where
+            # we read the value associated with an argument instead of the
+            # value read from the stack. However, write_action shift everything
+            # as-if we had replayed all the necessary terms, and therefore
+            # variables are named as-if the offset were 0.
+            arg_offset = 0
+
         def no_unpack(val):
             return val
 
@@ -412,7 +426,7 @@ class RustActionWriter:
             get_value = "s{}"
             for a in args:
                 if isinstance(a, int):
-                    yield unpack(get_value.format(a + act.offset))
+                    yield unpack(get_value.format(a + arg_offset))
                 elif isinstance(a, str):
                     yield unpack(a)
                 elif isinstance(a, Some):
