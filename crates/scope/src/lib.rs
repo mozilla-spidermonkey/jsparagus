@@ -9,7 +9,7 @@
 //! The output of this analysis is a `ScopeDataMapAndFunctionMap`
 //! describing each scope, binding, and function in the AST.
 
-mod context;
+mod builder;
 pub mod data;
 pub mod frame_slot;
 pub mod free_name_tracker;
