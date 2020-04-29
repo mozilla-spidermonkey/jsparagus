@@ -4028,9 +4028,6 @@ impl<'alloc> AstBuilder<'alloc> {
         let index = self.context_metadata.find_first_binding(offset);
         self.context_metadata.pop_bindings_from(index);
 
-        let label_index = self.context_metadata.find_first_label(offset);
-        self.context_metadata.pop_labels_from(label_index);
-
         tail.name = name.map(|boxed| boxed.unbox());
         tail.loc.start = class_token.loc.start;
         self.alloc_with(|| Expression::ClassExpression(tail.unbox()))
@@ -5031,22 +5028,26 @@ impl<'alloc> AstBuilder<'alloc> {
     //
     // NOTE: For Syntax-only parsing (NYI), the stack value for Statement
     //       should contain this information.
-    fn is_labelled_function(&self, mut stmt: &Statement<'alloc>) -> bool {
+    fn is_labelled_function(&self, stmt: &Statement<'alloc>) -> bool {
         // Step 1. If stmt is not a LabelledStatement , return false.
-
-        while let Statement::LabelledStatement { ref body, .. } = stmt {
+        if let Some(index) = self
+            .context_metadata
+            .find_label_index_at_offset(stmt.get_loc().start)
+        {
             // Step 2. Let item be the LabelledItem of stmt.
-            let item: &Statement<'alloc> = body;
-
-            // Step 3. If item is LabelledItem : FunctionDeclaration,
-            // return true.
-            if let Statement::FunctionDeclaration(_) = item {
-                return true;
+            for label in self.context_metadata.labels_from(index) {
+                match label.kind {
+                    // Step 3. If item is LabelledItem : FunctionDeclaration,
+                    // return true.
+                    LabelKind::Function => {
+                        return true;
+                    }
+                    // Step 4. Let subStmt be the Statement of item.
+                    // Step 5. Return IsLabelledFunction(subStmt).
+                    LabelKind::LabelledLabel => continue,
+                    _ => break,
+                }
             }
-
-            // Step 4. Let subStmt be the Statement of item.
-            // Step 5. Return IsLabelledFunction(subStmt).
-            stmt = item;
         }
 
         false

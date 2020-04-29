@@ -394,6 +394,11 @@ impl ContextMetadata {
         self.breaks_and_continues.get(index.index)
     }
 
+    pub fn find_label_index_at_offset(&self, offset: usize) -> Option<LabelIndex> {
+        let index = self.labels.iter().position(|info| info.offset == offset);
+        index.map(|index| LabelIndex { index })
+    }
+
     pub fn find_label_at_offset(&mut self, offset: usize) -> Option<&mut LabelInfo> {
         self.labels.iter_mut().find(|info| info.offset == offset)
     }
