@@ -105,6 +105,12 @@ impl BreakOrContinueIndex {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum LabelKind {
     Other,
+
+    Function,
+
+    Loop,
+
+    LabelledLabel,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -240,6 +246,23 @@ impl ContextMetadata {
         self.labels.iter().skip(index.index)
     }
 
+    // Update the label kind of a label declared in a specific range of the
+    // source (and not in any nested scope). There should never be more than one.
+    //
+    // It's necessary because the current parser only calls AstBuilder methods
+    // at the end of each production, not at the beginning.
+    //
+    // Labels inside `StatementList` must be marked using this method before
+    // we reach the end of its scope.
+    pub fn mark_label_kind_at_offset(&mut self, from: usize, kind: LabelKind) {
+        let maybe_label = self.find_label_at_offset(from);
+        if let Some(info) = maybe_label {
+            info.kind = kind
+        } else {
+            panic!("Tried to mark a non-existant label");
+        }
+    }
+
     // Remove lexical bindings after `index`-th item,
     // while keeping var bindings.
     //
@@ -369,5 +392,9 @@ impl ContextMetadata {
 
     pub fn find_break_or_continue_at(&self, index: BreakOrContinueIndex) -> Option<&ControlInfo> {
         self.breaks_and_continues.get(index.index)
+    }
+
+    pub fn find_label_at_offset(&mut self, offset: usize) -> Option<&mut LabelInfo> {
+        self.labels.iter_mut().find(|info| info.offset == offset)
     }
 }

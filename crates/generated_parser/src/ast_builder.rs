@@ -1,5 +1,6 @@
 use crate::context_stack::{
-    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, ControlInfo, LabelInfo, LabelKind, LabelIndex
+    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, ControlInfo,
+    LabelIndex, LabelInfo, LabelKind,
 };
 use crate::declaration_kind::DeclarationKind;
 use crate::early_errors::*;
@@ -3119,13 +3120,12 @@ impl<'alloc> AstBuilder<'alloc> {
         let info = match label {
             Some(ref label) => {
                 // Label is used both for LabelledStatement and for labelled
-                // ContinueStatements. A label will be noted in bindings whenever we hit
-                // a label, as is the case for ContinueStatements. These bindings are
-                // not necessary, and are at the end of the bindings stack. To keep things
-                // clean, we will pop the last element (the label we just added) off the stack.
-                let index = self
-                    .context_metadata
-                    .find_first_label(label.loc.start);
+                // ContinueStatements. A label will be noted in the context metadata
+                // whenever we hit a label, as is the case for BreakStatements. These
+                // bindings are not necessary, and are at the end of the bindings stack.
+                // To keep things clean, we will pop the last element (the label we just
+                // added) off the stack.
+                let index = self.context_metadata.find_first_label(label.loc.start);
                 self.context_metadata.pop_labels_from(index);
 
                 ControlInfo::new_continue(continue_token.loc.start, Some(label.value))
@@ -3156,13 +3156,12 @@ impl<'alloc> AstBuilder<'alloc> {
         let info = match label {
             Some(ref label) => {
                 // Label is used both for LabelledStatement and for labelled
-                // BreakStatements. A label will be noted in bindings whenever we hit
-                // a label, as is the case for BreakStatements. These bindings are
-                // not necessary, and are at the end of the bindings stack. To keep things
-                // clean, we will pop the last element (the label we just added) off the stack.
-                let index = self
-                    .context_metadata
-                    .find_first_label(label.loc.start);
+                // BreakStatements. A label will be noted in the context metadata
+                // whenever we hit a label, as is the case for BreakStatements. These
+                // bindings are not necessary, and are at the end of the bindings stack.
+                // To keep things clean, we will pop the last element (the label we just
+                // added) off the stack.
+                let index = self.context_metadata.find_first_label(label.loc.start);
                 self.context_metadata.pop_labels_from(index);
 
                 ControlInfo::new_break(break_token.loc.start, Some(label.value))
@@ -3379,7 +3378,8 @@ impl<'alloc> AstBuilder<'alloc> {
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         let label_loc = label.loc;
         let body_loc = body.get_loc();
-        self.check_labelled_statement(&label, &body)?;
+        self.mark_labelled_statement(&label, &body);
+        self.check_labelled_statement(&label)?;
         Ok(self.alloc_with(|| Statement::LabelledStatement {
             label: label.unbox(),
             body,
@@ -4025,9 +4025,7 @@ impl<'alloc> AstBuilder<'alloc> {
         mut tail: arena::Box<'alloc, ClassExpression<'alloc>>,
     ) -> arena::Box<'alloc, Expression<'alloc>> {
         let offset = class_token.loc.start;
-        let index = self
-            .context_metadata
-            .find_first_binding(offset);
+        let index = self.context_metadata.find_first_binding(offset);
         self.context_metadata.pop_bindings_from(index);
 
         let label_index = self.context_metadata.find_first_label(offset);
@@ -4574,11 +4572,7 @@ impl<'alloc> AstBuilder<'alloc> {
             debug_assert!(info.offset < offset);
         }
 
-        // Labels are not usually considered bindings, but we are using bindings
-        // in order to track duplicate label information. See `check_labelled_statement` for
-        // more information about how this is used.
-        //
-        // If the label is attached to a continue or break statement, its binding info
+        // If the label is attached to a continue or break statement, its label info
         // is popped from the stack. See `continue_statement` and `break_statement` for more
         // information.
         self.context_metadata.push_label(LabelInfo {
@@ -4926,7 +4920,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
 
         self.context_metadata.pop_bindings_from(param_index);
-        let label_index = self.context_metadata.find_first_label(start_of_param_offset);
+        let label_index = self
+            .context_metadata
+            .find_first_label(start_of_param_offset);
         self.context_metadata.pop_labels_from(label_index);
 
         Ok(())
@@ -4952,7 +4948,9 @@ impl<'alloc> AstBuilder<'alloc> {
         self.declare_script_or_function(&mut body_context, body_index)?;
         self.context_metadata.pop_bindings_from(param_index);
 
-        let label_index = self.context_metadata.find_first_label(start_of_param_offset);
+        let label_index = self
+            .context_metadata
+            .find_first_label(start_of_param_offset);
         self.context_metadata.pop_labels_from(label_index);
 
         self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
@@ -5035,6 +5033,7 @@ impl<'alloc> AstBuilder<'alloc> {
     //       should contain this information.
     fn is_labelled_function(&self, mut stmt: &Statement<'alloc>) -> bool {
         // Step 1. If stmt is not a LabelledStatement , return false.
+
         while let Statement::LabelledStatement { ref body, .. } = stmt {
             // Step 2. Let item be the LabelledItem of stmt.
             let item: &Statement<'alloc> = body;
@@ -5053,27 +5052,44 @@ impl<'alloc> AstBuilder<'alloc> {
         false
     }
 
-    fn check_labelled_statement(
+    fn mark_labelled_statement(
         &mut self,
         label: &arena::Box<'alloc, Label>,
         body: &Statement<'alloc>,
-    ) -> Result<'alloc, ()> {
+    ) {
         let start_label_offset = label.loc.start;
-        let end_label_offset = label.loc.end;
-        let name = label.value;
-        let is_loop = match body {
+        let kind = match body {
             Statement::ForStatement { .. }
             | Statement::ForOfStatement { .. }
             | Statement::ForInStatement { .. }
             | Statement::WhileStatement { .. }
-            | Statement::DoWhileStatement { .. } => true,
-            _ => false,
+            | Statement::DoWhileStatement { .. } => LabelKind::Loop,
+            Statement::LabelledStatement { .. } => LabelKind::LabelledLabel,
+            Statement::FunctionDeclaration { .. } => LabelKind::Function,
+            _ => LabelKind::Other,
         };
 
-        let context = LabelledStatementEarlyErrorsContext::new(name, is_loop);
+        self.context_metadata
+            .mark_label_kind_at_offset(start_label_offset, kind);
+    }
 
-        let label_index = self.context_metadata.find_first_label(end_label_offset);
-        for info in self.context_metadata.labels_from(label_index) {
+    fn check_labelled_statement(
+        &mut self,
+        label: &arena::Box<'alloc, Label>,
+    ) -> Result<'alloc, ()> {
+        let start_label_offset = label.loc.start;
+        let end_label_offset = label.loc.end;
+        let name = label.value;
+
+        let label = self
+            .context_metadata
+            .find_label_at_offset(start_label_offset)
+            .unwrap();
+
+        let context = LabelledStatementEarlyErrorsContext::new(name, label.kind);
+
+        let next_label_index = self.context_metadata.find_first_label(end_label_offset);
+        for info in self.context_metadata.labels_from(next_label_index) {
             context.check_duplicate_label(info.name)?;
         }
 
