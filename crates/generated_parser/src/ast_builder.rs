@@ -1,8 +1,9 @@
 use crate::context_stack::{
-    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, ControlInfo,
-    LabelIndex, LabelInfo, LabelKind,
+    BindingInfo, BindingKind, BindingsIndex, ContextMetadata, ControlInfo, LabelIndex, LabelInfo,
+    LabelKind,
 };
 use crate::declaration_kind::DeclarationKind;
+use crate::early_error_checker::*;
 use crate::early_errors::*;
 use crate::error::{BoxedParseError, ParseError, Result};
 use crate::Token;
@@ -3125,7 +3126,9 @@ impl<'alloc> AstBuilder<'alloc> {
                 // bindings are not necessary, and are at the end of the bindings stack.
                 // To keep things clean, we will pop the last element (the label we just
                 // added) off the stack.
-                let index = self.context_metadata.find_first_label(label.loc.start);
+                let index = self
+                    .context_metadata
+                    .find_first_label(continue_token.loc.start);
                 self.context_metadata.pop_labels_from(index);
 
                 ControlInfo::new_continue(continue_token.loc.start, Some(label.value))
@@ -3379,7 +3382,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let label_loc = label.loc;
         let body_loc = body.get_loc();
         self.mark_labelled_statement(&label, &body);
-        self.check_labelled_statement(&label)?;
+        self.check_labelled_statement(label.value, label_loc.start, label_loc.end)?;
         Ok(self.alloc_with(|| Statement::LabelledStatement {
             label: label.unbox(),
             body,
@@ -4817,18 +4820,6 @@ impl<'alloc> AstBuilder<'alloc> {
         Ok(())
     }
 
-    fn check_unhandled_continue(
-        &mut self,
-        context: LabelledStatementEarlyErrorsContext,
-        index: BreakOrContinueIndex,
-    ) -> Result<'alloc, ()> {
-        for info in self.context_metadata.breaks_and_continues_from(index) {
-            context.check_labelled_continue_to_non_loop(info)?;
-        }
-
-        Ok(())
-    }
-
     // Declare bindings to script-or-function-like context, where function
     // declarations are body-level.
     fn declare_script_or_function<T>(
@@ -5073,34 +5064,10 @@ impl<'alloc> AstBuilder<'alloc> {
         self.context_metadata
             .mark_label_kind_at_offset(start_label_offset, kind);
     }
+}
 
-    fn check_labelled_statement(
-        &mut self,
-        label: &arena::Box<'alloc, Label>,
-    ) -> Result<'alloc, ()> {
-        let start_label_offset = label.loc.start;
-        let end_label_offset = label.loc.end;
-        let name = label.value;
-
-        let label = self
-            .context_metadata
-            .find_label_at_offset(start_label_offset)
-            .unwrap();
-
-        let context = LabelledStatementEarlyErrorsContext::new(name, label.kind);
-
-        let next_label_index = self.context_metadata.find_first_label(end_label_offset);
-        for info in self.context_metadata.labels_from(next_label_index) {
-            context.check_duplicate_label(info.name)?;
-        }
-
-        let break_or_continue_index = self
-            .context_metadata
-            .find_first_break_or_continue(start_label_offset);
-        self.check_unhandled_continue(context, break_or_continue_index)?;
-
-        self.context_metadata
-            .pop_labelled_breaks_and_continues_from_index(break_or_continue_index, name);
-        Ok(())
+impl<'alloc> EarlyErrorChecker<'alloc> for AstBuilder<'alloc> {
+    fn context_metadata(&mut self) -> &mut ContextMetadata {
+        &mut self.context_metadata
     }
 }
