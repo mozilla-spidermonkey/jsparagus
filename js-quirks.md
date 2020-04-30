@@ -378,6 +378,37 @@ var { if } = obj;       // SyntaxError: `if` is not an Identifier
 ```
 
 
+### Escape sequences in keywords
+
+*(entangled with: conditional keywords, ASI)*
+
+You can use escape sequences to write variable and property names, but
+not keywords (including contextual keywords in contexts where they act
+as keywords).
+
+So `if (foo) {}` and `{ i\f: 0 }` are legal but `i\u0066 (foo)` is not.
+
+And you don't necessarily know if you're lexing a contextual keyword
+until the next token: `({ g\u0065t: 0 })` is legal, but
+`({ g\u0065t x(){} })` is not.
+
+And for `let` it's even worse: `l\u0065t` by itself is a legal way to
+reference a variable named `let`, which means that
+
+```js
+let
+x
+```
+declares a variable named `x`, while, thanks to ASI,
+
+```js
+l\u0065t
+x
+```
+is a reference to a variable named `let` followed by a reference to a
+variable named `x`.
+
+
 ### Early errors (**)
 
 *(entangled with: lazy parsing, conditional keywords, ASI)*
