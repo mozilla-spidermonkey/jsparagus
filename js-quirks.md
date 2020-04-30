@@ -7,7 +7,9 @@ from scratch.
 With apologies to the generous people who work on the standard. Thanks
 for doing that—better you than me.
 
-Thanks to @mathiasbynens for pointing out an additional quirk.
+Thanks to [@bakkot](https://github.com/bakkot) and
+[@mathiasbynens](https://github.com/mathiasbynens) for pointing out
+several additional quirks.
 
 Problems are rated in terms of difficulty, from `(*)` = easy to `(***)`
 = hard. We’ll start with the easiest problems.
