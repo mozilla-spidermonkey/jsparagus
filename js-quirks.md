@@ -699,6 +699,16 @@ The indentation is misleading; actually ASI inserts a semicolon at the
 end of the first line: `return; g();`. (This function always returns
 undefined. The second statement is never reached.)
 
+These restrictions apply even to multiline comments, so the function
+
+```js
+function f(g) {
+  return /*
+    */ g();
+}
+```
+contains two statements, just as the previous example did.
+
 I’m not sure why these rules exist, but it’s probably because (back in
 the Netscape days) users complained about the bizarre behavior of
 automatic semicolon insertion, and so some special do-what-I-mean hacks
