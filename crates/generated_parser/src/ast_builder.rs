@@ -2710,9 +2710,9 @@ impl<'alloc> AstBuilder<'alloc> {
         consequent: arena::Box<'alloc, Statement<'alloc>>,
         alternate: Option<arena::Box<'alloc, Statement<'alloc>>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&consequent)?;
+        self.check_single_statement(consequent.get_loc().start)?;
         if let Some(ref stmt) = alternate {
-            self.check_single_statement(&stmt)?;
+            self.check_single_statement(stmt.get_loc().start)?;
         }
 
         let if_loc = if_token.loc;
@@ -2779,7 +2779,7 @@ impl<'alloc> AstBuilder<'alloc> {
         test: arena::Box<'alloc, Expression<'alloc>>,
         close_token: arena::Box<'alloc, Token>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
 
         self.context_metadata
             .pop_unlabelled_breaks_and_continues_from(do_token.loc.start);
@@ -2797,7 +2797,7 @@ impl<'alloc> AstBuilder<'alloc> {
         test: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
 
         let stmt_loc = stmt.get_loc();
         self.context_metadata
@@ -2819,7 +2819,7 @@ impl<'alloc> AstBuilder<'alloc> {
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.for_statement_common(for_token, init, test, update, stmt)
     }
 
@@ -2832,7 +2832,7 @@ impl<'alloc> AstBuilder<'alloc> {
         update: Option<arena::Box<'alloc, Expression<'alloc>>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.check_lexical_for_bindings(&init.get_loc())?;
         self.for_statement_common(for_token, Some(init), test, update, stmt)
     }
@@ -2909,7 +2909,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.for_in_statement_common(for_token, left, right, stmt)
     }
 
@@ -2921,7 +2921,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
         self.for_in_statement_common(for_token, left, right, stmt)
     }
@@ -2999,7 +2999,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.for_of_statement_common(for_token, left, right, stmt)
     }
 
@@ -3011,7 +3011,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
         self.for_of_statement_common(for_token, left, right, stmt)
     }
@@ -3043,7 +3043,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.for_await_of_statement_common(for_token, left, right, stmt)
     }
 
@@ -3055,7 +3055,7 @@ impl<'alloc> AstBuilder<'alloc> {
         right: arena::Box<'alloc, Expression<'alloc>>,
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
-        self.check_single_statement(&stmt)?;
+        self.check_single_statement(stmt.get_loc().start)?;
         self.check_lexical_for_bindings(&left.get_loc())?;
         self.for_await_of_statement_common(for_token, left, right, stmt)
     }
@@ -4997,53 +4997,6 @@ impl<'alloc> AstBuilder<'alloc> {
         true
     }
 
-    // Static Semantics: Early Errors
-    // https://tc39.es/ecma262/#sec-if-statement-static-semantics-early-errors
-    // https://tc39.es/ecma262/#sec-semantics-static-semantics-early-errors
-    // https://tc39.es/ecma262/#sec-with-statement-static-semantics-early-errors
-    fn check_single_statement(
-        &self,
-        stmt: &arena::Box<'alloc, Statement<'alloc>>,
-    ) -> Result<'alloc, ()> {
-        // * It is a Syntax Error if IsLabelledFunction(Statement) is true.
-        if self.is_labelled_function(stmt) {
-            return Err(ParseError::LabelledFunctionDeclInSingleStatement.into());
-        }
-        Ok(())
-    }
-
-    // https://tc39.es/ecma262/#sec-islabelledfunction
-    // Static Semantics: IsLabelledFunction ( stmt )
-    //
-    // Returns IsLabelledFunction of `stmt`.
-    //
-    // NOTE: For Syntax-only parsing (NYI), the stack value for Statement
-    //       should contain this information.
-    fn is_labelled_function(&self, stmt: &Statement<'alloc>) -> bool {
-        // Step 1. If stmt is not a LabelledStatement , return false.
-        if let Some(index) = self
-            .context_metadata
-            .find_label_index_at_offset(stmt.get_loc().start)
-        {
-            // Step 2. Let item be the LabelledItem of stmt.
-            for label in self.context_metadata.labels_from(index) {
-                match label.kind {
-                    // Step 3. If item is LabelledItem : FunctionDeclaration,
-                    // return true.
-                    LabelKind::Function => {
-                        return true;
-                    }
-                    // Step 4. Let subStmt be the Statement of item.
-                    // Step 5. Return IsLabelledFunction(subStmt).
-                    LabelKind::LabelledLabel => continue,
-                    _ => break,
-                }
-            }
-        }
-
-        false
-    }
-
     fn mark_labelled_statement(
         &mut self,
         label: &arena::Box<'alloc, Label>,
@@ -5069,5 +5022,8 @@ impl<'alloc> AstBuilder<'alloc> {
 impl<'alloc> EarlyErrorChecker<'alloc> for AstBuilder<'alloc> {
     fn context_metadata(&mut self) -> &mut ContextMetadata {
         &mut self.context_metadata
+    }
+    fn context_metadata_immutable(&self) -> &ContextMetadata {
+        &self.context_metadata
     }
 }

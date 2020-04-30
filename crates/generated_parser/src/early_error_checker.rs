@@ -1,10 +1,11 @@
-use crate::context_stack::{BreakOrContinueIndex, ContextMetadata};
+use crate::context_stack::{BreakOrContinueIndex, ContextMetadata, LabelKind};
 use crate::early_errors::*;
-use crate::error::Result;
+use crate::error::{ParseError, Result};
 use ast::source_atom_set::SourceAtomSetIndex;
 
 pub trait EarlyErrorChecker<'alloc> {
     fn context_metadata(&mut self) -> &mut ContextMetadata;
+    fn context_metadata_immutable(&self) -> &ContextMetadata;
     fn check_labelled_statement(
         &mut self,
         name: SourceAtomSetIndex,
@@ -60,5 +61,49 @@ pub trait EarlyErrorChecker<'alloc> {
         }
 
         Ok(())
+    }
+
+    // Static Semantics: Early Errors
+    // https://tc39.es/ecma262/#sec-if-statement-static-semantics-early-errors
+    // https://tc39.es/ecma262/#sec-semantics-static-semantics-early-errors
+    // https://tc39.es/ecma262/#sec-with-statement-static-semantics-early-errors
+    fn check_single_statement(&self, offset: usize) -> Result<'alloc, ()> {
+        // * It is a Syntax Error if IsLabelledFunction(Statement) is true.
+        if self.is_labelled_function(offset) {
+            return Err(ParseError::LabelledFunctionDeclInSingleStatement.into());
+        }
+        Ok(())
+    }
+
+    // https://tc39.es/ecma262/#sec-islabelledfunction
+    // Static Semantics: IsLabelledFunction ( stmt )
+    //
+    // Returns IsLabelledFunction of `stmt`.
+    //
+    // NOTE: For Syntax-only parsing (NYI), the stack value for Statement
+    //       should contain this information.
+    fn is_labelled_function(&self, offset: usize) -> bool {
+        // Step 1. If stmt is not a LabelledStatement , return false.
+        if let Some(index) = self
+            .context_metadata_immutable()
+            .find_label_index_at_offset(offset)
+        {
+            // Step 2. Let item be the LabelledItem of stmt.
+            for label in self.context_metadata_immutable().labels_from(index) {
+                match label.kind {
+                    // Step 3. If item is LabelledItem : FunctionDeclaration,
+                    // return true.
+                    LabelKind::Function => {
+                        return true;
+                    }
+                    // Step 4. Let subStmt be the Statement of item.
+                    // Step 5. Return IsLabelledFunction(subStmt).
+                    LabelKind::LabelledLabel => continue,
+                    _ => break,
+                }
+            }
+        }
+
+        false
     }
 }
