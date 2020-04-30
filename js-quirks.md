@@ -906,6 +906,45 @@ until later. Consider parsing `(a`. This could be the beginning of an
 arrow function, or not; we might not know until after we reach the
 matching `)`, which could be a long way away.
 
+Annex B.3.3 adds extremely complex rules for scoping for function
+declarations which makes this especially difficult. In
+
+```js
+function f() {
+    let x = 1;
+    return function g() {
+        {
+            function x(){}
+        }
+        {
+            let x;
+        }
+        return x;
+    };
+}
+```
+
+the function `g` does not use the initial `let x`, but in
+
+```js
+function f() {
+    let x = 1;
+    return function g() {
+        {
+            {
+                function x(){}
+            }
+            let x;
+        }
+        return x;
+    };
+}
+```
+it does.
+
+[Here](https://dev.to/rkirsling/tales-from-ecma-s-crypt-annex-b-3-3-56go)
+is a good writeup of what's going on in these examples.
+
 
 ### Arrow functions, assignment, destructuring, and cover grammars (\*\*\*)
 
