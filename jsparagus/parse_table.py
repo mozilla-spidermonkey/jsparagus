@@ -1556,13 +1556,20 @@ class ParseTable:
             stack_diff = unwind_term.update_stack_with()
             if not stack_diff.reduce_stack():
                 return False
-            if stack_diff.replay <= 0:
+            if stack_diff.pop + stack_diff.replay <= 0:
                 return False
 
             # Remove replayed terms from the Unwind action.
             replayed = replay_term.replay_steps
-            unshifted = min(stack_diff.replay, len(replayed))
+            unshifted = min(stack_diff.replay + min(s.arguments, stack_diff.pop), len(replayed))
+            if unshifted < len(replayed):
+                # We do not have all replayed terms as arguments, thus do not
+                # consume arguments
+                unshifted = min(stack_diff.replay, len(replayed))
+            if unshifted == 0:
+                return False
             new_unwind_term = unwind_term.unshift_action(unshifted)
+            new_replay = new_unwind_term.update_stack_with().replay
 
             # Replace the replay_term and unwind_term by terms which are
             # avoiding extra replay actions.
@@ -1570,11 +1577,12 @@ class ParseTable:
             if len(replayed) == unshifted:
                 # The Unwind action replay more terms than what we originally
                 # had. The replay term is replaced by an Unwind edge instead.
+                assert s.arguments >= -new_replay
                 self.add_edge(s, new_unwind_term, unwind_dest_idx)
             else:
-                # The Unwind action replay less terms than what we originally
-                # had. The replay terms is shortened and a new state is created
-                # to accomodate the new Unwind action.
+                # The Unwind action replay and pop less terms than what we
+                # originally had. Thus the replay action is shortened and a new
+                # state is created to accomodate the new Unwind action.
                 assert unshifted >= 1
                 new_replay_term = Replay(replayed[:-unshifted])
                 implicit_replay_term = Replay(replayed[-unshifted:])
@@ -1588,6 +1596,7 @@ class ParseTable:
                 # Add new Replay and new Unwind actions.
                 self.add_edge(s, new_replay_term, unwind_state.index)
                 if is_new:
+                    assert unwind_state.arguments >= -new_replay
                     self.add_edge(unwind_state, new_unwind_term, unwind_dest_idx)
                 assert not unwind_state.is_inconsistent()
             assert not s.is_inconsistent()
