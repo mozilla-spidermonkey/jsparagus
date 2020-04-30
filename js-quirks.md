@@ -117,6 +117,20 @@ in this section is easy to deal with, but #4 is special.
 For another ambiguity, see "Slashes" below.
 
 
+### Unicode quirks
+
+JavaScript source is Unicode and usually follows Unicode rules for thing
+like identifiers and whitespace, but it has a few special cases: `$`,
+`_`, `U+200C ZERO WIDTH NON-JOINER`, and `U+200D ZERO WIDTH JOINER` are
+legal in identifiers (the latter two only after the first character), and
+`U+FEFF ZERO WIDTH NO-BREAK SPACE` (also known as the byte-order mark) is
+treated as whitespace.
+
+It also allows any code point, including surrogate halves, even though the
+Unicode standard says that unpaired surrogate halves should be treated as
+encoding errors.
+
+
 ### Legacy octal literals and escape sequences (*)
 
 This is more funny than difficult.
