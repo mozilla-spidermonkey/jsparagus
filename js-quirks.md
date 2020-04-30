@@ -191,6 +191,9 @@ include:
     to strict mode, go back, and reparse the function from the
     beginning.
 
+    Fortunately an Early Error rule prohibits mixing `"use strict"` with
+    more complex parameter lists, like `function foo(x = eval('')) {`.
+
 *   The expression syntax “`delete` *Identifier*” and the abominable
     *WithStatement* are banned in strict mode.
 
@@ -488,6 +491,18 @@ that are covered adequately elsewhere:
         specify a very large refinement grammar when *ObjectLiteral*
         almost covers *ObjectAssignmentPattern*:
         [sorry, too complicated to explain](https://tc39.es/ecma262/#sec-object-initializer-static-semantics-early-errors).
+
+*   Early errors are sometimes used to prevent parsers from needing to
+    backtrack too much.
+
+    *   When parsing `async ( x = await/a/g )`, you don't know until the
+        next token if this is an async arrow or a call to a function named
+        `async`. This means you can't even tokenize properly, because in
+        the former case the thing following `x =` is two divisions and in
+        the latter case it's an *AwaitExpression* of a regular expression.
+        So an Early Error forbids having `await` in parameters at all,
+        allowing parsers to immediately throw an error if they find
+        themselves in this case.
 
 Many strict mode rules are enforced using Early Errors, but others
 affect runtime semantics.
