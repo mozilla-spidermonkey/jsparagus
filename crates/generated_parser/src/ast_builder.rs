@@ -4675,7 +4675,7 @@ impl<'alloc> AstBuilder<'alloc> {
         from: BindingsIndex,
         to: BindingsIndex,
     ) -> Result<'alloc, ()> {
-        for info in self.context_metadata.bindings_from_to(to, from) {
+        for info in self.context_metadata.bindings_from_to(from, to) {
             match info.kind {
                 BindingKind::Let => {
                     context.declare_lex(
