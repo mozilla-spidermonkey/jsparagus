@@ -15,12 +15,12 @@ pub enum NameLocation {
 }
 
 #[derive(Debug)]
-pub struct GlobalEmitterScope {
+struct GlobalEmitterScope {
     cache: HashMap<SourceAtomSetIndex, NameLocation>,
 }
 
 impl GlobalEmitterScope {
-    pub fn new(data: &GlobalScopeData) -> Self {
+    fn new(data: &GlobalScopeData) -> Self {
         let mut cache = HashMap::new();
         for item in data.iter() {
             cache.insert(item.name(), NameLocation::Global(item.kind()));
@@ -85,7 +85,7 @@ impl LexicalEmitterScope {
 }
 
 #[derive(Debug)]
-pub enum EmitterScope {
+enum EmitterScope {
     Global(GlobalEmitterScope),
     Lexical(LexicalEmitterScope),
 }
@@ -129,7 +129,7 @@ impl EmitterScopeStack {
         }
     }
 
-    pub fn innermost(&self) -> &EmitterScope {
+    fn innermost(&self) -> &EmitterScope {
         self.scope_stack
             .last()
             .expect("There should be at least one scope")
@@ -177,7 +177,7 @@ impl EmitterScopeStack {
         emit.leave_global_scope();
     }
 
-    pub fn dead_zone_frame_slot_range(
+    fn dead_zone_frame_slot_range(
         &self,
         emit: &mut InstructionWriter,
         slot_start: FrameSlot,
