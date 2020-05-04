@@ -47,16 +47,15 @@ pub trait EarlyErrorChecker<'alloc> {
     }
 
     fn check_unhandled_break_or_continue<T>(
-        &self,
-        context_metadata: &mut ContextMetadata,
+        &mut self,
         context: T,
         offset: usize,
     ) -> Result<'alloc, ()>
     where
         T: ControlEarlyErrorsContext,
     {
-        let index = context_metadata.find_first_break_or_continue(offset);
-        if let Some(info) = context_metadata.find_break_or_continue_at(index) {
+        let index = self.context_metadata().find_first_break_or_continue(offset);
+        if let Some(info) = self.context_metadata().find_break_or_continue_at(index) {
             context.on_unhandled_break_or_continue(info)?;
         }
 

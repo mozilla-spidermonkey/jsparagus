@@ -4804,22 +4804,6 @@ impl<'alloc> AstBuilder<'alloc> {
         Ok(())
     }
 
-    fn check_unhandled_break_or_continue<T>(
-        &mut self,
-        context: T,
-        offset: usize,
-    ) -> Result<'alloc, ()>
-    where
-        T: ControlEarlyErrorsContext,
-    {
-        let index = self.context_metadata.find_first_break_or_continue(offset);
-        if let Some(info) = self.context_metadata.find_break_or_continue_at(index) {
-            context.on_unhandled_break_or_continue(info)?;
-        }
-
-        Ok(())
-    }
-
     // Declare bindings to script-or-function-like context, where function
     // declarations are body-level.
     fn declare_script_or_function<T>(
