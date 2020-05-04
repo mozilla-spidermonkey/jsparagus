@@ -4751,23 +4751,6 @@ impl<'alloc> AstBuilder<'alloc> {
         Ok(())
     }
 
-    // Declare bindings to the parameter of function or catch.
-    fn declare_param<T>(
-        &self,
-        context: &mut T,
-        from: BindingsIndex,
-        to: BindingsIndex,
-    ) -> Result<'alloc, ()>
-    where
-        T: ParameterEarlyErrorsContext,
-    {
-        for info in self.context_metadata.bindings_from_to(from, to) {
-            context.declare(info.name, info.offset, &self.atoms.borrow())?;
-        }
-
-        Ok(())
-    }
-
     // Check bindings in Catch and Block.
     fn check_catch_bindings(
         &mut self,
@@ -4799,71 +4782,6 @@ impl<'alloc> AstBuilder<'alloc> {
         let mut block_context = CatchBlockEarlyErrorsContext::new(param_context);
         self.declare_block(&mut block_context, body_index)?;
         self.context_metadata.pop_lexical_bindings_from(body_index);
-
-        Ok(())
-    }
-
-    // Check bindings in function with FormalParameters.
-    fn check_function_bindings(
-        &mut self,
-        is_simple: bool,
-        start_of_param_offset: usize,
-        end_of_param_offset: usize,
-    ) -> Result<'alloc, ()> {
-        let mut param_context = if is_simple {
-            FormalParametersEarlyErrorsContext::new_simple()
-        } else {
-            FormalParametersEarlyErrorsContext::new_non_simple()
-        };
-
-        let param_index = self
-            .context_metadata
-            .find_first_binding(start_of_param_offset);
-        let body_index = self
-            .context_metadata
-            .find_first_binding(end_of_param_offset);
-        self.declare_param(&mut param_context, param_index, body_index)?;
-
-        let mut body_context = FunctionBodyEarlyErrorsContext::new(param_context);
-        self.declare_script_or_function(&mut body_context, body_index)?;
-
-        self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
-
-        self.context_metadata.pop_bindings_from(param_index);
-        let label_index = self
-            .context_metadata
-            .find_first_label(start_of_param_offset);
-        self.context_metadata.pop_labels_from(label_index);
-
-        Ok(())
-    }
-
-    // Check bindings in function with UniqueFormalParameters.
-    fn check_unique_function_bindings(
-        &mut self,
-        start_of_param_offset: usize,
-        end_of_param_offset: usize,
-    ) -> Result<'alloc, ()> {
-        let mut param_context = UniqueFormalParametersEarlyErrorsContext::new();
-
-        let param_index = self
-            .context_metadata
-            .find_first_binding(start_of_param_offset);
-        let body_index = self
-            .context_metadata
-            .find_first_binding(end_of_param_offset);
-        self.declare_param(&mut param_context, param_index, body_index)?;
-
-        let mut body_context = UniqueFunctionBodyEarlyErrorsContext::new(param_context);
-        self.declare_script_or_function(&mut body_context, body_index)?;
-        self.context_metadata.pop_bindings_from(param_index);
-
-        let label_index = self
-            .context_metadata
-            .find_first_label(start_of_param_offset);
-        self.context_metadata.pop_labels_from(label_index);
-
-        self.check_unhandled_break_or_continue(body_context, end_of_param_offset)?;
 
         Ok(())
     }
