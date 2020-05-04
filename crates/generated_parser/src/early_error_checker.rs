@@ -380,4 +380,59 @@ pub trait EarlyErrorChecker<'alloc> {
 
         Ok(())
     }
+
+    // Check bindings in CaseBlock of switch-statement.
+    fn check_case_block_binding(&mut self, start_of_block_offset: usize) -> Result<'alloc, ()> {
+        let mut context = CaseBlockEarlyErrorsContext::new();
+
+        let index = self
+            .context_metadata_mut()
+            .find_first_binding(start_of_block_offset);
+        // Check bindings in CaseBlock of switch-statement.
+        self.declare_block(&mut context, index)?;
+        self.context_metadata_mut().pop_lexical_bindings_from(index);
+
+        self.context_metadata_mut()
+            .pop_unlabelled_breaks_from(start_of_block_offset);
+
+        Ok(())
+    }
+
+    // Check bindings in Catch and Block.
+    fn check_catch_bindings(
+        &mut self,
+        is_simple: bool,
+        start_loc: usize,
+        end_loc: usize,
+    ) -> Result<'alloc, ()> {
+        let mut param_context = if is_simple {
+            CatchParameterEarlyErrorsContext::new_with_binding_identifier()
+        } else {
+            CatchParameterEarlyErrorsContext::new_with_binding_pattern()
+        };
+
+        let param_index = self.context_metadata_mut().find_first_binding(start_loc);
+        let body_index = self.context_metadata_mut().find_first_binding(end_loc);
+        self.declare_param(&mut param_context, param_index, body_index)?;
+
+        let mut block_context = CatchBlockEarlyErrorsContext::new(param_context);
+        self.declare_block(&mut block_context, body_index)?;
+        self.context_metadata_mut()
+            .pop_lexical_bindings_from(param_index);
+
+        Ok(())
+    }
+
+    // Check bindings in Catch with no parameter and Block.
+    fn check_catch_no_param_bindings(&mut self, catch_offset: usize) -> Result<'alloc, ()> {
+        let body_index = self.context_metadata_mut().find_first_binding(catch_offset);
+
+        let param_context = CatchParameterEarlyErrorsContext::new_with_binding_identifier();
+        let mut block_context = CatchBlockEarlyErrorsContext::new(param_context);
+        self.declare_block(&mut block_context, body_index)?;
+        self.context_metadata_mut()
+            .pop_lexical_bindings_from(body_index);
+
+        Ok(())
+    }
 }
