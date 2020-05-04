@@ -1,11 +1,17 @@
-use crate::context_stack::{BreakOrContinueIndex, ContextMetadata, LabelKind};
+use crate::context_stack::{
+    BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, LabelIndex, LabelKind,
+};
+use crate::declaration_kind::DeclarationKind;
 use crate::early_errors::*;
 use crate::error::{ParseError, Result};
-use ast::source_atom_set::SourceAtomSetIndex;
+use ast::source_atom_set::{SourceAtomSet, SourceAtomSetIndex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub trait EarlyErrorChecker<'alloc> {
     fn context_metadata(&mut self) -> &mut ContextMetadata;
     fn context_metadata_immutable(&self) -> &ContextMetadata;
+    fn atoms(&self) -> &Rc<RefCell<SourceAtomSet<'alloc>>>;
     fn check_labelled_statement(
         &mut self,
         name: SourceAtomSetIndex,
@@ -104,5 +110,96 @@ pub trait EarlyErrorChecker<'alloc> {
         }
 
         false
+    }
+
+    // Check bindings in Script.
+    fn check_script_bindings(&mut self) -> Result<'alloc, ()> {
+        let mut context = ScriptEarlyErrorsContext::new();
+        let index = BindingsIndex { index: 0 };
+        self.declare_script_or_function(&mut context, index)?;
+        self.context_metadata().pop_bindings_from(index);
+
+        let label_index = LabelIndex { index: 0 };
+        self.context_metadata().pop_labels_from(label_index);
+
+        self.check_unhandled_break_or_continue(context, 0)?;
+
+        Ok(())
+    }
+
+    // Check bindings in Module.
+    fn check_module_bindings(&mut self) -> Result<'alloc, ()> {
+        let mut context = ModuleEarlyErrorsContext::new();
+        let index = BindingsIndex { index: 0 };
+        self.declare_script_or_function(&mut context, index)?;
+        self.context_metadata().pop_bindings_from(index);
+
+        let label_index = LabelIndex { index: 0 };
+        self.context_metadata().pop_labels_from(label_index);
+
+        self.check_unhandled_break_or_continue(context, 0)?;
+
+        Ok(())
+    }
+
+    // Declare bindings to script-or-function-like context, where function
+    // declarations are body-level.
+    fn declare_script_or_function<T>(
+        &mut self,
+        context: &mut T,
+        index: BindingsIndex,
+    ) -> Result<'alloc, ()>
+    where
+        T: LexicalEarlyErrorsContext + VarEarlyErrorsContext,
+    {
+        for info in self.context_metadata_immutable().bindings_from(index) {
+            match info.kind {
+                BindingKind::Var => {
+                    context.declare_var(
+                        info.name,
+                        DeclarationKind::Var,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Function | BindingKind::AsyncOrGenerator => {
+                    context.declare_var(
+                        info.name,
+                        DeclarationKind::BodyLevelFunction,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Let => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Let,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Const => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Const,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Class => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Class,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                _ => {
+                    panic!("Unexpected binding found {:?}", info);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
