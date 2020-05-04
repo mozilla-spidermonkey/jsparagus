@@ -2,6 +2,7 @@
 
 use crate::numeric_value::{parse_float, parse_int, NumericLiteralBase};
 use crate::parser::Parser;
+use ast::arena;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
 use ast::source_slice_list::SourceSliceList;
 use ast::SourceLocation;
@@ -91,16 +92,20 @@ impl<'alloc> Lexer<'alloc> {
         chars.next()
     }
 
-    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token> {
+    #[inline]
+    pub fn next<'parser>(
+        &mut self,
+        parser: &Parser<'parser>,
+    ) -> Result<'alloc, arena::Box<'alloc, Token>> {
         let result = self.advance_impl(parser)?;
         let is_on_new_line = self.is_on_new_line;
         self.is_on_new_line = false;
-        Ok(Token {
+        Ok(arena::alloc_with(self.allocator, || Token {
             terminal_id: result.terminal_id,
             loc: result.loc,
             is_on_new_line,
             value: result.value,
-        })
+        }))
     }
 
     fn unexpected_err(&mut self) -> ParseError<'alloc> {
