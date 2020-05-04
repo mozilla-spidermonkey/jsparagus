@@ -1,9 +1,12 @@
 use crate::context_stack::{
-    BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, LabelIndex, LabelKind,
+    BindingInfo, BindingKind, BindingsIndex, BreakOrContinueIndex, ContextMetadata, LabelIndex,
+    LabelInfo, LabelKind,
 };
 use crate::declaration_kind::DeclarationKind;
 use crate::early_errors::*;
 use crate::error::{ParseError, Result};
+use crate::Token;
+use ast::arena;
 use ast::source_atom_set::{SourceAtomSet, SourceAtomSetIndex};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -12,6 +15,59 @@ pub trait EarlyErrorChecker<'alloc> {
     fn context_metadata_mut(&mut self) -> &mut ContextMetadata;
     fn context_metadata(&self) -> &ContextMetadata;
     fn atoms(&self) -> &Rc<RefCell<SourceAtomSet<'alloc>>>;
+
+    // Check Early Error for BindingIdentifier and note binding info to the
+    // stack.
+    fn on_binding_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+        let context = IdentifierEarlyErrorsContext::new();
+        context.check_binding_identifier(token, &self.atoms().borrow())?;
+
+        let name = token.value.as_atom();
+        let offset = token.loc.start;
+
+        if let Some(info) = self.context_metadata_mut().last_binding() {
+            debug_assert!(info.offset < offset);
+        }
+
+        self.context_metadata_mut().push_binding(BindingInfo {
+            name,
+            offset,
+            kind: BindingKind::Unknown,
+        });
+
+        Ok(())
+    }
+
+    // Check Early Error for IdentifierReference.
+    fn on_identifier_reference(&self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+        let context = IdentifierEarlyErrorsContext::new();
+        context.check_identifier_reference(token, &self.atoms().borrow())
+    }
+
+    // Check Early Error for LabelIdentifier and note binding info to the
+    // stack
+    fn on_label_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+        let context = IdentifierEarlyErrorsContext::new();
+
+        let name = token.value.as_atom();
+        let offset = token.loc.start;
+
+        if let Some(info) = self.context_metadata_mut().last_binding() {
+            debug_assert!(info.offset < offset);
+        }
+
+        // If the label is attached to a continue or break statement, its label info
+        // is popped from the stack. See `continue_statement` and `break_statement` for more
+        // information.
+        self.context_metadata_mut().push_label(LabelInfo {
+            name,
+            offset,
+            kind: LabelKind::Other,
+        });
+
+        context.check_label_identifier(token, &self.atoms().borrow())
+    }
+
     fn check_labelled_statement(
         &mut self,
         name: SourceAtomSetIndex,

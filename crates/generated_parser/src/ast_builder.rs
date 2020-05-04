@@ -1,8 +1,5 @@
-use crate::context_stack::{
-    BindingInfo, BindingKind, ContextMetadata, ControlInfo, LabelInfo, LabelKind,
-};
+use crate::context_stack::{BindingKind, ContextMetadata, ControlInfo, LabelKind};
 use crate::early_error_checker::*;
-use crate::early_errors::*;
 use crate::error::{BoxedParseError, ParseError, Result};
 use crate::Token;
 use ast::{
@@ -4533,58 +4530,6 @@ impl<'alloc> AstBuilder<'alloc> {
         _exported_name: arena::Box<'alloc, Token>,
     ) -> Result<'alloc, arena::Box<'alloc, Void>> {
         Err(ParseError::NotImplemented("export").into())
-    }
-
-    // Check Early Error for BindingIdentifier and note binding info to the
-    // stack.
-    fn on_binding_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
-        let context = IdentifierEarlyErrorsContext::new();
-        context.check_binding_identifier(token, &self.atoms.borrow())?;
-
-        let name = token.value.as_atom();
-        let offset = token.loc.start;
-
-        if let Some(info) = self.context_metadata.last_binding() {
-            debug_assert!(info.offset < offset);
-        }
-
-        self.context_metadata.push_binding(BindingInfo {
-            name,
-            offset,
-            kind: BindingKind::Unknown,
-        });
-
-        Ok(())
-    }
-
-    // Check Early Error for IdentifierReference.
-    fn on_identifier_reference(&self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
-        let context = IdentifierEarlyErrorsContext::new();
-        context.check_identifier_reference(token, &self.atoms.borrow())
-    }
-
-    // Check Early Error for LabelIdentifier and note binding info to the
-    // stack
-    fn on_label_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
-        let context = IdentifierEarlyErrorsContext::new();
-
-        let name = token.value.as_atom();
-        let offset = token.loc.start;
-
-        if let Some(info) = self.context_metadata.last_binding() {
-            debug_assert!(info.offset < offset);
-        }
-
-        // If the label is attached to a continue or break statement, its label info
-        // is popped from the stack. See `continue_statement` and `break_statement` for more
-        // information.
-        self.context_metadata.push_label(LabelInfo {
-            name,
-            offset,
-            kind: LabelKind::Other,
-        });
-
-        context.check_label_identifier(token, &self.atoms.borrow())
     }
 
     // Returns IsSimpleParameterList of `params`.
