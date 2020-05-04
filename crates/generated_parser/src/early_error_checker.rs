@@ -303,4 +303,81 @@ pub trait EarlyErrorChecker<'alloc> {
 
         Ok(())
     }
+
+    // Declare bindings to Block-like context, where function declarations
+    // are lexical.
+    fn declare_block<T>(&self, context: &mut T, index: BindingsIndex) -> Result<'alloc, ()>
+    where
+        T: LexicalEarlyErrorsContext + VarEarlyErrorsContext,
+    {
+        for info in self.context_metadata().bindings_from(index) {
+            match info.kind {
+                BindingKind::Var => {
+                    context.declare_var(
+                        info.name,
+                        DeclarationKind::Var,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Function => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::LexicalFunction,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::AsyncOrGenerator => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::LexicalAsyncOrGenerator,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Let => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Let,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Const => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Const,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Class => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Class,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                _ => {
+                    panic!("Unexpected binding found {:?}", info);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // Check bindings in Block.
+    fn check_block_bindings(&mut self, start_of_block_offset: usize) -> Result<'alloc, ()> {
+        let mut context = BlockEarlyErrorsContext::new();
+        let index = self
+            .context_metadata_mut()
+            .find_first_binding(start_of_block_offset);
+        self.declare_block(&mut context, index)?;
+        self.context_metadata_mut().pop_lexical_bindings_from(index);
+
+        Ok(())
+    }
 }
