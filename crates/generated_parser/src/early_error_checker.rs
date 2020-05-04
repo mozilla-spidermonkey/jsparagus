@@ -435,4 +435,83 @@ pub trait EarlyErrorChecker<'alloc> {
 
         Ok(())
     }
+
+    // Declare bindings to the head of lexical for-statement.
+    fn declare_lexical_for_head(
+        &self,
+        context: &mut LexicalForHeadEarlyErrorsContext,
+        from: BindingsIndex,
+        to: BindingsIndex,
+    ) -> Result<'alloc, ()> {
+        for info in self.context_metadata().bindings_from_to(from, to) {
+            match info.kind {
+                BindingKind::Let => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Let,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                BindingKind::Const => {
+                    context.declare_lex(
+                        info.name,
+                        DeclarationKind::Const,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                _ => {
+                    panic!("Unexpected binding found {:?}", info);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // Declare bindings to the body of lexical for-statement.
+    fn declare_lexical_for_body(
+        &self,
+        context: &mut LexicalForBodyEarlyErrorsContext,
+        index: BindingsIndex,
+    ) -> Result<'alloc, ()> {
+        for info in self.context_metadata().bindings_from(index) {
+            match info.kind {
+                BindingKind::Var => {
+                    context.declare_var(
+                        info.name,
+                        DeclarationKind::Var,
+                        info.offset,
+                        &self.atoms().borrow(),
+                    )?;
+                }
+                _ => {
+                    panic!("Unexpected binding found {:?}", info);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // Check bindings in lexical for-statement.
+    fn check_lexical_for_bindings(
+        &mut self,
+        start_loc: usize,
+        end_loc: usize,
+    ) -> Result<'alloc, ()> {
+        let mut head_context = LexicalForHeadEarlyErrorsContext::new();
+
+        let head_index = self.context_metadata_mut().find_first_binding(start_loc);
+        let body_index = self.context_metadata_mut().find_first_binding(end_loc);
+        self.declare_lexical_for_head(&mut head_context, head_index, body_index)?;
+
+        let mut body_context = LexicalForBodyEarlyErrorsContext::new(head_context);
+        self.declare_lexical_for_body(&mut body_context, body_index)?;
+        self.context_metadata_mut()
+            .pop_lexical_bindings_from(head_index);
+
+        Ok(())
+    }
 }

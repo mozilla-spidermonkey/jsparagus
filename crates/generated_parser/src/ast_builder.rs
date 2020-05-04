@@ -1,7 +1,6 @@
 use crate::context_stack::{
-    BindingInfo, BindingKind, BindingsIndex, ContextMetadata, ControlInfo, LabelInfo, LabelKind,
+    BindingInfo, BindingKind, ContextMetadata, ControlInfo, LabelInfo, LabelKind,
 };
-use crate::declaration_kind::DeclarationKind;
 use crate::early_error_checker::*;
 use crate::early_errors::*;
 use crate::error::{BoxedParseError, ParseError, Result};
@@ -2832,7 +2831,8 @@ impl<'alloc> AstBuilder<'alloc> {
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         self.check_single_statement(stmt.get_loc().start)?;
-        self.check_lexical_for_bindings(&init.get_loc())?;
+        let init_loc = &init.get_loc();
+        self.check_lexical_for_bindings(init_loc.start, init_loc.end)?;
         self.for_statement_common(for_token, Some(init), test, update, stmt)
     }
 
@@ -2921,7 +2921,8 @@ impl<'alloc> AstBuilder<'alloc> {
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         self.check_single_statement(stmt.get_loc().start)?;
-        self.check_lexical_for_bindings(&left.get_loc())?;
+        let left_loc = &left.get_loc();
+        self.check_lexical_for_bindings(left_loc.start, left_loc.end)?;
         self.for_in_statement_common(for_token, left, right, stmt)
     }
 
@@ -3011,7 +3012,8 @@ impl<'alloc> AstBuilder<'alloc> {
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         self.check_single_statement(stmt.get_loc().start)?;
-        self.check_lexical_for_bindings(&left.get_loc())?;
+        let left_loc = &left.get_loc();
+        self.check_lexical_for_bindings(left_loc.start, left_loc.end)?;
         self.for_of_statement_common(for_token, left, right, stmt)
     }
 
@@ -3055,7 +3057,8 @@ impl<'alloc> AstBuilder<'alloc> {
         stmt: arena::Box<'alloc, Statement<'alloc>>,
     ) -> Result<'alloc, arena::Box<'alloc, Statement<'alloc>>> {
         self.check_single_statement(stmt.get_loc().start)?;
-        self.check_lexical_for_bindings(&left.get_loc())?;
+        let left_loc = &left.get_loc();
+        self.check_lexical_for_bindings(left_loc.start, left_loc.end)?;
         self.for_await_of_statement_common(for_token, left, right, stmt)
     }
 
@@ -4582,80 +4585,6 @@ impl<'alloc> AstBuilder<'alloc> {
         });
 
         context.check_label_identifier(token, &self.atoms.borrow())
-    }
-
-    // Declare bindings to the head of lexical for-statement.
-    fn declare_lexical_for_head(
-        &self,
-        context: &mut LexicalForHeadEarlyErrorsContext,
-        from: BindingsIndex,
-        to: BindingsIndex,
-    ) -> Result<'alloc, ()> {
-        for info in self.context_metadata.bindings_from_to(from, to) {
-            match info.kind {
-                BindingKind::Let => {
-                    context.declare_lex(
-                        info.name,
-                        DeclarationKind::Let,
-                        info.offset,
-                        &self.atoms.borrow(),
-                    )?;
-                }
-                BindingKind::Const => {
-                    context.declare_lex(
-                        info.name,
-                        DeclarationKind::Const,
-                        info.offset,
-                        &self.atoms.borrow(),
-                    )?;
-                }
-                _ => {
-                    panic!("Unexpected binding found {:?}", info);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    // Declare bindings to the body of lexical for-statement.
-    fn declare_lexical_for_body(
-        &self,
-        context: &mut LexicalForBodyEarlyErrorsContext,
-        index: BindingsIndex,
-    ) -> Result<'alloc, ()> {
-        for info in self.context_metadata.bindings_from(index) {
-            match info.kind {
-                BindingKind::Var => {
-                    context.declare_var(
-                        info.name,
-                        DeclarationKind::Var,
-                        info.offset,
-                        &self.atoms.borrow(),
-                    )?;
-                }
-                _ => {
-                    panic!("Unexpected binding found {:?}", info);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    // Check bindings in lexical for-statement.
-    fn check_lexical_for_bindings(&mut self, bindings_loc: &SourceLocation) -> Result<'alloc, ()> {
-        let mut head_context = LexicalForHeadEarlyErrorsContext::new();
-
-        let head_index = self.context_metadata.find_first_binding(bindings_loc.start);
-        let body_index = self.context_metadata.find_first_binding(bindings_loc.end);
-        self.declare_lexical_for_head(&mut head_context, head_index, body_index)?;
-
-        let mut body_context = LexicalForBodyEarlyErrorsContext::new(head_context);
-        self.declare_lexical_for_body(&mut body_context, body_index)?;
-        self.context_metadata.pop_lexical_bindings_from(head_index);
-
-        Ok(())
     }
 
     // Returns IsSimpleParameterList of `params`.
