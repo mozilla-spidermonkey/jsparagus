@@ -1,6 +1,7 @@
 use crate::stack_value_generated::AstError;
 use crate::DeclarationKind;
 use crate::Token;
+use static_assertions::assert_eq_size;
 use std::{convert::Infallible, error::Error, fmt};
 
 #[derive(Debug)]
@@ -171,3 +172,6 @@ impl<'a, 'alloc: 'a> Error for &'a ParseError<'alloc> {}
 // implementation possible.
 pub type BoxedParseError<'alloc> = std::boxed::Box<ParseError<'alloc>>;
 pub type Result<'alloc, T> = std::result::Result<T, BoxedParseError<'alloc>>;
+
+assert_eq_size!(BoxedParseError<'static>, usize);
+assert_eq_size!(Result<'static, ()>, usize);
