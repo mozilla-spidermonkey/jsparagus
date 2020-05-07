@@ -4912,10 +4912,10 @@ impl<'alloc> AstBuilder<'alloc> {
 }
 
 impl<'alloc> EarlyErrorChecker<'alloc> for AstBuilder<'alloc> {
-    fn context_metadata(&mut self) -> &mut ContextMetadata {
+    fn context_metadata_mut(&mut self) -> &mut ContextMetadata {
         &mut self.context_metadata
     }
-    fn context_metadata_immutable(&self) -> &ContextMetadata {
+    fn context_metadata(&self) -> &ContextMetadata {
         &self.context_metadata
     }
     fn atoms(&self) -> &Rc<RefCell<SourceAtomSet<'alloc>>> {
