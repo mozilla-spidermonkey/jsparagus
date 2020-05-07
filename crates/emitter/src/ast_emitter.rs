@@ -8,6 +8,7 @@ use crate::compilation_info::CompilationInfo;
 use crate::emitter::{EmitError, EmitOptions, InstructionWriter};
 use crate::emitter_scope::{EmitterScopeStack, NameLocation};
 use crate::expression_emitter::*;
+use crate::function_declaration_emitter::{DummyFunctionScriptEmitter, FunctionDeclarationEmitter};
 use crate::object_emitter::*;
 use crate::opcode::Opcode;
 use crate::reference_op_emitter::{
@@ -78,6 +79,29 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         }
     }
 
+    pub fn with_inner<ScriptFn>(
+        &mut self,
+        callback: ScriptFn,
+    ) -> Result<ScriptStencilIndex, EmitError>
+    where
+        ScriptFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+    {
+        let script_index = self.scripts.allocate();
+
+        let inner_script = {
+            let mut inner_emitter =
+                AstEmitter::new(self.options, self.compilation_info, self.scripts);
+
+            callback(&mut inner_emitter)?;
+
+            inner_emitter.emit.into()
+        };
+
+        self.scripts.populate(script_index, inner_script);
+
+        Ok(script_index)
+    }
+
     pub fn lookup_name(&mut self, name: SourceAtomSetIndex) -> NameLocation {
         self.scope_stack.lookup_name(name)
     }
@@ -115,16 +139,18 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_top_level_function_declaration(&mut self, fun: &Function) -> Result<(), EmitError> {
-        let _name = fun
+        let name = fun
             .name
             .as_ref()
             .expect("function declaration should have name")
             .name
             .value;
 
-        Err(EmitError::NotImplemented(
-            "TODO: top level FunctionDeclaration",
-        ))
+        let fun_index = DummyFunctionScriptEmitter { name }.emit(self)?;
+
+        FunctionDeclarationEmitter { fun: fun_index }.emit(self);
+
+        Ok(())
     }
 
     fn emit_statement(&mut self, ast: &Statement) -> Result<(), EmitError> {
