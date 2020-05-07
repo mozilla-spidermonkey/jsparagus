@@ -151,13 +151,14 @@ fn handle_script<'alloc>(
             eprintln!("error: {}", err);
         }
         Ok(result) => {
-            let script = &result.scripts[0];
+            for (i, script) in result.scripts.iter().enumerate() {
+                if verbosity.emit_result {
+                    println!("\n# EmitResult [{}]\n{:#?}", i, script);
+                }
 
-            if verbosity.emit_result {
-                println!("\n{:#?}", script);
-            }
-            if verbosity.bytecode {
-                println!("\n{}", emitter::dis(&script.bytecode));
+                if verbosity.bytecode {
+                    println!("\n# bytecode [{}]\n{}", i, emitter::dis(&script.bytecode));
+                }
             }
 
             match evaluate(&result, global) {
