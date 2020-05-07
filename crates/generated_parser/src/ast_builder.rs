@@ -3381,7 +3381,7 @@ impl<'alloc> AstBuilder<'alloc> {
         let label_loc = label.loc;
         let body_loc = body.get_loc();
         self.mark_labelled_statement(&label, &body);
-        self.check_labelled_statement(label.value, label_loc.start, label_loc.end)?;
+        self.check_labelled_statement(label.value, label_loc.start, body_loc.start)?;
         Ok(self.alloc_with(|| Statement::LabelledStatement {
             label: label.unbox(),
             body,
