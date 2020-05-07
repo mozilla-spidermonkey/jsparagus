@@ -1,5 +1,5 @@
 use crate::context_stack::{BindingKind, ContextMetadata, ControlInfo, LabelKind};
-use crate::early_error_checker::*;
+use crate::early_error_checker::EarlyErrorChecker;
 use crate::error::{BoxedParseError, ParseError, Result};
 use crate::Token;
 use ast::{
