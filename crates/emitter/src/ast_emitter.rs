@@ -20,6 +20,7 @@ use crate::script_emitter::ScriptEmitter;
 use crate::stencil::{EmitResult, ScriptStencilIndex, ScriptStencilList};
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSetIndex};
 use ast::types::*;
+use std::collections::HashSet;
 
 use crate::control_structures::{
     BreakEmitter, CForEmitter, ContinueEmitter, ControlStructureStack, DoWhileEmitter,
@@ -54,6 +55,10 @@ pub struct AstEmitter<'alloc, 'opt> {
     pub compilation_info: &'opt mut CompilationInfo<'alloc>,
     pub scripts: &'opt mut ScriptStencilList,
     pub control_stack: ControlStructureStack,
+
+    /// Holds the offset of top-level function declarations, to check if the
+    /// given function function declaration is top-level.
+    top_level_function_offsets: HashSet<usize>,
 }
 
 impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
@@ -69,6 +74,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             compilation_info,
             scripts,
             control_stack: ControlStructureStack::new(),
+            top_level_function_offsets: HashSet::new(),
         }
     }
 
@@ -90,6 +96,10 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             .iter()
             .map(|key| *function_map.get(key).expect("function should exist"))
             .collect();
+
+        for fun in &top_level_functions {
+            self.note_top_level_function(fun);
+        }
 
         ScriptEmitter {
             top_level_functions: top_level_functions.iter(),
@@ -244,12 +254,24 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             Statement::WithStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: WithStatement"));
             }
-            Statement::FunctionDeclaration(_) => {
-                return Err(EmitError::NotImplemented("TODO: FunctionDeclaration"));
+            Statement::FunctionDeclaration(fun) => {
+                if !self.is_top_level_function(fun) {
+                    return Err(EmitError::NotImplemented(
+                        "TODO: non-top-level FunctionDeclaration",
+                    ));
+                }
             }
         };
 
         Ok(())
+    }
+
+    fn note_top_level_function(&mut self, fun: &Function) {
+        self.top_level_function_offsets.insert(fun.loc.start);
+    }
+
+    fn is_top_level_function(&self, fun: &Function) -> bool {
+        self.top_level_function_offsets.contains(&fun.loc.start)
     }
 
     fn emit_variable_declaration_statement(
