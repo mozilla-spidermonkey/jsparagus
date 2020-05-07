@@ -87,7 +87,9 @@ impl From<ScriptStencilIndex> for usize {
 /// List of stencil scripts.
 #[derive(Debug)]
 pub struct ScriptStencilList {
-    scripts: Vec<ScriptStencil>,
+    /// Uses Option to allow `allocate()` and `populate()` to be called
+    /// separately.
+    scripts: Vec<Option<ScriptStencil>>,
 }
 
 impl ScriptStencilList {
@@ -99,13 +101,26 @@ impl ScriptStencilList {
 
     pub fn push(&mut self, script: ScriptStencil) -> ScriptStencilIndex {
         let index = self.scripts.len();
-        self.scripts.push(script);
+        self.scripts.push(Some(script));
         ScriptStencilIndex::new(index)
+    }
+
+    pub fn allocate(&mut self) -> ScriptStencilIndex {
+        let index = self.scripts.len();
+        self.scripts.push(None);
+        ScriptStencilIndex::new(index)
+    }
+
+    pub fn populate(&mut self, index: ScriptStencilIndex, script: ScriptStencil) {
+        self.scripts[usize::from(index)].replace(script);
     }
 }
 
 impl From<ScriptStencilList> for Vec<ScriptStencil> {
     fn from(list: ScriptStencilList) -> Vec<ScriptStencil> {
         list.scripts
+            .into_iter()
+            .map(|g| g.expect("Should be populated"))
+            .collect()
     }
 }
