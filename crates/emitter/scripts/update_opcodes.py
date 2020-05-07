@@ -349,10 +349,10 @@ def extract_function_types(paths):
     types = {}
 
     extract_enum(types, paths, 'FunctionKind', filename='FunctionFlags.h')
-    extract_enum(types, paths, 'GeneratorKind',
-                 filename='GeneratorAndAsyncKind.h')
-    extract_enum(types, paths, 'FunctionAsyncKind',
-                 filename='GeneratorAndAsyncKind.h')
+    #extract_enum(types, paths, 'GeneratorKind',
+    #             filename='GeneratorAndAsyncKind.h')
+    #extract_enum(types, paths, 'FunctionAsyncKind',
+    #             filename='GeneratorAndAsyncKind.h')
 
     return types
 
