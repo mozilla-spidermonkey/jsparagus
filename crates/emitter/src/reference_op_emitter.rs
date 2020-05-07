@@ -10,7 +10,8 @@ use scope::frame_slot::FrameSlot;
 enum AssignmentReferenceKind {
     GlobalVar(ScriptAtomSetIndex),
     GlobalLexical(ScriptAtomSetIndex),
-    FrameSlot(FrameSlot),
+    FrameSlotLexical(FrameSlot),
+    FrameSlotNonLexical(FrameSlot),
     Dynamic(ScriptAtomSetIndex),
     #[allow(dead_code)]
     Prop(ScriptAtomSetIndex),
@@ -34,7 +35,8 @@ impl AssignmentReference {
         match self.kind {
             AssignmentReferenceKind::GlobalVar(_) => 1,
             AssignmentReferenceKind::GlobalLexical(_) => 1,
-            AssignmentReferenceKind::FrameSlot(_) => 0,
+            AssignmentReferenceKind::FrameSlotLexical(_) => 0,
+            AssignmentReferenceKind::FrameSlotNonLexical(_) => 0,
             AssignmentReferenceKind::Dynamic(_) => 1,
             AssignmentReferenceKind::Prop(_) => 1,
             AssignmentReferenceKind::Elem => 2,
@@ -66,6 +68,32 @@ impl DeclarationReference {
 enum CallKind {
     Normal,
     // FIXME: Support eval, Function#call, Function#apply etc.
+}
+
+#[derive(Debug, PartialEq)]
+enum ValueIsOnStack { No, Yes }
+
+fn check_temporary_dead_zone(emitter: &mut AstEmitter, slot: FrameSlot,
+                             is_on_stack: ValueIsOnStack) {
+    // FIXME: Use cache to avoid emitting check_lexical twice or more.
+    // FIXME: Support aliased lexical.
+
+    //                  [stack] VAL?
+
+    if is_on_stack == ValueIsOnStack::No {
+        emitter.emit.get_local(slot.into());
+        //              [stack] VAL
+    }
+
+    emitter.emit.check_lexical(slot.into());
+    //                  [stack] VAL
+
+    if is_on_stack == ValueIsOnStack::No {
+        emitter.emit.pop();
+        //              [stack]
+    }
+
+    //                  [stack] VAL?
 }
 
 // See *ReferenceEmitter.
@@ -101,9 +129,14 @@ impl GetNameEmitter {
                 emitter.emit.get_name(name_index);
                 //      [stack] VAL
             }
-            NameLocation::FrameSlot(slot, _kind) => {
+            NameLocation::FrameSlot(slot, kind) => {
                 emitter.emit.get_local(slot.into());
                 //      [stack] VAL
+
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    check_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    //  [stack] VAL
+                }
             }
         }
     }
@@ -273,9 +306,14 @@ impl NameReferenceEmitter {
                 emitter.emit.g_implicit_this(name_index);
                 //      [stack] CALLEE THIS
             }
-            NameLocation::FrameSlot(slot, _kind) => {
+            NameLocation::FrameSlot(slot, kind) => {
                 emitter.emit.get_local(slot.into());
                 //      [stack] CALLEE
+
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    check_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    //  [stack] CALLEE
+                }
 
                 emitter.emit.undefined();
                 //      [stack] CALLEE THIS
@@ -310,8 +348,12 @@ impl NameReferenceEmitter {
 
                 AssignmentReference::new(AssignmentReferenceKind::Dynamic(name_index))
             }
-            NameLocation::FrameSlot(slot, _kind) => {
-                AssignmentReference::new(AssignmentReferenceKind::FrameSlot(slot))
+            NameLocation::FrameSlot(slot, kind) => {
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    AssignmentReference::new(AssignmentReferenceKind::FrameSlotLexical(slot))
+                } else {
+                    AssignmentReference::new(AssignmentReferenceKind::FrameSlotNonLexical(slot))
+                }
             }
         }
     }
@@ -585,7 +627,16 @@ where
                 emitter.emit.set_name(name_index);
                 //      [stack] VAL
             }
-            AssignmentReferenceKind::FrameSlot(slot) => {
+            AssignmentReferenceKind::FrameSlotLexical(slot) => {
+                //      [stack] VAL
+
+                check_temporary_dead_zone(emitter, slot, ValueIsOnStack::No);
+                //      [stack] VAL
+
+                emitter.emit.set_local(slot.into());
+                //      [stack] VAL
+            }
+            AssignmentReferenceKind::FrameSlotNonLexical(slot) => {
                 //      [stack] VAL
 
                 emitter.emit.set_local(slot.into());
