@@ -77,6 +77,8 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_script(mut self, ast: &Script) -> Result<ScriptStencilIndex, EmitError> {
+        let script_index = self.scripts.allocate();
+
         let scope_data_map = &self.compilation_info.scope_data_map;
         let function_map = &self.compilation_info.function_map;
 
@@ -97,7 +99,9 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         }
         .emit(&mut self)?;
 
-        Ok(self.scripts.push(self.emit.into()))
+        self.scripts.populate(script_index, self.emit.into());
+
+        Ok(script_index)
     }
 
     fn emit_top_level_function_declaration(&mut self, fun: &Function) -> Result<(), EmitError> {
