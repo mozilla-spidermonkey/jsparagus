@@ -2,6 +2,7 @@ use crate::ast_emitter::AstEmitter;
 use crate::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
 use crate::emitter::EmitError;
 use crate::emitter::InstructionWriter;
+use crate::scope_notes::ScopeNoteIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
 
 // Control structures
@@ -122,7 +123,9 @@ pub trait Continuable {
     fn emit_continue_target_and_patch(&mut self, emit: &mut InstructionWriter);
 }
 
+#[derive(Debug, PartialEq)]
 pub struct LoopControl {
+    scope_note_index: ScopeNoteIndex,
     breaks: Vec<BytecodeOffset>,
     continues: Vec<BytecodeOffset>,
     head: BytecodeOffset,
@@ -153,9 +156,10 @@ impl Continuable for LoopControl {
 }
 
 impl LoopControl {
-    pub fn new(emit: &mut InstructionWriter, depth: u8) -> Self {
+    pub fn new(emit: &mut InstructionWriter, depth: u8, scope_note_index: ScopeNoteIndex) -> Self {
         let offset = LoopControl::open_loop(emit, depth);
         Self {
+            scope_note_index,
             breaks: Vec::new(),
             continues: Vec::new(),
             head: offset,
@@ -184,8 +188,9 @@ impl LoopControl {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LabelControl {
+    scope_note_index: ScopeNoteIndex,
     name: SourceAtomSetIndex,
     breaks: Vec<BytecodeOffset>,
     head: BytecodeOffset,
@@ -206,9 +211,14 @@ impl Breakable for LabelControl {
 }
 
 impl LabelControl {
-    pub fn new(name: SourceAtomSetIndex, emit: &mut InstructionWriter) -> Self {
+    pub fn new(
+        name: SourceAtomSetIndex,
+        emit: &mut InstructionWriter,
+        scope_note_index: ScopeNoteIndex,
+    ) -> Self {
         let offset = emit.bytecode_offset();
         Self {
+            scope_note_index,
             name,
             head: offset,
             breaks: Vec::new(),
@@ -216,9 +226,19 @@ impl LabelControl {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Control {
     Loop(LoopControl),
     Label(LabelControl),
+}
+
+impl Control {
+    fn scope_note_index(&self) -> ScopeNoteIndex {
+        match self {
+            Control::Loop(control) => control.scope_note_index,
+            Control::Label(control) => control.scope_note_index,
+        }
+    }
 }
 
 // Compared to C++ impl, this uses explicit stack struct,
@@ -235,21 +255,27 @@ impl ControlStructureStack {
         }
     }
 
-    pub fn open_loop(&mut self, emit: &mut InstructionWriter) {
+    pub fn open_loop(&mut self, emit: &mut InstructionWriter, scope_note_index: ScopeNoteIndex) {
         let depth = (self.control_stack.len() + 1) as u8;
 
-        let new_loop = Control::Loop(LoopControl::new(emit, depth));
+        let new_loop = Control::Loop(LoopControl::new(emit, depth, scope_note_index));
 
         self.control_stack.push(new_loop);
     }
 
-    pub fn open_label(&mut self, name: SourceAtomSetIndex, emit: &mut InstructionWriter) {
-        let new_label = LabelControl::new(name, emit);
+    pub fn open_label(
+        &mut self,
+        name: SourceAtomSetIndex,
+        emit: &mut InstructionWriter,
+        scope_note_index: ScopeNoteIndex,
+    ) {
+        let new_label = LabelControl::new(name, emit, scope_note_index);
         self.control_stack.push(Control::Label(new_label));
     }
 
     pub fn register_break(&mut self, offset: BytecodeOffset) {
         let innermost = self.innermost();
+
         match innermost {
             Control::Label(control) => control.register_break(offset),
             Control::Loop(control) => control.register_break(offset),
@@ -440,6 +466,7 @@ where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
+    pub scope_note_index: ScopeNoteIndex,
     pub test: F1,
     pub block: F2,
 }
@@ -449,7 +476,9 @@ where
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        emitter.control_stack.open_loop(&mut emitter.emit);
+        emitter
+            .control_stack
+            .open_loop(&mut emitter.emit, self.scope_note_index);
 
         (self.test)(emitter)?;
 
@@ -477,6 +506,7 @@ where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
+    pub scope_note_index: ScopeNoteIndex,
     pub block: F2,
     pub test: F1,
 }
@@ -486,7 +516,9 @@ where
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        emitter.control_stack.open_loop(&mut emitter.emit);
+        emitter
+            .control_stack
+            .open_loop(&mut emitter.emit, self.scope_note_index);
 
         (self.block)(emitter)?;
 
@@ -516,6 +548,7 @@ where
     UpdateFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
     BlockFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
+    pub scope_note_index: ScopeNoteIndex,
     pub maybe_init: &'a Option<CondT>,
     pub maybe_test: &'a Option<ExprT>,
     pub maybe_update: &'a Option<ExprT>,
@@ -540,7 +573,9 @@ where
         }
 
         // Emit loop head
-        emitter.control_stack.open_loop(&mut emitter.emit);
+        emitter
+            .control_stack
+            .open_loop(&mut emitter.emit, self.scope_note_index);
 
         // if there is a test condition (ie x < 3) emit it
         if let Some(test) = self.maybe_test {
@@ -577,6 +612,7 @@ pub struct LabelEmitter<F1>
 where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
+    pub scope_note_index: ScopeNoteIndex,
     pub name: SourceAtomSetIndex,
     pub body: F1,
 }
@@ -588,7 +624,7 @@ where
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
         emitter
             .control_stack
-            .open_label(self.name, &mut emitter.emit);
+            .open_label(self.name, &mut emitter.emit, self.scope_note_index);
 
         (self.body)(emitter)?;
 

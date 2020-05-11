@@ -1411,6 +1411,11 @@ impl InstructionWriter {
         self.scope_notes.leave_scope(index, offset);
     }
 
+    pub fn get_scope_note_index(&self) -> ScopeNoteIndex {
+        self.scope_notes.current_index()
+    }
+
+
     pub fn switch_to_main(&mut self) {
         self.main_offset = self.bytecode_offset();
     }

@@ -22,7 +22,7 @@ impl ScopeNote {
 }
 
 /// Index into ScopeNoteList.notes.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ScopeNoteIndex {
     index: usize,
 }
@@ -64,6 +64,11 @@ impl ScopeNoteList {
 
     pub fn leave_scope(&mut self, index: ScopeNoteIndex, offset: BytecodeOffset) {
         self.notes[usize::from(index)].end = offset;
+    }
+
+    pub fn current_index(&self) -> ScopeNoteIndex {
+        let note_index = self.notes.len();
+        ScopeNoteIndex::new(note_index)
     }
 }
 
