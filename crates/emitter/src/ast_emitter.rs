@@ -131,18 +131,12 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
-                return Err(EmitError::NotImplemented(
-                    "TODO: scope handling for BreakStatement",
-                ));
             }
             Statement::ContinueStatement { label, .. } => {
                 ContinueEmitter {
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
-                return Err(EmitError::NotImplemented(
-                    "TODO: scope handling for ContinueStatement",
-                ));
             }
             Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
