@@ -128,7 +128,6 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::BreakStatement { label, .. } => {
                 BreakEmitter {
-                    jump: JumpKind::Goto,
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
@@ -138,7 +137,6 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::ContinueStatement { label, .. } => {
                 ContinueEmitter {
-                    jump: JumpKind::Goto,
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);

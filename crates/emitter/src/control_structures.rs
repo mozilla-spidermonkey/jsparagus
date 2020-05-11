@@ -370,74 +370,68 @@ impl ControlStructureStack {
     }
 }
 
-// Struct for multiple jumps that point to the same target. Examples are breaks and loop conditions.
-pub struct BreakEmitter {
-    pub jump: JumpKind,
-    pub label: Option<SourceAtomSetIndex>,
+struct RegisteredJump<F1>
+where
+    F1: Fn(&mut AstEmitter, BytecodeOffset),
+{
+    kind: JumpKind,
+    register_offset: F1,
 }
 
-impl Jump for BreakEmitter {
+impl<F1> Jump for RegisteredJump<F1>
+where
+    F1: Fn(&mut AstEmitter, BytecodeOffset),
+{
     fn jump_kind(&mut self) -> &JumpKind {
-        &self.jump
+        &self.kind
     }
+}
+
+impl<F1> RegisteredJump<F1>
+where
+    F1: Fn(&mut AstEmitter, BytecodeOffset),
+{
+    pub fn emit(&mut self, emitter: &mut AstEmitter) {
+        let offset = emitter.emit.bytecode_offset();
+        self.emit_jump(emitter);
+        (self.register_offset)(emitter, offset);
+    }
+}
+
+// Struct for multiple jumps that point to the same target. Examples are breaks and loop conditions.
+pub struct BreakEmitter {
+    pub label: Option<SourceAtomSetIndex>,
 }
 
 impl BreakEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        // TODO: For 'break' statements in non local loops, we need to emit some extra bytecode.
-        // see https://searchfox.org/mozilla-central/rev/a707541ff423ade0d81cef6488e6ecfa09273886/js/src/frontend/BytecodeEmitter.cpp#702-840
-        let offset = emitter.emit.bytecode_offset();
-        match self.label {
-            Some(label) => emitter.control_stack.register_labelled_break(label, offset),
-            None => emitter.control_stack.register_break(offset),
+        RegisteredJump {
+            kind: JumpKind::Goto,
+            register_offset: |emitter, offset| match self.label {
+                Some(label) => emitter.control_stack.register_labelled_break(label, offset),
+                None => emitter.control_stack.register_break(offset),
+            },
         }
-
-        self.emit_jump(emitter);
-    }
-}
-
-// Struct for multiple jumps that point to the same target. Examples are breaks and loop conditions.
-pub struct InternalBreakEmitter {
-    pub jump: JumpKind,
-}
-
-impl Jump for InternalBreakEmitter {
-    fn jump_kind(&mut self) -> &JumpKind {
-        &self.jump
-    }
-}
-
-impl InternalBreakEmitter {
-    pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        let offset = emitter.emit.bytecode_offset();
-        emitter.control_stack.register_break(offset);
-        self.emit_jump(emitter);
+        .emit(emitter);
     }
 }
 
 pub struct ContinueEmitter {
-    pub jump: JumpKind,
     pub label: Option<SourceAtomSetIndex>,
-}
-
-impl Jump for ContinueEmitter {
-    fn jump_kind(&mut self) -> &JumpKind {
-        &self.jump
-    }
 }
 
 impl ContinueEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        // TODO: For 'continue' statements in non local loops, we need to emit some extra bytecode.
-        // see https://searchfox.org/mozilla-central/rev/a707541ff423ade0d81cef6488e6ecfa09273886/js/src/frontend/BytecodeEmitter.cpp#702-840
-        let offset = emitter.emit.bytecode_offset();
-        match self.label {
-            Some(label) => emitter
-                .control_stack
-                .register_labelled_continue(label, offset),
-            None => emitter.control_stack.register_continue(offset),
+        RegisteredJump {
+            kind: JumpKind::Goto,
+            register_offset: |emitter, offset| match self.label {
+                Some(label) => emitter
+                    .control_stack
+                    .register_labelled_continue(label, offset),
+                None => emitter.control_stack.register_continue(offset),
+            },
         }
-        self.emit_jump(emitter);
+        .emit(emitter);
     }
 }
 
@@ -459,8 +453,10 @@ where
 
         (self.test)(emitter)?;
 
-        InternalBreakEmitter {
-            jump: JumpKind::IfEq,
+        // add a registered jump for the conditional statement
+        RegisteredJump {
+            kind: JumpKind::IfEq,
+            register_offset: |emitter, offset| emitter.control_stack.register_break(offset),
         }
         .emit(emitter);
 
@@ -500,8 +496,10 @@ where
 
         (self.test)(emitter)?;
 
-        InternalBreakEmitter {
-            jump: JumpKind::IfEq,
+        // add a registered jump for the conditional statement
+        RegisteredJump {
+            kind: JumpKind::IfEq,
+            register_offset: |emitter, offset| emitter.control_stack.register_break(offset),
         }
         .emit(emitter);
 
@@ -548,8 +546,10 @@ where
         if let Some(test) = self.maybe_test {
             (self.test)(emitter, &test)?;
 
-            InternalBreakEmitter {
-                jump: JumpKind::IfEq,
+            // add a registered jump for the conditional statement
+            RegisteredJump {
+                kind: JumpKind::IfEq,
+                register_offset: |emitter, offset| emitter.control_stack.register_break(offset),
             }
             .emit(emitter);
         }
