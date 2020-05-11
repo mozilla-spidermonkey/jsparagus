@@ -199,7 +199,9 @@ impl Breakable for LabelControl {
     }
 
     fn emit_break_target_and_patch(&mut self, emit: &mut InstructionWriter) {
-        emit.emit_jump_target_and_patch(&self.breaks);
+        if !self.breaks.is_empty() {
+            emit.emit_jump_target_and_patch(&self.breaks);
+        }
     }
 }
 
@@ -265,12 +267,9 @@ impl ControlStructureStack {
     }
 
     pub fn register_labelled_break(&mut self, label: SourceAtomSetIndex, offset: BytecodeOffset) {
-        if let Some(control) = self.find_labelled_loop(label) {
-            control.register_break(offset);
-        } else {
-            panic!(
-                "A labelled break was passed, but no label was found. This should be caught by early errors"
-            )
+        match self.find_labelled_control(label) {
+            Control::Label(control) => control.register_break(offset),
+            Control::Loop(control) => control.register_break(offset),
         }
     }
 
@@ -288,8 +287,8 @@ impl ControlStructureStack {
         }
     }
 
-    pub fn find_labelled_loop(&mut self, label: SourceAtomSetIndex) -> Option<&mut LoopControl> {
-        let label_index = self.find_labelled_index(label)?;
+    fn find_labelled_loop(&mut self, label: SourceAtomSetIndex) -> Option<&mut LoopControl> {
+        let label_index = self.find_labelled_index(label);
         // To find the associated loop for a label, we can take the label's index + 1, as the
         // associated loop should always be in the position after the label.
         let control = self.control_stack.get_mut(label_index + 1);
@@ -299,16 +298,34 @@ impl ControlStructureStack {
         }
     }
 
-    pub fn find_labelled_index(&mut self, label: SourceAtomSetIndex) -> Option<usize> {
-        self.control_stack.iter().position(|control| match control {
-            Control::Label(control) => {
-                if control.name == label {
-                    return true;
+    fn find_labelled_control(&mut self, label: SourceAtomSetIndex) -> &mut Control {
+        self.control_stack
+            .iter_mut()
+            .find(|control| match control {
+                Control::Label(control) => {
+                    if control.name == label {
+                        return true;
+                    }
+                    false
                 }
-                false
-            }
-            _ => false,
-        })
+                _ => false,
+            })
+            .expect("there should be a control with this label")
+    }
+
+    fn find_labelled_index(&mut self, label: SourceAtomSetIndex) -> usize {
+        self.control_stack
+            .iter()
+            .position(|control| match control {
+                Control::Label(control) => {
+                    if control.name == label {
+                        return true;
+                    }
+                    false
+                }
+                _ => false,
+            })
+            .expect("there should be a control with this label")
     }
 
     pub fn emit_continue_target_and_patch(&mut self, emit: &mut InstructionWriter) {
