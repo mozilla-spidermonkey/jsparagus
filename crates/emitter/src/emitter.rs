@@ -1415,6 +1415,17 @@ impl InstructionWriter {
         self.scope_notes.current_index()
     }
 
+    pub fn enter_scope_hole(&mut self, index: ScopeNoteIndex) -> ScopeNoteIndex {
+        self.debug_leave_lexical_env();
+        let offset = self.bytecode_offset();
+        let index = self.scope_notes.enter_scope_hole(index, offset);
+        index
+    }
+
+    pub fn leave_scope_hole(&mut self, index: ScopeNoteIndex) {
+        let offset = self.bytecode_offset();
+        self.scope_notes.leave_scope(index, offset);
+    }
 
     pub fn switch_to_main(&mut self) {
         self.main_offset = self.bytecode_offset();

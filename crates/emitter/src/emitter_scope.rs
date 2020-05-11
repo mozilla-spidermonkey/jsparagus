@@ -118,7 +118,7 @@ impl EmitterScope {
         }
     }
 
-    fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
+    pub fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
         match self {
             EmitterScope::Global(scope) => scope.scope_note_index(),
             EmitterScope::Lexical(scope) => scope.scope_note_index(),
@@ -153,6 +153,25 @@ impl EmitterScopeStack {
         self.scope_stack
             .last()
             .expect("There should be at least one scope")
+    }
+
+    pub fn scope_indices_from(
+        &self,
+        scope_note_index: &ScopeNoteIndex,
+    ) -> Vec<Option<ScopeNoteIndex>> {
+        let index = self
+            .scope_stack
+            .iter()
+            .position(|scope| match scope.scope_note_index() {
+                Some(index) => &index == scope_note_index,
+                _ => false,
+            })
+            .expect("Index must be available");
+        let mut indices = Vec::new();
+        for scope in self.scope_stack.iter().skip(index) {
+            indices.push(scope.scope_note_index());
+        }
+        indices
     }
 
     /// Enter the global scope. Call this once at the beginning of a top-level

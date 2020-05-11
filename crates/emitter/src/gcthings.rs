@@ -18,7 +18,7 @@ pub struct GCThingIndex {
 }
 
 impl GCThingIndex {
-    fn new(index: usize) -> Self {
+    pub fn new(index: usize) -> Self {
         Self { index }
     }
 }

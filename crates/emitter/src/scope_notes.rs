@@ -62,6 +62,28 @@ impl ScopeNoteList {
         ScopeNoteIndex::new(note_index)
     }
 
+    fn get_scope_hole_gcthing_index(&self, reference_scope_index: ScopeNoteIndex) -> GCThingIndex {
+        if reference_scope_index.index >= 1 {
+            return self
+                .notes
+                .get(reference_scope_index.index - 1)
+                .unwrap()
+                .index;
+        }
+        GCThingIndex::new(0)
+    }
+
+    pub fn enter_scope_hole(
+        &mut self,
+        reference_scope_index: ScopeNoteIndex,
+        offset: BytecodeOffset,
+    ) -> ScopeNoteIndex {
+        let note_index = self.notes.len();
+        let parent_index = ScopeNoteIndex::new(note_index - 1);
+        let reference_gcthing_index = self.get_scope_hole_gcthing_index(reference_scope_index);
+        self.enter_scope(reference_gcthing_index, offset, Some(parent_index))
+    }
+
     pub fn leave_scope(&mut self, index: ScopeNoteIndex, offset: BytecodeOffset) {
         self.notes[usize::from(index)].end = offset;
     }

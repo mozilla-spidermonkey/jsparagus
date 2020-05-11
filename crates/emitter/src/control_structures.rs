@@ -431,6 +431,14 @@ pub struct BreakEmitter {
 
 impl BreakEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
+        // step 1) create scope holes for the break until we are in the scope of the label or
+        // the for loop of this statement
+        let scope_note_holes = NonLocalExitControl {
+            kind: NonLocalExitKind::Break,
+        }
+        .prepare_for_non_local_jump(emitter, self.label);
+
+        // step 2) emit a registered jump on the appropriate nested control
         RegisteredJump {
             kind: JumpKind::Goto,
             register_offset: |emitter, offset| match self.label {
@@ -439,6 +447,11 @@ impl BreakEmitter {
             },
         }
         .emit(emitter);
+
+        // step 3) close each scope hole after the jump
+        for hole in scope_note_holes.iter() {
+            hole.emit_non_local_jump_end(&mut emitter.emit);
+        }
     }
 }
 
@@ -448,6 +461,14 @@ pub struct ContinueEmitter {
 
 impl ContinueEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
+        // step 1) create scope holes for the break until we are in the scope of the label or
+        // the for loop of this statement
+        let scope_note_holes = NonLocalExitControl {
+            kind: NonLocalExitKind::Continue,
+        }
+        .prepare_for_non_local_jump(emitter, self.label);
+
+        // step 2) emit a registered jump on the appropriate nested control
         RegisteredJump {
             kind: JumpKind::Goto,
             register_offset: |emitter, offset| match self.label {
@@ -458,6 +479,11 @@ impl ContinueEmitter {
             },
         }
         .emit(emitter);
+
+        // step 3) close each scope hole after the jump
+        for hole in scope_note_holes.iter() {
+            hole.emit_non_local_jump_end(&mut emitter.emit);
+        }
     }
 }
 
@@ -630,5 +656,56 @@ where
 
         emitter.control_stack.close_label(&mut emitter.emit);
         Ok(())
+    }
+}
+
+pub enum NonLocalExitKind {
+    Continue,
+    Break,
+}
+
+pub struct NonLocalExitControl {
+    pub kind: NonLocalExitKind,
+}
+
+impl NonLocalExitControl {
+    pub fn prepare_for_non_local_jump(
+        &mut self,
+        emitter: &mut AstEmitter,
+        label: Option<SourceAtomSetIndex>,
+    ) -> Vec<ScopeNoteHoleEmitter> {
+        let target_scope_note_index = match label {
+            Some(label) => emitter
+                .control_stack
+                .find_labelled_control(label)
+                .scope_note_index(),
+            None => emitter.control_stack.innermost().scope_note_index(),
+        };
+
+        let mut holes = Vec::new();
+        for maybe_scope_note_index in emitter
+            .scope_stack
+            .scope_indices_from(&target_scope_note_index)
+            .iter()
+            .rev()
+        {
+            if let Some(index) = maybe_scope_note_index {
+                holes.push(ScopeNoteHoleEmitter {
+                    scope_note_index: emitter.emit.enter_scope_hole(*index),
+                });
+            }
+        }
+
+        holes
+    }
+}
+
+pub struct ScopeNoteHoleEmitter {
+    scope_note_index: ScopeNoteIndex,
+}
+
+impl ScopeNoteHoleEmitter {
+    pub fn emit_non_local_jump_end(&self, emit: &mut InstructionWriter) {
+        emit.leave_scope_hole(self.scope_note_index);
     }
 }
