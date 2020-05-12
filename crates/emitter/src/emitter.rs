@@ -1411,15 +1411,17 @@ impl InstructionWriter {
         self.scope_notes.leave_scope(index, offset);
     }
 
-    pub fn get_scope_note_index(&self) -> ScopeNoteIndex {
-        self.scope_notes.current_index()
-    }
-
-    pub fn enter_scope_hole(&mut self, index: ScopeNoteIndex) -> ScopeNoteIndex {
+    pub fn enter_scope_hole(
+        &mut self,
+        maybe_scope_note_index: &Option<ScopeNoteIndex>,
+    ) -> ScopeNoteIndex {
         self.debug_leave_lexical_env();
         let offset = self.bytecode_offset();
-        let index = self.scope_notes.enter_scope_hole(index, offset);
-        index
+        let body_scope_index = self
+            .body_scope_index
+            .expect("we should have a body scope index");
+        self.scope_notes
+            .enter_scope_hole(maybe_scope_note_index, body_scope_index, offset)
     }
 
     pub fn leave_scope_hole(&mut self, index: ScopeNoteIndex) {

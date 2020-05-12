@@ -22,6 +22,11 @@ pub enum NameLocation {
     FrameSlot(FrameSlot, BindingKind),
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct EmitterScopeIndex {
+    index: usize,
+}
+
 // --- EmitterScope types
 //
 // These types are the variants of enum EmitterScope.
@@ -155,20 +160,18 @@ impl EmitterScopeStack {
             .expect("There should be at least one scope")
     }
 
-    pub fn scope_indices_from(
+    pub fn scope_note_indices_from_to(
         &self,
-        scope_note_index: &ScopeNoteIndex,
+        from: &EmitterScopeIndex,
+        to: &EmitterScopeIndex,
     ) -> Vec<Option<ScopeNoteIndex>> {
-        let index = self
+        let mut indices = Vec::new();
+        for scope in self
             .scope_stack
             .iter()
-            .position(|scope| match scope.scope_note_index() {
-                Some(index) => &index == scope_note_index,
-                _ => false,
-            })
-            .expect("Index must be available");
-        let mut indices = Vec::new();
-        for scope in self.scope_stack.iter().skip(index) {
+            .skip(from.index)
+            .take(to.index - from.index)
+        {
             indices.push(scope.scope_note_index());
         }
         indices
@@ -303,5 +306,11 @@ impl EmitterScopeStack {
         }
 
         NameLocation::Dynamic
+    }
+
+    pub fn current_index(&mut self) -> EmitterScopeIndex {
+        EmitterScopeIndex {
+            index: self.scope_stack.len() - 1,
+        }
     }
 }
