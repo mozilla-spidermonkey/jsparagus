@@ -22,6 +22,11 @@ pub enum NameLocation {
     FrameSlot(FrameSlot, BindingKind),
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct EmitterScopeDepth {
+    index: usize,
+}
+
 // --- EmitterScope types
 //
 // These types are the variants of enum EmitterScope.
@@ -118,7 +123,7 @@ impl EmitterScope {
         }
     }
 
-    fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
+    pub fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
         match self {
             EmitterScope::Global(scope) => scope.scope_note_index(),
             EmitterScope::Lexical(scope) => scope.scope_note_index(),
@@ -284,5 +289,35 @@ impl EmitterScopeStack {
         }
 
         NameLocation::Dynamic
+    }
+
+    pub fn current_depth(&mut self) -> EmitterScopeDepth {
+        EmitterScopeDepth {
+            index: self.scope_stack.len() - 1,
+        }
+    }
+
+    pub fn scope_note_indices_from_to(
+        &self,
+        from: &EmitterScopeDepth,
+        to: &EmitterScopeDepth,
+    ) -> Vec<Option<ScopeNoteIndex>> {
+        let mut indices = Vec::new();
+        for scope in self
+            .scope_stack
+            .iter()
+            .skip(from.index)
+            .take(to.index - from.index)
+        {
+            indices.push(scope.scope_note_index());
+        }
+        indices
+    }
+
+    pub fn get_scope_note_index_for(&self, index: EmitterScopeDepth) -> Option<ScopeNoteIndex> {
+        self.scope_stack
+            .get(index.index)
+            .expect("scope should exist")
+            .scope_note_index()
     }
 }

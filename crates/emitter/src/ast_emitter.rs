@@ -128,29 +128,22 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::BreakStatement { label, .. } => {
                 BreakEmitter {
-                    jump: JumpKind::Goto,
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
-                return Err(EmitError::NotImplemented(
-                    "TODO: scope handling for BreakStatement",
-                ));
             }
             Statement::ContinueStatement { label, .. } => {
                 ContinueEmitter {
-                    jump: JumpKind::Goto,
                     label: label.as_ref().map(|x| x.value),
                 }
                 .emit(self);
-                return Err(EmitError::NotImplemented(
-                    "TODO: scope handling for ContinueStatement",
-                ));
             }
             Statement::DebuggerStatement { .. } => {
                 return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
             }
             Statement::DoWhileStatement { block, test, .. } => {
                 DoWhileEmitter {
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     block: |emitter| emitter.emit_statement(block),
                     test: |emitter| emitter.emit_expression(test),
                 }
@@ -177,6 +170,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 ..
             } => {
                 CForEmitter {
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     maybe_init: init,
                     maybe_test: test,
                     maybe_update: update,
@@ -205,6 +199,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::LabelledStatement { label, body, .. } => {
                 LabelEmitter {
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     name: label.value,
                     body: |emitter| emitter.emit_statement(body),
                 }
@@ -236,6 +231,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::WhileStatement { test, block, .. } => {
                 WhileEmitter {
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     test: |emitter| emitter.emit_expression(test),
                     block: |emitter| emitter.emit_statement(block),
                 }
