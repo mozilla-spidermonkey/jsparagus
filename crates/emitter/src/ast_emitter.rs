@@ -143,7 +143,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::DoWhileStatement { block, test, .. } => {
                 DoWhileEmitter {
-                    enclosing_emitter_scope_index: self.scope_stack.current_index(),
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     block: |emitter| emitter.emit_statement(block),
                     test: |emitter| emitter.emit_expression(test),
                 }
@@ -170,7 +170,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 ..
             } => {
                 CForEmitter {
-                    enclosing_emitter_scope_index: self.scope_stack.current_index(),
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     maybe_init: init,
                     maybe_test: test,
                     maybe_update: update,
@@ -199,7 +199,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::LabelledStatement { label, body, .. } => {
                 LabelEmitter {
-                    enclosing_emitter_scope_index: self.scope_stack.current_index(),
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     name: label.value,
                     body: |emitter| emitter.emit_statement(body),
                 }
@@ -231,7 +231,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
             Statement::WhileStatement { test, block, .. } => {
                 WhileEmitter {
-                    enclosing_emitter_scope_index: self.scope_stack.current_index(),
+                    enclosing_emitter_scope_depth: self.scope_stack.current_depth(),
                     test: |emitter| emitter.emit_expression(test),
                     block: |emitter| emitter.emit_statement(block),
                 }

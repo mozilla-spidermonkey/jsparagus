@@ -2,8 +2,7 @@ use crate::ast_emitter::AstEmitter;
 use crate::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
 use crate::emitter::EmitError;
 use crate::emitter::InstructionWriter;
-use crate::emitter_scope::EmitterScopeIndex;
-use crate::scope_notes::ScopeNoteIndex;
+use crate::emitter_scope::EmitterScopeDepth;
 use ast::source_atom_set::SourceAtomSetIndex;
 
 // Control structures
@@ -126,7 +125,7 @@ pub trait Continuable {
 
 #[derive(Debug, PartialEq)]
 pub struct LoopControl {
-    enclosing_emitter_scope_index: EmitterScopeIndex,
+    enclosing_emitter_scope_depth: EmitterScopeDepth,
     breaks: Vec<BytecodeOffset>,
     continues: Vec<BytecodeOffset>,
     head: BytecodeOffset,
@@ -160,11 +159,11 @@ impl LoopControl {
     pub fn new(
         emit: &mut InstructionWriter,
         depth: u8,
-        enclosing_emitter_scope_index: EmitterScopeIndex,
+        enclosing_emitter_scope_depth: EmitterScopeDepth,
     ) -> Self {
         let offset = LoopControl::open_loop(emit, depth);
         Self {
-            enclosing_emitter_scope_index,
+            enclosing_emitter_scope_depth,
             breaks: Vec::new(),
             continues: Vec::new(),
             head: offset,
@@ -195,7 +194,7 @@ impl LoopControl {
 
 #[derive(Debug, PartialEq)]
 pub struct LabelControl {
-    enclosing_emitter_scope_index: EmitterScopeIndex,
+    enclosing_emitter_scope_depth: EmitterScopeDepth,
     name: SourceAtomSetIndex,
     breaks: Vec<BytecodeOffset>,
     head: BytecodeOffset,
@@ -219,11 +218,11 @@ impl LabelControl {
     pub fn new(
         name: SourceAtomSetIndex,
         emit: &mut InstructionWriter,
-        enclosing_emitter_scope_index: EmitterScopeIndex,
+        enclosing_emitter_scope_depth: EmitterScopeDepth,
     ) -> Self {
         let offset = emit.bytecode_offset();
         Self {
-            enclosing_emitter_scope_index,
+            enclosing_emitter_scope_depth,
             name,
             head: offset,
             breaks: Vec::new(),
@@ -238,10 +237,10 @@ pub enum Control {
 }
 
 impl Control {
-    fn enclosing_emitter_scope_index(&self) -> EmitterScopeIndex {
+    fn enclosing_emitter_scope_depth(&self) -> EmitterScopeDepth {
         match self {
-            Control::Loop(control) => control.enclosing_emitter_scope_index,
-            Control::Label(control) => control.enclosing_emitter_scope_index,
+            Control::Loop(control) => control.enclosing_emitter_scope_depth,
+            Control::Label(control) => control.enclosing_emitter_scope_depth,
         }
     }
 }
@@ -263,11 +262,11 @@ impl ControlStructureStack {
     pub fn open_loop(
         &mut self,
         emit: &mut InstructionWriter,
-        enclosing_emitter_scope_index: EmitterScopeIndex,
+        enclosing_emitter_scope_depth: EmitterScopeDepth,
     ) {
         let depth = (self.control_stack.len() + 1) as u8;
 
-        let new_loop = Control::Loop(LoopControl::new(emit, depth, enclosing_emitter_scope_index));
+        let new_loop = Control::Loop(LoopControl::new(emit, depth, enclosing_emitter_scope_depth));
 
         self.control_stack.push(new_loop);
     }
@@ -276,9 +275,9 @@ impl ControlStructureStack {
         &mut self,
         name: SourceAtomSetIndex,
         emit: &mut InstructionWriter,
-        enclosing_emitter_scope_index: EmitterScopeIndex,
+        enclosing_emitter_scope_depth: EmitterScopeDepth,
     ) {
-        let new_label = LabelControl::new(name, emit, enclosing_emitter_scope_index);
+        let new_label = LabelControl::new(name, emit, enclosing_emitter_scope_depth);
         self.control_stack.push(Control::Label(new_label));
     }
 
@@ -410,6 +409,8 @@ where
     F1: Fn(&mut AstEmitter, BytecodeOffset),
 {
     kind: JumpKind,
+    // This callback registers the bytecode offset of the jump in a list of bytecode offsets
+    // associated with a loop or a label.
     register_offset: F1,
 }
 
@@ -440,27 +441,16 @@ pub struct BreakEmitter {
 
 impl BreakEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        // step 1) create scope holes for the break until we are in the scope of the label or
-        // the for loop of this statement
-        let scope_note_holes = NonLocalExitControl {
-            kind: NonLocalExitKind::Break,
-        }
-        .prepare_for_non_local_jump(emitter, self.label);
-
-        // step 2) emit a registered jump on the appropriate nested control
-        RegisteredJump {
-            kind: JumpKind::Goto,
-            register_offset: |emitter, offset| match self.label {
-                Some(label) => emitter.control_stack.register_labelled_break(label, offset),
-                None => emitter.control_stack.register_break(offset),
+        NonLocalExitControl {
+            registered_jump: RegisteredJump {
+                kind: JumpKind::Goto,
+                register_offset: |emitter, offset| match self.label {
+                    Some(label) => emitter.control_stack.register_labelled_break(label, offset),
+                    None => emitter.control_stack.register_break(offset),
+                },
             },
         }
-        .emit(emitter);
-
-        // step 3) close each scope hole after the jump
-        for hole in scope_note_holes.iter() {
-            hole.emit_non_local_jump_end(&mut emitter.emit);
-        }
+        .emit(emitter, self.label);
     }
 }
 
@@ -470,29 +460,18 @@ pub struct ContinueEmitter {
 
 impl ContinueEmitter {
     pub fn emit(&mut self, emitter: &mut AstEmitter) {
-        // step 1) create scope holes for the break until we are in the scope of the label or
-        // the for loop of this statement
-        let scope_note_holes = NonLocalExitControl {
-            kind: NonLocalExitKind::Continue,
-        }
-        .prepare_for_non_local_jump(emitter, self.label);
-
-        // step 2) emit a registered jump on the appropriate nested control
-        RegisteredJump {
-            kind: JumpKind::Goto,
-            register_offset: |emitter, offset| match self.label {
-                Some(label) => emitter
-                    .control_stack
-                    .register_labelled_continue(label, offset),
-                None => emitter.control_stack.register_continue(offset),
+        NonLocalExitControl {
+            registered_jump: RegisteredJump {
+                kind: JumpKind::Goto,
+                register_offset: |emitter, offset| match self.label {
+                    Some(label) => emitter
+                        .control_stack
+                        .register_labelled_continue(label, offset),
+                    None => emitter.control_stack.register_continue(offset),
+                },
             },
         }
-        .emit(emitter);
-
-        // step 3) close each scope hole after the jump
-        for hole in scope_note_holes.iter() {
-            hole.emit_non_local_jump_end(&mut emitter.emit);
-        }
+        .emit(emitter, self.label);
     }
 }
 
@@ -501,7 +480,7 @@ where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    pub enclosing_emitter_scope_index: EmitterScopeIndex,
+    pub enclosing_emitter_scope_depth: EmitterScopeDepth,
     pub test: F1,
     pub block: F2,
 }
@@ -513,7 +492,7 @@ where
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
         emitter
             .control_stack
-            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_index);
+            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_depth);
 
         (self.test)(emitter)?;
 
@@ -541,7 +520,7 @@ where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
     F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    pub enclosing_emitter_scope_index: EmitterScopeIndex,
+    pub enclosing_emitter_scope_depth: EmitterScopeDepth,
     pub block: F2,
     pub test: F1,
 }
@@ -553,7 +532,7 @@ where
     pub fn emit(&mut self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
         emitter
             .control_stack
-            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_index);
+            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_depth);
 
         (self.block)(emitter)?;
 
@@ -583,7 +562,7 @@ where
     UpdateFn: Fn(&mut AstEmitter, &ExprT) -> Result<(), EmitError>,
     BlockFn: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    pub enclosing_emitter_scope_index: EmitterScopeIndex,
+    pub enclosing_emitter_scope_depth: EmitterScopeDepth,
     pub maybe_init: &'a Option<CondT>,
     pub maybe_test: &'a Option<ExprT>,
     pub maybe_update: &'a Option<ExprT>,
@@ -610,7 +589,7 @@ where
         // Emit loop head
         emitter
             .control_stack
-            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_index);
+            .open_loop(&mut emitter.emit, self.enclosing_emitter_scope_depth);
 
         // if there is a test condition (ie x < 3) emit it
         if let Some(test) = self.maybe_test {
@@ -647,7 +626,7 @@ pub struct LabelEmitter<F1>
 where
     F1: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
-    pub enclosing_emitter_scope_index: EmitterScopeIndex,
+    pub enclosing_emitter_scope_depth: EmitterScopeDepth,
     pub name: SourceAtomSetIndex,
     pub body: F1,
 }
@@ -660,7 +639,7 @@ where
         emitter.control_stack.open_label(
             self.name,
             &mut emitter.emit,
-            self.enclosing_emitter_scope_index,
+            self.enclosing_emitter_scope_depth,
         );
 
         (self.body)(emitter)?;
@@ -670,54 +649,56 @@ where
     }
 }
 
-pub enum NonLocalExitKind {
-    Continue,
-    Break,
+pub struct NonLocalExitControl<F1>
+where
+    F1: Fn(&mut AstEmitter, BytecodeOffset),
+{
+    registered_jump: RegisteredJump<F1>,
 }
 
-pub struct NonLocalExitControl {
-    pub kind: NonLocalExitKind,
-}
-
-impl NonLocalExitControl {
-    pub fn prepare_for_non_local_jump(
-        &mut self,
-        emitter: &mut AstEmitter,
-        label: Option<SourceAtomSetIndex>,
-    ) -> Vec<ScopeNoteHoleEmitter> {
-        let enclosing_emitter_scope_index = match label {
+impl<F1> NonLocalExitControl<F1>
+where
+    F1: Fn(&mut AstEmitter, BytecodeOffset),
+{
+    pub fn emit(&mut self, emitter: &mut AstEmitter, label: Option<SourceAtomSetIndex>) {
+        // Step 1: find the enclosing emitter scope
+        let enclosing_emitter_scope_depth = match label {
             Some(label) => emitter
                 .control_stack
                 .find_labelled_control(label)
-                .enclosing_emitter_scope_index(),
+                .enclosing_emitter_scope_depth(),
             None => emitter
                 .control_stack
                 .innermost()
-                .enclosing_emitter_scope_index(),
+                .enclosing_emitter_scope_depth(),
         };
 
-        let current_scope_index = emitter.scope_stack.current_index();
+        // Step 2: find the current emitter scope
+        let current_scope_index = emitter.scope_stack.current_depth();
 
+        // Step 3: iterate over scopes that have been entered since the enclosing scope,
+        // add a scope note hole for each one as we exit
         let mut holes = Vec::new();
         let scope_indicies = emitter
             .scope_stack
-            .scope_note_indices_from_to(&enclosing_emitter_scope_index, &current_scope_index);
+            .scope_note_indices_from_to(&enclosing_emitter_scope_depth, &current_scope_index);
+        let mut parent_scope_note_index = emitter
+            .scope_stack
+            .get_scope_note_index_for(current_scope_index);
         for maybe_scope_note_index in scope_indicies.iter().rev() {
-            holes.push(ScopeNoteHoleEmitter {
-                scope_note_index: emitter.emit.enter_scope_hole(maybe_scope_note_index),
-            });
+            let scope_note_index = emitter
+                .emit
+                .enter_scope_hole(maybe_scope_note_index, parent_scope_note_index);
+            holes.push(scope_note_index);
+            parent_scope_note_index = Some(scope_note_index);
         }
 
-        holes
-    }
-}
+        // Step 4: perform the jump
+        self.registered_jump.emit(emitter);
 
-pub struct ScopeNoteHoleEmitter {
-    scope_note_index: ScopeNoteIndex,
-}
-
-impl ScopeNoteHoleEmitter {
-    pub fn emit_non_local_jump_end(&self, emit: &mut InstructionWriter) {
-        emit.leave_scope_hole(self.scope_note_index);
+        // Step 5: close each scope hole after the jump
+        for scope_note_hole_index in holes.iter() {
+            emitter.emit.leave_scope_hole(*scope_note_hole_index);
+        }
     }
 }

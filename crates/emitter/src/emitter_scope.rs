@@ -23,7 +23,7 @@ pub enum NameLocation {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct EmitterScopeIndex {
+pub struct EmitterScopeDepth {
     index: usize,
 }
 
@@ -160,23 +160,6 @@ impl EmitterScopeStack {
             .expect("There should be at least one scope")
     }
 
-    pub fn scope_note_indices_from_to(
-        &self,
-        from: &EmitterScopeIndex,
-        to: &EmitterScopeIndex,
-    ) -> Vec<Option<ScopeNoteIndex>> {
-        let mut indices = Vec::new();
-        for scope in self
-            .scope_stack
-            .iter()
-            .skip(from.index)
-            .take(to.index - from.index)
-        {
-            indices.push(scope.scope_note_index());
-        }
-        indices
-    }
-
     /// Enter the global scope. Call this once at the beginning of a top-level
     /// script.
     ///
@@ -308,9 +291,33 @@ impl EmitterScopeStack {
         NameLocation::Dynamic
     }
 
-    pub fn current_index(&mut self) -> EmitterScopeIndex {
-        EmitterScopeIndex {
+    pub fn current_depth(&mut self) -> EmitterScopeDepth {
+        EmitterScopeDepth {
             index: self.scope_stack.len() - 1,
         }
+    }
+
+    pub fn scope_note_indices_from_to(
+        &self,
+        from: &EmitterScopeDepth,
+        to: &EmitterScopeDepth,
+    ) -> Vec<Option<ScopeNoteIndex>> {
+        let mut indices = Vec::new();
+        for scope in self
+            .scope_stack
+            .iter()
+            .skip(from.index)
+            .take(to.index - from.index)
+        {
+            indices.push(scope.scope_note_index());
+        }
+        indices
+    }
+
+    pub fn get_scope_note_index_for(&self, index: EmitterScopeDepth) -> Option<ScopeNoteIndex> {
+        self.scope_stack
+            .get(index.index)
+            .expect("scope should exist")
+            .scope_note_index()
     }
 }
