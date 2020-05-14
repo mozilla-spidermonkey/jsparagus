@@ -71,10 +71,16 @@ enum CallKind {
 }
 
 #[derive(Debug, PartialEq)]
-enum ValueIsOnStack { No, Yes }
+enum ValueIsOnStack {
+    No,
+    Yes,
+}
 
-fn check_temporary_dead_zone(emitter: &mut AstEmitter, slot: FrameSlot,
-                             is_on_stack: ValueIsOnStack) {
+fn check_temporary_dead_zone(
+    emitter: &mut AstEmitter,
+    slot: FrameSlot,
+    is_on_stack: ValueIsOnStack,
+) {
     // FIXME: Use cache to avoid emitting check_lexical twice or more.
     // FIXME: Support aliased lexical.
 

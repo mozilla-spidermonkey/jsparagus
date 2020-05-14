@@ -1701,11 +1701,21 @@ impl<'alloc> Lexer<'alloc> {
                 '&' => match self.peek() {
                     Some('&') => {
                         self.chars.next();
-                        return self.set_result(
-                            TerminalId::LogicalAnd,
-                            SourceLocation::new(start, self.offset()),
-                            TokenValue::None,
-                        );
+                        match self.peek() {
+                            Some('=') => {
+                                self.chars.next();
+                                return self.set_result(
+                                    TerminalId::LogicalAndAssign,
+                                    SourceLocation::new(start, self.offset()),
+                                    TokenValue::None,
+                                );
+                            }
+                            _ => return self.set_result(
+                                TerminalId::LogicalAnd,
+                                SourceLocation::new(start, self.offset()),
+                                TokenValue::None,
+                            )
+                        }
                     }
                     Some('=') => {
                         self.chars.next();
@@ -2035,11 +2045,21 @@ impl<'alloc> Lexer<'alloc> {
                 '|' => match self.peek() {
                     Some('|') => {
                         self.chars.next();
-                        return self.set_result(
-                            TerminalId::LogicalOr,
-                            SourceLocation::new(start, self.offset()),
-                            TokenValue::None,
-                        );
+                        match self.peek() {
+                            Some('=') => {
+                                self.chars.next();
+                                return self.set_result(
+                                    TerminalId::LogicalOrAssign,
+                                    SourceLocation::new(start, self.offset()),
+                                    TokenValue::None,
+                                );
+                            }
+                            _ => return self.set_result(
+                                TerminalId::LogicalOr,
+                                SourceLocation::new(start, self.offset()),
+                                TokenValue::None,
+                            )
+                        }
                     }
                     Some('=') => {
                         self.chars.next();
@@ -2059,11 +2079,21 @@ impl<'alloc> Lexer<'alloc> {
                 '?' => match self.peek() {
                     Some('?') => {
                         self.chars.next();
-                        return self.set_result(
-                            TerminalId::Coalesce,
-                            SourceLocation::new(start, self.offset()),
-                            TokenValue::None,
-                        );
+                        match self.peek() {
+                            Some('=') => {
+                                self.chars.next();
+                                return self.set_result(
+                                    TerminalId::CoalesceAssign,
+                                    SourceLocation::new(start, self.offset()),
+                                    TokenValue::None,
+                                );
+                            }
+                            _ => return self.set_result(
+                                TerminalId::Coalesce,
+                                SourceLocation::new(start, self.offset()),
+                                TokenValue::None,
+                            )
+                        }
                     }
                     Some('.') => {
                         if let Some('0'..='9') = self.double_peek() {
