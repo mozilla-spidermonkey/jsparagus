@@ -8,20 +8,12 @@ from . import types, grammar
 
 
 class Action:
-    __slots__ = ["read", "write", "_hash"]
-
-    # Set of trait names which are consumed by this action.
-    read: typing.List[str]
-
-    # Set of trait names which are mutated by this action.
-    write: typing.List[str]
+    __slots__ = ["_hash"]
 
     # Cached hash.
     _hash: typing.Optional[int]
 
-    def __init__(self, read: typing.List[str], write: typing.List[str]) -> None:
-        self.read = read
-        self.write = write
+    def __init__(self) -> None:
         self._hash = None
 
     def is_inconsistent(self) -> bool:
@@ -74,10 +66,6 @@ class Action:
         if self.__class__ != other.__class__:
             return False
         assert isinstance(other, Action)
-        if sorted(self.read) != sorted(other.read):
-            return False
-        if sorted(self.write) != sorted(other.write):
-            return False
         for s in self.__slots__:
             if getattr(self, s) != getattr(other, s):
                 return False
@@ -89,12 +77,6 @@ class Action:
 
         def hashed_content() -> typing.Iterator[object]:
             yield self.__class__
-            yield "rd"
-            for alias in self.read:
-                yield alias
-            yield "wd"
-            for alias in self.write:
-                yield alias
             for s in self.__slots__:
                 yield repr(getattr(self, s))
 
@@ -131,7 +113,7 @@ class Reduce(Action):
             name = "Start_" + str(nt_name.goal.name)
         else:
             name = nt_name
-        super().__init__([], ["nt_" + name])
+        super().__init__()
         self.nt = nt    # Non-terminal which is reduced
         self.pop = pop  # Number of stack elements which should be replayed.
         self.replay = replay  # List of terms to shift back
@@ -155,7 +137,7 @@ class Accept(Action):
     __slots__: typing.List[str] = []
 
     def __init__(self) -> None:
-        super().__init__([], [])
+        super().__init__()
 
     def __str__(self) -> str:
         return "Accept()"
@@ -176,7 +158,7 @@ class Lookahead(Action):
     accept: bool
 
     def __init__(self, terms: typing.FrozenSet[str], accept: bool):
-        super().__init__([], [])
+        super().__init__()
         self.terms = terms
         self.accept = accept
 
@@ -212,7 +194,7 @@ class CheckNotOnNewLine(Action):
 
     def __init__(self, offset: int = 0) -> None:
         # assert offset >= -1 and "Smaller offsets are not supported on all backends."
-        super().__init__([], [])
+        super().__init__()
         self.offset = offset
 
     def is_inconsistent(self) -> bool:
@@ -246,7 +228,7 @@ class FilterFlag(Action):
     value: object
 
     def __init__(self, flag: str, value: object) -> None:
-        super().__init__(["flag_" + flag], [])
+        super().__init__()
         self.flag = flag
         self.value = value
 
@@ -272,7 +254,7 @@ class PushFlag(Action):
     value: object
 
     def __init__(self, flag: str, value: object) -> None:
-        super().__init__([], ["flag_" + flag])
+        super().__init__()
         self.flag = flag
         self.value = value
 
@@ -287,7 +269,7 @@ class PopFlag(Action):
     flag: str
 
     def __init__(self, flag: str) -> None:
-        super().__init__(["flag_" + flag], ["flag_" + flag])
+        super().__init__()
         self.flag = flag
 
     def __str__(self) -> str:
@@ -326,10 +308,8 @@ class FunCall(Action):
             fallible: bool = False,
             set_to: str = "val",
             offset: int = 0,
-            alias_read: typing.List[str] = [],
-            alias_write: typing.List[str] = []
     ) -> None:
-        super().__init__(alias_read, alias_write)
+        super().__init__()
         self.trait = trait        # Trait on which this method is implemented.
         self.method = method      # Method and argument to be read for calling it.
         self.fallible = fallible  # Whether the function call can fail.
@@ -346,7 +326,7 @@ class FunCall(Action):
 
     def __repr__(self) -> str:
         return "FunCall({})".format(', '.join(map(repr, [
-            self.trait, self.method, self.fallible, self.read, self.write,
+            self.trait, self.method, self.fallible,
             self.args, self.set_to, self.offset
         ])))
 
@@ -356,9 +336,7 @@ class FunCall(Action):
                        trait=self.trait,
                        fallible=self.fallible,
                        set_to=self.set_to,
-                       offset=self.offset + 1,
-                       alias_read=self.read,
-                       alias_write=self.write)
+                       offset=self.offset + 1)
 
 
 class Seq(Action):
@@ -370,9 +348,7 @@ class Seq(Action):
     actions: typing.Tuple[Action, ...]
 
     def __init__(self, actions: typing.Sequence[Action]) -> None:
-        read = [rd for a in actions for rd in a.read]
-        write = [wr for a in actions for wr in a.write]
-        super().__init__(read, write)
+        super().__init__()
         self.actions = tuple(actions)   # Ordered list of actions to execute.
         assert all([not a.is_condition() for a in actions])
         assert all([not isinstance(a, Seq) for a in actions])
