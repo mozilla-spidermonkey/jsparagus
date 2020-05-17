@@ -172,12 +172,16 @@ impl EmitterScopeStack {
         let scope_index = scope_data_map.get_global_index();
         let scope_data = scope_data_map.get_global_at(scope_index);
 
+        // The outermost scope should be the first item in the GC things list.
+        // Enter global scope here, before emitting any name ops below.
+        emit.enter_global_scope(scope_index);
+
         if scope_data.bindings.len() > 0 {
             emit.check_global_or_eval_decl();
         }
 
         for item in scope_data.iter() {
-            let name_index = emit.get_atom_index(item.name());
+            let name_index = emit.get_atom_gcthing_index(item.name());
 
             match item.kind() {
                 BindingKind::Var => {
@@ -198,8 +202,6 @@ impl EmitterScopeStack {
 
         let scope = EmitterScope::Global(GlobalEmitterScope::new(scope_data));
         self.scope_stack.push(scope);
-
-        emit.enter_global_scope(scope_index);
     }
 
     /// Leave the global scope. Call this once at the end of a top-level

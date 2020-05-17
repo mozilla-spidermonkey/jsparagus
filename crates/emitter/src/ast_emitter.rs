@@ -424,7 +424,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             }
 
             Expression::LiteralStringExpression { value, .. } => {
-                let str_index = self.emit.get_atom_index(*value);
+                let str_index = self.emit.get_atom_gcthing_index(*value);
                 self.emit.string(str_index);
             }
 

@@ -1,5 +1,5 @@
 use emitter::opcode::Opcode;
-use emitter::{EmitResult, ScriptStencil};
+use emitter::{EmitResult, GCThing, ScriptStencil};
 
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -64,8 +64,10 @@ impl<'alloc> Helpers<'alloc> for ScriptStencil {
     }
 
     fn read_atom(&self, offset: usize, atoms: &Vec<&'alloc str>) -> String {
-        let index = self.atoms[self.read_i32(offset) as usize];
-        atoms[usize::from(index)].to_string()
+        match self.gcthings[self.read_i32(offset) as usize] {
+            GCThing::Atom(index) => atoms[usize::from(index)].to_string(),
+            _ => panic!("Unexpected GC things for string"),
+        }
     }
 }
 

@@ -6,7 +6,6 @@ use crate::gcthings::GCThing;
 use crate::regexp::RegExpItem;
 use crate::scope_notes::ScopeNote;
 
-use ast::source_atom_set::SourceAtomSetIndex;
 use scope::data::ScopeData;
 use scope::frame_slot::FrameSlot;
 
@@ -38,7 +37,6 @@ impl<'alloc> EmitResult<'alloc> {
 #[derive(Debug)]
 pub struct ScriptStencil {
     pub bytecode: Vec<u8>,
-    pub atoms: Vec<SourceAtomSetIndex>,
     pub regexps: Vec<RegExpItem>,
     pub gcthings: Vec<GCThing>,
     pub scope_notes: Vec<ScopeNote>,
