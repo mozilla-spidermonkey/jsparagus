@@ -1,20 +1,20 @@
 use crate::ast_emitter::AstEmitter;
 use crate::emitter::EmitError;
 use crate::emitter_scope::NameLocation;
-use crate::script_atom_set::ScriptAtomSetIndex;
+use crate::gcthings::GCThingIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
 use scope::data::BindingKind;
 use scope::frame_slot::FrameSlot;
 
 #[derive(Debug, PartialEq)]
 enum AssignmentReferenceKind {
-    GlobalVar(ScriptAtomSetIndex),
-    GlobalLexical(ScriptAtomSetIndex),
+    GlobalVar(GCThingIndex),
+    GlobalLexical(GCThingIndex),
     FrameSlotLexical(FrameSlot),
     FrameSlotNonLexical(FrameSlot),
-    Dynamic(ScriptAtomSetIndex),
+    Dynamic(GCThingIndex),
     #[allow(dead_code)]
-    Prop(ScriptAtomSetIndex),
+    Prop(GCThingIndex),
     #[allow(dead_code)]
     Elem,
 }
@@ -46,8 +46,8 @@ impl AssignmentReference {
 
 #[derive(Debug, PartialEq)]
 enum DeclarationReferenceKind {
-    GlobalVar(ScriptAtomSetIndex),
-    GlobalLexical(ScriptAtomSetIndex),
+    GlobalVar(GCThingIndex),
+    GlobalLexical(GCThingIndex),
     FrameSlot(FrameSlot),
 }
 
@@ -121,7 +121,7 @@ pub struct GetNameEmitter {
 }
 impl GetNameEmitter {
     pub fn emit(self, emitter: &mut AstEmitter) {
-        let name_index = emitter.emit.get_atom_index(self.name);
+        let name_index = emitter.emit.get_atom_gcthing_index(self.name);
         let loc = emitter.lookup_name(self.name);
 
         //              [stack]
@@ -161,7 +161,7 @@ where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        let key_index = emitter.emit.get_atom_index(self.key);
+        let key_index = emitter.emit.get_atom_gcthing_index(self.key);
 
         //              [stack]
 
@@ -190,7 +190,7 @@ where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
-        let key_index = emitter.emit.get_atom_index(self.key);
+        let key_index = emitter.emit.get_atom_gcthing_index(self.key);
 
         //              [stack]
 
@@ -292,7 +292,7 @@ pub struct NameReferenceEmitter {
 }
 impl NameReferenceEmitter {
     pub fn emit_for_call(self, emitter: &mut AstEmitter) -> CallReference {
-        let name_index = emitter.emit.get_atom_index(self.name);
+        let name_index = emitter.emit.get_atom_gcthing_index(self.name);
         let loc = emitter.lookup_name(self.name);
 
         //              [stack]
@@ -330,7 +330,7 @@ impl NameReferenceEmitter {
     }
 
     pub fn emit_for_assignment(self, emitter: &mut AstEmitter) -> AssignmentReference {
-        let name_index = emitter.emit.get_atom_index(self.name);
+        let name_index = emitter.emit.get_atom_gcthing_index(self.name);
         let loc = emitter.lookup_name(self.name);
 
         //              [stack]
@@ -365,7 +365,7 @@ impl NameReferenceEmitter {
     }
 
     pub fn emit_for_declaration(self, emitter: &mut AstEmitter) -> DeclarationReference {
-        let name_index = emitter.emit.get_atom_index(self.name);
+        let name_index = emitter.emit.get_atom_gcthing_index(self.name);
         let loc = emitter.lookup_name(self.name);
 
         //              [stack]
@@ -404,7 +404,7 @@ where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub fn emit_for_call(self, emitter: &mut AstEmitter) -> Result<CallReference, EmitError> {
-        let key_index = emitter.emit.get_atom_index(self.key);
+        let key_index = emitter.emit.get_atom_gcthing_index(self.key);
 
         //              [stack]
 
@@ -431,7 +431,7 @@ where
         self,
         emitter: &mut AstEmitter,
     ) -> Result<AssignmentReference, EmitError> {
-        let key_index = emitter.emit.get_atom_index(self.key);
+        let key_index = emitter.emit.get_atom_gcthing_index(self.key);
 
         //              [stack]
 
