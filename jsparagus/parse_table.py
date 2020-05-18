@@ -551,7 +551,7 @@ class ParseTable:
                     print("\nMapping state {} to LR0:\n{}".format(s.stable_hash, s_it))
                 for k, sk_it in s_it.transitions().items():
                     locations = sk_it.stable_locations()
-                    if not self.is_term_shifted(k):
+                    if not self.term_is_shifted(k):
                         locations = OrderedFrozenSet()
                     is_new, sk = self.new_state(locations)
                     if is_new:
@@ -566,7 +566,7 @@ class ParseTable:
             print("Create LR(0) Table Result:")
             self.debug_dump()
 
-    def is_term_shifted(self, term: typing.Optional[Term]) -> bool:
+    def term_is_shifted(self, term: typing.Optional[Term]) -> bool:
         return not (isinstance(term, Action) and term.update_stack())
 
     def is_valid_path(
@@ -668,7 +668,7 @@ class ParseTable:
         enough context to disambiguate the inconsistency of the given state."""
 
         def not_interesting(aps: APS) -> bool:
-            reduce_list = [e for e in aps.history if self.is_term_shifted(e.term)]
+            reduce_list = [e for e in aps.history if self.term_is_shifted(e.term)]
             has_reduce_loop = len(reduce_list) != len(set(reduce_list))
             return has_reduce_loop
 
@@ -757,7 +757,7 @@ class ParseTable:
                 edges: Path
         ) -> typing.Tuple[int, typing.Optional[Edge]]:
             for i, edge in enumerate(edges):
-                if not self.is_term_shifted(edge.term):
+                if not self.term_is_shifted(edge.term):
                     return i, edge
             return 0, None
 
@@ -765,7 +765,7 @@ class ParseTable:
                 edges: Path
         ) -> typing.Tuple[int, typing.Optional[Edge]]:
             for i, edge in zip(reversed(range(len(edges))), reversed(edges)):
-                if not self.is_term_shifted(edge.term):
+                if not self.term_is_shifted(edge.term):
                     return i, edge
             return 0, None
 
@@ -1033,7 +1033,7 @@ class ParseTable:
             # No need to consider any action beyind the first reduced action
             # since the reduced action is in charge of replaying the lookahead
             # terms.
-            actions = list(keep_until(actions[:-1], lambda edge: not self.is_term_shifted(edge.term)))
+            actions = list(keep_until(actions[:-1], lambda edge: not self.term_is_shifted(edge.term)))
             assert all(isinstance(edge.term, Action) for edge in actions)
 
             # Change the order of the shifted term, shift all actions by 1 with
@@ -1086,7 +1086,7 @@ class ParseTable:
                 ]
                 new_shift_map = collections.defaultdict(lambda: [])
                 recurse = False
-                if not self.is_term_shifted(term):
+                if not self.term_is_shifted(term):
                     # There is no more target after a reduce action.
                     actions_list = []
                 for target, actions in actions_list:
@@ -1368,7 +1368,7 @@ class ParseTable:
             if aps.history == []:
                 return True
             last = aps.history[-1].term
-            is_reduce = not self.is_term_shifted(last)
+            is_reduce = not self.term_is_shifted(last)
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             can_reduce_later = True
             try:

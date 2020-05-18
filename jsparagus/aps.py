@@ -23,10 +23,10 @@ def shifted_path_to(pt: ParseTable, n: int, right_of: Path) -> typing.Iterator[P
     state = right_of[0].src
     assert isinstance(state, int)
     for edge in pt.states[state].backedges:
-        if not pt.is_term_shifted(edge.term):
+        if not pt.term_is_shifted(edge.term):
             print(repr(edge))
             print(pt.states[edge.src])
-        assert pt.is_term_shifted(edge.term)
+        assert pt.term_is_shifted(edge.term)
         if pt.term_is_stacked(edge.term):
             s_n = n - 1
             if n == 0:
