@@ -372,6 +372,22 @@ class ParseTable:
                 return True
         return False
 
+    def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> None:
+        for s in self.states:
+            if s is not None:
+                s.rewrite_state_indexes(state_map)
+        self.named_goals = [
+            (nt, state_map[s]) for nt, s in self.named_goals
+        ]
+
+    def rewrite_reordered_state_indexes(self) -> None:
+        state_map = {
+            s.index: i
+            for i, s in enumerate(self.states)
+            if s is not None
+        }
+        self.rewrite_state_indexes(state_map)
+
     def new_state(
             self,
             locations: OrderedFrozenSet[str],
@@ -1272,9 +1288,7 @@ class ParseTable:
 
     def remove_all_unreachable_state(self, verbose: bool, progress: bool) -> None:
         self.states = [s for s in self.states if s is not None]
-        state_map = {s.index: i for i, s in enumerate(self.states)}
-        for s in self.states:
-            s.rewrite_state_indexes(state_map)
+        self.rewrite_reordered_state_indexes()
 
     def fold_identical_endings(self, verbose: bool, progress: bool) -> None:
         # If 2 states have the same outgoing edges, then we can merge the 2
@@ -1327,9 +1341,7 @@ class ParseTable:
         self.states = []
         self.states.extend(shift_states)
         self.states.extend(action_states)
-        state_map = {s.index: i for i, s in enumerate(self.states)}
-        for s in self.states:
-            s.rewrite_state_indexes(state_map)
+        self.rewrite_reordered_state_indexes()
 
     def count_shift_states(self) -> int:
         return sum(1 for s in self.states if s is not None and len(s.epsilon) == 0)
