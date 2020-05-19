@@ -7,6 +7,7 @@ license = "MIT/Apache-2.0"
 
 [dependencies]
 jsparagus-emitter = { path = "../emitter" }
+jsparagus-stencil = { path = "../stencil" }
 
 [dev-dependencies]
 bumpalo = "2.6.0"

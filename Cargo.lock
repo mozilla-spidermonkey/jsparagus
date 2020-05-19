@@ -382,6 +382,7 @@ dependencies = [
  "jsparagus-json-log",
  "jsparagus-parser",
  "jsparagus-scope",
+ "jsparagus-stencil",
 ]
 
 [[package]]
@@ -420,6 +421,7 @@ dependencies = [
  "jsparagus-ast",
  "jsparagus-parser",
  "jsparagus-scope",
+ "jsparagus-stencil",
 ]
 
 [[package]]
@@ -439,6 +441,7 @@ dependencies = [
  "jsparagus-ast",
  "jsparagus-emitter",
  "jsparagus-parser",
+ "jsparagus-stencil",
 ]
 
 [[package]]
@@ -467,6 +470,17 @@ version = "0.1.0"
 dependencies = [
  "indexmap",
  "jsparagus-ast",
+]
+
+[[package]]
+name = "jsparagus-stencil"
+version = "0.1.0"
+dependencies = [
+ "bumpalo 2.6.0",
+ "byteorder",
+ "indexmap",
+ "jsparagus-ast",
+ "jsparagus-scope",
 ]
 
 [[package]]

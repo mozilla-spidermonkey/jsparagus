@@ -1,5 +1,7 @@
-use emitter::opcode::Opcode;
-use emitter::{EmitResult, GCThing, ScriptStencil};
+use stencil::gcthings::GCThing;
+use stencil::opcode::Opcode;
+use stencil::result::EmitResult;
+use stencil::script::ScriptStencil;
 
 use std::cell::RefCell;
 use std::convert::TryFrom;
