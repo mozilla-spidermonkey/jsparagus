@@ -1,11 +1,10 @@
 //! The result of emitter
 
+use crate::frame_slot::FrameSlot;
 use crate::function::FunctionCreationData;
 use crate::gcthings::GCThing;
 use crate::regexp::RegExpItem;
 use crate::scope_notes::ScopeNote;
-
-use scope::frame_slot::FrameSlot;
 
 /// Data used to instantiate the non-lazy script.
 /// Maps to js::frontend::ScriptStencil in m-c/js/src/frontend/Stencil.h.

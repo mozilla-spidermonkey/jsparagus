@@ -1,5 +1,5 @@
+use crate::scope::ScopeData;
 use crate::script::ScriptStencil;
-use scope::data::ScopeData;
 
 /// The result of emitter.
 pub struct EmitResult<'alloc> {

@@ -7,18 +7,18 @@
 
 use ast::source_atom_set::SourceAtomSetIndex;
 use byteorder::{ByteOrder, LittleEndian};
-use scope::data::ScopeIndex;
-use scope::frame_slot::FrameSlot;
 use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
 use stencil::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
+use stencil::frame_slot::FrameSlot;
 use stencil::function::{FunctionCreationData, FunctionCreationDataList};
 use stencil::gcthings::{GCThingIndex, GCThingList};
 use stencil::opcode::Opcode;
 use stencil::regexp::{RegExpItem, RegExpList};
+use stencil::scope::ScopeIndex;
 use stencil::scope_notes::{ScopeNoteIndex, ScopeNoteList};
 use stencil::script::ScriptStencil;
 
