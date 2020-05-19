@@ -470,6 +470,7 @@ version = "0.1.0"
 dependencies = [
  "indexmap",
  "jsparagus-ast",
+ "jsparagus-stencil",
 ]
 
 [[package]]
@@ -480,7 +481,6 @@ dependencies = [
  "byteorder",
  "indexmap",
  "jsparagus-ast",
- "jsparagus-scope",
 ]
 
 [[package]]
