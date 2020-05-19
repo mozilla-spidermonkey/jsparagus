@@ -7,6 +7,7 @@ mod value;
 mod tests;
 
 extern crate jsparagus_emitter as emitter;
+extern crate jsparagus_stencil as stencil;
 
 #[cfg(test)]
 extern crate jsparagus_ast as ast;
