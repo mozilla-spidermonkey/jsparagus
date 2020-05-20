@@ -477,9 +477,6 @@ dependencies = [
 name = "jsparagus-stencil"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
- "byteorder",
- "indexmap",
  "jsparagus-ast",
 ]
 
