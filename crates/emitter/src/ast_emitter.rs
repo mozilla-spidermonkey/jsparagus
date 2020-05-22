@@ -200,7 +200,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
                 .emit(self);
             }
             Statement::DebuggerStatement { .. } => {
-                return Err(EmitError::NotImplemented("TODO: DebuggerStatement"));
+                self.emit.debugger();
             }
             Statement::DoWhileStatement { block, test, .. } => {
                 DoWhileEmitter {
