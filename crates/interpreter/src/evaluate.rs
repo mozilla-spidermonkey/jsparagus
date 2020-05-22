@@ -389,6 +389,8 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
 
             Opcode::JumpTarget => {}
 
+            Opcode::Debugger => {}
+
             Opcode::LoopHead => {}
 
             Opcode::Dup => {
