@@ -473,7 +473,9 @@ impl GlobalScopeBuilder {
         for n in &self.declared_var_names {
             // 18.a. Perform ? envRec.CreateGlobalVarBinding(vn, false).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
 
         // Step 17. For each Parse Node f in functionsToInitialize, do
@@ -486,7 +488,8 @@ impl GlobalScopeBuilder {
             //
             // FIXME: for Annex B functions, use `new`.
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings
+            data.base
+                .bindings
                 .push(BindingName::new_top_level_function(*n, is_closed_over));
         }
 
@@ -498,13 +501,17 @@ impl GlobalScopeBuilder {
             // Step 16.b.ii. Else,
             // Step 16.b.ii.1. Perform ? envRec.CreateMutableBinding(dn, false).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             // Step 16.b.i. If IsConstantDeclaration of d is true, then
             // Step 16.b.i.1. Perform ? envRec.CreateImmutableBinding(dn, true).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Global(data)
@@ -608,7 +615,9 @@ impl BlockScopeBuilder {
             // Step 4.a.ii. Else,
             // Step 4.a.ii.1. Perform ! envRec.CreateMutableBinding(dn, false).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.fun_names {
             // Step 4.b. If d is a FunctionDeclaration, a GeneratorDeclaration,
@@ -619,13 +628,17 @@ impl BlockScopeBuilder {
             //              argument env.
             // Step 4.b.iii. Perform envRec.InitializeBinding(fn, fo).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             // Step 4.a.i. If IsConstantDeclaration of d is true, then
             // Step 4.a.i.1. Perform ! envRec.CreateImmutableBinding(dn, true).
             let is_closed_over = self.name_tracker.is_closed_over_def(n);
-            data.bindings.push(BindingName::new(*n, is_closed_over))
+            data.base
+                .bindings
+                .push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Lexical(data)
@@ -679,7 +692,9 @@ impl FunctionExpressionScopeBuilder {
                 // Step 4. Let name be StringValue of BindingIdentifier .
                 // Step 5. Perform envRec.CreateImmutableBinding(name, false).
                 let is_closed_over = self.name_tracker.is_closed_over_def(name);
-                data.bindings.push(BindingName::new(*name, is_closed_over));
+                data.base
+                    .bindings
+                    .push(BindingName::new(*name, is_closed_over));
 
                 ScopeData::Lexical(data)
             }
@@ -1071,10 +1086,11 @@ impl FunctionParametersScopeBuilder {
                         || (!has_extra_body_var_scope
                             && body_scope_builder.name_tracker.is_closed_over_def(n));
                     function_scope_data
+                        .base
                         .bindings
                         .push(Some(BindingName::new(*n, is_closed_over)))
                 }
-                None => function_scope_data.bindings.push(None),
+                None => function_scope_data.base.bindings.push(None),
             }
         }
         for n in &self.non_positional_parameter_names {
@@ -1082,6 +1098,7 @@ impl FunctionParametersScopeBuilder {
                 || (!has_extra_body_var_scope
                     && body_scope_builder.name_tracker.is_closed_over_def(n));
             function_scope_data
+                .base
                 .bindings
                 .push(Some(BindingName::new(*n, is_closed_over)))
         }
@@ -1144,6 +1161,7 @@ impl FunctionParametersScopeBuilder {
                 //                ! envRec.CreateMutableBinding(n, false).
                 let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
                 function_scope_data
+                    .base
                     .bindings
                     .push(Some(BindingName::new(*n, is_closed_over)));
 
@@ -1185,7 +1203,9 @@ impl FunctionParametersScopeBuilder {
                 // Step 28.f.i.2. Perform
                 //                ! varEnvRec.CreateMutableBinding(n, false).
                 let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
-                data.bindings.push(BindingName::new(*n, is_closed_over));
+                data.base
+                    .bindings
+                    .push(BindingName::new(*n, is_closed_over));
 
                 // Step 28.f.i.3. If n is not an element of parameterBindings or if
                 //                n is an element of functionNames, let
@@ -1246,14 +1266,18 @@ impl FunctionParametersScopeBuilder {
                     // Step 35.b.ii.1. Perform
                     //                 ! lexEnvRec.CreateMutableBinding(dn, false).
                     let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
-                    data.bindings.push(BindingName::new(*n, is_closed_over))
+                    data.base
+                        .bindings
+                        .push(BindingName::new(*n, is_closed_over))
                 }
                 for n in &body_scope_builder.const_names {
                     // Step 35.b.i. If IsConstantDeclaration of d is true, then
                     // Step 35.b.i.1. Perform
                     //                ! lexEnvRec.CreateImmutableBinding(dn, true).
                     let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
-                    data.bindings.push(BindingName::new(*n, is_closed_over))
+                    data.base
+                        .bindings
+                        .push(BindingName::new(*n, is_closed_over))
                 }
 
                 ScopeData::Lexical(data)
