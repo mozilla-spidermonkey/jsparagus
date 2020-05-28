@@ -176,7 +176,7 @@ impl EmitterScopeStack {
         // Enter global scope here, before emitting any name ops below.
         emit.enter_global_scope(scope_index);
 
-        if scope_data.bindings.len() > 0 {
+        if scope_data.base.bindings.len() > 0 {
             emit.check_global_or_eval_decl();
         }
 

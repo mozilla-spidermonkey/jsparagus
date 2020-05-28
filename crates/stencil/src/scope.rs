@@ -76,22 +76,84 @@ impl<'a> BindingIterItem<'a> {
     }
 }
 
+/// Accessor for is_closed_over for both BindingName/Option<BindingName>.
+pub trait MaybeBindingName {
+    fn is_closed_over(&self) -> bool;
+}
+impl MaybeBindingName for BindingName {
+    fn is_closed_over(&self) -> bool {
+        self.is_closed_over
+    }
+}
+impl MaybeBindingName for Option<BindingName> {
+    fn is_closed_over(&self) -> bool {
+        match self {
+            Some(b) => b.is_closed_over,
+            None => false,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct BaseScopeData<BindingItemT>
+where
+    BindingItemT: MaybeBindingName,
+{
+    /// Corresponds to `*Scope::Data.{length, trailingNames}.`
+    /// The layout is defined by *ScopeData structs below, that has
+    /// this struct.
+    pub bindings: Vec<BindingItemT>,
+    pub has_eval: bool,
+    pub has_with: bool,
+}
+
+impl<BindingItemT> BaseScopeData<BindingItemT>
+where
+    BindingItemT: MaybeBindingName,
+{
+    pub fn new(bindings_count: usize) -> Self {
+        Self {
+            bindings: Vec::with_capacity(bindings_count),
+            has_eval: false,
+            has_with: false,
+        }
+    }
+
+    /// Returns true if this scope needs to be allocated on heap as
+    /// EnvironmentObject.
+    pub fn needs_environment_object(&self) -> bool {
+        // `with` and direct `eval` can dynamically access bindings in this
+        // scope.
+        if self.has_eval || self.has_with {
+            return true;
+        }
+
+        // If a binding in this scope is closed over by inner function,
+        // it can be accessed when this frame isn't on the stack.
+        for binding in &self.bindings {
+            if binding.is_closed_over() {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
 /// Bindings created in global environment.
 ///
 /// Maps to js::GlobalScope::Data in m-c/js/src/vm/Scope.h.
 #[derive(Debug)]
 pub struct GlobalScopeData {
-    pub let_start: usize,
-    pub const_start: usize,
-
-    /// Corresponds to `GlobalScope::Data.{length, trailingNames}.`
-    ///
     /// Bindings are sorted by kind:
     ///
-    /// * `bindings[0..let_start]` - `var`s
-    /// * `bindings[let_start..const_start]` - `let`s
-    /// * `bindings[const_start..]` - `const`s
-    pub bindings: Vec<BindingName>,
+    /// * `base.bindings[0..let_start]` - `var`s
+    /// * `base.bindings[let_start..const_start]` - `let`s
+    /// * `base.bindings[const_start..]` - `const`s
+    pub base: BaseScopeData<BindingName>,
+
+    pub let_start: usize,
+    pub const_start: usize,
 
     /// The global functions in this script.
     pub functions: Vec<AssociatedDataKey>,
@@ -107,9 +169,9 @@ impl GlobalScopeData {
         let capacity = var_count + let_count + const_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             let_start: var_count,
             const_start: var_count + let_count,
-            bindings: Vec::with_capacity(capacity),
             functions,
         }
     }
@@ -136,7 +198,7 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
     type Item = BindingIterItem<'a>;
 
     fn next(&mut self) -> Option<BindingIterItem<'a>> {
-        if self.i == self.data.bindings.len() {
+        if self.i == self.data.base.bindings.len() {
             return None;
         }
 
@@ -148,7 +210,7 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
             BindingKind::Const
         };
 
-        let name = &self.data.bindings[self.i];
+        let name = &self.data.base.bindings[self.i];
 
         self.i += 1;
 
@@ -163,8 +225,8 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
 /// in m-c/js/src/frontend/Stencil.h
 #[derive(Debug)]
 pub struct VarScopeData {
-    /// Corresponds to VarScope::Data.{length, trailingNames}.
-    pub bindings: Vec<BindingName>,
+    /// All bindings are `var`.
+    pub base: BaseScopeData<BindingName>,
 
     /// The first frame slot of this scope.
     ///
@@ -186,7 +248,7 @@ impl VarScopeData {
         let capacity = var_count;
 
         Self {
-            bindings: Vec::with_capacity(capacity),
+            base: BaseScopeData::new(capacity),
             // Set to the correct value in EmitterScopeStack::enter_lexical.
             first_frame_slot: FrameSlot::new(0),
             enclosing,
@@ -201,10 +263,13 @@ impl VarScopeData {
 /// in m-c/js/src/frontend/Stencil.h
 #[derive(Debug)]
 pub struct LexicalScopeData {
-    pub const_start: usize,
+    /// Bindings are sorted by kind:
+    ///
+    /// * `base.bindings[0..const_start]` - `let`s
+    /// * `base.bindings[const_start..]` - `const`s
+    pub base: BaseScopeData<BindingName>,
 
-    /// Corresponds to LexicalScope::Data.{length, trailingNames}.
-    pub bindings: Vec<BindingName>,
+    pub const_start: usize,
 
     /// The first frame slot of this scope.
     ///
@@ -234,8 +299,8 @@ impl LexicalScopeData {
         let capacity = let_count + const_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             const_start: let_count,
-            bindings: Vec::with_capacity(capacity),
             // Set to the correct value in EmitterScopeStack::enter_lexical.
             first_frame_slot: FrameSlot::new(0),
             enclosing,
@@ -286,7 +351,7 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
     type Item = BindingIterItem<'a>;
 
     fn next(&mut self) -> Option<BindingIterItem<'a>> {
-        if self.i == self.data.bindings.len() {
+        if self.i == self.data.base.bindings.len() {
             return None;
         }
 
@@ -296,7 +361,7 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
             BindingKind::Const
         };
 
-        let name = &self.data.bindings[self.i];
+        let name = &self.data.base.bindings[self.i];
 
         self.i += 1;
 
@@ -311,15 +376,26 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
 /// in m-c/js/src/frontend/Stencil.h
 #[derive(Debug)]
 pub struct FunctionScopeData {
-    has_parameter_exprs: bool,
-    non_positional_formal_start: usize,
-    var_start: usize,
-
-    /// Corresponds to FunctionScope::Data.{length, trailingNames}.
+    /// Bindings are sorted by kind:
+    ///
+    /// * `base.bindings[0..non_positional_formal_start]` -
+    ///    positional foparameters:
+    ///      - single binding parameter with/without default
+    ///      - single binding rest parameter
+    /// * `base.bindings[non_positional_formal_start..var_start]` -
+    ///    non positional parameters:
+    ///      - destructuring parameter
+    ///      - destructuring rest parameter
+    /// * `base.bindings[var_start..]` - `var`s
     ///
     /// Given positional parameters range can have null slot for destructuring,
-    /// this is Vec of Option<BindingName>, instead of BindingName like others.
-    pub bindings: Vec<Option<BindingName>>,
+    /// use Vec of Option<BindingName>, instead of BindingName like others.
+    pub base: BaseScopeData<Option<BindingName>>,
+
+    has_parameter_exprs: bool,
+
+    non_positional_formal_start: usize,
+    var_start: usize,
 
     /// The first frame slot of this scope.
     ///
@@ -347,10 +423,10 @@ impl FunctionScopeData {
         let capacity = positional_parameter_count + non_positional_formal_start + var_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             has_parameter_exprs,
             non_positional_formal_start: positional_parameter_count,
             var_start: positional_parameter_count + non_positional_formal_start,
-            bindings: Vec::with_capacity(capacity),
             // Set to the correct value in EmitterScopeStack::enter_function.
             first_frame_slot: FrameSlot::new(0),
             enclosing,
