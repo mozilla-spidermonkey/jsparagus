@@ -71,6 +71,10 @@ impl<'a> BindingIterItem<'a> {
         self.name.is_top_level_function
     }
 
+    pub fn is_closed_over(&self) -> bool {
+        self.name.is_closed_over
+    }
+
     pub fn kind(&self) -> BindingKind {
         self.kind
     }
@@ -119,12 +123,18 @@ where
         }
     }
 
+    pub fn is_all_bindings_closed_over(&self) -> bool {
+        // `with` and direct `eval` can dynamically access any binding in this
+        // scope.
+        self.has_eval || self.has_with
+    }
+
     /// Returns true if this scope needs to be allocated on heap as
     /// EnvironmentObject.
     pub fn needs_environment_object(&self) -> bool {
         // `with` and direct `eval` can dynamically access bindings in this
         // scope.
-        if self.has_eval || self.has_with {
+        if self.is_all_bindings_closed_over() {
             return true;
         }
 

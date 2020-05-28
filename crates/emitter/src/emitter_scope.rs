@@ -8,6 +8,7 @@ use crate::emitter::InstructionWriter;
 use ast::source_atom_set::SourceAtomSetIndex;
 use std::collections::HashMap;
 use std::iter::Iterator;
+use stencil::env_coord::{EnvironmentHops, EnvironmentSlot};
 use stencil::frame_slot::FrameSlot;
 use stencil::scope::{BindingKind, GlobalScopeData, LexicalScopeData, ScopeDataMap, ScopeIndex};
 use stencil::scope_notes::ScopeNoteIndex;
@@ -21,6 +22,7 @@ pub enum NameLocation {
     Dynamic,
     Global(BindingKind),
     FrameSlot(FrameSlot, BindingKind),
+    EnvironmentCoord(EnvironmentHops, EnvironmentSlot, BindingKind),
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -74,28 +76,59 @@ impl GlobalEmitterScope {
     fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
         None
     }
+
+    fn has_environment_object(&self) -> bool {
+        false
+    }
+}
+
+struct LexicalEnvironmentObject {}
+impl LexicalEnvironmentObject {
+    fn first_free_slot() -> u32 {
+        // FIXME: This is the value of
+        //   `JSSLOT_FREE(&LexicalEnvironmentObject::class_)`
+        // in SpiderMonkey
+        2
+    }
 }
 
 #[derive(Debug)]
 pub struct LexicalEmitterScope {
     cache: HashMap<SourceAtomSetIndex, NameLocation>,
     next_frame_slot: FrameSlot,
+    needs_environment_object: bool,
     scope_note_index: Option<ScopeNoteIndex>,
 }
 
 impl LexicalEmitterScope {
     pub fn new(data: &LexicalScopeData, first_frame_slot: FrameSlot) -> Self {
+        let is_all_bindings_closed_over = data.base.is_all_bindings_closed_over();
+        let mut needs_environment_object = false;
+
         let mut cache = HashMap::new();
-        let mut slot = first_frame_slot;
+        let mut frame_slot = first_frame_slot;
+        let mut env_slot = EnvironmentSlot::new(LexicalEnvironmentObject::first_free_slot());
         for item in data.iter() {
-            // FIXME: support environment (item.is_closed_over()).
-            cache.insert(item.name(), NameLocation::FrameSlot(slot, item.kind()));
-            slot.next();
+            if is_all_bindings_closed_over || item.is_closed_over() {
+                cache.insert(
+                    item.name(),
+                    NameLocation::EnvironmentCoord(EnvironmentHops::new(0), env_slot, item.kind()),
+                );
+                env_slot.next();
+                needs_environment_object = true;
+            } else {
+                cache.insert(
+                    item.name(),
+                    NameLocation::FrameSlot(frame_slot, item.kind()),
+                );
+                frame_slot.next();
+            }
         }
 
         Self {
             cache,
-            next_frame_slot: slot,
+            next_frame_slot: frame_slot,
+            needs_environment_object,
             scope_note_index: None,
         }
     }
@@ -113,6 +146,10 @@ impl LexicalEmitterScope {
 
     fn scope_note_index(&self) -> Option<ScopeNoteIndex> {
         self.scope_note_index
+    }
+
+    pub fn has_environment_object(&self) -> bool {
+        self.needs_environment_object
     }
 }
 
@@ -142,6 +179,13 @@ impl EmitterScope {
         match self {
             EmitterScope::Global(scope) => scope.scope_note_index(),
             EmitterScope::Lexical(scope) => scope.scope_note_index(),
+        }
+    }
+
+    fn has_environment_object(&self) -> bool {
+        match self {
+            EmitterScope::Global(scope) => scope.has_environment_object(),
+            EmitterScope::Lexical(scope) => scope.has_environment_object(),
         }
     }
 }
@@ -262,14 +306,18 @@ impl EmitterScopeStack {
     ) {
         let mut scope_data = scope_data_map.get_lexical_at_mut(scope_index);
 
-        let first_frame_slot = self.innermost().next_frame_slot();
         let parent_scope_note_index = self.innermost().scope_note_index();
 
+        let first_frame_slot = self.innermost().next_frame_slot();
         scope_data.first_frame_slot = first_frame_slot;
-
         let mut lexical_scope = LexicalEmitterScope::new(scope_data, first_frame_slot);
         let next_frame_slot = lexical_scope.next_frame_slot;
-        let index = emit.enter_lexical_scope(scope_index, parent_scope_note_index, next_frame_slot);
+        let index = emit.enter_lexical_scope(
+            scope_index,
+            parent_scope_note_index,
+            next_frame_slot,
+            lexical_scope.needs_environment_object,
+        );
         lexical_scope.scope_note_index = Some(index);
 
         let scope = EmitterScope::Lexical(lexical_scope);
@@ -288,6 +336,7 @@ impl EmitterScopeStack {
             lexical_scope
                 .scope_note_index
                 .expect("scope note index should be populated"),
+            lexical_scope.needs_environment_object,
         );
     }
 
@@ -298,10 +347,20 @@ impl EmitterScopeStack {
     ///
     /// [1]: https://tc39.es/ecma262/#sec-resolvebinding
     pub fn lookup_name(&mut self, name: SourceAtomSetIndex) -> NameLocation {
+        let mut hops = EnvironmentHops::new(0);
+
         for scope in self.scope_stack.iter().rev() {
             if let Some(loc) = scope.lookup_name(name) {
-                // FIXME: handle hops in aliased var.
-                return loc;
+                return match loc {
+                    NameLocation::EnvironmentCoord(orig_hops, slot, kind) => {
+                        debug_assert!(u8::from(orig_hops) == 0u8);
+                        NameLocation::EnvironmentCoord(hops, slot, kind)
+                    }
+                    _ => loc,
+                };
+            }
+            if scope.has_environment_object() {
+                hops.next();
             }
         }
 
