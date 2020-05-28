@@ -1204,9 +1204,9 @@ impl InstructionWriter {
         self.write_g_c_thing_index(name_index);
     }
 
-    pub fn push_lexical_env(&mut self, lexical_scope_index: u32) {
+    pub fn push_lexical_env(&mut self, lexical_scope_index: GCThingIndex) {
         self.emit_op(Opcode::PushLexicalEnv);
-        self.write_u32(lexical_scope_index);
+        self.write_g_c_thing_index(lexical_scope_index);
     }
 
     pub fn pop_lexical_env(&mut self) {
@@ -1225,14 +1225,14 @@ impl InstructionWriter {
         self.emit_op(Opcode::FreshenLexicalEnv);
     }
 
-    pub fn push_var_env(&mut self, scope_index: u32) {
+    pub fn push_var_env(&mut self, scope_index: GCThingIndex) {
         self.emit_op(Opcode::PushVarEnv);
-        self.write_u32(scope_index);
+        self.write_g_c_thing_index(scope_index);
     }
 
-    pub fn enter_with(&mut self, static_with_index: u32) {
+    pub fn enter_with(&mut self, static_with_index: GCThingIndex) {
         self.emit_op(Opcode::EnterWith);
-        self.write_u32(static_with_index);
+        self.write_g_c_thing_index(static_with_index);
     }
 
     pub fn leave_with(&mut self) {
