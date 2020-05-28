@@ -687,9 +687,10 @@ where
 
             let hole_scope_note_index = match item.inner {
                 EmitterScope::Global(_) => panic!("global shouldn't be enclosed by other scope"),
-                EmitterScope::Lexical(_) => emitter.emit.enter_scope_hole_from_lexical(
+                EmitterScope::Lexical(scope) => emitter.emit.enter_scope_hole_from_lexical(
                     &item.outer.scope_note_index(),
                     parent_scope_note_index,
+                    scope.has_environment_object(),
                 ),
             };
             holes.push(hole_scope_note_index);
