@@ -66,7 +66,7 @@ impl<'alloc> Helpers<'alloc> for ScriptStencil {
     }
 
     fn read_atom(&self, offset: usize, atoms: &Vec<&'alloc str>) -> String {
-        match self.gcthings[self.read_i32(offset) as usize] {
+        match self.base.gcthings[self.read_i32(offset) as usize] {
             GCThing::Atom(index) => atoms[usize::from(index)].to_string(),
             _ => panic!("Unexpected GC things for string"),
         }
