@@ -247,9 +247,9 @@ pub struct SourceExtent {
 pub struct FunctionStencil {
     name: Option<SourceAtomSetIndex>,
     script: FunctionScript,
+    nargs: u16,
     flags: FunctionFlags,
     extent: SourceExtent,
-    // FIXME: add more fields
 }
 
 impl FunctionStencil {
@@ -262,6 +262,7 @@ impl FunctionStencil {
         Self {
             name,
             script: FunctionScript::NonLazy(NonLazyFunctionScript { script }),
+            nargs: 0,
             flags,
             extent,
         }
@@ -276,6 +277,7 @@ impl FunctionStencil {
         Self {
             name,
             script: FunctionScript::Lazy(LazyFunctionScript { script }),
+            nargs: 0,
             flags,
             extent,
         }
@@ -322,6 +324,10 @@ impl FunctionStencil {
 
     pub fn name<'a>(&'a self) -> &'a Option<SourceAtomSetIndex> {
         &self.name
+    }
+
+    pub fn add_nargs(&mut self) {
+        self.nargs += 1;
     }
 
     pub fn set_has_rest(&mut self) {
