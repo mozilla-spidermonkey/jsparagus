@@ -151,13 +151,23 @@ fn handle_script<'alloc>(
             eprintln!("error: {}", err);
         }
         Ok(result) => {
-            for (i, script) in result.scripts.iter().enumerate() {
-                if verbosity.emit_result {
-                    println!("\n# EmitResult [{}]\n{:#?}", i, script);
-                }
+            if verbosity.emit_result {
+                println!("\n# EmitResult\n{:#?}", result);
+            }
 
+            if verbosity.bytecode {
+                println!("\n# Bytecode\n{}", emitter::dis(&result.script.bytecode));
+            }
+
+            for (i, fun) in result.functions.iter().enumerate() {
                 if verbosity.bytecode {
-                    println!("\n# bytecode [{}]\n{}", i, emitter::dis(&script.bytecode));
+                    if fun.is_non_lazy() {
+                        println!(
+                            "\n# bytecode for functions[{}]\n{}",
+                            i,
+                            emitter::dis(&fun.non_lazy_script().bytecode)
+                        );
+                    }
                 }
             }
 

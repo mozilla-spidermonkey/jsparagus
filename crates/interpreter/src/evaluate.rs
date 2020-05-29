@@ -82,7 +82,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
 
-    let script = &result.scripts[0];
+    let script = &result.script;
     let atoms = &result.atoms;
 
     loop {

@@ -14,7 +14,7 @@ use std::convert::TryInto;
 use std::fmt;
 use stencil::bytecode_offset::{BytecodeOffset, BytecodeOffsetDiff};
 use stencil::frame_slot::FrameSlot;
-use stencil::function::{FunctionCreationData, FunctionCreationDataList};
+use stencil::function::FunctionStencilIndex;
 use stencil::gcthings::{GCThingIndex, GCThingList};
 use stencil::opcode::Opcode;
 use stencil::regexp::{RegExpItem, RegExpList};
@@ -118,7 +118,6 @@ pub struct InstructionWriter {
 
     gcthings: GCThingList,
     scope_notes: ScopeNoteList,
-    inner_functions: FunctionCreationDataList,
 
     regexps: RegExpList,
 
@@ -177,7 +176,6 @@ impl InstructionWriter {
             gcthings: GCThingList::new(),
             atom_to_gcindex_map: HashMap::new(),
             scope_notes: ScopeNoteList::new(),
-            inner_functions: FunctionCreationDataList::new(),
             regexps: RegExpList::new(),
             last_jump_target_offset: None,
             main_offset: BytecodeOffset::from(0usize),
@@ -1371,9 +1369,8 @@ impl InstructionWriter {
         }
     }
 
-    pub fn get_function_gcthing_index(&mut self, fun_data: FunctionCreationData) -> GCThingIndex {
-        let fun_data_index = self.inner_functions.push(fun_data);
-        self.gcthings.push_function(fun_data_index)
+    pub fn get_function_gcthing_index(&mut self, fun_index: FunctionStencilIndex) -> GCThingIndex {
+        self.gcthings.push_function(fun_index)
     }
 
     pub fn get_regexp_gcthing_index(&mut self, regexp: RegExpItem) -> GCThingIndex {
@@ -1457,7 +1454,6 @@ impl From<InstructionWriter> for ScriptStencil {
             bytecode: emit.bytecode,
             regexps: emit.regexps.into(),
             scope_notes: emit.scope_notes.into(),
-            inner_functions: emit.inner_functions.into(),
 
             lineno: 1,
             column: 0,
