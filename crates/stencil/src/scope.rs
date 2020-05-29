@@ -10,7 +10,8 @@
 //! Each scope contains a list of bindings (`BindingName`).
 
 use crate::frame_slot::FrameSlot;
-use ast::associated_data::{AssociatedData, Key as AssociatedDataKey};
+use crate::function::FunctionStencilIndex;
+use ast::associated_data::AssociatedData;
 use ast::source_atom_set::SourceAtomSetIndex;
 use ast::source_location_accessor::SourceLocationAccessor;
 use ast::type_id::NodeTypeIdAccessor;
@@ -166,7 +167,7 @@ pub struct GlobalScopeData {
     pub const_start: usize,
 
     /// The global functions in this script.
-    pub functions: Vec<AssociatedDataKey>,
+    pub functions: Vec<FunctionStencilIndex>,
 }
 
 impl GlobalScopeData {
@@ -174,7 +175,7 @@ impl GlobalScopeData {
         var_count: usize,
         let_count: usize,
         const_count: usize,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         let capacity = var_count + let_count + const_count;
 
@@ -296,7 +297,7 @@ pub struct LexicalScopeData {
     pub enclosing: ScopeIndex,
 
     /// Functions in this scope.
-    pub functions: Vec<AssociatedDataKey>,
+    pub functions: Vec<FunctionStencilIndex>,
 }
 
 impl LexicalScopeData {
@@ -304,7 +305,7 @@ impl LexicalScopeData {
         let_count: usize,
         const_count: usize,
         enclosing: ScopeIndex,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         let capacity = let_count + const_count;
 
@@ -322,7 +323,7 @@ impl LexicalScopeData {
         let_count: usize,
         const_count: usize,
         enclosing: ScopeIndex,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         Self::new(let_count, const_count, enclosing, functions)
     }

@@ -34,7 +34,7 @@ pub fn emit<'alloc>(
 ) -> Result<EmitResult<'alloc>, EmitError> {
     let ScopePassResult {
         scope_data_map,
-        function_map,
+        function_declarations,
         function_stencil_indices,
         functions,
     } = scope::generate_scope_data(ast);
@@ -42,7 +42,7 @@ pub fn emit<'alloc>(
         atoms,
         slices,
         scope_data_map,
-        function_map,
+        function_declarations,
         function_stencil_indices,
         functions,
     );

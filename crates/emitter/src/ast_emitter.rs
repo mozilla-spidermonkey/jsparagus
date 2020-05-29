@@ -86,7 +86,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
 
     fn emit_script(mut self, ast: &Script) -> Result<ScriptStencil, EmitError> {
         let scope_data_map = &self.compilation_info.scope_data_map;
-        let function_map = &self.compilation_info.function_map;
+        let function_declarations = &self.compilation_info.function_declarations;
 
         let scope_index = scope_data_map.get_global_index();
         let scope_data = scope_data_map.get_global_at(scope_index);
@@ -94,7 +94,11 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
         let top_level_functions: Vec<&Function> = scope_data
             .functions
             .iter()
-            .map(|key| *function_map.get(key).expect("function should exist"))
+            .map(|key| {
+                *function_declarations
+                    .get(key)
+                    .expect("function should exist")
+            })
             .collect();
 
         for fun in &top_level_functions {
