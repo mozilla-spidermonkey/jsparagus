@@ -11,13 +11,14 @@ use crate::builder::{ScopeDataMapAndFunctionStencilList, ScopeDataMapBuilder};
 use ast::arena;
 use ast::associated_data::AssociatedData;
 use ast::{types::*, visit::Pass};
+use std::collections::HashMap;
 use stencil::function::{FunctionStencilIndex, FunctionStencilList};
 use stencil::scope::ScopeDataMap;
 
 /// The result of scope analysis.
 pub struct ScopePassResult<'alloc> {
     pub scope_data_map: ScopeDataMap,
-    pub function_map: AssociatedData<&'alloc Function<'alloc>>,
+    pub function_declarations: HashMap<FunctionStencilIndex, &'alloc Function<'alloc>>,
     pub function_stencil_indices: AssociatedData<FunctionStencilIndex>,
     pub functions: FunctionStencilList,
 }
@@ -30,14 +31,14 @@ pub struct ScopePassResult<'alloc> {
 #[derive(Debug)]
 pub struct ScopePass<'alloc> {
     builder: ScopeDataMapBuilder,
-    function_map: AssociatedData<&'alloc Function<'alloc>>,
+    function_declarations: HashMap<FunctionStencilIndex, &'alloc Function<'alloc>>,
 }
 
 impl<'alloc> ScopePass<'alloc> {
     pub fn new() -> Self {
         Self {
             builder: ScopeDataMapBuilder::new(),
-            function_map: AssociatedData::new(),
+            function_declarations: HashMap::new(),
         }
     }
 }
@@ -51,7 +52,7 @@ impl<'alloc> From<ScopePass<'alloc>> for ScopePassResult<'alloc> {
         } = pass.builder.into();
         ScopePassResult {
             scope_data_map,
-            function_map: pass.function_map,
+            function_declarations: pass.function_declarations,
             function_stencil_indices,
             functions,
         }
@@ -121,9 +122,10 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         } else {
             panic!("FunctionDeclaration should have name");
         };
-        self.builder
-            .before_function_declaration(name, ast, ast.is_generator, ast.is_async);
-        self.function_map.insert(ast, ast);
+        let fun_index =
+            self.builder
+                .before_function_declaration(name, ast, ast.is_generator, ast.is_async);
+        self.function_declarations.insert(fun_index, ast);
     }
 
     fn leave_enum_statement_variant_function_declaration(&mut self, ast: &'alloc Function<'alloc>) {

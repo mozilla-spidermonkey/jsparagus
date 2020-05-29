@@ -346,7 +346,7 @@ impl FunctionStencil {
 }
 
 /// Index into FunctionStencilList.items.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FunctionStencilIndex {
     index: usize,
 }

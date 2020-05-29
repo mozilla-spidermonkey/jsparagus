@@ -34,7 +34,7 @@
 //! [1]: https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
 
 use crate::free_name_tracker::FreeNameTracker;
-use ast::associated_data::{AssociatedData, Key as AssociatedDataKey};
+use ast::associated_data::AssociatedData;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSetIndex};
 use ast::source_location_accessor::SourceLocationAccessor;
 use ast::type_id::NodeTypeIdAccessor;
@@ -325,7 +325,7 @@ struct GlobalScopeBuilder {
     /// https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
     ///
     /// Step 8. Let functionsToInitialize be a new empty List.
-    functions_to_initialize: Vec<AssociatedDataKey>,
+    functions_to_initialize: Vec<FunctionStencilIndex>,
 
     /// Step 9. Let declaredFunctionNames be a new empty List.
     declared_function_names: IndexSet<SourceAtomSetIndex>,
@@ -402,10 +402,7 @@ impl GlobalScopeBuilder {
         self.const_names.push(name);
     }
 
-    fn declare_function<T>(&mut self, name: SourceAtomSetIndex, fun: &T)
-    where
-        T: SourceLocationAccessor + NodeTypeIdAccessor,
-    {
+    fn declare_function(&mut self, name: SourceAtomSetIndex, fun_index: FunctionStencilIndex) {
         // Runtime Semantics: GlobalDeclarationInstantiation ( script, env )
         // https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
         //
@@ -439,8 +436,7 @@ impl GlobalScopeBuilder {
 
         // Step 10.a.iv.4. Insert d as the first element of
         //                 functionsToInitialize.
-        self.functions_to_initialize
-            .push(AssociatedDataKey::new(fun));
+        self.functions_to_initialize.push(fun_index);
     }
 
     fn remove_function_names_from_var_names(&mut self) {
@@ -537,7 +533,7 @@ struct BlockScopeBuilder {
     ///           then
     ///
     /// FIXME: Support Annex B.
-    functions: Vec<AssociatedDataKey>,
+    functions: Vec<FunctionStencilIndex>,
 
     /// Scope associated to this builder.
     scope_index: ScopeIndex,
@@ -572,10 +568,7 @@ impl BlockScopeBuilder {
         self.const_names.push(name);
     }
 
-    fn declare_function<T>(&mut self, name: SourceAtomSetIndex, fun: &T)
-    where
-        T: SourceLocationAccessor + NodeTypeIdAccessor,
-    {
+    fn declare_function(&mut self, name: SourceAtomSetIndex, fun_index: FunctionStencilIndex) {
         // Runtime Semantics: BlockDeclarationInstantiation ( code, env )
         // https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
         //
@@ -589,7 +582,7 @@ impl BlockScopeBuilder {
         // Step 4.b. If d is a FunctionDeclaration, a GeneratorDeclaration, an
         //           AsyncFunctionDeclaration, or an AsyncGeneratorDeclaration,
         //           then
-        self.functions.push(AssociatedDataKey::new(fun));
+        self.functions.push(fun_index);
     }
 
     fn into_scope_data(self, enclosing: ScopeIndex) -> ScopeData {
@@ -1310,7 +1303,7 @@ struct FunctionBodyScopeBuilder {
     const_names: Vec<SourceAtomSetIndex>,
 
     /// Step 13. Let functionsToInitialize be a new empty List.
-    functions_to_initialize: Vec<AssociatedDataKey>,
+    functions_to_initialize: Vec<FunctionStencilIndex>,
 
     /// Step 18. Else if hasParameterExpressions is false, then
     /// Step 18.a. If "arguments" is an element of functionNames or
@@ -1376,10 +1369,7 @@ impl FunctionBodyScopeBuilder {
         self.check_lexical_or_function_name(name);
     }
 
-    fn declare_function<T>(&mut self, name: SourceAtomSetIndex, fun: &T)
-    where
-        T: SourceLocationAccessor + NodeTypeIdAccessor,
-    {
+    fn declare_function(&mut self, name: SourceAtomSetIndex, fun_index: FunctionStencilIndex) {
         // FunctionDeclarationInstantiation ( func, argumentsList )
         // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
         //
@@ -1406,8 +1396,7 @@ impl FunctionBodyScopeBuilder {
 
         // Step 14.a.iii.3. Insert d as the first element of
         //                  functionsToInitialize.
-        self.functions_to_initialize
-            .push(AssociatedDataKey::new(fun));
+        self.functions_to_initialize.push(fun_index);
     }
 }
 
@@ -1720,7 +1709,7 @@ impl FunctionStencilBuilder {
     ///
     /// This creates `FunctionStencil` for the function, and adds it to
     /// enclosing function if exists.
-    fn enter<T>(&mut self, fun: &T, syntax_kind: FunctionSyntaxKind)
+    fn enter<T>(&mut self, fun: &T, syntax_kind: FunctionSyntaxKind) -> FunctionStencilIndex
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
@@ -1755,6 +1744,8 @@ impl FunctionStencilBuilder {
         }
 
         self.function_stack.push(index);
+
+        index
     }
 
     /// Leave a function, setting its source location.
@@ -2038,22 +2029,27 @@ impl ScopeDataMapBuilder {
         fun: &T,
         is_generator: bool,
         is_async: bool,
-    ) where
+    ) -> FunctionStencilIndex
+    where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        let fun_index = self.function_stencil_builder.enter(
+            fun,
+            FunctionSyntaxKind::function_declaration(is_generator, is_async),
+        );
+
         match self.builder_stack.innermost_lexical() {
-            ScopeBuilder::Global(ref mut builder) => builder.declare_function(name, fun),
-            ScopeBuilder::Block(ref mut builder) => builder.declare_function(name, fun),
-            ScopeBuilder::FunctionBody(ref mut builder) => builder.declare_function(name, fun),
+            ScopeBuilder::Global(ref mut builder) => builder.declare_function(name, fun_index),
+            ScopeBuilder::Block(ref mut builder) => builder.declare_function(name, fun_index),
+            ScopeBuilder::FunctionBody(ref mut builder) => {
+                builder.declare_function(name, fun_index)
+            }
             _ => panic!("unexpected lexical for FunctionDeclaration"),
         }
 
         self.scope_kind_stack.push(ScopeKind::FunctionName);
 
-        self.function_stencil_builder.enter(
-            fun,
-            FunctionSyntaxKind::function_declaration(is_generator, is_async),
-        );
+        fun_index
     }
 
     pub fn after_function_declaration<T>(&mut self, fun: &T)
