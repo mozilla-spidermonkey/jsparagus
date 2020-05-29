@@ -1,7 +1,6 @@
 //! The result of emitter
 
 use crate::frame_slot::FrameSlot;
-use crate::function::FunctionCreationData;
 use crate::gcthings::GCThing;
 use crate::regexp::RegExpItem;
 use crate::scope_notes::ScopeNote;
@@ -170,7 +169,6 @@ pub struct ScriptStencil {
     pub bytecode: Vec<u8>,
     pub regexps: Vec<RegExpItem>,
     pub scope_notes: Vec<ScopeNote>,
-    pub inner_functions: Vec<FunctionCreationData>,
 
     /// Line and column numbers for the first character of source.
     pub lineno: usize,
