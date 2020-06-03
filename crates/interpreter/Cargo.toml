@@ -10,7 +10,7 @@ jsparagus-emitter = { path = "../emitter" }
 jsparagus-stencil = { path = "../stencil" }
 
 [dev-dependencies]
-bumpalo = "2.6.0"
+bumpalo = "3.4.0"
 jsparagus-ast = { path = "../ast" }
 jsparagus-parser = { path = "../parser" }
 

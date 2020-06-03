@@ -229,10 +229,9 @@ pub fn read_print_loop(verbosity: Verbosity) {
             }
             Ok(script) => {
                 let program = arena::alloc(allocator, Program::Script(script.unbox()));
-
                 handle_script(
                     &verbosity,
-                    &program.unbox(),
+                    &program,
                     atoms.replace(SourceAtomSet::new_uninitialized()),
                     slices.replace(SourceSliceList::new()),
                     global.clone(),
