@@ -1406,23 +1406,35 @@ impl InstructionWriter {
     }
 
     pub fn leave_lexical_scope(&mut self, index: ScopeNoteIndex) {
-        self.debug_leave_lexical_env();
+        self.emit_leave_lexical_scope();
         let offset = self.bytecode_offset();
         self.scope_notes.leave_scope(index, offset);
     }
 
-    pub fn enter_scope_hole(
-        &mut self,
-        maybe_scope_note_index: &Option<ScopeNoteIndex>,
-        parent_scope_note_index: Option<ScopeNoteIndex>,
-    ) -> ScopeNoteIndex {
+    fn emit_leave_lexical_scope(&mut self) {
         // TODO: the bytecode sequence before leaving scope (entering hole) depends on the kind
         // of scope (and also controls). This is currently only debug_leave_lexical_env because
         // there's only simple lexical scope.
         self.debug_leave_lexical_env();
+    }
+
+    pub fn enter_scope_hole_from_lexical(
+        &mut self,
+        maybe_hole_scope_note_index: &Option<ScopeNoteIndex>,
+        parent_scope_note_index: Option<ScopeNoteIndex>,
+    ) -> ScopeNoteIndex {
+        self.emit_leave_lexical_scope();
+        self.enter_scope_hole(maybe_hole_scope_note_index, parent_scope_note_index)
+    }
+
+    fn enter_scope_hole(
+        &mut self,
+        maybe_hole_scope_note_index: &Option<ScopeNoteIndex>,
+        parent_scope_note_index: Option<ScopeNoteIndex>,
+    ) -> ScopeNoteIndex {
         let offset = self.bytecode_offset();
 
-        let gcthing_index = match maybe_scope_note_index {
+        let gcthing_index = match maybe_hole_scope_note_index {
             Some(index) => self.scope_notes.get_scope_hole_gcthing_index(index),
             None => self
                 .body_scope_index

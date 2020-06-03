@@ -7,6 +7,7 @@
 use crate::emitter::InstructionWriter;
 use ast::source_atom_set::SourceAtomSetIndex;
 use std::collections::HashMap;
+use std::iter::Iterator;
 use stencil::frame_slot::FrameSlot;
 use stencil::scope::{BindingKind, GlobalScopeData, LexicalScopeData, ScopeDataMap, ScopeIndex};
 use stencil::scope_notes::ScopeNoteIndex;
@@ -27,12 +28,26 @@ pub struct EmitterScopeDepth {
     index: usize,
 }
 
+impl EmitterScopeDepth {
+    fn has_parent(&self) -> bool {
+        self.index > 0
+    }
+
+    fn parent(&self) -> Self {
+        debug_assert!(self.has_parent());
+
+        Self {
+            index: self.index - 1,
+        }
+    }
+}
+
 // --- EmitterScope types
 //
 // These types are the variants of enum EmitterScope.
 
 #[derive(Debug)]
-struct GlobalEmitterScope {
+pub struct GlobalEmitterScope {
     cache: HashMap<SourceAtomSetIndex, NameLocation>,
 }
 
@@ -103,7 +118,7 @@ impl LexicalEmitterScope {
 
 /// The information about a scope needed for emitting bytecode.
 #[derive(Debug)]
-enum EmitterScope {
+pub enum EmitterScope {
     Global(GlobalEmitterScope),
     Lexical(LexicalEmitterScope),
 }
@@ -293,33 +308,68 @@ impl EmitterScopeStack {
         NameLocation::Dynamic
     }
 
-    pub fn current_depth(&mut self) -> EmitterScopeDepth {
+    pub fn current_depth(&self) -> EmitterScopeDepth {
         EmitterScopeDepth {
             index: self.scope_stack.len() - 1,
         }
     }
 
-    pub fn scope_note_indices_from_to(
-        &self,
-        from: &EmitterScopeDepth,
-        to: &EmitterScopeDepth,
-    ) -> Vec<Option<ScopeNoteIndex>> {
-        let mut indices = Vec::new();
-        for scope in self
-            .scope_stack
-            .iter()
-            .skip(from.index)
-            .take(to.index - from.index)
-        {
-            indices.push(scope.scope_note_index());
-        }
-        indices
+    /// Walk the scope stack up to and including `to` depth.
+    /// See EmitterScopeWalker for the details.
+    pub fn walk_up_to_including<'a>(&'a self, to: EmitterScopeDepth) -> EmitterScopeWalker<'a> {
+        EmitterScopeWalker::new(self, to)
     }
 
-    pub fn get_scope_note_index_for(&self, index: EmitterScopeDepth) -> Option<ScopeNoteIndex> {
+    pub fn get_current_scope_note_index(&self) -> Option<ScopeNoteIndex> {
+        self.innermost().scope_note_index()
+    }
+
+    fn get<'a>(&'a self, index: EmitterScopeDepth) -> &'a EmitterScope {
         self.scope_stack
             .get(index.index)
             .expect("scope should exist")
-            .scope_note_index()
+    }
+}
+
+/// Walk the scope stack up to `to`, and yields EmitterScopeWalkItem for
+/// each scope.
+///
+/// The first item is `{ outer: parent-of-innermost, inner: innermost }`, and
+/// the last item is `{ outer: to, inner: child-of-to }`.
+pub struct EmitterScopeWalker<'a> {
+    stack: &'a EmitterScopeStack,
+    to: EmitterScopeDepth,
+    current: EmitterScopeDepth,
+}
+
+impl<'a> EmitterScopeWalker<'a> {
+    fn new(stack: &'a EmitterScopeStack, to: EmitterScopeDepth) -> Self {
+        let current = stack.current_depth();
+
+        Self { stack, to, current }
+    }
+}
+
+pub struct EmitterScopeWalkItem<'a> {
+    pub outer: &'a EmitterScope,
+    pub inner: &'a EmitterScope,
+}
+
+impl<'a> Iterator for EmitterScopeWalker<'a> {
+    type Item = EmitterScopeWalkItem<'a>;
+
+    fn next(&mut self) -> Option<EmitterScopeWalkItem<'a>> {
+        if self.current == self.to {
+            return None;
+        }
+
+        let outer_index = self.current.parent();
+        let inner_index = self.current;
+        self.current = outer_index;
+
+        Some(EmitterScopeWalkItem {
+            inner: self.stack.get(inner_index),
+            outer: self.stack.get(outer_index),
+        })
     }
 }
