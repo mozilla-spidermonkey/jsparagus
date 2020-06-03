@@ -409,7 +409,7 @@ You can use escape sequences to write variable and property names, but
 not keywords (including contextual keywords in contexts where they act
 as keywords).
 
-So `if (foo) {}` and `{ i\f: 0 }` are legal but `i\u0066 (foo)` is not.
+So `if (foo) {}` and `{ i\u0066: 0 }` are legal but `i\u0066 (foo)` is not.
 
 And you don't necessarily know if you're lexing a contextual keyword
 until the next token: `({ g\u0065t: 0 })` is legal, but
