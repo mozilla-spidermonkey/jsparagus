@@ -208,9 +208,7 @@ impl FunctionFlags {
                 debug_assert!(!syntax_kind.is_async);
                 flags |= CONSTRUCTOR;
             }
-            _ => {
-                debug_assert!(!syntax_kind.is_generator);
-            }
+            _ => {}
         }
         Self::new(flags)
     }
