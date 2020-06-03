@@ -6,7 +6,9 @@ import typing
 from .grammar import Element, InitNt, Nt
 from . import types, grammar
 
-StateId = int
+# Avoid circular reference between this module and parse_table.py
+if typing.TYPE_CHECKING:
+    from .parse_table import StateId
 
 
 class Action:
