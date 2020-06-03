@@ -8,6 +8,7 @@
 //! no AST is built. So we try to keep AST use separate from the analysis code.
 
 use crate::builder::{ScopeDataMapAndFunctionStencilList, ScopeDataMapBuilder};
+use crate::data::FunctionDeclarationPropertyMap;
 use ast::arena;
 use ast::associated_data::AssociatedData;
 use ast::{types::*, visit::Pass};
@@ -20,6 +21,7 @@ pub struct ScopePassResult<'alloc> {
     pub scope_data_map: ScopeDataMap,
     pub function_declarations: HashMap<FunctionStencilIndex, &'alloc Function<'alloc>>,
     pub function_stencil_indices: AssociatedData<FunctionStencilIndex>,
+    pub function_declaration_properties: FunctionDeclarationPropertyMap,
     pub functions: FunctionStencilList,
 }
 
@@ -48,12 +50,14 @@ impl<'alloc> From<ScopePass<'alloc>> for ScopePassResult<'alloc> {
         let ScopeDataMapAndFunctionStencilList {
             scope_data_map,
             function_stencil_indices,
+            function_declaration_properties,
             functions,
         } = pass.builder.into();
         ScopePassResult {
             scope_data_map,
             function_declarations: pass.function_declarations,
             function_stencil_indices,
+            function_declaration_properties,
             functions,
         }
     }

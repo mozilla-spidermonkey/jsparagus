@@ -36,6 +36,7 @@ pub fn emit<'alloc>(
         scope_data_map,
         function_declarations,
         function_stencil_indices,
+        function_declaration_properties,
         functions,
     } = scope::generate_scope_data(ast);
     let compilation_info = CompilationInfo::new(
@@ -44,6 +45,7 @@ pub fn emit<'alloc>(
         scope_data_map,
         function_declarations,
         function_stencil_indices,
+        function_declaration_properties,
         functions,
     );
     ast_emitter::emit_program(ast, options, compilation_info)

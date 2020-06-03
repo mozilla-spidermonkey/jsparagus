@@ -343,6 +343,49 @@ impl LexicalScopeData {
     pub fn iter<'a>(&'a self) -> LexicalBindingIter<'a> {
         LexicalBindingIter::new(self)
     }
+
+    /// Mark a `name` binding originally at `original_binding_index`
+    /// Annex B function.
+    ///
+    /// The binding at `original_binding_index` can be different thing
+    /// if any binding before it is already removed.
+    pub fn mark_annex_b_function(
+        &mut self,
+        name: SourceAtomSetIndex,
+        original_binding_index: usize,
+    ) {
+        let binding_index = self.find_binding(name, original_binding_index);
+
+        // Lexical function becomes mutable binding.
+        debug_assert!(binding_index < self.const_start);
+
+        self.const_start -= 1;
+        self.base.bindings.remove(binding_index);
+    }
+
+    /// Find the binding `name`, originally stored at `original_binding_index`.
+    /// If the binding at `original_binding_index` isn't `name`, look for
+    /// `name`.
+    /// Panics if the binding with given `name` doesn't exist.
+    fn find_binding(&self, name: SourceAtomSetIndex, original_binding_index: usize) -> usize {
+        if original_binding_index < self.base.bindings.len() {
+            let binding = &self.base.bindings[original_binding_index];
+            if binding.name == name {
+                return original_binding_index;
+            }
+        }
+
+        // TODO: Search from `original_binding_index` to 0,
+        //       instead of iterating all items.
+
+        for (i, binding) in self.base.bindings.iter().enumerate() {
+            if binding.name == name {
+                return i;
+            }
+        }
+
+        panic!("The binding should exist");
+    }
 }
 
 /// Corresponds to the iteration part of js::BindingIter
@@ -526,7 +569,7 @@ impl ScopeDataList {
             .expect("Should be populated")
     }
 
-    fn get_mut(&mut self, index: ScopeIndex) -> &mut ScopeData {
+    pub fn get_mut(&mut self, index: ScopeIndex) -> &mut ScopeData {
         self.scopes[usize::from(index)]
             .as_mut()
             .expect("Should be populated")
@@ -585,6 +628,13 @@ impl ScopeDataMap {
             .get(node)
             .expect("There should be a scope data associated")
             .clone()
+    }
+
+    pub fn get_lexical_at(&self, index: ScopeIndex) -> &LexicalScopeData {
+        match self.scopes.get(index) {
+            ScopeData::Lexical(scope) => scope,
+            _ => panic!("Unexpected scope data for lexical"),
+        }
     }
 
     pub fn get_lexical_at_mut(&mut self, index: ScopeIndex) -> &mut LexicalScopeData {
