@@ -96,15 +96,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "2.6.0"
+version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad807f2fc2bf185eeb98ff3a901bd46dc5ad58163d0fa4577ba0d25674d71708"
-
-[[package]]
-name = "bumpalo"
-version = "3.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f359dc14ff8911330a51ef78022d376f25ed00248912803b58f00cb1c27f742"
+checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
 
 [[package]]
 name = "byteorder"
@@ -389,7 +383,7 @@ dependencies = [
 name = "jsparagus-ast"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "indexmap",
  "serde",
  "serde_json",
@@ -399,7 +393,7 @@ dependencies = [
 name = "jsparagus-driver"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "env_logger",
  "jsparagus-ast",
  "jsparagus-emitter",
@@ -415,7 +409,7 @@ dependencies = [
 name = "jsparagus-emitter"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "byteorder",
  "indexmap",
  "jsparagus-ast",
@@ -428,7 +422,7 @@ dependencies = [
 name = "jsparagus-generated-parser"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "jsparagus-ast",
  "static_assertions",
 ]
@@ -437,7 +431,7 @@ dependencies = [
 name = "jsparagus-interpreter"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "jsparagus-ast",
  "jsparagus-emitter",
  "jsparagus-parser",
@@ -456,7 +450,7 @@ dependencies = [
 name = "jsparagus-parser"
 version = "0.1.0"
 dependencies = [
- "bumpalo 2.6.0",
+ "bumpalo",
  "criterion",
  "jsparagus-ast",
  "jsparagus-generated-parser",
@@ -1039,7 +1033,7 @@ version = "0.2.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11cdb95816290b525b32587d76419facd99662a07e59d3cdb560488a819d9a45"
 dependencies = [
- "bumpalo 3.2.0",
+ "bumpalo",
  "lazy_static",
  "log",
  "proc-macro2",
