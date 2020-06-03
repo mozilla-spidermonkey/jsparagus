@@ -14,7 +14,10 @@ from .actions import Action, FilterFlag
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
 from .lr0 import LR0Generator, Term
-from .aps import APS, Edge, Path, StateId
+from .aps import APS, Edge, Path
+
+# StateAndTransitions objects are indexed using a StateId which is an integer.
+StateId = int
 
 
 class StateAndTransitions:
