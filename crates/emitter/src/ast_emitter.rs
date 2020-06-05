@@ -110,6 +110,13 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_top_level_function_declaration(&mut self, fun: &Function) -> Result<(), EmitError> {
+        if fun.is_generator {
+            return Err(EmitError::NotImplemented("TODO: Generator"));
+        }
+        if fun.is_async {
+            return Err(EmitError::NotImplemented("TODO: Async function"));
+        }
+
         let stencil_index = *self
             .compilation_info
             .function_stencil_indices
@@ -125,6 +132,13 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
     }
 
     fn emit_non_top_level_function_declaration(&mut self, fun: &Function) -> Result<(), EmitError> {
+        if fun.is_generator {
+            return Err(EmitError::NotImplemented("TODO: Generator"));
+        }
+        if fun.is_async {
+            return Err(EmitError::NotImplemented("TODO: Async function"));
+        }
+
         let stencil_index = *self
             .compilation_info
             .function_stencil_indices
