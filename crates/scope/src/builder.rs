@@ -346,7 +346,7 @@ impl From<BindingIndex> for usize {
 #[derive(Debug)]
 struct PossiblyAnnexBFunction {
     name: SourceAtomSetIndex,
-    owner_scope: ScopeIndex,
+    owner_scope_index: ScopeIndex,
     binding_index: BindingIndex,
     stencil_index: FunctionStencilIndex,
 }
@@ -366,14 +366,14 @@ impl PossiblyAnnexBFunctionList {
     fn push(
         &mut self,
         name: SourceAtomSetIndex,
-        owner_scope: ScopeIndex,
+        owner_scope_index: ScopeIndex,
         binding_index: BindingIndex,
         stencil_index: FunctionStencilIndex,
     ) {
         if let Some(functions) = self.functions.get_mut(&name) {
             functions.push(PossiblyAnnexBFunction {
                 name,
-                owner_scope,
+                owner_scope_index,
                 binding_index,
                 stencil_index,
             });
@@ -383,7 +383,7 @@ impl PossiblyAnnexBFunctionList {
         let mut functions = Vec::with_capacity(1);
         functions.push(PossiblyAnnexBFunction {
             name,
-            owner_scope,
+            owner_scope_index,
             binding_index,
             stencil_index,
         });
@@ -401,7 +401,7 @@ impl PossiblyAnnexBFunctionList {
     ) {
         for functions in &mut self.functions.values() {
             for fun in functions {
-                let scope = scopes.get_mut(fun.owner_scope);
+                let scope = scopes.get_mut(fun.owner_scope_index);
                 match scope {
                     ScopeData::Lexical(data) => {
                         data.mark_annex_b_function(fun.name, fun.binding_index.into());

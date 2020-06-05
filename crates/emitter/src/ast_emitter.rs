@@ -117,7 +117,7 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             .expect("FunctionStencil should be created");
         let fun_index = LazyFunctionEmitter { stencil_index }.emit(self);
 
-        TopLevelFunctionDeclarationEmitter { fun: fun_index }.emit(self);
+        TopLevelFunctionDeclarationEmitter { fun_index }.emit(self);
 
         Err(EmitError::NotImplemented(
             "TODO: Populate FunctionStencil fields",
@@ -146,17 +146,9 @@ impl<'alloc, 'opt> AstEmitter<'alloc, 'opt> {
             .expect("Function declaration should have name");
 
         if is_annex_b {
-            AnnexBFunctionDeclarationEmitter {
-                fun: fun_index,
-                name,
-            }
-            .emit(self)?;
+            AnnexBFunctionDeclarationEmitter { fun_index, name }.emit(self)?;
         } else {
-            LexicalFunctionDeclarationEmitter {
-                fun: fun_index,
-                name,
-            }
-            .emit(self)?;
+            LexicalFunctionDeclarationEmitter { fun_index, name }.emit(self)?;
         }
 
         Err(EmitError::NotImplemented(
