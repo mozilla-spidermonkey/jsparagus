@@ -16,19 +16,19 @@ impl LazyFunctionEmitter {
 }
 
 pub struct TopLevelFunctionDeclarationEmitter {
-    pub fun: GCThingIndex,
+    pub fun_index: GCThingIndex,
 }
 
 impl TopLevelFunctionDeclarationEmitter {
     pub fn emit(self, emitter: &mut AstEmitter) {
-        emitter.emit.lambda(self.fun);
+        emitter.emit.lambda(self.fun_index);
         emitter.emit.def_fun();
     }
 }
 
 pub struct LexicalFunctionDeclarationEmitter {
     pub name: SourceAtomSetIndex,
-    pub fun: GCThingIndex,
+    pub fun_index: GCThingIndex,
 }
 
 impl LexicalFunctionDeclarationEmitter {
@@ -38,7 +38,7 @@ impl LexicalFunctionDeclarationEmitter {
                 Ok(NameReferenceEmitter { name: self.name }.emit_for_declaration(emitter))
             },
             rhs: |emitter| {
-                emitter.emit.lambda(self.fun);
+                emitter.emit.lambda(self.fun_index);
                 Ok(())
             },
         }
@@ -48,7 +48,7 @@ impl LexicalFunctionDeclarationEmitter {
 
 pub struct AnnexBFunctionDeclarationEmitter {
     pub name: SourceAtomSetIndex,
-    pub fun: GCThingIndex,
+    pub fun_index: GCThingIndex,
 }
 
 impl AnnexBFunctionDeclarationEmitter {
@@ -58,7 +58,7 @@ impl AnnexBFunctionDeclarationEmitter {
                 Ok(NameReferenceEmitter { name: self.name }.emit_for_assignment(emitter))
             },
             rhs: |emitter| {
-                emitter.emit.lambda(self.fun);
+                emitter.emit.lambda(self.fun_index);
                 Ok(())
             },
         }
