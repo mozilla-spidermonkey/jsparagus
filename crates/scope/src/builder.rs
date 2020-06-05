@@ -1021,7 +1021,16 @@ struct FunctionParametersScopeBuilder {
 }
 
 impl FunctionParametersScopeBuilder {
-    fn new(scope_index: ScopeIndex) -> Self {
+    fn new(scope_index: ScopeIndex, is_arrow: bool) -> Self {
+        let mut name_tracker = FreeNameTracker::new();
+
+        if !is_arrow {
+            // Arrow function closes over this/arguments from enclosing
+            // function.
+            name_tracker.note_def(CommonSourceAtomSetIndices::this());
+            name_tracker.note_def(CommonSourceAtomSetIndices::arguments());
+        }
+
         Self {
             state: FunctionParametersState::Init,
 
@@ -1041,7 +1050,7 @@ impl FunctionParametersScopeBuilder {
             simple_parameter_list: true,
             has_parameter_expressions: false,
             scope_index,
-            name_tracker: FreeNameTracker::new(),
+            name_tracker,
         }
     }
 
@@ -2060,6 +2069,23 @@ impl FunctionStencilBuilder {
         self.function_stack.pop();
     }
 
+    /// Returns a immutable reference to the innermost function. None otherwise.
+    fn maybe_current<'a>(&'a self) -> Option<&'a FunctionStencil> {
+        let maybe_index = self.function_stack.last();
+        if maybe_index.is_none() {
+            return None;
+        }
+
+        let index = *maybe_index.unwrap();
+        Some(self.functions.get(index))
+    }
+
+    /// Returns a immutable reference to the current function.
+    /// Panics if no current function is found.
+    fn current<'a>(&'a self) -> &'a FunctionStencil {
+        self.maybe_current().expect("should be inside function")
+    }
+
     /// Returns a mutable reference to the innermost function. None otherwise.
     fn maybe_current_mut<'a>(&'a mut self) -> Option<&'a mut FunctionStencil> {
         let maybe_index = self.function_stack.last();
@@ -2493,7 +2519,9 @@ impl ScopeDataMapBuilder {
 
         let index = self.scopes.allocate();
 
-        let builder = FunctionParametersScopeBuilder::new(index);
+        let is_arrow = self.function_stencil_builder.current().is_arrow();
+
+        let builder = FunctionParametersScopeBuilder::new(index, is_arrow);
         self.non_global.insert(params, index);
 
         self.builder_stack.push_function_parameters(builder);

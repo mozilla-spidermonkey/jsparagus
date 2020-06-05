@@ -212,6 +212,11 @@ impl FunctionFlags {
         }
         Self::new(flags)
     }
+
+    pub fn is_arrow(&self) -> bool {
+        let kind_num = (self.flags >> FUNCTION_KIND_SHIFT) & FUNCTION_KIND_MASK;
+        kind_num == FunctionKind::Arrow as u16
+    }
 }
 
 #[derive(Debug)]
@@ -295,6 +300,10 @@ impl FunctionStencil {
             FunctionScript::NonLazy(_) => false,
             FunctionScript::Lazy(_) => true,
         }
+    }
+
+    pub fn is_arrow(&self) -> bool {
+        self.flags.is_arrow()
     }
 
     pub fn non_lazy_script<'a>(&'a self) -> &'a ScriptStencil {
