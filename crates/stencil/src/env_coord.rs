@@ -1,3 +1,9 @@
+//! (EnvironmentSlot,EnvironmentHops) pair represent the reference to a slot in
+//! an environment object in the environment chain.
+//!
+//! See the SMDOC comment in m-c/js/src/vm/EnvironmentObject.h for the details
+//! about environment object and environment chain.
+
 /// Slot in the environmentslot object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct EnvironmentSlot {
@@ -20,7 +26,8 @@ impl From<EnvironmentSlot> for u32 {
     }
 }
 
-/// Hops to the environment object.
+/// The number of environment objects to skip (hop) on the environment chain in
+/// order to find the associated environment object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct EnvironmentHops {
     hops: u8,
