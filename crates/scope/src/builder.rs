@@ -1378,7 +1378,14 @@ impl FunctionParametersScopeBuilder {
         );
 
         let has_extra_body_var_scope = self.has_parameter_expressions;
-        let function_var_names_count = if has_extra_body_var_scope {
+
+        // NOTE: Names in `body_scope_builder.var_names` is skipped if
+        //       parameter has the same name, or it's `arguments`,
+        //       at step 27.c.i.
+        //       The count here isn't the exact number of var bindings, but
+        //       it's fine given FunctionScopeData::new doesn't require the
+        //       exact number, but just maximum number.
+        let function_max_var_names_count = if has_extra_body_var_scope {
             0
         } else {
             body_scope_builder.var_names.len()
@@ -1388,7 +1395,7 @@ impl FunctionParametersScopeBuilder {
             self.has_parameter_expressions,
             self.positional_parameter_names.len(),
             self.non_positional_parameter_names.len(),
-            function_var_names_count,
+            function_max_var_names_count,
             enclosing,
         );
 

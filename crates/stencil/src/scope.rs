@@ -471,10 +471,10 @@ impl FunctionScopeData {
         has_parameter_exprs: bool,
         positional_parameter_count: usize,
         non_positional_formal_start: usize,
-        var_count: usize,
+        max_var_count: usize,
         enclosing: ScopeIndex,
     ) -> Self {
-        let capacity = positional_parameter_count + non_positional_formal_start + var_count;
+        let capacity = positional_parameter_count + non_positional_formal_start + max_var_count;
 
         Self {
             base: BaseScopeData::new(capacity),
