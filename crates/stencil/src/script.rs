@@ -179,8 +179,48 @@ impl ScriptStencilBase {
         }
     }
 
+    pub fn set_has_inner_functions(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::HasInnerFunctions);
+    }
+
+    pub fn set_function_has_this_binding(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::FunctionHasThisBinding);
+    }
+
     pub fn set_has_rest(&mut self) {
         self.immutable_flags.set(ImmutableScriptFlagsEnum::HasRest);
+    }
+
+    pub fn set_needs_function_environment_objects(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::NeedsFunctionEnvironmentObjects);
+    }
+
+    pub fn set_function_has_extra_body_var_scope(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::FunctionHasExtraBodyVarScope);
+    }
+
+    pub fn set_should_declare_arguments(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::ShouldDeclareArguments);
+    }
+
+    pub fn set_arguments_has_var_binding(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::ArgumentsHasVarBinding);
+    }
+
+    pub fn set_always_needs_args_obj(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::AlwaysNeedsArgsObj);
+    }
+
+    pub fn set_has_mapped_args_obj(&mut self) {
+        self.immutable_flags
+            .set(ImmutableScriptFlagsEnum::HasMappedArgsObj);
     }
 }
 

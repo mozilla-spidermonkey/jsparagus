@@ -2639,6 +2639,38 @@ impl ScopeDataMapBuilder {
         let var_scope_index = body_scope_builder.var_scope_index;
         let lexical_scope_index = body_scope_builder.lexical_scope_index;
 
+        // Save scope information used by FunctionStencilBuilder into
+        // local variables here before consuming ScopeBuilders.
+        let bindings_accessed_dynamically =
+            parameter_scope_builder.base.bindings_accessed_dynamically;
+
+        let has_used_this = parameter_scope_builder
+            .base
+            .name_tracker
+            .is_used_or_closed_over(CommonSourceAtomSetIndices::this())
+            || bindings_accessed_dynamically;
+        let has_used_arguments = parameter_scope_builder
+            .base
+            .name_tracker
+            .is_used_or_closed_over(CommonSourceAtomSetIndices::arguments())
+            || bindings_accessed_dynamically;
+
+        let parameter_has_arguments = parameter_scope_builder.parameter_has_arguments;
+
+        // NOTE: `var` here doesn't include Annex B functions.
+        //       Also, `var_names_has_arguments` becomes true regardless of
+        //       `arguments` in parameter.
+        let var_names_has_arguments = body_scope_builder
+            .var_names
+            .contains(&CommonSourceAtomSetIndices::arguments());
+
+        let body_has_defined_arguments =
+            var_names_has_arguments || body_scope_builder.function_or_lexical_has_arguments;
+
+        let strict = parameter_scope_builder.strict;
+        let simple_parameter_list = parameter_scope_builder.simple_parameter_list;
+        let has_mapped_arguments = !strict && simple_parameter_list;
+
         // Runtime Semantics: EvaluateBody
         // https://tc39.es/ecma262/#sec-function-definitions-runtime-semantics-evaluatebody
         //
@@ -2655,8 +2687,79 @@ impl ScopeDataMapBuilder {
             enclosing,
             body_scope_builder,
         );
-
         self.possibly_annex_b_functions.clear();
+
+        let has_extra_body_var = match &scope_data_set.extra_body_var {
+            ScopeData::Var(_) => true,
+            _ => false,
+        };
+
+        let fun_stencil = self.function_stencil_builder.current_mut();
+
+        if let ScopeData::Function(fun) = &scope_data_set.function {
+            if fun.base.needs_environment_object() {
+                fun_stencil.set_needs_environment_object();
+            }
+        } else {
+            panic!("Unexpected scope data for function");
+        }
+
+        if has_extra_body_var {
+            fun_stencil.set_has_extra_body_var_scope();
+        }
+
+        if has_mapped_arguments {
+            fun_stencil.set_has_mapped_args_obj();
+        }
+
+        if !fun_stencil.is_arrow() {
+            if has_used_this {
+                fun_stencil.set_has_this_binding();
+            }
+
+            // Perform the same algorithm as
+            // ParseContext::declareFunctionArgumentsObject in
+            // m-c/js/src/frontend/ParseContext.cpp.
+            //
+            // NOTE: This is implementation-specfic optimization, and has
+            //       no corresponding steps in the spec.
+
+            let mut uses_arguments = false;
+            let mut try_declare_arguments = has_used_arguments;
+            if has_extra_body_var {
+                if var_names_has_arguments {
+                    try_declare_arguments = true;
+                }
+            } else {
+                if var_names_has_arguments && !parameter_has_arguments {
+                    uses_arguments = true;
+                }
+            }
+
+            if try_declare_arguments {
+                if has_extra_body_var {
+                    if !parameter_has_arguments {
+                        fun_stencil.set_should_declare_arguments();
+                        uses_arguments = true;
+                    }
+                } else {
+                    let has_defined_arguments =
+                        parameter_has_arguments || body_has_defined_arguments;
+
+                    if !has_defined_arguments {
+                        fun_stencil.set_should_declare_arguments();
+                        uses_arguments = true;
+                    }
+                }
+            }
+
+            if uses_arguments {
+                fun_stencil.set_arguments_has_var_binding();
+                if bindings_accessed_dynamically {
+                    fun_stencil.set_always_needs_args_obj();
+                }
+            }
+        }
 
         self.scopes
             .populate(function_scope_index, scope_data_set.function);

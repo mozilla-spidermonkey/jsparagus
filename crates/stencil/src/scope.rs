@@ -81,7 +81,7 @@ impl<'a> BindingIterItem<'a> {
     }
 }
 
-/// Accessor for is_closed_over for both BindingName/Option<BindingName>.
+/// Accessor for both BindingName/Option<BindingName>.
 pub trait MaybeBindingName {
     fn is_closed_over(&self) -> bool;
 }

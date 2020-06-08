@@ -343,6 +343,36 @@ impl FunctionStencil {
         self.lazy_script_mut().set_has_rest();
     }
 
+    pub fn set_has_this_binding(&mut self) {
+        self.lazy_script_mut().set_function_has_this_binding();
+    }
+
+    pub fn set_needs_environment_object(&mut self) {
+        self.lazy_script_mut()
+            .set_needs_function_environment_objects();
+    }
+
+    pub fn set_has_extra_body_var_scope(&mut self) {
+        self.lazy_script_mut()
+            .set_function_has_extra_body_var_scope();
+    }
+
+    pub fn set_should_declare_arguments(&mut self) {
+        self.lazy_script_mut().set_should_declare_arguments();
+    }
+
+    pub fn set_arguments_has_var_binding(&mut self) {
+        self.lazy_script_mut().set_arguments_has_var_binding();
+    }
+
+    pub fn set_always_needs_args_obj(&mut self) {
+        self.lazy_script_mut().set_always_needs_args_obj();
+    }
+
+    pub fn set_has_mapped_args_obj(&mut self) {
+        self.lazy_script_mut().set_has_mapped_args_obj();
+    }
+
     pub fn set_to_string_starts(&mut self, to_string_start: usize) {
         self.extent.to_string_start = to_string_start as u32;
     }
@@ -356,6 +386,7 @@ impl FunctionStencil {
     }
 
     pub fn push_inner_function(&mut self, fun: FunctionStencilIndex) {
+        self.lazy_script_mut().set_has_inner_functions();
         self.lazy_script_mut().gcthings.push(GCThing::Function(fun));
     }
 
