@@ -423,9 +423,25 @@ impl PossiblyAnnexBFunctionList {
     }
 }
 
+/// Common fields across all *ScopeBuilder.
+#[derive(Debug)]
+struct BaseScopeBuilder {
+    name_tracker: FreeNameTracker,
+}
+
+impl BaseScopeBuilder {
+    fn new() -> Self {
+        Self {
+            name_tracker: FreeNameTracker::new(),
+        }
+    }
+}
+
 /// Variables declared/used in GlobalDeclarationInstantiation.
 #[derive(Debug)]
 struct GlobalScopeBuilder {
+    base: BaseScopeBuilder,
+
     /// Runtime Semantics: GlobalDeclarationInstantiation ( script, env )
     /// https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
     ///
@@ -447,20 +463,18 @@ struct GlobalScopeBuilder {
     const_names: Vec<SourceAtomSetIndex>,
 
     scope_index: ScopeIndex,
-
-    name_tracker: FreeNameTracker,
 }
 
 impl GlobalScopeBuilder {
     fn new(scope_index: ScopeIndex) -> Self {
         Self {
+            base: BaseScopeBuilder::new(),
             functions_to_initialize: Vec::new(),
             declared_function_names: IndexSet::new(),
             declared_var_names: IndexSet::new(),
             let_names: Vec::new(),
             const_names: Vec::new(),
             scope_index,
-            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -678,7 +692,7 @@ impl GlobalScopeBuilder {
         // Step 18. For each String vn in declaredVarNames, in list order, do
         for n in &self.declared_var_names {
             // 18.a. Perform ? envRec.CreateGlobalVarBinding(vn, false).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new(*n, is_closed_over))
@@ -691,7 +705,7 @@ impl GlobalScopeBuilder {
             //            argument env.
             // Step 17.c. Perform
             //            ? envRec.CreateGlobalFunctionBinding(fn, fo, false).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new_top_level_function(*n, is_closed_over));
@@ -704,7 +718,7 @@ impl GlobalScopeBuilder {
         for n in &self.let_names {
             // Step 16.b.ii. Else,
             // Step 16.b.ii.1. Perform ? envRec.CreateMutableBinding(dn, false).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new(*n, is_closed_over))
@@ -712,7 +726,7 @@ impl GlobalScopeBuilder {
         for n in &self.const_names {
             // Step 16.b.i. If IsConstantDeclaration of d is true, then
             // Step 16.b.i.1. Perform ? envRec.CreateImmutableBinding(dn, true).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new(*n, is_closed_over))
@@ -731,6 +745,8 @@ struct FunctionNameAndStencilIndex {
 /// Variables declared/used in BlockDeclarationInstantiation
 #[derive(Debug)]
 struct BlockScopeBuilder {
+    base: BaseScopeBuilder,
+
     /// Runtime Semantics: BlockDeclarationInstantiation ( code, env )
     /// https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
     ///
@@ -748,17 +764,16 @@ struct BlockScopeBuilder {
 
     /// Scope associated to this builder.
     scope_index: ScopeIndex,
-    name_tracker: FreeNameTracker,
 }
 
 impl BlockScopeBuilder {
     fn new(scope_index: ScopeIndex) -> Self {
         Self {
+            base: BaseScopeBuilder::new(),
             let_names: Vec::new(),
             const_names: Vec::new(),
             functions: Vec::new(),
             scope_index,
-            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -817,7 +832,7 @@ impl BlockScopeBuilder {
         for n in &self.let_names {
             // Step 4.a.ii. Else,
             // Step 4.a.ii.1. Perform ! envRec.CreateMutableBinding(dn, false).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new(*n, is_closed_over));
@@ -830,7 +845,7 @@ impl BlockScopeBuilder {
             // Step 4.b.ii. Let fo be InstantiateFunctionObject of d with
             //              argument env.
             // Step 4.b.iii. Perform envRec.InitializeBinding(fn, fo).
-            let is_closed_over = self.name_tracker.is_closed_over_def(&n.name);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(&n.name);
             let binding_index = BindingIndex::new(data.base.bindings.len());
             data.base
                 .bindings
@@ -841,7 +856,7 @@ impl BlockScopeBuilder {
         for n in &self.const_names {
             // Step 4.a.i. If IsConstantDeclaration of d is true, then
             // Step 4.a.i.1. Perform ! envRec.CreateImmutableBinding(dn, true).
-            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n);
             data.base
                 .bindings
                 .push(BindingName::new(*n, is_closed_over));
@@ -859,19 +874,19 @@ impl BlockScopeBuilder {
 /// consistency.
 #[derive(Debug)]
 struct FunctionExpressionScopeBuilder {
+    base: BaseScopeBuilder,
+
     function_expression_name: Option<SourceAtomSetIndex>,
 
     scope_index: ScopeIndex,
-
-    name_tracker: FreeNameTracker,
 }
 
 impl FunctionExpressionScopeBuilder {
     fn new(scope_index: ScopeIndex) -> Self {
         Self {
+            base: BaseScopeBuilder::new(),
             function_expression_name: None,
             scope_index,
-            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -897,7 +912,7 @@ impl FunctionExpressionScopeBuilder {
 
                 // Step 4. Let name be StringValue of BindingIdentifier .
                 // Step 5. Perform envRec.CreateImmutableBinding(name, false).
-                let is_closed_over = self.name_tracker.is_closed_over_def(name);
+                let is_closed_over = self.base.name_tracker.is_closed_over_def(name);
                 data.base
                     .bindings
                     .push(BindingName::new(*name, is_closed_over));
@@ -975,6 +990,8 @@ enum FunctionParametersState {
 /// FormalParameters
 #[derive(Debug)]
 struct FunctionParametersScopeBuilder {
+    base: BaseScopeBuilder,
+
     /// State of the analysis.
     /// This is used to determine what kind of binding the parameter is.
     state: FunctionParametersState,
@@ -1016,22 +1033,24 @@ struct FunctionParametersScopeBuilder {
     has_parameter_expressions: bool,
 
     scope_index: ScopeIndex,
-
-    name_tracker: FreeNameTracker,
 }
 
 impl FunctionParametersScopeBuilder {
     fn new(scope_index: ScopeIndex, is_arrow: bool) -> Self {
-        let mut name_tracker = FreeNameTracker::new();
+        let mut base = BaseScopeBuilder::new();
 
         if !is_arrow {
             // Arrow function closes over this/arguments from enclosing
             // function.
-            name_tracker.note_def(CommonSourceAtomSetIndices::this());
-            name_tracker.note_def(CommonSourceAtomSetIndices::arguments());
+            base.name_tracker
+                .note_def(CommonSourceAtomSetIndices::this());
+            base.name_tracker
+                .note_def(CommonSourceAtomSetIndices::arguments());
         }
 
         Self {
+            base,
+
             state: FunctionParametersState::Init,
 
             positional_parameter_names: Vec::new(),
@@ -1050,7 +1069,6 @@ impl FunctionParametersScopeBuilder {
             simple_parameter_list: true,
             has_parameter_expressions: false,
             scope_index,
-            name_tracker,
         }
     }
 
@@ -1385,9 +1403,9 @@ impl FunctionParametersScopeBuilder {
         for maybe_name in &self.positional_parameter_names {
             match maybe_name {
                 Some(n) => {
-                    let is_closed_over = self.name_tracker.is_closed_over_def(n)
+                    let is_closed_over = self.base.name_tracker.is_closed_over_def(n)
                         || (!has_extra_body_var_scope
-                            && body_scope_builder.name_tracker.is_closed_over_def(n));
+                            && body_scope_builder.base.name_tracker.is_closed_over_def(n));
                     function_scope_data
                         .base
                         .bindings
@@ -1397,9 +1415,9 @@ impl FunctionParametersScopeBuilder {
             }
         }
         for n in &self.non_positional_parameter_names {
-            let is_closed_over = self.name_tracker.is_closed_over_def(n)
+            let is_closed_over = self.base.name_tracker.is_closed_over_def(n)
                 || (!has_extra_body_var_scope
-                    && body_scope_builder.name_tracker.is_closed_over_def(n));
+                    && body_scope_builder.base.name_tracker.is_closed_over_def(n));
             function_scope_data
                 .base
                 .bindings
@@ -1462,7 +1480,7 @@ impl FunctionParametersScopeBuilder {
 
                 // Step 27.c.i.2. Perform
                 //                ! envRec.CreateMutableBinding(n, false).
-                let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
+                let is_closed_over = body_scope_builder.base.name_tracker.is_closed_over_def(n);
                 function_scope_data
                     .base
                     .bindings
@@ -1505,7 +1523,7 @@ impl FunctionParametersScopeBuilder {
 
                 // Step 28.f.i.2. Perform
                 //                ! varEnvRec.CreateMutableBinding(n, false).
-                let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
+                let is_closed_over = body_scope_builder.base.name_tracker.is_closed_over_def(n);
                 data.base
                     .bindings
                     .push(BindingName::new(*n, is_closed_over));
@@ -1565,7 +1583,7 @@ impl FunctionParametersScopeBuilder {
                     // Step 35.b.ii. Else,
                     // Step 35.b.ii.1. Perform
                     //                 ! lexEnvRec.CreateMutableBinding(dn, false).
-                    let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
+                    let is_closed_over = body_scope_builder.base.name_tracker.is_closed_over_def(n);
                     data.base
                         .bindings
                         .push(BindingName::new(*n, is_closed_over))
@@ -1574,7 +1592,7 @@ impl FunctionParametersScopeBuilder {
                     // Step 35.b.i. If IsConstantDeclaration of d is true, then
                     // Step 35.b.i.1. Perform
                     //                ! lexEnvRec.CreateImmutableBinding(dn, true).
-                    let is_closed_over = body_scope_builder.name_tracker.is_closed_over_def(n);
+                    let is_closed_over = body_scope_builder.base.name_tracker.is_closed_over_def(n);
                     data.base
                         .bindings
                         .push(BindingName::new(*n, is_closed_over))
@@ -1599,6 +1617,8 @@ impl FunctionParametersScopeBuilder {
 /// Variables declared/used in FunctionBody.
 #[derive(Debug)]
 struct FunctionBodyScopeBuilder {
+    base: BaseScopeBuilder,
+
     /// FunctionDeclarationInstantiation ( func, argumentsList )
     /// https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
     ///
@@ -1619,13 +1639,12 @@ struct FunctionBodyScopeBuilder {
 
     var_scope_index: ScopeIndex,
     lexical_scope_index: ScopeIndex,
-
-    name_tracker: FreeNameTracker,
 }
 
 impl FunctionBodyScopeBuilder {
     fn new(var_scope_index: ScopeIndex, lexical_scope_index: ScopeIndex) -> Self {
         Self {
+            base: BaseScopeBuilder::new(),
             var_names: IndexSet::new(),
             let_names: Vec::new(),
             const_names: Vec::new(),
@@ -1633,7 +1652,6 @@ impl FunctionBodyScopeBuilder {
             function_or_lexical_has_arguments: false,
             var_scope_index,
             lexical_scope_index,
-            name_tracker: FreeNameTracker::new(),
         }
     }
 
@@ -1728,7 +1746,7 @@ impl ScopeBuilder {
     }
 
     fn declare_var(&mut self, name: SourceAtomSetIndex) {
-        self.name_tracker_mut().note_def(name);
+        self.base_mut().name_tracker.note_def(name);
 
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_var(name),
@@ -1738,7 +1756,7 @@ impl ScopeBuilder {
     }
 
     fn declare_let(&mut self, name: SourceAtomSetIndex) {
-        self.name_tracker_mut().note_def(name);
+        self.base_mut().name_tracker.note_def(name);
 
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_let(name),
@@ -1749,7 +1767,7 @@ impl ScopeBuilder {
     }
 
     fn declare_const(&mut self, name: SourceAtomSetIndex) {
-        self.name_tracker_mut().note_def(name);
+        self.base_mut().name_tracker.note_def(name);
 
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_const(name),
@@ -1760,7 +1778,7 @@ impl ScopeBuilder {
     }
 
     fn set_function_name(&mut self, name: SourceAtomSetIndex) {
-        self.name_tracker_mut().note_def(name);
+        self.base_mut().name_tracker.note_def(name);
 
         match self {
             ScopeBuilder::FunctionExpression(ref mut builder) => builder.set_function_name(name),
@@ -1771,7 +1789,7 @@ impl ScopeBuilder {
     }
 
     fn declare_param(&mut self, name: SourceAtomSetIndex) {
-        self.name_tracker_mut().note_def(name);
+        self.base_mut().name_tracker.note_def(name);
 
         match self {
             ScopeBuilder::FunctionParameters(ref mut builder) => builder.declare_param(name),
@@ -1779,23 +1797,23 @@ impl ScopeBuilder {
         }
     }
 
-    fn name_tracker(&self) -> &FreeNameTracker {
+    fn base(&self) -> &BaseScopeBuilder {
         match self {
-            ScopeBuilder::Global(builder) => &builder.name_tracker,
-            ScopeBuilder::Block(builder) => &builder.name_tracker,
-            ScopeBuilder::FunctionExpression(builder) => &builder.name_tracker,
-            ScopeBuilder::FunctionParameters(builder) => &builder.name_tracker,
-            ScopeBuilder::FunctionBody(builder) => &builder.name_tracker,
+            ScopeBuilder::Global(builder) => &builder.base,
+            ScopeBuilder::Block(builder) => &builder.base,
+            ScopeBuilder::FunctionExpression(builder) => &builder.base,
+            ScopeBuilder::FunctionParameters(builder) => &builder.base,
+            ScopeBuilder::FunctionBody(builder) => &builder.base,
         }
     }
 
-    fn name_tracker_mut(&mut self) -> &mut FreeNameTracker {
+    fn base_mut(&mut self) -> &mut BaseScopeBuilder {
         match self {
-            ScopeBuilder::Global(builder) => &mut builder.name_tracker,
-            ScopeBuilder::Block(builder) => &mut builder.name_tracker,
-            ScopeBuilder::FunctionExpression(builder) => &mut builder.name_tracker,
-            ScopeBuilder::FunctionParameters(builder) => &mut builder.name_tracker,
-            ScopeBuilder::FunctionBody(builder) => &mut builder.name_tracker,
+            ScopeBuilder::Global(builder) => &mut builder.base,
+            ScopeBuilder::Block(builder) => &mut builder.base,
+            ScopeBuilder::FunctionExpression(builder) => &mut builder.base,
+            ScopeBuilder::FunctionParameters(builder) => &mut builder.base,
+            ScopeBuilder::FunctionBody(builder) => &mut builder.base,
         }
     }
 }
@@ -1947,14 +1965,16 @@ impl ScopeBuilderStack {
         let inner = self.stack.pop().expect("unmatching scope builder");
         match self.stack.last_mut() {
             Some(outer) => {
-                let inner_tracker = inner.name_tracker();
-                let outer_tracker = outer.name_tracker_mut();
+                let inner_base = inner.base();
+                let outer_base = outer.base_mut();
                 match inner {
                     ScopeBuilder::Global(_) => {
                         panic!("Global shouldn't be enclosed by other scope");
                     }
                     ScopeBuilder::Block(_) => {
-                        outer_tracker.propagate_from_inner_non_script(inner_tracker);
+                        outer_base
+                            .name_tracker
+                            .propagate_from_inner_non_script(&inner_base.name_tracker);
                     }
                     ScopeBuilder::FunctionExpression(_) => {
                         // NOTE: Function expression's name cannot have any
@@ -1963,13 +1983,19 @@ impl ScopeBuilderStack {
                         //       any closed-over free variables inside this
                         //       function is propagated from FunctionParameters
                         //       to enclosing scope builder.
-                        outer_tracker.propagate_from_inner_non_script(inner_tracker);
+                        outer_base
+                            .name_tracker
+                            .propagate_from_inner_non_script(&inner_base.name_tracker);
                     }
                     ScopeBuilder::FunctionParameters(_) => {
-                        outer_tracker.propagate_from_inner_script(inner_tracker);
+                        outer_base
+                            .name_tracker
+                            .propagate_from_inner_script(&inner_base.name_tracker);
                     }
                     ScopeBuilder::FunctionBody(_) => {
-                        outer_tracker.propagate_from_inner_non_script(inner_tracker);
+                        outer_base
+                            .name_tracker
+                            .propagate_from_inner_non_script(&inner_base.name_tracker);
                     }
                 }
             }
@@ -2140,11 +2166,13 @@ impl FunctionStencilBuilder {
         parameter_scope_builder: &FunctionParametersScopeBuilder,
     ) {
         let closed_over_freevars: HashSet<SourceAtomSetIndex> = parameter_scope_builder
+            .base
             .name_tracker
             .closed_over_freevars()
             .cloned()
             .collect();
         let used_freevars: HashSet<SourceAtomSetIndex> = parameter_scope_builder
+            .base
             .name_tracker
             .used_freevars()
             .cloned()
@@ -2356,7 +2384,8 @@ impl ScopeDataMapBuilder {
     pub fn on_non_binding_identifier(&mut self, name: SourceAtomSetIndex) {
         self.builder_stack
             .innermost()
-            .name_tracker_mut()
+            .base_mut()
+            .name_tracker
             .note_use(name);
     }
 
