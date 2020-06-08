@@ -427,12 +427,19 @@ impl PossiblyAnnexBFunctionList {
 #[derive(Debug)]
 struct BaseScopeBuilder {
     name_tracker: FreeNameTracker,
+
+    /// Bindings in this scope can be accessed dynamically by:
+    ///   * direct `eval`
+    ///   * `with` statement
+    ///   * `delete name` statement
+    bindings_accessed_dynamically: bool,
 }
 
 impl BaseScopeBuilder {
     fn new() -> Self {
         Self {
             name_tracker: FreeNameTracker::new(),
+            bindings_accessed_dynamically: false,
         }
     }
 }
@@ -1967,6 +1974,10 @@ impl ScopeBuilderStack {
             Some(outer) => {
                 let inner_base = inner.base();
                 let outer_base = outer.base_mut();
+
+                outer_base.bindings_accessed_dynamically |=
+                    inner_base.bindings_accessed_dynamically;
+
                 match inner {
                     ScopeBuilder::Global(_) => {
                         panic!("Global shouldn't be enclosed by other scope");
