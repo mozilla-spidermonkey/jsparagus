@@ -22,8 +22,6 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
     # Disable MyPy type checking for everything in this module.
     out.write("# type: ignore\n\n")
 
-    shift_count = parse_table.count_shift_states()
-    action_count = parse_table.count_action_states()
     out.write("from jsparagus import runtime\n")
     if any(isinstance(key, Nt) for key in parse_table.nonterminals):
         out.write(
@@ -115,8 +113,7 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
                 print(parse_table.debug_context(state.index, "\n", "# "))
                 raise
             if fallthrough:
-                if dest >= shift_count:
-                    assert dest < shift_count + action_count
+                if parse_table.states[dest].epsilon != []:
                     # This is a transition to an action.
                     out.write("{}state_{}_actions(parser, lexer)\n".format(indent, dest))
                 else:
