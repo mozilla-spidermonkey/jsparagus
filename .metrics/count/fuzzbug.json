@@ -145,6 +145,7 @@
     "updated_at": "2020-02-05T17:50:08Z",
     "closed_at": "2020-01-25T16:24:31Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "body": "The following test case passes when running with jsparagus generated parser, but fails in SpiderMonkey:\r\n\r\n```js\r\nfunc\r\n   return !x;\r\n```"
   },
   {
@@ -210,6 +211,7 @@
     "updated_at": "2019-12-23T18:21:35Z",
     "closed_at": "2019-12-23T18:21:34Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/47",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47",
@@ -281,6 +283,7 @@
     "updated_at": "2019-12-23T18:14:11Z",
     "closed_at": "2019-12-23T18:14:11Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/46",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46",
@@ -343,6 +346,7 @@
     "updated_at": "2019-12-23T19:28:19Z",
     "closed_at": "2019-12-23T19:28:18Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "body": "The following JS scripts is wrongly accepted by jsparagus' parser, while being refused by SpiderMonkey's parser.\r\n\r\n```js\r\nconst y\r\n```\r\n\r\n```js\r\nconst y;\r\n```\r\n"
   },
   {
@@ -408,6 +412,7 @@
     "updated_at": "2019-12-19T13:31:15Z",
     "closed_at": "2019-12-19T13:31:15Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/43",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43",
@@ -479,6 +484,7 @@
     "updated_at": "2019-12-11T17:47:55Z",
     "closed_at": "2019-12-11T17:47:54Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "body": "The following test case is accepted by jsparagus, while being rejected by SpiderMonkey's parser.\r\n\r\n```js\r\nlet c = (this != 4.2);\r\n\r\n/* Don't\r\n```\r\n"
   },
   {
@@ -535,6 +541,7 @@
     "updated_at": "2019-12-11T17:43:07Z",
     "closed_at": "2019-12-11T17:35:16Z",
     "author_association": "COLLABORATOR",
+    "active_lock_reason": null,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/40",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40",
