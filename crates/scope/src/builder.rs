@@ -2116,12 +2116,7 @@ impl FunctionStencilBuilder {
     /// Returns a immutable reference to the innermost function. None otherwise.
     fn maybe_current<'a>(&'a self) -> Option<&'a FunctionStencil> {
         let maybe_index = self.function_stack.last();
-        if maybe_index.is_none() {
-            return None;
-        }
-
-        let index = *maybe_index.unwrap();
-        Some(self.functions.get(index))
+        maybe_index.map(move |index| self.functions.get(*index))
     }
 
     /// Returns a immutable reference to the current function.
@@ -2132,13 +2127,8 @@ impl FunctionStencilBuilder {
 
     /// Returns a mutable reference to the innermost function. None otherwise.
     fn maybe_current_mut<'a>(&'a mut self) -> Option<&'a mut FunctionStencil> {
-        let maybe_index = self.function_stack.last();
-        if maybe_index.is_none() {
-            return None;
-        }
-
-        let index = *maybe_index.unwrap();
-        Some(self.functions.get_mut(index))
+        let maybe_index = self.function_stack.last().cloned();
+        maybe_index.map(move |index| self.functions.get_mut(index))
     }
 
     /// Returns a mutable reference to the current function.
