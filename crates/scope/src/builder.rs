@@ -1982,6 +1982,9 @@ impl ScopeBuilderStack {
                 let inner_base = inner.base();
                 let outer_base = outer.base_mut();
 
+                // When construct such as `eval`, `with` and `delete` access
+                // name dynamically in inner scopes, we have to propagate this
+                // flag to the outer scope such that we prevent optimizations.
                 outer_base.bindings_accessed_dynamically |=
                     inner_base.bindings_accessed_dynamically;
 
@@ -2714,44 +2717,55 @@ impl ScopeDataMapBuilder {
                 fun_stencil.set_has_this_binding();
             }
 
-            // Perform the same algorithm as
-            // ParseContext::declareFunctionArgumentsObject in
-            // m-c/js/src/frontend/ParseContext.cpp.
+            let mut uses_arguments = false;
+            let mut try_declare_arguments = has_used_arguments;
+
+            // FunctionDeclarationInstantiation ( func, argumentsList )
+            // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
+            //
+            // Step 17 (Else if "arguments" is an element of parameterNames...)
+            // and step 18 (Else if hasParameterExpressions is false...) say
+            // formal parameters, lexical bindings, and body-level functions
+            // named 'arguments' shadow the arguments object.
+            //
+            // So even if there wasn't a free use of 'arguments' but there is a
+            // var binding of 'arguments', we still might need the arguments
+            // object.
+            //
+            // If we have an extra var scope due to parameter expressions and
+            // the body declared 'var arguments', we still need to declare
+            // 'arguments' in the function scope.
             //
             // NOTE: This is implementation-specfic optimization, and has
             //       no corresponding steps in the spec.
-
-            let mut uses_arguments = false;
-            let mut try_declare_arguments = has_used_arguments;
-            if has_extra_body_var {
-                if var_names_has_arguments {
+            if var_names_has_arguments {
+                if has_extra_body_var {
                     try_declare_arguments = true;
-                }
-            } else {
-                if var_names_has_arguments && !parameter_has_arguments {
+                } else if !parameter_has_arguments {
                     uses_arguments = true;
                 }
             }
 
             if try_declare_arguments {
-                if has_extra_body_var {
-                    if !parameter_has_arguments {
-                        fun_stencil.set_should_declare_arguments();
-                        uses_arguments = true;
-                    }
+                let has_defined_arguments = parameter_has_arguments || body_has_defined_arguments;
+                let declare_arguments = if has_extra_body_var {
+                    !parameter_has_arguments
                 } else {
-                    let has_defined_arguments =
-                        parameter_has_arguments || body_has_defined_arguments;
+                    has_defined_arguments
+                };
 
-                    if !has_defined_arguments {
-                        fun_stencil.set_should_declare_arguments();
-                        uses_arguments = true;
-                    }
+                if declare_arguments {
+                    fun_stencil.set_should_declare_arguments();
+                    uses_arguments = true;
                 }
             }
 
             if uses_arguments {
+                // There is an 'arguments' binding. Is the arguments object
+                // definitely needed?
                 fun_stencil.set_arguments_has_var_binding();
+
+                // Dynamic scope access destroys all hope of optimization.
                 if bindings_accessed_dynamically {
                     fun_stencil.set_always_needs_args_obj();
                 }
