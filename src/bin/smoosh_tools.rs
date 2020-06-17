@@ -5,6 +5,42 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
+static USAGE_STRING: &'static str = r#"Tools for jsparagus + SmooshMonkey development
+
+USAGE:
+    cargo run --bin smoosh_tools [COMMAND] [OPTIONS]
+
+COMMAND:
+    build [--opt] [MOZILLA_CENTRAL]
+        Build SpiderMonkey JS shell with SmooshMonkey enabled, using this
+        jsparagus clone instead of vendored one
+    shell [--opt] [MOZILLA_CENTRAL]
+        Run SpiderMonkey JS shell binary built by "build" command
+    test [--opt] [MOZILLA_CENTRAL]
+        Run jstests/jit-test with SpiderMonkey JS shell binary built by
+        "build" command
+    bump [MOZILLA_CENTRAL]
+        Bump jsparagus version referred by mozilla-central to the latest
+        "ci_generated" branch HEAD, and re-vendor jsparagus
+    try [--remote=REMOTE] [MOZILLA_CENTRAL]
+        Push to try with current jsparagus branch
+        This pushes current jsparagus branch to "generated" branch, and
+        modifies the reference in mozilla-central to it, and pushes to try
+        This requires L1 Commit Access for hg.mozilla.org,
+        and mozilla-central should be a Git repository
+    gen [--remote=REMOTE]
+        Push current jsparagus branch to "generated" branch, with generated
+        files included, to refer from mozilla-central
+
+OPTIONS:
+    MOZILLA_CENTRAL Path to mozilla-central or mozilla-unified clone
+                    This can be omitted if mozilla-central or mozilla-unified
+                    is placed next to jsparagus clone directory
+    --opt           Use optimized build configuration, instead of debug build
+    --remote=REMOTE The name of remote to push the generated branch to
+                    Defaults to "origin"
+"#;
+
 macro_rules! try_finally {
     ({$($t: tt)*} {$($f: tt)*}) => {
         let result = (|| -> Result<(), Error> {
@@ -165,43 +201,7 @@ impl SimpleArgs {
     }
 
     fn show_usage() -> ! {
-        println!(
-            r#"Tools for jsparagus + SmooshMonkey development
-
-USAGE:
-    cargo run --bin smoosh_tools [COMMAND] [OPTIONS]
-
-COMMAND:
-    build [--opt] [MOZILLA_CENTRAL]
-        Build SpiderMonkey JS shell with SmooshMonkey enabled, using this
-        jsparagus clone instead of vendored one
-    shell [--opt] [MOZILLA_CENTRAL]
-        Run SpiderMonkey JS shell binary built by "build" command
-    test [--opt] [MOZILLA_CENTRAL]
-        Run jstests/jit-test with SpiderMonkey JS shell binary built by
-        "build" command
-    bump [MOZILLA_CENTRAL]
-        Bump jsparagus version referred by mozilla-central to the latest
-        "ci_generated" branch HEAD, and re-vendor jsparagus
-    try [--remote=REMOTE] [MOZILLA_CENTRAL]
-        Push to try with current jsparagus branch
-        This pushes current jsparagus branch to "generated" branch, and
-        modifies the reference in mozilla-central to it, and pushes to try
-        This requires L1 Commit Access for hg.mozilla.org,
-        and mozilla-central should be a Git repository
-    gen [--remote=REMOTE]
-        Push current jsparagus branch to "generated" branch, with generated
-        files included, to refer from mozilla-central
-
-OPTIONS:
-    MOZILLA_CENTRAL Path to mozilla-central or mozilla-unified clone
-                    This can be omitted if mozilla-central or mozilla-unified
-                    is placed next to jsparagus clone directory
-    --opt           Use optimized build configuration, instead of debug build
-    --remote=REMOTE The name of remote to push the generated branch to
-                    Defaults to "origin"
-"#
-        );
+        print!("{}", USAGE_STRING);
         process::exit(-1)
     }
 
@@ -717,6 +717,7 @@ fn push_to_gen_branch(args: &SimpleArgs) -> Result<BranchInfo, Error> {
                 jsparagus_repo.run(&["reset", "--soft", "HEAD^"])?;
             });
         } {
+            // Forget *_generated.rs files.
             jsparagus_repo.run(&["reset"])?;
         });
     } {
