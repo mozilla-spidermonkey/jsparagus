@@ -445,7 +445,7 @@ class RustParserWriter:
         self.write(1, "}")
         self.write(1, "pub fn to_terminal(&self) -> TerminalId {")
         self.write(2, "assert!(self.is_terminal());")
-        self.write(2, "unsafe {{ std::mem::transmute(self.0) }}")
+        self.write(2, "unsafe { std::mem::transmute(self.0) }")
         self.write(1, "}")
         self.write(0, "}")
         self.write(0, "")
