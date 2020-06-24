@@ -153,7 +153,7 @@ as the bytecode emitter and further integration with SpiderMonkey.
 [Fuzzbug Open Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_results%2F.metrics%2Fbadges%2Fopen-fuzzbug.json
 [Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/issues?utf8=%E2%9C%93&q=label%3AlibFuzzer+
 [Open Fuzzbugs]: https://github.com/mozilla-spidermonkey/jsparagus/labels/libFuzzer
-[SmooshMonkey Build Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Farai-a%2Fjsparagus%2Fci_smoosh_status%2Fsmoosh_build.json
+[SmooshMonkey Build Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_smoosh_status%2Fsmoosh_build.json
 [SmooshMonkey Build TreeHerder]: https://treeherder.mozilla.org/#/jobs?repo=mozilla-central&tier=1%2C2%2C3&searchStr=sm-nonunified
-[SmooshMonkey Test Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Farai-a%2Fjsparagus%2Fci_smoosh_status%2Fsmoosh_test.json
+[SmooshMonkey Test Badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla-spidermonkey%2Fjsparagus%2Fci_smoosh_status%2Fsmoosh_test.json
 [SmooshMonkey Test TreeHerder]: https://treeherder.mozilla.org/#/jobs?repo=mozilla-central&tier=1%2C2%2C3&searchStr=sm-smoosh
