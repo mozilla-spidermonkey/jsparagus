@@ -152,6 +152,15 @@ class Action:
         the new indexes"""
         return self
 
+    def fold_by_destination(self, actions: typing.List[Action]) -> typing.List[Action]:
+        """If after rewriting state indexes, multiple condition are reaching the same
+        destination state, we attempt to fold them by destination. Not
+        implementing this function can lead to the introduction of inconsistent
+        states, as the conditions might be redundant. """
+
+        # By default do nothing.
+        return actions
+
     def __eq__(self, other: object) -> bool:
         if self.__class__ != other.__class__:
             return False
@@ -403,6 +412,15 @@ class FilterStates(Action):
     def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> FilterStates:
         states = list(state_map[s] for s in self.states)
         return FilterStates(states)
+
+    def fold_by_destination(self, actions: typing.List[Action]) -> typing.List[Action]:
+        states: typing.List[StateId] = []
+        for a in actions:
+            if not isinstance(a, FilterStates):
+                # Do nothing in case the state is inconsistent.
+                return actions
+            states.extend(a.states)
+        return [FilterStates(states)]
 
     def __str__(self) -> str:
         return "FilterStates({})".format(self.states)

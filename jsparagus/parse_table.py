@@ -185,8 +185,15 @@ class StateAndTransitions:
         self.errors = {
             k: state_map[s] for k, s in self.errors.items()
         }
+        # Multiple actions might jump to the same target, attempt to fold these
+        # conditions based on having the same target.
+        epsilon_by_dest = collections.defaultdict(list)
+        for k, s in self.epsilon:
+            epsilon_by_dest[state_map[s]].append(k.rewrite_state_indexes(state_map))
         self.epsilon = [
-            (k.rewrite_state_indexes(state_map), state_map[s]) for k, s in self.epsilon
+            (k, s)
+            for s, ks in epsilon_by_dest.items()
+            for k in ks[0].fold_by_destination(ks)
         ]
         self.backedges = OrderedSet(
             Edge(state_map[edge.src], apply_on_term(edge.term))
@@ -390,6 +397,7 @@ class ParseTable:
         for s in self.states:
             if s is not None:
                 s.rewrite_state_indexes(state_map)
+                self.assert_state_invariants(s)
         self.named_goals = [
             (nt, state_map[s]) for nt, s in self.named_goals
         ]
@@ -546,6 +554,8 @@ class ParseTable:
         for e in src.backedges:
             assert e.term is not None
             assert self.states[e.src][e.term] == src.index
+        if not self.assume_inconsistent:
+            assert not src.is_inconsistent()
 
     def remove_unreachable_states(
             self,
@@ -1477,7 +1487,7 @@ class ParseTable:
                 src = self.states[edge.src]
                 old_dest = src[edge_term]
                 # print("replace {} -- {} --> {}, by {} -- {} --> {}"
-                #       .format(src.index, term, src[term], src.index, term, ref.index))
+                #       .format(src.index, edge_term, src[edge_term], src.index, edge_term, ref.index))
                 self.replace_edge(src, edge_term, ref.index, maybe_unreachable)
                 state_map[old_dest] = ref.index
                 hit = True
