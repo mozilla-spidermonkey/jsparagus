@@ -200,7 +200,7 @@ class Replay(Action):
     this does not Shift a term given as argument as the replay action should
     always be garanteed and that we want to maximize the sharing of code when
     possible."""
-    __slots__ = ['replay_dest']
+    __slots__ = ['replay_steps']
 
     replay_steps: typing.Tuple[StateId, ...]
 
