@@ -654,7 +654,7 @@ class ParseTable:
             self.debug_dump()
 
     def term_is_shifted(self, term: typing.Optional[Term]) -> bool:
-        return not (isinstance(term, Action) and term.update_stack())
+        return not isinstance(term, Action) or term.follow_edge()
 
     def is_valid_path(
             self,

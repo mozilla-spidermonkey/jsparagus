@@ -19,13 +19,13 @@ def shifted_path_to(pt: ParseTable, n: int, right_of: Path) -> typing.Iterator[P
     state = right_of[0].src
     assert isinstance(state, int)
     for edge in pt.states[state].backedges:
-        assert pt.term_is_shifted(edge.term)
         if isinstance(edge.term, Action) and edge.term.update_stack():
             # Some Action such as Unwind and Replay are actions which are
             # forking the execution state from the parse stable state.
             # While computing the shifted_path_to, we only iterate over the
             # parse table states.
             continue
+        assert pt.term_is_shifted(edge.term)
         if pt.term_is_stacked(edge.term):
             s_n = n - 1
             if n == 0:
