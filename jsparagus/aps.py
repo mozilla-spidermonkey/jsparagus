@@ -32,6 +32,12 @@ def shifted_path_to(pt: ParseTable, n: int, right_of: Path) -> typing.Iterator[P
                 continue
         else:
             s_n = n
+            if n == 0 and not pt.assume_inconsistent:
+                # If the parse table is no longer inconsistent, then there is
+                # no point on walking back on actions as they are expected to
+                # be resolved. Thus we cannot have the restrictions issue that
+                # we have on inconsistent parse tables.
+                continue
         from_edge = Edge(edge.src, edge.term)
         for path in shifted_path_to(pt, s_n, [from_edge] + right_of):
             yield path
