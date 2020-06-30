@@ -453,10 +453,10 @@ pub struct FunctionScopeData {
     /// use Vec of Option<BindingName>, instead of BindingName like others.
     pub base: BaseScopeData<Option<BindingName>>,
 
-    has_parameter_exprs: bool,
+    pub has_parameter_exprs: bool,
 
-    non_positional_formal_start: usize,
-    var_start: usize,
+    pub non_positional_formal_start: usize,
+    pub var_start: usize,
 
     /// The first frame slot of this scope.
     ///
