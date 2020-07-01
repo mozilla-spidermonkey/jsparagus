@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::env::{self, Args};
-use std::fs::File;
+use std::fs::{File, create_dir_all};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
+use std::str::FromStr;
 
 static USAGE_STRING: &'static str = r#"Tools for jsparagus + SmooshMonkey development
 
@@ -39,6 +40,9 @@ OPTIONS:
     --opt           Use optimized build configuration, instead of debug build
     --remote=REMOTE The name of remote to push the generated branch to
                     Defaults to "origin"
+    --concat-mozconfig For building mozilla-central, concatenates the content
+                    of the MOZCONFIG environment variable with the content of
+                    smoosh_tools mozconfig.
 "#;
 
 macro_rules! try_finally {
@@ -69,6 +73,7 @@ enum Error {
     SubProcessError(String, Option<i32>),
     IO(String, std::io::Error),
     Encode(String, std::str::Utf8Error),
+    EnvVar(&'static str, std::env::VarError),
 }
 
 impl Error {
@@ -90,6 +95,10 @@ impl Error {
             }
             Error::Encode(message, e) => {
                 println!("{}", message);
+                println!("{}", e);
+            }
+            Error::EnvVar(var, e) => {
+                println!("Error while reading {}:", var);
                 println!("{}", e);
             }
         }
@@ -122,6 +131,7 @@ struct SimpleArgs {
     build_type: BuildType,
     moz_path: String,
     remote: String,
+    concat_mozconfig: bool,
 }
 
 impl SimpleArgs {
@@ -147,6 +157,7 @@ impl SimpleArgs {
         let mut remote = "origin".to_string();
         let mut moz_path = Self::guess_moz();
         let mut build_type = BuildType::Debug;
+        let mut concat_mozconfig = false;
 
         for arg in args {
             if arg.starts_with("-") {
@@ -174,6 +185,9 @@ impl SimpleArgs {
                         "--opt" => {
                             build_type = BuildType::Opt;
                         }
+                        "--concat-mozconfig" => {
+                            concat_mozconfig = true;
+                        }
                         _ => {
                             Self::show_usage();
                         }
@@ -197,6 +211,7 @@ impl SimpleArgs {
             build_type,
             moz_path,
             remote,
+            concat_mozconfig,
         }
     }
 
@@ -300,6 +315,93 @@ impl JsparagusTree {
         })
     }
 }
+
+struct ObjDir(String);
+impl FromStr for ObjDir {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let header = "mk_add_options";
+        let s = match s.starts_with(header) {
+            true => &s[header.len()..],
+            false => return Err(Error::Generic("unexpected start".into())),
+        };
+        if Some(0) != s.find(char::is_whitespace) {
+            return Err(Error::Generic("expected whitespace after mk_add_options".into()));
+        }
+        let s = s.trim_start();
+        let eq_idx = s.find('=').ok_or(Error::Generic("equal sign not found after mk_add_option".into()))?;
+        let var_name = &s[..eq_idx];
+        if var_name != "MOZ_OBJDIR" {
+            return Err(Error::Generic(format!("{}: unexpected variable, expected MOZ_OBJDIR", var_name)))
+        }
+        let s = &s[(eq_idx + 1)..];
+        let s = s.trim();
+
+        Ok(ObjDir(s.into()))
+    }
+}
+
+
+#[derive(Debug)]
+struct BuildTree {
+    moz: MozillaTree,
+    jsp: JsparagusTree,
+    mozconfig: PathBuf,
+}
+
+impl BuildTree {
+    fn try_new(args: &SimpleArgs) -> Result<Self, Error> {
+        let moz = MozillaTree::try_new(&args.moz_path)?;
+        let jsp = JsparagusTree::try_new()?;
+
+        let jsp_mozconfig = jsp.mozconfig(args.build_type);
+        let mozconfig = if args.concat_mozconfig {
+            // Create a MOZCONFIG file which concatenate the content of the
+            // environmenet variable with the content provided by jsparagus.
+            // This is useful to add additional compilation variants for
+            // mozilla-central.
+            let env = env::var("MOZCONFIG")
+                .map_err(|e| Error::EnvVar("MOZCONFIG", e))?;
+            let env_config = read_file(&env.into())?;
+            let jsp_config = read_file(&jsp_mozconfig)?;
+            let config = env_config + &jsp_config;
+
+            // Extract the object directory, in which the mozconfig file would
+            // be created.
+            let mut objdir = None;
+            for line in config.lines() {
+                match line.parse() {
+                    Ok(ObjDir(meta_path)) => objdir = Some(meta_path),
+                    Err(_error) => (),
+                }
+            }
+            let objdir = objdir.ok_or(Error::Generic("MOZ_OBJDIR must exists".into()))?;
+            let topsrcdir = moz.topsrcdir.to_str().ok_or(())
+                .map_err(|_| Error::Generic("topsrcdir cannot be encoded in UTF-8.".into()))?;
+            let objdir = objdir.replace("@TOPSRCDIR@", topsrcdir);
+
+            // Create the object direcotry.
+            let objdir: PathBuf = objdir.into();
+            if !objdir.is_dir() {
+                create_dir_all(&objdir)
+                    .map_err(|e| Error::IO(format!("Failed to create directory {:?}", objdir), e))?;
+            }
+
+            // Create MOZCONFIG file.
+            let mozconfig = objdir.join("mozconfig");
+            write_file(&mozconfig, config)?;
+
+            mozconfig
+        } else {
+            jsp_mozconfig
+        };
+
+        Ok(Self { moz, jsp, mozconfig })
+    }
+}
+
+
 
 /// Run `command`, and check if the exit code is successful.
 /// Returns Err if failed to run the command, or the exit code is non-zero.
@@ -563,15 +665,13 @@ where
 }
 
 fn run_mach(command: &'static str, args: &SimpleArgs) -> Result<(), Error> {
-    let moz = MozillaTree::try_new(&args.moz_path)?;
-    let jsparagus = JsparagusTree::try_new()?;
-    let mozconfig = jsparagus.mozconfig(args.build_type);
+    let build = BuildTree::try_new(args)?;
 
     check_command(
-        Command::new(moz.topsrcdir.join("mach").to_str().unwrap())
+        Command::new(build.moz.topsrcdir.join("mach").to_str().unwrap())
             .arg(command)
-            .current_dir(moz.topsrcdir)
-            .env("MOZCONFIG", mozconfig.to_str().unwrap()),
+            .current_dir(build.moz.topsrcdir)
+            .env("MOZCONFIG", build.mozconfig.to_str().unwrap()),
     )
 }
 
