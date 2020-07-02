@@ -664,12 +664,12 @@ where
     write_file(cargo, filtered_lines.join("\n"))
 }
 
-fn run_mach(command: &'static str, args: &SimpleArgs) -> Result<(), Error> {
+fn run_mach(command_args: &[&str], args: &SimpleArgs) -> Result<(), Error> {
     let build = BuildTree::try_new(args)?;
 
     check_command(
         Command::new(build.moz.topsrcdir.join("mach").to_str().unwrap())
-            .arg(command)
+            .args(command_args)
             .current_dir(build.moz.topsrcdir)
             .env("MOZCONFIG", build.mozconfig.to_str().unwrap()),
     )
@@ -686,16 +686,16 @@ fn build(args: &SimpleArgs) -> Result<(), Error> {
         },
     )?;
 
-    run_mach("build", args)
+    run_mach(&["build"], args)
 }
 
 fn shell(args: &SimpleArgs) -> Result<(), Error> {
-    run_mach("run", args)
+    run_mach(&["run", "--smoosh"], args)
 }
 
 fn test(args: &SimpleArgs) -> Result<(), Error> {
-    run_mach("jstests", args)?;
-    run_mach("jit-test", args)
+    run_mach(&["jstests", "--args=-smoosh"], args)?;
+    run_mach(&["jit-test", "--args=-smoosh"], args)
 }
 
 fn vendor(moz: &MozillaTree) -> Result<(), Error> {
