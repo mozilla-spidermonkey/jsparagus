@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::env::{self, Args};
-use std::fs::{File, create_dir_all};
+use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
@@ -327,13 +327,20 @@ impl FromStr for ObjDir {
             false => return Err(Error::Generic("unexpected start".into())),
         };
         if Some(0) != s.find(char::is_whitespace) {
-            return Err(Error::Generic("expected whitespace after mk_add_options".into()));
+            return Err(Error::Generic(
+                "expected whitespace after mk_add_options".into(),
+            ));
         }
         let s = s.trim_start();
-        let eq_idx = s.find('=').ok_or(Error::Generic("equal sign not found after mk_add_option".into()))?;
+        let eq_idx = s.find('=').ok_or(Error::Generic(
+            "equal sign not found after mk_add_option".into(),
+        ))?;
         let var_name = &s[..eq_idx];
         if var_name != "MOZ_OBJDIR" {
-            return Err(Error::Generic(format!("{}: unexpected variable, expected MOZ_OBJDIR", var_name)))
+            return Err(Error::Generic(format!(
+                "{}: unexpected variable, expected MOZ_OBJDIR",
+                var_name
+            )));
         }
         let s = &s[(eq_idx + 1)..];
         let s = s.trim();
@@ -341,7 +348,6 @@ impl FromStr for ObjDir {
         Ok(ObjDir(s.into()))
     }
 }
-
 
 #[derive(Debug)]
 struct BuildTree {
@@ -361,8 +367,7 @@ impl BuildTree {
             // environmenet variable with the content provided by jsparagus.
             // This is useful to add additional compilation variants for
             // mozilla-central.
-            let env = env::var("MOZCONFIG")
-                .map_err(|e| Error::EnvVar("MOZCONFIG", e))?;
+            let env = env::var("MOZCONFIG").map_err(|e| Error::EnvVar("MOZCONFIG", e))?;
             let env_config = read_file(&env.into())?;
             let jsp_config = read_file(&jsp_mozconfig)?;
             let config = env_config + &jsp_config;
@@ -377,15 +382,19 @@ impl BuildTree {
                 }
             }
             let objdir = objdir.ok_or(Error::Generic("MOZ_OBJDIR must exists".into()))?;
-            let topsrcdir = moz.topsrcdir.to_str().ok_or(())
+            let topsrcdir = moz
+                .topsrcdir
+                .to_str()
+                .ok_or(())
                 .map_err(|_| Error::Generic("topsrcdir cannot be encoded in UTF-8.".into()))?;
             let objdir = objdir.replace("@TOPSRCDIR@", topsrcdir);
 
             // Create the object direcotry.
             let objdir: PathBuf = objdir.into();
             if !objdir.is_dir() {
-                create_dir_all(&objdir)
-                    .map_err(|e| Error::IO(format!("Failed to create directory {:?}", objdir), e))?;
+                create_dir_all(&objdir).map_err(|e| {
+                    Error::IO(format!("Failed to create directory {:?}", objdir), e)
+                })?;
             }
 
             // Create MOZCONFIG file.
@@ -397,11 +406,13 @@ impl BuildTree {
             jsp_mozconfig
         };
 
-        Ok(Self { moz, jsp, mozconfig })
+        Ok(Self {
+            moz,
+            jsp,
+            mozconfig,
+        })
     }
 }
-
-
 
 /// Run `command`, and check if the exit code is successful.
 /// Returns Err if failed to run the command, or the exit code is non-zero.
