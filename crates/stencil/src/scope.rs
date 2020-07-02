@@ -248,6 +248,8 @@ pub struct VarScopeData {
     /// and VarScope::Data.nextFrameSlot is calculated there.
     pub first_frame_slot: FrameSlot,
 
+    pub function_has_extensible_scope: bool,
+
     /// ScopeIndex of the enclosing scope.
     ///
     /// A parameter for ScopeCreationData::create.
@@ -255,13 +257,18 @@ pub struct VarScopeData {
 }
 
 impl VarScopeData {
-    pub fn new(var_count: usize, enclosing: ScopeIndex) -> Self {
+    pub fn new(
+        var_count: usize,
+        function_has_extensible_scope: bool,
+        enclosing: ScopeIndex,
+    ) -> Self {
         let capacity = var_count;
 
         Self {
             base: BaseScopeData::new(capacity),
             // Set to the correct value in EmitterScopeStack::enter_lexical.
             first_frame_slot: FrameSlot::new(0),
+            function_has_extensible_scope,
             enclosing,
         }
     }

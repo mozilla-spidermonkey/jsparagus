@@ -1037,6 +1037,8 @@ struct FunctionParametersScopeBuilder {
     has_parameter_expressions: bool,
 
     scope_index: ScopeIndex,
+
+    has_direct_eval: bool,
 }
 
 impl FunctionParametersScopeBuilder {
@@ -1073,6 +1075,7 @@ impl FunctionParametersScopeBuilder {
             simple_parameter_list: true,
             has_parameter_expressions: false,
             scope_index,
+            has_direct_eval: false,
         }
     }
 
@@ -1509,6 +1512,10 @@ impl FunctionParametersScopeBuilder {
         else {
             debug_assert!(has_extra_body_var_scope);
 
+            // In non-strict mode code, direct `eval` can extend function's
+            // scope.
+            let function_has_extensible_scope = !self.strict && self.has_direct_eval;
+
             // Step 28.a. NOTE: A separate Environment Record is needed to
             //            ensure that closures created by expressions in the
             //            formal parameter list do not have visibility of
@@ -1520,6 +1527,7 @@ impl FunctionParametersScopeBuilder {
             //            varEnv.
             let mut data = VarScopeData::new(
                 body_scope_builder.var_names.len(),
+                function_has_extensible_scope,
                 /* encloding= */ self.scope_index,
             );
 
@@ -1889,6 +1897,19 @@ impl ScopeBuilderStack {
         }
 
         panic!("There should be at least one scope on the stack");
+    }
+
+    fn maybe_innermost_function_parameters<'a>(
+        &'a mut self,
+    ) -> Option<&'a mut FunctionParametersScopeBuilder> {
+        for builder in self.stack.iter_mut().rev() {
+            match builder {
+                ScopeBuilder::FunctionParameters(builder) => return Some(builder),
+                _ => {}
+            }
+        }
+
+        None
     }
 
     fn innermost_lexical<'a>(&'a mut self) -> &'a mut ScopeBuilder {
@@ -2776,6 +2797,20 @@ impl ScopeDataMapBuilder {
             .populate(var_scope_index, scope_data_set.extra_body_var);
         self.scopes
             .populate(lexical_scope_index, scope_data_set.lexical);
+    }
+
+    #[allow(dead_code)]
+    pub fn on_direct_eval(&mut self) {
+        if let Some(parameter_scope_builder) =
+            self.builder_stack.maybe_innermost_function_parameters()
+        {
+            parameter_scope_builder.has_direct_eval = true;
+        }
+
+        self.builder_stack
+            .innermost()
+            .base_mut()
+            .bindings_accessed_dynamically = true;
     }
 }
 
