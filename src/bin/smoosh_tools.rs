@@ -20,6 +20,10 @@ COMMAND:
     test [--opt] [MOZILLA_CENTRAL]
         Run jstests/jit-test with SpiderMonkey JS shell binary built by
         "build" command
+    bench [--opt] [--samples-dir=REAL_JS_SAMPLES/DATE] [MOZILLA_CENTRAL]
+        Compare SpiderMonkey parser performance against SmooshMonkey on a
+        collection of JavaScript files, using the JS shell binary built by
+        "build" command.
     bump [MOZILLA_CENTRAL]
         Bump jsparagus version referred by mozilla-central to the latest
         "ci_generated" branch HEAD, and re-vendor jsparagus
@@ -43,6 +47,8 @@ OPTIONS:
     --concat-mozconfig For building mozilla-central, concatenates the content
                     of the MOZCONFIG environment variable with the content of
                     smoosh_tools mozconfig.
+    --samples-dir=DIR Directory containing thousands of JavaScripts to be used
+                    for measuring the performance of SmooshMonkey.
 "#;
 
 macro_rules! try_finally {
@@ -110,6 +116,7 @@ enum CommandType {
     Build,
     Shell,
     Test,
+    Bench,
     Bump,
     Gen,
     Try,
@@ -130,6 +137,7 @@ struct SimpleArgs {
     command: CommandType,
     build_type: BuildType,
     moz_path: String,
+    realjs_path: String,
     remote: String,
     concat_mozconfig: bool,
 }
@@ -144,6 +152,7 @@ impl SimpleArgs {
                 "build" => CommandType::Build,
                 "test" => CommandType::Test,
                 "shell" => CommandType::Shell,
+                "bench" => CommandType::Bench,
                 "bump" => CommandType::Bump,
                 "gen" => CommandType::Gen,
                 "try" => CommandType::Try,
@@ -156,6 +165,7 @@ impl SimpleArgs {
 
         let mut remote = "origin".to_string();
         let mut moz_path = Self::guess_moz();
+        let mut realjs_path = Self::guess_realjs();
         let mut build_type = BuildType::Debug;
         let mut concat_mozconfig = false;
 
@@ -175,6 +185,9 @@ impl SimpleArgs {
                     match name {
                         "--remote" => {
                             remote = value.to_string();
+                        }
+                        "--samples-dir" => {
+                            realjs_path = value.to_string();
                         }
                         _ => {
                             Self::show_usage();
@@ -210,6 +223,7 @@ impl SimpleArgs {
             command,
             build_type,
             moz_path,
+            realjs_path,
             remote,
             concat_mozconfig,
         }
@@ -234,6 +248,10 @@ impl SimpleArgs {
         }
 
         return "../mozilla-central".to_string();
+    }
+
+    fn guess_realjs() -> String {
+        return "../real-js-samples/20190416".to_string();
     }
 }
 
@@ -313,6 +331,12 @@ impl JsparagusTree {
             BuildType::Opt => "smoosh-opt",
             BuildType::Debug => "smoosh-debug",
         })
+    }
+
+    fn compare_parsers_js(&self) -> PathBuf {
+        self.topsrcdir
+            .join("benchmarks")
+            .join("compare-spidermonkey-parsers.js")
     }
 }
 
@@ -704,6 +728,20 @@ fn shell(args: &SimpleArgs) -> Result<(), Error> {
     run_mach(&["run", "--smoosh"], args)
 }
 
+fn bench(args: &SimpleArgs) -> Result<(), Error> {
+    let jsparagus = JsparagusTree::try_new()?;
+    let cmp_parsers = jsparagus.compare_parsers_js();
+    let cmp_parsers: &str = cmp_parsers.to_str().ok_or(Error::Generic(
+        "Unable to serialize benchmark script path".into(),
+    ))?;
+    let realjs_path = jsparagus.topsrcdir.join(&args.realjs_path);
+    let realjs_path: &str = realjs_path.to_str().ok_or(Error::Generic(
+        "Unable to serialize benchmark script path".into(),
+    ))?;
+
+    run_mach(&["run", "-f", cmp_parsers, "--", "--", realjs_path], args)
+}
+
 fn test(args: &SimpleArgs) -> Result<(), Error> {
     run_mach(&["jstests", "--args=-smoosh"], args)?;
     run_mach(&["jit-test", "--args=-smoosh"], args)
@@ -892,6 +930,7 @@ fn main() {
         CommandType::Build => build(&args),
         CommandType::Shell => shell(&args),
         CommandType::Test => test(&args),
+        CommandType::Bench => bench(&args),
         CommandType::Bump => bump(&args),
         CommandType::Gen => gen_branch(&args),
         CommandType::Try => push_try(&args),
