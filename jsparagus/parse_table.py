@@ -362,7 +362,7 @@ class ParseTable:
         self.remove_all_unreachable_state(verbose, progress)
         # TODO: Statically compute replayed terms. (maybe?)
         # Replace reduce actions by programmatic stack manipulation.
-        self.remove_reduce(verbose, progress)
+        self.lower_reduce_actions(verbose, progress)
         # Fold paths which have the same ending.
         self.fold_identical_endings(verbose, progress)
         # Group state with similar non-terminal edges close-by, to improve the
@@ -1332,13 +1332,13 @@ class ParseTable:
         self.states = [s for s in self.states if s is not None]
         self.rewrite_reordered_state_indexes()
 
-    def remove_reduce(self, verbose: bool, progress: bool) -> None:
+    def lower_reduce_actions(self, verbose: bool, progress: bool) -> None:
         # Remove Reduce actions and replace them by the programmatic
         # equivalent.
         #
         # This transformation preserves the stack manipulations of the parse
-        # table. It only changes it from being implicitly executed by the shift
-        # function of the LR parser, by being executed as an action.
+        # table. It only changes it from being implicitly executed by the LR
+        # parser, to being explicitly executed with actions.
         #
         # This transformation converts the hard-to-predict load of the shift
         # table into a branch prediction which is potentially easier to
@@ -1348,7 +1348,7 @@ class ParseTable:
         # replaying non-terminals, thus the backends could safely ignore the
         # ability of the shift function from handling non-terminals.
         if verbose or progress:
-            print("Remove Reduce actions.")
+            print("Lower Reduce actions.")
 
         maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
 
@@ -1399,7 +1399,7 @@ class ParseTable:
                         has_replay = iter_aps.replay != []
                     # print("End at {}:\n{}".format(len(iter_aps.history),
                     #                               iter_aps.string(name="\titer_aps")))
-                    replay_list = list(map(lambda e: e.src, iter_aps.shift))
+                    replay_list = [e.src for e in iter_aps.shift]
                     assert len(replay_list) >= 2
                     replay_term = Replay(replay_list[1:])
                     states_by_replay_term[replay_term].append(replay_list[0])
@@ -1425,7 +1425,7 @@ class ParseTable:
 
                 # Add Unwind action.
                 # print("After:\n")
-                locations = OrderedFrozenSet(reduce_state.locations)
+                locations = reduce_state.locations
                 delayed: OrderedFrozenSet[DelayedAction] = OrderedFrozenSet(filter_by_replay_term.items())
                 is_new, filter_state = self.new_state(locations, delayed)
                 self.add_edge(reduce_state, unwind_term, filter_state.index)
@@ -1444,7 +1444,7 @@ class ParseTable:
                     dest = self.states[dest_idx]
 
                     # Add FilterStates action from the filter_state to the replay_state.
-                    locations = OrderedFrozenSet(dest.locations)
+                    locations = dest.locations
                     delayed = OrderedFrozenSet(itertools.chain(dest.delayed_actions, [replay_term]))
                     is_new, replay_state = self.new_state(locations, delayed)
                     self.add_edge(filter_state, filter_term, replay_state.index)
@@ -1537,11 +1537,11 @@ class ParseTable:
 
         def state_value(s: StateAndTransitions) -> float:
             value = 0.0
-            i = 1.0
             if len(s.epsilon) != 0:
-                return 2.0
+                return 4.0
             if len(s.nonterminals) == 0:
-                return 1.0
+                return 2.0
+            i = 1.0
             for nt in freq_nt:
                 if nt in s:
                     value += i
