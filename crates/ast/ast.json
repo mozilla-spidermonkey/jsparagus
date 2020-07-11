@@ -289,11 +289,15 @@
     "StaticMemberExpressionTail": {
       "property": "IdentifierName"
     },
+    "PrivateFieldExpressionTail": {
+      "field": "PrivateIdentifier"
+    },
     "CallExpressionTail": {
       "arguments": "Arguments"
     },
     "ComputedMemberExpression": "ComputedMemberExpression",
     "StaticMemberExpression": "StaticMemberExpression",
+    "PrivateFieldExpression": "PrivateFieldExpression",
     "CallExpression": "CallExpression"
   },
   "PropertyName": {
