@@ -1388,7 +1388,7 @@ impl<'alloc> AstBuilder<'alloc> {
         self.alloc_with(|| {
             Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
                 PrivateFieldExpression {
-                    object,
+                    object: ExpressionOrSuper::Expression(object),
                     field: self.private_identifier(private_identifier),
                     loc: SourceLocation::from_parts(object_loc, field_loc),
                 },
@@ -2128,6 +2128,13 @@ impl<'alloc> AstBuilder<'alloc> {
                         expression,
                         loc,
                     },
+                ),
+            ),
+            Expression::MemberExpression(MemberExpression::PrivateFieldExpression(
+                PrivateFieldExpression { object, field, loc },
+            )) => SimpleAssignmentTarget::MemberAssignmentTarget(
+                MemberAssignmentTarget::PrivateFieldAssignmentTarget(
+                    PrivateFieldAssignmentTarget { object, field, loc },
                 ),
             ),
 
