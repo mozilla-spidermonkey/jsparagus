@@ -1930,6 +1930,10 @@ impl ScopeBuilderStack {
             .get_scope_index()
     }
 
+    fn current_scope_index_or_empty_global(&self) -> ScopeIndex {
+        self.current_scope_index()
+    }
+
     fn push_global(&mut self, builder: GlobalScopeBuilder) {
         self.stack.push(ScopeBuilder::Global(builder))
     }
@@ -2081,7 +2085,12 @@ impl FunctionScriptStencilBuilder {
     ///
     /// This creates `ScriptStencil` for the function, and adds it to
     /// enclosing function if exists.
-    fn enter<T>(&mut self, fun: &T, syntax_kind: FunctionSyntaxKind) -> ScriptStencilIndex
+    fn enter<T>(
+        &mut self,
+        fun: &T,
+        syntax_kind: FunctionSyntaxKind,
+        enclosing_scope_index: ScopeIndex,
+    ) -> ScriptStencilIndex
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
@@ -2105,6 +2114,7 @@ impl FunctionScriptStencilBuilder {
             syntax_kind.is_generator(),
             syntax_kind.is_async(),
             FunctionFlags::interpreted(syntax_kind),
+            enclosing_scope_index,
         );
         let index = self.functions.push(function_stencil);
         self.function_stencil_indices.insert(fun, index);
@@ -2432,6 +2442,7 @@ impl ScopeDataMapBuilder {
         let fun_index = self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::function_declaration(is_generator, is_async),
+            self.builder_stack.current_scope_index_or_empty_global(),
         );
 
         match self.builder_stack.innermost_lexical() {
@@ -2472,6 +2483,7 @@ impl ScopeDataMapBuilder {
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::function_expression(is_generator, is_async),
+            self.builder_stack.current_scope_index_or_empty_global(),
         );
     }
 
@@ -2494,8 +2506,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
-        self.function_stencil_builder
-            .enter(fun, FunctionSyntaxKind::method(is_generator, is_async));
+        self.function_stencil_builder.enter(
+            fun,
+            FunctionSyntaxKind::method(is_generator, is_async),
+            self.builder_stack.current_scope_index_or_empty_global(),
+        );
     }
 
     pub fn after_method<T>(&mut self, fun: &T)
@@ -2509,8 +2524,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
-        self.function_stencil_builder
-            .enter(fun, FunctionSyntaxKind::getter());
+        self.function_stencil_builder.enter(
+            fun,
+            FunctionSyntaxKind::getter(),
+            self.builder_stack.current_scope_index_or_empty_global(),
+        );
     }
 
     pub fn on_getter_parameter<T>(&mut self, param: &T)
@@ -2532,8 +2550,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
-        self.function_stencil_builder
-            .enter(fun, FunctionSyntaxKind::setter());
+        self.function_stencil_builder.enter(
+            fun,
+            FunctionSyntaxKind::setter(),
+            self.builder_stack.current_scope_index_or_empty_global(),
+        );
     }
 
     pub fn before_setter_parameter<T>(&mut self, param: &T)
@@ -2559,8 +2580,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
-        self.function_stencil_builder
-            .enter(params, FunctionSyntaxKind::arrow(is_async));
+        self.function_stencil_builder.enter(
+            params,
+            FunctionSyntaxKind::arrow(is_async),
+            self.builder_stack.current_scope_index_or_empty_global(),
+        );
     }
 
     pub fn after_arrow_function<T>(&mut self, body: &T)
