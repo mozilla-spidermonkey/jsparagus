@@ -471,6 +471,8 @@ pub struct FunctionScopeData {
     ///
     /// A parameter for ScopeCreationData::create.
     pub enclosing: ScopeIndex,
+
+    pub function_index: ScriptStencilIndex,
 }
 
 impl FunctionScopeData {
@@ -480,6 +482,7 @@ impl FunctionScopeData {
         non_positional_formal_start: usize,
         max_var_count: usize,
         enclosing: ScopeIndex,
+        function_index: ScriptStencilIndex,
     ) -> Self {
         let capacity = positional_parameter_count + non_positional_formal_start + max_var_count;
 
@@ -491,6 +494,7 @@ impl FunctionScopeData {
             // Set to the correct value in EmitterScopeStack::enter_function.
             first_frame_slot: FrameSlot::new(0),
             enclosing,
+            function_index,
         }
     }
 }
