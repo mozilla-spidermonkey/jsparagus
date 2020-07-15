@@ -345,7 +345,10 @@ struct PossiblyAnnexBFunction {
     name: SourceAtomSetIndex,
     owner_scope_index: ScopeIndex,
     binding_index: BindingIndex,
-    stencil_index: ScriptStencilIndex,
+
+    /// Index of the script in the list of `functions` in the
+    /// `FunctionScriptStencilBuilder`.
+    script_index: ScriptStencilIndex,
 }
 
 #[derive(Debug)]
@@ -365,14 +368,14 @@ impl PossiblyAnnexBFunctionList {
         name: SourceAtomSetIndex,
         owner_scope_index: ScopeIndex,
         binding_index: BindingIndex,
-        stencil_index: ScriptStencilIndex,
+        script_index: ScriptStencilIndex,
     ) {
         if let Some(functions) = self.functions.get_mut(&name) {
             functions.push(PossiblyAnnexBFunction {
                 name,
                 owner_scope_index,
                 binding_index,
-                stencil_index,
+                script_index,
             });
             return;
         }
@@ -382,7 +385,7 @@ impl PossiblyAnnexBFunctionList {
             name,
             owner_scope_index,
             binding_index,
-            stencil_index,
+            script_index,
         });
         self.functions.insert(name, functions);
     }
@@ -406,7 +409,7 @@ impl PossiblyAnnexBFunctionList {
                     _ => panic!("unexpected scope pointed by Annex B function"),
                 }
 
-                function_declaration_properties.mark_annex_b(fun.stencil_index);
+                function_declaration_properties.mark_annex_b(fun.script_index);
             }
         }
     }
@@ -1038,11 +1041,15 @@ struct FunctionParametersScopeBuilder {
 
     scope_index: ScopeIndex,
 
+    /// Index of the script in the list of `functions` in the
+    /// `FunctionScriptStencilBuilder`.
+    script_index: ScriptStencilIndex,
+
     has_direct_eval: bool,
 }
 
 impl FunctionParametersScopeBuilder {
-    fn new(scope_index: ScopeIndex, is_arrow: bool) -> Self {
+    fn new(scope_index: ScopeIndex, is_arrow: bool, script_index: ScriptStencilIndex) -> Self {
         let mut base = BaseScopeBuilder::new();
 
         if !is_arrow {
@@ -1075,6 +1082,7 @@ impl FunctionParametersScopeBuilder {
             simple_parameter_list: true,
             has_parameter_expressions: false,
             scope_index,
+            script_index,
             has_direct_eval: false,
         }
     }
@@ -1397,6 +1405,7 @@ impl FunctionParametersScopeBuilder {
             self.non_positional_parameter_names.len(),
             function_max_var_names_count,
             enclosing,
+            self.script_index,
         );
 
         // FunctionDeclarationInstantiation ( func, argumentsList )
@@ -2145,6 +2154,15 @@ impl FunctionScriptStencilBuilder {
         self.function_stack.pop();
     }
 
+    /// Returns the current function's index.
+    /// Panics if no current function is found.
+    fn current_index(&self) -> ScriptStencilIndex {
+        *self
+            .function_stack
+            .last()
+            .expect("should be inside function")
+    }
+
     /// Returns a immutable reference to the innermost function. None otherwise.
     fn maybe_current<'a>(&'a self) -> Option<&'a ScriptStencil> {
         let maybe_index = self.function_stack.last();
@@ -2604,7 +2622,11 @@ impl ScopeDataMapBuilder {
 
         let is_arrow = self.function_stencil_builder.current().is_arrow_function();
 
-        let builder = FunctionParametersScopeBuilder::new(index, is_arrow);
+        let builder = FunctionParametersScopeBuilder::new(
+            index,
+            is_arrow,
+            self.function_stencil_builder.current_index(),
+        );
         self.non_global.insert(params, index);
 
         self.builder_stack.push_function_parameters(builder);
