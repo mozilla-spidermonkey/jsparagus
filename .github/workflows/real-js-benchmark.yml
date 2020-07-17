@@ -1,0 +1,64 @@
+name: Real JS Samples Benchmark
+on: push
+
+jobs:
+  benchmark:
+    runs-on: [self-hosted, benchmark-pool-1]
+    steps:
+    - name: Clean Work Directory
+      run: |
+        rm -rf *
+    - name: Checkout jsparagus
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+        path: 'jsparagus'
+    - name: Checkout real-js-samples
+      uses: actions/checkout@v2
+      with:
+        repository: 'Yoric/real-js-samples'
+        path: 'real-js-samples'
+    - name: Checkout mozilla-central
+      run: |
+          # Pull mozilla-central changes
+          source /var/github-action-runner/.profile
+          git -C /var/github-action-runner/gecko pull --all
+          # Create a local clone of mozilla-central
+          git clone -l /var/github-action-runner/gecko mozilla-central
+    - name: Status of Checkouts
+      run: |
+        echo "mozilla-central: $(git -C mozilla-central show --oneline -s)"
+        echo "jsparagus: $(git -C jsparagus show --oneline -s)"
+        echo "real-js-samples: $(git -C real-js-samples show --oneline -s)"
+    - name: Setup venv
+      run: |
+        source /var/github-action-runner/.profile
+        cd jsparagus
+        make init
+    - name: Generate Files
+      run: |
+        source /var/github-action-runner/.profile
+        cd jsparagus
+        make all
+        # OS independant replace
+        sed -i.bak '/*_generated.rs/d' .gitignore && rm .gitignore.bak
+    - name: Build Gecko
+      run: |
+        # Disable Opcodes.h check, as we only focus on parsing speed.
+        export JS_SMOOSH_DISABLE_OPCODE_CHECK=1
+        # Apply Bug 1640982 fix.
+        export CARGO_PROFILE_RELEASE_LTO=true
+        source /var/github-action-runner/.profile
+        cd jsparagus
+        cargo run --bin smoosh_tools build --opt
+    - name: Benchmark Real JS Samples
+      run: |
+        source /var/github-action-runner/.profile
+        cd jsparagus
+        cargo run --bin smoosh_tools bench --opt
+    - name: Post Checkout mozilla-central
+      if: ${{ always() }}
+      run: |
+          # Remove checked out repository.
+          rm -rf mozilla-central
+
