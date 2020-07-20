@@ -392,14 +392,18 @@ impl ScriptStencil {
         self.fun_nargs += 1;
     }
 
-    pub fn set_to_string_starts(&mut self, to_string_start: usize) {
-        self.extent.to_string_start = to_string_start as u32;
+    /// source_start should point the start of parameter for functions.
+    pub fn set_source_starts(&mut self, source_start: usize) {
+        self.extent.source_start = source_start as u32;
     }
 
+    /// to_string_end should point the end of function body for function,
+    /// and the end of class for constructor.
     pub fn set_to_string_end(&mut self, to_string_end: usize) {
         self.extent.to_string_end = to_string_end as u32;
     }
 
+    /// source_end should point the end of function body.
     pub fn set_source_end(&mut self, source_end: usize) {
         self.extent.source_end = source_end as u32;
     }
