@@ -146,7 +146,8 @@
     "closed_at": "2020-01-25T16:24:31Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
-    "body": "The following test case passes when running with jsparagus generated parser, but fails in SpiderMonkey:\r\n\r\n```js\r\nfunc\r\n   return !x;\r\n```"
+    "body": "The following test case passes when running with jsparagus generated parser, but fails in SpiderMonkey:\r\n\r\n```js\r\nfunc\r\n   return !x;\r\n```",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/47",
@@ -218,7 +219,8 @@
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47.diff",
       "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47.patch"
     },
-    "body": "The following regexp was incorrectly accepted by jsparagus, because the flags of the regexp were not tested against the accepted list of flags.\r\n\r\nHere a small test case which should fail.\r\n\r\n```js\r\n/ |/ji\r\n```\r\n"
+    "body": "The following regexp was incorrectly accepted by jsparagus, because the flags of the regexp were not tested against the accepted list of flags.\r\n\r\nHere a small test case which should fail.\r\n\r\n```js\r\n/ |/ji\r\n```\r\n",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/46",
@@ -290,7 +292,8 @@
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46.diff",
       "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46.patch"
     },
-    "body": "The following test case fails while unwrapping the content of the template string.\r\n\r\n```js\r\nReflect.parse(`\r\nlet a\r\nf2()\r\n`);\r\n```\r\n\r\nThis patch replace the `None` result, by the content produced while iterating over the template string content, using the `builder` initialized earlier."
+    "body": "The following test case fails while unwrapping the content of the template string.\r\n\r\n```js\r\nReflect.parse(`\r\nlet a\r\nf2()\r\n`);\r\n```\r\n\r\nThis patch replace the `None` result, by the content produced while iterating over the template string content, using the `builder` initialized earlier.",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/44",
@@ -347,7 +350,8 @@
     "closed_at": "2019-12-23T19:28:18Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
-    "body": "The following JS scripts is wrongly accepted by jsparagus' parser, while being refused by SpiderMonkey's parser.\r\n\r\n```js\r\nconst y\r\n```\r\n\r\n```js\r\nconst y;\r\n```\r\n"
+    "body": "The following JS scripts is wrongly accepted by jsparagus' parser, while being refused by SpiderMonkey's parser.\r\n\r\n```js\r\nconst y\r\n```\r\n\r\n```js\r\nconst y;\r\n```\r\n",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/43",
@@ -419,7 +423,8 @@
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43.diff",
       "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43.patch"
     },
-    "body": "This PR fix the lexer to correctly reject inputs such as:\r\n\r\n```js\r\n// Bug 1319415\r\n\r\nvar src =\r\n`(modu\r\n```\r\n"
+    "body": "This PR fix the lexer to correctly reject inputs such as:\r\n\r\n```js\r\n// Bug 1319415\r\n\r\nvar src =\r\n`(modu\r\n```\r\n",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/41",
@@ -485,7 +490,8 @@
     "closed_at": "2019-12-11T17:47:54Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
-    "body": "The following test case is accepted by jsparagus, while being rejected by SpiderMonkey's parser.\r\n\r\n```js\r\nlet c = (this != 4.2);\r\n\r\n/* Don't\r\n```\r\n"
+    "body": "The following test case is accepted by jsparagus, while being rejected by SpiderMonkey's parser.\r\n\r\n```js\r\nlet c = (this != 4.2);\r\n\r\n/* Don't\r\n```\r\n",
+    "performed_via_github_app": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/40",
@@ -548,6 +554,7 @@
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40.diff",
       "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40.patch"
     },
-    "body": "Currently when generating the AST, we might fail and panic with some error messages.\r\nThis patch make all `to_ast` function return a `Result`, which will then bubble up to the parser and avoid failing when parsing a module as a script or the opposite.\r\n"
+    "body": "Currently when generating the AST, we might fail and panic with some error messages.\r\nThis patch make all `to_ast` function return a `Result`, which will then bubble up to the parser and avoid failing when parsing a module as a script or the opposite.\r\n",
+    "performed_via_github_app": null
   }
 ]
