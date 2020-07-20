@@ -247,6 +247,14 @@ impl SourceExtent {
 /// Maps to js::frontend::ScriptStencil in m-c/js/src/frontend/Stencil.h.
 #[derive(Debug)]
 pub struct ScriptStencil {
+    // Fields for BaseScript.
+    // Used by:
+    //   * Global script
+    //   * Eval
+    //   * Module
+    //   * non-lazy Function (except asm.js module)
+    //   * lazy Function (cannot be asm.js module)
+    /// See `BaseScript::immutableFlags_`.
     pub immutable_flags: ImmutableScriptFlags,
 
     /// For top level script and non-lazy function script,
@@ -256,15 +264,48 @@ pub struct ScriptStencil {
     /// closed over bindings.
     pub gcthings: Vec<GCThing>,
 
+    /// See `BaseScript::sharedData_`.
     pub immutable_script_data: Option<ImmutableScriptDataIndex>,
 
+    /// The location of this script in the source.
     pub extent: SourceExtent,
 
+    // Fields for JSFunction.
+    // Used by:
+    //   * non-lazy Function
+    //   * lazy Function
+    //   * asm.js module
+    /// The explicit or implicit name of the function. The FunctionFlags
+    /// indicate the kind of name.
     pub fun_name: Option<SourceAtomSetIndex>,
+
+    /// See `JSFunction::nargs_`.
     pub fun_nargs: u16,
+
+    /// See: `FunctionFlags`.
     pub fun_flags: FunctionFlags,
 
+    /// If this ScriptStencil refers to a lazy child of the function being
+    /// compiled, this field holds the child's immediately enclosing scope's
+    /// index. Once compilation succeeds, we will store the scope pointed by
+    /// this in the child's BaseScript.  (Debugger may become confused if lazy
+    /// scripts refer to partially initialized enclosing scopes, so we must
+    /// avoid storing the scope in the BaseScript until compilation has
+    /// completed successfully.)
     pub lazy_function_enclosing_scope_index: Option<ScopeIndex>,
+
+    /// This function is a standalone function that is not syntactically part of
+    /// another script. Eg. Created by `new Function("")`.
+    pub is_standalone_function: bool,
+
+    /// This is set by the emitter of the enclosing script when a
+    /// reference to this function is generated.
+    pub was_function_emitted: bool,
+
+    /// This function should be marked as a singleton. It is expected to be
+    /// defined at most once. This is a heuristic only and does not affect
+    /// correctness.
+    pub is_singleton_function: bool,
 }
 
 impl ScriptStencil {
@@ -282,6 +323,9 @@ impl ScriptStencil {
             fun_nargs: 0,
             fun_flags: FunctionFlags::empty(),
             lazy_function_enclosing_scope_index: None,
+            is_standalone_function: false,
+            was_function_emitted: false,
+            is_singleton_function: false,
         }
     }
 
@@ -310,6 +354,9 @@ impl ScriptStencil {
             fun_nargs: 0,
             fun_flags,
             lazy_function_enclosing_scope_index: Some(lazy_function_enclosing_scope_index),
+            is_standalone_function: false,
+            was_function_emitted: false,
+            is_singleton_function: false,
         }
     }
 
@@ -402,6 +449,10 @@ impl ScriptStencil {
 
     pub fn set_source_end(&mut self, source_end: usize) {
         self.extent.source_end = source_end as u32;
+    }
+
+    pub fn set_function_emitted(&mut self) {
+        self.was_function_emitted = true;
     }
 
     pub fn push_inner_function(&mut self, fun: ScriptStencilIndex) {
