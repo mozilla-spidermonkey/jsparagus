@@ -2202,7 +2202,7 @@ impl FunctionScriptStencilBuilder {
     {
         let loc = params.get_loc();
         let params_start = loc.start;
-        self.current_mut().set_to_string_starts(params_start);
+        self.current_mut().set_source_starts(params_start);
     }
 
     fn on_non_rest_parameter(&mut self) {
