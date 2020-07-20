@@ -1046,6 +1046,8 @@ struct FunctionParametersScopeBuilder {
     script_index: ScriptStencilIndex,
 
     has_direct_eval: bool,
+
+    is_arrow: bool,
 }
 
 impl FunctionParametersScopeBuilder {
@@ -1084,6 +1086,7 @@ impl FunctionParametersScopeBuilder {
             scope_index,
             script_index,
             has_direct_eval: false,
+            is_arrow,
         }
     }
 
@@ -1406,6 +1409,7 @@ impl FunctionParametersScopeBuilder {
             function_max_var_names_count,
             enclosing,
             self.script_index,
+            self.is_arrow,
         );
 
         // FunctionDeclarationInstantiation ( func, argumentsList )
