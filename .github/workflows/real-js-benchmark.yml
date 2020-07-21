@@ -1,5 +1,10 @@
 name: Real JS Samples Benchmark
-on: push
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+      branches:
+      - master
 
 jobs:
   benchmark:
