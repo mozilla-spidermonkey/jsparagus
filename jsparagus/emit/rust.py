@@ -94,12 +94,18 @@ def extract_ranges(iterator):
     """Given a sorted iterator of integer, yield the contiguous ranges"""
     # Identify contiguous ranges of states.
     ranges = collections.defaultdict(list)
+    # A sorted list of contiguous integers implies that elements are separated
+    # by 1, as well as their indexes. Thus we can categorize them into buckets
+    # of contiguous integers using the base, which is the value v from which we
+    # remove the index i.
     for i, v in enumerate(iterator):
         ranges[v - i].append(v)
     for l in ranges.values():
         yield (l[0], l[-1])
 
 def rust_range(riter):
+    """Prettify a list of tuple of (min, max) of matched ranges into Rust
+    syntax."""
     def minmax_join(rmin, rmax):
         if rmin == rmax:
             return str(rmin)
@@ -224,26 +230,33 @@ class RustActionWriter:
             else:
                 self.write("match parser.top_state() {")
                 with indent(self):
-                    max_weight = max(len(act.states) for act, dest in state.edges())
-                    max_states = []
-                    max_dest = None
+                    # Consider the branch which has the largest number of
+                    # potential top-states to be most likely, and therefore the
+                    # default branch to go to if all other fail to match.
+                    default_weight = max(len(act.states) for act, dest in state.edges())
+                    default_states = []
+                    default_dest = None
                     for act, dest in state.edges():
                         assert first_act.check_same_variable(act)
-                        if max_dest is None and max_weight == len(act.states):
-                            max_states = act.states
-                            max_dest = dest
+                        if default_dest is None and default_weight == len(act.states):
+                            # This range has the same weight as the default
+                            # branch. Ignore it and use it as the default
+                            # branch which would be generated at the end.
+                            default_states = act.states
+                            default_dest = dest
                             continue
                         pattern = rust_range(extract_ranges(act.states))
                         self.write("{} => {{", pattern)
                         with indent(self):
                             self.write_epsilon_transition(dest)
                         self.write("}")
-                    # self.write("_ => panic!(\"Unexpected state value.\")")
+                    # Generate code for the default branch, which got skipped
+                    # while producing the loop.
                     self.write("_ => {")
                     with indent(self):
-                        pattern = rust_range(extract_ranges(max_states))
+                        pattern = rust_range(extract_ranges(default_states))
                         self.write("// {}", pattern)
-                        self.write_epsilon_transition(max_dest)
+                        self.write_epsilon_transition(default_dest)
                     self.write("}")
                 self.write("}")
         else:
