@@ -92,6 +92,27 @@ jobs:
         make all
         # OS independant replace
         sed -i.bak '/*_generated.rs/d' .gitignore && rm .gitignore.bak
+    - name: Apply gecko patches
+      run: |
+        source /var/github-action-runner/.profile
+        cd mozilla-central
+        cat ../jsparagus/gecko-patches.txt | while read PATCH_AND_BUG; do
+          PATCH=$(echo $PATCH_AND_BUG | cut -d : -f 1)
+          BUG=$(echo $PATCH_AND_BUG | cut -d : -f 2)
+
+          # Check bug status and skip if it's already landed.
+          STATUS=$(curl https://bugzilla.mozilla.org/rest/bug/$BUG | python3 -c 'import sys, json; print(json.load(sys.stdin)["bugs"][0]["status"])')
+          echo "Bug $BUG $STATUS"
+          if [ "x$STATUS" = "xRESOLVED" ]; then
+            continue
+          fi
+
+          # Apply the latest patch from phabricator.
+          PATCH_URL=https://phabricator.services.mozilla.com/${PATCH}?download=true
+          curl --location "$PATCH_URL" | git apply --index || git reset --hard
+          git status
+          git commit --allow-empty -m "Bug $BUG"
+        done
     - name: Build Gecko
       run: |
         # Disable Opcodes.h check, as we only focus on parsing speed.
