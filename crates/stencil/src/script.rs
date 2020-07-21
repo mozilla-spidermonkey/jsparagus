@@ -260,8 +260,14 @@ pub struct ScriptStencil {
     /// For top level script and non-lazy function script,
     /// this is a list of GC things referred by bytecode and scope.
     ///
-    /// For lazy function script, this is a list of inner functions and
-    /// closed over bindings.
+    /// For lazy function script, this contains the list of inner functions,
+    /// followed by the list of names defined and closed over by inner script.
+    /// The list of names are delimited by GCThing::Null for each scope.
+    ///
+    /// The order of scopes are depth-first post-order, and names inside each
+    /// scope is in not defined.
+    ///
+    /// Trailing scopes without any names are omitted for space efficiency.
     pub gcthings: Vec<GCThing>,
 
     /// See `BaseScript::sharedData_`.
@@ -468,6 +474,11 @@ impl ScriptStencil {
     pub fn push_closed_over_bindings(&mut self, name: SourceAtomSetIndex) {
         debug_assert!(self.is_lazy_function());
         self.gcthings.push(GCThing::Atom(name));
+    }
+
+    pub fn push_closed_over_bindings_delimiter(&mut self) {
+        debug_assert!(self.is_lazy_function());
+        self.gcthings.push(GCThing::Null);
     }
 }
 
