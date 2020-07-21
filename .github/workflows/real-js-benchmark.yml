@@ -8,6 +8,50 @@ on:
 
 jobs:
   benchmark:
+    # This workflow relies on:
+    #   - A specific hardware (benchmark-pool-1) in order to have a consistent
+    #     and comparable results against multiple builds.
+    #
+    #   - Some persistent data to reduce the time needed to checkout
+    #     mozilla-central.
+    #
+    # To setup such host multiple things should be considered.
+    #
+    # In terms of security, the code which is executed on this hardware should
+    # not be trusted. As such, the Github Action jobs should run on a dedicated
+    # computer which is either isolated or containerized. Do not run this setup
+    # on a non-dedicated computer!
+    #
+    # It is best to create a dedicated user.
+    #   $ mkdir /var/github-action-runner
+    #   $ useradd -d /var/github-action-runner github-action-user
+    #
+    # Make sure this newly added user has no sudo capabilities.
+    #
+    # A checkout of Gecko should be present under /var/github-action-runner. The
+    # dependencies for building Gecko should as well be installed with `mach
+    # bootstrap`, which can be done using another user with sudo capabilities,
+    # and changing the HOME environment variable to match the github-action-user
+    # home.
+    #
+    # The file /var/github-action-runner/.profile contains:
+    #
+    #    export PATH="$HOME/.cargo/bin:$PATH"
+    #    export PATH="/var/github-action-runner/.mozbuild/git-cinnabar:$PATH"
+    #
+    # Which is used to add cargo in the path, as well as git-cinnabar, to keep
+    # the gecko clone up to date.
+    #
+    # To add this computer to the benchmark pool, follow the instruction
+    # provided by github, after clicking "Add runner" on this page:
+    #   https://github.com/mozilla-spidermonkey/jsparagus/settings/actions
+    #
+    # "benchmark-pool-1" specification:
+    #   /proc/cpuinfo:
+    #     Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz
+    #   dmidecode --type 17:
+    #     2x Hynix/Hyundai HMT41GU6MFR8C-PB (DDR3, 8GB, 1600 MT/s)
+    #
     runs-on: [self-hosted, benchmark-pool-1]
     steps:
     - name: Clean Work Directory
@@ -16,13 +60,14 @@ jobs:
     - name: Checkout jsparagus
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+        fetch-depth: 0
         path: 'jsparagus'
     - name: Checkout real-js-samples
       uses: actions/checkout@v2
       with:
         repository: 'Yoric/real-js-samples'
         path: 'real-js-samples'
+        fetch-depth: 0
     - name: Checkout mozilla-central
       run: |
           # Pull mozilla-central changes
