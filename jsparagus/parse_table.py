@@ -492,7 +492,6 @@ class ParseTable:
     ) -> None:
         self.states[dest].backedges.remove(Edge(src.index, term))
         maybe_unreachable_set.add(dest)
-        self.assert_state_invariants(src)
 
     def replace_edge(
             self,
@@ -555,12 +554,17 @@ class ParseTable:
         """Remove all existing edges, in order to replace them by new one. This is used
         when resolving shift-reduce conflicts."""
         assert isinstance(src, StateAndTransitions)
+        old_dest = []
         for term, dest in src.edges():
             self.remove_backedge(src, term, dest, maybe_unreachable_set)
+            old_dest.append(dest)
         src.terminals = {}
         src.nonterminals = {}
         src.errors = {}
         src.epsilon = []
+        self.assert_state_invariants(src)
+        for dest in old_dest:
+            self.assert_state_invariants(dest)
 
     def assert_state_invariants(self, src: typing.Union[StateId, StateAndTransitions]) -> None:
         if not self.debug_info:
@@ -568,13 +572,19 @@ class ParseTable:
         if isinstance(src, int):
             src = self.states[src]
         assert isinstance(src, StateAndTransitions)
-        for term, dest in src.edges():
-            assert Edge(src.index, term) in self.states[dest].backedges
-        for e in src.backedges:
-            assert e.term is not None
-            assert self.states[e.src][e.term] == src.index
-        if not self.assume_inconsistent:
-            assert not src.is_inconsistent()
+        try:
+            for term, dest in src.edges():
+                assert Edge(src.index, term) in self.states[dest].backedges
+            for e in src.backedges:
+                assert e.term is not None
+                assert self.states[e.src][e.term] == src.index
+            if not self.assume_inconsistent:
+                assert not src.is_inconsistent()
+        except AssertionError as exc:
+            print("assert_state_inveriants for {}\n".format(src))
+            for e in src.backedges:
+                print("backedge {} from {}\n".format(e, self.states[e.src]))
+            raise exc
 
     def remove_unreachable_states(
             self,
