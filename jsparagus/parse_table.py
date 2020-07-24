@@ -185,16 +185,12 @@ class StateAndTransitions:
         self.errors = {
             k: state_map[s] for k, s in self.errors.items()
         }
-        # Multiple actions might jump to the same target, attempt to fold these
-        # conditions based on having the same target.
-        epsilon_by_dest = collections.defaultdict(list)
-        for k, s in self.epsilon:
-            epsilon_by_dest[state_map[s]].append(k.rewrite_state_indexes(state_map))
         self.epsilon = [
-            (k, s)
-            for s, ks in epsilon_by_dest.items()
-            for k in ks[0].fold_by_destination(ks)
+            (k.rewrite_state_indexes(state_map), state_map[s])
+            for k, s in self.epsilon
         ]
+        # We cannot have multiple identical actions jumping to different locations.
+        assert len(self.epsilon) == len(set(k for k, _ in self.epsilon))
         self.backedges = OrderedSet(
             Edge(state_map[edge.src], apply_on_term(edge.term))
             for edge in self.backedges
@@ -399,10 +395,31 @@ class ParseTable:
         for s in self.states:
             if s is not None:
                 s.rewrite_state_indexes(state_map)
-                self.assert_state_invariants(s)
         self.named_goals = [
             (nt, state_map[s]) for nt, s in self.named_goals
         ]
+
+        # After a rewrite, multiple actions (conditions) might jump to the same
+        # target, attempt to fold these conditions based on having the same
+        # target. If we can merge them, then remove previous edges (updating
+        # the backedges of successor states) and replace them by the newly
+        # created edges.
+        for s in self.states:
+            if s is not None and len(s.epsilon) != 0:
+                epsilon_by_dest = collections.defaultdict(list)
+                for k, d in s.epsilon:
+                    epsilon_by_dest[d].append(k)
+                maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+                for d, ks in epsilon_by_dest.items():
+                    if len(ks) == 1:
+                        continue
+                    new_ks = ks[0].fold_by_destination(ks)
+                    if new_ks == ks:
+                        continue
+                    for k in ks:
+                        self.remove_edge(s, k, maybe_unreachable_set)
+                    for k in new_ks:
+                        self.add_edge(s, k, d)
 
     def rewrite_reordered_state_indexes(self) -> None:
         state_map = {
