@@ -29,7 +29,7 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
             "                               ShiftError, ShiftAccept)\n")
     out.write("\n")
 
-    methods: OrderedSet[FunCall] = OrderedSet()
+    methods: OrderedSet[typing.Tuple[str, int]] = OrderedSet()
 
     def write_epsilon_transition(indent: str, dest_idx: StateId):
         dest = parse_table.states[dest_idx]
@@ -118,7 +118,7 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
                 assert len(act.args) == 1
                 out.write("{}{} = {}\n".format(indent, act.set_to, next(map_with_offset(act.args))))
             else:
-                methods.add(act)
+                methods.add((act.method, len(act.args)))
                 out.write("{}{} = parser.methods.{}({})\n".format(
                     indent, act.set_to, method_name_to_python(act.method),
                     ", ".join(map_with_offset(act.args))
@@ -211,9 +211,9 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
 
     # Class used to provide default methods when not defined by the caller.
     out.write("class DefaultMethods:\n")
-    for act in methods:
-        act_args = ", ".join("x{}".format(i) for i in range(len(act.args)))
-        name = method_name_to_python(act.method)
+    for method, arglen in methods:
+        act_args = ", ".join("x{}".format(i) for i in range(arglen))
+        name = method_name_to_python(method)
         out.write("    def {}(self, {}):\n".format(name, act_args))
         out.write("        return ({}, {})\n".format(repr(name), act_args))
     if not methods:
