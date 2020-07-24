@@ -174,6 +174,11 @@ class Action:
         # By default do nothing.
         return actions
 
+    def state_refs(self) -> typing.List[StateId]:
+        """List of states which are referenced by this action."""
+        # By default do nothing.
+        return []
+
     def __eq__(self, other: object) -> bool:
         if self.__class__ != other.__class__:
             return False
@@ -229,6 +234,9 @@ class Replay(Action):
 
     def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> Replay:
         return Replay(map(lambda s: state_map[s], self.replay_steps))
+
+    def state_refs(self) -> typing.List[StateId]:
+        return list(self.replay_steps)
 
     def __str__(self) -> str:
         return "Replay({})".format(str(self.replay_steps))
@@ -443,6 +451,9 @@ class FilterStates(Action):
             states.extend(a.states)
         return [FilterStates(states)]
 
+    def state_refs(self) -> typing.List[StateId]:
+        return list(self.states)
+
     def __str__(self) -> str:
         return "FilterStates({})".format(self.states)
 
@@ -634,3 +645,6 @@ class Seq(Action):
     def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> Seq:
         actions = list(map(lambda a: a.rewrite_state_indexes(state_map), self.actions))
         return Seq(actions)
+
+    def state_refs(self) -> typing.List[StateId]:
+        return [s for a in self.actions for s in a.state_refs()]

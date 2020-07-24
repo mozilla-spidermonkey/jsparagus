@@ -9,7 +9,7 @@ import typing
 import itertools
 
 from . import types
-from .utils import consume, keep_until, split
+from .utils import consume, keep_until, split, default_id_dict, default_fwd_dict
 from .ordered import OrderedSet, OrderedFrozenSet
 from .actions import Action, Replay, Reduce, FilterStates, Seq
 from .grammar import End, ErrorSymbol, InitNt, Nt
@@ -1590,12 +1590,30 @@ class ParseTable:
 
         def rewrite_backedges(state_list: typing.List[StateAndTransitions],
                               state_map: typing.Dict[StateId, StateId],
+                              backrefs: typing.Dict[StateId,
+                                                    typing.List[typing.Tuple[StateId, Action, StateId]]],
                               maybe_unreachable: OrderedSet[StateId]) -> bool:
+            all_backrefs = []
+            new_backrefs = set()
+            for s in state_list:
+                all_backrefs.extend(backrefs[s.index])
             # All states have the same outgoing edges. Thus we replace all of
             # them by a single state. We do that by replacing edges of which
             # are targeting the state in the state_list by edges targetting the
             # ref state.
             ref = state_list.pop()
+            tmp_state_map = default_fwd_dict(state_map)
+            for s in state_list:
+                tmp_state_map[s.index] = ref.index
+
+            for ref_s, ref_t, _d in all_backrefs:
+                new_backrefs.add((ref_s, ref_t.rewrite_state_indexes(tmp_state_map)))
+            if len(all_backrefs) != len(new_backrefs):
+                # Skip this rewrite if when rewritting we are going to cause
+                # some aliasing to happen between actions which are going to
+                # different states.
+                return False
+
             replace_edges = [e for s in state_list for e in s.backedges]
             hit = False
             for edge in replace_edges:
@@ -1612,14 +1630,24 @@ class ParseTable:
 
         def rewrite_if_same_outedges(state_list: typing.List[StateAndTransitions]) -> bool:
             maybe_unreachable: OrderedSet[StateId] = OrderedSet()
-            outedges = collections.defaultdict(lambda: [])
+            backrefs = collections.defaultdict(list)
+            outedges = collections.defaultdict(list)
             for s in state_list:
+                # Iterate first over actions, then over ordinary states.
+                self.assert_state_invariants(s)
                 outedges[tuple(s.edges())].append(s)
+                if s.epsilon == []:
+                    continue
+                for t, d in s.edges():
+                    if not isinstance(t, Action):
+                        continue
+                    for r in t.state_refs():
+                        backrefs[r].append((s.index, t, d))
             hit = False
-            state_map = {i: i for i, _ in enumerate(self.states)}
+            state_map: typing.Dict[StateId, StateId] = default_id_dict()
             for same in outedges.values():
                 if len(same) > 1:
-                    hit = rewrite_backedges(same, state_map, maybe_unreachable) or hit
+                    hit = rewrite_backedges(same, state_map, backrefs, maybe_unreachable) or hit
             if hit:
                 self.remove_unreachable_states(maybe_unreachable)
                 self.rewrite_state_indexes(state_map)
