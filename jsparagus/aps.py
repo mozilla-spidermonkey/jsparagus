@@ -55,6 +55,7 @@ def reduce_path(pt: ParseTable, shifted: Path) -> typing.Iterator[Path]:
     nt = stack_diff.nt
     assert nt is not None
     depth = stack_diff.pop + stack_diff.replay
+    assert depth >= 0
     if depth > 0:
         # We are reducing at least one element from the stack.
         stacked = [i for i, e in enumerate(shifted) if pt.term_is_stacked(e.term)]
@@ -273,7 +274,6 @@ class APS:
                 reducing = not a.follow_edge()
                 assert stack_diff.pop >= 0
                 assert stack_diff.nt is not None
-                assert stack_diff.replay >= 0
                 for path in reduce_path(pt, prev_sh):
                     # path contains the chains of state shifted, including
                     # epsilon transitions. The head of the path should be able
