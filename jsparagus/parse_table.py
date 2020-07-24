@@ -421,6 +421,8 @@ class ParseTable:
                     for k in new_ks:
                         self.add_edge(s, k, d)
 
+        self.assert_table_invariants()
+
     def rewrite_reordered_state_indexes(self) -> None:
         state_map = {
             s.index: i
@@ -565,6 +567,11 @@ class ParseTable:
         self.assert_state_invariants(src)
         for dest in old_dest:
             self.assert_state_invariants(dest)
+
+    def assert_table_invariants(self) -> None:
+        for s in self.states:
+            if s is not None:
+                self.assert_state_invariants(s)
 
     def assert_state_invariants(self, src: typing.Union[StateId, StateAndTransitions]) -> None:
         if not self.debug_info:
