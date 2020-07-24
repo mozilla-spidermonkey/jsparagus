@@ -1400,58 +1400,26 @@ class DefaultMethods:
         return ('empty', x0)
     def var_token(self, x0):
         return ('var_token', x0)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
     def prod(self, x0, x1):
         return ('prod', x0, x1)
     def optional(self, x0):
         return ('optional', x0)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
     def const_token(self, x0, x1):
         return ('const_token', x0, x1)
-    def prod(self, x0, x1):
-        return ('prod', x0, x1)
     def expr_match(self, x0):
         return ('expr_match', x0)
     def expr_none(self, ):
         return ('expr_none', )
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
-    def nt_def(self, x0, x1, x2, x3):
-        return ('nt_def', x0, x1, x2, x3)
     def expr_call(self, x0, x1):
         return ('expr_call', x0, x1)
     def args_single(self, x0):
         return ('args_single', x0)
-    def expr_call(self, x0, x1):
-        return ('expr_call', x0, x1)
     def expr_some(self, x0):
         return ('expr_some', x0)
     def args_append(self, x0, x1):
         return ('args_append', x0, x1)
     def grammar(self, x0, x1):
         return ('grammar', x0, x1)
-    def grammar(self, x0, x1):
-        return ('grammar', x0, x1)
-    def nt_defs_single(self, x0):
-        return ('nt_defs_single', x0)
-    def nt_defs_append(self, x0, x1):
-        return ('nt_defs_append', x0, x1)
-    def single(self, x0):
-        return ('single', x0)
-    def append(self, x0, x1):
-        return ('append', x0, x1)
-    def args_single(self, x0):
-        return ('args_single', x0)
-    def args_append(self, x0, x1):
-        return ('args_append', x0, x1)
 
 class Parser(runtime.Parser):
     def __init__(self, goal='grammar', builder=None):
