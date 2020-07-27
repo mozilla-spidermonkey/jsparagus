@@ -1,6 +1,7 @@
 //! Functions to exercise the parser from the command line.
 
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -12,6 +13,7 @@ extern crate jsparagus_ast as ast;
 extern crate jsparagus_emitter as emitter;
 extern crate jsparagus_interpreter as interpreter;
 extern crate jsparagus_parser as parser;
+extern crate jsparagus_stencil as stencil;
 
 use ast::arena;
 use ast::dump::ASTDump;
@@ -21,6 +23,7 @@ use ast::types::Program;
 use bumpalo::Bump;
 use interpreter::{create_global, evaluate, Object};
 use parser::{is_partial_script, parse_script, ParseOptions};
+use stencil::script::SourceExtent;
 
 use rustyline::error::ReadlineError;
 use rustyline::validate::{ValidationContext, ValidationResult, Validator};
@@ -140,12 +143,13 @@ fn handle_script<'alloc>(
     atoms: SourceAtomSet<'alloc>,
     slices: SourceSliceList<'alloc>,
     global: Rc<RefCell<Object>>,
+    extent: SourceExtent,
 ) {
     if verbosity.ast {
         program.dump_with_atoms(&mut io::stderr(), &atoms, &slices);
     }
 
-    let options = emitter::EmitOptions::new();
+    let options = emitter::EmitOptions::new(extent);
     match emitter::emit(program, &options, atoms, slices) {
         Err(err) => {
             eprintln!("error: {}", err);
@@ -214,6 +218,7 @@ pub fn read_print_loop(verbosity: Verbosity) {
 
     let global = create_global();
 
+    let mut line = 1;
     loop {
         let input = rl.readline("> ");
         if let Err(err) = input {
@@ -223,6 +228,7 @@ pub fn read_print_loop(verbosity: Verbosity) {
 
         let input = input.unwrap();
         rl.add_history_entry(input.as_str());
+        let input_len = input.len();
 
         let allocator = &Bump::new();
         let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
@@ -239,6 +245,8 @@ pub fn read_print_loop(verbosity: Verbosity) {
                 eprintln!("error: {}", err);
             }
             Ok(script) => {
+                let extent = SourceExtent::top_level_script(input_len.try_into().unwrap(), line, 0);
+
                 let program = arena::alloc(allocator, Program::Script(script.unbox()));
                 handle_script(
                     &verbosity,
@@ -246,8 +254,11 @@ pub fn read_print_loop(verbosity: Verbosity) {
                     atoms.replace(SourceAtomSet::new_uninitialized()),
                     slices.replace(SourceSliceList::new()),
                     global.clone(),
+                    extent,
                 );
             }
         }
+
+        line += 1;
     }
 }

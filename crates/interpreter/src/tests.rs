@@ -5,7 +5,9 @@ use bumpalo::Bump;
 use emitter::{emit, EmitOptions};
 use parser::{parse_script, ParseOptions};
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::rc::Rc;
+use stencil::script::SourceExtent;
 
 use crate::{create_global, evaluate, EvalError, JSValue};
 
@@ -14,9 +16,11 @@ fn try_evaluate(source: &str) -> Result<JSValue, EvalError> {
     let parse_options = ParseOptions::new();
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
     let slices = Rc::new(RefCell::new(SourceSliceList::new()));
+    let source_len = source.len();
     let parse_result = parse_script(alloc, source, &parse_options, atoms.clone(), slices.clone())
         .expect("Failed to parse");
-    let emit_options = EmitOptions::new();
+    let extent = SourceExtent::top_level_script(source_len.try_into().unwrap(), 1, 0);
+    let emit_options = EmitOptions::new(extent);
     let script = parse_result.unbox();
     let program = arena::alloc(alloc, ast::types::Program::Script(script));
     let result = emit(
