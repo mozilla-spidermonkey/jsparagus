@@ -363,6 +363,8 @@ class ParseTable:
         # TODO: Statically compute replayed terms. (maybe?)
         # Replace reduce actions by programmatic stack manipulation.
         self.lower_reduce_actions(verbose, progress)
+        # Fold Replay followed by Unwind instruction.
+        self.fold_replay_unwind(verbose, progress)
         # Fold paths which have the same ending.
         self.fold_identical_endings(verbose, progress)
         # Group state with similar non-terminal edges close-by, to improve the
@@ -1476,6 +1478,74 @@ class ParseTable:
                 assert not filter_state.is_inconsistent()
 
         consume(transform(), progress)
+
+    def fold_replay_unwind(self, verbose: bool, progress: bool) -> None:
+        """Convert Replay action falling into Unwind action to an Unwind action which
+        replay less terms."""
+        if verbose or progress:
+            print("Fold Replay followed by Unwind actions.")
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+
+        def try_transform(s: StateAndTransitions) -> bool:
+            if len(s.epsilon) != 1:
+                return False
+            replay_term, replay_dest_idx = next(iter(s.epsilon))
+            if not isinstance(replay_term, Replay):
+                return False
+            replay_dest = self.states[replay_dest_idx]
+            if len(replay_dest.epsilon) != 1:
+                return False
+            unwind_term, unwind_dest_idx = next(iter(replay_dest.epsilon))
+            if not unwind_term.update_stack():
+                return False
+            stack_diff = unwind_term.update_stack_with()
+            if not stack_diff.reduce_stack():
+                return False
+            if stack_diff.replay <= 0:
+                return False
+
+            # Remove replayed terms from the Unwind action.
+            replayed = replay_term.replay_steps
+            unshifted = min(stack_diff.replay, len(replayed))
+            new_unwind_term = unwind_term.unshift_action(unshifted)
+
+            # Replace the replay_term and unwind_term by terms which are
+            # avoiding extra replay actions.
+            self.remove_edge(s, replay_term, maybe_unreachable_set)
+            if len(replayed) == unshifted:
+                # The Unwind action replay more terms than what we originally
+                # had. The replay term is replaced by an Unwind edge instead.
+                self.add_edge(s, new_unwind_term, unwind_dest_idx)
+            else:
+                # The Unwind action replay less terms than what we originally
+                # had. The replay terms is shortened and a new state is created
+                # to accomodate the new Unwind action.
+                assert unshifted >= 1
+                new_replay_term = Replay(replayed[:-unshifted])
+                implicit_replay_term = Replay(replayed[-unshifted:])
+                locations = replay_dest.locations
+                delayed: OrderedFrozenSet[DelayedAction]
+                delayed = OrderedFrozenSet(
+                    itertools.chain(replay_dest.delayed_actions, [implicit_replay_term]))
+                is_new, unwind_state = self.new_state(locations, delayed)
+                assert (not is_new) == (new_unwind_term in unwind_state)
+
+                # Add new Replay and new Unwind actions.
+                self.add_edge(s, new_replay_term, unwind_state.index)
+                if is_new:
+                    self.add_edge(unwind_state, new_unwind_term, unwind_dest_idx)
+                assert not unwind_state.is_inconsistent()
+            assert not s.is_inconsistent()
+            return True
+
+        def transform() -> typing.Iterator[None]:
+            for s in self.states:
+                if try_transform(s):
+                    yield  # progress bar
+
+        consume(transform(), progress)
+        self.remove_unreachable_states(maybe_unreachable_set)
 
     def fold_identical_endings(self, verbose: bool, progress: bool) -> None:
         # If 2 states have the same outgoing edges, then we can merge the 2

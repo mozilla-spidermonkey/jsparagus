@@ -75,6 +75,13 @@ class StackDiff:
     # This must happen only follow_edge is True.
     replay: int
 
+    def reduce_stack(self) -> bool:
+        """Returns whether the action is reducing the stack by replacing popped
+        elements by a non-terminal. Note, this test is simpler than checking
+        for instances, as Reduce / Unwind might either be present, or present
+        as part of the last element of a Seq action. """
+        return self.nt is not None
+
 
 class Action:
     __slots__ = ["_hash"]
@@ -125,6 +132,12 @@ class Action:
         parser stack."""
         assert self.update_stack()
         raise TypeError("Action.update_stack_with not implemented")
+
+    def unshift_action(self, num: int) -> Action:
+        """When manipulating stack operation, we have the option to unshift some
+        replayed token which were shifted to disambiguate the grammar. However,
+        they might no longer be needed in some cases."""
+        raise TypeError("{} cannot be unshifted".format(self.__class__.__name__))
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         """Transpose this action with shifting the given terminal or Nt.
@@ -247,6 +260,10 @@ class Unwind(Action):
     def update_stack_with(self) -> StackDiff:
         return StackDiff(self.pop, self.nt, self.replay)
 
+    def unshift_action(self, num: int) -> Unwind:
+        assert self.replay >= num
+        return Unwind(self.nt, self.pop, replay=self.replay - num)
+
     def shifted_action(self, shifted_term: Element) -> Unwind:
         return Unwind(self.nt, self.pop, replay=self.replay + 1)
 
@@ -276,6 +293,10 @@ class Reduce(Action):
 
     def update_stack_with(self) -> StackDiff:
         return self.unwind.update_stack_with()
+
+    def unshift_action(self, num: int) -> Reduce:
+        unwind = self.unwind.unshift_action(num)
+        return Reduce(unwind)
 
     def shifted_action(self, shifted_term: Element) -> Reduce:
         unwind = self.unwind.shifted_action(shifted_term)
@@ -544,6 +565,14 @@ class FunCall(Action):
             self.args, self.set_to, self.offset
         ])))
 
+    def unshift_action(self, num: int) -> FunCall:
+        assert self.offset >= num
+        return FunCall(self.method, self.args,
+                       trait=self.trait,
+                       fallible=self.fallible,
+                       set_to=self.set_to,
+                       offset=self.offset - num)
+
     def shifted_action(self, shifted_term: Element) -> FunCall:
         return FunCall(self.method,
                        self.args,
@@ -583,6 +612,10 @@ class Seq(Action):
 
     def update_stack_with(self) -> StackDiff:
         return self.actions[-1].update_stack_with()
+
+    def unshift_action(self, num: int) -> Seq:
+        actions = list(map(lambda a: a.unshift_action(num), self.actions))
+        return Seq(actions)
 
     def shifted_action(self, shift: Element) -> ShiftedAction:
         actions: typing.List[Action] = []
