@@ -288,7 +288,13 @@ enum ScopeKind {
     /// LexicallyScopedDeclarations::LexicalDeclarationWithConst
     Const,
 
+    /// Pushed when entering function, to catch function name.
     FunctionName,
+
+    /// Pushed when entering function parameter, to disable FunctionName's
+    /// effect.
+    /// Equivalent to the case there's no kind on the stack.
+    FunctionParametersAndBody,
 
     FormalParameter,
 
@@ -2519,6 +2525,11 @@ impl ScopeDataMapBuilder {
                 self.builder_stack.innermost().set_function_name(name);
                 self.function_stencil_builder.set_function_name(name);
             }
+            ScopeKind::FunctionParametersAndBody => {
+                // FIXME
+                // Do nothing for unsupported case.
+                return;
+            }
             ScopeKind::FormalParameter => self.builder_stack.innermost().declare_param(name),
             _ => panic!("Not implemeneted"),
         }
@@ -2701,6 +2712,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        self.scope_kind_stack
+            .push(ScopeKind::FunctionParametersAndBody);
+
         self.builder_stack
             .closed_over_bindings_for_lazy
             .push(Vec::new());
@@ -2940,6 +2954,9 @@ impl ScopeDataMapBuilder {
             .populate(var_scope_index, scope_data_set.extra_body_var);
         self.scopes
             .populate(lexical_scope_index, scope_data_set.lexical);
+
+        self.scope_kind_stack
+            .pop(ScopeKind::FunctionParametersAndBody);
     }
 
     #[allow(dead_code)]
