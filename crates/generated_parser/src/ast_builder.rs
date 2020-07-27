@@ -1448,9 +1448,11 @@ impl<'alloc> AstBuilder<'alloc> {
         super_token: arena::Box<'alloc, Token>,
         expression: arena::Box<'alloc, Expression<'alloc>>,
         close_token: arena::Box<'alloc, Token>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        self.check_super()?;
+
         let super_loc = super_token.loc;
-        self.alloc_with(|| {
+        Ok(self.alloc_with(|| {
             Expression::MemberExpression(MemberExpression::ComputedMemberExpression(
                 ComputedMemberExpression {
                     object: ExpressionOrSuper::Super { loc: super_loc },
@@ -1458,7 +1460,7 @@ impl<'alloc> AstBuilder<'alloc> {
                     loc: SourceLocation::from_parts(super_loc, close_token.loc),
                 },
             ))
-        })
+        }))
     }
 
     // SuperProperty : `super` `.` IdentifierName
@@ -1466,10 +1468,12 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         super_token: arena::Box<'alloc, Token>,
         identifier_token: arena::Box<'alloc, Token>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        self.check_super()?;
+
         let super_loc = super_token.loc;
         let identifier_loc = identifier_token.loc;
-        self.alloc_with(|| {
+        Ok(self.alloc_with(|| {
             Expression::MemberExpression(MemberExpression::StaticMemberExpression(
                 StaticMemberExpression {
                     object: ExpressionOrSuper::Super { loc: super_loc },
@@ -1477,7 +1481,7 @@ impl<'alloc> AstBuilder<'alloc> {
                     loc: SourceLocation::from_parts(super_loc, identifier_loc),
                 },
             ))
-        })
+        }))
     }
 
     // NewTarget : `new` `.` `target`
@@ -1532,16 +1536,18 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         super_token: arena::Box<'alloc, Token>,
         arguments: arena::Box<'alloc, Arguments<'alloc>>,
-    ) -> arena::Box<'alloc, Expression<'alloc>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Expression<'alloc>>> {
+        self.check_super()?;
+
         let super_loc = super_token.loc;
         let arguments_loc = arguments.loc;
-        self.alloc_with(|| {
+        Ok(self.alloc_with(|| {
             Expression::CallExpression(CallExpression {
                 callee: ExpressionOrSuper::Super { loc: super_loc },
                 arguments: arguments.unbox(),
                 loc: SourceLocation::from_parts(super_loc, arguments_loc),
             })
-        })
+        }))
     }
 
     // ImportCall : `import` `(` AssignmentExpression `)`
