@@ -130,7 +130,7 @@ class Action:
         """When manipulating stack operation, we have the option to unshift some
         replayed token which were shifted to disambiguate the grammar. However,
         they might no longer be needed in some cases."""
-        return self
+        raise TypeError("{} cannot be unshifted".format(self.__class__.__name__))
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         """Transpose this action with shifting the given terminal or Nt.
@@ -349,9 +349,6 @@ class Lookahead(Action):
     def __str__(self) -> str:
         return "Lookahead({}, {})".format(self.terms, self.accept)
 
-    def unshift_action(self, num: int) -> Action:
-        raise TypeError("Lookahead cannot be unshifted")
-
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
             return True
@@ -391,9 +388,6 @@ class CheckNotOnNewLine(Action):
 
     def check_different_values(self, other: Action) -> bool:
         return False
-
-    def unshift_action(self, num: int) -> Action:
-        raise TypeError("CheckNotOnNewLine cannot be unshifted")
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
@@ -441,9 +435,6 @@ class FilterStates(Action):
                 return actions
             states.extend(a.states)
         return [FilterStates(states)]
-
-    def unshift_action(self, num: int) -> Action:
-        raise TypeError("FilterStates cannot be unshifted")
 
     def __str__(self) -> str:
         return "FilterStates({})".format(self.states)
