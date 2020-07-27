@@ -75,6 +75,13 @@ class StackDiff:
     # This must happen only follow_edge is True.
     replay: int
 
+    def reduce_stack(self) -> bool:
+        """Returns whether the action is reducing the stack by replacing popped
+        elements by a non-terminal. Note, this test is simpler than checking
+        for instances, as Reduce / Unwind might either be present, or present
+        as part of the last element of a Seq action. """
+        return self.nt is not None
+
 
 class Action:
     __slots__ = ["_hash"]

@@ -1500,6 +1500,8 @@ class ParseTable:
             if not unwind_term.update_stack():
                 return False
             stack_diff = unwind_term.update_stack_with()
+            if not stack_diff.reduce_stack():
+                return False
             if stack_diff.replay <= 0:
                 return False
 
@@ -1515,7 +1517,6 @@ class ParseTable:
                 # The Unwind action replay more terms than what we originally
                 # had. The replay term is replaced by an Unwind edge instead.
                 self.add_edge(s, new_unwind_term, unwind_dest_idx)
-                pass
             else:
                 # The Unwind action replay less terms than what we originally
                 # had. The replay terms is shortened and a new state is created
