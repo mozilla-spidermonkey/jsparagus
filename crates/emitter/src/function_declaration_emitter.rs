@@ -47,7 +47,11 @@ impl LexicalFunctionDeclarationEmitter {
                 Ok(())
             },
         }
-        .emit(emitter)
+        .emit(emitter)?;
+
+        emitter.emit.pop();
+
+        Ok(())
     }
 }
 
@@ -67,6 +71,10 @@ impl AnnexBFunctionDeclarationEmitter {
                 Ok(())
             },
         }
-        .emit(emitter)
+        .emit(emitter)?;
+
+        emitter.emit.pop();
+
+        Ok(())
     }
 }
