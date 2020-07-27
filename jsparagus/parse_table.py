@@ -409,13 +409,18 @@ class ParseTable:
                 epsilon_by_dest = collections.defaultdict(list)
                 for k, d in s.epsilon:
                     epsilon_by_dest[d].append(k)
-                maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
                 for d, ks in epsilon_by_dest.items():
                     if len(ks) == 1:
                         continue
                     new_ks = ks[0].fold_by_destination(ks)
                     if new_ks == ks:
                         continue
+                    # This collection is required by `remove_edge`, but in this
+                    # particular case we know for sure that at least one edge
+                    # would be added back. Therefore no need to use the content
+                    # of the set.
+                    maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+                    assert len(new_ks) > 0
                     for k in ks:
                         self.remove_edge(s, k, maybe_unreachable_set)
                     for k in new_ks:
