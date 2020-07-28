@@ -67,8 +67,10 @@ function for_all_files(parse, N = 1, prefix = "", result = {}) {
 // The aggregated results is returned as an object, which reports the total time
 // for each parser, the quantity of bytes parsed and skipped and an array of
 // speed ratios for each file tested.
-function compare(res1, res2) {
+function compare(name1, res1, name2, res2) {
     var result = {
+        name1: name1,
+        name2: name2,
         time1: 0,
         time2: 0,
         parsed_files: 0,
@@ -95,6 +97,15 @@ function compare(res1, res2) {
         }
     }
     return result;
+}
+
+function print_result(result) {
+    print(result.name1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
+    print(result.name2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
+    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
+    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
+    print(result.name2, "/", result.name1, ":", result.time2 / result.time1);
+    print(result.name2, "/", result.name1, ":", spread(result.ratios_2over1, 0, 5, 0.05));
 }
 
 // Given a `table` of speed ratios, display a distribution chart of speed
@@ -148,26 +159,14 @@ function spread(table, min, max, step) {
 function strategy_1() {
     var res1 = for_all_files(parse_1, runs_per_script);
     var res2 = for_all_files(parse_2, runs_per_script);
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 3, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 // Compare Hot-parsers on cold data, and swap parse order.
 function strategy_2() {
     var res2 = for_all_files(parse_2, runs_per_script);
     var res1 = for_all_files(parse_1, runs_per_script);
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 3, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 // Interleaves N hot-parser results. (if N=1, then strategy_3 is identical to strategy_1)
@@ -182,13 +181,7 @@ function strategy_3() {
         for_all_files(parse_1, 1, "" + n, res1);
         for_all_files(parse_2, 1, "" + n, res2);
     }
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 5, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 // Compare cold parsers, with alternatetively cold/hot data.
@@ -239,17 +232,37 @@ function strategy_0() {
         }
     }
 
-    var total_bytes = count_bytes * runs_per_script;
-    print(name_1, "\t", time_1, "ms\t", 1e6 * time_1 / total_bytes, 'ns/byte\t', total_bytes / (1e6 * time_1), 'bytes/ns\t');
-    print(name_2, "\t", time_2, "ms\t", 1e6 * time_2 / total_bytes, 'ns/byte\t', total_bytes / (1e6 * time_2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", count * runs_per_script, ", bytes:", total_bytes, ")");
-    print("Total skipped (scripts:", skipped * runs_per_script, ", bytes:", skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", time_2 / time_1);
-    print(name_2, "/", name_1, ":", spread(ratios_2over1, 0, 5, 0.05));
+    return {
+        name1: name_1,
+        name2: name_2,
+        time1: time_1,
+        time2: time_2,
+        parsed_files: count * runs_per_script,
+        parsed_bytes: count_bytes * runs_per_script,
+        skipped_files: skipped * runs_per_script,
+        skipped_bytes: skipped_bytes * runs_per_script,
+        ratios_2over1: ratios_2over1,
+    };
 }
 
-print("Main thread comparison:")
-strategy_0();
-print("")
-print("Off-thread comparison:")
-strategy_3();
+var outputJSON = os.getenv("SMOOSH_BENCH_AS_JSON") !== undefined;
+if (!outputJSON) {
+    print("Main thread comparison:");
+}
+var main_thread_result = strategy_0();
+if (!outputJSON) {
+    print_result(main_thread_result);
+    print("");
+    print("Off-thread comparison:");
+}
+var off_thread_result = strategy_3();
+if (!outputJSON) {
+    print_result(off_thread_result);
+}
+
+if (outputJSON) {
+    print(JSON.stringify({
+        main_thread: main_thread_result,
+        off_thread: main_thread_result
+    }));
+}
