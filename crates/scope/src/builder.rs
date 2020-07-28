@@ -1376,8 +1376,7 @@ impl FunctionParametersScopeBuilder {
         let has_extra_body_var_scope = self.has_parameter_expressions;
 
         // NOTE: Names in `body_scope_builder.var_names` is skipped if
-        //       parameter has the same name, or it's `arguments`,
-        //       at step 27.c.i.
+        //       it's `arguments`, at step 27.c.i.
         //       The count here isn't the exact number of var bindings, but
         //       it's fine given FunctionScopeData::new doesn't require the
         //       exact number, but just maximum number.
@@ -1474,7 +1473,6 @@ impl FunctionParametersScopeBuilder {
 
             // Step 27.b. Let instantiatedVarNames be a copy of the List
             //            parameterBindings.
-            // (implicit)
 
             // Step 27.c. For each n in varNames, do
             for n in &body_scope_builder.var_names {
@@ -1483,7 +1481,7 @@ impl FunctionParametersScopeBuilder {
                 // Step 27.c.i.1. Append n to instantiatedVarNames.
                 //
                 // NOTE: var_names is already unique.
-                //       Check against parameters here.
+                //       Check against parameters and `arguments` here.
                 if self.parameter_names.contains(n)
                     || (arguments_object_needed && *n == CommonSourceAtomSetIndices::arguments())
                 {
@@ -1520,8 +1518,7 @@ impl FunctionParametersScopeBuilder {
             //            declarations in the function body.
 
             // Step 28.b. Let varEnv be NewDeclarativeEnvironment(env).
-            // Step 28.c. Let varEnvRec be varEnv's EnvironmentRecord.
-            // Step 28.d. Set the VariableEnvironment of calleeContext to
+            // Step 28.c. Set the VariableEnvironment of calleeContext to
             //            varEnv.
             let mut data = VarScopeData::new(
                 body_scope_builder.var_names.len(),
@@ -1529,32 +1526,32 @@ impl FunctionParametersScopeBuilder {
                 /* encloding= */ self.scope_index,
             );
 
-            // Step 28.e. Let instantiatedVarNames be a new empty List.
-            // NOTE: var_names is already unique. Nothing to check here.
+            // Step 28.d. Let instantiatedVarNames be a new empty List.
 
-            // Step 28.f. For each n in varNames, do
+            // Step 28.e. For each n in varNames, do
             for n in &body_scope_builder.var_names {
-                // Step 28.f.i. If n is not an element of instantiatedVarNames, then
-                // Step 28.f.i.1. Append n to instantiatedVarNames.
-                // (implicit)
+                // Step 28.e.i. If n is not an element of instantiatedVarNames, then
+                // Step 28.e.i.1. Append n to instantiatedVarNames.
+                //
+                // NOTE: var_names is already unique.
 
-                // Step 28.f.i.2. Perform
-                //                ! varEnvRec.CreateMutableBinding(n, false).
+                // Step 28.e.i.2. Perform
+                //                ! varEnv.CreateMutableBinding(n, false).
                 let is_closed_over = body_scope_builder.base.name_tracker.is_closed_over_def(n);
                 data.base
                     .bindings
                     .push(BindingName::new(*n, is_closed_over));
 
-                // Step 28.f.i.3. If n is not an element of parameterBindings or if
+                // Step 28.e.i.3. If n is not an element of parameterBindings or if
                 //                n is an element of functionNames, let
                 //                initialValue be undefined.
-                // Step 28.f.i.4. Else,
-                // Step 28.f.i.4.a. Let initialValue be
-                //                  ! envRec.GetBindingValue(n, false).
-                // Step 28.f.i.5. Call varEnvRec.InitializeBinding(n, initialValue).
+                // Step 28.e.i.4. Else,
+                // Step 28.e.i.4.a. Let initialValue be
+                //                  ! env.GetBindingValue(n, false).
+                // Step 28.e.i.5. Call varEnv.InitializeBinding(n, initialValue).
                 // (done in emitter)
 
-                // Step 28.f.i.6. NOTE: A var with the same name as a formal
+                // Step 28.e.i.6. NOTE: A var with the same name as a formal
                 //                parameter initially has the same value as the
                 //                corresponding initialized parameter.
             }
