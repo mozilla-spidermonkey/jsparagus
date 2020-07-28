@@ -295,4 +295,12 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
             _ => {}
         }
     }
+
+    fn enter_class_declaration(&mut self, _ast: &'alloc ClassDeclaration<'alloc>) {
+        self.builder.on_class();
+    }
+
+    fn enter_class_expression(&mut self, _ast: &'alloc ClassExpression<'alloc>) {
+        self.builder.on_class();
+    }
 }

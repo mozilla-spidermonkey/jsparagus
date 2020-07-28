@@ -3011,6 +3011,11 @@ impl ScopeDataMapBuilder {
             .base_mut()
             .bindings_accessed_dynamically = true;
     }
+
+    pub fn on_class(&mut self) {
+        // FIXME: NewDeclarativeEnvironment for class tail.
+        self.set_error(ScopeBuildError::NotImplemented("class"));
+    }
 }
 
 pub struct ScopeDataMapAndScriptStencilList {
