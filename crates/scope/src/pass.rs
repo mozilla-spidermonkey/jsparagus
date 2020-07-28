@@ -281,4 +281,18 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
     fn enter_catch_clause(&mut self, _ast: &'alloc CatchClause<'alloc>) {
         self.builder.before_catch_clause();
     }
+
+    fn enter_call_expression(&mut self, ast: &'alloc CallExpression<'alloc>) {
+        match &ast.callee {
+            ExpressionOrSuper::Expression(expr) => match &**expr {
+                Expression::IdentifierExpression(IdentifierExpression { name, .. }) => {
+                    if name.value == CommonSourceAtomSetIndices::eval() {
+                        self.builder.on_direct_eval();
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 }

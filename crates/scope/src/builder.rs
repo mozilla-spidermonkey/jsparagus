@@ -2994,8 +2994,12 @@ impl ScopeDataMapBuilder {
         self.set_error(ScopeBuildError::NotImplemented("try-catch"));
     }
 
-    #[allow(dead_code)]
     pub fn on_direct_eval(&mut self) {
+        // FIXME: Propagate to script flags.
+        self.set_error(ScopeBuildError::NotImplemented(
+            "direct eval (script flags)",
+        ));
+
         if let Some(parameter_scope_builder) =
             self.builder_stack.maybe_innermost_function_parameters()
         {
