@@ -1715,6 +1715,9 @@ impl FunctionBodyScopeBuilder {
         // FunctionDeclarationInstantiation ( func, argumentsList )
         // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
         //
+        // Step 9. Let varNames be the VarDeclaredNames of code.
+        self.var_names.insert(name);
+
         // Step 14. For each d in varDeclarations, in reverse list order, do
         // Step 14.a. If d is neither a VariableDeclaration nor a ForBinding
         //            nor a BindingIdentifier , then
