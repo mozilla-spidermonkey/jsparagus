@@ -7,7 +7,7 @@
 //! but the goal is to do this analysis as part of the parse phase, even when
 //! no AST is built. So we try to keep AST use separate from the analysis code.
 
-use crate::builder::{ScopeDataMapAndScriptStencilList, ScopeDataMapBuilder};
+use crate::builder::{ScopeBuildError, ScopeDataMapAndScriptStencilList, ScopeDataMapBuilder};
 use crate::data::FunctionDeclarationPropertyMap;
 use ast::arena;
 use ast::associated_data::AssociatedData;
@@ -24,6 +24,7 @@ pub struct ScopePassResult<'alloc> {
     pub function_stencil_indices: AssociatedData<ScriptStencilIndex>,
     pub function_declaration_properties: FunctionDeclarationPropertyMap,
     pub functions: ScriptStencilList,
+    pub error: Option<ScopeBuildError>,
 }
 
 /// The top-level struct responsible for extracting the necessary information
@@ -53,6 +54,7 @@ impl<'alloc> From<ScopePass<'alloc>> for ScopePassResult<'alloc> {
             function_stencil_indices,
             function_declaration_properties,
             functions,
+            error,
         } = pass.builder.into();
         ScopePassResult {
             scope_data_map,
@@ -60,6 +62,7 @@ impl<'alloc> From<ScopePass<'alloc>> for ScopePassResult<'alloc> {
             function_stencil_indices,
             function_declaration_properties,
             functions,
+            error,
         }
     }
 }

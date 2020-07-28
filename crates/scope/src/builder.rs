@@ -2314,6 +2314,13 @@ impl FunctionScriptStencilBuilder {
     }
 }
 
+/// Scope builder shouldn't raise any error except not-implemented.
+/// This struct should eventually be removed.
+#[derive(Clone, Debug)]
+pub enum ScopeBuildError {
+    NotImplemented(&'static str),
+}
+
 /// Receives method calls telling about a JS script and builds a
 /// `ScopeDataMap`.
 ///
@@ -2339,6 +2346,8 @@ pub struct ScopeDataMapBuilder {
     function_declaration_properties: FunctionDeclarationPropertyMap,
 
     possibly_annex_b_functions: PossiblyAnnexBFunctionList,
+
+    error: Option<ScopeBuildError>,
 }
 
 impl ScopeDataMapBuilder {
@@ -2352,6 +2361,13 @@ impl ScopeDataMapBuilder {
             function_stencil_builder: FunctionScriptStencilBuilder::new(),
             function_declaration_properties: FunctionDeclarationPropertyMap::new(),
             possibly_annex_b_functions: PossiblyAnnexBFunctionList::new(),
+            error: None,
+        }
+    }
+
+    fn set_error(&mut self, e: ScopeBuildError) {
+        if self.error.is_none() {
+            self.error = Some(e);
         }
     }
 
@@ -2490,7 +2506,9 @@ impl ScopeDataMapBuilder {
         if self.scope_kind_stack.is_empty() {
             // FIXME
             // Do nothing for unsupported case.
-            // Emitter will return NotImplemented anyway.
+            self.set_error(ScopeBuildError::NotImplemented(
+                "Unsupported binding identifier",
+            ));
             return;
         }
 
@@ -2505,6 +2523,9 @@ impl ScopeDataMapBuilder {
             ScopeKind::FunctionParametersAndBody => {
                 // FIXME
                 // Do nothing for unsupported case.
+                self.set_error(ScopeBuildError::NotImplemented(
+                    "Unsupported binding identifier",
+                ));
                 return;
             }
             ScopeKind::FormalParameter => self.builder_stack.innermost().declare_param(name),
@@ -2530,6 +2551,13 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        if is_generator || is_async {
+            // FIXME: Generator and async should mark all bindings closed over.
+            self.set_error(ScopeBuildError::NotImplemented(
+                "Generator or async function",
+            ));
+        }
+
         let fun_index = self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::function_declaration(is_generator, is_async),
@@ -2563,6 +2591,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        // FIXME: Anonymous function expression needs inferred name.
+        self.set_error(ScopeBuildError::NotImplemented(
+            "Function expression (name analysis)",
+        ));
+
         let index = self.scopes.allocate();
         let builder = FunctionExpressionScopeBuilder::new(index);
         self.non_global.insert(fun, index);
@@ -2597,6 +2630,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        // FIXME: Support PropertyName as function name.
+        self.set_error(ScopeBuildError::NotImplemented("Method (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::method(is_generator, is_async),
@@ -2615,6 +2651,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        // FIXME: Support PropertyName as function name.
+        self.set_error(ScopeBuildError::NotImplemented("Getter (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::getter(),
@@ -2641,6 +2680,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        // FIXME: Support PropertyName as function name.
+        self.set_error(ScopeBuildError::NotImplemented("Setter (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::setter(),
@@ -2671,6 +2713,12 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        // FIXME: Arrow function needs to access enclosing scope's
+        //        `this` and `arguments`.
+        self.set_error(ScopeBuildError::NotImplemented(
+            "Arrow function (special name handling)",
+        ));
+
         self.function_stencil_builder.enter(
             params,
             FunctionSyntaxKind::arrow(is_async),
@@ -2961,6 +3009,7 @@ pub struct ScopeDataMapAndScriptStencilList {
     pub function_stencil_indices: AssociatedData<ScriptStencilIndex>,
     pub function_declaration_properties: FunctionDeclarationPropertyMap,
     pub functions: ScriptStencilList,
+    pub error: Option<ScopeBuildError>,
 }
 
 impl From<ScopeDataMapBuilder> for ScopeDataMapAndScriptStencilList {
@@ -2974,6 +3023,7 @@ impl From<ScopeDataMapBuilder> for ScopeDataMapAndScriptStencilList {
             function_stencil_indices: builder.function_stencil_builder.function_stencil_indices,
             function_declaration_properties: builder.function_declaration_properties,
             functions: builder.function_stencil_builder.functions,
+            error: builder.error,
         }
     }
 }
