@@ -1008,10 +1008,6 @@ struct FunctionParametersScopeBuilder {
     strict: bool,
 
     /// Step 5. Let parameterNames be the BoundNames of formals.
-    ///
-    /// NOTE: This is used only for checking duplication.
-    ///       The actual list of parameters is stored in
-    ///       positional_parameter_names and non_positional_parameter_names.
     parameter_names: HashSet<SourceAtomSetIndex>,
 
     /// Step 17. Else if "arguments" is an element of parameterNames, then
@@ -1266,6 +1262,9 @@ impl FunctionParametersScopeBuilder {
             possibly_annex_b_functions.remove_if_exists(*n);
         }
         for n in &body_scope_builder.const_names {
+            possibly_annex_b_functions.remove_if_exists(*n);
+        }
+        for n in &self.parameter_names {
             possibly_annex_b_functions.remove_if_exists(*n);
         }
 
