@@ -303,4 +303,16 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
     fn enter_class_expression(&mut self, _ast: &'alloc ClassExpression<'alloc>) {
         self.builder.on_class();
     }
+
+    fn enter_enum_statement_variant_with_statement(
+        &mut self,
+        _object: &'alloc arena::Box<'alloc, Expression<'alloc>>,
+        _body: &'alloc arena::Box<'alloc, Statement<'alloc>>,
+    ) {
+        self.builder.on_with();
+    }
+
+    fn visit_enum_unary_operator_variant_delete(&mut self) {
+        self.builder.on_delete();
+    }
 }
