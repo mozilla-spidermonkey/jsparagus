@@ -3025,6 +3025,16 @@ impl ScopeDataMapBuilder {
         // FIXME: NewDeclarativeEnvironment for class tail.
         self.set_error(ScopeBuildError::NotImplemented("class"));
     }
+
+    pub fn on_with(&mut self) {
+        // FIXME: Propagate to script flags.
+        self.set_error(ScopeBuildError::NotImplemented("with statement"));
+    }
+
+    pub fn on_delete(&mut self) {
+        // FIXME: Propagate to script flags.
+        self.set_error(ScopeBuildError::NotImplemented("delete operator"));
+    }
 }
 
 pub struct ScopeDataMapAndScriptStencilList {
