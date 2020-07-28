@@ -2989,6 +2989,11 @@ impl ScopeDataMapBuilder {
             .pop(ScopeKind::FunctionParametersAndBody);
     }
 
+    pub fn before_catch_clause(&mut self) {
+        // FIXME: NewDeclarativeEnvironment for catch parameter.
+        self.set_error(ScopeBuildError::NotImplemented("try-catch"));
+    }
+
     #[allow(dead_code)]
     pub fn on_direct_eval(&mut self) {
         if let Some(parameter_scope_builder) =
