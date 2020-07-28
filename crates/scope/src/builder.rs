@@ -2859,7 +2859,13 @@ impl ScopeDataMapBuilder {
         }
 
         if has_extra_body_var_scope {
-            fun_stencil.set_function_has_extra_body_var_scope();
+            let extra_body_var_scope = match &scope_data_set.extra_body_var {
+                ScopeData::Var(scope) => scope,
+                _ => panic!(""),
+            };
+            if extra_body_var_scope.base.bindings.len() > 0 {
+                fun_stencil.set_function_has_extra_body_var_scope();
+            }
         }
 
         if has_mapped_arguments {
