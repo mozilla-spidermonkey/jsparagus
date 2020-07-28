@@ -315,4 +315,39 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
     fn visit_enum_unary_operator_variant_delete(&mut self) {
         self.builder.on_delete();
     }
+
+    fn enter_enum_statement_variant_for_statement(
+        &mut self,
+        init: &'alloc Option<VariableDeclarationOrExpression<'alloc>>,
+        _test: &'alloc Option<arena::Box<'alloc, Expression<'alloc>>>,
+        _update: &'alloc Option<arena::Box<'alloc, Expression<'alloc>>>,
+        _block: &'alloc arena::Box<'alloc, Statement<'alloc>>,
+    ) {
+        match init {
+            Some(VariableDeclarationOrExpression::VariableDeclaration(decl)) => match decl.kind {
+                VariableDeclarationKind::Let { .. } | VariableDeclarationKind::Const { .. } => {
+                    self.builder.on_lexical_for();
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
+    fn enter_enum_statement_variant_for_in_statement(
+        &mut self,
+        left: &'alloc VariableDeclarationOrAssignmentTarget<'alloc>,
+        _right: &'alloc arena::Box<'alloc, Expression<'alloc>>,
+        _block: &'alloc arena::Box<'alloc, Statement<'alloc>>,
+    ) {
+        match left {
+            VariableDeclarationOrAssignmentTarget::VariableDeclaration(decl) => match decl.kind {
+                VariableDeclarationKind::Let { .. } | VariableDeclarationKind::Const { .. } => {
+                    self.builder.on_lexical_for();
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 }

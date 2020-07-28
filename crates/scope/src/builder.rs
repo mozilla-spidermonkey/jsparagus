@@ -3035,6 +3035,11 @@ impl ScopeDataMapBuilder {
         // FIXME: Propagate to script flags.
         self.set_error(ScopeBuildError::NotImplemented("delete operator"));
     }
+
+    pub fn on_lexical_for(&mut self) {
+        // FIXME: NewDeclarativeEnvironment in for statement
+        self.set_error(ScopeBuildError::NotImplemented("lexical for"));
+    }
 }
 
 pub struct ScopeDataMapAndScriptStencilList {
