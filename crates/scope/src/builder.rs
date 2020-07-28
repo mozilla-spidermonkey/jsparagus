@@ -400,21 +400,9 @@ impl PossiblyAnnexBFunctionList {
         self.functions.remove(&name);
     }
 
-    fn mark_annex_b(
-        &self,
-        scopes: &mut ScopeDataList,
-        function_declaration_properties: &mut FunctionDeclarationPropertyMap,
-    ) {
+    fn mark_annex_b(&self, function_declaration_properties: &mut FunctionDeclarationPropertyMap) {
         for functions in &mut self.functions.values() {
             for fun in functions {
-                let scope = scopes.get_mut(fun.owner_scope_index);
-                match scope {
-                    ScopeData::Lexical(data) => {
-                        data.mark_annex_b_function(fun.name, fun.binding_index.into());
-                    }
-                    _ => panic!("unexpected scope pointed by Annex B function"),
-                }
-
                 function_declaration_properties.mark_annex_b(fun.script_index);
             }
         }
@@ -586,7 +574,6 @@ impl GlobalScopeBuilder {
 
     fn perform_annex_b(
         &mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
     ) {
@@ -668,12 +655,11 @@ impl GlobalScopeBuilder {
         // Step 2.d.ii.1.b.iii.4. Perform
         //                        ? genv.SetMutableBinding(F, fobj, false).
         // Step 2.d.ii.1.b.iii.5. Return NormalCompletion(empty).
-        possibly_annex_b_functions.mark_annex_b(scopes, function_declaration_properties);
+        possibly_annex_b_functions.mark_annex_b(function_declaration_properties);
     }
 
     fn into_scope_data(
         mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
     ) -> ScopeData {
@@ -686,11 +672,7 @@ impl GlobalScopeBuilder {
         //
         // NOTE: Reordered here to reflect the change to
         //       self.declared_var_names.
-        self.perform_annex_b(
-            scopes,
-            function_declaration_properties,
-            possibly_annex_b_functions,
-        );
+        self.perform_annex_b(function_declaration_properties, possibly_annex_b_functions);
 
         // Step 12.a.i.i If vn is not an element of declaredFunctionNames, then
         self.remove_function_names_from_var_names();
@@ -1250,7 +1232,6 @@ impl FunctionParametersScopeBuilder {
 
     fn perform_annex_b(
         &mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
         body_scope_builder: &mut FunctionBodyScopeBuilder,
@@ -1316,12 +1297,11 @@ impl FunctionParametersScopeBuilder {
         // Step 1.a.ii.3.c. Let fobj be ! benv.GetBindingValue(F, false).
         // Step 1.a.ii.3.d. Perform ! fenv.SetMutableBinding(F, fobj, false).
         // Step 1.a.ii.3.e. Return NormalCompletion(empty).
-        possibly_annex_b_functions.mark_annex_b(scopes, function_declaration_properties);
+        possibly_annex_b_functions.mark_annex_b(function_declaration_properties);
     }
 
     fn into_scope_data_set(
         mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
         enclosing: ScopeIndex,
@@ -1388,7 +1368,6 @@ impl FunctionParametersScopeBuilder {
         // NOTE: Reordered here to reflect the change to
         //       body_scope_builder.var_names.
         self.perform_annex_b(
-            scopes,
             function_declaration_properties,
             possibly_annex_b_functions,
             &mut body_scope_builder,
@@ -2425,7 +2404,6 @@ impl ScopeDataMapBuilder {
         // Steps 12-18.
         let scope_index = builder.scope_index;
         let scope = builder.into_scope_data(
-            &mut self.scopes,
             &mut self.function_declaration_properties,
             &mut self.possibly_annex_b_functions,
         );
@@ -2855,7 +2833,6 @@ impl ScopeDataMapBuilder {
         // Step 1. Perform ? FunctionDeclarationInstantiation(functionObject,
         //         argumentsList).
         let scope_data_set = parameter_scope_builder.into_scope_data_set(
-            &mut self.scopes,
             &mut self.function_declaration_properties,
             &mut self.possibly_annex_b_functions,
             enclosing,
