@@ -3040,6 +3040,11 @@ impl ScopeDataMapBuilder {
         // FIXME: NewDeclarativeEnvironment in for statement
         self.set_error(ScopeBuildError::NotImplemented("lexical for"));
     }
+
+    pub fn on_switch(&mut self) {
+        // FIXME: NewDeclarativeEnvironment in for case block
+        self.set_error(ScopeBuildError::NotImplemented("switch"));
+    }
 }
 
 pub struct ScopeDataMapAndScriptStencilList {

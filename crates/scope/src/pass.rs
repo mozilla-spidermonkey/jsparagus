@@ -350,4 +350,12 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
             _ => {}
         }
     }
+
+    fn enter_enum_statement_variant_switch_statement(
+        &mut self,
+        _discriminant: &'alloc arena::Box<'alloc, Expression<'alloc>>,
+        _cases: &'alloc arena::Vec<'alloc, SwitchCase<'alloc>>,
+    ) {
+        self.builder.on_switch();
+    }
 }
