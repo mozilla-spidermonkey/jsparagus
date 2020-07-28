@@ -1981,7 +1981,10 @@ impl ScopeBuilderStack {
 
     fn pop_block(&mut self) -> BlockScopeBuilder {
         match self.pop() {
-            ScopeBuilder::Block(builder) => builder,
+            ScopeBuilder::Block(builder) => {
+                self.update_closed_over_bindings_for_lazy(&builder.base);
+                builder
+            }
             _ => panic!("unmatching scope builder"),
         }
     }
@@ -1992,7 +1995,10 @@ impl ScopeBuilderStack {
 
     fn pop_function_expression(&mut self) -> FunctionExpressionScopeBuilder {
         match self.pop() {
-            ScopeBuilder::FunctionExpression(builder) => builder,
+            ScopeBuilder::FunctionExpression(builder) => {
+                self.update_closed_over_bindings_for_lazy(&builder.base);
+                builder
+            }
             _ => panic!("unmatching scope builder"),
         }
     }
@@ -2001,11 +2007,32 @@ impl ScopeBuilderStack {
         self.stack.push(ScopeBuilder::FunctionParameters(builder))
     }
 
-    fn pop_function_parameters(&mut self) -> FunctionParametersScopeBuilder {
-        match self.pop() {
+    fn pop_function_parameters_and_body(
+        &mut self,
+    ) -> (FunctionParametersScopeBuilder, FunctionBodyScopeBuilder) {
+        let body_scope_builder = match self.pop() {
+            ScopeBuilder::FunctionBody(builder) => builder,
+            _ => panic!("unmatching scope builder"),
+        };
+
+        let parameter_scope_builder = match self.pop() {
             ScopeBuilder::FunctionParameters(builder) => builder,
             _ => panic!("unmatching scope builder"),
+        };
+
+        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
+
+        if has_extra_body_var_scope {
+            self.update_closed_over_bindings_for_lazy(&body_scope_builder.base);
+            self.update_closed_over_bindings_for_lazy(&parameter_scope_builder.base);
+        } else {
+            self.update_closed_over_bindings_for_lazy_with_parameters_and_body(
+                &parameter_scope_builder.base,
+                &body_scope_builder.base,
+            );
         }
+
+        (parameter_scope_builder, body_scope_builder)
     }
 
     fn get_function_parameters<'a>(&'a mut self) -> &'a mut FunctionParametersScopeBuilder {
@@ -2019,10 +2046,41 @@ impl ScopeBuilderStack {
         self.stack.push(ScopeBuilder::FunctionBody(builder))
     }
 
-    fn pop_function_body(&mut self) -> FunctionBodyScopeBuilder {
-        match self.pop() {
-            ScopeBuilder::FunctionBody(builder) => builder,
-            _ => panic!("unmatching scope builder"),
+    fn update_closed_over_bindings_for_lazy(&mut self, builder: &BaseScopeBuilder) {
+        match self.closed_over_bindings_for_lazy.last_mut() {
+            Some(bindings) => {
+                for name in builder.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                bindings.push(None);
+            }
+            None => {
+                // We're leaving lexical scope in top-level script.
+            }
+        }
+    }
+
+    // Just like update_closed_over_bindings_for_lazy, but merge
+    // 2 builders for parameters and body, in case the function doesn't have
+    // extra body scope.
+    fn update_closed_over_bindings_for_lazy_with_parameters_and_body(
+        &mut self,
+        builder1: &BaseScopeBuilder,
+        builder2: &BaseScopeBuilder,
+    ) {
+        match self.closed_over_bindings_for_lazy.last_mut() {
+            Some(bindings) => {
+                for name in builder1.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                for name in builder2.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                bindings.push(None);
+            }
+            None => {
+                // We're leaving lexical scope in top-level script.
+            }
         }
     }
 
@@ -2033,18 +2091,6 @@ impl ScopeBuilderStack {
             Some(outer) => {
                 let inner_base = inner.base();
                 let outer_base = outer.base_mut();
-
-                match self.closed_over_bindings_for_lazy.last_mut() {
-                    Some(bindings) => {
-                        for name in inner_base.name_tracker.defined_and_closed_over_vars() {
-                            bindings.push(Some(*name));
-                        }
-                        bindings.push(None);
-                    }
-                    None => {
-                        // We're leaving lexical scope in top-level script.
-                    }
-                }
 
                 // When construct such as `eval`, `with` and `delete` access
                 // name dynamically in inner scopes, we have to propagate this
@@ -2736,9 +2782,11 @@ impl ScopeDataMapBuilder {
     }
 
     pub fn after_function_body(&mut self) {
-        let body_scope_builder = self.builder_stack.pop_function_body();
-        let parameter_scope_builder = self.builder_stack.pop_function_parameters();
+        let (parameter_scope_builder, body_scope_builder) =
+            self.builder_stack.pop_function_parameters_and_body();
         let enclosing = self.builder_stack.current_scope_index();
+
+        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
 
         self.function_stencil_builder.add_closed_over_bindings(
             self.builder_stack
@@ -2801,9 +2849,13 @@ impl ScopeDataMapBuilder {
         );
         self.possibly_annex_b_functions.clear();
 
-        let has_extra_body_var = match &scope_data_set.extra_body_var {
-            ScopeData::Var(_) => true,
-            _ => false,
+        match &scope_data_set.extra_body_var {
+            ScopeData::Var(_) => {
+                debug_assert!(has_extra_body_var_scope);
+            }
+            _ => {
+                debug_assert!(!has_extra_body_var_scope);
+            }
         };
 
         let fun_stencil = self.function_stencil_builder.current_mut();
@@ -2816,7 +2868,7 @@ impl ScopeDataMapBuilder {
             panic!("Unexpected scope data for function");
         }
 
-        if has_extra_body_var {
+        if has_extra_body_var_scope {
             fun_stencil.set_function_has_extra_body_var_scope();
         }
 
@@ -2851,7 +2903,7 @@ impl ScopeDataMapBuilder {
             // NOTE: This is implementation-specfic optimization, and has
             //       no corresponding steps in the spec.
             if var_names_has_arguments {
-                if has_extra_body_var {
+                if has_extra_body_var_scope {
                     try_declare_arguments = true;
                 } else if !parameter_has_arguments {
                     uses_arguments = true;
@@ -2861,8 +2913,8 @@ impl ScopeDataMapBuilder {
             if try_declare_arguments {
                 // if extra body var scope exists, the existence of `arguments`
                 // binding in function body doesn't affect.
-                let declare_arguments =
-                    !parameter_has_arguments && (has_extra_body_var || !body_has_defined_arguments);
+                let declare_arguments = !parameter_has_arguments
+                    && (has_extra_body_var_scope || !body_has_defined_arguments);
 
                 if declare_arguments {
                     fun_stencil.set_should_declare_arguments();
