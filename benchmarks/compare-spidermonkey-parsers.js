@@ -4,11 +4,34 @@
 // Directory where to find the list of JavaScript sources to be used for
 // benchmarking.
 var dir = ".";
-if (scriptArgs && scriptArgs[0]) {
-    // If an argument is given on the command line, assume this is the path to
-    // one of real-js-samples directory containing thousabds of JS files,
-    // otherwise this is assumed to be the current working directory.
-    dir = scriptArgs[0]; //  "~/real-js-samples/20190416"
+
+// Skip list cache to be used to be able to compare profiles. Without a skip
+// list which ensure that only runnable test cases are used, the profile would
+// not represent the actual values reported by this script.
+var skipList = [], skipFile = "", skipLen = 0;
+
+// Handle command line arguments.
+for (var i = 0; i < scriptArgs.length; i++) {
+    switch (scriptArgs[i]) {
+    case "--dir":
+        if (++i >= scriptArgs.length) {
+            throw Error("--dir expects a path.");
+        }
+        dir = scriptArgs[i];
+        break;
+    case "--skip-file":
+        if (++i >= scriptArgs.length) {
+            throw Error("--skip-file expects a path.");
+        }
+        skipFile = scriptArgs[i];
+        try {
+            skipList = eval(os.file.readFile(skipFile));
+        } catch (e) {
+            // ignore errors
+        }
+        skipLen = skipList.length;
+        break;
+    }
 }
 
 // Execution mode of the parser, either "script" or "module".
@@ -203,6 +226,9 @@ function strategy_0() {
     var parse1_first = true;
     for (var file of list) {
         path = os.path.join(dir, file);
+        if (skipList.includes(path)) {
+            continue;
+        }
         content = "";
         try {
             // print(Math.round(100 * f / list.length), file);
@@ -229,6 +255,7 @@ function strategy_0() {
             // ignore all errors for now.
             skipped++;
             skipped_bytes += content.length;
+            skipList.push(path);
         }
     }
 
@@ -265,4 +292,14 @@ if (outputJSON) {
         main_thread: main_thread_result,
         off_thread: main_thread_result
     }));
+}
+
+if (skipFile && skipList.length > skipLen) {
+    var content = `[${skipList.map(s => `"${s}"`).join(",")}]`;
+    var data = new ArrayBuffer(content.length);
+    var view = new Uint8Array(data);
+    for (var i = 0; i < content.length; i++) {
+        view[i] = content.charCodeAt(i);
+    }
+    os.file.writeTypedArrayToFile(skipFile, view);
 }
