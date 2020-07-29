@@ -139,10 +139,19 @@ function spread(table, min, max, step) {
     var chars = ["\xa0", "\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
     var s = ["\xa0", "\xa0", "" + min, "\xa0", "\xa0"];
     var ending = ["\xa0", "\xa0", "" + max, "\xa0", "\xa0"];
+    var scale = "\xa0\xa0";
+    var scale_values = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
     var ranges = [];
     var vmax = table.length / 10;
     for (var i = min; i < max; i += step) {
         ranges.push(0);
+        var decimal = i - Math.trunc(i);
+        var error = Math.abs(decimal - Math.round(10 * decimal) / 10);
+        decimal = Math.round(decimal * 10) % 10;
+        if (error < step / 2)
+            scale += scale_values[decimal];
+        else
+            scale += "\xa0";
     }
     for (var x of table) {
         if (x < min || max < x) continue;
@@ -167,6 +176,7 @@ function spread(table, min, max, step) {
     var res = "";
     for (i = 0; i < s.length; i++)
         res += "\n" + s[i];
+    res += "\n" + scale;
     return res;
 }
 
