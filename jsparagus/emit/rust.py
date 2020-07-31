@@ -12,7 +12,7 @@ from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
 from ..grammar import (Some, Nt, InitNt, End, ErrorSymbol)
-from ..actions import (Accept, Action, Replay, Unwind, Reduce, CheckNotOnNewLine, FilterStates,
+from ..actions import (Accept, Action, Replay, Unwind, Reduce, CheckLineTerminator, FilterStates,
                        PushFlag, PopFlag, FunCall, Seq)
 
 from .. import types
@@ -223,7 +223,7 @@ class RustActionWriter:
         # states. Thus we use the first action to produce the match statement.
         assert isinstance(first_act, Action)
         assert first_act.is_condition()
-        if isinstance(first_act, CheckNotOnNewLine):
+        if isinstance(first_act, CheckLineTerminator):
             # TODO: At the moment this is Action is implemented as a single
             # operation with a single destination. However, we should implement
             # it in the future as 2 branches, one which is verifying the lack
@@ -234,6 +234,7 @@ class RustActionWriter:
             act, dest = next(state.edges())
             assert len(self.replay_args) == 0
             assert -act.offset > 0
+            assert act.is_on_new_line == False
             self.write("// {}", str(act))
             self.write("if !parser.check_not_on_new_line({})? {{", -act.offset)
             with indent(self):

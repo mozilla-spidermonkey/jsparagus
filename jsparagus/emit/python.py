@@ -6,7 +6,7 @@ import io
 import typing
 
 from ..grammar import ErrorSymbol, Nt, Some
-from ..actions import (Accept, Action, CheckNotOnNewLine, FilterFlag, FilterStates, FunCall,
+from ..actions import (Accept, Action, CheckLineTerminator, FilterFlag, FilterStates, FunCall,
                        Lookahead, OutputExpr, PopFlag, PushFlag, Reduce, Replay, Seq, Unwind)
 from ..runtime import ErrorToken, ErrorTokenClass
 from ..ordered import OrderedSet
@@ -73,7 +73,7 @@ def write_python_parse_table(out: io.TextIOBase, parse_table: ParseTable) -> Non
             return indent, False
         if isinstance(act, Lookahead):
             raise ValueError("Unexpected Lookahead action")
-        if isinstance(act, CheckNotOnNewLine):
+        if isinstance(act, CheckLineTerminator):
             out.write("{}if not parser.check_not_on_new_line(lexer, {}):\n".format(indent, -act.offset))
             out.write("{}    return\n".format(indent))
             return indent, True

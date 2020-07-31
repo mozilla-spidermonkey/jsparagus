@@ -96,7 +96,7 @@ class Action:
     def is_inconsistent(self) -> bool:
         """Returns True if this action is inconsistent. An action can be
         inconsistent if the parameters it is given cannot be evaluated given
-        its current location in the parse table. Such as CheckNotOnNewLine.
+        its current location in the parse table. Such as CheckLineTerminator.
         """
         return False
 
@@ -374,18 +374,26 @@ class Lookahead(Action):
         return not self.accept
 
 
-class CheckNotOnNewLine(Action):
+class CheckLineTerminator(Action):
     """Check whether the terminal at the given stack offset is on a new line or
-    not. If not this would produce an Error, otherwise this rule would be
-    shifted."""
-    __slots__ = ['offset']
+    not. If the condition is true, then the edge is followed. """
+    __slots__ = ['offset', 'is_on_new_line']
 
+    # Offset of the token which is being checked.
+    #   - If this number is zero, then # this represent the next token.
+    #   - If this number is -1, this represents the last shifted token.
+    #   - If this number is -2, this represents the second to last shifted token.
     offset: int
 
-    def __init__(self, offset: int = 0) -> None:
+    # Check whether the token at the offset is (= True), or is not (= False) on
+    # a new line compared to the previous token.
+    is_on_new_line: bool
+
+    def __init__(self, offset: int = 0, is_on_new_line: bool = False) -> None:
         # assert offset >= -1 and "Smaller offsets are not supported on all backends."
         super().__init__()
         self.offset = offset
+        self.is_on_new_line = is_on_new_line
 
     def is_inconsistent(self) -> bool:
         # We can only look at stacked terminals. Having an offset of 0 implies
@@ -397,11 +405,11 @@ class CheckNotOnNewLine(Action):
     def is_condition(self) -> bool:
         return True
 
-    def condition(self) -> CheckNotOnNewLine:
+    def condition(self) -> CheckLineTerminator:
         return self
 
     def check_same_variable(self, other: Action) -> bool:
-        return isinstance(other, CheckNotOnNewLine) and self.offset == other.offset
+        return isinstance(other, CheckLineTerminator) and self.offset == other.offset
 
     def check_different_values(self, other: Action) -> bool:
         return False
@@ -409,10 +417,10 @@ class CheckNotOnNewLine(Action):
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
             return True
-        return CheckNotOnNewLine(self.offset - 1)
+        return CheckLineTerminator(self.offset - 1, self.is_on_new_line)
 
     def __str__(self) -> str:
-        return "CheckNotOnNewLine({})".format(self.offset)
+        return "CheckLineTerminator({}, {})".format(self.offset, self.is_on_new_line)
 
 
 class FilterStates(Action):

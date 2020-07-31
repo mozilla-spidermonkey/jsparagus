@@ -11,7 +11,7 @@ import collections
 from dataclasses import dataclass
 import typing
 
-from .actions import (Accept, Action, CheckNotOnNewLine, FunCall, Lookahead,
+from .actions import (Accept, Action, CheckLineTerminator, FunCall, Lookahead,
                       OutputExpr, Unwind, Reduce, Seq)
 from .ordered import OrderedFrozenSet
 from .grammar import (CallMethod, Element, End, ErrorSymbol, Grammar,
@@ -336,7 +336,7 @@ class LR0Generator:
                 # Check whether the following terminal is on a new line. If
                 # not, this would produce a syntax error. The argument is the
                 # terminal offset.
-                term = CheckNotOnNewLine()
+                term = CheckLineTerminator()
             elif isinstance(term, CallMethod):
                 funcalls: typing.List[Action] = []
                 pop = sum(1 for e in prod.rhs[:lr_item.offset] if on_stack(self.grammar.grammar, e))
