@@ -595,6 +595,75 @@ class ParseTable:
         for dest in old_dest:
             self.assert_state_invariants(dest)
 
+    def restore_edges(
+            self,
+            state: StateAndTransitions,
+            shift_map: typing.DefaultDict[
+                Term,
+                typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+            ],
+            maybe_unreachable_set: OrderedSet[StateId],
+            debug_depth: str = ""
+    ) -> None:
+        """Restore the new state machine based on a given state to use as a base and
+        the shift_map corresponding to edges."""
+
+        # print("{}starting with {}\n".format(depth, state))
+        edges = {}
+        for term, actions_list in shift_map.items():
+            # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
+            # Collect all the states reachable after shifting the term.
+            # Compute the unique name, based on the locations and actions
+            # which are delayed.
+            locations: OrderedSet[str] = OrderedSet()
+            delayed: OrderedSet[DelayedAction] = OrderedSet()
+            new_shift_map: typing.DefaultDict[
+                Term,
+                typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+            ]
+            new_shift_map = collections.defaultdict(lambda: [])
+            recurse = False
+            if not self.term_is_shifted(term):
+                # There is no more target after a reduce action.
+                actions_list = []
+            for target, actions in actions_list:
+                assert isinstance(target, StateAndTransitions)
+                locations |= target.locations
+                delayed |= target.delayed_actions
+                if actions != []:
+                    # Pull edges, with delayed actions.
+                    edge = actions[0]
+                    assert isinstance(edge, Edge)
+                    for action in actions:
+                        action_term = action.term
+                        assert isinstance(action_term, Action)
+                        delayed.add(action_term)
+                    edge_term = edge.term
+                    assert edge_term is not None
+                    new_shift_map[edge_term].append((target, actions[1:]))
+                    recurse = True
+                else:
+                    # Pull edges, as a copy of existing edges.
+                    for next_term, next_dest_id in target.edges():
+                        next_dest = self.states[next_dest_id]
+                        new_shift_map[next_term].append((next_dest, []))
+
+            is_new, new_target = self.new_state(
+                OrderedFrozenSet(locations), OrderedFrozenSet(delayed))
+            edges[term] = new_target.index
+            if self.debug_info:
+                print("{}is_new = {}, index = {}".format(debug_depth, is_new, new_target.index))
+                print("{}Add: {} -- {} --> {}".format(debug_depth, state.index, str(term), new_target.index))
+                print("{}continue: (is_new: {}) or (recurse: {})".format(debug_depth, is_new, recurse))
+            if is_new or recurse:
+                self.restore_edges(new_target, new_shift_map, maybe_unreachable_set, debug_depth + "  ")
+
+        self.clear_edges(state, maybe_unreachable_set)
+        for term, target_id in edges.items():
+            self.add_edge(state, term, target_id)
+        if self.debug_info:
+            print("{}replaced by {}\n".format(debug_depth, state))
+
     def assert_table_invariants(self) -> None:
         for s in self.states:
             if s is not None:
@@ -1305,74 +1374,8 @@ class ParseTable:
                 target = self.states[target_id]
                 shift_map[term].append((target, new_actions))
 
-        # Restore the new state machine based on a given state to use as a base
-        # and the shift_map corresponding to edges.
-        def restore_edges(
-                state: StateAndTransitions,
-                shift_map: typing.DefaultDict[
-                    Term,
-                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
-                ],
-                depth: str
-        ) -> None:
-            # print("{}starting with {}\n".format(depth, state))
-            edges = {}
-            for term, actions_list in shift_map.items():
-                # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
-                # Collect all the states reachable after shifting the term.
-                # Compute the unique name, based on the locations and actions
-                # which are delayed.
-                locations: OrderedSet[str] = OrderedSet()
-                delayed: OrderedSet[DelayedAction] = OrderedSet()
-                new_shift_map: typing.DefaultDict[
-                    Term,
-                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
-                ]
-                new_shift_map = collections.defaultdict(lambda: [])
-                recurse = False
-                if not self.term_is_shifted(term):
-                    # There is no more target after a reduce action.
-                    actions_list = []
-                for target, actions in actions_list:
-                    assert isinstance(target, StateAndTransitions)
-                    locations |= target.locations
-                    delayed |= target.delayed_actions
-                    if actions != []:
-                        # Pull edges, with delayed actions.
-                        edge = actions[0]
-                        assert isinstance(edge, Edge)
-                        for action in actions:
-                            action_term = action.term
-                            assert isinstance(action_term, Action)
-                            delayed.add(action_term)
-                        edge_term = edge.term
-                        assert edge_term is not None
-                        new_shift_map[edge_term].append((target, actions[1:]))
-                        recurse = True
-                    else:
-                        # Pull edges, as a copy of existing edges.
-                        for next_term, next_dest_id in target.edges():
-                            next_dest = self.states[next_dest_id]
-                            new_shift_map[next_term].append((next_dest, []))
-
-                is_new, new_target = self.new_state(
-                    OrderedFrozenSet(locations), OrderedFrozenSet(delayed))
-                edges[term] = new_target.index
-                if self.debug_info:
-                    print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
-                    print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
-                    print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
-                if is_new or recurse:
-                    restore_edges(new_target, new_shift_map, depth + "  ")
-
-            self.clear_edges(state, maybe_unreachable_set)
-            for term, target_id in edges.items():
-                self.add_edge(state, term, target_id)
-            if self.debug_info:
-                print("{}replaced by {}\n".format(depth, state))
-
         state = self.states[s]
-        restore_edges(state, shift_map, "")
+        self.restore_edges(state, shift_map, maybe_unreachable_set)
         self.remove_unreachable_states(maybe_unreachable_set)
 
     def fix_inconsistent_state(self, s: StateId, verbose: bool) -> bool:
