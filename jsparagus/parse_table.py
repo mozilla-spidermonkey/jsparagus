@@ -11,7 +11,8 @@ import itertools
 from . import types
 from .utils import consume, keep_until, split, default_id_dict, default_fwd_dict
 from .ordered import OrderedSet, OrderedFrozenSet
-from .actions import Action, Replay, Reduce, FilterStates, Seq
+from .actions import (Action, Replay, Reduce, Unwind, FilterStates, Seq,
+                      CheckLineTerminator)
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
 from .lr0 import LR0Generator, Term
@@ -56,7 +57,7 @@ class StateAndTransitions:
     arguments: int
 
     # Outgoing edges taken when shifting terminals.
-    terminals: typing.Dict[str, StateId]
+    terminals: typing.Dict[typing.Union[str, End], StateId]
 
     # Outgoing edges taken when shifting nonterminals after reducing.
     nonterminals: typing.Dict[Nt, StateId]
@@ -153,7 +154,7 @@ class StateAndTransitions:
         return False
 
     def shifted_edges(self) -> typing.Iterator[
-            typing.Tuple[typing.Union[str, Nt, ErrorSymbol], StateId]
+            typing.Tuple[typing.Union[str, End, Nt, ErrorSymbol], StateId]
     ]:
         k: Term
         s: StateId
@@ -364,6 +365,13 @@ class ParseTable:
         self.exec_modes = grammar.grammar.exec_modes
         self.assume_inconsistent = True
         self.create_lr0_table(grammar, verbose, progress)
+        # Automatic Semicolon Insertion (ASI) is a process by which the
+        # JavaScript grammar is implicitly disambiguated. This phase would make
+        # this grammar transformation explicit.
+        self.expand_javascript_asi(verbose, progress)
+        # LR0 is incosnistent, which implies that we need a non-determinisitic
+        # evaluator. This phase solves ambiguities of the grammar by adding
+        # more lookahead and context.
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
         # Optimize by removing unused states.
@@ -914,6 +922,122 @@ class ParseTable:
 
         self.aps_visitor(APS.start(state), visit)
         return record
+
+    def expand_javascript_asi(self, verbose: bool, progress: bool) -> None:
+        """The frontend of the JavaScript grammar adds ErrorSymbols to handle Automatic
+        Semicolon Insertion (ASI). As described in the ECMAScript
+        Specification [1], these locations are used as a fallback mechanism for
+        tokens which would not be allowed by the grammar otherwise.
+
+        Implementing these rules implies that we have to look at all locations
+        which have an ErrorSymbol dedicated to ASI, and add the missing
+        transitions, such that the ErrorSymbol can be converted to an ordinary
+        nonterminal of the grammar.
+
+        Note, this is an optimization dedicated to remove the handling of a
+        replay-list (variable list of lookahead) as well as a fallback
+        mechanism for the runtime of the parser.
+
+        [1] https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
+
+        """
+        if verbose or progress:
+            print("Expand JavaScript Automatic Semicolon Insertion")
+
+        # Collect all states which have an ErrorSymbol.
+        todo = []
+        for s in self.states:
+            if len(s.errors) > 0:
+                todo.append(s)
+        if todo == []:
+            return
+
+        # Get the dead-end state, as the destination of the reduce edges.
+        dead_end = self.get_state(OrderedFrozenSet())
+
+        # Add Reduce ErrorSymbol("asi")
+        asi_nt = Nt(str(ErrorSymbol("asi")))
+        self.nonterminals.append(asi_nt)
+        reduce_asi = self.get_state(
+            OrderedFrozenSet(['ErrorSymbol("asi") ::= <token> ·',
+                              'ErrorSymbol("asi") ::= [LineTerminator here] <token> ·']))
+        self.add_edge(reduce_asi, Reduce(Unwind(asi_nt, 0, 1)), dead_end.index)
+
+        # Add CheckLineTerminator -> Reduce ErrorSymbol("asi")
+        newline_asi_term = CheckLineTerminator(-1, True)
+        newline_asi = self.get_state(
+            OrderedFrozenSet(['ErrorSymbol("asi") ::= [LineTerminator here] <token> ·']),
+            OrderedFrozenSet([newline_asi_term]))
+        self.add_edge(newline_asi, newline_asi_term, reduce_asi.index)
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        no_LineTerminator_here = CheckLineTerminator(0, False)
+
+        def contains_no_LineTerminator_here(aps: APS) -> bool:
+            for edge in aps.history:
+                if edge.term == no_LineTerminator_here:
+                    return True
+            return False
+
+        # Replace error symbols edges of the parse table by the semantic
+        # mentioned in [1] by adding the equivalent parse table rules. The
+        # error symbols are replaced by non-terminals which are reduced by the
+        # `reduce_asi` and `reduce_dw_asi` states.
+        #
+        # [1] https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
+        def visit_error_symbols() -> typing.Iterator[None]:
+            for s in todo:
+                yield  # progress bar.
+                assert len(s.errors) == 1
+
+                # 11.9.1.1 Capture the list of offending tokens. An offending
+                # token is a token which is not allowed by any production of
+                # the grammar.
+                #
+                # 11.9.1.2 (End is implicitly considered as a terminal)
+                aps_lanes = self.lookahead_lanes(s.index)
+                assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
+                accepted_tokens = set(aps.lookahead[0] for aps in aps_lanes)
+                offending_tokens = [t for t in self.terminals if t not in accepted_tokens]
+
+                # 11.9.1.3 A restricted token is a token from a restricted
+                # production, i-e. which has a `[no LineTerminator here]`
+                # before the token.
+                restricted_lanes = [aps for aps in aps_lanes if contains_no_LineTerminator_here(aps)]
+                restricted_tokens = [aps.lookahead[0] for aps in restricted_lanes]
+
+                # Get the index of the state to go to after the nonterminal
+                # semicolon.
+                error, dest = next(iter(s.errors.items()))
+                self.remove_edge(s, error, maybe_unreachable_set)
+                self.add_edge(s, asi_nt, dest)
+
+                if "}" in offending_tokens:
+                    self.add_edge(s, "}", reduce_asi.index)
+                    offending_tokens.remove("}")
+
+                if error == ErrorSymbol("asi"):
+                    offending_target = newline_asi
+                elif error == ErrorSymbol("do_while_asi"):
+                    # `do{}while(false) foo()` is a valid JavaScript syntax,
+                    # where a semicolon is automatically inserted between the
+                    # ending parenthesis of the while statement and the foo
+                    # identifier.
+                    offending_target = reduce_asi
+                else:
+                    raise ValueError("Unexpected ErrorSymbol code")
+
+                for token in offending_tokens:
+                    self.add_edge(s, token, offending_target.index)
+                for term in restricted_tokens:
+                    if isinstance(term, (str, End)):
+                        self.add_edge(s, term, newline_asi.index)
+
+        consume(visit_error_symbols(), progress)
+
+        if verbose:
+            print("Expand JavaScript Automatic Semicolon Insertion")
+            self.debug_dump()
 
     def fix_with_context(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         raise ValueError("fix_with_context: Not Implemented")

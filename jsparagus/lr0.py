@@ -140,7 +140,7 @@ class LRItem:
 # A Term is the label on an edge from one state to another. It's normally a
 # terminal, nonterminal, or epsilon action. A state can also have a special
 # catchall edge, labeled with an ErrorSymbol.
-ShiftedTerm = typing.Union[str, Nt, ErrorSymbol]
+ShiftedTerm = typing.Union[str, End, Nt, ErrorSymbol]
 Term = typing.Union[ShiftedTerm, Action]
 
 
