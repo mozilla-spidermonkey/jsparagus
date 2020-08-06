@@ -108,6 +108,18 @@ class Action:
         "Return the conditional action."
         raise TypeError("Action.condition not implemented")
 
+    def can_negate(self) -> bool:
+        "Whether the current condition (action) implemented the negate function."
+        assert self.is_condition()
+        return False
+
+    def negate(self, covered: typing.List[Action]) -> typing.List[Action]:
+        """Given a list of conditions, returns the condition which check the same
+        variable but all the values which are not covered by the rest of the
+        conditions, by adding it to the list which is returned."""
+        assert self.can_negate()
+        raise TypeError("Action.negate not implemented")
+
     def check_same_variable(self, other: Action) -> bool:
         "Return whether both conditionals are checking the same variable."
         assert self.is_condition()
@@ -392,6 +404,7 @@ class CheckLineTerminator(Action):
     def __init__(self, offset: int = 0, is_on_new_line: bool = False) -> None:
         # assert offset >= -1 and "Smaller offsets are not supported on all backends."
         super().__init__()
+        assert offset >= -1
         self.offset = offset
         self.is_on_new_line = is_on_new_line
 
@@ -408,11 +421,24 @@ class CheckLineTerminator(Action):
     def condition(self) -> CheckLineTerminator:
         return self
 
+    def can_negate(self) -> bool:
+        "Unordered condition, which accept or not to reach the next state."
+        return True
+
+    def negate(self, covered: typing.List[Action]) -> typing.List[Action]:
+        assert len(covered) >= 1 and len(covered) <= 2
+        if len(covered) == 2:
+            return covered
+        assert covered[0] == self
+        negated = CheckLineTerminator(self.offset, not self.is_on_new_line)
+        return [self, negated]
+
     def check_same_variable(self, other: Action) -> bool:
         return isinstance(other, CheckLineTerminator) and self.offset == other.offset
 
     def check_different_values(self, other: Action) -> bool:
-        return False
+        assert isinstance(other, CheckLineTerminator)
+        return self.is_on_new_line != other.is_on_new_line
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):

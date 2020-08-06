@@ -1335,6 +1335,56 @@ class ParseTable:
     #     self.remove_unreachable_states(maybe_unreachable_set)
     #     pass
 
+    def try_fix_with_conditions(self, s: StateId) -> bool:
+        """When dealing with consistent conditions, we can simply move all the
+        inconsistencies under the condition and its negated counter-part. This
+        is equivalent to changing the order in which variable are compared,
+        given condition which are not dependent on each others. """
+
+        state = self.states[s]
+        assert state.is_inconsistent()
+        conditions: typing.List[Action] = []
+        for act, dest in state.epsilon:
+            if act.is_condition() and not act.is_inconsistent() and act.can_negate():
+                if conditions == []:
+                    conditions.append(act)
+                elif conditions[0].check_same_variable(act):
+                    conditions.append(act)
+
+        # If we have not found any consistent condition, then fallback on using
+        # other way of solving inconsistencies.
+        if conditions == []:
+            return False
+
+        # The set of conditions extracted would remain inconsistent even after
+        # fix_with_conditions.
+        pairs = itertools.combinations(conditions, 2)
+        if any(not k1.check_different_values(k2) for k1, k2 in pairs):
+            return False
+
+        # If the list of condition does not yet cover the space of possible
+        # value, add the missing actions, with which we should wrap all the
+        # cases which have no conditionals.
+        conditions = conditions[0].negate(conditions)
+
+        shift_map: typing.DefaultDict[
+            Term,
+            typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+        ]
+        shift_map = collections.defaultdict(lambda: [])
+        edges = list(iter(state.edges()))
+        for term, dest in edges:
+            if term in conditions:
+                shift_map[term].append((self.states[dest], []))
+            else:
+                for cond in conditions:
+                    shift_map[cond].append((self.states[dest], [Edge(s, term)]))
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        self.restore_edges(state, shift_map, maybe_unreachable_set)
+        self.remove_unreachable_states(maybe_unreachable_set)
+        return True
+
     def fix_with_lookahead(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         # Find the list of terminals following each actions (even reduce
         # actions).
@@ -1416,11 +1466,24 @@ class ParseTable:
             return False
 
         all_reduce = all(a.update_stack() for a, _ in state.epsilon)
+        any_conditional = any(a.is_condition() and a.can_negate() for a, _ in state.epsilon)
         any_shift = (len(state.terminals) + len(state.nonterminals) + len(state.errors)) > 0
+        try_with_conditionals = any_conditional
         try_with_context = all_reduce and not any_shift
         try_with_lookahead = not try_with_context
         # if verbose:
         #     print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:", "\taps"))
+        if try_with_conditionals:
+            if verbose:
+                print("\tFix with conditionals")
+            fixed = self.try_fix_with_conditions(s)
+            if fixed:
+                try_with_context = False
+                try_with_lookahead = False
+            elif verbose and try_with_context:
+                print("\tFallback on fixing with context.")
+            elif verbose and try_with_context:
+                print("\tFallback on fixing with lookahead.")
         if try_with_context:
             if verbose:
                 print("\tFix with context.")
@@ -1436,6 +1499,7 @@ class ParseTable:
             aps_lanes = self.lookahead_lanes(s)
             assert aps_lanes != []
             self.fix_with_lookahead(s, aps_lanes)
+        assert not state.is_inconsistent()
         return True
 
     def fix_inconsistent_table(self, verbose: bool, progress: bool) -> None:
