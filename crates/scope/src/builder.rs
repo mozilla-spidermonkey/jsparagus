@@ -1246,7 +1246,7 @@ impl FunctionParametersScopeBuilder {
     }
 
     fn perform_annex_b(
-        &mut self,
+        &self,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
         body_scope_builder: &mut FunctionBodyScopeBuilder,
@@ -1302,6 +1302,7 @@ impl FunctionParametersScopeBuilder {
         // Step 1.a.ii.2.c. Append F to instantiatedVarNames.
         for n in possibly_annex_b_functions.names() {
             body_scope_builder.var_names.insert(*n);
+            body_scope_builder.base.name_tracker.note_def(*n);
         }
 
         // Step 1.a.ii.3. When the FunctionDeclaration f is evaluated, perform
@@ -1319,11 +1320,9 @@ impl FunctionParametersScopeBuilder {
     }
 
     fn into_scope_data_set(
-        mut self,
-        function_declaration_properties: &mut FunctionDeclarationPropertyMap,
-        possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
+        self,
         enclosing: ScopeIndex,
-        mut body_scope_builder: FunctionBodyScopeBuilder,
+        body_scope_builder: FunctionBodyScopeBuilder,
     ) -> FunctionScopeDataSet {
         // FunctionDeclarationInstantiation ( func, argumentsList )
         // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
@@ -1380,16 +1379,6 @@ impl FunctionParametersScopeBuilder {
             //            calleeEnv.
             // Step 20.f. Set the LexicalEnvironment of calleeContext to env.
         }
-
-        // Step 29. NOTE: Annex B adds additional steps at this point.
-        //
-        // NOTE: Reordered here to reflect the change to
-        //       body_scope_builder.var_names.
-        self.perform_annex_b(
-            function_declaration_properties,
-            possibly_annex_b_functions,
-            &mut body_scope_builder,
-        );
 
         let has_extra_body_var_scope = self.has_parameter_expressions;
 
@@ -2036,8 +2025,10 @@ impl ScopeBuilderStack {
 
     fn pop_function_parameters_and_body(
         &mut self,
+        function_declaration_properties: &mut FunctionDeclarationPropertyMap,
+        possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
     ) -> (FunctionParametersScopeBuilder, FunctionBodyScopeBuilder) {
-        let body_scope_builder = match self.pop() {
+        let mut body_scope_builder = match self.pop() {
             ScopeBuilder::FunctionBody(builder) => builder,
             _ => panic!("unmatching scope builder"),
         };
@@ -2047,7 +2038,18 @@ impl ScopeBuilderStack {
             _ => panic!("unmatching scope builder"),
         };
 
-        // FIXME: Perform annex B here.
+        // FunctionDeclarationInstantiation ( func, argumentsList )
+        // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
+        //
+        // Step 29. NOTE: Annex B adds additional steps at this point.
+        //
+        // NOTE: Reordered here in order to reflect Annex B functions
+        //       to FreeNameTracker.
+        parameter_scope_builder.perform_annex_b(
+            function_declaration_properties,
+            possibly_annex_b_functions,
+            &mut body_scope_builder,
+        );
 
         parameter_scope_builder
             .base
@@ -2829,7 +2831,10 @@ impl ScopeDataMapBuilder {
 
     pub fn after_function_body(&mut self) {
         let (parameter_scope_builder, body_scope_builder) =
-            self.builder_stack.pop_function_parameters_and_body();
+            self.builder_stack.pop_function_parameters_and_body(
+                &mut self.function_declaration_properties,
+                &mut self.possibly_annex_b_functions,
+            );
         let enclosing = self.builder_stack.current_scope_index();
 
         let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
@@ -2886,12 +2891,8 @@ impl ScopeDataMapBuilder {
         //
         // Step 1. Perform ? FunctionDeclarationInstantiation(functionObject,
         //         argumentsList).
-        let scope_data_set = parameter_scope_builder.into_scope_data_set(
-            &mut self.function_declaration_properties,
-            &mut self.possibly_annex_b_functions,
-            enclosing,
-            body_scope_builder,
-        );
+        let scope_data_set =
+            parameter_scope_builder.into_scope_data_set(enclosing, body_scope_builder);
         self.possibly_annex_b_functions.clear();
 
         match &scope_data_set.extra_body_var {
