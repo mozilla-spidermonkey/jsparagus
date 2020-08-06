@@ -1027,17 +1027,21 @@ class ParseTable:
         # Add Reduce ErrorSymbol("asi")
         asi_nt = Nt(str(ErrorSymbol("asi")))
         self.nonterminals.append(asi_nt)
-        reduce_asi = self.get_state(
-            OrderedFrozenSet(['ErrorSymbol("asi") ::= <token> ·',
-                              'ErrorSymbol("asi") ::= [LineTerminator here] <token> ·']))
-        self.add_edge(reduce_asi, Reduce(Unwind(asi_nt, 0, 1)), dead_end.index)
+        reduce_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
+        for t in self.terminals:
+            reduce_asi[t] = self.get_state(
+                OrderedFrozenSet(['ErrorSymbol("asi") ::= {} ·'.format(str(t)),
+                                  'ErrorSymbol("asi") ::= [LineTerminator here] {} ·'.format(str(t))]))
+            self.add_edge(reduce_asi[t], Reduce(Unwind(asi_nt, 0, 1)), dead_end.index)
 
         # Add CheckLineTerminator -> Reduce ErrorSymbol("asi")
         newline_asi_term = CheckLineTerminator(-1, True)
-        newline_asi = self.get_state(
-            OrderedFrozenSet(['ErrorSymbol("asi") ::= [LineTerminator here] <token> ·']),
-            OrderedFrozenSet([newline_asi_term]))
-        self.add_edge(newline_asi, newline_asi_term, reduce_asi.index)
+        newline_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
+        for t in self.terminals:
+            newline_asi[t] = self.get_state(
+                OrderedFrozenSet(['ErrorSymbol("asi") ::= [LineTerminator here] {} ·'.format(str(t))]),
+                OrderedFrozenSet([newline_asi_term]))
+            self.add_edge(newline_asi[t], newline_asi_term, reduce_asi[t].index)
 
         maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
         no_LineTerminator_here = CheckLineTerminator(0, False)
@@ -1058,16 +1062,28 @@ class ParseTable:
             for s in todo:
                 yield  # progress bar.
                 assert len(s.errors) == 1
+                error, error_dest = next(iter(s.errors.items()))
 
                 # 11.9.1.1 Capture the list of offending tokens. An offending
                 # token is a token which is not allowed by any production of
                 # the grammar.
                 #
                 # 11.9.1.2 (End is implicitly considered as a terminal)
+                #
+                # Note: Normally offending tokens are any tokens which does not
+                # satisfy any production of the grammar, however doing so by
+                # using the list of all possible tokens causes an ambiguity in
+                # the parse table. Thus we restrict this to the list of tokens
+                # which might be accepted after the error symbol.
                 aps_lanes = self.lookahead_lanes(s.index)
+                aps_lanes_on_error = self.lookahead_lanes(error_dest)
                 assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
                 accepted_tokens = set(aps.lookahead[0] for aps in aps_lanes)
-                offending_tokens = [t for t in self.terminals if t not in accepted_tokens]
+                accepted_tokens_on_error = set(aps.lookahead[0] for aps in aps_lanes_on_error)
+                offending_tokens = [
+                    t for t in accepted_tokens_on_error
+                    if t not in accepted_tokens and t in self.terminals
+                ]
 
                 # 11.9.1.3 A restricted token is a token from a restricted
                 # production, i-e. which has a `[no LineTerminator here]`
@@ -1082,7 +1098,7 @@ class ParseTable:
                 self.add_edge(s, asi_nt, dest)
 
                 if "}" in offending_tokens:
-                    self.add_edge(s, "}", reduce_asi.index)
+                    self.add_edge(s, "}", reduce_asi["}"].index)
                     offending_tokens.remove("}")
 
                 if error == ErrorSymbol("asi"):
@@ -1097,15 +1113,15 @@ class ParseTable:
                     raise ValueError("Unexpected ErrorSymbol code")
 
                 for token in offending_tokens:
-                    self.add_edge(s, token, offending_target.index)
+                    self.add_edge(s, token, offending_target[token].index)
                 for term in restricted_tokens:
                     if isinstance(term, (str, End)):
-                        self.add_edge(s, term, newline_asi.index)
+                        self.add_edge(s, term, newline_asi[token].index)
 
         consume(visit_error_symbols(), progress)
 
         if verbose:
-            print("Expand JavaScript Automatic Semicolon Insertion")
+            print("Expand JavaScript Automatic Semicolon Insertion result:")
             self.debug_dump()
 
     def fix_with_context(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
