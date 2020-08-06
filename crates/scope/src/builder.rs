@@ -521,6 +521,7 @@ impl GlobalScopeBuilder {
         // Step 12.a.i.1.c. If vn is not an element of declaredVarNames, then
         // Step 12.a.i.1.a.i. Append vn to declaredVarNames.
         self.declared_var_names.insert(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn declare_let(&mut self, name: SourceAtomSetIndex) {
@@ -530,6 +531,7 @@ impl GlobalScopeBuilder {
         // Step 15. Let lexDeclarations be the LexicallyScopedDeclarations of
         //          script.
         self.let_names.push(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn declare_const(&mut self, name: SourceAtomSetIndex) {
@@ -539,6 +541,7 @@ impl GlobalScopeBuilder {
         // Step 15. Let lexDeclarations be the LexicallyScopedDeclarations of
         //          script.
         self.const_names.push(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn declare_function(&mut self, name: SourceAtomSetIndex, fun_index: ScriptStencilIndex) {
@@ -657,7 +660,7 @@ impl GlobalScopeBuilder {
         //                       ?env.CreateGlobalVarBinding(F, false).
         // Step 2.d.ii.1.b.ii.2. Append F to declaredFunctionOrVarNames.
         for n in possibly_annex_b_functions.names() {
-            self.declared_var_names.insert(*n);
+            self.declare_var(*n);
         }
 
         // Step 2.d.ii.1.b.iii. When the FunctionDeclaration f is evaluated,
@@ -797,6 +800,7 @@ impl BlockScopeBuilder {
         //
         // Step 3. Let declarations be the LexicallyScopedDeclarations of code.
         self.let_names.push(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn declare_const(&mut self, name: SourceAtomSetIndex) {
@@ -805,6 +809,7 @@ impl BlockScopeBuilder {
         //
         // Step 3. Let declarations be the LexicallyScopedDeclarations of code.
         self.const_names.push(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn declare_function(&mut self, name: SourceAtomSetIndex, fun_index: ScriptStencilIndex) {
@@ -906,6 +911,7 @@ impl FunctionExpressionScopeBuilder {
 
     fn set_function_name(&mut self, name: SourceAtomSetIndex) {
         self.function_expression_name = Some(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn into_scope_data(self, enclosing: ScopeIndex) -> ScopeData {
@@ -1243,6 +1249,8 @@ impl FunctionParametersScopeBuilder {
         if name == CommonSourceAtomSetIndices::arguments() {
             self.parameter_has_arguments = true;
         }
+
+        self.base.name_tracker.note_def(name);
     }
 
     fn perform_annex_b(
@@ -1301,8 +1309,7 @@ impl FunctionParametersScopeBuilder {
         // Step 1.a.ii.2.b. Perform varEnv.InitializeBinding(F, undefined).
         // Step 1.a.ii.2.c. Append F to instantiatedVarNames.
         for n in possibly_annex_b_functions.names() {
-            body_scope_builder.var_names.insert(*n);
-            body_scope_builder.base.name_tracker.note_def(*n);
+            body_scope_builder.declare_var(*n);
         }
 
         // Step 1.a.ii.3. When the FunctionDeclaration f is evaluated, perform
@@ -1682,6 +1689,7 @@ impl FunctionBodyScopeBuilder {
         //
         // Step 9. Let varNames be the VarDeclaredNames of code.
         self.var_names.insert(name);
+        self.base.name_tracker.note_def(name);
     }
 
     fn check_lexical_or_function_name(&mut self, name: SourceAtomSetIndex) {
@@ -1701,6 +1709,7 @@ impl FunctionBodyScopeBuilder {
         //
         // Step 11. Let lexicalNames be the LexicallyDeclaredNames of code.
         self.let_names.push(name.clone());
+        self.base.name_tracker.note_def(name);
 
         self.check_lexical_or_function_name(name);
     }
@@ -1711,6 +1720,7 @@ impl FunctionBodyScopeBuilder {
         //
         // Step 11. Let lexicalNames be the LexicallyDeclaredNames of code.
         self.let_names.push(name.clone());
+        self.base.name_tracker.note_def(name);
 
         self.check_lexical_or_function_name(name);
     }
@@ -1770,8 +1780,6 @@ impl ScopeBuilder {
     }
 
     fn declare_var(&mut self, name: SourceAtomSetIndex) {
-        self.base_mut().name_tracker.note_def(name);
-
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_var(name),
             ScopeBuilder::FunctionBody(ref mut builder) => builder.declare_var(name),
@@ -1780,8 +1788,6 @@ impl ScopeBuilder {
     }
 
     fn declare_let(&mut self, name: SourceAtomSetIndex) {
-        self.base_mut().name_tracker.note_def(name);
-
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_let(name),
             ScopeBuilder::Block(ref mut builder) => builder.declare_let(name),
@@ -1791,8 +1797,6 @@ impl ScopeBuilder {
     }
 
     fn declare_const(&mut self, name: SourceAtomSetIndex) {
-        self.base_mut().name_tracker.note_def(name);
-
         match self {
             ScopeBuilder::Global(ref mut builder) => builder.declare_const(name),
             ScopeBuilder::Block(ref mut builder) => builder.declare_const(name),
@@ -1802,8 +1806,6 @@ impl ScopeBuilder {
     }
 
     fn set_function_name(&mut self, name: SourceAtomSetIndex) {
-        self.base_mut().name_tracker.note_def(name);
-
         match self {
             ScopeBuilder::FunctionExpression(ref mut builder) => builder.set_function_name(name),
             // FunctionDeclaration etc doesn't push any scope builder.
@@ -1813,8 +1815,6 @@ impl ScopeBuilder {
     }
 
     fn declare_param(&mut self, name: SourceAtomSetIndex) {
-        self.base_mut().name_tracker.note_def(name);
-
         match self {
             ScopeBuilder::FunctionParameters(ref mut builder) => builder.declare_param(name),
             _ => panic!("unexpected function scope builder"),
