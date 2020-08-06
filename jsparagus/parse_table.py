@@ -709,6 +709,28 @@ class ParseTable:
                     self.remove_state(s, next_set)
             maybe_unreachable_set = next_set
 
+    def mark_sweep_states(self) -> None:
+        marked = set()
+
+        def mark(s: StateId) -> None:
+            marked.add(s)
+            for _, dest in self.states[s].edges():
+                if dest not in marked:
+                    mark(dest)
+
+        for _, idx in self.named_goals:
+            mark(idx)
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        remove_list = []
+        for s in self.states:
+            if s is not None and s.index not in marked:
+                remove_list.append(s)
+        for s in remove_list:
+            self.clear_edges(s, maybe_unreachable_set)
+        for s in remove_list:
+            self.remove_state(s.index, maybe_unreachable_set)
+
     def is_reachable_state(self, s: StateId) -> bool:
         """Check whether the current state is reachable or not."""
         if self.states[s] is None:
@@ -1527,54 +1549,41 @@ class ParseTable:
 
         def visit_table() -> typing.Iterator[None]:
             nonlocal count
-            unreachable = []
             while todo:
-                while todo:
-                    yield  # progress bar.
-                    # TODO: Compare stack / queue, for the traversal of the states.
-                    s = todo.popleft()
-                    if not self.is_reachable_state(s):
-                        # NOTE: We do not fix unreachable states, as we might
-                        # not be able to compute the reduce actions. However,
-                        # we should not clean edges not backedges as the state
-                        # might become reachable later on, since states are
-                        # shared if they have the same locations.
-                        unreachable.append(s)
-                        continue
-                    assert self.states[s].is_inconsistent()
-                    start_len = len(self.states)
-                    if verbose:
-                        count = count + 1
-                        print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
-                    try:
-                        self.fix_inconsistent_state(s, verbose)
-                    except Exception as exc:
-                        self.debug_info = True
-                        raise ValueError(
-                            "Error while fixing conflict in state {}\n\n"
-                            "In the following grammar productions:\n{}"
-                            .format(self.states[s].stable_str(self.states),
-                                    self.debug_context(s, "\n", "\t"))
-                        ) from exc
-                    new_inconsistent_states = [
-                        s.index for s in self.states[start_len:]
-                        if s.is_inconsistent()
-                    ]
-                    if verbose:
-                        print("\tAdding {} states".format(len(self.states[start_len:])))
-                        print("\tWith {} inconsistent states".format(len(new_inconsistent_states)))
-                    todo.extend(new_inconsistent_states)
+                yield  # progress bar.
+                # TODO: Compare stack / queue, for the traversal of the states.
+                s = todo.popleft()
+                if self.states[s] is None:
+                    continue
+                assert self.states[s].is_inconsistent()
+                start_len = len(self.states)
+                if verbose:
+                    count = count + 1
+                    print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
+                try:
+                    self.fix_inconsistent_state(s, verbose)
+                except Exception as exc:
+                    self.debug_info = True
+                    raise ValueError(
+                        "Error while fixing conflict in state {}\n\n"
+                        "In the following grammar productions:\n{}"
+                        .format(self.states[s].stable_str(self.states),
+                                self.debug_context(s, "\n", "\t"))
+                    ) from exc
+                new_inconsistent_states = [
+                    s.index for s in self.states[start_len:]
+                    if s.is_inconsistent()
+                ]
+                if verbose:
+                    print("\tAdding {} states".format(len(self.states[start_len:])))
+                    print("\tWith {} inconsistent states".format(len(new_inconsistent_states)))
 
-                # Check whether none of the previously inconsistent and
-                # unreahable state became reachable. If so add it back to the
-                # todo list.
-                still_unreachable = []
-                for s in unreachable:
-                    if self.is_reachable_state(s):
-                        todo.append(s)
-                    else:
-                        still_unreachable.append(s)
-                unreachable = still_unreachable
+                todo.extend(new_inconsistent_states)
+                self.mark_sweep_states()
+                if not todo:
+                    for state in self.states:
+                        if state is not None and state.is_inconsistent():
+                            todo.append(state.index)
 
         consume(visit_table(), progress)
         if verbose:
@@ -1589,6 +1598,7 @@ class ParseTable:
         if verbose:
             print("Fix Inconsistent Table Result:")
             self.debug_dump()
+        self.debug_info = False
 
     def remove_all_unreachable_state(self, verbose: bool, progress: bool) -> None:
         self.states = [s for s in self.states if s is not None]
