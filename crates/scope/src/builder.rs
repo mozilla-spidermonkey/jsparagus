@@ -436,6 +436,25 @@ impl BaseScopeBuilder {
             bindings_accessed_dynamically: false,
         }
     }
+
+    fn propagate_common(&mut self, inner: &BaseScopeBuilder) {
+        // When construct such as `eval`, `with` and `delete` access
+        // name dynamically in inner scopes, we have to propagate this
+        // flag to the outer scope such that we prevent optimizations.
+        self.bindings_accessed_dynamically |= inner.bindings_accessed_dynamically;
+    }
+
+    fn propagate_from_inner_non_script(&mut self, inner: &BaseScopeBuilder) {
+        self.propagate_common(inner);
+        self.name_tracker
+            .propagate_from_inner_non_script(&inner.name_tracker);
+    }
+
+    fn propagate_from_inner_script(&mut self, inner: &BaseScopeBuilder) {
+        self.propagate_common(inner);
+        self.name_tracker
+            .propagate_from_inner_script(&inner.name_tracker);
+    }
 }
 
 /// Variables declared/used in GlobalDeclarationInstantiation.
@@ -1813,6 +1832,7 @@ impl ScopeBuilder {
         }
     }
 
+    #[allow(dead_code)]
     fn base(&self) -> &BaseScopeBuilder {
         match self {
             ScopeBuilder::Global(builder) => &builder.base,
@@ -1937,6 +1957,10 @@ impl ScopeBuilderStack {
             .expect("There should be at least one scope on the stack")
     }
 
+    fn maybe_innermost<'a>(&'a mut self) -> Option<&'a mut ScopeBuilder> {
+        self.stack.last_mut()
+    }
+
     fn current_scope_index(&self) -> ScopeIndex {
         self.stack
             .last()
@@ -1954,7 +1978,10 @@ impl ScopeBuilderStack {
 
     fn pop_global(&mut self) -> GlobalScopeBuilder {
         match self.pop() {
-            ScopeBuilder::Global(builder) => builder,
+            ScopeBuilder::Global(builder) => {
+                debug_assert!(self.stack.is_empty());
+                builder
+            }
             _ => panic!("unmatching scope builder"),
         }
     }
@@ -1966,6 +1993,10 @@ impl ScopeBuilderStack {
     fn pop_block(&mut self) -> BlockScopeBuilder {
         match self.pop() {
             ScopeBuilder::Block(builder) => {
+                self.innermost()
+                    .base_mut()
+                    .propagate_from_inner_non_script(&builder.base);
+
                 self.update_closed_over_bindings_for_lazy(&builder.base);
                 builder
             }
@@ -1980,6 +2011,18 @@ impl ScopeBuilderStack {
     fn pop_function_expression(&mut self) -> FunctionExpressionScopeBuilder {
         match self.pop() {
             ScopeBuilder::FunctionExpression(builder) => {
+                if let Some(outer) = self.maybe_innermost() {
+                    // NOTE: Function expression's name cannot have any
+                    //       used free variables.
+                    //       We can treat it as non-script here, so that
+                    //       any closed-over free variables inside this
+                    //       function is propagated from FunctionParameters
+                    //       to enclosing scope builder.
+                    outer
+                        .base_mut()
+                        .propagate_from_inner_non_script(&builder.base);
+                }
+
                 self.update_closed_over_bindings_for_lazy(&builder.base);
                 builder
             }
@@ -1999,13 +2042,23 @@ impl ScopeBuilderStack {
             _ => panic!("unmatching scope builder"),
         };
 
-        let parameter_scope_builder = match self.pop() {
+        let mut parameter_scope_builder = match self.pop() {
             ScopeBuilder::FunctionParameters(builder) => builder,
             _ => panic!("unmatching scope builder"),
         };
 
-        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
+        // FIXME: Perform annex B here.
 
+        parameter_scope_builder
+            .base
+            .propagate_from_inner_non_script(&body_scope_builder.base);
+        if let Some(outer) = self.maybe_innermost() {
+            outer
+                .base_mut()
+                .propagate_from_inner_script(&parameter_scope_builder.base);
+        }
+
+        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
         if has_extra_body_var_scope {
             self.update_closed_over_bindings_for_lazy(&body_scope_builder.base);
             self.update_closed_over_bindings_for_lazy(&parameter_scope_builder.base);
@@ -2068,55 +2121,9 @@ impl ScopeBuilderStack {
         }
     }
 
-    /// Pop the current scope, propagating names to outer scope.
+    /// Pop the current scope.
     fn pop(&mut self) -> ScopeBuilder {
-        let inner = self.stack.pop().expect("unmatching scope builder");
-        match self.stack.last_mut() {
-            Some(outer) => {
-                let inner_base = inner.base();
-                let outer_base = outer.base_mut();
-
-                // When construct such as `eval`, `with` and `delete` access
-                // name dynamically in inner scopes, we have to propagate this
-                // flag to the outer scope such that we prevent optimizations.
-                outer_base.bindings_accessed_dynamically |=
-                    inner_base.bindings_accessed_dynamically;
-
-                match inner {
-                    ScopeBuilder::Global(_) => {
-                        panic!("Global shouldn't be enclosed by other scope");
-                    }
-                    ScopeBuilder::Block(_) => {
-                        outer_base
-                            .name_tracker
-                            .propagate_from_inner_non_script(&inner_base.name_tracker);
-                    }
-                    ScopeBuilder::FunctionExpression(_) => {
-                        // NOTE: Function expression's name cannot have any
-                        //       used free variables.
-                        //       We can treat it as non-script here, so that
-                        //       any closed-over free variables inside this
-                        //       function is propagated from FunctionParameters
-                        //       to enclosing scope builder.
-                        outer_base
-                            .name_tracker
-                            .propagate_from_inner_non_script(&inner_base.name_tracker);
-                    }
-                    ScopeBuilder::FunctionParameters(_) => {
-                        outer_base
-                            .name_tracker
-                            .propagate_from_inner_script(&inner_base.name_tracker);
-                    }
-                    ScopeBuilder::FunctionBody(_) => {
-                        outer_base
-                            .name_tracker
-                            .propagate_from_inner_non_script(&inner_base.name_tracker);
-                    }
-                }
-            }
-            None => {}
-        }
-        inner
+        self.stack.pop().expect("unmatching scope builder")
     }
 }
 
