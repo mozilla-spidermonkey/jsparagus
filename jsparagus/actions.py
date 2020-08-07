@@ -623,7 +623,7 @@ class FunCall(Action):
             args: typing.Tuple[OutputExpr, ...],
             trait: types.Type = types.Type("AstBuilder"),
             fallible: bool = False,
-            set_to: str = "val",
+            set_to: str = "value",
             offset: int = 0,
     ) -> None:
         super().__init__()

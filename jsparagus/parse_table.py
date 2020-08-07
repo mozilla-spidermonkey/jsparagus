@@ -1049,21 +1049,22 @@ class ParseTable:
         dead_end = self.get_state(OrderedFrozenSet())
 
         # Add Reduce ErrorSymbol("asi")
-        asi_nt = Nt(str(ErrorSymbol("asi")))
+        asi_nt = Nt("ASI")
+        asi_term = Seq([FunCall("asi", ()), Reduce(Unwind(asi_nt, 0, 0))])
         self.nonterminals.append(asi_nt)
         reduce_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
         for t in self.terminals:
             reduce_asi[t] = self.get_state(
-                OrderedFrozenSet(['ErrorSymbol("asi") ::= {} ·'.format(str(t)),
-                                  'ErrorSymbol("asi") ::= [LineTerminator here] {} ·'.format(str(t))]))
-            self.add_edge(reduce_asi[t], Reduce(Unwind(asi_nt, 0, 1)), dead_end.index)
+                OrderedFrozenSet(['ASI ::= {} ·'.format(str(t)),
+                                  'ASI ::= [LineTerminator here] {} ·'.format(str(t))]))
+            self.add_edge(reduce_asi[t], asi_term.shifted_action(t), dead_end.index)
 
         # Add CheckLineTerminator -> Reduce ErrorSymbol("asi")
         newline_asi_term = CheckLineTerminator(-1, True)
         newline_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
         for t in self.terminals:
             newline_asi[t] = self.get_state(
-                OrderedFrozenSet(['ErrorSymbol("asi") ::= [LineTerminator here] {} ·'.format(str(t))]),
+                OrderedFrozenSet(['ASI ::= [LineTerminator here] {} ·'.format(str(t))]),
                 OrderedFrozenSet([newline_asi_term]))
             self.add_edge(newline_asi[t], newline_asi_term, reduce_asi[t].index)
 
