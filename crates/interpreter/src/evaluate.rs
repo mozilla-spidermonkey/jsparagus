@@ -39,6 +39,12 @@ trait Helpers<'alloc> {
     fn read_offset(&self, offset: usize) -> isize;
     fn read_atom(&self, offset: usize, gcthings: &Vec<GCThing>, atoms: &Vec<&'alloc str>)
         -> String;
+    fn read_slice(
+        &self,
+        offset: usize,
+        gcthings: &Vec<GCThing>,
+        slices: &Vec<&'alloc str>,
+    ) -> String;
 }
 
 impl<'alloc> Helpers<'alloc> for ImmutableScriptData {
@@ -77,6 +83,18 @@ impl<'alloc> Helpers<'alloc> for ImmutableScriptData {
             _ => panic!("Unexpected GC things for string"),
         }
     }
+
+    fn read_slice(
+        &self,
+        offset: usize,
+        gcthings: &Vec<GCThing>,
+        slices: &Vec<&'alloc str>,
+    ) -> String {
+        match gcthings[self.read_i32(offset) as usize] {
+            GCThing::Slice(index) => slices[usize::from(index)].to_string(),
+            _ => panic!("Unexpected GC things for string"),
+        }
+    }
 }
 
 /// This functions can partially interpreter the bytecode shared with SpiderMonkey.
@@ -96,6 +114,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
     let immutable_script_data = &result.script_data_list[script_data_index];
     let gcthings = &script.gcthings;
     let atoms = &result.atoms;
+    let slices = &result.slices;
 
     loop {
         let op = match Opcode::try_from(immutable_script_data.bytecode[pc]) {
@@ -424,10 +443,10 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
             }
 
             Opcode::String => {
-                stack.push(JSValue::String(immutable_script_data.read_atom(
+                stack.push(JSValue::String(immutable_script_data.read_slice(
                     pc + 1,
                     gcthings,
-                    atoms,
+                    slices,
                 )));
             }
 

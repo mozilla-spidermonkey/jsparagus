@@ -210,7 +210,7 @@
       "unicode": "bool"
     },
     "LiteralStringExpression": {
-      "value": "SourceAtomSetIndex"
+      "value": "SourceSliceIndex"
     },
     "ArrayExpression": "ArrayExpression",
     "ArrowExpression": {

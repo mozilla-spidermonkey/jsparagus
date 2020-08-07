@@ -1378,7 +1378,7 @@ impl<'alloc> Lexer<'alloc> {
 
                 Some(c @ '"') | Some(c @ '\'') => {
                     if c == delimiter {
-                        let value = self.string_to_token_value(builder.finish_without_push(&self));
+                        let value = self.slice_to_token_value(builder.finish_without_push(&self));
                         return self.set_result(
                             TerminalId::StringLiteral,
                             SourceLocation::new(offset, self.offset()),
