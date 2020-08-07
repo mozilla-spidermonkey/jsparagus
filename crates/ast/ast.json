@@ -602,7 +602,7 @@
   },
   "StaticPropertyName": {
     "_type": "struct",
-    "value": "SourceAtomSetIndex"
+    "value": "SourceSliceIndex"
   },
   "NumericLiteral": {
     "_type": "struct",

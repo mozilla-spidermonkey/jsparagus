@@ -55,7 +55,7 @@ class Type(TypeBase):
         if self.name in RUST_BUILTIN_TYPES:
             return self.name
         if self.name == 'Token':
-            return "Token"
+            return "Token<'alloc>"
         if self.name in ast.type_decls and ast.type_decls[self.name].has_lifetime:
             return "{}<'alloc>".format(self.name)
         return self.name

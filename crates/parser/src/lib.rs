@@ -73,7 +73,7 @@ fn parse<'alloc>(
     atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
     slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 ) -> Result<'alloc, StackValue<'alloc>> {
-    let mut tokens = Lexer::new(allocator, source.chars(), atoms.clone(), slices.clone());
+    let mut tokens = Lexer::new(allocator, source.chars());
 
     TABLES.check();
 
@@ -96,10 +96,10 @@ pub fn is_partial_script<'alloc>(
     slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 ) -> Result<'alloc, bool> {
     let mut parser = Parser::new(
-        AstBuilder::new(allocator, atoms.clone(), slices.clone()),
+        AstBuilder::new(allocator, atoms, slices),
         START_STATE_SCRIPT,
     );
-    let mut tokens = Lexer::new(allocator, source.chars(), atoms, slices);
+    let mut tokens = Lexer::new(allocator, source.chars());
     loop {
         let t = tokens.next(&parser)?;
         if t.terminal_id == TerminalId::End {

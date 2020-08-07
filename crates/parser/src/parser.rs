@@ -132,7 +132,7 @@ impl<'alloc> Parser<'alloc> {
         *self.state_stack.last().unwrap()
     }
 
-    pub fn write_token(&mut self, token: arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+    pub fn write_token(&mut self, token: arena::Box<'alloc, Token<'alloc>>) -> Result<'alloc, ()> {
         json_trace!({
             "method": "write_token",
             "is_on_new_line": token.is_on_new_line,
@@ -178,7 +178,7 @@ impl<'alloc> Parser<'alloc> {
         Ok(self.node_stack.pop().unwrap().value)
     }
 
-    pub(crate) fn parse_error(t: &Token) -> ParseError<'alloc> {
+    pub(crate) fn parse_error(t: &Token<'alloc>) -> ParseError<'alloc> {
         if t.terminal_id == TerminalId::End {
             ParseError::UnexpectedEnd
         } else {
@@ -225,7 +225,7 @@ impl<'alloc> Parser<'alloc> {
         Err(ParseError::ParserCannotUnpackToken.into())
     }
 
-    pub(crate) fn recover(t: &Token, error_code: ErrorCode) -> Result<'alloc, ()> {
+    pub(crate) fn recover(t: &Token<'alloc>, error_code: ErrorCode) -> Result<'alloc, ()> {
         match error_code {
             ErrorCode::Asi => {
                 if t.is_on_new_line

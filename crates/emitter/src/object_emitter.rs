@@ -1,6 +1,6 @@
 use crate::ast_emitter::AstEmitter;
 use crate::emitter::EmitError;
-use ast::source_atom_set::SourceAtomSetIndex;
+use ast::source_slice_list::SourceSliceIndex;
 
 /// Struct for emitting bytecode for a property where its name is string.
 ///
@@ -12,7 +12,7 @@ where
     F: Fn(&mut AstEmitter) -> Result<(), EmitError>,
 {
     pub state: &'a mut ObjectEmitterState,
-    pub key: SourceAtomSetIndex,
+    pub key: SourceSliceIndex,
     pub value: F,
 }
 
@@ -34,7 +34,7 @@ where
                 //      [stack] OBJ
             }
             None => {
-                let name_index = emitter.emit.get_atom_gcthing_index(self.key);
+                let name_index = emitter.emit.get_slice_gcthing_index(self.key);
 
                 (self.value)(emitter)?;
                 //      [stack] OBJ VALUE
@@ -46,12 +46,8 @@ where
         Ok(())
     }
 
-    fn to_property_index(
-        &self,
-        emitter: &mut AstEmitter,
-        index: SourceAtomSetIndex,
-    ) -> Option<u32> {
-        let s = emitter.compilation_info.atoms.get(index);
+    fn to_property_index(&self, emitter: &mut AstEmitter, index: SourceSliceIndex) -> Option<u32> {
+        let s = emitter.compilation_info.slices.get(index);
         s.parse::<u32>().ok()
     }
 }

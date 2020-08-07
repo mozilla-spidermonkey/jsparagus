@@ -4,31 +4,23 @@ use crate::numeric_value::{parse_float, parse_int, NumericLiteralBase};
 use crate::parser::Parser;
 use crate::unicode::{is_id_continue, is_id_start};
 use ast::arena;
-use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet};
-use ast::source_slice_list::SourceSliceList;
 use ast::SourceLocation;
 use bumpalo::{collections::String, Bump};
 use generated_parser::{ParseError, Result, TerminalId, Token, TokenValue};
-use std::cell::RefCell;
 use std::convert::TryFrom;
-use std::rc::Rc;
 use std::str::Chars;
 
 pub struct Lexer<'alloc> {
     allocator: &'alloc Bump,
 
     /// Next token to be returned.
-    token: arena::Box<'alloc, Token>,
+    token: arena::Box<'alloc, Token<'alloc>>,
 
     /// Length of the input text, in UTF-8 bytes.
     source_length: usize,
 
     /// Iterator over the remaining not-yet-parsed input.
     chars: Chars<'alloc>,
-
-    atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
-
-    slices: Rc<RefCell<SourceSliceList<'alloc>>>,
 }
 
 enum NumericResult {
@@ -43,13 +35,8 @@ enum NumericResult {
 }
 
 impl<'alloc> Lexer<'alloc> {
-    pub fn new(
-        allocator: &'alloc Bump,
-        chars: Chars<'alloc>,
-        atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
-        slices: Rc<RefCell<SourceSliceList<'alloc>>>,
-    ) -> Lexer<'alloc> {
-        Self::with_offset(allocator, chars, 0, atoms, slices)
+    pub fn new(allocator: &'alloc Bump, chars: Chars<'alloc>) -> Lexer<'alloc> {
+        Self::with_offset(allocator, chars, 0)
     }
 
     /// Create a lexer for a part of a JS script or module. `offset` is the
@@ -59,8 +46,6 @@ impl<'alloc> Lexer<'alloc> {
         allocator: &'alloc Bump,
         chars: Chars<'alloc>,
         offset: usize,
-        atoms: Rc<RefCell<SourceAtomSet<'alloc>>>,
-        slices: Rc<RefCell<SourceSliceList<'alloc>>>,
     ) -> Lexer<'alloc> {
         let source_length = offset + chars.as_str().len();
         let mut token = arena::alloc(allocator, new_token());
@@ -70,8 +55,6 @@ impl<'alloc> Lexer<'alloc> {
             token,
             source_length,
             chars,
-            atoms,
-            slices,
         }
     }
 
@@ -97,7 +80,7 @@ impl<'alloc> Lexer<'alloc> {
         &mut self,
         terminal_id: TerminalId,
         loc: SourceLocation,
-        value: TokenValue,
+        value: TokenValue<'alloc>,
     ) -> Result<'alloc, ()> {
         self.token.terminal_id = terminal_id;
         self.token.loc = loc;
@@ -109,7 +92,7 @@ impl<'alloc> Lexer<'alloc> {
     pub fn next<'parser>(
         &mut self,
         parser: &Parser<'parser>,
-    ) -> Result<'alloc, arena::Box<'alloc, Token>> {
+    ) -> Result<'alloc, arena::Box<'alloc, Token<'alloc>>> {
         let mut next_token = arena::alloc_with(self.allocator, || new_token());
         self.advance_impl(parser)?;
         std::mem::swap(&mut self.token, &mut next_token);
@@ -126,7 +109,7 @@ impl<'alloc> Lexer<'alloc> {
 }
 
 /// Returns an empty token which is meant as a place holder to be mutated later.
-fn new_token() -> Token {
+fn new_token<'alloc>() -> Token<'alloc> {
     Token::basic_token(TerminalId::End, SourceLocation::default())
 }
 
@@ -416,15 +399,12 @@ impl<'alloc> Lexer<'alloc> {
             (TerminalId::NameWithEscape, self.string_to_token_value(text))
         } else {
             match &text as &str {
-                "as" => (
-                    TerminalId::As,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::as_()),
-                ),
+                "as" => (TerminalId::As, TokenValue::String("as")),
                 "async" => {
                     /*
                     (
                         TerminalId::Async,
-                        TokenValue::Atom(CommonSourceAtomSetIndices::async_()),
+                        TokenValue::String("async"),
                     ),
                     */
                     return Err(ParseError::NotImplemented(
@@ -436,118 +416,43 @@ impl<'alloc> Lexer<'alloc> {
                     /*
                     (
                         TerminalId::Await,
-                        TokenValue::Atom(CommonSourceAtomSetIndices::await_()),
+                        TokenValue::String("await"),
                     ),
                      */
                     return Err(
                         ParseError::NotImplemented("await cannot be handled in parser").into(),
                     );
                 }
-                "break" => (
-                    TerminalId::Break,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::break_()),
-                ),
-                "case" => (
-                    TerminalId::Case,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::case()),
-                ),
-                "catch" => (
-                    TerminalId::Catch,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::catch()),
-                ),
-                "class" => (
-                    TerminalId::Class,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::class()),
-                ),
-                "const" => (
-                    TerminalId::Const,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::const_()),
-                ),
-                "continue" => (
-                    TerminalId::Continue,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::continue_()),
-                ),
-                "debugger" => (
-                    TerminalId::Debugger,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::debugger()),
-                ),
-                "default" => (
-                    TerminalId::Default,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::default()),
-                ),
-                "delete" => (
-                    TerminalId::Delete,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::delete()),
-                ),
-                "do" => (
-                    TerminalId::Do,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::do_()),
-                ),
-                "else" => (
-                    TerminalId::Else,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::else_()),
-                ),
-                "enum" => (
-                    TerminalId::Enum,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::enum_()),
-                ),
-                "export" => (
-                    TerminalId::Export,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::export()),
-                ),
-                "extends" => (
-                    TerminalId::Extends,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::extends()),
-                ),
-                "finally" => (
-                    TerminalId::Finally,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::finally()),
-                ),
-                "for" => (
-                    TerminalId::For,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::for_()),
-                ),
-                "from" => (
-                    TerminalId::From,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::from()),
-                ),
-                "function" => (
-                    TerminalId::Function,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::function()),
-                ),
-                "get" => (
-                    TerminalId::Get,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::get()),
-                ),
-                "if" => (
-                    TerminalId::If,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::if_()),
-                ),
-                "implements" => (
-                    TerminalId::Implements,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::implements()),
-                ),
-                "import" => (
-                    TerminalId::Import,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::import()),
-                ),
-                "in" => (
-                    TerminalId::In,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::in_()),
-                ),
-                "instanceof" => (
-                    TerminalId::Instanceof,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::instanceof()),
-                ),
-                "interface" => (
-                    TerminalId::Interface,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::interface()),
-                ),
+                "break" => (TerminalId::Break, TokenValue::String("break")),
+                "case" => (TerminalId::Case, TokenValue::String("case")),
+                "catch" => (TerminalId::Catch, TokenValue::String("catch")),
+                "class" => (TerminalId::Class, TokenValue::String("class")),
+                "const" => (TerminalId::Const, TokenValue::String("const")),
+                "continue" => (TerminalId::Continue, TokenValue::String("continue")),
+                "debugger" => (TerminalId::Debugger, TokenValue::String("debugger")),
+                "default" => (TerminalId::Default, TokenValue::String("default")),
+                "delete" => (TerminalId::Delete, TokenValue::String("delete")),
+                "do" => (TerminalId::Do, TokenValue::String("do")),
+                "else" => (TerminalId::Else, TokenValue::String("else")),
+                "enum" => (TerminalId::Enum, TokenValue::String("enum")),
+                "export" => (TerminalId::Export, TokenValue::String("export")),
+                "extends" => (TerminalId::Extends, TokenValue::String("extends")),
+                "finally" => (TerminalId::Finally, TokenValue::String("finally")),
+                "for" => (TerminalId::For, TokenValue::String("for")),
+                "from" => (TerminalId::From, TokenValue::String("from")),
+                "function" => (TerminalId::Function, TokenValue::String("function")),
+                "get" => (TerminalId::Get, TokenValue::String("get")),
+                "if" => (TerminalId::If, TokenValue::String("if")),
+                "implements" => (TerminalId::Implements, TokenValue::String("implements")),
+                "import" => (TerminalId::Import, TokenValue::String("import")),
+                "in" => (TerminalId::In, TokenValue::String("in")),
+                "instanceof" => (TerminalId::Instanceof, TokenValue::String("instanceof")),
+                "interface" => (TerminalId::Interface, TokenValue::String("interface")),
                 "let" => {
                     /*
                     (
                         TerminalId::Let,
-                        TokenValue::Atom(CommonSourceAtomSetIndices::let_()),
+                        TokenValue::String("let"),
                     ),
                     */
                     return Err(ParseError::NotImplemented(
@@ -555,109 +460,40 @@ impl<'alloc> Lexer<'alloc> {
                     )
                     .into());
                 }
-                "new" => (
-                    TerminalId::New,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::new_()),
-                ),
-                "of" => (
-                    TerminalId::Of,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::of()),
-                ),
-                "package" => (
-                    TerminalId::Package,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::package()),
-                ),
-                "private" => (
-                    TerminalId::Private,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::private()),
-                ),
-                "protected" => (
-                    TerminalId::Protected,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::protected()),
-                ),
-                "public" => (
-                    TerminalId::Public,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::public()),
-                ),
-                "return" => (
-                    TerminalId::Return,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::return_()),
-                ),
-                "set" => (
-                    TerminalId::Set,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::set()),
-                ),
-                "static" => (
-                    TerminalId::Static,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::static_()),
-                ),
-                "super" => (
-                    TerminalId::Super,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::super_()),
-                ),
-                "switch" => (
-                    TerminalId::Switch,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::switch()),
-                ),
-                "target" => (
-                    TerminalId::Target,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::target()),
-                ),
-                "this" => (
-                    TerminalId::This,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::this()),
-                ),
-                "throw" => (
-                    TerminalId::Throw,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::throw()),
-                ),
-                "try" => (
-                    TerminalId::Try,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::try_()),
-                ),
-                "typeof" => (
-                    TerminalId::Typeof,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::typeof_()),
-                ),
-                "var" => (
-                    TerminalId::Var,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::var()),
-                ),
-                "void" => (
-                    TerminalId::Void,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::void()),
-                ),
-                "while" => (
-                    TerminalId::While,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::while_()),
-                ),
-                "with" => (
-                    TerminalId::With,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::with()),
-                ),
+                "new" => (TerminalId::New, TokenValue::String("new")),
+                "of" => (TerminalId::Of, TokenValue::String("of")),
+                "package" => (TerminalId::Package, TokenValue::String("package")),
+                "private" => (TerminalId::Private, TokenValue::String("private")),
+                "protected" => (TerminalId::Protected, TokenValue::String("protected")),
+                "public" => (TerminalId::Public, TokenValue::String("public")),
+                "return" => (TerminalId::Return, TokenValue::String("return")),
+                "set" => (TerminalId::Set, TokenValue::String("set")),
+                "static" => (TerminalId::Static, TokenValue::String("static")),
+                "super" => (TerminalId::Super, TokenValue::String("super")),
+                "switch" => (TerminalId::Switch, TokenValue::String("switch")),
+                "target" => (TerminalId::Target, TokenValue::String("target")),
+                "this" => (TerminalId::This, TokenValue::String("this")),
+                "throw" => (TerminalId::Throw, TokenValue::String("throw")),
+                "try" => (TerminalId::Try, TokenValue::String("try")),
+                "typeof" => (TerminalId::Typeof, TokenValue::String("typeof")),
+                "var" => (TerminalId::Var, TokenValue::String("var")),
+                "void" => (TerminalId::Void, TokenValue::String("void")),
+                "while" => (TerminalId::While, TokenValue::String("while")),
+                "with" => (TerminalId::With, TokenValue::String("with")),
                 "yield" => {
                     /*
                     (
                         TerminalId::Yield,
-                        TokenValue::Atom(CommonSourceAtomSetIndices::yield_()),
+                        TokenValue::String("yield"),
                     ),
                      */
                     return Err(
                         ParseError::NotImplemented("yield cannot be handled in parser").into(),
                     );
                 }
-                "null" => (
-                    TerminalId::NullLiteral,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::null()),
-                ),
-                "true" => (
-                    TerminalId::BooleanLiteral,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::true_()),
-                ),
-                "false" => (
-                    TerminalId::BooleanLiteral,
-                    TokenValue::Atom(CommonSourceAtomSetIndices::false_()),
-                ),
+                "null" => (TerminalId::NullLiteral, TokenValue::String("null")),
+                "true" => (TerminalId::BooleanLiteral, TokenValue::String("true")),
+                "false" => (TerminalId::BooleanLiteral, TokenValue::String("false")),
                 _ => (TerminalId::Name, self.string_to_token_value(text)),
             }
         };
@@ -1378,7 +1214,7 @@ impl<'alloc> Lexer<'alloc> {
 
                 Some(c @ '"') | Some(c @ '\'') => {
                     if c == delimiter {
-                        let value = self.slice_to_token_value(builder.finish_without_push(&self));
+                        let value = self.string_to_token_value(builder.finish_without_push(&self));
                         return self.set_result(
                             TerminalId::StringLiteral,
                             SourceLocation::new(offset, self.offset()),
@@ -1502,7 +1338,7 @@ impl<'alloc> Lexer<'alloc> {
         // TODO: 12.2.8.2.4 and 12.2.8.2.5 Check that the body matches the
         // grammar defined in 21.2.1.
 
-        let value = self.slice_to_token_value(literal);
+        let value = self.string_to_token_value(literal);
         self.set_result(
             TerminalId::RegularExpressionLiteral,
             SourceLocation::new(offset, self.offset()),
@@ -2214,14 +2050,8 @@ impl<'alloc> Lexer<'alloc> {
         )
     }
 
-    fn string_to_token_value(&mut self, s: &'alloc str) -> TokenValue {
-        let index = self.atoms.borrow_mut().insert(s);
-        TokenValue::Atom(index)
-    }
-
-    fn slice_to_token_value(&mut self, s: &'alloc str) -> TokenValue {
-        let index = self.slices.borrow_mut().push(s);
-        TokenValue::Slice(index)
+    fn string_to_token_value(&mut self, s: &'alloc str) -> TokenValue<'alloc> {
+        TokenValue::String(s)
     }
 
     fn numeric_result_to_advance_result(
