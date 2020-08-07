@@ -226,6 +226,37 @@ class Action:
 ShiftedAction = typing.Union[Action, bool]
 
 
+class Shift(Action):
+    """Shift action is the implicit action performed when a terminal or nonterminal
+    is used on an edge. However this state is not supported as an epsilon edge,
+    but only serves to annotate delayed actions of states. """
+    __slots__ = ['term']
+
+    term: ShiftedTerm
+
+    def __init__(self, term: ShiftedTerm):
+        super().__init__()
+        self.term = term
+
+    def is_inconsistent(self) -> bool:
+        return True
+
+    def is_condition(self) -> bool:
+        return True
+
+    def condition(self) -> Shift:
+        return self
+
+    def update_stack(self) -> bool:
+        return True
+
+    def update_stack_with(self) -> StackDiff:
+        return StackDiff(0, None, -1)
+
+    def __str__(self) -> str:
+        return "Shift({})".format(str(self.term))
+
+
 class Replay(Action):
     """Replay a term which was previously saved by the Unwind function. Note that
     this does not Shift a term given as argument as the replay action should

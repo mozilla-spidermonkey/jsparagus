@@ -11,8 +11,8 @@ import itertools
 from . import types
 from .utils import consume, keep_until, split, default_id_dict, default_fwd_dict
 from .ordered import OrderedSet, OrderedFrozenSet
-from .actions import (Action, Replay, Reduce, Unwind, FilterStates, Seq,
-                      CheckLineTerminator)
+from .actions import (Action, Shift, Replay, Reduce, Unwind, FilterStates, Seq,
+                      FunCall, CheckLineTerminator)
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
 from .lr0 import LR0Generator, Term
@@ -626,21 +626,23 @@ class ParseTable:
             if not self.term_is_shifted(term):
                 # There is no more target after a reduce action.
                 actions_list = []
-            for target, actions in actions_list:
+            for target, remaining_edges in actions_list:
                 assert isinstance(target, StateAndTransitions)
                 locations |= target.locations
                 delayed |= target.delayed_actions
-                if actions != []:
+                if remaining_edges != []:
                     # Pull edges, with delayed actions.
-                    edge = actions[0]
-                    assert isinstance(edge, Edge)
-                    for action in actions:
-                        action_term = action.term
-                        assert isinstance(action_term, Action)
-                        delayed.add(action_term)
+                    for edge in remaining_edges:
+                        edge_term = edge.term
+                        assert edge_term is not None
+                        if isinstance(edge_term, Action):
+                            delayed.add(edge_term)
+                        else:
+                            delayed.add(Shift(edge_term))
+                    edge = remaining_edges[0]
                     edge_term = edge.term
                     assert edge_term is not None
-                    new_shift_map[edge_term].append((target, actions[1:]))
+                    new_shift_map[edge_term].append((target, remaining_edges[1:]))
                     recurse = True
                 else:
                     # Pull edges, as a copy of existing edges.
