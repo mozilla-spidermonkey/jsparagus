@@ -322,11 +322,14 @@ class Unwind(Action):
 class Reduce(Action):
     """Prevent the fall-through to the epsilon transition and returns to the shift
     table execution to resume shifting or replaying terms."""
-    __slots__ = ['unwind']
+    __slots__ = ['unwind', 'lookahead']
 
     unwind: Unwind
 
-    def __init__(self, unwind: Unwind) -> None:
+    # List of lookahead tokens used to prevent aliasing of reduce states.
+    lookahead: typing.Tuple[Element, ...]
+
+    def __init__(self, unwind: Unwind, lookahead: typing.Tuple[Element, ...] = ()) -> None:
         nt_name = unwind.nt.name
         if isinstance(nt_name, InitNt):
             name = "Start_" + str(nt_name.goal.name)
@@ -334,9 +337,10 @@ class Reduce(Action):
             name = nt_name
         super().__init__()
         self.unwind = unwind
+        self.lookahead = lookahead
 
     def __str__(self) -> str:
-        return "Reduce({})".format(str(self.unwind))
+        return "Reduce({}, {})".format(str(self.unwind), str(self.lookahead))
 
     def follow_edge(self) -> bool:
         return False
@@ -349,11 +353,11 @@ class Reduce(Action):
 
     def unshift_action(self, num: int) -> Reduce:
         unwind = self.unwind.unshift_action(num)
-        return Reduce(unwind)
+        return Reduce(unwind, lookahead=self.lookahead[:-num])
 
     def shifted_action(self, shifted_term: Element) -> Reduce:
         unwind = self.unwind.shifted_action(shifted_term)
-        return Reduce(unwind)
+        return Reduce(unwind, lookahead=(*self.lookahead, shifted_term))
 
 
 class Accept(Action):
