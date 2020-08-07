@@ -1,17 +1,14 @@
 use crate::parser_tables_generated::TerminalId;
-use ast::source_atom_set::SourceAtomSetIndex;
-use ast::source_slice_list::SourceSliceIndex;
 use ast::SourceLocation;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TokenValue {
+pub enum TokenValue<'a> {
     None,
     Number(f64),
-    Atom(SourceAtomSetIndex),
-    Slice(SourceSliceIndex),
+    String(&'a str),
 }
 
-impl TokenValue {
+impl<'a> TokenValue<'a> {
     pub fn as_number(&self) -> f64 {
         match self {
             Self::Number(n) => *n,
@@ -19,17 +16,10 @@ impl TokenValue {
         }
     }
 
-    pub fn as_atom(&self) -> SourceAtomSetIndex {
+    pub fn as_str(&self) -> &'a str {
         match self {
-            Self::Atom(index) => *index,
-            _ => panic!("expected atom"),
-        }
-    }
-
-    pub fn as_slice(&self) -> SourceSliceIndex {
-        match self {
-            Self::Slice(index) => *index,
-            _ => panic!("expected atom"),
+            Self::String(s) => s,
+            _ => panic!("expected str"),
         }
     }
 }
@@ -41,7 +31,7 @@ impl TokenValue {
 /// Tokens match the goal terminals of the ECMAScript lexical grammar; see
 /// <https://tc39.es/ecma262/#sec-ecmascript-language-lexical-grammar>.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Token {
+pub struct Token<'a> {
     /// Token type.
     pub terminal_id: TerminalId,
 
@@ -73,10 +63,10 @@ pub struct Token {
     ///
     /// For all other tokens (including template literal parts), the content is
     /// unspecified for now. TODO.
-    pub value: TokenValue,
+    pub value: TokenValue<'a>,
 }
 
-impl Token {
+impl<'a> Token<'a> {
     pub fn basic_token(terminal_id: TerminalId, loc: SourceLocation) -> Self {
         Self {
             terminal_id,

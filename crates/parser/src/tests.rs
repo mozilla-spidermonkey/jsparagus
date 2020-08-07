@@ -138,18 +138,8 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
     let left_slices = Rc::new(RefCell::new(SourceSliceList::new()));
     let right_atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
     let right_slices = Rc::new(RefCell::new(SourceSliceList::new()));
-    let mut left_lexer = Lexer::new(
-        allocator,
-        left.chars(),
-        left_atoms.clone(),
-        left_slices.clone(),
-    );
-    let mut right_lexer = Lexer::new(
-        allocator,
-        right.chars(),
-        right_atoms.clone(),
-        right_slices.clone(),
-    );
+    let mut left_lexer = Lexer::new(allocator, left.chars());
+    let mut right_lexer = Lexer::new(allocator, right.chars());
 
     let mut left_parser = Parser::new(
         AstBuilder::new(allocator, left_atoms, left_slices),
@@ -193,7 +183,7 @@ fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let buf = chunks_to_string(code);
     let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
     let slices = Rc::new(RefCell::new(SourceSliceList::new()));
-    let mut lexer = Lexer::new(allocator, buf.chars(), atoms.clone(), slices.clone());
+    let mut lexer = Lexer::new(allocator, buf.chars());
     let mut parser = Parser::new(
         AstBuilder::new(allocator, atoms, slices),
         generated_parser::START_STATE_SCRIPT,

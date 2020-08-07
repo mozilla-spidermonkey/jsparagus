@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 use ast::source_atom_set::SourceAtomSetIndex;
+use ast::source_slice_list::SourceSliceIndex;
 use byteorder::{ByteOrder, LittleEndian};
 use std::cmp;
 use std::collections::HashMap;
@@ -1382,6 +1383,10 @@ impl InstructionWriter {
                 index
             }
         }
+    }
+
+    pub fn get_slice_gcthing_index(&mut self, slice: SourceSliceIndex) -> GCThingIndex {
+        self.gcthings.push_slice(slice)
     }
 
     pub fn get_function_gcthing_index(&mut self, fun_index: ScriptStencilIndex) -> GCThingIndex {

@@ -293,11 +293,15 @@ pub trait EarlyErrorChecker<'alloc> {
 
     // Check Early Error for BindingIdentifier and note binding info to the
     // stack.
-    fn on_binding_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+    fn on_binding_identifier(
+        &mut self,
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
-        context.check_binding_identifier(token, &self.atoms().borrow())?;
+        context.check_binding_identifier(token, token_atom, &self.atoms().borrow())?;
 
-        let name = token.value.as_atom();
+        let name = token_atom;
         let offset = token.loc.start;
 
         if let Some(info) = self.context_metadata_mut().last_binding() {
@@ -314,17 +318,25 @@ pub trait EarlyErrorChecker<'alloc> {
     }
 
     // Check Early Error for IdentifierReference.
-    fn on_identifier_reference(&self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+    fn on_identifier_reference(
+        &self,
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
-        context.check_identifier_reference(token, &self.atoms().borrow())
+        context.check_identifier_reference(token, token_atom, &self.atoms().borrow())
     }
 
     // Check Early Error for LabelIdentifier and note binding info to the
     // stack
-    fn on_label_identifier(&mut self, token: &arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
+    fn on_label_identifier(
+        &mut self,
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> Result<'alloc, ()> {
         let context = IdentifierEarlyErrorsContext::new();
 
-        let name = token.value.as_atom();
+        let name = token_atom;
         let offset = token.loc.start;
 
         if let Some(info) = self.context_metadata_mut().last_binding() {
@@ -340,7 +352,7 @@ pub trait EarlyErrorChecker<'alloc> {
             kind: LabelKind::Other,
         });
 
-        context.check_label_identifier(token, &self.atoms().borrow())
+        context.check_label_identifier(token, token_atom, &self.atoms().borrow())
     }
 
     /// Check Early Error for LabelledStatement.

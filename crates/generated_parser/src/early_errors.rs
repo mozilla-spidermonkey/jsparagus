@@ -83,36 +83,51 @@ impl IdentifierEarlyErrorsContext {
     }
      */
 
-    fn is_arguments_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_arguments_identifier<'alloc>(
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> bool {
         return (token.terminal_id == TerminalId::Name
             || token.terminal_id == TerminalId::NameWithEscape)
-            && token.value.as_atom() == CommonSourceAtomSetIndices::arguments();
+            && token_atom == CommonSourceAtomSetIndices::arguments();
     }
 
-    fn is_eval_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_eval_identifier<'alloc>(
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> bool {
         return (token.terminal_id == TerminalId::Name
             || token.terminal_id == TerminalId::NameWithEscape)
-            && token.value.as_atom() == CommonSourceAtomSetIndices::eval();
+            && token_atom == CommonSourceAtomSetIndices::eval();
     }
 
-    fn is_yield_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_yield_identifier<'alloc>(
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> bool {
         return token.terminal_id == TerminalId::Yield
             || (token.terminal_id == TerminalId::NameWithEscape
-                && token.value.as_atom() == CommonSourceAtomSetIndices::yield_());
+                && token_atom == CommonSourceAtomSetIndices::yield_());
     }
 
-    fn is_await_identifier<'alloc>(token: &arena::Box<'alloc, Token>) -> bool {
+    fn is_await_identifier<'alloc>(
+        token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
+    ) -> bool {
         return token.terminal_id == TerminalId::Await
             || (token.terminal_id == TerminalId::NameWithEscape
-                && token.value.as_atom() == CommonSourceAtomSetIndices::await_());
+                && token_atom == CommonSourceAtomSetIndices::await_());
     }
 
     pub fn check_binding_identifier<'alloc>(
         &self,
         token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
         atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
-        if Self::is_arguments_identifier(token) || Self::is_eval_identifier(token) {
+        if Self::is_arguments_identifier(token, token_atom)
+            || Self::is_eval_identifier(token, token_atom)
+        {
             // Static Semantics: Early Errors
             // https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors
             //
@@ -122,7 +137,7 @@ impl IdentifierEarlyErrorsContext {
             //   production is contained in strict mode code and the
             //   StringValue of Identifier is "arguments" or "eval".
             if self.is_strict()? {
-                let name = atoms.get(token.value.as_atom());
+                let name = atoms.get(token_atom);
                 let offset = token.loc.start;
                 return Err(ParseError::InvalidIdentifier(name.clone(), offset).into());
             }
@@ -130,7 +145,7 @@ impl IdentifierEarlyErrorsContext {
             return Ok(());
         }
 
-        if Self::is_yield_identifier(token) {
+        if Self::is_yield_identifier(token, token_atom) {
             // BindingIdentifier : yield
             //
             // * It is a Syntax Error if this production has a [Yield]
@@ -140,7 +155,7 @@ impl IdentifierEarlyErrorsContext {
             // return self.check_yield_common();
         }
 
-        if Self::is_await_identifier(token) {
+        if Self::is_await_identifier(token, token_atom) {
             // BindingIdentifier : await
             //
             // * It is a Syntax Error if this production has an [Await]
@@ -150,44 +165,47 @@ impl IdentifierEarlyErrorsContext {
             // return self.check_await_common();
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token, token_atom, atoms)
     }
 
     pub fn check_label_identifier<'alloc>(
         &self,
         token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
         atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
-        if Self::is_yield_identifier(token) {
-            return self.check_yield_common(token, atoms);
+        if Self::is_yield_identifier(token, token_atom) {
+            return self.check_yield_common(token, token_atom, atoms);
         }
 
-        if Self::is_await_identifier(token) {
-            return self.check_await_common(token, atoms);
+        if Self::is_await_identifier(token, token_atom) {
+            return self.check_await_common(token, token_atom, atoms);
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token, token_atom, atoms)
     }
 
     pub fn check_identifier_reference<'alloc>(
         &self,
         token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
         atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
-        if Self::is_yield_identifier(token) {
-            return self.check_yield_common(token, atoms);
+        if Self::is_yield_identifier(token, token_atom) {
+            return self.check_yield_common(token, token_atom, atoms);
         }
 
-        if Self::is_await_identifier(token) {
-            return self.check_await_common(token, atoms);
+        if Self::is_await_identifier(token, token_atom) {
+            return self.check_await_common(token, token_atom, atoms);
         }
 
-        self.check_identifier(token, atoms)
+        self.check_identifier(token, token_atom, atoms)
     }
 
     fn check_yield_common<'alloc>(
         &self,
         _token: &arena::Box<'alloc, Token>,
+        _token_atom: SourceAtomSetIndex,
         _atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
@@ -223,7 +241,7 @@ impl IdentifierEarlyErrorsContext {
         //
         // if self.is_strict()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         atoms.get(token.value.as_atom()),
+        //         atoms.get(token_atom),
         //         offset,
         //     ));
         // }
@@ -234,6 +252,7 @@ impl IdentifierEarlyErrorsContext {
     fn check_await_common<'alloc>(
         &self,
         _token: &arena::Box<'alloc, Token>,
+        _token_atom: SourceAtomSetIndex,
         _atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
         // Static Semantics: Early Errors
@@ -267,7 +286,7 @@ impl IdentifierEarlyErrorsContext {
         //
         // if self.is_module()? {
         //     return Err(ParseError::InvalidIdentifier(
-        //         atoms.get(token.value.as_atom()),
+        //         atoms.get(token_atom),
         //         offset,
         //     ));
         // }
@@ -328,11 +347,12 @@ impl IdentifierEarlyErrorsContext {
     fn check_identifier<'alloc>(
         &self,
         token: &arena::Box<'alloc, Token>,
+        token_atom: SourceAtomSetIndex,
         atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
         match token.terminal_id {
             TerminalId::NameWithEscape => {
-                let name = token.value.as_atom();
+                let name = token_atom;
                 if Self::is_contextual_keyword_excluding_yield(name) {
                     // Identifier : IdentifierName but not ReservedWord
                     //
@@ -346,7 +366,7 @@ impl IdentifierEarlyErrorsContext {
                     // NOTE: "yield" case is handled in
                     //       `check_yield_common`.
                     if self.is_strict()? {
-                        let name = atoms.get(token.value.as_atom());
+                        let name = atoms.get(token_atom);
                         let offset = token.loc.start;
                         return Err(ParseError::InvalidIdentifier(name, offset).into());
                     }
@@ -357,7 +377,7 @@ impl IdentifierEarlyErrorsContext {
                     //   IdentifierName is the same String value as the
                     //   StringValue of any ReservedWord except for yield
                     //   or await.
-                    let name = atoms.get(token.value.as_atom());
+                    let name = atoms.get(token_atom);
                     let offset = token.loc.start;
                     return Err(ParseError::InvalidIdentifier(name, offset).into());
                 }
@@ -379,7 +399,7 @@ impl IdentifierEarlyErrorsContext {
                 //
                 // NOTE: "yield" case is handled in `check_yield_common`.
                 if self.is_strict()? {
-                    let name = atoms.get(token.value.as_atom());
+                    let name = atoms.get(token_atom);
                     let offset = token.loc.start;
                     return Err(ParseError::InvalidIdentifier(name, offset).into());
                 }

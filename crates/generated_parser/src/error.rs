@@ -18,7 +18,7 @@ pub enum ParseError<'alloc> {
 
     // Generic syntax errors
     NotImplemented(&'static str),
-    SyntaxError(Token),
+    SyntaxError(Token<'alloc>),
     UnexpectedEnd,
     InvalidAssignmentTarget,
     InvalidParameter,
