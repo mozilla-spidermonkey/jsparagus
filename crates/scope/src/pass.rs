@@ -196,7 +196,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         // FIXME: Call self.builder.on_function_name
 
         self.enter_getter(ast);
-        self.visit_property_name(&ast.property_name);
+        self.visit_class_element_name(&ast.property_name);
 
         // FIXME: Pass something that points `()` part of getter.
         self.builder.on_getter_parameter(ast);
@@ -214,7 +214,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         // FIXME: Call self.builder.on_function_name
 
         self.enter_setter(ast);
-        self.visit_property_name(&ast.property_name);
+        self.visit_class_element_name(&ast.property_name);
 
         // FIXME: Pass something that points `(param)` part of setter,
         // including `(` and `)`.
