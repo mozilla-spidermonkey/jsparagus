@@ -88,7 +88,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
     let mut stack = Vec::new();
     let mut rval = JSValue::Undefined;
 
-    let script = &result.top_level_script;
+    let script = &result.scripts[0];
     let script_data_index: usize = script
         .immutable_script_data
         .expect("Top level scropt should have ImmutableScriptData")
