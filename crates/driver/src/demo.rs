@@ -160,25 +160,15 @@ fn handle_script<'alloc>(
             }
 
             if verbosity.bytecode {
-                let script_data_index: usize = result
-                    .top_level_script
-                    .immutable_script_data
-                    .expect("Top level script should have ImmutableScriptData")
-                    .into();
-                let script_data = &result.script_data_list[script_data_index];
-                println!("\n# Bytecode\n{}", emitter::dis(&script_data.bytecode));
-            }
-
-            for (i, fun) in result.functions.iter().enumerate() {
-                if verbosity.bytecode {
-                    if fun.is_non_lazy_function() {
-                        let script_data_index: usize = fun
+                for (i, script) in result.scripts.iter().enumerate() {
+                    if !script.is_function() || script.is_non_lazy_function() {
+                        let script_data_index: usize = script
                             .immutable_script_data
-                            .expect("Non-lazy function should have ImmutableScriptData")
+                            .expect("Non-lazy script should have ImmutableScriptData")
                             .into();
                         let script_data = &result.script_data_list[script_data_index];
                         println!(
-                            "\n# bytecode for functions[{}]\n{}",
+                            "\n# bytecode for script[{}]\n{}",
                             i,
                             emitter::dis(&script_data.bytecode)
                         );
