@@ -111,7 +111,6 @@ macro_rules! for_all_common_atoms {
             ("while", while_, While),
             ("with", with, With),
             ("yield", yield_, Yield),
-            ("use strict", use_strict, UseStrict),
             ("__proto__", __proto__, Proto),
         );
     }

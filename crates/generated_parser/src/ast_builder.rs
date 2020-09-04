@@ -766,8 +766,9 @@ impl<'alloc> AstBuilder<'alloc> {
         let loc = token.loc;
         // Hack: Prevent emission for scripts with "use strict"
         // directive.
-        let value = token.value.as_atom();
-        if value == CommonSourceAtomSetIndices::use_strict() {
+        let value = token.value.as_slice();
+        let slice = self.slices.borrow().get(value);
+        if slice == "use strict" {
             return Err(ParseError::NotImplemented("use strict directive").into());
         }
 
@@ -1050,7 +1051,10 @@ impl<'alloc> AstBuilder<'alloc> {
         &self,
         token: arena::Box<'alloc, Token>,
     ) -> Result<'alloc, arena::Box<'alloc, PropertyName<'alloc>>> {
-        let value = token.value.as_atom();
+        let name = self.slices.borrow().get(token.value.as_slice());
+
+        let value = self.atoms.borrow_mut().insert(name);
+
         if value == CommonSourceAtomSetIndices::__proto__() {
             return Err(ParseError::NotImplemented("__proto__ as property name").into());
         }

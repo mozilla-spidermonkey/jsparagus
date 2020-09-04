@@ -2,6 +2,7 @@ use crate::regexp::RegExpIndex;
 use crate::scope::ScopeIndex;
 use crate::script::ScriptStencilIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
+use ast::source_slice_list::SourceSliceIndex;
 
 /// Corresponds to js::frontend::GCThingList::ListType
 /// in m-c/js/src/frontend/BytecodeSection.h.
@@ -9,6 +10,7 @@ use ast::source_atom_set::SourceAtomSetIndex;
 pub enum GCThing {
     Null,
     Atom(SourceAtomSetIndex),
+    Slice(SourceSliceIndex),
     Function(ScriptStencilIndex),
     RegExp(RegExpIndex),
     Scope(ScopeIndex),
@@ -48,6 +50,12 @@ impl GCThingList {
     pub fn push_atom(&mut self, atom_index: SourceAtomSetIndex) -> GCThingIndex {
         let index = self.things.len();
         self.things.push(GCThing::Atom(atom_index));
+        GCThingIndex::new(index)
+    }
+
+    pub fn push_slice(&mut self, slice_index: SourceSliceIndex) -> GCThingIndex {
+        let index = self.things.len();
+        self.things.push(GCThing::Slice(slice_index));
         GCThingIndex::new(index)
     }
 

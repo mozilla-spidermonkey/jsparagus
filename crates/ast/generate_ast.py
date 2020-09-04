@@ -429,7 +429,6 @@ def pass_(ast):
         write(0, "#![allow(dead_code)]")
         write(0, "")
         write(0, "use crate::arena;")
-        write(0, "use crate::source_atom_set::SourceAtomSetIndex;")
         write(0, "use crate::source_slice_list::SourceSliceIndex;")
         write(0, "use crate::types::*;")
         write(0, "")
