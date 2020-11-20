@@ -147,9 +147,6 @@ pub struct InstructionWriter {
 
     /// Number of JOF_IC instructions emitted so far.
     num_ic_entries: usize,
-
-    /// Number of instructions in this script that have JOF_TYPESET.
-    num_type_sets: usize,
 }
 
 #[derive(Debug)]
@@ -194,7 +191,6 @@ impl InstructionWriter {
             maximum_stack_depth: 0,
             body_scope_index: None,
             num_ic_entries: 0,
-            num_type_sets: 0,
         }
     }
 
@@ -302,10 +298,6 @@ impl InstructionWriter {
         }
 
         self.bytecode.push(opcode.to_byte());
-
-        if opcode.has_typeset() {
-            self.num_type_sets += 1;
-        }
     }
 
     fn set_last_jump_target_offset(&mut self, target: BytecodeOffset) {
@@ -1503,7 +1495,6 @@ impl InstructionWriter {
                 .map_err(|_| EmitError::NotImplemented("Throwing allocation overflow"))?,
             num_ic_entries: self.num_ic_entries.try_into().unwrap(),
             fun_length: 0,
-            num_bytecode_type_sets: self.num_type_sets.try_into().unwrap(),
 
             bytecode: self.bytecode,
             scope_notes: self.scope_notes.into(),
