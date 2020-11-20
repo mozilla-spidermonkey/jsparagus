@@ -222,11 +222,7 @@ macro_rules! using_opcode_database {
                 (EnterWith, enter_with, NULL, 5, 1, 0, JOF_SCOPE),
                 (LeaveWith, leave_with, NULL, 1, 0, 0, JOF_BYTE),
                 (BindVar, bind_var, NULL, 1, 0, 1, JOF_BYTE),
-                (DefVar, def_var, NULL, 5, 0, 0, JOF_ATOM),
-                (DefFun, def_fun, NULL, 1, 1, 0, JOF_BYTE),
-                (DefLet, def_let, NULL, 5, 0, 0, JOF_ATOM),
-                (DefConst, def_const, NULL, 5, 0, 0, JOF_ATOM),
-                (CheckGlobalOrEvalDecl, check_global_or_eval_decl, NULL, 1, 0, 0, JOF_BYTE),
+                (GlobalOrEvalDeclInstantiation, global_or_eval_decl_instantiation, NULL, 5, 0, 0, JOF_GCTHING),
                 (DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY),
                 (Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE),
                 (Rest, rest, NULL, 1, 0, 1, JOF_BYTE|JOF_IC),
@@ -325,74 +321,77 @@ const JOF_LOCAL: u32 = 12;
 /// yield, await, or gosub resume index
 const JOF_RESUMEINDEX: u32 = 13;
 
+/// inline DoubleValue
+const JOF_DOUBLE: u32 = 14;
+
+/// uint32_t generic gc-thing index
+const JOF_GCTHING: u32 = 15;
+
 /// uint32_t constant index
-const JOF_ATOM: u32 = 14;
+const JOF_ATOM: u32 = 16;
 
 /// uint32_t object index
-const JOF_OBJECT: u32 = 15;
+const JOF_OBJECT: u32 = 17;
 
 /// uint32_t regexp index
-const JOF_REGEXP: u32 = 16;
-
-/// inline DoubleValue
-const JOF_DOUBLE: u32 = 17;
+const JOF_REGEXP: u32 = 18;
 
 /// uint32_t scope index
-const JOF_SCOPE: u32 = 18;
-
-/// uint32_t IC index
-const JOF_ICINDEX: u32 = 19;
-
-/// JSOp::LoopHead, combines JOF_ICINDEX and JOF_UINT8
-const JOF_LOOPHEAD: u32 = 20;
+const JOF_SCOPE: u32 = 19;
 
 /// uint32_t index for BigInt value
-const JOF_BIGINT: u32 = 21;
+const JOF_BIGINT: u32 = 20;
+
+/// uint32_t IC index
+const JOF_ICINDEX: u32 = 21;
+
+/// JSOp::LoopHead, combines JOF_ICINDEX and JOF_UINT8
+const JOF_LOOPHEAD: u32 = 22;
 
 /// uint32_t atom index, sourceStart, sourceEnd
-const JOF_CLASS_CTOR: u32 = 22;
+const JOF_CLASS_CTOR: u32 = 23;
 
 /// A pair of unspecified uint8_t arguments
-const JOF_TWO_UINT8: u32 = 23;
+const JOF_TWO_UINT8: u32 = 24;
 
 /// mask for above immediate types
-const JOF_TYPEMASK: u32 = 0x001f;
+const JOF_TYPEMASK: u32 = 0xFF;
 
 /// name operation
-const JOF_NAME: u32 = 1 << 5;
+const JOF_NAME: u32 = 1 << 8;
 
 /// obj.prop operation
-const JOF_PROP: u32 = 2 << 5;
+const JOF_PROP: u32 = 2 << 8;
 
 /// obj[index] operation
-const JOF_ELEM: u32 = 3 << 5;
+const JOF_ELEM: u32 = 3 << 8;
 
 /// property/element/name set operation
-const JOF_PROPSET: u32 = 1 << 7;
+const JOF_PROPSET: u32 = 1 << 16;
 
 /// property/element/name init operation
-const JOF_PROPINIT: u32 = 1 << 8;
+const JOF_PROPINIT: u32 = 1 << 17;
 
 /// op can only be generated in sloppy mode
-const JOF_CHECKSLOPPY: u32 = 1 << 10;
+const JOF_CHECKSLOPPY: u32 = 1 << 18;
 
 /// op can only be generated in strict mode
-const JOF_CHECKSTRICT: u32 = 1 << 11;
+const JOF_CHECKSTRICT: u32 = 1 << 19;
 
 /// any call, construct, or eval instruction
-const JOF_INVOKE: u32 = 1 << 12;
+const JOF_INVOKE: u32 = 1 << 20;
 
 /// invoke instruction using [[Construct]] entry
-const JOF_CONSTRUCT: u32 = 1 << 13;
+const JOF_CONSTRUCT: u32 = 1 << 21;
 
 /// invoke instruction using spread argument
-const JOF_SPREAD: u32 = 1 << 14;
+const JOF_SPREAD: u32 = 1 << 22;
 
 /// predicted global name
-const JOF_GNAME: u32 = 1 << 15;
+const JOF_GNAME: u32 = 1 << 23;
 
 /// baseline may use an IC for this op
-const JOF_IC: u32 = 1 << 16;
+const JOF_IC: u32 = 1 << 24;
 
 // @@@@ END FLAGS @@@@
 

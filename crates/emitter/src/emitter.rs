@@ -1255,27 +1255,9 @@ impl InstructionWriter {
         self.emit_op(Opcode::BindVar);
     }
 
-    pub fn def_var(&mut self, name_index: GCThingIndex) {
-        self.emit_op(Opcode::DefVar);
-        self.write_g_c_thing_index(name_index);
-    }
-
-    pub fn def_fun(&mut self) {
-        self.emit_op(Opcode::DefFun);
-    }
-
-    pub fn def_let(&mut self, name_index: GCThingIndex) {
-        self.emit_op(Opcode::DefLet);
-        self.write_g_c_thing_index(name_index);
-    }
-
-    pub fn def_const(&mut self, name_index: GCThingIndex) {
-        self.emit_op(Opcode::DefConst);
-        self.write_g_c_thing_index(name_index);
-    }
-
-    pub fn check_global_or_eval_decl(&mut self) {
-        self.emit_op(Opcode::CheckGlobalOrEvalDecl);
+    pub fn global_or_eval_decl_instantiation(&mut self, last_fun: u32) {
+        self.emit_op(Opcode::GlobalOrEvalDeclInstantiation);
+        self.write_u32(last_fun);
     }
 
     pub fn del_name(&mut self, name_index: GCThingIndex) {

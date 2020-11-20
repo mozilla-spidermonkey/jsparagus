@@ -251,11 +251,6 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
                 continue;
             }
 
-            Opcode::DefVar => {
-                let atom = immutable_script_data.read_atom(pc + 1, gcthings, atoms);
-                global.borrow_mut().set(atom, JSValue::Undefined);
-            }
-
             Opcode::BindGName => {
                 // TODO: proper binding
                 stack.push(JSValue::Object(global.clone()))
@@ -436,9 +431,14 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
             Opcode::Undefined => stack.push(JSValue::Undefined),
             Opcode::Null => stack.push(JSValue::Null),
 
-            Opcode::CheckGlobalOrEvalDecl => {
-                // FIXME: Port CheckGlobalOrEvalDeclarationConflicts
-                //        from js/src/vm/EnvironmentObject.cpp.
+            Opcode::GlobalOrEvalDeclInstantiation => {
+                let last_fun = immutable_script_data.read_u32(pc + 1);
+                if last_fun > 0 {
+                    return Err(EvalError::NotImplemented(format!(
+                        "function is not implemented ({:?} function(s) found)",
+                        last_fun
+                    )));
+                }
             }
 
             Opcode::Nop => {}
