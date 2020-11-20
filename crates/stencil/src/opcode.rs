@@ -80,11 +80,11 @@ macro_rules! using_opcode_database {
                 (InitHiddenPropSetter, init_hidden_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT),
                 (InitElemSetter, init_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT),
                 (InitHiddenElemSetter, init_hidden_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT),
-                (GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (CallProp, call_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
-                (CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
-                (Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
+                (GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC),
+                (CallProp, call_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC),
+                (GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC),
+                (CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC),
+                (Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC),
                 (SetProp, set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC),
                 (StrictSetProp, strict_set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC),
                 (SetElem, set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC),
@@ -96,8 +96,8 @@ macro_rules! using_opcode_database {
                 (HasOwn, has_own, NULL, 1, 2, 1, JOF_BYTE|JOF_IC),
                 (CheckPrivateField, check_private_field, NULL, 3, 2, 3, JOF_TWO_UINT8|JOF_CHECKSTRICT|JOF_IC),
                 (SuperBase, super_base, NULL, 1, 1, 1, JOF_BYTE),
-                (GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC),
-                (GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC),
+                (GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_IC),
+                (GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_IC),
                 (SetPropSuper, set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY),
                 (StrictSetPropSuper, strict_set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT),
                 (SetElemSuper, set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY),
@@ -126,25 +126,25 @@ macro_rules! using_opcode_database {
                 (ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR),
                 (DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR),
                 (BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8),
-                (Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (FunApply, fun_apply, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (FunCall, fun_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC),
-                (SpreadCall, spread_call, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_IC),
+                (Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
+                (CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
+                (FunApply, fun_apply, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
+                (FunCall, fun_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
+                (CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
+                (SpreadCall, spread_call, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_IC),
                 (OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE|JOF_IC),
-                (Eval, eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
-                (SpreadEval, spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC),
-                (StrictEval, strict_eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
-                (StrictSpreadEval, strict_spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC),
+                (Eval, eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CHECKSLOPPY|JOF_IC),
+                (SpreadEval, spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_CHECKSLOPPY|JOF_IC),
+                (StrictEval, strict_eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CHECKSTRICT|JOF_IC),
+                (StrictSpreadEval, strict_spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_CHECKSTRICT|JOF_IC),
                 (ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM),
                 (GImplicitThis, g_implicit_this, "", 5, 0, 1, JOF_ATOM),
                 (CallSiteObj, call_site_obj, NULL, 5, 0, 1, JOF_OBJECT),
                 (IsConstructing, is_constructing, NULL, 1, 0, 1, JOF_BYTE),
-                (New, new_, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC),
-                (SuperCall, super_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC),
-                (SpreadNew, spread_new, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC),
-                (SpreadSuperCall, spread_super_call, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC),
+                (New, new_, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_IC),
+                (SuperCall, super_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_IC),
+                (SpreadNew, spread_new, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_IC),
+                (SpreadSuperCall, spread_super_call, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_IC),
                 (SuperFun, super_fun, NULL, 1, 1, 1, JOF_BYTE),
                 (CheckThisReinit, check_this_reinit, NULL, 1, 1, 1, JOF_BYTE),
                 (Generator, generator, NULL, 1, 0, 1, JOF_BYTE),
@@ -195,14 +195,14 @@ macro_rules! using_opcode_database {
                 (CheckThis, check_this, NULL, 1, 1, 1, JOF_BYTE),
                 (BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC),
                 (BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
-                (GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_GNAME|JOF_IC),
+                (GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
+                (GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC),
                 (GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME),
                 (GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME),
-                (GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
-                (GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC),
+                (GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME),
+                (GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME),
+                (GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_IC),
+                (GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
                 (Callee, callee, NULL, 1, 0, 1, JOF_BYTE),
                 (EnvCallee, env_callee, NULL, 2, 0, 1, JOF_UINT8),
                 (SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC),
@@ -229,7 +229,7 @@ macro_rules! using_opcode_database {
                 (CheckGlobalOrEvalDecl, check_global_or_eval_decl, NULL, 1, 0, 0, JOF_BYTE),
                 (DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY),
                 (Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE),
-                (Rest, rest, NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC),
+                (Rest, rest, NULL, 1, 0, 1, JOF_BYTE|JOF_IC),
                 (FunctionThis, function_this, NULL, 1, 0, 1, JOF_BYTE),
                 (Pop, pop, NULL, 1, 1, 0, JOF_BYTE),
                 (PopN, pop_n, NULL, 3, -1, 0, JOF_UINT16),
@@ -391,11 +391,8 @@ const JOF_SPREAD: u32 = 1 << 14;
 /// predicted global name
 const JOF_GNAME: u32 = 1 << 15;
 
-/// has an entry in a script's type sets
-const JOF_TYPESET: u32 = 1 << 16;
-
 /// baseline may use an IC for this op
-const JOF_IC: u32 = 1 << 17;
+const JOF_IC: u32 = 1 << 16;
 
 // @@@@ END FLAGS @@@@
 
@@ -576,10 +573,6 @@ impl Opcode {
 
     pub fn has_argc(self) -> bool {
         self.format_bits() & JOF_TYPEMASK == JOF_ARGC
-    }
-
-    pub fn has_typeset(self) -> bool {
-        self.format_bits() & JOF_TYPESET != 0
     }
 }
 
