@@ -99,7 +99,7 @@ pub enum MutableScriptFlagsEnum {
     #[allow(dead_code)]
     FailedShapeGuard = 1 << 19,
     #[allow(dead_code)]
-    HadLICMBailout = 1 << 20,
+    HadLICMInvalidation = 1 << 20,
     #[allow(dead_code)]
     HadOverflowBailout = 1 << 21,
     #[allow(dead_code)]
