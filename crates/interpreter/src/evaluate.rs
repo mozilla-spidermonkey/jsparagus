@@ -313,7 +313,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
                 stack.push(obj);
             }
 
-            Opcode::GetProp | Opcode::CallProp => {
+            Opcode::GetProp => {
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
                 let atom = immutable_script_data.read_atom(pc + 1, gcthings, atoms);
@@ -325,7 +325,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
                 }
             }
 
-            Opcode::GetElem | Opcode::CallElem => {
+            Opcode::GetElem => {
                 let key = stack.pop().ok_or(EvalError::EmptyStack)?;
                 let obj = stack.pop().ok_or(EvalError::EmptyStack)?;
 
