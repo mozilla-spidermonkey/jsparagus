@@ -107,7 +107,7 @@ macro_rules! using_opcode_database {
                 (ToAsyncIter, to_async_iter, NULL, 1, 2, 1, JOF_BYTE),
                 (MutateProto, mutate_proto, NULL, 1, 2, 1, JOF_BYTE),
                 (NewArray, new_array, NULL, 5, 0, 1, JOF_UINT32|JOF_IC),
-                (InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_IC),
+                (InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT),
                 (InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC),
                 (Hole, hole, NULL, 1, 0, 1, JOF_BYTE),
                 (RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP),
