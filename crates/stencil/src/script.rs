@@ -91,25 +91,27 @@ pub enum MutableScriptFlagsEnum {
     #[allow(dead_code)]
     SpewEnabled = 1 << 15,
     #[allow(dead_code)]
-    BaselineDisabled = 1 << 16,
+    NeedsFinalWarmUpCount = 1 << 16,
     #[allow(dead_code)]
-    IonDisabled = 1 << 17,
+    BaselineDisabled = 1 << 17,
     #[allow(dead_code)]
-    FailedBoundsCheck = 1 << 18,
+    IonDisabled = 1 << 18,
     #[allow(dead_code)]
-    FailedShapeGuard = 1 << 19,
+    FailedBoundsCheck = 1 << 19,
     #[allow(dead_code)]
-    HadLICMInvalidation = 1 << 20,
+    FailedShapeGuard = 1 << 20,
     #[allow(dead_code)]
-    HadEagerTruncationBailout = 1 << 21,
+    HadLICMInvalidation = 1 << 21,
     #[allow(dead_code)]
-    Uninlineable = 1 << 22,
+    HadEagerTruncationBailout = 1 << 22,
     #[allow(dead_code)]
-    InvalidatedIdempotentCache = 1 << 23,
+    Uninlineable = 1 << 23,
     #[allow(dead_code)]
-    FailedLexicalCheck = 1 << 24,
+    InvalidatedIdempotentCache = 1 << 24,
     #[allow(dead_code)]
-    HadSpeculativePhiBailout = 1 << 25,
+    FailedLexicalCheck = 1 << 25,
+    #[allow(dead_code)]
+    HadSpeculativePhiBailout = 1 << 26,
 }
 
 // @@@@ END TYPES @@@@
