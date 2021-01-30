@@ -57,19 +57,21 @@ pub enum ImmutableScriptFlagsEnum {
     #[allow(dead_code)]
     IsFieldInitializer = 1 << 20,
     #[allow(dead_code)]
-    HasRest = 1 << 21,
+    UseMemberInitializers = 1 << 21,
     #[allow(dead_code)]
-    NeedsFunctionEnvironmentObjects = 1 << 22,
+    HasRest = 1 << 22,
     #[allow(dead_code)]
-    FunctionHasExtraBodyVarScope = 1 << 23,
+    NeedsFunctionEnvironmentObjects = 1 << 23,
     #[allow(dead_code)]
-    ShouldDeclareArguments = 1 << 24,
+    FunctionHasExtraBodyVarScope = 1 << 24,
     #[allow(dead_code)]
-    ArgumentsHasVarBinding = 1 << 25,
+    ShouldDeclareArguments = 1 << 25,
     #[allow(dead_code)]
-    AlwaysNeedsArgsObj = 1 << 26,
+    ArgumentsHasVarBinding = 1 << 26,
     #[allow(dead_code)]
-    HasMappedArgsObj = 1 << 27,
+    AlwaysNeedsArgsObj = 1 << 27,
+    #[allow(dead_code)]
+    HasMappedArgsObj = 1 << 28,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -112,6 +114,10 @@ pub enum MutableScriptFlagsEnum {
     FailedLexicalCheck = 1 << 25,
     #[allow(dead_code)]
     HadSpeculativePhiBailout = 1 << 26,
+    #[allow(dead_code)]
+    HadUnboxFoldingBailout = 1 << 27,
+    #[allow(dead_code)]
+    IsInlinableLargeFunction = 1 << 28,
 }
 
 // @@@@ END TYPES @@@@
