@@ -52,7 +52,7 @@ trait Jump {
                 emitter.emit.and_(placeholder_offset);
             }
             JumpKind::IfEq { .. } => {
-                emitter.emit.if_eq(placeholder_offset);
+                emitter.emit.jump_if_false(placeholder_offset);
             }
             JumpKind::Goto { .. } => {
                 emitter.emit.goto_(placeholder_offset);

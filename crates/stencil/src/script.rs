@@ -55,7 +55,7 @@ pub enum ImmutableScriptFlagsEnum {
     #[allow(dead_code)]
     IsDerivedClassConstructor = 1 << 19,
     #[allow(dead_code)]
-    IsFieldInitializer = 1 << 20,
+    IsSyntheticFunction = 1 << 20,
     #[allow(dead_code)]
     UseMemberInitializers = 1 << 21,
     #[allow(dead_code)]

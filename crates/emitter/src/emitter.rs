@@ -764,20 +764,6 @@ impl InstructionWriter {
         self.write_g_c_thing_index(func_index);
     }
 
-    pub fn class_constructor(&mut self, name_index: u32, source_start: u32, source_end: u32) {
-        self.emit_op(Opcode::ClassConstructor);
-        self.write_u32(name_index);
-        self.write_u32(source_start);
-        self.write_u32(source_end);
-    }
-
-    pub fn derived_constructor(&mut self, name_index: u32, source_start: u32, source_end: u32) {
-        self.emit_op(Opcode::DerivedConstructor);
-        self.write_u32(name_index);
-        self.write_u32(source_start);
-        self.write_u32(source_end);
-    }
-
     pub fn builtin_object(&mut self, kind: u8) {
         self.emit_op(Opcode::BuiltinObject);
         self.write_u8(kind);
@@ -957,13 +943,13 @@ impl InstructionWriter {
         self.write_bytecode_offset_diff(offset);
     }
 
-    pub fn if_eq(&mut self, forward_offset: BytecodeOffsetDiff) {
-        self.emit_op(Opcode::IfEq);
+    pub fn jump_if_false(&mut self, forward_offset: BytecodeOffsetDiff) {
+        self.emit_op(Opcode::JumpIfFalse);
         self.write_bytecode_offset_diff(forward_offset);
     }
 
-    pub fn if_ne(&mut self, offset: BytecodeOffsetDiff) {
-        self.emit_op(Opcode::IfNe);
+    pub fn jump_if_true(&mut self, offset: BytecodeOffsetDiff) {
+        self.emit_op(Opcode::JumpIfTrue);
         self.write_bytecode_offset_diff(offset);
     }
 
