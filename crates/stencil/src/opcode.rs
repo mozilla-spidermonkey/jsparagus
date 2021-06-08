@@ -193,6 +193,7 @@ macro_rules! using_opcode_database {
                 (GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME),
                 (GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME),
                 (GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME),
+                (GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD|JOF_NAME),
                 (GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME),
                 (GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_IC),
                 (GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC),
@@ -234,9 +235,6 @@ macro_rules! using_opcode_database {
                 (NopDestructuring, nop_destructuring, NULL, 1, 0, 0, JOF_BYTE),
                 (ForceInterpreter, force_interpreter, NULL, 1, 0, 0, JOF_BYTE),
                 (DebugCheckSelfHosted, debug_check_self_hosted, NULL, 1, 1, 1, JOF_BYTE),
-                (InstrumentationActive, instrumentation_active, NULL, 1, 0, 1, JOF_BYTE),
-                (InstrumentationCallback, instrumentation_callback, NULL, 1, 0, 1, JOF_BYTE),
-                (InstrumentationScriptId, instrumentation_script_id, NULL, 1, 0, 1, JOF_BYTE),
                 (Debugger, debugger, NULL, 1, 0, 0, JOF_BYTE),
                 // @@@@ END OPCODES @@@@
             ]
@@ -344,6 +342,9 @@ const JOF_LOOPHEAD: u32 = 22;
 
 /// A pair of unspecified uint8_t arguments
 const JOF_TWO_UINT8: u32 = 23;
+
+/// An embedded ScopeCoordinate immediate that may traverse DebugEnvironmentProxies
+const JOF_DEBUGCOORD: u32 = 24;
 
 /// mask for above immediate types
 const JOF_TYPEMASK: u32 = 0xFF;
