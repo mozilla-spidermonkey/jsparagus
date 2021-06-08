@@ -1114,6 +1114,12 @@ impl InstructionWriter {
         self.write_u24(slot);
     }
 
+    pub fn get_aliased_debug_var(&mut self, hops: u8, slot: u24) {
+        self.emit_op(Opcode::GetAliasedDebugVar);
+        self.write_u8(hops);
+        self.write_u24(slot);
+    }
+
     pub fn get_import(&mut self, name_index: GCThingIndex) {
         self.emit_op(Opcode::GetImport);
         self.write_g_c_thing_index(name_index);
@@ -1300,18 +1306,6 @@ impl InstructionWriter {
 
     pub fn debug_check_self_hosted(&mut self) {
         self.emit_op(Opcode::DebugCheckSelfHosted);
-    }
-
-    pub fn instrumentation_active(&mut self) {
-        self.emit_op(Opcode::InstrumentationActive);
-    }
-
-    pub fn instrumentation_callback(&mut self) {
-        self.emit_op(Opcode::InstrumentationCallback);
-    }
-
-    pub fn instrumentation_script_id(&mut self) {
-        self.emit_op(Opcode::InstrumentationScriptId);
     }
 
     pub fn debugger(&mut self) {
