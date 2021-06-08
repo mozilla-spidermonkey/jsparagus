@@ -55,7 +55,7 @@ pub enum ImmutableScriptFlagsEnum {
     #[allow(dead_code)]
     IsDerivedClassConstructor = 1 << 19,
     #[allow(dead_code)]
-    IsFieldInitializer = 1 << 20,
+    IsSyntheticFunction = 1 << 20,
     #[allow(dead_code)]
     UseMemberInitializers = 1 << 21,
     #[allow(dead_code)]
@@ -99,25 +99,23 @@ pub enum MutableScriptFlagsEnum {
     #[allow(dead_code)]
     IonDisabled = 1 << 18,
     #[allow(dead_code)]
-    FailedBoundsCheck = 1 << 19,
+    Uninlineable = 1 << 19,
     #[allow(dead_code)]
-    FailedShapeGuard = 1 << 20,
+    IsInlinableLargeFunction = 1 << 20,
     #[allow(dead_code)]
-    HadLICMInvalidation = 1 << 21,
+    FailedBoundsCheck = 1 << 21,
     #[allow(dead_code)]
-    HadEagerTruncationBailout = 1 << 22,
+    HadLICMInvalidation = 1 << 22,
     #[allow(dead_code)]
-    Uninlineable = 1 << 23,
+    HadReorderingBailout = 1 << 23,
     #[allow(dead_code)]
-    InvalidatedIdempotentCache = 1 << 24,
+    HadEagerTruncationBailout = 1 << 24,
     #[allow(dead_code)]
     FailedLexicalCheck = 1 << 25,
     #[allow(dead_code)]
     HadSpeculativePhiBailout = 1 << 26,
     #[allow(dead_code)]
     HadUnboxFoldingBailout = 1 << 27,
-    #[allow(dead_code)]
-    IsInlinableLargeFunction = 1 << 28,
 }
 
 // @@@@ END TYPES @@@@
