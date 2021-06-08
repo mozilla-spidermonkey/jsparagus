@@ -101,7 +101,7 @@ pub enum MutableScriptFlagsEnum {
     #[allow(dead_code)]
     HadLICMInvalidation = 1 << 20,
     #[allow(dead_code)]
-    HadOverflowBailout = 1 << 21,
+    HadEagerTruncationBailout = 1 << 21,
     #[allow(dead_code)]
     Uninlineable = 1 << 22,
     #[allow(dead_code)]
