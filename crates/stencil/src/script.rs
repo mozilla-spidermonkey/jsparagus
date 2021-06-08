@@ -72,6 +72,8 @@ pub enum ImmutableScriptFlagsEnum {
     AlwaysNeedsArgsObj = 1 << 27,
     #[allow(dead_code)]
     HasMappedArgsObj = 1 << 28,
+    #[allow(dead_code)]
+    IsInlinableLargeFunction = 1 << 29,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -100,8 +102,6 @@ pub enum MutableScriptFlagsEnum {
     IonDisabled = 1 << 18,
     #[allow(dead_code)]
     Uninlineable = 1 << 19,
-    #[allow(dead_code)]
-    IsInlinableLargeFunction = 1 << 20,
     #[allow(dead_code)]
     FailedBoundsCheck = 1 << 21,
     #[allow(dead_code)]

@@ -211,6 +211,7 @@ macro_rules! using_opcode_database {
                 (DebugLeaveLexicalEnv, debug_leave_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
                 (RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
                 (FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE),
+                (PushClassBodyEnv, push_class_body_env, NULL, 5, 0, 0, JOF_SCOPE),
                 (PushVarEnv, push_var_env, NULL, 5, 0, 0, JOF_SCOPE),
                 (EnterWith, enter_with, NULL, 5, 1, 0, JOF_SCOPE),
                 (LeaveWith, leave_with, NULL, 1, 0, 0, JOF_BYTE),

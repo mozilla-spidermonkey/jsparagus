@@ -65,6 +65,7 @@ pub enum ThrowMsgKind {
     PrivateDoubleInit = 3,
     MissingPrivateOnGet = 4,
     MissingPrivateOnSet = 5,
+    AssignToPrivateMethod = 6,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1197,6 +1198,11 @@ impl InstructionWriter {
 
     pub fn freshen_lexical_env(&mut self) {
         self.emit_op(Opcode::FreshenLexicalEnv);
+    }
+
+    pub fn push_class_body_env(&mut self, lexical_scope_index: GCThingIndex) {
+        self.emit_op(Opcode::PushClassBodyEnv);
+        self.write_g_c_thing_index(lexical_scope_index);
     }
 
     pub fn push_var_env(&mut self, scope_index: GCThingIndex) {

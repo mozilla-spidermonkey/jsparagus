@@ -123,6 +123,7 @@
  * -   `regexpIndex` (`JOF_REGEXP`): `RegExpObject*`
  * -   `scopeIndex` (`JOF_SCOPE`): `Scope*`
  * -   `lexicalScopeIndex` (`JOF_SCOPE`): `LexicalScope*`
+ * -   `classBodyScopeIndex` (`JOF_SCOPE`): `ClassBodyScope*`
  * -   `withScopeIndex` (`JOF_SCOPE`): `WithScope*`
  * -   `bigIntIndex` (`JOF_BIGINT`): `BigInt*`
  *
@@ -3055,7 +3056,7 @@
      * Push a lexical environment onto the environment chain.
      *
      * The `LexicalScope` indicated by `lexicalScopeIndex` determines the shape
-     * of the new `LexicalEnvironmentObject`. All bindings in the new
+     * of the new `BlockLexicalEnvironmentObject`. All bindings in the new
      * environment are marked as uninitialized.
      *
      * Implements: [Evaluation of *Block*][1], steps 1-4.
@@ -3063,7 +3064,8 @@
      * #### Fine print for environment chain instructions
      *
      * The following rules for `JSOp::{Push,Pop}LexicalEnv` also apply to
-     * `JSOp::PushVarEnv` and `JSOp::{Enter,Leave}With`.
+     * `JSOp::PushClassBodyEnv`, `JSOp::PushVarEnv`, and
+     * `JSOp::{Enter,Leave}With`.
      *
      * Each `JSOp::PopLexicalEnv` instruction matches a particular
      * `JSOp::PushLexicalEnv` instruction in the same script and must have the
@@ -3095,7 +3097,7 @@
      */ \
     MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     /*
-     * Pop a lexical environment from the environment chain.
+     * Pop a lexical or class-body environment from the environment chain.
      *
      * See `JSOp::PushLexicalEnv` for the fine print.
      *
@@ -3114,9 +3116,9 @@
      * debugger still needs to be notified when control exits a scope; that's
      * what this instruction does.
      *
-     * The last instruction in a lexical scope, as indicated by scope notes,
-     * must be either this instruction (if the scope is optimized) or
-     * `JSOp::PopLexicalEnv` (if not).
+     * The last instruction in a lexical or class-body scope, as indicated by
+     * scope notes, must be either this instruction (if the scope is optimized)
+     * or `JSOp::PopLexicalEnv` (if not).
      *
      *   Category: Variables and scopes
      *   Type: Entering and leaving environments
@@ -3125,12 +3127,12 @@
      */ \
     MACRO(DebugLeaveLexicalEnv, debug_leave_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
     /*
-     * Recreate the current block on the environment chain with a fresh block
+     * Replace the current block on the environment chain with a fresh block
      * with uninitialized bindings. This implements the behavior of inducing a
      * fresh lexical environment for every iteration of a for-in/of loop whose
-     * loop-head has a (captured) lexical declaration.
+     * loop-head declares lexical variables that may be captured.
      *
-     * The current environment must be a LexicalEnvironmentObject.
+     * The current environment must be a BlockLexicalEnvironmentObject.
      *
      *   Category: Variables and scopes
      *   Type: Entering and leaving environments
@@ -3139,13 +3141,9 @@
      */ \
     MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
     /*
-     * Replace the current block on the environment chain with a fresh block
-     * that copies all the bindings in the block. This implements the behavior
-     * of inducing a fresh lexical environment for every iteration of a
-     * `for(let ...; ...; ...)` loop, if any declarations induced by such a
-     * loop are captured within the loop.
-     *
-     * The current environment must be a LexicalEnvironmentObject.
+     * Like `JSOp::RecreateLexicalEnv`, but the values of all the bindings are
+     * copied from the old block to the new one. This is used for C-style
+     * `for(let ...; ...; ...)` loops.
      *
      *   Category: Variables and scopes
      *   Type: Entering and leaving environments
@@ -3154,12 +3152,27 @@
      */ \
     MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
     /*
+     * Push a ClassBody environment onto the environment chain.
+     *
+     * Like `JSOp::PushLexicalEnv`, but pushes a `ClassBodyEnvironmentObject`
+     * rather than a `BlockLexicalEnvironmentObject`.  `JSOp::PopLexicalEnv` is
+     * used to pop class-body environments as well as lexical environments.
+     *
+     * See `JSOp::PushLexicalEnv` for the fine print.
+     *
+     *   Category: Variables and scopes
+     *   Type: Entering and leaving environments
+     *   Operands: uint32_t lexicalScopeIndex
+     *   Stack: =>
+     */ \
+    MACRO(PushClassBodyEnv, push_class_body_env, NULL, 5, 0, 0, JOF_SCOPE) \
+    /*
      * Push a var environment onto the environment chain.
      *
      * Like `JSOp::PushLexicalEnv`, but pushes a `VarEnvironmentObject` rather
-     * than a `LexicalEnvironmentObject`. The difference is that non-strict
-     * direct `eval` can add bindings to a var environment; see `VarScope` in
-     * Scope.h.
+     * than a `BlockLexicalEnvironmentObject`. The difference is that
+     * non-strict direct `eval` can add bindings to a var environment; see
+     * `VarScope` in Scope.h.
      *
      * See `JSOp::PushLexicalEnv` for the fine print.
      *
@@ -3538,7 +3551,6 @@
  * a power of two.  Use this macro to do so.
  */
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(228)                                   \
   MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
