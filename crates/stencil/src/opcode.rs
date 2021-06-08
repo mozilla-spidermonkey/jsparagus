@@ -150,15 +150,16 @@ macro_rules! using_opcode_database {
                 (AsyncAwait, async_await, NULL, 1, 2, 1, JOF_BYTE),
                 (AsyncResolve, async_resolve, NULL, 2, 2, 1, JOF_UINT8),
                 (Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX),
-                (TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE),
+                (CanSkipAwait, can_skip_await, NULL, 1, 1, 2, JOF_BYTE),
+                (MaybeExtractAwaitValue, maybe_extract_await_value, NULL, 1, 2, 2, JOF_BYTE),
                 (ResumeKind, resume_kind, NULL, 2, 0, 1, JOF_UINT8),
                 (CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE),
                 (Resume, resume, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE),
                 (JumpTarget, jump_target, NULL, 5, 0, 0, JOF_ICINDEX),
                 (LoopHead, loop_head, NULL, 6, 0, 0, JOF_LOOPHEAD),
                 (Goto, goto_, NULL, 5, 0, 0, JOF_JUMP),
-                (IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
-                (IfNe, if_ne, NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
+                (JumpIfFalse, jump_if_false, NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
+                (JumpIfTrue, jump_if_true, NULL, 5, 1, 0, JOF_JUMP|JOF_IC),
                 (And, and_, NULL, 5, 1, 1, JOF_JUMP|JOF_IC),
                 (Or, or_, NULL, 5, 1, 1, JOF_JUMP|JOF_IC),
                 (Coalesce, coalesce, NULL, 5, 1, 1, JOF_JUMP),
@@ -446,8 +447,8 @@ impl Opcode {
 
     pub fn is_jump(self) -> bool {
         self == Opcode::Goto
-            || self == Opcode::IfEq
-            || self == Opcode::IfNe
+            || self == Opcode::JumpIfFalse
+            || self == Opcode::JumpIfTrue
             || self == Opcode::Or
             || self == Opcode::And
             || self == Opcode::Coalesce

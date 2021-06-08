@@ -2158,22 +2158,37 @@
      */ \
     MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
     /*
-     * Decide whether awaiting 'value' can be skipped.
+     * Test if the re-entry to the microtask loop may be skipped.
      *
      * This is part of an optimization for `await` expressions. Programs very
      * often await values that aren't promises, or promises that are already
      * resolved. We can then sometimes skip suspending the current frame and
      * returning to the microtask loop. If the circumstances permit the
-     * optimization, `TrySkipAwait` replaces `value` with the result of the
-     * `await` expression (unwrapping the resolved promise, if any) and pushes
-     * `true`. Otherwise, it leaves `value` unchanged and pushes 'false'.
+     * optimization, `CanSkipAwait` pushes true if the optimization is allowed,
+     * and false otherwise.
      *
      *   Category: Functions
      *   Type: Generators and async functions
      *   Operands:
-     *   Stack: value => value_or_resolved, can_skip
+     *   Stack: value => value, can_skip
      */ \
-    MACRO(TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
+    MACRO(CanSkipAwait, can_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
+    /*
+     * Potentially extract an awaited value, if the await is skippable
+     *
+     * If re-entering the microtask loop is skippable (as checked by CanSkipAwait)
+     * if can_skip is true,  `MaybeExtractAwaitValue` replaces `value` with the result of the
+     * `await` expression (unwrapping the resolved promise, if any). Otherwise, value remains
+     * as is.
+     *
+     * In both cases, can_skip remains the same.
+     *
+     *   Category: Functions
+     *   Type: Generators and async functions
+     *   Operands:
+     *   Stack: value, can_skip => value_or_resolved, can_skip
+     */ \
+    MACRO(MaybeExtractAwaitValue, maybe_extract_await_value, NULL, 1, 2, 2, JOF_BYTE) \
     /*
      * Pushes one of the GeneratorResumeKind values as Int32Value.
      *
@@ -2271,7 +2286,7 @@
      *   Operands: int32_t forwardOffset
      *   Stack: cond =>
      */ \
-    MACRO(IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    MACRO(JumpIfFalse, jump_if_false, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     /*
      * If ToBoolean(`cond`) is true, jump to a 32-bit offset from the current
      * instruction.
@@ -2284,7 +2299,7 @@
      *   Operands: int32_t offset
      *   Stack: cond =>
      */ \
-    MACRO(IfNe, if_ne, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    MACRO(JumpIfTrue, jump_if_true, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     /*
      * Short-circuit for logical AND.
      *
@@ -2322,8 +2337,8 @@
      */ \
     MACRO(Coalesce, coalesce, NULL, 5, 1, 1, JOF_JUMP) \
      /*
-     * Like `JSOp::IfNe` ("jump if true"), but if the branch is taken,
-     * pop and discard an additional stack value.
+     * Like `JSOp::JumpIfTrue`, but if the branch is taken, pop and discard an
+     * additional stack value.
      *
      * This is used to implement `switch` statements when the
      * `JSOp::TableSwitch` optimization is not possible. The switch statement
@@ -2349,8 +2364,8 @@
      *
      * This opcode is weird: it's the only one whose ndefs varies depending on
      * which way a conditional branch goes. We could implement switch
-     * statements using `JSOp::IfNe` and `JSOp::Pop`, but that would also be
-     * awkward--putting the `JSOp::Pop` inside the `switch` body would
+     * statements using `JSOp::JumpIfTrue` and `JSOp::Pop`, but that would also
+     * be awkward--putting the `JSOp::Pop` inside the `switch` body would
      * complicate fallthrough.
      *
      *   Category: Control flow
@@ -3564,7 +3579,6 @@
  * a power of two.  Use this macro to do so.
  */
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \

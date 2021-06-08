@@ -920,8 +920,12 @@ impl InstructionWriter {
         self.write_u24(resume_index);
     }
 
-    pub fn try_skip_await(&mut self) {
-        self.emit_op(Opcode::TrySkipAwait);
+    pub fn can_skip_await(&mut self) {
+        self.emit_op(Opcode::CanSkipAwait);
+    }
+
+    pub fn maybe_extract_await_value(&mut self) {
+        self.emit_op(Opcode::MaybeExtractAwaitValue);
     }
 
     pub fn resume_kind(&mut self, resume_kind: GeneratorResumeKind) {
@@ -953,13 +957,13 @@ impl InstructionWriter {
         self.write_bytecode_offset_diff(offset);
     }
 
-    pub fn if_eq(&mut self, forward_offset: BytecodeOffsetDiff) {
-        self.emit_op(Opcode::IfEq);
+    pub fn jump_if_false(&mut self, forward_offset: BytecodeOffsetDiff) {
+        self.emit_op(Opcode::JumpIfFalse);
         self.write_bytecode_offset_diff(forward_offset);
     }
 
-    pub fn if_ne(&mut self, offset: BytecodeOffsetDiff) {
-        self.emit_op(Opcode::IfNe);
+    pub fn jump_if_true(&mut self, offset: BytecodeOffsetDiff) {
+        self.emit_op(Opcode::JumpIfTrue);
         self.write_bytecode_offset_diff(offset);
     }
 
