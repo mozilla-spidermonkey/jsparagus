@@ -819,12 +819,18 @@
      * must fill in all slots of the new object before it is used in any other
      * way.
      *
+     * For `JSOp::NewObject`, the new object has a group based on the allocation
+     * site (or a new group if the template's group is a singleton). For
+     * `JSOp::NewObjectWithGroup`, the new object has the same group as the
+     * template object.
+     *
      *   Category: Objects
      *   Type: Creating objects
      *   Operands: uint32_t baseobjIndex
      *   Stack: => obj
      */ \
     MACRO(NewObject, new_object, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
+    MACRO(NewObjectWithGroup, new_object_with_group, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
     /*
      * Push a preconstructed object.
      *
@@ -1004,6 +1010,9 @@
      * Get the value of the property `obj.name`. This can call getters and
      * proxy traps.
      *
+     * `JSOp::CallProp` is exactly like `JSOp::GetProp` but hints to the VM that we're
+     * getting a method in order to call it.
+     *
      * Implements: [GetV][1], [GetValue][2] step 5.
      *
      * [1]: https://tc39.es/ecma262/#sec-getv
@@ -1015,8 +1024,12 @@
      *   Stack: obj => obj[name]
      */ \
     MACRO(GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
+    MACRO(CallProp, call_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
     /*
      * Get the value of the property `obj[key]`.
+     *
+     * `JSOp::CallElem` is exactly like `JSOp::GetElem` but hints to the VM that
+     * we're getting a method in order to call it.
      *
      * Implements: [GetV][1], [GetValue][2] step 5.
      *
@@ -1029,6 +1042,19 @@
      *   Stack: obj, key => obj[key]
      */ \
     MACRO(GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
+    MACRO(CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_IC) \
+    /*
+     * Push the value of `obj.length`.
+     *
+     * `nameIndex` must be the index of the atom `"length"`. This then behaves
+     * exactly like `JSOp::GetProp`.
+     *
+     *   Category: Objects
+     *   Type: Accessing properties
+     *   Operands: uint32_t nameIndex
+     *   Stack: obj => obj.length
+     */ \
+    MACRO(Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_IC) \
     /*
      * Non-strict assignment to a property, `obj.name = val`.
      *
@@ -1340,6 +1366,16 @@
      */ \
     MACRO(IsNoIter, is_no_iter, NULL, 1, 1, 2, JOF_BYTE) \
     /*
+     * No-op instruction to hint to IonBuilder that the value on top of the
+     * stack is the string key in a for-in loop.
+     *
+     *   Category: Objects
+     *   Type: Enumeration
+     *   Operands:
+     *   Stack: val => val
+     */ \
+    MACRO(IterNext, iter_next, NULL, 1, 1, 1, JOF_BYTE) \
+    /*
      * Exit a for-in loop, closing the iterator.
      *
      * `iter` must be a `PropertyIteratorObject` pushed by `JSOp::Iter`.
@@ -1432,7 +1468,7 @@
     /*
      * Initialize an array element `array[index]` with value `val`.
      *
-     * `val` may be `MagicValue(JS_ELEMENTS_HOLE)` pushed by `JSOp::Hole`.
+     * `val` may be `MagicValue(JS_ELEMENTS_HOLE)`. If it is, this does nothing.
      *
      * This never calls setters or proxy traps.
      *
@@ -1449,13 +1485,13 @@
      *   Operands: uint32_t index
      *   Stack: array, val => array
      */ \
-    MACRO(InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT) \
+    MACRO(InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     /*
      * Initialize an array element `array[index++]` with value `val`.
      *
-     * `val` may be `MagicValue(JS_ELEMENTS_HOLE)` pushed by `JSOp::Hole`. If it
-     * is, no element is defined, but the array length and the stack value
-     * `index` are still incremented.
+     * `val` may be `MagicValue(JS_ELEMENTS_HOLE)`. If it is, no element is
+     * defined, but the array length and the stack value `index` are still
+     * incremented.
      *
      * This never calls setters or proxy traps.
      *
@@ -1495,6 +1531,23 @@
      */ \
     MACRO(Hole, hole, NULL, 1, 0, 1, JOF_BYTE) \
     /*
+     * Create and push a new array that shares the elements of a template
+     * object.
+     *
+     * `script->getObject(objectIndex)` must be a copy-on-write array whose
+     * elements are all primitive values.
+     *
+     * This is an optimization. This single instruction implements an entire
+     * array literal, saving run time, code, and memory compared to
+     * `JSOp::NewArray` and a series of `JSOp::InitElem` instructions.
+     *
+     *   Category: Objects
+     *   Type: Array literals
+     *   Operands: uint32_t objectIndex
+     *   Stack: => array
+     */ \
+    MACRO(NewArrayCopyOnWrite, new_array_copy_on_write, NULL, 5, 0, 1, JOF_OBJECT) \
+    /*
      * Clone and push a new RegExp object.
      *
      * Implements: [Evaluation for *RegularExpressionLiteral*][1].
@@ -1508,9 +1561,11 @@
      */ \
     MACRO(RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP) \
     /*
-     * Push a new function object.
+     * Push a function object.
      *
-     * The new function inherits the current environment chain.
+     * This clones the function unless it's a singleton; see
+     * `CanReuseFunctionForClone`. The new function inherits the current
+     * environment chain.
      *
      * Used to create most JS functions. Notable exceptions are arrow functions
      * and derived or default class constructors.
@@ -2158,37 +2213,22 @@
      */ \
     MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
     /*
-     * Test if the re-entry to the microtask loop may be skipped.
+     * Decide whether awaiting 'value' can be skipped.
      *
      * This is part of an optimization for `await` expressions. Programs very
      * often await values that aren't promises, or promises that are already
      * resolved. We can then sometimes skip suspending the current frame and
      * returning to the microtask loop. If the circumstances permit the
-     * optimization, `CanSkipAwait` pushes true if the optimization is allowed,
-     * and false otherwise.
+     * optimization, `TrySkipAwait` replaces `value` with the result of the
+     * `await` expression (unwrapping the resolved promise, if any) and pushes
+     * `true`. Otherwise, it leaves `value` unchanged and pushes 'false'.
      *
      *   Category: Functions
      *   Type: Generators and async functions
      *   Operands:
-     *   Stack: value => value, can_skip
+     *   Stack: value => value_or_resolved, can_skip
      */ \
-    MACRO(CanSkipAwait, can_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
-    /*
-     * Potentially extract an awaited value, if the await is skippable
-     *
-     * If re-entering the microtask loop is skippable (as checked by CanSkipAwait)
-     * if can_skip is true,  `MaybeExtractAwaitValue` replaces `value` with the result of the
-     * `await` expression (unwrapping the resolved promise, if any). Otherwise, value remains
-     * as is.
-     *
-     * In both cases, can_skip remains the same.
-     *
-     *   Category: Functions
-     *   Type: Generators and async functions
-     *   Operands:
-     *   Stack: value, can_skip => value_or_resolved, can_skip
-     */ \
-    MACRO(MaybeExtractAwaitValue, maybe_extract_await_value, NULL, 1, 2, 2, JOF_BYTE) \
+    MACRO(TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
     /*
      * Pushes one of the GeneratorResumeKind values as Int32Value.
      *
@@ -3354,7 +3394,7 @@
      *
      * Example 1: `arguments[0]` is supported; therefore the interpreter's
      * implementation of `JSOp::GetElem` checks for optimized arguments (see
-     * `MaybeGetElemOptimizedArguments`).
+     * `GetElemOptimizedArguments`).
      *
      * Example 2: `f.apply(this, arguments)` is supported; therefore our
      * implementation of `Function.prototype.apply` checks for optimized
@@ -3579,11 +3619,6 @@
  * a power of two.  Use this macro to do so.
  */
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(230)                                   \
-  MACRO(231)                                   \
-  MACRO(232)                                   \
-  MACRO(233)                                   \
-  MACRO(234)                                   \
   MACRO(235)                                   \
   MACRO(236)                                   \
   MACRO(237)                                   \

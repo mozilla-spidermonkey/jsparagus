@@ -186,23 +186,19 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   // This function is a field initializer lambda for a class.
   IsFieldInitializer = 1 << 20,
 
-  // This function is a class constructor that has MemberInitializer data
-  // associated with it.
-  UseMemberInitializers = 1 << 21,
-
   // This function has a rest (`...`) parameter.
-  HasRest = 1 << 22,
+  HasRest = 1 << 21,
 
   // This function needs a call object or named lambda environment to be created
   // in order to execute the function. This is done in the Stack or JIT frame
   // setup code _before_ the bytecode prologue starts.
-  NeedsFunctionEnvironmentObjects = 1 << 23,
+  NeedsFunctionEnvironmentObjects = 1 << 22,
 
   // An extra VarScope is used as the body scope instead of the normal
   // FunctionScope. This is needed when parameter expressions are used AND the
   // function has var bindings or a sloppy-direct-eval. For example,
   //    `function(x = eval("")) { var y; }`
-  FunctionHasExtraBodyVarScope = 1 << 24,
+  FunctionHasExtraBodyVarScope = 1 << 23,
 
   // This function must define the implicit `arguments` binding on the function
   // scope. If there are no free uses or an appropriate explicit binding exists,
@@ -211,7 +207,7 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   // Note: Parameter expressions will not see an explicit `var arguments;`
   // binding in the body and an implicit binding on the function-scope must
   // still be used in that case.
-  ShouldDeclareArguments = 1 << 25,
+  ShouldDeclareArguments = 1 << 24,
 
   // This function has a local (implicit or explicit) `arguments` binding. This
   // binding is initialized by the JSOp::Arguments bytecode.
@@ -234,19 +230,19 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   //    // Implicit use in parameter expression
   //    function f(a = arguments) { return a; }
   //   ```
-  ArgumentsHasVarBinding = 1 << 26,
+  ArgumentsHasVarBinding = 1 << 25,
 
   // This function requires the `arguments` binding to be initialized with the
   // real arguments object. If unset, but ArgumentsHasVarBinding is set then an
   // analysis pass will determine if an efficient placeholder value can be used
   // instead.
   // See the implementation of JSOp::Arguments opcode.
-  AlwaysNeedsArgsObj = 1 << 27,
+  AlwaysNeedsArgsObj = 1 << 26,
 
   // This function must use the "mapped" form of an arguments object. This flag
   // is set independently of whether we actually use an `arguments` binding. The
   // conditions are specified in the ECMAScript spec.
-  HasMappedArgsObj = 1 << 28,
+  HasMappedArgsObj = 1 << 27,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -279,9 +275,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
   // Set if the script has opted into spew.
   SpewEnabled = 1 << 15,
 
-  // Set if we care about a script's final warmup count.
-  NeedsFinalWarmUpCount = 1 << 16,
-
   //
   // IonMonkey compilation hints.
   //
@@ -290,41 +283,34 @@ enum class MutableScriptFlagsEnum : uint32_t {
   // IonDisabled is equivalent to |jitScript->canIonCompile() == false| but
   // JitScript can be discarded on GC and we don't want this to affect
   // observable behavior (see ArgumentsGetterImpl comment).
-  BaselineDisabled = 1 << 17,
-  IonDisabled = 1 << 18,
+  BaselineDisabled = 1 << 16,
+  IonDisabled = 1 << 17,
 
   // Script has had hoisted bounds checks fail.
-  FailedBoundsCheck = 1 << 19,
+  FailedBoundsCheck = 1 << 18,
 
   // Script has had hoisted shape guard fail.
-  FailedShapeGuard = 1 << 20,
+  FailedShapeGuard = 1 << 19,
 
   // Script has had instruction hoisted by LICM fail.
-  HadLICMInvalidation = 1 << 21,
+  HadLICMInvalidation = 1 << 20,
 
   // An overflow happened where Range Analysis hoped it would not. The next
   // compile should be more conservative.
-  HadEagerTruncationBailout = 1 << 22,
+  HadOverflowBailout = 1 << 21,
 
   // This script should not be inlined into others. This happens after inlining
   // has failed.
-  Uninlineable = 1 << 23,
+  Uninlineable = 1 << 22,
 
   // An idempotent IC has triggered invalidation and should be deoptimized.
-  InvalidatedIdempotentCache = 1 << 24,
+  InvalidatedIdempotentCache = 1 << 23,
 
   // Lexical check did fail and bail out.
-  FailedLexicalCheck = 1 << 25,
+  FailedLexicalCheck = 1 << 24,
 
   // A guard inserted by phi specialization failed.
-  HadSpeculativePhiBailout = 1 << 26,
-
-  // An unbox folded with a load failed.
-  HadUnboxFoldingBailout = 1 << 27,
-
-  // Large self-hosted methods that should be inlined anyway by the JIT for
-  // performance reasons can be marked with this flag.
-  IsInlinableLargeFunction = 1 << 28,
+  HadSpeculativePhiBailout = 1 << 25,
 };
 
 }  // namespace js

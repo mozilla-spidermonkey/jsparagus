@@ -522,6 +522,11 @@ impl InstructionWriter {
         self.write_g_c_thing_index(baseobj_index);
     }
 
+    pub fn new_object_with_group(&mut self, baseobj_index: GCThingIndex) {
+        self.emit_op(Opcode::NewObjectWithGroup);
+        self.write_g_c_thing_index(baseobj_index);
+    }
+
     pub fn object(&mut self, object_index: GCThingIndex) {
         self.emit_op(Opcode::Object);
         self.write_g_c_thing_index(object_index);
@@ -599,8 +604,22 @@ impl InstructionWriter {
         self.write_g_c_thing_index(name_index);
     }
 
+    pub fn call_prop(&mut self, name_index: GCThingIndex) {
+        self.emit_op(Opcode::CallProp);
+        self.write_g_c_thing_index(name_index);
+    }
+
     pub fn get_elem(&mut self) {
         self.emit_op(Opcode::GetElem);
+    }
+
+    pub fn call_elem(&mut self) {
+        self.emit_op(Opcode::CallElem);
+    }
+
+    pub fn length(&mut self, name_index: GCThingIndex) {
+        self.emit_op(Opcode::Length);
+        self.write_g_c_thing_index(name_index);
     }
 
     pub fn set_prop(&mut self, name_index: GCThingIndex) {
@@ -692,6 +711,10 @@ impl InstructionWriter {
         self.emit_op(Opcode::IsNoIter);
     }
 
+    pub fn iter_next(&mut self) {
+        self.emit_op(Opcode::IterNext);
+    }
+
     pub fn end_iter(&mut self) {
         self.emit_op(Opcode::EndIter);
     }
@@ -729,6 +752,11 @@ impl InstructionWriter {
 
     pub fn hole(&mut self) {
         self.emit_op(Opcode::Hole);
+    }
+
+    pub fn new_array_copy_on_write(&mut self, object_index: GCThingIndex) {
+        self.emit_op(Opcode::NewArrayCopyOnWrite);
+        self.write_g_c_thing_index(object_index);
     }
 
     pub fn reg_exp(&mut self, regexp_index: GCThingIndex) {
@@ -920,12 +948,8 @@ impl InstructionWriter {
         self.write_u24(resume_index);
     }
 
-    pub fn can_skip_await(&mut self) {
-        self.emit_op(Opcode::CanSkipAwait);
-    }
-
-    pub fn maybe_extract_await_value(&mut self) {
-        self.emit_op(Opcode::MaybeExtractAwaitValue);
+    pub fn try_skip_await(&mut self) {
+        self.emit_op(Opcode::TrySkipAwait);
     }
 
     pub fn resume_kind(&mut self, resume_kind: GeneratorResumeKind) {
