@@ -236,7 +236,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
                 return Ok(rval);
             }
 
-            Opcode::IfEq => {
+            Opcode::JumpIfFalse => {
                 let b = to_boolean(&stack.pop().ok_or(EvalError::EmptyStack)?);
                 if !b {
                     let offset = immutable_script_data.read_offset(pc + 1);
