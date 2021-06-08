@@ -297,6 +297,7 @@ class FunctionFlags {
   void setResolvedName() { setFlags(RESOLVED_NAME); }
 
   void setInferredName() { setFlags(HAS_INFERRED_NAME); }
+  void clearInferredName() { clearFlags(HAS_INFERRED_NAME); }
 
   void setGuessedAtom() { setFlags(HAS_GUESSED_ATOM); }
 
