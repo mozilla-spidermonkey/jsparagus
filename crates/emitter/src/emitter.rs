@@ -764,20 +764,6 @@ impl InstructionWriter {
         self.write_g_c_thing_index(func_index);
     }
 
-    pub fn class_constructor(&mut self, name_index: u32, source_start: u32, source_end: u32) {
-        self.emit_op(Opcode::ClassConstructor);
-        self.write_u32(name_index);
-        self.write_u32(source_start);
-        self.write_u32(source_end);
-    }
-
-    pub fn derived_constructor(&mut self, name_index: u32, source_start: u32, source_end: u32) {
-        self.emit_op(Opcode::DerivedConstructor);
-        self.write_u32(name_index);
-        self.write_u32(source_start);
-        self.write_u32(source_end);
-    }
-
     pub fn builtin_object(&mut self, kind: u8) {
         self.emit_op(Opcode::BuiltinObject);
         self.write_u8(kind);

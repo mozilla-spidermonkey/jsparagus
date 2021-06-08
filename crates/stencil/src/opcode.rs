@@ -117,8 +117,6 @@ macro_rules! using_opcode_database {
                 (InitHomeObject, init_home_object, NULL, 1, 2, 1, JOF_BYTE),
                 (CheckClassHeritage, check_class_heritage, NULL, 1, 1, 1, JOF_BYTE),
                 (FunWithProto, fun_with_proto, NULL, 5, 1, 1, JOF_OBJECT),
-                (ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR),
-                (DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR),
                 (BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8),
                 (Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
                 (CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC),
@@ -343,11 +341,8 @@ const JOF_ICINDEX: u32 = 21;
 /// JSOp::LoopHead, combines JOF_ICINDEX and JOF_UINT8
 const JOF_LOOPHEAD: u32 = 22;
 
-/// uint32_t atom index, sourceStart, sourceEnd
-const JOF_CLASS_CTOR: u32 = 23;
-
 /// A pair of unspecified uint8_t arguments
-const JOF_TWO_UINT8: u32 = 24;
+const JOF_TWO_UINT8: u32 = 23;
 
 /// mask for above immediate types
 const JOF_TYPEMASK: u32 = 0xFF;
