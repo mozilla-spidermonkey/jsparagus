@@ -72,7 +72,7 @@ pub enum ThrowMsgKind {
 pub enum ThrowCondition {
     ThrowHas = 0,
     ThrowHasNot = 1,
-    NoThrow = 2,
+    OnlyCheckRhs = 2,
 }
 
 #[derive(Debug, Clone, Copy)]
