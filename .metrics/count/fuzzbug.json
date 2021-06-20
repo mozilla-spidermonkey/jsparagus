@@ -79,7 +79,7 @@
       "events_url": "https://api.github.com/users/jorendorff/events{/privacy}",
       "received_events_url": "https://api.github.com/users/jorendorff/received_events",
       "type": "User",
-      "site_admin": false
+      "site_admin": true
     },
     "assignees": [
       {
@@ -100,7 +100,7 @@
         "events_url": "https://api.github.com/users/jorendorff/events{/privacy}",
         "received_events_url": "https://api.github.com/users/jorendorff/received_events",
         "type": "User",
-        "site_admin": false
+        "site_admin": true
       }
     ],
     "milestone": {
@@ -130,7 +130,7 @@
         "events_url": "https://api.github.com/users/jorendorff/events{/privacy}",
         "received_events_url": "https://api.github.com/users/jorendorff/received_events",
         "type": "User",
-        "site_admin": false
+        "site_admin": true
       },
       "open_issues": 0,
       "closed_issues": 35,
