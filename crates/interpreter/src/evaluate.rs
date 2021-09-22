@@ -341,7 +341,7 @@ pub fn evaluate(result: &EmitResult, global: Rc<RefCell<Object>>) -> Result<JSVa
                 }
             }
 
-            Opcode::GImplicitThis => {
+            Opcode::ImplicitThis => {
                 // "The result is always `undefined` except when the name refers to a
                 // binding in a non-syntactic `with` environment."
                 stack.push(JSValue::Undefined);
