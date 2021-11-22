@@ -9,8 +9,7 @@
 #define vm_Opcodes_h
 
 #include <stddef.h>
-
-#include "vm/WellKnownAtom.h"  // js_*_str
+#include <stdint.h>
 
 // clang-format off
 /*
@@ -268,7 +267,7 @@
      *   Operands:
      *   Stack: => null
      */ \
-    MACRO(Null, null, js_null_str, 1, 0, 1, JOF_BYTE) \
+    MACRO(Null, null, "null", 1, 0, 1, JOF_BYTE) \
     /*
      * Push a boolean constant.
      *
@@ -276,8 +275,8 @@
      *   Operands:
      *   Stack: => true/false
      */ \
-    MACRO(False, false_, js_false_str, 1, 0, 1, JOF_BYTE) \
-    MACRO(True, true_, js_true_str, 1, 0, 1, JOF_BYTE) \
+    MACRO(False, false_, "false", 1, 0, 1, JOF_BYTE) \
+    MACRO(True, true_, "true", 1, 0, 1, JOF_BYTE) \
     /*
      * Push the `int32_t` immediate operand as an `Int32Value`.
      *
@@ -560,7 +559,7 @@
      *   Operands:
      *   Stack: value, target => (value instanceof target)
      */ \
-    MACRO(Instanceof, instanceof, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Instanceof, instanceof, "instanceof", 1, 2, 1, JOF_BYTE|JOF_IC) \
     /*
      * [The `in` operator][1].
      *
@@ -577,7 +576,7 @@
      *   Operands:
      *   Stack: id, obj => (id in obj)
      */ \
-    MACRO(In, in_, js_in_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(In, in_, "in", 1, 2, 1, JOF_BYTE|JOF_IC) \
     /*
      * [Bitwise shift operators][1] (`<<`, `>>`, `>>>`).
      *
@@ -3570,5 +3569,14 @@ FOR_EACH_OPCODE(DEFINE_LENGTH_CONSTANT)
 #undef DEFINE_LENGTH_CONSTANT
 
 }  // namespace js
+
+/*
+ * JS operation bytecodes.
+ */
+enum class JSOp : uint8_t {
+#define ENUMERATE_OPCODE(op, ...) op,
+  FOR_EACH_OPCODE(ENUMERATE_OPCODE)
+#undef ENUMERATE_OPCODE
+};
 
 #endif  // vm_Opcodes_h
