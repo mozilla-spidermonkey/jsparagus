@@ -32,6 +32,15 @@
     },
     "labels": [
       {
+        "id": 1728597138,
+        "node_id": "MDU6TGFiZWwxNzI4NTk3MTM4",
+        "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/labels/libFuzzer",
+        "name": "libFuzzer",
+        "color": "ef002b",
+        "default": false,
+        "description": "Bug found using libFuzzer instrumentation of the JS Shell"
+      },
+      {
         "id": 1827187785,
         "node_id": "MDU6TGFiZWwxODI3MTg3Nzg1",
         "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/labels/MVP",
@@ -48,15 +57,6 @@
         "color": "FFC300",
         "default": false,
         "description": "Project Work (MVP or Reserve) that is currently in development or completed."
-      },
-      {
-        "id": 1728597138,
-        "node_id": "MDU6TGFiZWwxNzI4NTk3MTM4",
-        "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/labels/libFuzzer",
-        "name": "libFuzzer",
-        "color": "ef002b",
-        "default": false,
-        "description": "Bug found using libFuzzer instrumentation of the JS Shell"
       }
     ],
     "state": "closed",
@@ -147,6 +147,19 @@
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
     "body": "The following test case passes when running with jsparagus generated parser, but fails in SpiderMonkey:\r\n\r\n```js\r\nfunc\r\n   return !x;\r\n```",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/48/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/48/timeline",
     "performed_via_github_app": null
   },
   {
@@ -213,13 +226,28 @@
     "closed_at": "2019-12-23T18:21:34Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
+    "draft": false,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/47",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47",
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47.diff",
-      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47.patch"
+      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/47.patch",
+      "merged_at": "2019-12-23T18:21:34Z"
     },
     "body": "The following regexp was incorrectly accepted by jsparagus, because the flags of the regexp were not tested against the accepted list of flags.\r\n\r\nHere a small test case which should fail.\r\n\r\n```js\r\n/ |/ji\r\n```\r\n",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/47/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/47/timeline",
     "performed_via_github_app": null
   },
   {
@@ -286,13 +314,28 @@
     "closed_at": "2019-12-23T18:14:11Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
+    "draft": false,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/46",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46",
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46.diff",
-      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46.patch"
+      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/46.patch",
+      "merged_at": "2019-12-23T18:14:11Z"
     },
     "body": "The following test case fails while unwrapping the content of the template string.\r\n\r\n```js\r\nReflect.parse(`\r\nlet a\r\nf2()\r\n`);\r\n```\r\n\r\nThis patch replace the `None` result, by the content produced while iterating over the template string content, using the `builder` initialized earlier.",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/46/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/46/timeline",
     "performed_via_github_app": null
   },
   {
@@ -351,6 +394,19 @@
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
     "body": "The following JS scripts is wrongly accepted by jsparagus' parser, while being refused by SpiderMonkey's parser.\r\n\r\n```js\r\nconst y\r\n```\r\n\r\n```js\r\nconst y;\r\n```\r\n",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/44/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/44/timeline",
     "performed_via_github_app": null
   },
   {
@@ -417,13 +473,28 @@
     "closed_at": "2019-12-19T13:31:15Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
+    "draft": false,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/43",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43",
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43.diff",
-      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43.patch"
+      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/43.patch",
+      "merged_at": "2019-12-19T13:31:14Z"
     },
     "body": "This PR fix the lexer to correctly reject inputs such as:\r\n\r\n```js\r\n// Bug 1319415\r\n\r\nvar src =\r\n`(modu\r\n```\r\n",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/43/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/43/timeline",
     "performed_via_github_app": null
   },
   {
@@ -491,6 +562,19 @@
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
     "body": "The following test case is accepted by jsparagus, while being rejected by SpiderMonkey's parser.\r\n\r\n```js\r\nlet c = (this != 4.2);\r\n\r\n/* Don't\r\n```\r\n",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/41/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/41/timeline",
     "performed_via_github_app": null
   },
   {
@@ -548,13 +632,28 @@
     "closed_at": "2019-12-11T17:35:16Z",
     "author_association": "COLLABORATOR",
     "active_lock_reason": null,
+    "draft": false,
     "pull_request": {
       "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/pulls/40",
       "html_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40",
       "diff_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40.diff",
-      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40.patch"
+      "patch_url": "https://github.com/mozilla-spidermonkey/jsparagus/pull/40.patch",
+      "merged_at": "2019-12-11T17:35:16Z"
     },
     "body": "Currently when generating the AST, we might fail and panic with some error messages.\r\nThis patch make all `to_ast` function return a `Result`, which will then bubble up to the parser and avoid failing when parsing a module as a script or the opposite.\r\n",
+    "reactions": {
+      "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/40/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/40/timeline",
     "performed_via_github_app": null
   }
 ]
