@@ -497,6 +497,10 @@ impl InstructionWriter {
         self.emit_op(Opcode::ToString);
     }
 
+    pub fn is_null_or_undefined(&mut self) {
+        self.emit_op(Opcode::IsNullOrUndefined);
+    }
+
     pub fn global_this(&mut self) {
         self.emit_op(Opcode::GlobalThis);
     }

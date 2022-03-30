@@ -57,6 +57,7 @@ macro_rules! using_opcode_database {
                 (ToPropertyKey, to_property_key, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
                 (ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE|JOF_IC),
                 (ToString, to_string, NULL, 1, 1, 1, JOF_BYTE),
+                (IsNullOrUndefined, is_null_or_undefined, NULL, 1, 1, 2, JOF_BYTE),
                 (GlobalThis, global_this, NULL, 1, 0, 1, JOF_BYTE),
                 (NonSyntacticGlobalThis, non_syntactic_global_this, NULL, 1, 0, 1, JOF_BYTE),
                 (NewTarget, new_target, NULL, 1, 0, 1, JOF_BYTE),
