@@ -3454,8 +3454,9 @@ impl ScopeDataMapBuilder {
     }
 
     pub fn on_new_target(&mut self) {
-        let fun_stencil = self.function_stencil_builder.current_mut();
-        fun_stencil.set_function_has_new_target_binding();
+        if let Some(fun_stencil) = self.function_stencil_builder.maybe_current_mut() {
+            fun_stencil.set_function_has_new_target_binding()
+        }
     }
 }
 
