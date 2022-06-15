@@ -25,11 +25,6 @@ use interpreter::{create_global, evaluate, Object};
 use parser::{is_partial_script, parse_script, ParseOptions};
 use stencil::script::SourceExtent;
 
-use rustyline::error::ReadlineError;
-use rustyline::validate::{ValidationContext, ValidationResult, Validator};
-use rustyline::Editor;
-use rustyline_derive::{Completer, Helper, Highlighter, Hinter};
-
 #[derive(Clone, Debug, Default)]
 pub struct DemoStats {
     files_attempted: usize,
@@ -184,40 +179,70 @@ fn handle_script<'alloc>(
     }
 }
 
-#[derive(Completer, Helper, Highlighter, Hinter)]
-struct InputValidator {}
+fn prompt(s: &'static str) -> bool {
+    if let Err(err) = write!(std::io::stdout(), "{}", s) {
+        eprintln!("error: {:?}", err);
+        return false;
+    }
+    if let Err(err) = std::io::stdout().flush() {
+        eprintln!("error: {:?}", err);
+        return false;
+    }
 
-impl Validator for InputValidator {
-    fn validate(&self, ctx: &mut ValidationContext) -> Result<ValidationResult, ReadlineError> {
+    true
+}
+
+fn read_line() -> Option<String> {
+    if !prompt("js> ") {
+        return None;
+    }
+
+    let mut input = String::new();
+    loop {
+        let mut line = String::new();
+        match std::io::stdin().read_line(&mut line) {
+            Err(err) => {
+                eprintln!("error: {:?}", err);
+                return None;
+            }
+            Ok(0) => {
+                return None;
+            }
+            _ => {}
+        }
+        input.push_str(line.as_str());
+
         let allocator = &Bump::new();
         let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
         let slices = Rc::new(RefCell::new(SourceSliceList::new()));
-        match is_partial_script(allocator, ctx.input(), atoms, slices) {
-            Ok(true) => Ok(ValidationResult::Incomplete),
-            // We treat ParseErrors as "valid" so that they
-            // can be handled by the REPL function.
-            _ => Ok(ValidationResult::Valid(None)),
+        match is_partial_script(allocator, input.as_str(), atoms, slices) {
+            Ok(true) => {}
+            Ok(false) => break,
+            Err(err) => {
+                eprintln!("error: {:?}", err);
+                return None;
+            }
+        }
+
+        if !prompt("... ") {
+            return None;
         }
     }
+
+    Some(input)
 }
 
 pub fn read_print_loop(verbosity: Verbosity) {
-    let h = InputValidator {};
-    let mut rl = Editor::new();
-    rl.set_helper(Some(h));
-
     let global = create_global();
 
     let mut line = 1;
     loop {
-        let input = rl.readline("> ");
-        if let Err(err) = input {
-            eprintln!("error: {:?}", err);
+        let input = read_line();
+        if input.is_none() {
             break;
         }
 
         let input = input.unwrap();
-        rl.add_history_entry(input.as_str());
         let input_len = input.len();
 
         let allocator = &Bump::new();
