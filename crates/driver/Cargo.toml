@@ -13,7 +13,7 @@ jsparagus-interpreter = { path = "../interpreter" }
 jsparagus-parser = { path = "../parser" }
 jsparagus-stencil = { path = "../stencil" }
 log = { version = "0.4.0", features = ["max_level_debug", "release_max_level_warn"] }
-env_logger = "0.7.1"
+env_logger = { version = "0.7.1", default-features = false } # disable `regex`
 structopt = "0.3"
 
 # jemalloc is temporarily disabled due to a known upstream bug (macOS crashes
