@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
     "label": "Days since last FuzzBug",
-    "message": "999",
+    "message": "1000",
     "color": "green"
 }
