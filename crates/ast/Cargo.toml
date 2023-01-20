@@ -6,5 +6,5 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 
 [dependencies]
-bumpalo = { version = "3.4.0", features = ["collections"] }
+bumpalo = { version = "3.11.1", features = ["collections"] }
 indexmap = "1.0"
