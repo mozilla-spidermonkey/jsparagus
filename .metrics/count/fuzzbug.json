@@ -160,7 +160,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/48/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": "completed"
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/47",
@@ -248,7 +249,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/47/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/46",
@@ -336,7 +338,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/46/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/44",
@@ -407,7 +410,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/44/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": "completed"
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/43",
@@ -495,7 +499,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/43/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": null
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/41",
@@ -575,7 +580,8 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/41/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": "completed"
   },
   {
     "url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/40",
@@ -654,6 +660,7 @@
       "eyes": 0
     },
     "timeline_url": "https://api.github.com/repos/mozilla-spidermonkey/jsparagus/issues/40/timeline",
-    "performed_via_github_app": null
+    "performed_via_github_app": null,
+    "state_reason": null
   }
 ]
