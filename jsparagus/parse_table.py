@@ -11,7 +11,8 @@ import itertools
 from . import types
 from .utils import consume, keep_until, split, default_id_dict, default_fwd_dict
 from .ordered import OrderedSet, OrderedFrozenSet
-from .actions import Action, Replay, Reduce, FilterStates, Seq
+from .actions import (Action, Shift, Replay, Reduce, Unwind, FilterStates, Seq,
+                      FunCall, CheckLineTerminator)
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
 from .lr0 import LR0Generator, Term
@@ -56,7 +57,7 @@ class StateAndTransitions:
     arguments: int
 
     # Outgoing edges taken when shifting terminals.
-    terminals: typing.Dict[str, StateId]
+    terminals: typing.Dict[typing.Union[str, End], StateId]
 
     # Outgoing edges taken when shifting nonterminals after reducing.
     nonterminals: typing.Dict[Nt, StateId]
@@ -153,7 +154,7 @@ class StateAndTransitions:
         return False
 
     def shifted_edges(self) -> typing.Iterator[
-            typing.Tuple[typing.Union[str, Nt, ErrorSymbol], StateId]
+            typing.Tuple[typing.Union[str, End, Nt, ErrorSymbol], StateId]
     ]:
         k: Term
         s: StateId
@@ -364,6 +365,13 @@ class ParseTable:
         self.exec_modes = grammar.grammar.exec_modes
         self.assume_inconsistent = True
         self.create_lr0_table(grammar, verbose, progress)
+        # Automatic Semicolon Insertion (ASI) is a process by which the
+        # JavaScript grammar is implicitly disambiguated. This phase would make
+        # this grammar transformation explicit.
+        self.expand_javascript_asi(verbose, progress)
+        # LR0 is incosnistent, which implies that we need a non-determinisitic
+        # evaluator. This phase solves ambiguities of the grammar by adding
+        # more lookahead and context.
         self.fix_inconsistent_table(verbose, progress)
         # TODO: Optimize chains of actions into sequences.
         # Optimize by removing unused states.
@@ -587,6 +595,77 @@ class ParseTable:
         for dest in old_dest:
             self.assert_state_invariants(dest)
 
+    def restore_edges(
+            self,
+            state: StateAndTransitions,
+            shift_map: typing.DefaultDict[
+                Term,
+                typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+            ],
+            maybe_unreachable_set: OrderedSet[StateId],
+            debug_depth: str = ""
+    ) -> None:
+        """Restore the new state machine based on a given state to use as a base and
+        the shift_map corresponding to edges."""
+
+        # print("{}starting with {}\n".format(depth, state))
+        edges = {}
+        for term, actions_list in shift_map.items():
+            # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
+            # Collect all the states reachable after shifting the term.
+            # Compute the unique name, based on the locations and actions
+            # which are delayed.
+            locations: OrderedSet[str] = OrderedSet()
+            delayed: OrderedSet[DelayedAction] = OrderedSet()
+            new_shift_map: typing.DefaultDict[
+                Term,
+                typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+            ]
+            new_shift_map = collections.defaultdict(lambda: [])
+            recurse = False
+            if not self.term_is_shifted(term):
+                # There is no more target after a reduce action.
+                actions_list = []
+            for target, remaining_edges in actions_list:
+                assert isinstance(target, StateAndTransitions)
+                locations |= target.locations
+                delayed |= target.delayed_actions
+                if remaining_edges != []:
+                    # Pull edges, with delayed actions.
+                    for edge in remaining_edges:
+                        edge_term = edge.term
+                        assert edge_term is not None
+                        if isinstance(edge_term, Action):
+                            delayed.add(edge_term)
+                        else:
+                            delayed.add(Shift(edge_term))
+                    edge = remaining_edges[0]
+                    edge_term = edge.term
+                    assert edge_term is not None
+                    new_shift_map[edge_term].append((target, remaining_edges[1:]))
+                    recurse = True
+                else:
+                    # Pull edges, as a copy of existing edges.
+                    for next_term, next_dest_id in target.edges():
+                        next_dest = self.states[next_dest_id]
+                        new_shift_map[next_term].append((next_dest, []))
+
+            is_new, new_target = self.new_state(
+                OrderedFrozenSet(locations), OrderedFrozenSet(delayed))
+            edges[term] = new_target.index
+            if self.debug_info:
+                print("{}is_new = {}, index = {}".format(debug_depth, is_new, new_target.index))
+                print("{}Add: {} -- {} --> {}".format(debug_depth, state.index, str(term), new_target.index))
+                print("{}continue: (is_new: {}) or (recurse: {})".format(debug_depth, is_new, recurse))
+            if is_new or recurse:
+                self.restore_edges(new_target, new_shift_map, maybe_unreachable_set, debug_depth + "  ")
+
+        self.clear_edges(state, maybe_unreachable_set)
+        for term, target_id in edges.items():
+            self.add_edge(state, term, target_id)
+        if self.debug_info:
+            print("{}replaced by {}\n".format(debug_depth, state))
+
     def assert_table_invariants(self) -> None:
         for s in self.states:
             if s is not None:
@@ -631,6 +710,28 @@ class ParseTable:
                 if len(self.states[s].backedges) == 0 and s not in init:
                     self.remove_state(s, next_set)
             maybe_unreachable_set = next_set
+
+    def mark_sweep_states(self) -> None:
+        marked = set()
+
+        def mark(s: StateId) -> None:
+            marked.add(s)
+            for _, dest in self.states[s].edges():
+                if dest not in marked:
+                    mark(dest)
+
+        for _, idx in self.named_goals:
+            mark(idx)
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        remove_list = []
+        for s in self.states:
+            if s is not None and s.index not in marked:
+                remove_list.append(s)
+        for s in remove_list:
+            self.clear_edges(s, maybe_unreachable_set)
+        for s in remove_list:
+            self.remove_state(s.index, maybe_unreachable_set)
 
     def is_reachable_state(self, s: StateId) -> bool:
         """Check whether the current state is reachable or not."""
@@ -915,6 +1016,139 @@ class ParseTable:
         self.aps_visitor(APS.start(state), visit)
         return record
 
+    def expand_javascript_asi(self, verbose: bool, progress: bool) -> None:
+        """The frontend of the JavaScript grammar adds ErrorSymbols to handle Automatic
+        Semicolon Insertion (ASI). As described in the ECMAScript
+        Specification [1], these locations are used as a fallback mechanism for
+        tokens which would not be allowed by the grammar otherwise.
+
+        Implementing these rules implies that we have to look at all locations
+        which have an ErrorSymbol dedicated to ASI, and add the missing
+        transitions, such that the ErrorSymbol can be converted to an ordinary
+        nonterminal of the grammar.
+
+        Note, this is an optimization dedicated to remove the handling of a
+        replay-list (variable list of lookahead) as well as a fallback
+        mechanism for the runtime of the parser.
+
+        [1] https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
+
+        """
+        if verbose or progress:
+            print("Expand JavaScript Automatic Semicolon Insertion")
+
+        # Collect all states which have an ErrorSymbol.
+        todo = []
+        for s in self.states:
+            if len(s.errors) > 0:
+                todo.append(s)
+        if todo == []:
+            return
+
+        # Get the dead-end state, as the destination of the reduce edges.
+        dead_end = self.get_state(OrderedFrozenSet())
+
+        # Add Reduce ErrorSymbol("asi")
+        asi_nt = Nt("ASI")
+        asi_term = Seq([FunCall("asi", ()), Reduce(Unwind(asi_nt, 0, 0))])
+        self.nonterminals.append(asi_nt)
+        reduce_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
+        for t in self.terminals:
+            reduce_asi[t] = self.get_state(
+                OrderedFrozenSet(['ASI ::= {} ·'.format(str(t)),
+                                  'ASI ::= [LineTerminator here] {} ·'.format(str(t))]))
+            self.add_edge(reduce_asi[t], asi_term.shifted_action(t), dead_end.index)
+
+        # Add CheckLineTerminator -> Reduce ErrorSymbol("asi")
+        newline_asi_term = CheckLineTerminator(-1, True)
+        newline_asi: typing.Dict[ShiftedTerm, StateAndTransitions] = {}
+        for t in self.terminals:
+            newline_asi[t] = self.get_state(
+                OrderedFrozenSet(['ASI ::= [LineTerminator here] {} ·'.format(str(t))]),
+                OrderedFrozenSet([newline_asi_term]))
+            self.add_edge(newline_asi[t], newline_asi_term, reduce_asi[t].index)
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        no_LineTerminator_here = CheckLineTerminator(0, False)
+
+        def contains_no_LineTerminator_here(aps: APS) -> bool:
+            for edge in aps.history:
+                if edge.term == no_LineTerminator_here:
+                    return True
+            return False
+
+        # Replace error symbols edges of the parse table by the semantic
+        # mentioned in [1] by adding the equivalent parse table rules. The
+        # error symbols are replaced by non-terminals which are reduced by the
+        # `reduce_asi` and `reduce_dw_asi` states.
+        #
+        # [1] https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
+        def visit_error_symbols() -> typing.Iterator[None]:
+            for s in todo:
+                yield  # progress bar.
+                assert len(s.errors) == 1
+                error, error_dest = next(iter(s.errors.items()))
+
+                # 11.9.1.1 Capture the list of offending tokens. An offending
+                # token is a token which is not allowed by any production of
+                # the grammar.
+                #
+                # 11.9.1.2 (End is implicitly considered as a terminal)
+                #
+                # Note: Normally offending tokens are any tokens which does not
+                # satisfy any production of the grammar, however doing so by
+                # using the list of all possible tokens causes an ambiguity in
+                # the parse table. Thus we restrict this to the list of tokens
+                # which might be accepted after the error symbol.
+                aps_lanes = self.lookahead_lanes(s.index)
+                aps_lanes_on_error = self.lookahead_lanes(error_dest)
+                assert all(len(aps.lookahead) >= 1 for aps in aps_lanes)
+                accepted_tokens = set(aps.lookahead[0] for aps in aps_lanes)
+                accepted_tokens_on_error = set(aps.lookahead[0] for aps in aps_lanes_on_error)
+                offending_tokens = [
+                    t for t in accepted_tokens_on_error
+                    if t not in accepted_tokens and t in self.terminals
+                ]
+
+                # 11.9.1.3 A restricted token is a token from a restricted
+                # production, i-e. which has a `[no LineTerminator here]`
+                # before the token.
+                restricted_lanes = [aps for aps in aps_lanes if contains_no_LineTerminator_here(aps)]
+                restricted_tokens = [aps.lookahead[0] for aps in restricted_lanes]
+
+                # Get the index of the state to go to after the nonterminal
+                # semicolon.
+                error, dest = next(iter(s.errors.items()))
+                self.remove_edge(s, error, maybe_unreachable_set)
+                self.add_edge(s, asi_nt, dest)
+
+                if "}" in offending_tokens:
+                    self.add_edge(s, "}", reduce_asi["}"].index)
+                    offending_tokens.remove("}")
+
+                if error == ErrorSymbol("asi"):
+                    offending_target = newline_asi
+                elif error == ErrorSymbol("do_while_asi"):
+                    # `do{}while(false) foo()` is a valid JavaScript syntax,
+                    # where a semicolon is automatically inserted between the
+                    # ending parenthesis of the while statement and the foo
+                    # identifier.
+                    offending_target = reduce_asi
+                else:
+                    raise ValueError("Unexpected ErrorSymbol code")
+
+                for token in offending_tokens:
+                    self.add_edge(s, token, offending_target[token].index)
+                for term in restricted_tokens:
+                    if isinstance(term, (str, End)):
+                        self.add_edge(s, term, newline_asi[token].index)
+
+        consume(visit_error_symbols(), progress)
+
+        if verbose:
+            print("Expand JavaScript Automatic Semicolon Insertion result:")
+            self.debug_dump()
+
     def fix_with_context(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         raise ValueError("fix_with_context: Not Implemented")
     #     # This strategy is about using context information. By using chains of
@@ -1126,6 +1360,56 @@ class ParseTable:
     #     self.remove_unreachable_states(maybe_unreachable_set)
     #     pass
 
+    def try_fix_with_conditions(self, s: StateId) -> bool:
+        """When dealing with consistent conditions, we can simply move all the
+        inconsistencies under the condition and its negated counter-part. This
+        is equivalent to changing the order in which variable are compared,
+        given condition which are not dependent on each others. """
+
+        state = self.states[s]
+        assert state.is_inconsistent()
+        conditions: typing.List[Action] = []
+        for act, dest in state.epsilon:
+            if act.is_condition() and not act.is_inconsistent() and act.can_negate():
+                if conditions == []:
+                    conditions.append(act)
+                elif conditions[0].check_same_variable(act):
+                    conditions.append(act)
+
+        # If we have not found any consistent condition, then fallback on using
+        # other way of solving inconsistencies.
+        if conditions == []:
+            return False
+
+        # The set of conditions extracted would remain inconsistent even after
+        # fix_with_conditions.
+        pairs = itertools.combinations(conditions, 2)
+        if any(not k1.check_different_values(k2) for k1, k2 in pairs):
+            return False
+
+        # If the list of condition does not yet cover the space of possible
+        # value, add the missing actions, with which we should wrap all the
+        # cases which have no conditionals.
+        conditions = conditions[0].negate(conditions)
+
+        shift_map: typing.DefaultDict[
+            Term,
+            typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
+        ]
+        shift_map = collections.defaultdict(lambda: [])
+        edges = list(iter(state.edges()))
+        for term, dest in edges:
+            if term in conditions:
+                shift_map[term].append((self.states[dest], []))
+            else:
+                for cond in conditions:
+                    shift_map[cond].append((self.states[dest], [Edge(s, term)]))
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+        self.restore_edges(state, shift_map, maybe_unreachable_set)
+        self.remove_unreachable_states(maybe_unreachable_set)
+        return True
+
     def fix_with_lookahead(self, s: StateId, aps_lanes: typing.List[APS]) -> None:
         # Find the list of terminals following each actions (even reduce
         # actions).
@@ -1181,74 +1465,8 @@ class ParseTable:
                 target = self.states[target_id]
                 shift_map[term].append((target, new_actions))
 
-        # Restore the new state machine based on a given state to use as a base
-        # and the shift_map corresponding to edges.
-        def restore_edges(
-                state: StateAndTransitions,
-                shift_map: typing.DefaultDict[
-                    Term,
-                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
-                ],
-                depth: str
-        ) -> None:
-            # print("{}starting with {}\n".format(depth, state))
-            edges = {}
-            for term, actions_list in shift_map.items():
-                # print("{}term: {}, lists: {}\n".format(depth, repr(term), repr(actions_list)))
-                # Collect all the states reachable after shifting the term.
-                # Compute the unique name, based on the locations and actions
-                # which are delayed.
-                locations: OrderedSet[str] = OrderedSet()
-                delayed: OrderedSet[DelayedAction] = OrderedSet()
-                new_shift_map: typing.DefaultDict[
-                    Term,
-                    typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
-                ]
-                new_shift_map = collections.defaultdict(lambda: [])
-                recurse = False
-                if not self.term_is_shifted(term):
-                    # There is no more target after a reduce action.
-                    actions_list = []
-                for target, actions in actions_list:
-                    assert isinstance(target, StateAndTransitions)
-                    locations |= target.locations
-                    delayed |= target.delayed_actions
-                    if actions != []:
-                        # Pull edges, with delayed actions.
-                        edge = actions[0]
-                        assert isinstance(edge, Edge)
-                        for action in actions:
-                            action_term = action.term
-                            assert isinstance(action_term, Action)
-                            delayed.add(action_term)
-                        edge_term = edge.term
-                        assert edge_term is not None
-                        new_shift_map[edge_term].append((target, actions[1:]))
-                        recurse = True
-                    else:
-                        # Pull edges, as a copy of existing edges.
-                        for next_term, next_dest_id in target.edges():
-                            next_dest = self.states[next_dest_id]
-                            new_shift_map[next_term].append((next_dest, []))
-
-                is_new, new_target = self.new_state(
-                    OrderedFrozenSet(locations), OrderedFrozenSet(delayed))
-                edges[term] = new_target.index
-                if self.debug_info:
-                    print("{}is_new = {}, index = {}".format(depth, is_new, new_target.index))
-                    print("{}Add: {} -- {} --> {}".format(depth, state.index, str(term), new_target.index))
-                    print("{}continue: (is_new: {}) or (recurse: {})".format(depth, is_new, recurse))
-                if is_new or recurse:
-                    restore_edges(new_target, new_shift_map, depth + "  ")
-
-            self.clear_edges(state, maybe_unreachable_set)
-            for term, target_id in edges.items():
-                self.add_edge(state, term, target_id)
-            if self.debug_info:
-                print("{}replaced by {}\n".format(depth, state))
-
         state = self.states[s]
-        restore_edges(state, shift_map, "")
+        self.restore_edges(state, shift_map, maybe_unreachable_set)
         self.remove_unreachable_states(maybe_unreachable_set)
 
     def fix_inconsistent_state(self, s: StateId, verbose: bool) -> bool:
@@ -1273,11 +1491,24 @@ class ParseTable:
             return False
 
         all_reduce = all(a.update_stack() for a, _ in state.epsilon)
+        any_conditional = any(a.is_condition() and a.can_negate() for a, _ in state.epsilon)
         any_shift = (len(state.terminals) + len(state.nonterminals) + len(state.errors)) > 0
+        try_with_conditionals = any_conditional
         try_with_context = all_reduce and not any_shift
         try_with_lookahead = not try_with_context
         # if verbose:
         #     print(aps_lanes_str(aps_lanes, "fix_inconsistent_state:", "\taps"))
+        if try_with_conditionals:
+            if verbose:
+                print("\tFix with conditionals")
+            fixed = self.try_fix_with_conditions(s)
+            if fixed:
+                try_with_context = False
+                try_with_lookahead = False
+            elif verbose and try_with_context:
+                print("\tFallback on fixing with context.")
+            elif verbose and try_with_context:
+                print("\tFallback on fixing with lookahead.")
         if try_with_context:
             if verbose:
                 print("\tFix with context.")
@@ -1293,6 +1524,7 @@ class ParseTable:
             aps_lanes = self.lookahead_lanes(s)
             assert aps_lanes != []
             self.fix_with_lookahead(s, aps_lanes)
+        assert not state.is_inconsistent()
         return True
 
     def fix_inconsistent_table(self, verbose: bool, progress: bool) -> None:
@@ -1320,54 +1552,41 @@ class ParseTable:
 
         def visit_table() -> typing.Iterator[None]:
             nonlocal count
-            unreachable = []
             while todo:
-                while todo:
-                    yield  # progress bar.
-                    # TODO: Compare stack / queue, for the traversal of the states.
-                    s = todo.popleft()
-                    if not self.is_reachable_state(s):
-                        # NOTE: We do not fix unreachable states, as we might
-                        # not be able to compute the reduce actions. However,
-                        # we should not clean edges not backedges as the state
-                        # might become reachable later on, since states are
-                        # shared if they have the same locations.
-                        unreachable.append(s)
-                        continue
-                    assert self.states[s].is_inconsistent()
-                    start_len = len(self.states)
-                    if verbose:
-                        count = count + 1
-                        print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
-                    try:
-                        self.fix_inconsistent_state(s, verbose)
-                    except Exception as exc:
-                        self.debug_info = True
-                        raise ValueError(
-                            "Error while fixing conflict in state {}\n\n"
-                            "In the following grammar productions:\n{}"
-                            .format(self.states[s].stable_str(self.states),
-                                    self.debug_context(s, "\n", "\t"))
-                        ) from exc
-                    new_inconsistent_states = [
-                        s.index for s in self.states[start_len:]
-                        if s.is_inconsistent()
-                    ]
-                    if verbose:
-                        print("\tAdding {} states".format(len(self.states[start_len:])))
-                        print("\tWith {} inconsistent states".format(len(new_inconsistent_states)))
-                    todo.extend(new_inconsistent_states)
+                yield  # progress bar.
+                # TODO: Compare stack / queue, for the traversal of the states.
+                s = todo.popleft()
+                if self.states[s] is None:
+                    continue
+                assert self.states[s].is_inconsistent()
+                start_len = len(self.states)
+                if verbose:
+                    count = count + 1
+                    print("Fixing state {}\n".format(self.states[s].stable_str(self.states)))
+                try:
+                    self.fix_inconsistent_state(s, verbose)
+                except Exception as exc:
+                    self.debug_info = True
+                    raise ValueError(
+                        "Error while fixing conflict in state {}\n\n"
+                        "In the following grammar productions:\n{}"
+                        .format(self.states[s].stable_str(self.states),
+                                self.debug_context(s, "\n", "\t"))
+                    ) from exc
+                new_inconsistent_states = [
+                    s.index for s in self.states[start_len:]
+                    if s.is_inconsistent()
+                ]
+                if verbose:
+                    print("\tAdding {} states".format(len(self.states[start_len:])))
+                    print("\tWith {} inconsistent states".format(len(new_inconsistent_states)))
 
-                # Check whether none of the previously inconsistent and
-                # unreahable state became reachable. If so add it back to the
-                # todo list.
-                still_unreachable = []
-                for s in unreachable:
-                    if self.is_reachable_state(s):
-                        todo.append(s)
-                    else:
-                        still_unreachable.append(s)
-                unreachable = still_unreachable
+                todo.extend(new_inconsistent_states)
+                self.mark_sweep_states()
+                if not todo:
+                    for state in self.states:
+                        if state is not None and state.is_inconsistent():
+                            todo.append(state.index)
 
         consume(visit_table(), progress)
         if verbose:
@@ -1382,6 +1601,7 @@ class ParseTable:
         if verbose:
             print("Fix Inconsistent Table Result:")
             self.debug_dump()
+        self.debug_info = False
 
     def remove_all_unreachable_state(self, verbose: bool, progress: bool) -> None:
         self.states = [s for s in self.states if s is not None]

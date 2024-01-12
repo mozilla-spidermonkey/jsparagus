@@ -217,6 +217,7 @@ class APS:
         last_edge = sh[-1]
         state = pt.states[last_edge.src]
         state_match_shift_end = self.state == self.shift[-1].src
+        term: Term
         if self.replay == []:
             assert state_match_shift_end
             for term, to in state.shifted_edges():

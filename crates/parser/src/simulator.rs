@@ -114,8 +114,8 @@ impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
     fn top_state(&self) -> usize {
         self.state()
     }
-    fn check_not_on_new_line(&mut self, _peek: usize) -> Result<'alloc, bool> {
-        Ok(true)
+    fn is_on_new_line(&self) -> Result<'alloc, bool> {
+        Ok(false)
     }
 }
 

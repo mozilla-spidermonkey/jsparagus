@@ -96,19 +96,13 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
     fn top_state(&self) -> usize {
         self.state()
     }
-    fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool> {
+    fn is_on_new_line(&self) -> Result<'alloc, bool> {
         let sv = {
             let stack = self.node_stack.stack_slice();
-            &stack[stack.len() - peek].value
+            &stack[stack.len() - 1].value
         };
         if let StackValue::Token(ref token) = sv {
-            if !token.is_on_new_line {
-                return Ok(true);
-            }
-            self.rewind(peek - 1);
-            let tv = self.pop();
-            self.try_error_handling(tv)?;
-            return Ok(false);
+            return Ok(token.is_on_new_line);
         }
         Err(ParseError::NoLineTerminatorHereExpectedToken.into())
     }
@@ -194,51 +188,14 @@ impl<'alloc> Parser<'alloc> {
             }),
         });
         if let StackValue::Token(ref token) = t.value {
-            // Error tokens might them-self cause more errors to be reported.
-            // This happens due to the fact that the ErrorToken can be replayed,
-            // and while the ErrorToken might be in the lookahead rules, it
-            // might not be in the shifted terms coming after the reduced
-            // nonterminal.
-            if t.term == TerminalId::ErrorToken.into() {
-                return Err(Self::parse_error(token).into());
-            }
-
-            // Otherwise, check if the current rule accept an Automatic
-            // Semi-Colon insertion (ASI).
-            let state = self.state();
-            assert!(state < TABLES.shift_count);
-            let error_code = TABLES.error_codes[state];
-            if let Some(error_code) = error_code {
-                let err_token = (*token).clone();
-                Self::recover(token, error_code)?;
-                self.replay(t);
-                let err_token = self.handler.alloc(err_token);
-                self.replay(TermValue {
-                    term: TerminalId::ErrorToken.into(),
-                    value: StackValue::Token(err_token),
-                });
-                return Ok(false);
-            }
             // On error, don't attempt error handling again.
             return Err(Self::parse_error(token).into());
         }
         Err(ParseError::ParserCannotUnpackToken.into())
     }
 
-    pub(crate) fn recover(t: &Token, error_code: ErrorCode) -> Result<'alloc, ()> {
-        match error_code {
-            ErrorCode::Asi => {
-                if t.is_on_new_line
-                    || t.terminal_id == TerminalId::End
-                    || t.terminal_id == TerminalId::CloseBrace
-                {
-                    Ok(())
-                } else {
-                    Err(Self::parse_error(t).into())
-                }
-            }
-            ErrorCode::DoWhileAsi => Ok(()),
-        }
+    pub(crate) fn recover(t: &Token, _error_code: ErrorCode) -> Result<'alloc, ()> {
+        Err(Self::parse_error(t).into())
     }
 
     fn simulator<'a>(&'a self) -> Simulator<'alloc, 'a> {
