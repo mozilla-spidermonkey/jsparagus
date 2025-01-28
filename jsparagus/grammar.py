@@ -1145,7 +1145,7 @@ class End:
 @dataclass(frozen=True)
 class ErrorSymbol:
     """Special grammar symbol that can be consumed to handle a syntax error."""
-    error_code: int
+    error_code: str
 
 
 Element = typing.Union[

@@ -96,7 +96,7 @@ class Action:
     def is_inconsistent(self) -> bool:
         """Returns True if this action is inconsistent. An action can be
         inconsistent if the parameters it is given cannot be evaluated given
-        its current location in the parse table. Such as CheckNotOnNewLine.
+        its current location in the parse table. Such as CheckLineTerminator.
         """
         return False
 
@@ -107,6 +107,18 @@ class Action:
     def condition(self) -> Action:
         "Return the conditional action."
         raise TypeError("Action.condition not implemented")
+
+    def can_negate(self) -> bool:
+        "Whether the current condition (action) implemented the negate function."
+        assert self.is_condition()
+        return False
+
+    def negate(self, covered: typing.List[Action]) -> typing.List[Action]:
+        """Given a list of conditions, returns the condition which check the same
+        variable but all the values which are not covered by the rest of the
+        conditions, by adding it to the list which is returned."""
+        assert self.can_negate()
+        raise TypeError("Action.negate not implemented")
 
     def check_same_variable(self, other: Action) -> bool:
         "Return whether both conditionals are checking the same variable."
@@ -214,6 +226,37 @@ class Action:
 ShiftedAction = typing.Union[Action, bool]
 
 
+class Shift(Action):
+    """Shift action is the implicit action performed when a terminal or nonterminal
+    is used on an edge. However this state is not supported as an epsilon edge,
+    but only serves to annotate delayed actions of states. """
+    __slots__ = ['term']
+
+    term: ShiftedTerm
+
+    def __init__(self, term: ShiftedTerm):
+        super().__init__()
+        self.term = term
+
+    def is_inconsistent(self) -> bool:
+        return True
+
+    def is_condition(self) -> bool:
+        return True
+
+    def condition(self) -> Shift:
+        return self
+
+    def update_stack(self) -> bool:
+        return True
+
+    def update_stack_with(self) -> StackDiff:
+        return StackDiff(0, None, -1)
+
+    def __str__(self) -> str:
+        return "Shift({})".format(str(self.term))
+
+
 class Replay(Action):
     """Replay a term which was previously saved by the Unwind function. Note that
     this does not Shift a term given as argument as the replay action should
@@ -279,11 +322,14 @@ class Unwind(Action):
 class Reduce(Action):
     """Prevent the fall-through to the epsilon transition and returns to the shift
     table execution to resume shifting or replaying terms."""
-    __slots__ = ['unwind']
+    __slots__ = ['unwind', 'lookahead']
 
     unwind: Unwind
 
-    def __init__(self, unwind: Unwind) -> None:
+    # List of lookahead tokens used to prevent aliasing of reduce states.
+    lookahead: typing.Tuple[Element, ...]
+
+    def __init__(self, unwind: Unwind, lookahead: typing.Tuple[Element, ...] = ()) -> None:
         nt_name = unwind.nt.name
         if isinstance(nt_name, InitNt):
             name = "Start_" + str(nt_name.goal.name)
@@ -291,9 +337,10 @@ class Reduce(Action):
             name = nt_name
         super().__init__()
         self.unwind = unwind
+        self.lookahead = lookahead
 
     def __str__(self) -> str:
-        return "Reduce({})".format(str(self.unwind))
+        return "Reduce({}, {})".format(str(self.unwind), str(self.lookahead))
 
     def follow_edge(self) -> bool:
         return False
@@ -306,11 +353,11 @@ class Reduce(Action):
 
     def unshift_action(self, num: int) -> Reduce:
         unwind = self.unwind.unshift_action(num)
-        return Reduce(unwind)
+        return Reduce(unwind, lookahead=self.lookahead[:-num])
 
     def shifted_action(self, shifted_term: Element) -> Reduce:
         unwind = self.unwind.shifted_action(shifted_term)
-        return Reduce(unwind)
+        return Reduce(unwind, lookahead=(*self.lookahead, shifted_term))
 
 
 class Accept(Action):
@@ -374,18 +421,27 @@ class Lookahead(Action):
         return not self.accept
 
 
-class CheckNotOnNewLine(Action):
+class CheckLineTerminator(Action):
     """Check whether the terminal at the given stack offset is on a new line or
-    not. If not this would produce an Error, otherwise this rule would be
-    shifted."""
-    __slots__ = ['offset']
+    not. If the condition is true, then the edge is followed. """
+    __slots__ = ['offset', 'is_on_new_line']
 
+    # Offset of the token which is being checked.
+    #   - If this number is zero, then # this represent the next token.
+    #   - If this number is -1, this represents the last shifted token.
+    #   - If this number is -2, this represents the second to last shifted token.
     offset: int
 
-    def __init__(self, offset: int = 0) -> None:
+    # Check whether the token at the offset is (= True), or is not (= False) on
+    # a new line compared to the previous token.
+    is_on_new_line: bool
+
+    def __init__(self, offset: int = 0, is_on_new_line: bool = False) -> None:
         # assert offset >= -1 and "Smaller offsets are not supported on all backends."
         super().__init__()
+        assert offset >= -1
         self.offset = offset
+        self.is_on_new_line = is_on_new_line
 
     def is_inconsistent(self) -> bool:
         # We can only look at stacked terminals. Having an offset of 0 implies
@@ -397,22 +453,35 @@ class CheckNotOnNewLine(Action):
     def is_condition(self) -> bool:
         return True
 
-    def condition(self) -> CheckNotOnNewLine:
+    def condition(self) -> CheckLineTerminator:
         return self
 
+    def can_negate(self) -> bool:
+        "Unordered condition, which accept or not to reach the next state."
+        return True
+
+    def negate(self, covered: typing.List[Action]) -> typing.List[Action]:
+        assert len(covered) >= 1 and len(covered) <= 2
+        if len(covered) == 2:
+            return covered
+        assert covered[0] == self
+        negated = CheckLineTerminator(self.offset, not self.is_on_new_line)
+        return [self, negated]
+
     def check_same_variable(self, other: Action) -> bool:
-        return isinstance(other, CheckNotOnNewLine) and self.offset == other.offset
+        return isinstance(other, CheckLineTerminator) and self.offset == other.offset
 
     def check_different_values(self, other: Action) -> bool:
-        return False
+        assert isinstance(other, CheckLineTerminator)
+        return self.is_on_new_line != other.is_on_new_line
 
     def shifted_action(self, shifted_term: Element) -> ShiftedAction:
         if isinstance(shifted_term, Nt):
             return True
-        return CheckNotOnNewLine(self.offset - 1)
+        return CheckLineTerminator(self.offset - 1, self.is_on_new_line)
 
     def __str__(self) -> str:
-        return "CheckNotOnNewLine({})".format(self.offset)
+        return "CheckLineTerminator({}, {})".format(self.offset, self.is_on_new_line)
 
 
 class FilterStates(Action):
@@ -554,7 +623,7 @@ class FunCall(Action):
             args: typing.Tuple[OutputExpr, ...],
             trait: types.Type = types.Type("AstBuilder"),
             fallible: bool = False,
-            set_to: str = "val",
+            set_to: str = "value",
             offset: int = 0,
     ) -> None:
         super().__init__()
