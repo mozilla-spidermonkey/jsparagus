@@ -11,13 +11,17 @@ use jsparagus_ast::source_slice_list::SourceSliceList;
 use jsparagus_parser::{parse_script, ParseOptions};
 
 fn parser_bench(c: &mut Criterion) {
-    let tests = &["simple", "__finStreamer-proto"];
+    let tests = &["simple", "__finStreamer-proto", "jquery-slim"];
     let mut programs = HashMap::new();
 
     programs.insert("simple", include_str!("./simple.js"));
     programs.insert(
         "__finStreamer-proto",
         include_str!("./__finStreamer-proto.js"),
+    );
+    programs.insert(
+        "jquery-slim",
+        include_str!("./jquery-3.5.0.slim.min.js"),
     );
 
     c.bench_function_over_inputs(
