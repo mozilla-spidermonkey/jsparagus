@@ -360,11 +360,11 @@ to make it a little less confusing.)
     Amazingly, both of the following are valid JS code:
 
     ```js
-    for (async of => {};;) {}
-    for (async of []) {}
+    for (using of = resource;;) {}
+    for (using of []) {}
     ```
 
-    In the first line, `async` is a keyword and `of` is an identifier;
+    In the first line, `using` is a keyword and `of` is an identifier;
     in the second line it's the other way round.
 
     Even a simplified JS grammar can't be LR(1) as long as it includes
