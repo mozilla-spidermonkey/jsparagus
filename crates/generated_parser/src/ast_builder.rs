@@ -84,6 +84,11 @@ impl<'alloc> AstBuilder<'alloc> {
         list.append(elements);
     }
 
+    // Automatic Semicolon Insertion
+    pub fn asi(&self) -> arena::Box<'alloc, Asi> {
+        self.alloc_with(|| Asi::default())
+    }
+
     // IdentifierReference : Identifier
     pub fn identifier_reference(
         &self,

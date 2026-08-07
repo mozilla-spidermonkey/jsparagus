@@ -25,8 +25,10 @@ impl SourceLocation {
         self.start = start.start;
         self.end = end.end;
     }
+}
 
-    pub fn default() -> Self {
+impl Default for SourceLocation {
+    fn default() -> Self {
         Self { start: 0, end: 0 }
     }
 }

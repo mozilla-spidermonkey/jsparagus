@@ -2,6 +2,9 @@
   "Void": {
     "_type": "enum"
   },
+  "Asi": {
+    "_type": "struct"
+  },
   "Argument": {
     "_type": "enum",
     "SpreadElement": "Box<Expression>",

@@ -12,7 +12,7 @@ from ..runtime import (ERROR, ErrorToken, SPECIAL_CASE_TAG)
 from ..ordered import OrderedSet
 
 from ..grammar import (Some, Nt, InitNt, End, ErrorSymbol)
-from ..actions import (Accept, Action, Replay, Unwind, Reduce, CheckNotOnNewLine, FilterStates,
+from ..actions import (Accept, Action, Replay, Unwind, Reduce, CheckLineTerminator, FilterStates,
                        PushFlag, PopFlag, FunCall, Seq)
 
 from .. import types
@@ -223,23 +223,43 @@ class RustActionWriter:
         # states. Thus we use the first action to produce the match statement.
         assert isinstance(first_act, Action)
         assert first_act.is_condition()
-        if isinstance(first_act, CheckNotOnNewLine):
+        if isinstance(first_act, CheckLineTerminator):
             # TODO: At the moment this is Action is implemented as a single
             # operation with a single destination. However, we should implement
             # it in the future as 2 branches, one which is verifying the lack
             # of new lines, and one which is shifting an extra error token.
             # This might help remove the overhead of backtracking in addition
             # to make this backtracking visible through APS.
-            assert len(list(state.edges())) == 1
-            act, dest = next(state.edges())
             assert len(self.replay_args) == 0
-            assert -act.offset > 0
-            self.write("// {}", str(act))
-            self.write("if !parser.check_not_on_new_line({})? {{", -act.offset)
-            with indent(self):
-                self.write("return Ok(false);")
-            self.write("}")
-            self.write_epsilon_transition(dest)
+            assert first_act.offset == -1
+            if len(state.epsilon) == 1:
+                # Generate if-not-then-error code.
+                act, dest = next(state.edges())
+                test = "!" if act.is_on_new_line else ""
+                self.write("// {}", str(act))
+                self.write("if {}parser.is_on_new_line()? {{", test)
+                with indent(self):
+                    self.write("return Ok(false);")
+                self.write("}")
+                self.write_epsilon_transition(dest)
+            else:
+                # Generate if-else code
+                assert len(list(state.edges())) == 2
+                edges = state.edges()
+                true_act, true_dest = next(edges)
+                if not true_act.is_on_new_line:
+                    false_act, false_dest = true_act, true_dest
+                    true_act, true_dest = next(edges)
+                else:
+                    false_act, false_dest = next(edges)
+                self.write("// {} & {}", str(true_act), str(false_act))
+                self.write("if parser.is_on_new_line()? {")
+                with indent(self):
+                    self.write_epsilon_transition(true_dest)
+                self.write("} else {")
+                with indent(self):
+                    self.write_epsilon_transition(false_dest)
+                self.write("}")
         elif isinstance(first_act, FilterStates):
             if len(state.epsilon) == 1:
                 # This is an attempt to avoid huge unending compilations.
